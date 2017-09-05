@@ -20,6 +20,7 @@
         <module>services-commons</module>
         <module>topology-service</module>
         <module>tao-services-kit</module>
+        <module>data-query-service</module>
     </modules>
 
     <properties>
@@ -55,7 +56,50 @@
             <name>Hibernate Spatial</name>
             <url>${hibernatespatialUrl}</url>
         </repository>
+        <repository>
+            <id>spring-releases</id>
+            <url>https://repo.spring.io/libs-release</url>
+        </repository>
     </repositories>
+    <dependencies>
+        <!-- TAO domain model -->
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-data-model</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Spring dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+            <version>RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.2.11</version>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
 
     <distributionManagement>
         <repository>
@@ -69,6 +113,13 @@
             <url>${taoSnapshotsUrl}</url>
         </snapshotRepository>
     </distributionManagement>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>spring-releases</id>
+            <url>https://repo.spring.io/libs-release</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <build>
         <pluginManagement>
@@ -92,7 +143,6 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
 
         <plugins>
             <plugin>
