@@ -17,10 +17,13 @@
     <description>Spring services for TAO</description>
 
     <modules>
-
+        <module>services-commons</module>
+        <module>topology-service</module>
+        <module>tao-services-kit</module>
     </modules>
 
     <properties>
+        <spring.version>4.3.0.RELEASE</spring.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- maven -->
