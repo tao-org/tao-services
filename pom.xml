@@ -4,23 +4,20 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>ro.cs.tao</groupId>
-    <artifactId>tao-core</artifactId>
+    <parent>
+        <groupId>ro.cs.tao</groupId>
+        <artifactId>tao-core</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>tao-services</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+
+    <name>TAO Services Project</name>
+    <description>Spring services for TAO</description>
 
     <modules>
-        <module>tao-data-model</module>
-        <module>tao-utils</module>
-        <module>tao-service-registry</module>
-        <module>tao-data-sources</module>
-        <module>tao-persistence</module>
-        <module>tao-scihub</module>
-        <module>tao-aws</module>
-        <module>tao-peps</module>
-		<module>tao-integration</module>
-        <module>tao-topology</module>
-        <module>tao-core-kit</module>
+
     </modules>
 
     <properties>
