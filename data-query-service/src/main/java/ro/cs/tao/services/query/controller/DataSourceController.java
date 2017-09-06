@@ -42,7 +42,7 @@ public class DataSourceController {
         return new ResponseEntity<>(sources, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/sensor/{name}/{source}", method = RequestMethod.GET)
+    @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET)
     public ResponseEntity<?> getSupportedParameters(@PathVariable("name") String sensorName,
                                                                             @PathVariable("source") String dataSourceClassName) {
         List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
