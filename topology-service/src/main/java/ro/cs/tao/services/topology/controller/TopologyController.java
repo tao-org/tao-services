@@ -24,7 +24,7 @@ public class TopologyController {
     @Autowired
     private TopologyService topologyService;
 
-    @RequestMapping(value = "/node/getbyname/{name}", method = RequestMethod.GET)
+    @RequestMapping(value = "/node/{name}", method = RequestMethod.GET)
     public ResponseEntity<?> getByName(@PathVariable("name") String name) {
         NodeDescription node = topologyService.findByName(name);
         if (node == null) {
