@@ -20,7 +20,7 @@
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>topology-service</artifactId>
+            <artifactId>tao-data-services</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

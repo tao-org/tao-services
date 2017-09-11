@@ -1,4 +1,4 @@
-package ro.cs.tao.services.topology;
+package ro.cs.tao.services.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -6,11 +6,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * @author Cosmin Cara
  */
-@SpringBootApplication(scanBasePackages = { "ro.cs.tao.services.topology" })
-public class Application {
+@SpringBootApplication(scanBasePackages = { "ro.cs.tao.services" })
+public class ComponentApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
+        SpringApplication.run(ComponentApplication.class, args);
     }
 
 }

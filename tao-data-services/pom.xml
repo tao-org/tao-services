@@ -9,21 +9,17 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>topology-service</artifactId>
-    <packaging>war</packaging>
+    <artifactId>tao-data-services</artifactId>
 
     <dependencies>
-        <!-- TAO Core dependencies -->
-        <dependency>
-            <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-topology</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- TAO Services dependencies -->
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>services-commons</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-data-model</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
