@@ -1,4 +1,4 @@
-package ro.cs.tao.services.crud;
+package ro.cs.tao.services.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.services.commons.ServiceError;
+import ro.cs.tao.services.interfaces.CRUDService;
 
 import java.util.List;
 
@@ -21,7 +22,7 @@ public abstract class BasicController<T> {
     @Autowired
     private CRUDService<T> service;
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET)
     public ResponseEntity<?> get(@PathVariable("id") String id) {
         T entity = service.findById(id);
         if (entity == null) {
@@ -40,13 +41,13 @@ public abstract class BasicController<T> {
         return new ResponseEntity<>(objects, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/update/{id}", method = RequestMethod.PUT)
+    @RequestMapping(value = "/update/{id:.+}", method = RequestMethod.PUT)
     public ResponseEntity<?> save(@PathVariable("id") String id, @RequestBody T entity) {
         service.save(entity);
         return new ResponseEntity<>(entity, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE)
     public ResponseEntity<?> delete(@PathVariable("id") String id) {
         service.delete(id);
         return new ResponseEntity<T>(HttpStatus.NO_CONTENT);
