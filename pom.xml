@@ -18,11 +18,9 @@
 
     <modules>
         <module>services-commons</module>
-        <module>topology-service</module>
-        <module>tao-services-kit</module>
-        <module>data-query-service</module>
-        <module>component-service</module>
         <module>tao-data-services</module>
+        <module>data-query-service</module>
+        <module>tao-services-kit</module>
     </modules>
 
     <properties>
