@@ -1,4 +1,4 @@
-package ro.cs.tao.services.crud;
+package ro.cs.tao.services.interfaces;
 
 import java.util.List;
 
