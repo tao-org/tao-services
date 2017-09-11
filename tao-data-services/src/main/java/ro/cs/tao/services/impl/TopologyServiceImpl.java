@@ -1,6 +1,7 @@
-package ro.cs.tao.services.topology.service;
+package ro.cs.tao.services.impl;
 
 import org.springframework.stereotype.Service;
+import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
 
 import java.util.ArrayList;
@@ -11,8 +12,9 @@ import java.util.List;
  */
 @Service("topologyService")
 public class TopologyServiceImpl implements TopologyService {
+
     @Override
-    public NodeDescription findByName(String hostName) {
+    public NodeDescription findById(String hostName) {
         NodeDescription node = new NodeDescription();
         node.setHostName("host_sample");
         node.setIpAddr("10.0.0.1");
@@ -25,7 +27,7 @@ public class TopologyServiceImpl implements TopologyService {
     }
 
     @Override
-    public List<NodeDescription> getAll() {
+    public List<NodeDescription> list() {
         List<NodeDescription> list = new ArrayList<NodeDescription>();
         NodeDescription node = new NodeDescription();
         node.setHostName("host_sample_1");
@@ -50,12 +52,12 @@ public class TopologyServiceImpl implements TopologyService {
     }
 
     @Override
-    public void saveNode(NodeDescription node) {
+    public void save(NodeDescription node) {
         //no-op
     }
 
     @Override
-    public void deleteNode(String name) {
+    public void delete(String name) {
         //no-op
     }
 }
