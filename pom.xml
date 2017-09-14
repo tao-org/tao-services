@@ -22,6 +22,7 @@
         <module>data-query-service</module>
         <module>tao-services-kit</module>
         <module>monitoring-service</module>
+        <module>services-startup</module>
     </modules>
 
     <properties>
