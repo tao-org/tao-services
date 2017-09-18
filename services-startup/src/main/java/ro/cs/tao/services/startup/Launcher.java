@@ -12,7 +12,7 @@ import ro.cs.tao.services.query.Application;
 /**
  * @author Cosmin Cara
  */
-@SpringBootApplication(scanBasePackages = { "ro.cs.tao" })
+@SpringBootApplication()
 @ImportResource("classpath:services-startup-context.xml")
 public class Launcher {
 

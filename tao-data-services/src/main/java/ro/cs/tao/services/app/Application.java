@@ -7,7 +7,7 @@ import org.springframework.context.annotation.ImportResource;
 /**
  * @author Cosmin Cara
  */
-@SpringBootApplication(scanBasePackages = { "ro.cs.tao" })
+@SpringBootApplication()
 @ImportResource("classpath:tao-data-services-context.xml")
 public class Application {
 
