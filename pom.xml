@@ -45,6 +45,10 @@
 
     <repositories>
         <repository>
+            <id>spring-releases</id>
+            <url>https://repo.spring.io/libs-release</url>
+        </repository>
+        <repository>
             <id>maven-public</id>
             <name>Maven public</name>
             <url>${mavenPublicUrl}/</url>
@@ -58,10 +62,6 @@
             <id>hibernatespatial</id>
             <name>Hibernate Spatial</name>
             <url>${hibernatespatialUrl}</url>
-        </repository>
-        <repository>
-            <id>spring-releases</id>
-            <url>https://repo.spring.io/libs-release</url>
         </repository>
         <repository>
             <id>springio-milestone</id>
@@ -80,13 +80,19 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>2.0.0.M3</version>
+            <version>1.5.7.RELEASE</version>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-tomcat</artifactId>
-            <version>2.0.0.M3</version>
+            <version>1.5.7.RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>4.3.11.RELEASE</version>
         </dependency>
 
         <dependency>
