@@ -39,20 +39,14 @@
         <taoSnapshotsUrl>http://cayman.c-s.ro:8081/nexus/repository/tao-snapshots/</taoSnapshotsUrl>
         <taoReleasesUrl>http://cayman.c-s.ro:8081/nexus/repository/tao-releases/</taoReleasesUrl>
         <osgeoUrl>http://cayman.c-s.ro:8081/nexus/repository/osgeo/</osgeoUrl>
-        <hibernatespatialUrl>http://cayman.c-s.ro:8081/nexus/repository/hibernatespatial/</hibernatespatialUrl>
-        <springio-milestoneUrl>http://cayman.c-s.ro:8081/nexus/repository/springio-milestone/</springio-milestoneUrl>
+        <hibernatespatialUrl>http://cayman:8081/nexus/repository/hibernatespatial/</hibernatespatialUrl>
+        <springio-milestoneUrl>http://cayman:8081/nexus/repository/springio-milestone/</springio-milestoneUrl>
     </properties>
 
     <repositories>
         <repository>
-            <id>tao-snapshots</id>
-            <name>Tao snapshots</name>
-            <url>${taoSnapshotsUrl}/</url>
-        </repository>
-        <repository>
-            <id>tao-releases</id>
-            <name>Tao releases</name>
-            <url>${taoReleasesUrl}/</url>
+            <id>spring-releases</id>
+            <url>https://repo.spring.io/libs-release</url>
         </repository>
         <repository>
             <id>maven-public</id>
@@ -68,10 +62,6 @@
             <id>hibernatespatial</id>
             <name>Hibernate Spatial</name>
             <url>${hibernatespatialUrl}</url>
-        </repository>
-        <repository>
-            <id>spring-releases</id>
-            <url>https://repo.spring.io/libs-release</url>
         </repository>
         <repository>
             <id>springio-milestone</id>
@@ -90,13 +80,19 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>2.0.0.M3</version>
+            <version>1.5.7.RELEASE</version>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-tomcat</artifactId>
-            <version>2.0.0.M3</version>
+            <version>1.5.7.RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>4.3.11.RELEASE</version>
         </dependency>
 
         <dependency>
