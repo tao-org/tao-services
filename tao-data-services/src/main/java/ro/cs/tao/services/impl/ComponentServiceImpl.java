@@ -105,7 +105,7 @@ public class ComponentServiceImpl implements ComponentService {
         component.setSources(new SourceDescriptor[] {sourceDescriptor});
         component.setTargets(new TargetDescriptor[] { new TargetDescriptor("out_str") });
         component.setVersion("1.0");
-        component.setParameters(parameters);
+        component.setParameterDescriptors(parameters);
         component.setVariables(variables);
         component.setTemplateType(TemplateType.VELOCITY);
         component.setTemplate(template);
