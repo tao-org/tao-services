@@ -48,6 +48,11 @@ public class ComponentServiceImpl implements ComponentService {
     }
 
     @Override
+    public void update(TaoComponent component) {
+        // TODO
+    }
+
+    @Override
     public void delete(String name) {
         fakeComponents.remove(name);
     }

@@ -25,6 +25,11 @@ public class TopologyServiceImpl implements TopologyService {
 
     @Override
     public void save(NodeDescription node) {
+        TopologyManager.getInstance().add(node);
+    }
+
+    @Override
+    public void update(NodeDescription node) {
         TopologyManager.getInstance().update(node);
     }
 
