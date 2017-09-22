@@ -41,9 +41,15 @@ public abstract class BasicController<T> {
         return new ResponseEntity<>(objects, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/update/{id:.+}", method = RequestMethod.PUT)
-    public ResponseEntity<?> save(@PathVariable("id") String id, @RequestBody T entity) {
+    @RequestMapping(value = "/", method = RequestMethod.POST)
+    public ResponseEntity<?> save(@RequestBody T entity) {
         service.save(entity);
+        return new ResponseEntity<>(entity, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/update/{id:.+}", method = RequestMethod.PUT)
+    public ResponseEntity<?> update(@PathVariable("id") String id, @RequestBody T entity) {
+        service.update(entity);
         return new ResponseEntity<>(entity, HttpStatus.OK);
     }
 

@@ -15,6 +15,8 @@ public interface CRUDService<T> {
 
     void save(T object);
 
+    void update(T object);
+
     void delete(String id);
 
 }

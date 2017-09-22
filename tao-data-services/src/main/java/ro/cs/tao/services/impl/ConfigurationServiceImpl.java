@@ -43,6 +43,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     @Override
+    public void update(KeyValuePair object) {
+        // no-op
+    }
+
+    @Override
     public void delete(String id) {
         // no-op
     }
