@@ -12,12 +12,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.datasource.param.ParameterDescriptor;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.services.commons.ServiceError;
+import ro.cs.tao.services.query.model.DataSourceInstance;
 import ro.cs.tao.services.query.model.Query;
 import ro.cs.tao.services.query.service.DataSourceService;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
+import java.util.SortedSet;
 
 /**
  * @author Cosmin Cara
@@ -29,9 +31,18 @@ public class DataSourceController {
     @Autowired
     private DataSourceService dataSourceService;
 
+    @RequestMapping(value = "/", method = RequestMethod.GET)
+    public ResponseEntity<List<DataSourceInstance>> getRegisteredSources() {
+        List<DataSourceInstance> instances = dataSourceService.getDatasourceInstances();
+        if (instances == null || instances.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(instances, HttpStatus.OK);
+    }
+
     @RequestMapping(value = "/sensor/", method = RequestMethod.GET)
-    public ResponseEntity<List<String>> getSupportedSensors() {
-        List<String> sensors = dataSourceService.getSupportedSensors();
+    public ResponseEntity<SortedSet<String>> getSupportedSensors() {
+        SortedSet<String> sensors = dataSourceService.getSupportedSensors();
         if (sensors == null || sensors.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
