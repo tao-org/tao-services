@@ -34,7 +34,7 @@ public class TopologyServiceImpl implements TopologyService {
     }
 
     @Override
-    public void delete(String name) {
-        TopologyManager.getInstance().remove(name);
+    public void delete(String hostName) {
+        TopologyManager.getInstance().remove(hostName);
     }
 }
