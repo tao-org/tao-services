@@ -7,6 +7,7 @@ import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.param.ParameterDescriptor;
 import ro.cs.tao.datasource.param.QueryParameter;
 import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.services.query.model.DataSourceInstance;
 import ro.cs.tao.services.query.model.Query;
 
 import java.text.ParseException;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 
 /**
  * @author Cosmin Cara
@@ -23,13 +25,25 @@ import java.util.Map;
 public class DataSourceServiceImpl implements DataSourceService {
 
     @Override
-    public List<String> getSupportedSensors() {
+    public SortedSet<String> getSupportedSensors() {
         return DataSourceManager.getInstance().getSupportedSensors();
     }
 
     @Override
     public List<String> getDatasourcesForSensor(String sensorName) {
         return DataSourceManager.getInstance().getNames(sensorName);
+    }
+
+    @Override
+    public List<DataSourceInstance> getDatasourceInstances() {
+        List<DataSourceInstance> instances = new ArrayList<>();
+        final DataSourceManager dataSourceManager = DataSourceManager.getInstance();
+        final SortedSet<String> sensors = dataSourceManager.getSupportedSensors();
+        for (String sensor : sensors) {
+            dataSourceManager.getNames(sensor).forEach(n ->
+                instances.add(new DataSourceInstance(sensor, n, dataSourceManager.getSupportedParameters(sensor, n))));
+        }
+        return instances;
     }
 
     @Override
