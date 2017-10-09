@@ -30,4 +30,9 @@ public class MonitoringController {
         return new ResponseEntity<>(snapshot, HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/notification", method = RequestMethod.GET)
+    public ResponseEntity<?> getNotifications() {
+        return new ResponseEntity<>(monitoringService.getNotifications(), HttpStatus.OK);
+    }
+
 }
