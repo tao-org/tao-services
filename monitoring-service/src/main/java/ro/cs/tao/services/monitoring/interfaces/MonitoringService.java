@@ -1,5 +1,6 @@
 package ro.cs.tao.services.monitoring.interfaces;
 
+import ro.cs.tao.Message;
 import ro.cs.tao.services.monitoring.model.Snapshot;
 
 /**
@@ -8,5 +9,7 @@ import ro.cs.tao.services.monitoring.model.Snapshot;
 public interface MonitoringService {
 
     Snapshot getMasterSnapshot();
+
+    Message[] getNotifications();
 
 }

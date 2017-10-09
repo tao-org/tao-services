@@ -11,5 +11,12 @@
 
     <artifactId>services-commons</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-notification</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 
 </project>
