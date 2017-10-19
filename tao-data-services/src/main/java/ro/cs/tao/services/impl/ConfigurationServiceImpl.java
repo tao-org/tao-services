@@ -14,7 +14,9 @@ import java.util.Properties;
  * @author Cosmin Cara
  */
 @Service("configurationService")
-public class ConfigurationServiceImpl implements ConfigurationService {
+public class ConfigurationServiceImpl
+    extends ServiceBase<KeyValuePair>
+        implements ConfigurationService {
 
     @Override
     public KeyValuePair findById(String id) {
@@ -50,5 +52,17 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public void delete(String id) {
         // no-op
+    }
+
+    @Override
+    protected void validateFields(KeyValuePair object, List<String> errors) {
+        String value = object.getKey();
+        if (value == null || value.trim().isEmpty()) {
+            errors.add("[key] cannot be empty");
+        }
+        value = object.getValue();
+        if (value == null || value.trim().isEmpty()) {
+            errors.add("[value] cannot be empty");
+        }
     }
 }
