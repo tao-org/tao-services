@@ -1,5 +1,7 @@
 package ro.cs.tao.services.interfaces;
 
+import ro.cs.tao.component.validation.ValidationException;
+
 import java.util.List;
 
 /**
@@ -19,4 +21,5 @@ public interface CRUDService<T> {
 
     void delete(String id);
 
+    default void validate(T object) throws ValidationException { }
 }
