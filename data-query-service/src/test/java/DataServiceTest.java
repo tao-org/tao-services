@@ -73,7 +73,7 @@ public class DataServiceTest {
         aoi.append(-8.9037319257, 24.413397299);
         aoi.append(-9.9866909768, 24.413397299);
         aoi.append(-9.9866909768, 23.4186029838);
-        query.addParameter("footprint", aoi.toWKT());
+        query.addParameter("footprint", aoi);
 
         query.addParameter("cloudcoverpercentage", 100.);
         query.setMaxResults(1);
@@ -85,7 +85,7 @@ public class DataServiceTest {
     @Test
     public void testDownload1() {
         Assert.notNull(this.testS2Result, "Test requires a search result");
-        DataSourceComponent component = new DataSourceComponent("Sentinel-2", "Scientific Data Hub");
+        DataSourceComponent component = new DataSourceComponent("Sentinel-2", "Amazon Web Services");
         List<EOProduct> entry = new ArrayList<>();
         entry.add(this.testS2Result);
         List<EOProduct> result = component.doFetch(entry);
@@ -95,6 +95,7 @@ public class DataServiceTest {
         final String location = result.get(0).getLocation();
         Assert.notNull(location, "The location of the product should not be null");
         final URI path = URI.create(location);
+        Assert.isTrue("file".equals(path.getScheme()), "Product was not downloaded");
         Assert.isTrue(Files.exists(new java.io.File(path).toPath()), "Path not found");
     }
 
