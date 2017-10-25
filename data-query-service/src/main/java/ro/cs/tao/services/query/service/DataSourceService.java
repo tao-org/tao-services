@@ -20,7 +20,10 @@ public interface DataSourceService {
 
     List<DataSourceInstance> getDatasourceInstances();
 
-    List<ParameterDescriptor> getSupportedParameters(String sensorName, String dataSourceClassName);
+    List<ParameterDescriptor> getSupportedParameters(String sensorName, String dataSourceName);
 
-    List<EOProduct> query(String sensorName, String dataSourceClass, Query queryObject) throws ParseException;
+    List<EOProduct> query(String sensorName, String dataSourceName, Query queryObject) throws ParseException;
+
+    List<EOProduct> fetch(String sensorName, String dataSourceName, List<EOProduct> products, String user, String password);
+
 }

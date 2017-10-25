@@ -18,8 +18,8 @@ import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * @author Cosmin Cara
@@ -28,11 +28,12 @@ import java.util.List;
 public class MonitoringServiceImpl
         implements MonitoringService, Consumer<Event<Message>> {
 
-    private final List<Message> messageQueue;
+    private static final int MAX_QUEUE_SIZE = 100;
+    private final Queue<Message> messageQueue;
 
     public MonitoringServiceImpl() {
-        this.messageQueue = new ArrayList<>();
-        MessageBus.register(this, MessageBus.INFORMATION, MessageBus.WARNING, MessageBus.ERROR);
+        this.messageQueue = new LinkedList<>();
+        MessageBus.register(this, MessageBus.INFORMATION, MessageBus.WARNING, MessageBus.ERROR, MessageBus.PROGRESS);
     }
 
     @Override
@@ -85,7 +86,10 @@ public class MonitoringServiceImpl
     @Override
     public void accept(Event<Message> message) {
         synchronized (this.messageQueue) {
-            this.messageQueue.add(message.getData());
+            if (this.messageQueue.size() == MAX_QUEUE_SIZE) {
+                this.messageQueue.poll();
+            }
+            this.messageQueue.offer(message.getData());
         }
     }
 }
