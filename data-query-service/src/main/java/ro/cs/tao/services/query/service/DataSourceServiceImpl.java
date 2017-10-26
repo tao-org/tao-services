@@ -2,7 +2,7 @@ package ro.cs.tao.services.query.service;
 
 import org.springframework.stereotype.Service;
 import ro.cs.tao.datasource.DataQuery;
-import ro.cs.tao.datasource.DataSource;
+import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.param.ParameterDescriptor;
 import ro.cs.tao.datasource.param.QueryParameter;
@@ -47,9 +47,9 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
-    public List<ParameterDescriptor> getSupportedParameters(String sensorName, String dataSourceClassName) {
+    public List<ParameterDescriptor> getSupportedParameters(String sensorName, String dataSourceName) {
         Map<String, ParameterDescriptor> parameterDescriptorMap =
-                DataSourceManager.getInstance().getSupportedParameters(sensorName, dataSourceClassName);
+                DataSourceManager.getInstance().getSupportedParameters(sensorName, dataSourceName);
         List<ParameterDescriptor> parameters = null;
         if (parameterDescriptorMap != null) {
             parameters = new ArrayList<>(parameterDescriptorMap.values());
@@ -58,31 +58,38 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
-    public List<EOProduct> query(String sensorName, String dataSourceClass, Query queryObject) throws ParseException {
+    public List<EOProduct> query(String sensorName, String dataSourceName, Query queryObject) throws ParseException {
         List<EOProduct> results = null;
         if (queryObject != null) {
-            DataSource dataSource = DataSourceManager.getInstance().get(sensorName,
-                                                                        dataSourceClass);
-            if (dataSource != null) {
-                dataSource.setCredentials(queryObject.getUser(), queryObject.getPassword());
-                final Map<String, ParameterDescriptor> parameterDescriptorMap =
-                        DataSourceManager.getInstance().getSupportedParameters(sensorName, dataSourceClass);
-                DataQuery query = dataSource.createQuery(sensorName);
-                Map<String, Object> paramValues = queryObject.getValues();
-                for (Map.Entry<String, Object> entry : paramValues.entrySet()) {
-                    final ParameterDescriptor descriptor = parameterDescriptorMap.get(entry.getKey());
-                    final Class type = descriptor.getType();
-                    final QueryParameter queryParameter =
-                            query.createParameter(entry.getKey(),
-                                                  type,
-                                                  Date.class.isAssignableFrom(type) ?
-                                                          new SimpleDateFormat("yyyy-MM-dd").parse(String.valueOf(entry.getValue()))
-                                                          : entry.getValue());
-                    query.addParameter(queryParameter);
-                }
-                results = query.execute();
+            DataSourceComponent dsComponent = new DataSourceComponent(sensorName, dataSourceName);
+            dsComponent.setUserCredentials(queryObject.getUser(), queryObject.getPassword());
+            final Map<String, ParameterDescriptor> parameterDescriptorMap =
+                    DataSourceManager.getInstance().getSupportedParameters(sensorName, dataSourceName);
+            DataQuery query = dsComponent.createQuery();
+            Map<String, Object> paramValues = queryObject.getValues();
+            for (Map.Entry<String, Object> entry : paramValues.entrySet()) {
+                final ParameterDescriptor descriptor = parameterDescriptorMap.get(entry.getKey());
+                final Class type = descriptor.getType();
+                final QueryParameter queryParameter =
+                        query.createParameter(entry.getKey(),
+                                              type,
+                                              Date.class.isAssignableFrom(type) ?
+                                                      new SimpleDateFormat("yyyy-MM-dd").parse(String.valueOf(entry.getValue()))
+                                                      : entry.getValue());
+                query.addParameter(queryParameter);
             }
+            results = query.execute();
         }
         return results;
+    }
+
+    @Override
+    public List<EOProduct> fetch(String sensorName, String dataSourceName, List<EOProduct> products, String user, String password) {
+        if (products != null) {
+            DataSourceComponent dsComponent = new DataSourceComponent(sensorName, dataSourceName);
+            dsComponent.setUserCredentials(user, password);
+            products = dsComponent.doFetch(products);
+        }
+        return products;
     }
 }
