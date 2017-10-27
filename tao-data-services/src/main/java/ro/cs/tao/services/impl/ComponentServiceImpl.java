@@ -18,11 +18,7 @@ import ro.cs.tao.services.interfaces.ComponentService;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Cosmin Cara
@@ -165,7 +161,7 @@ public class ComponentServiceImpl
                                     Boolean.class,
                                     Boolean.TRUE.toString(),
                                     "Activate 8-Neighborhood connectivity (default is 4)."));
-        ArrayList<Variable> variables = new ArrayList<>();
+        Set<Variable> variables = new HashSet<>();
         variables.add(new Variable("ITK_AUTOLOAD_PATH", "E:\\OTB\\bin"));
         Template template = new BasicTemplate();
         template.setName("segmentation-cc-template.vm");
