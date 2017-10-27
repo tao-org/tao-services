@@ -13,7 +13,7 @@ import ro.cs.tao.services.query.Application;
  * @author Cosmin Cara
  */
 @SpringBootApplication()
-@ImportResource("classpath:services-startup-context.xml")
+@ImportResource({"classpath:services-startup-context.xml", "classpath*:tao-persistence-context.xml" })
 public class Launcher {
 
     public static void main(String[] args) {
