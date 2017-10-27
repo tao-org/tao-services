@@ -37,7 +37,7 @@ public abstract class BasicController<T> {
         return new ResponseEntity<>(entity, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/list", method = RequestMethod.GET)
+    @RequestMapping(value = "/", method = RequestMethod.GET)
     public ResponseEntity<List<T>> list() {
         List<T> objects = service.list();
         if (objects == null || objects.isEmpty()) {
