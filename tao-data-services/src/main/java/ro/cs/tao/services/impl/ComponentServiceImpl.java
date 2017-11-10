@@ -7,7 +7,7 @@ import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TaoComponent;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.Variable;
-import ro.cs.tao.component.constraints.SensorConstraint;
+import ro.cs.tao.component.constraints.RasterConstraint;
 import ro.cs.tao.component.template.BasicTemplate;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
@@ -18,7 +18,13 @@ import ro.cs.tao.services.interfaces.ComponentService;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Cosmin Cara
@@ -191,7 +197,7 @@ public class ComponentServiceImpl
                                      "-mode.vector.startlabel\n" +
                                      "$startlabel_int", false);
         SourceDescriptor sourceDescriptor = new SourceDescriptor("sourceProductFile");
-        sourceDescriptor.addConstraint(new SensorConstraint());
+        sourceDescriptor.addConstraint(RasterConstraint.class.getName());
         ProcessingComponent component = new ProcessingComponent();
         component.setId(id);
         component.setLabel(label);
