@@ -1,6 +1,7 @@
 package ro.cs.tao.services.query.service;
 
 import org.springframework.stereotype.Service;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataQuery;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
@@ -88,7 +89,8 @@ public class DataSourceServiceImpl implements DataSourceService {
         if (products != null) {
             DataSourceComponent dsComponent = new DataSourceComponent(sensorName, dataSourceName);
             dsComponent.setUserCredentials(user, password);
-            products = dsComponent.doFetch(products);
+            String path = ConfigurationManager.getInstance().getValue("product.location");
+            products = dsComponent.doFetch(products, path);
         }
         return products;
     }
