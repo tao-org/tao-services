@@ -37,6 +37,24 @@ public class DataServiceTest {
 
     @Test
     public void testQuery1() {
+        /**
+         * Sample JSON query:
+            {
+                "dataSource": "Scientific Data Hub",
+                "sensor": "Sentinel-2",
+                "user": "user",
+                "password": "pass",
+                "limit": 10,
+                "pageNumber": 1,
+                "pageSize": 10,
+                "values": {
+                    "beginPosition": "2017-11-07",
+                    "endPosition": "2017-11-27",
+                    "footprint": "POLYGON((20.73 43.85,24.86 43.85,24.86 46.45,20.73 46.45,20.73 43.85))",
+                    "cloudcoverpercentage": 100.0
+                }
+            }
+         */
         DataSourceComponent component = new DataSourceComponent("Sentinel-2", "Amazon Web Services");
         final DataQuery query = component.createQuery();
         QueryParameter begin = query.createParameter("beginPosition", Date.class);
@@ -45,11 +63,11 @@ public class DataServiceTest {
                                          .toInstant()));
         query.addParameter(begin);
         Polygon2D aoi = new Polygon2D();
-        aoi.append(-9.9866909768, 23.4186029838);
-        aoi.append(-8.9037319257, 23.4186029838);
-        aoi.append(-8.9037319257, 24.413397299);
-        aoi.append(-9.9866909768, 24.413397299);
-        aoi.append(-9.9866909768, 23.4186029838);
+        aoi.append(20.738296999999992, 43.85597175445727);
+        aoi.append(24.869156375, 43.85597175445727);
+        aoi.append(24.869156375, 46.45834435344344);
+        aoi.append(20.738296999999992, 46.45834435344344);
+        aoi.append(20.738296999999992, 43.85597175445727);
         query.addParameter("footprint", aoi);
 
         query.addParameter("cloudcoverpercentage", 100.);
@@ -61,6 +79,25 @@ public class DataServiceTest {
 
     @Test
     public void testQuery2() {
+        /**
+         * Sample JSON query:
+         *
+         * {
+            "dataSource": "Amazon Web Services",
+            "sensor": "Landsat-8",
+            "user": null,
+            "password": null,
+            "limit": 1,
+            "pageNumber": 0,
+            "pageSize": 0,
+            "values": {
+                "sensingStart": "2017-11-07",
+                "footprint": "POLYGON((-9.9866909768 23.4186029838,-8.9037319257 23.4186029838,-8.9037319257 24.413397299,-9.9866909768 24.413397299,-9.9866909768 23.4186029838))",
+                "cloudcoverpercentage": 100.0
+            }
+           }
+         */
+
         DataSourceComponent component = new DataSourceComponent("Landsat-8", "Amazon Web Services");
         final DataQuery query = component.createQuery();
         QueryParameter begin = query.createParameter("sensingStart", Date.class);

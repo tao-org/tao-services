@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  *
  * @author Cosmin Cara
  */
-public abstract class BasicController<T> {
+public abstract class DataEntityController<T> {
 
     @Autowired
     private CRUDService<T> service;
@@ -57,7 +57,7 @@ public abstract class BasicController<T> {
         }
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> update(@PathVariable("id") String id, @RequestBody T entity) {
         final ResponseEntity<?> validationResponse = validate(entity);
         if (validationResponse.getStatusCode() == HttpStatus.OK) {
