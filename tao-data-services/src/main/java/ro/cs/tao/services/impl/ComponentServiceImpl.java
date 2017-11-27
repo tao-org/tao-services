@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
-import ro.cs.tao.component.TaoComponent;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.Variable;
 import ro.cs.tao.component.constraints.RasterConstraint;
@@ -13,7 +12,6 @@ import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
 import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.component.validation.ValidationException;
-import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.services.interfaces.ComponentService;
 
 import java.nio.file.InvalidPathException;
@@ -31,10 +29,10 @@ import java.util.Set;
  */
 @Service("componentService")
 public class ComponentServiceImpl
-    extends ServiceBase<TaoComponent>
+    extends ServiceBase<ProcessingComponent>
         implements ComponentService {
 
-    private static final Map<String, TaoComponent> fakeComponents;
+    private static final Map<String, ProcessingComponent> fakeComponents;
 
     static {
         fakeComponents = new HashMap<>();
@@ -43,23 +41,23 @@ public class ComponentServiceImpl
     }
 
     @Override
-    public TaoComponent findById(String name) {
+    public ProcessingComponent findById(String name) {
         return fakeComponents.get(name);
     }
 
     @Override
-    public List<TaoComponent> list() {
+    public List<ProcessingComponent> list() {
         return new ArrayList<>(fakeComponents.values());
     }
 
     @Override
-    public void save(TaoComponent component) {
+    public void save(ProcessingComponent component) {
         fakeComponents.put(component.getId(), component);
     }
 
     @Override
-    public void update(TaoComponent component) {
-        // TODO
+    public void update(ProcessingComponent component) {
+        fakeComponents.put(component.getId(), component);
     }
 
     @Override
@@ -68,15 +66,12 @@ public class ComponentServiceImpl
     }
 
     @Override
-    public void validate(TaoComponent entity) throws ValidationException {
-        if (entity instanceof DataSourceComponent) {
-            throw new ValidationException("Data source components cannot be modified");
-        }
+    public void validate(ProcessingComponent entity) throws ValidationException {
         super.validate(entity);
     }
 
     @Override
-    protected void validateFields(TaoComponent entity, List<String> errors) {
+    protected void validateFields(ProcessingComponent entity, List<String> errors) {
         String value = entity.getId();
         if (value == null || value.trim().isEmpty()) {
             errors.add("[id] cannot be empty");
@@ -222,6 +217,7 @@ public class ComponentServiceImpl
         ret.setDataType(clazz);
         ret.setDefaultValue(defaultValue);
         ret.setDescription(description);
+        ret.setLabel(name);
         return ret;
     }
 }
