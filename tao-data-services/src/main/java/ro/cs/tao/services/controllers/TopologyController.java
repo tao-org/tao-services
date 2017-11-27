@@ -9,6 +9,6 @@ import ro.cs.tao.topology.NodeDescription;
  */
 @Controller
 @RequestMapping("/topology")
-public class TopologyController extends BasicController<NodeDescription> {
+public class TopologyController extends DataEntityController<NodeDescription> {
 
 }

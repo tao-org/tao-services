@@ -9,6 +9,6 @@ import ro.cs.tao.component.ProcessingComponent;
  */
 @Controller
 @RequestMapping("/component")
-public class ComponentController extends BasicController<ProcessingComponent> {
+public class ComponentController extends DataEntityController<ProcessingComponent> {
 
 }

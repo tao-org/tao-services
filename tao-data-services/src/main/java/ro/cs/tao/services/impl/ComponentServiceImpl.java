@@ -84,69 +84,66 @@ public class ComponentServiceImpl
         if (value == null || value.trim().isEmpty()) {
             errors.add("[version] cannot be empty");
         }
-        if (entity instanceof ProcessingComponent) {
-            ProcessingComponent component = (ProcessingComponent) entity;
-            value = component.getFileLocation();
-            if (value == null || value.trim().isEmpty()) {
-                errors.add("[fileLocation] cannot be empty");
+        value = entity.getFileLocation();
+        if (value == null || value.trim().isEmpty()) {
+            errors.add("[fileLocation] cannot be empty");
+        } else {
+            try {
+                Paths.get(value);
+            } catch (InvalidPathException e) {
+                errors.add("[fileLocation] has an invalid value");
+            }
+        }
+        value = entity.getWorkingDirectory();
+        if (value == null || value.trim().isEmpty()) {
+            errors.add("[workingDirectory] cannot be empty");
+        } else {
+            try {
+                Paths.get(value);
+            } catch (InvalidPathException e) {
+                errors.add("[workingDirectory] has an invalid value");
+            }
+        }
+        TemplateType templateType = entity.getTemplateType();
+        if (templateType == null) {
+            errors.add("[templateType] cannot be determined");
+        } else {
+            Template template = entity.getTemplate();
+            if (template == null || template.getContents() == null || template.getContents().isEmpty()) {
+                errors.add("[template] cannot be empty");
             } else {
                 try {
-                    Paths.get(value);
-                } catch (InvalidPathException e) {
-                    errors.add("[fileLocation] has an invalid value");
+                    entity.getTemplateEngine().parse(template);
+                } catch (TemplateException e) {
+                    errors.add("[template] has parsing errors: " + e.getMessage());
                 }
             }
-            value = component.getWorkingDirectory();
-            if (value == null || value.trim().isEmpty()) {
-                errors.add("[workingDirectory] cannot be empty");
-            } else {
-                try {
-                    Paths.get(value);
-                } catch (InvalidPathException e) {
-                    errors.add("[workingDirectory] has an invalid value");
+        }
+        List<ParameterDescriptor> parameterDescriptors = entity.getParameterDescriptors();
+        if (parameterDescriptors != null) {
+            for (ParameterDescriptor descriptor : parameterDescriptors) {
+                String descriptorId = descriptor.getId();
+                if (descriptorId == null || descriptorId.trim().isEmpty()) {
+                    errors.add("Invalid parameter found (missing id)");
+                    continue;
                 }
-            }
-            TemplateType templateType = component.getTemplateType();
-            if (templateType == null) {
-                errors.add("[templateType] cannot be determined");
-            } else {
-                Template template = component.getTemplate();
-                if (template == null || template.getContents() == null || template.getContents().isEmpty()) {
-                    errors.add("[template] cannot be empty");
-                } else {
-                    try {
-                        component.getTemplateEngine().parse(template);
-                    } catch (TemplateException e) {
-                        errors.add("[template] has parsing errors: " + e.getMessage());
-                    }
+                value = descriptor.getLabel();
+                if (value == null || value.trim().isEmpty()) {
+                    errors.add(String.format("[$%s] label cannot be empty", descriptorId));
                 }
-            }
-            List<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
-            if (parameterDescriptors != null) {
-                for (ParameterDescriptor descriptor : parameterDescriptors) {
-                    String descriptorId = descriptor.getId();
-                    if (descriptorId == null || descriptorId.trim().isEmpty()) {
-                        errors.add("Invalid parameter found (missing id)");
-                        continue;
-                    }
-                    value = descriptor.getLabel();
+                Class<?> dataType = descriptor.getDataType();
+                if (dataType == null) {
+                    errors.add(String.format("[$%s] cannot determine type", descriptorId));
+                }
+                if (Date.class.equals(dataType)) {
+                    value = descriptor.getFormat();
                     if (value == null || value.trim().isEmpty()) {
-                        errors.add(String.format("[$%s] label cannot be empty", descriptorId));
+                        errors.add(String.format("[$%s] format for date parameter not specified", descriptorId));
                     }
-                    Class<?> dataType = descriptor.getDataType();
-                    if (dataType == null) {
-                        errors.add(String.format("[$%s] cannot determine type", descriptorId));
-                    }
-                    if (Date.class.equals(dataType)) {
-                        value = descriptor.getFormat();
-                        if (value == null || value.trim().isEmpty()) {
-                            errors.add(String.format("[$%s] format for date parameter not specified", descriptorId));
-                        }
-                    }
-                    value = descriptor.getDefaultValue();
-                    if (descriptor.isNotNull() && (value == null || value.trim().isEmpty())) {
-                        errors.add(String.format("[$%s] is mandatory, but has no default value", descriptorId));
-                    }
+                }
+                value = descriptor.getDefaultValue();
+                if (descriptor.isNotNull() && (value == null || value.trim().isEmpty())) {
+                    errors.add(String.format("[$%s] is mandatory, but has no default value", descriptorId));
                 }
             }
         }

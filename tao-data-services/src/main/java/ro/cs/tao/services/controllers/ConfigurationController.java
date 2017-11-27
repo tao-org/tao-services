@@ -9,5 +9,5 @@ import ro.cs.tao.services.commons.KeyValuePair;
  */
 @Controller
 @RequestMapping("/config")
-public class ConfigurationController extends BasicController<KeyValuePair> {
+public class ConfigurationController extends DataEntityController<KeyValuePair> {
 }
