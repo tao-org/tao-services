@@ -27,7 +27,7 @@ public abstract class BasicController<T> {
     @Autowired
     private CRUDService<T> service;
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET)
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> get(@PathVariable("id") String id) {
         T entity = service.findById(id);
         if (entity == null) {
@@ -46,7 +46,7 @@ public abstract class BasicController<T> {
         return new ResponseEntity<>(objects, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST)
+    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> save(@RequestBody T entity) {
         final ResponseEntity<?> validationResponse = validate(entity);
         if (validationResponse.getStatusCode() == HttpStatus.OK) {
@@ -57,7 +57,7 @@ public abstract class BasicController<T> {
         }
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT)
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<?> update(@PathVariable("id") String id, @RequestBody T entity) {
         final ResponseEntity<?> validationResponse = validate(entity);
         if (validationResponse.getStatusCode() == HttpStatus.OK) {
@@ -72,7 +72,7 @@ public abstract class BasicController<T> {
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE)
     public ResponseEntity<?> delete(@PathVariable("id") String id) {
         service.delete(id);
-        return new ResponseEntity<T>(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<T>(HttpStatus.OK);
     }
 
     private ResponseEntity<?> validate(T entity) {
