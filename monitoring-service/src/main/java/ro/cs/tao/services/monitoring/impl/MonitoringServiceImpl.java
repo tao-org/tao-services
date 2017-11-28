@@ -1,10 +1,14 @@
 package ro.cs.tao.services.monitoring.impl;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
 import reactor.fn.Consumer;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.MessageBus;
+import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.monitoring.interfaces.MonitoringService;
 import ro.cs.tao.services.monitoring.model.Memory;
 import ro.cs.tao.services.monitoring.model.MemoryUnit;
@@ -18,8 +22,11 @@ import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
+import java.util.logging.Logger;
 
 /**
  * @author Cosmin Cara
@@ -30,10 +37,14 @@ public class MonitoringServiceImpl
 
     private static final int MAX_QUEUE_SIZE = 100;
     private final Queue<Message> messageQueue;
+    private final Logger logger;
+    @Autowired
+    private PersistenceManager persistenceManager;
 
     public MonitoringServiceImpl() {
         this.messageQueue = new LinkedList<>();
         MessageBus.register(this, MessageBus.INFORMATION, MessageBus.WARNING, MessageBus.ERROR, MessageBus.PROGRESS);
+        this.logger = Logger.getLogger(MonitoringService.class.getName());
     }
 
     @Override
@@ -74,13 +85,34 @@ public class MonitoringServiceImpl
     }
 
     @Override
-    public Message[] getNotifications() {
-        Message[] messages;
+    public List<Message> getLiveNotifications() {
+        List<Message> messages = new ArrayList<>();
         synchronized (this.messageQueue) {
-            messages = this.messageQueue.toArray(new Message[this.messageQueue.size()]);
+            messages.addAll(this.messageQueue);
             this.messageQueue.clear();
         }
         return messages;
+    }
+
+    @Override
+    public List<Message> getNotifications(int userId, int page) {
+        final Page<Message> userMessages = persistenceManager.getUserMessages(userId, page);
+        return userMessages != null ? userMessages.getContent() : new ArrayList<>();
+    }
+
+    @Override
+    public List<Message> acknowledgeNotification(List<Message> notifications) {
+        if (notifications != null) {
+            notifications.forEach(message -> {
+                message.setRead(true);
+                try {
+                    persistenceManager.saveMessage(message);
+                } catch (PersistenceException e) {
+                    logger.severe(e.getMessage());
+                }
+            });
+        }
+        return notifications;
     }
 
     @Override
