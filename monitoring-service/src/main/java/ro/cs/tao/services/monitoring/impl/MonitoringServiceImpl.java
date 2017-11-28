@@ -85,6 +85,11 @@ public class MonitoringServiceImpl
     }
 
     @Override
+    public Snapshot getNodeSnapshot(String hostName) {
+        return null;
+    }
+
+    @Override
     public List<Message> getLiveNotifications() {
         List<Message> messages = new ArrayList<>();
         synchronized (this.messageQueue) {
