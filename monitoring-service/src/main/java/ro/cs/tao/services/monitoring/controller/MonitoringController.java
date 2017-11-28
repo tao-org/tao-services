@@ -4,11 +4,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import ro.cs.tao.messaging.Message;
 import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.monitoring.interfaces.MonitoringService;
 import ro.cs.tao.services.monitoring.model.Snapshot;
+
+import java.util.List;
 
 /**
  * @author Cosmin Cara
@@ -30,9 +36,20 @@ public class MonitoringController {
         return new ResponseEntity<>(snapshot, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/notification", method = RequestMethod.GET)
-    public ResponseEntity<?> getNotifications() {
-        return new ResponseEntity<>(monitoringService.getNotifications(), HttpStatus.OK);
+    @RequestMapping(value = "/notification/", method = RequestMethod.GET)
+    public ResponseEntity<?> getLiveNotifications() {
+        return new ResponseEntity<>(monitoringService.getLiveNotifications(), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/notification/{page}", method = RequestMethod.GET)
+    public ResponseEntity<?> getNotifications(@RequestHeader(value = "userId") int userId,
+                                              @PathVariable("page") int page) {
+        return new ResponseEntity<>(monitoringService.getNotifications(userId, page), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/notification/ack", method = RequestMethod.POST)
+    public ResponseEntity<?> acknowledgeNotifications(@RequestBody List<Message> notifications) {
+        return new ResponseEntity<>(monitoringService.acknowledgeNotification(notifications), HttpStatus.OK);
     }
 
 }
