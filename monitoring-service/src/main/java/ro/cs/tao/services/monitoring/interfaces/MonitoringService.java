@@ -12,6 +12,8 @@ public interface MonitoringService {
 
     Snapshot getMasterSnapshot();
 
+    Snapshot getNodeSnapshot(String hostName);
+
     List<Message> getLiveNotifications();
 
     List<Message> getNotifications(int userId, int page);
