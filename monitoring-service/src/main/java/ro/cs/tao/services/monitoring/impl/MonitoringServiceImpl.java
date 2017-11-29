@@ -9,12 +9,12 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.MessageBus;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.services.monitoring.interfaces.MonitoringService;
-import ro.cs.tao.services.monitoring.model.Memory;
-import ro.cs.tao.services.monitoring.model.MemoryUnit;
-import ro.cs.tao.services.monitoring.model.Runtime;
-import ro.cs.tao.services.monitoring.model.Snapshot;
-import ro.cs.tao.services.monitoring.model.TimeUnit;
+import ro.cs.tao.services.interfaces.MonitoringService;
+import ro.cs.tao.services.model.monitoring.Memory;
+import ro.cs.tao.services.model.monitoring.MemoryUnit;
+import ro.cs.tao.services.model.monitoring.Runtime;
+import ro.cs.tao.services.model.monitoring.Snapshot;
+import ro.cs.tao.services.model.monitoring.TimeUnit;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -86,7 +86,23 @@ public class MonitoringServiceImpl
 
     @Override
     public Snapshot getNodeSnapshot(String hostName) {
-        return null;
+        Snapshot snapshot = new Snapshot();
+        try {
+            SnmpClient client = new SnmpClient(hostName);
+            client.start();
+            logger.info(client.getAsString(SnmpClient.ProcessorCount));
+            logger.info(client.getAsString(SnmpClient.SystemDescription));
+            logger.info(client.getAsString(SnmpClient.LastMinuteCPULoad));
+            logger.info(client.getAsString(SnmpClient.PercentageUserCPUTime));
+            logger.info(client.getAsString(SnmpClient.SystemUpTime));
+            logger.info(client.getAsString(SnmpClient.TotalMemoryUsed));
+            logger.info(client.getAsString(SnmpClient.TotalMemoryFree));
+        } catch (Throwable ex) {
+            logger.warning(ex.getMessage());
+        }
+        snapshot.setMemory(new Memory(MemoryUnit.MEGABYTE));
+        snapshot.setRuntime(new Runtime(TimeUnit.SECONDS));
+        return snapshot;
     }
 
     @Override

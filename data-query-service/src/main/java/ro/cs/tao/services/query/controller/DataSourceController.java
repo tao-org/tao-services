@@ -12,9 +12,9 @@ import ro.cs.tao.datasource.param.ParameterDescriptor;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.commons.ServiceError;
-import ro.cs.tao.services.query.model.DataSourceInstance;
-import ro.cs.tao.services.query.model.Query;
-import ro.cs.tao.services.query.service.DataSourceService;
+import ro.cs.tao.services.interfaces.DataSourceService;
+import ro.cs.tao.services.model.datasource.DataSourceInstance;
+import ro.cs.tao.services.model.datasource.Query;
 
 import java.util.List;
 import java.util.SortedSet;
