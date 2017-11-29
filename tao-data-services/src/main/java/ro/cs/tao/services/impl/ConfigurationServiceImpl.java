@@ -2,8 +2,8 @@ package ro.cs.tao.services.impl;
 
 import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.services.commons.KeyValuePair;
 import ro.cs.tao.services.interfaces.ConfigurationService;
+import ro.cs.tao.services.model.KeyValuePair;
 
 import java.util.ArrayList;
 import java.util.Enumeration;

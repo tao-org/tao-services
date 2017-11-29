@@ -20,6 +20,15 @@ import java.io.IOException;
  * @author Cosmin Cara
  */
 public class SnmpClient {
+    public static final OID SystemDescription = new OID(".1.3.6.1.2.1.1.1.0");
+    public static final OID SystemName = new OID(".1.3.6.1.2.1.1.5.0");
+    public static final OID LastMinuteCPULoad = new OID(".1.3.6.1.4.1.2021.10.1.3.1");
+    public static final OID PercentageUserCPUTime = new OID(".1.3.6.1.4.1.2021.11.9.0");
+    public static final OID TotalMemoryUsed = new OID(".1.3.6.1.4.1.2021.4.6.0");
+    public static final OID TotalMemoryFree = new OID(".1.3.6.1.4.1.2021.4.11.0");
+    public static final OID ProcessorCount = new OID(".1.3.6.1.2.1.25.3.2");
+    public static final OID SystemUpTime = new OID("1.3.6.1.2.1.25.1.1.0");
+
     private final String address;
     private Snmp snmp;
 
