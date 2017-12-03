@@ -13,7 +13,7 @@ import java.util.List;
  */
 @Service("topologyService")
 public class TopologyServiceImpl
-    extends ServiceBase<NodeDescription>
+    extends EntityService<NodeDescription>
         implements TopologyService {
 
     @Override
