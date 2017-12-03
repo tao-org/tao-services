@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * @author Cosmin Cara
  */
-public abstract class ServiceBase<T> {
+public abstract class EntityService<T> {
 
     public void validate(T entity) throws ValidationException {
         List<String> errors = new ArrayList<>();

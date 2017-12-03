@@ -1,5 +1,6 @@
 package ro.cs.tao.services.impl;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
@@ -12,62 +13,120 @@ import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
 import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.serialization.*;
 import ro.cs.tao.services.interfaces.ComponentService;
 
+import javax.xml.transform.stream.StreamSource;
+import java.io.StringReader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * @author Cosmin Cara
  */
 @Service("componentService")
 public class ComponentServiceImpl
-    extends ServiceBase<ProcessingComponent>
+    extends EntityService<ProcessingComponent>
         implements ComponentService {
 
-    private static final Map<String, ProcessingComponent> fakeComponents;
+    /*private static final Map<String, ProcessingComponent> fakeComponents;
 
     static {
         fakeComponents = new HashMap<>();
         fakeComponents.put("segmentation-cc-1", newComponent("segmentation-cc-1", "First segmentation component"));
         fakeComponents.put("segmentation-cc-2", newComponent("segmentation-cc-2", "Second segmentation component"));
-    }
+    }*/
+
+    @Autowired
+    private PersistenceManager persistenceManager;
+    private Logger logger = Logger.getLogger(ComponentService.class.getName());
 
     @Override
     public ProcessingComponent findById(String name) {
-        return fakeComponents.get(name);
+        //return fakeComponents.get(name);
+        ProcessingComponent component = null;
+        try {
+            component = persistenceManager.getProcessingComponentById(name);
+        } catch (PersistenceException e) {
+            logger.severe(e.getMessage());
+        }
+        return component;
     }
 
     @Override
     public List<ProcessingComponent> list() {
-        return new ArrayList<>(fakeComponents.values());
+        //return new ArrayList<>(fakeComponents.values());
+        List<ProcessingComponent> components = null;
+        try {
+            components = persistenceManager.getProcessingComponents();
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+        }
+        return components;
     }
 
     @Override
     public void save(ProcessingComponent component) {
-        fakeComponents.put(component.getId(), component);
+        //fakeComponents.put(component.getId(), component);\
+        if (component != null) {
+            try {
+                ProcessingComponent shouldBeNull = persistenceManager.getProcessingComponentById(component.getId());
+                if (shouldBeNull != null) {
+                    update(component);
+                } else {
+                    persistenceManager.saveProcessingComponent(component);
+                }
+            } catch (PersistenceException e) {
+                logger.severe(e.getMessage());
+            }
+        }
     }
 
     @Override
     public void update(ProcessingComponent component) {
-        fakeComponents.put(component.getId(), component);
+        //fakeComponents.put(component.getId(), component);
+        if (component != null) {
+            try {
+                persistenceManager.updateProcessingComponent(component);
+            } catch (PersistenceException e) {
+                logger.severe(e.getMessage());
+            }
+        }
     }
 
     @Override
     public void delete(String name) {
-        fakeComponents.remove(name);
+        //fakeComponents.remove(name);
+        try {
+            persistenceManager.deleteProcessingComponent(name);
+        } catch (PersistenceException e) {
+            logger.severe(e.getMessage());
+        }
     }
 
     @Override
     public void validate(ProcessingComponent entity) throws ValidationException {
         super.validate(entity);
+    }
+
+    @Override
+    public ProcessingComponent importFrom(MediaType mediaType, String data) throws SerializationException {
+        Serializer<ProcessingComponent, String> serializer = SerializerFactory.create(ProcessingComponent.class, mediaType);
+        return serializer.deserialize(new StreamSource(new StringReader(data)));
+    }
+
+    @Override
+    public String exportTo(MediaType mediaType, ProcessingComponent component) throws SerializationException {
+        Serializer<ProcessingComponent, String> serializer = SerializerFactory.create(ProcessingComponent.class, mediaType);
+        return serializer.serialize(component);
     }
 
     @Override
