@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>data-query-service</artifactId>
-    <packaging>war</packaging>
+    <!-- <packaging>war</packaging> -->
 
     <dependencies>
         <!-- TAO Core dependencies -->
@@ -53,16 +53,16 @@
     <build>
         <plugins>
             <!-- Plugin for building the war -->
-            <plugin>
+<!--            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
             </plugin>
-
+-->
             <!-- Plugin for building the jar, from the classes directory -->
-            <plugin>
+<!--            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <executions>
@@ -75,9 +75,9 @@
                     </execution>
                 </executions>
             </plugin>
-
+-->
             <!-- Plugin for installing the jar in the local repository -->
-            <plugin>
+<!--            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-install-plugin</artifactId>
                 <executions>
@@ -96,7 +96,7 @@
                     </execution>
                 </executions>
             </plugin>
-
+-->
         </plugins>
     </build>
 
