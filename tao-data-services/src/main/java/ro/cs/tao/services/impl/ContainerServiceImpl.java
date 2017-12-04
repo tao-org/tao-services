@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.ContainerService;
 
 import java.util.List;
@@ -25,29 +26,29 @@ public class ContainerServiceImpl
     @Override
     public Container findById(String id) {
         Container container = null;
-        /*try {
+        try {
             container = persistenceManager.getContainerById(id);
-        } catch (PersistenceException e) {
+        } catch (Exception e) {
             logger.severe(e.getMessage());
-        }*/
+        }
         return container;
     }
 
     @Override
     public List<Container> list() {
         List<Container> containers = null;
-        /*try {
+        try {
             containers = persistenceManager.getContainers();
         } catch (Exception e) {
             logger.severe(e.getMessage());
-        }*/
+        }
         return containers;
     }
 
     @Override
     public void save(Container object) {
         if (object != null) {
-            /*try {
+            try {
                 Container shouldBeNull = findById(object.getId());
                 if (shouldBeNull != null) {
                     update(object);
@@ -56,19 +57,19 @@ public class ContainerServiceImpl
                 }
             } catch (PersistenceException e) {
                 logger.severe(e.getMessage());
-            }*/
+            }
         }
     }
 
     @Override
     public void update(Container object) {
-        /*if (object != null) {
+        if (object != null) {
             try {
                 persistenceManager.updateContainer(object);
             } catch (PersistenceException e) {
                 logger.severe(e.getMessage());
             }
-        }*/
+        }
     }
 
     @Override
