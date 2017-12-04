@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.datasource.param.ParameterDescriptor;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.serialization.SerializationException;
+import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceInstance;
@@ -24,7 +25,7 @@ import java.util.SortedSet;
  */
 @Controller
 @RequestMapping("/query")
-public class DataSourceController {
+public class DataSourceController extends BaseController {
 
     @Autowired
     private DataSourceService dataSourceService;
