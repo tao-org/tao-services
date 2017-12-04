@@ -6,9 +6,9 @@ import org.springframework.context.annotation.ImportResource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import ro.cs.tao.services.app.ComponentApplication;
 import ro.cs.tao.services.app.ConfigurationApplication;
+import ro.cs.tao.services.app.ContainerApplication;
 import ro.cs.tao.services.app.TopologyApplication;
 import ro.cs.tao.services.monitoring.app.MonitoringApp;
-import ro.cs.tao.services.query.Application;
 
 /**
  * @author Cosmin Cara
@@ -20,8 +20,8 @@ public class Launcher {
 
     public static void main(String[] args) {
         new SpringApplicationBuilder()
-                .sources(Application.class, MonitoringApp.class, ComponentApplication.class, ConfigurationApplication.class,
-                         TopologyApplication.class)
+                .sources(MonitoringApp.class, ComponentApplication.class, ConfigurationApplication.class,
+                         TopologyApplication.class, ContainerApplication.class)
                 .run(args);
     }
 

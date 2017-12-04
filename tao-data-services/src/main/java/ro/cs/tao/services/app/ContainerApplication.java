@@ -1,7 +1,7 @@
 package ro.cs.tao.services.app;
 
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.ImportResource;
 
 /**
@@ -9,12 +9,8 @@ import org.springframework.context.annotation.ImportResource;
  */
 @SpringBootApplication()
 @ImportResource("classpath:tao-data-services-context.xml")
-public class Application {
-
+public class ContainerApplication {
     public static void main(String[] args) {
-        new SpringApplicationBuilder()
-                .sources(ComponentApplication.class, TopologyApplication.class, ConfigurationApplication.class)
-                .run(args);
+        SpringApplication.run(ContainerApplication.class, args);
     }
-
 }
