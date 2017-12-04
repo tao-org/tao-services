@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.CRUDService;
 
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
  *
  * @author Cosmin Cara
  */
-public abstract class DataEntityController<T> {
+public abstract class DataEntityController<T> extends BaseController {
 
     @Autowired
     private CRUDService<T> service;

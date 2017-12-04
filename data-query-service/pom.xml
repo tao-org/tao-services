@@ -29,6 +29,11 @@
             <artifactId>tao-aws</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-peps</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- TAO Services dependencies -->
         <dependency>

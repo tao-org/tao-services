@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.messaging.Message;
+import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.MonitoringService;
 import ro.cs.tao.services.model.monitoring.Snapshot;
@@ -21,7 +22,7 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/monitor")
-public class MonitoringController {
+public class MonitoringController extends BaseController {
 
     @Autowired
     private MonitoringService monitoringService;
