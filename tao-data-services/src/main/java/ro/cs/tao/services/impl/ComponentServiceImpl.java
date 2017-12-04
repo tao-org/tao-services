@@ -78,7 +78,7 @@ public class ComponentServiceImpl
         //fakeComponents.put(component.getId(), component);\
         if (component != null) {
             try {
-                ProcessingComponent shouldBeNull = persistenceManager.getProcessingComponentById(component.getId());
+                ProcessingComponent shouldBeNull = findById(component.getId());
                 if (shouldBeNull != null) {
                     update(component);
                 } else {
