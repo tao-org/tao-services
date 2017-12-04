@@ -50,11 +50,11 @@ public class ComponentServiceImpl
     private Logger logger = Logger.getLogger(ComponentService.class.getName());
 
     @Override
-    public ProcessingComponent findById(String name) {
+    public ProcessingComponent findById(String id) {
         //return fakeComponents.get(name);
         ProcessingComponent component = null;
         try {
-            component = persistenceManager.getProcessingComponentById(name);
+            component = persistenceManager.getProcessingComponentById(id);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
         }
