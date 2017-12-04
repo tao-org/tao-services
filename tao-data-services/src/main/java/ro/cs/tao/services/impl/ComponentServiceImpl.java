@@ -15,7 +15,10 @@ import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.serialization.*;
+import ro.cs.tao.serialization.MediaType;
+import ro.cs.tao.serialization.SerializationException;
+import ro.cs.tao.serialization.Serializer;
+import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.interfaces.ComponentService;
 
 import javax.xml.transform.stream.StreamSource;
@@ -134,6 +137,18 @@ public class ComponentServiceImpl
         String value = entity.getId();
         if (value == null || value.trim().isEmpty()) {
             errors.add("[id] cannot be empty");
+        }
+        value = entity.getContainerId();
+        if (value == null || value.trim().isEmpty()) {
+            errors.add("[containerId] cannot be empty");
+        } else {
+            try {
+                if (persistenceManager.getContainerById(value) == null) {
+                    errors.add("[containerId] points to a non-existing container");
+                }
+            } catch (PersistenceException e) {
+                logger.warning(e.getMessage());
+            }
         }
         value = entity.getLabel();
         if (value == null || value.trim().isEmpty()) {
