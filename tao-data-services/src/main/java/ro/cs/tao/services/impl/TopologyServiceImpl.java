@@ -2,6 +2,7 @@ package ro.cs.tao.services.impl;
 
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.docker.Container;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
@@ -39,6 +40,11 @@ public class TopologyServiceImpl
     @Override
     public void delete(String hostName) {
         TopologyManager.getInstance().remove(hostName);
+    }
+
+    @Override
+    public List<Container> getDockerImages() {
+        return TopologyManager.getInstance().getAvailableDockerImages();
     }
 
     @Override
