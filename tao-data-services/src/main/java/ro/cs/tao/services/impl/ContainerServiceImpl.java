@@ -28,7 +28,7 @@ public class ContainerServiceImpl
         Container container = null;
         try {
             container = persistenceManager.getContainerById(id);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             logger.severe(e.getMessage());
         }
         return container;
@@ -74,11 +74,11 @@ public class ContainerServiceImpl
 
     @Override
     public void delete(String id) {
-        /*try {
+        try {
             persistenceManager.deleteContainer(id);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
-        }*/
+        }
     }
 
     @Override
