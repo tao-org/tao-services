@@ -8,7 +8,7 @@ import org.springframework.context.annotation.ImportResource;
  * @author Cosmin Cara
  */
 @SpringBootApplication()
-@ImportResource("classpath:tao-data-services-context.xml")
+@ImportResource({"classpath:tao-data-services-context.xml", "classpath*:tao-persistence-context.xml" })
 public class ComponentApplication {
 
     public static void main(String[] args) {
