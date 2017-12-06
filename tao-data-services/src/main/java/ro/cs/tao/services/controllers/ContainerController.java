@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.TopologyManager;
 
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/docker")
-public class ContainerController extends DataEntityController<Container> {
+public class ContainerController extends DataEntityController<Container, ContainerService> {
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public ResponseEntity<List<Container>> list() {

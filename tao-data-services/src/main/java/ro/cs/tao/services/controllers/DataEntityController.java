@@ -23,10 +23,10 @@ import java.util.stream.Collectors;
  *
  * @author Cosmin Cara
  */
-public abstract class DataEntityController<T> extends BaseController {
+public abstract class DataEntityController<T, S extends CRUDService<T>> extends BaseController {
 
     @Autowired
-    private CRUDService<T> service;
+    protected S service;
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> get(@PathVariable("id") String id) {

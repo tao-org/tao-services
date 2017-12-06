@@ -10,6 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>services-startup</artifactId>
+    <name>TAO Services Launcher</name>
     <packaging>war</packaging>
 
     <properties>

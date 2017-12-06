@@ -2,6 +2,7 @@ package ro.cs.tao.services.controllers;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import ro.cs.tao.services.interfaces.ConfigurationService;
 import ro.cs.tao.services.model.KeyValuePair;
 
 /**
@@ -9,5 +10,5 @@ import ro.cs.tao.services.model.KeyValuePair;
  */
 @Controller
 @RequestMapping("/config")
-public class ConfigurationController extends DataEntityController<KeyValuePair> {
+public class ConfigurationController extends DataEntityController<KeyValuePair, ConfigurationService> {
 }

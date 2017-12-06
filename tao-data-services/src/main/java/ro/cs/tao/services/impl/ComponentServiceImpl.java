@@ -7,6 +7,8 @@ import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.Variable;
+import ro.cs.tao.component.constraints.Constraint;
+import ro.cs.tao.component.constraints.ConstraintFactory;
 import ro.cs.tao.component.constraints.RasterConstraint;
 import ro.cs.tao.component.template.BasicTemplate;
 import ro.cs.tao.component.template.Template;
@@ -27,8 +29,10 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -40,13 +44,13 @@ public class ComponentServiceImpl
     extends EntityService<ProcessingComponent>
         implements ComponentService {
 
-    /*private static final Map<String, ProcessingComponent> fakeComponents;
+    private static final Map<String, ProcessingComponent> fakeComponents;
 
     static {
         fakeComponents = new HashMap<>();
         fakeComponents.put("segmentation-cc-1", newComponent("segmentation-cc-1", "First segmentation component"));
         fakeComponents.put("segmentation-cc-2", newComponent("segmentation-cc-2", "Second segmentation component"));
-    }*/
+    }
 
     @Autowired
     private PersistenceManager persistenceManager;
@@ -66,14 +70,14 @@ public class ComponentServiceImpl
 
     @Override
     public List<ProcessingComponent> list() {
-        //return new ArrayList<>(fakeComponents.values());
-        List<ProcessingComponent> components = null;
+        return new ArrayList<>(fakeComponents.values());
+        /*List<ProcessingComponent> components = null;
         try {
             components = persistenceManager.getProcessingComponents();
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
-        return components;
+        return components;*/
     }
 
     @Override
@@ -130,6 +134,11 @@ public class ComponentServiceImpl
     public String exportTo(MediaType mediaType, ProcessingComponent component) throws SerializationException {
         Serializer<ProcessingComponent, String> serializer = SerializerFactory.create(ProcessingComponent.class, mediaType);
         return serializer.serialize(component);
+    }
+
+    @Override
+    public List<String> getAvailableConstraints() {
+        return ConstraintFactory.getAvailableConstraints();
     }
 
     @Override
@@ -263,7 +272,8 @@ public class ComponentServiceImpl
                                      "-mode.vector.startlabel\n" +
                                      "$startlabel_int", false);
         SourceDescriptor sourceDescriptor = new SourceDescriptor("sourceProductFile");
-        sourceDescriptor.addConstraint(RasterConstraint.class.getName());
+        Constraint annotation = RasterConstraint.class.getAnnotation(Constraint.class);
+        sourceDescriptor.addConstraint(annotation != null ? annotation.name() : RasterConstraint.class.getName());
         ProcessingComponent component = new ProcessingComponent();
         component.setId(id);
         component.setLabel(label);
