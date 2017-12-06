@@ -63,6 +63,9 @@ public class ComponentServiceIntegrationTest {
 
     @Test
     public void deleteTaoComponent() {
+        // First add (or update) an active component
+        addTaoComponent();
+
         HttpHeaders headers = new HttpHeaders();
         HttpEntity<String> entity = new HttpEntity<String>(null, headers);
         String fullUrl = createURLWithPort("/component/segmentation-cc-1");
