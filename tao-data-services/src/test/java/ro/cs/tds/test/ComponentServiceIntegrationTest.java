@@ -1,14 +1,20 @@
 package ro.cs.tds.test;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.context.embedded.LocalServerPort;
+import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringRunner;
 import ro.cs.tao.services.app.ComponentApplication;
+
+import java.io.IOException;
 
 /**
  * Created by cosmin on 11/24/2017.
@@ -39,7 +45,7 @@ public class ComponentServiceIntegrationTest {
         System.out.println(fullUrl);
         System.out.println(response);
         System.out.println(response.getBody());
-        Assert.assertEquals(response.getBody(), "[" + testComponentJson + "]");
+        checkReceivedComponent(response.getBody());
     }
 
     @Test
@@ -47,25 +53,26 @@ public class ComponentServiceIntegrationTest {
         // add the component if does not exists already
         addTaoComponent(null, null);
 
-        HttpHeaders headers = new HttpHeaders();
-
-        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
-
-        String fullUrl = createURLWithPort("/component/segmentation-cc-1");
-        ResponseEntity<String> response = restTemplate.exchange(
-                fullUrl,
-                HttpMethod.GET, entity, String.class);
-
-        System.out.println(fullUrl);
-        System.out.println(response);
-        System.out.println(response.getBody());
-        Assert.assertEquals(response.getBody(), testComponentJson);
+        checkTaoComponentExistence();
     }
 
     @Test
     public void testAddTaoComponent() {
         ResponseEntity<String> response = addTaoComponent(null, null);
-        Assert.assertEquals(response.getBody(), testComponentJson);
+        checkReceivedComponent(response.getBody());
+    }
+
+    @Test
+    public void deleteTaoComponent() {
+        HttpHeaders headers = new HttpHeaders();
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+        String fullUrl = createURLWithPort("/component/segmentation-cc-1");
+        ResponseEntity<String> response = restTemplate.exchange(
+                fullUrl,
+                HttpMethod.DELETE, entity, String.class);
+        System.out.println(response);
+
+        checkTaoComponentExistence();
     }
 
     private ResponseEntity<String> addTaoComponent(String id, String label) {
@@ -89,17 +96,55 @@ public class ComponentServiceIntegrationTest {
         return response;
     }
 
-//    private void deleteTaoComponent() {
-//        HttpHeaders headers = new HttpHeaders();
-//        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
-//        String fullUrl = createURLWithPort("/component/");
-//        ResponseEntity<String> response = restTemplate.exchange(
-//                fullUrl,
-//                HttpMethod.DELETE, entity, String.class, newCompJson);
-//        System.out.println(response);
-//        return response;
-//
-//    }
+    private void checkTaoComponentExistence() {
+        HttpHeaders headers = new HttpHeaders();
+
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+
+        String fullUrl = createURLWithPort("/component/segmentation-cc-1");
+        ResponseEntity<String> response = restTemplate.exchange(
+                fullUrl,
+                HttpMethod.GET, entity, String.class);
+
+        System.out.println(fullUrl);
+        System.out.println(response);
+        System.out.println(response.getBody());
+        checkReceivedComponent(response.getBody());
+    }
+
+    private void checkReceivedComponent(String responseBody) {
+        JsonFactory factory = new JsonFactory();
+        JsonParser parser = null;
+        try {
+            parser = factory.createParser(responseBody);
+            String idVal = null;
+            String labelVal = null;
+            String containerIdVal = null;
+            while(!parser.isClosed()){
+                JsonToken jsonToken = parser.nextToken();
+                if(JsonToken.FIELD_NAME.equals(jsonToken)){
+                    String fieldName = parser.getCurrentName();
+                    System.out.println(fieldName);
+                    if("id".equals(fieldName) && (idVal == null)){
+                        jsonToken = parser.nextToken();
+                        idVal = parser.getValueAsString();
+                    } else if ("label".equals(fieldName) && (labelVal == null)){
+                        jsonToken = parser.nextToken();
+                        labelVal = parser.getValueAsString();
+                    } else if ("containerId".equals(fieldName) && (containerIdVal == null)){
+                        jsonToken = parser.nextToken();
+                        containerIdVal = parser.getValueAsString();
+                    }
+                }
+            }
+            if (!"segmentation-cc-1".equals(idVal) || !"First segmentation component".equals(labelVal) ||
+                    !"DummyTestDockerContainer".equals(containerIdVal)) {
+                Assert.assertFalse(true);
+            }
+        } catch (IOException e){
+            Assert.assertFalse(true);
+        }
+    }
 
     private String createURLWithPort(String uri) {
         return "http://localhost:" + port + uri;
@@ -125,7 +170,7 @@ public class ComponentServiceIntegrationTest {
             "        \"data\": null," +
             "        \"constraints\": []" +
             "    }]," +
-            "    \"containerId\": \"DummyDockerContainer\"," +
+            "    \"containerId\": \"DummyTestDockerContainer\"," +
             "    \"fileLocation\": \"E:\\\\OTB\\\\otbcli_Segmentation.bat\"," +
             "    \"workingDirectory\": \"E:\\\\OTB\"," +
             "    \"templateType\": \"VELOCITY\"," +
@@ -144,11 +189,11 @@ public class ComponentServiceIntegrationTest {
             "        \"value\": \"E:\\\\OTB\\bin\"" +
             "    }]," +
             "    \"multiThread\": false," +
-            "    \"visibility\": null," +
+            "    \"visibility\": 2," +
             "    \"active\": false," +
             "    \"parameterDescriptors\": [{" +
             "        \"id\": \"outmode_string\"," +
-            "        \"type\": null," +
+            "        \"type\": 1," +
             "        \"dataType\": \"java.lang.String\"," +
             "        \"defaultValue\": \"ulco\"," +
             "        \"description\": \"This allows setting the writing behaviour for the output vector file. Please note that the actual behaviour depends on the file format.\"," +
@@ -160,7 +205,7 @@ public class ComponentServiceIntegrationTest {
             "        \"validator\": null" +
             "    }, {" +
             "        \"id\": \"neighbor_bool\"," +
-            "        \"type\": null," +
+            "        \"type\": 1," +
             "        \"dataType\": \"java.lang.Boolean\"," +
             "        \"defaultValue\": \"true\"," +
             "        \"description\": \"Activate 8-Neighborhood connectivity (default is 4).\"," +
