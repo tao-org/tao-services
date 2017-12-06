@@ -10,6 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>data-query-service</artifactId>
+    <name>TAO Query and Download Service</name>
     <!-- <packaging>war</packaging> -->
 
     <dependencies>

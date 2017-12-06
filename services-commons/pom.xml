@@ -10,6 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>services-commons</artifactId>
+    <name>TAO Services Commons</name>
 
     <dependencies>
         <dependency>
