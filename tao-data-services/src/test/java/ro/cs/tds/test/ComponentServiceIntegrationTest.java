@@ -3,6 +3,8 @@ package ro.cs.tds.test;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringRunner;
+import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.services.app.ComponentApplication;
 
 import java.io.IOException;
@@ -32,7 +35,7 @@ public class ComponentServiceIntegrationTest {
     @Test
     public void testGetTaoComponents() {
         // add the component if does not exists already
-        addTaoComponent(null, null);
+        addTaoComponent();
 
         HttpHeaders headers = new HttpHeaders();
         HttpEntity<String> entity = new HttpEntity<String>(null, headers);
@@ -45,21 +48,21 @@ public class ComponentServiceIntegrationTest {
         System.out.println(fullUrl);
         System.out.println(response);
         System.out.println(response.getBody());
-        checkReceivedComponent(response.getBody());
+        checkReceivedComponent(response.getBody(), true, true);
     }
 
     @Test
     public void testGetSingleTaoComponent() {
         // add the component if does not exists already
-        addTaoComponent(null, null);
+        addTaoComponent();
 
-        checkTaoComponentExistence();
+        checkTaoComponentExistence(true);
     }
 
     @Test
     public void testAddTaoComponent() {
-        ResponseEntity<String> response = addTaoComponent(null, null);
-        checkReceivedComponent(response.getBody());
+        ResponseEntity<String> response = addTaoComponent();
+        checkReceivedComponent(response.getBody(), false, true);
     }
 
     @Test
@@ -72,18 +75,11 @@ public class ComponentServiceIntegrationTest {
                 HttpMethod.DELETE, entity, String.class);
         System.out.println(response);
 
-        checkTaoComponentExistence();
+        checkTaoComponentExistence(false);
     }
 
-    private ResponseEntity<String> addTaoComponent(String id, String label) {
+    private ResponseEntity<String> addTaoComponent() {
         String newCompJson = testComponentJson;
-        if (id != null) {
-            newCompJson = newCompJson.replaceFirst("    \"id\": \"segmentation-cc-1\",", "    \"id\": \"" + id + "\",");
-        }
-        if (label != null) {
-            newCompJson = newCompJson.replaceFirst("    \"label\": \"First segmentation component\",", "    \"label\": \"" + label + "\",");
-        }
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<String>(null, headers);
@@ -96,7 +92,7 @@ public class ComponentServiceIntegrationTest {
         return response;
     }
 
-    private void checkTaoComponentExistence() {
+    private void checkTaoComponentExistence(boolean isActive) {
         HttpHeaders headers = new HttpHeaders();
 
         HttpEntity<String> entity = new HttpEntity<String>(null, headers);
@@ -109,41 +105,30 @@ public class ComponentServiceIntegrationTest {
         System.out.println(fullUrl);
         System.out.println(response);
         System.out.println(response.getBody());
-        checkReceivedComponent(response.getBody());
+        checkReceivedComponent(response.getBody(), false, isActive);
     }
 
-    private void checkReceivedComponent(String responseBody) {
-        JsonFactory factory = new JsonFactory();
-        JsonParser parser = null;
+    private void checkReceivedComponent(String responseBody, boolean isArray, boolean isActive) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        ProcessingComponent[] components = null;
         try {
-            parser = factory.createParser(responseBody);
-            String idVal = null;
-            String labelVal = null;
-            String containerIdVal = null;
-            while(!parser.isClosed()){
-                JsonToken jsonToken = parser.nextToken();
-                if(JsonToken.FIELD_NAME.equals(jsonToken)){
-                    String fieldName = parser.getCurrentName();
-                    System.out.println(fieldName);
-                    if("id".equals(fieldName) && (idVal == null)){
-                        jsonToken = parser.nextToken();
-                        idVal = parser.getValueAsString();
-                    } else if ("label".equals(fieldName) && (labelVal == null)){
-                        jsonToken = parser.nextToken();
-                        labelVal = parser.getValueAsString();
-                    } else if ("containerId".equals(fieldName) && (containerIdVal == null)){
-                        jsonToken = parser.nextToken();
-                        containerIdVal = parser.getValueAsString();
-                    }
-                }
+            if (isArray) {
+                components = objectMapper.readValue(responseBody, ProcessingComponent[].class);
+            } else {
+                components = new ProcessingComponent[]{objectMapper.readValue(responseBody, ProcessingComponent.class)};
             }
-            if (!"segmentation-cc-1".equals(idVal) || !"First segmentation component".equals(labelVal) ||
-                    !"DummyTestDockerContainer".equals(containerIdVal)) {
-                Assert.assertFalse(true);
-            }
-        } catch (IOException e){
+        } catch (IOException e) {
+            e.printStackTrace();
             Assert.assertFalse(true);
         }
+        for (ProcessingComponent processingComponent: components) {
+            if ("segmentation-cc-1".equals(processingComponent.getId()) && "First segmentation component".equals(processingComponent.getLabel()) &&
+                    processingComponent.getActive() == isActive) {
+                return;
+            }
+        }
+        Assert.assertFalse(true);
     }
 
     private String createURLWithPort(String uri) {
@@ -190,7 +175,7 @@ public class ComponentServiceIntegrationTest {
             "    }]," +
             "    \"multiThread\": false," +
             "    \"visibility\": 2," +
-            "    \"active\": false," +
+            "    \"active\": true," +
             "    \"parameterDescriptors\": [{" +
             "        \"id\": \"outmode_string\"," +
             "        \"type\": 1," +
