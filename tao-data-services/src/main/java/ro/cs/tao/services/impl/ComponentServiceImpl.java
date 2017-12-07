@@ -44,14 +44,15 @@ public class ComponentServiceImpl
     extends EntityService<ProcessingComponent>
         implements ComponentService {
 
-    private static final Map<String, ProcessingComponent> fakeComponents;
+    /*
+        private static final Map<String, ProcessingComponent> fakeComponents;
 
-    static {
-        fakeComponents = new HashMap<>();
-        fakeComponents.put("segmentation-cc-1", newComponent("segmentation-cc-1", "First segmentation component"));
-        fakeComponents.put("segmentation-cc-2", newComponent("segmentation-cc-2", "Second segmentation component"));
-    }
-
+        static {
+            fakeComponents = new HashMap<>();
+            fakeComponents.put("segmentation-cc-1", newComponent("segmentation-cc-1", "First segmentation component"));
+            fakeComponents.put("segmentation-cc-2", newComponent("segmentation-cc-2", "Second segmentation component"));
+        }
+    */
     @Autowired
     private PersistenceManager persistenceManager;
     private Logger logger = Logger.getLogger(ComponentService.class.getName());
@@ -70,14 +71,14 @@ public class ComponentServiceImpl
 
     @Override
     public List<ProcessingComponent> list() {
-        return new ArrayList<>(fakeComponents.values());
-        /*List<ProcessingComponent> components = null;
+        //return new ArrayList<>(fakeComponents.values());
+        List<ProcessingComponent> components = null;
         try {
             components = persistenceManager.getProcessingComponents();
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
-        return components;*/
+        return components;
     }
 
     @Override
