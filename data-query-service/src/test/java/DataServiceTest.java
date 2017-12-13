@@ -57,7 +57,7 @@ public class DataServiceTest {
          */
         DataSourceComponent component = new DataSourceComponent("Sentinel-2", "Amazon Web Services");
         final DataQuery query = component.createQuery();
-        QueryParameter begin = query.createParameter("beginPosition", Date.class);
+        QueryParameter<Date> begin = query.createParameter("beginPosition", Date.class);
         begin.setValue(Date.from(LocalDateTime.now().minusDays(15)
                                          .atZone(ZoneId.systemDefault())
                                          .toInstant()));
@@ -100,7 +100,7 @@ public class DataServiceTest {
 
         DataSourceComponent component = new DataSourceComponent("Landsat-8", "Amazon Web Services");
         final DataQuery query = component.createQuery();
-        QueryParameter begin = query.createParameter("sensingStart", Date.class);
+        QueryParameter<Date> begin = query.createParameter("sensingStart", Date.class);
         begin.setValue(Date.from(LocalDateTime.now().minusDays(20)
                                          .atZone(ZoneId.systemDefault())
                                          .toInstant()));
