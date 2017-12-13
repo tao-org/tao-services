@@ -73,7 +73,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE)
     public ResponseEntity<?> delete(@PathVariable("id") String id) {
         service.delete(id);
-        return new ResponseEntity<T>(HttpStatus.OK);
+        return new ResponseEntity<>("{}", HttpStatus.OK);
     }
 
     private ResponseEntity<?> validate(T entity) {
