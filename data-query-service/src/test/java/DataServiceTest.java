@@ -41,7 +41,7 @@ public class DataServiceTest {
          * Sample JSON query:
             {
                 "dataSource": "Scientific Data Hub",
-                "sensor": "Sentinel-2",
+                "sensor": "Sentinel2",
                 "user": "user",
                 "password": "pass",
                 "limit": 10,
@@ -55,7 +55,7 @@ public class DataServiceTest {
                 }
             }
          */
-        DataSourceComponent component = new DataSourceComponent("Sentinel-2", "Amazon Web Services");
+        DataSourceComponent component = new DataSourceComponent("Sentinel2", "Amazon Web Services");
         final DataQuery query = component.createQuery();
         QueryParameter<Date> begin = query.createParameter("beginPosition", Date.class);
         begin.setValue(Date.from(LocalDateTime.now().minusDays(15)
@@ -84,7 +84,7 @@ public class DataServiceTest {
          *
          * {
             "dataSource": "Amazon Web Services",
-            "sensor": "Landsat-8",
+            "sensor": "Landsat8",
             "user": null,
             "password": null,
             "limit": 1,
@@ -98,7 +98,7 @@ public class DataServiceTest {
            }
          */
 
-        DataSourceComponent component = new DataSourceComponent("Landsat-8", "Amazon Web Services");
+        DataSourceComponent component = new DataSourceComponent("Landsat8", "Amazon Web Services");
         final DataQuery query = component.createQuery();
         QueryParameter<Date> begin = query.createParameter("sensingStart", Date.class);
         begin.setValue(Date.from(LocalDateTime.now().minusDays(20)
@@ -123,7 +123,7 @@ public class DataServiceTest {
     @Test
     public void testDownload1() {
         Assert.notNull(this.testS2Result, "Test requires a search result");
-        DataSourceComponent component = new DataSourceComponent("Sentinel-2", "Amazon Web Services");
+        DataSourceComponent component = new DataSourceComponent("Sentinel2", "Amazon Web Services");
         List<EOProduct> entry = new ArrayList<>();
         entry.add(this.testS2Result);
         String folder = ConfigurationManager.getInstance().getValue("product.location");
@@ -141,7 +141,7 @@ public class DataServiceTest {
     @Test
     public void testDownload2() {
         Assert.notNull(this.testL8Result, "Test requires a search result");
-        DataSourceComponent component = new DataSourceComponent("Landsat-8", "Amazon Web Services");
+        DataSourceComponent component = new DataSourceComponent("Landsat8", "Amazon Web Services");
         List<EOProduct> entry = new ArrayList<>();
         entry.add(this.testL8Result);
         String folder = ConfigurationManager.getInstance().getValue("product.location");
