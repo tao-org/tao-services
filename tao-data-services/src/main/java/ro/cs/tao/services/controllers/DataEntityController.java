@@ -42,7 +42,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
     public ResponseEntity<List<T>> list() {
         List<T> objects = service.list();
         if (objects == null || objects.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(HttpStatus.OK);
         }
         return new ResponseEntity<>(objects, HttpStatus.OK);
     }
