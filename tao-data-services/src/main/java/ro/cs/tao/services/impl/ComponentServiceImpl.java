@@ -83,15 +83,18 @@ public class ComponentServiceImpl
     public void save(ProcessingComponent component) {
         //fakeComponents.put(component.getId(), component);\
         if (component != null) {
-            try {
-                ProcessingComponent shouldBeNull = findById(component.getId());
-                if (shouldBeNull != null) {
-                    update(component);
-                } else {
+
+            if(persistenceManager.checkIfExistsComponentById(component.getId()))
+            {
+                update(component);
+            }
+            else
+            {
+                try {
                     persistenceManager.saveProcessingComponent(component);
+                } catch (PersistenceException e) {
+                    logger.severe(e.getMessage());
                 }
-            } catch (PersistenceException e) {
-                logger.severe(e.getMessage());
             }
         }
     }
