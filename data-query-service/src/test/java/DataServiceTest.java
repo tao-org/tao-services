@@ -127,7 +127,7 @@ public class DataServiceTest {
         List<EOProduct> entry = new ArrayList<>();
         entry.add(this.testS2Result);
         String folder = ConfigurationManager.getInstance().getValue("product.location");
-        List<EOProduct> result = component.doFetch(entry, folder);
+        List<EOProduct> result = component.doFetch(entry, null, folder);
         Assert.notNull(result, "Unexpected result");
         Assert.notEmpty(result, "The list should have contained one result");
         Assert.isTrue(result.size() == 1, "The list should have contained only one result");
@@ -145,7 +145,7 @@ public class DataServiceTest {
         List<EOProduct> entry = new ArrayList<>();
         entry.add(this.testL8Result);
         String folder = ConfigurationManager.getInstance().getValue("product.location");
-        List<EOProduct> result = component.doFetch(entry, folder);
+        List<EOProduct> result = component.doFetch(entry, null, folder);
         Assert.notNull(result, "Unexpected result");
         Assert.notEmpty(result, "The list should have contained one result");
         Assert.isTrue(result.size() == 1, "The list should have contained only one result");
