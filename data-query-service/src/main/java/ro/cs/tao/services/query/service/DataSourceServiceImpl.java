@@ -66,7 +66,7 @@ public class DataSourceServiceImpl implements DataSourceService {
             DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
             dsComponent.setUserCredentials(query.getUser(), query.getPassword());
             String path = ConfigurationManager.getInstance().getValue("product.location");
-            products = dsComponent.doFetch(products, path);
+            products = dsComponent.doFetch(products, null, path);
         }
         return products;
     }
