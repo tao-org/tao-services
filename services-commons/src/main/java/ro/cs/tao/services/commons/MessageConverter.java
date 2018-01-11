@@ -13,10 +13,8 @@ public class MessageConverter implements Converter<Message, ServiceMessage> {
         if (value == null) {
             return null;
         }
-        Message message = new Message(value.getTimestamp().getTimeInMillis(),
-                                      value.getUserId(),
-                                      value.getSource(),
-                                      value.getData());
+        Message message = Message.create(value.getUser(), value.getSource(), value.getData());
+        message.setTimestamp(value.getTimestamp().getTimeInMillis());
         message.setRead(value.isRead());
         return message;
     }
@@ -28,7 +26,9 @@ public class MessageConverter implements Converter<Message, ServiceMessage> {
         }
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(value.getTimestamp());
-        ServiceMessage serviceMessage = new ServiceMessage(calendar, value.getUserId(), value.getSource(), value.getData());
+        String user = String.valueOf(value.getData().get(Message.PRINCIPAL_KEY));
+        String msg = String.valueOf(value.getData().get(Message.PAYLOAD_KEY));
+        ServiceMessage serviceMessage = new ServiceMessage(calendar, user, String.valueOf(value.getSource()), msg);
         serviceMessage.setRead(value.isRead());
         return serviceMessage;
     }

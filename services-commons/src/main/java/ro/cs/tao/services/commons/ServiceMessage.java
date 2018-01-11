@@ -7,23 +7,23 @@ import java.util.Calendar;
  */
 public class ServiceMessage {
     private Calendar timestamp;
-    private int userId;
+    private String user;
     private boolean read;
     private String source;
     private String data;
 
     public ServiceMessage() { }
 
-    public ServiceMessage(Calendar timestamp, int userId, String source, String data) {
+    public ServiceMessage(Calendar timestamp, String user, String source, String data) {
         this.timestamp = timestamp;
         this.source = source;
         this.data = data;
-        this.userId = userId;
+        this.user = user;
         this.read = false;
     }
 
-    public int getUserId() { return userId; }
-    public void setUserId(int userId) { this.userId = userId; }
+    public String getUser() { return user; }
+    public void setUserId(String user) { this.user = user; }
 
     public boolean isRead() { return read; }
     public void setRead(boolean read) { this.read = read; }

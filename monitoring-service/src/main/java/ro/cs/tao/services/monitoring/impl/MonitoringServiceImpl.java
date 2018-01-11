@@ -4,8 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.messaging.Message;
-import ro.cs.tao.messaging.MessageBus;
 import ro.cs.tao.messaging.NotifiableComponent;
+import ro.cs.tao.messaging.Topics;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.MessageConverter;
@@ -43,7 +43,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     public MonitoringServiceImpl() {
         super();
         this.messageQueue = new LinkedList<>();
-        subscribe(MessageBus.INFORMATION, MessageBus.WARNING, MessageBus.ERROR, MessageBus.PROGRESS);
+        subscribe(Topics.INFORMATION, Topics.WARNING, Topics.ERROR, Topics.PROGRESS);
     }
 
     @Override
