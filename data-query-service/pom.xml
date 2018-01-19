@@ -22,17 +22,17 @@
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-scihub</artifactId>
+            <artifactId>tao-datasources-scihub</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-aws</artifactId>
+            <artifactId>tao-datasources-aws</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-peps</artifactId>
+            <artifactId>tao-datasources-peps</artifactId>
             <version>${project.version}</version>
         </dependency>
 

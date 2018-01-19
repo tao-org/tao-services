@@ -53,9 +53,9 @@ public class MonitoringController extends BaseController {
     }
 
     @RequestMapping(value = "/notification/{page}", method = RequestMethod.GET)
-    public ResponseEntity<?> getNotifications(@RequestHeader(value = "userId") int userId,
+    public ResponseEntity<?> getNotifications(@RequestHeader(value = "user") String user,
                                               @PathVariable("page") int page) {
-        return new ResponseEntity<>(monitoringService.getNotifications(userId, page), HttpStatus.OK);
+        return new ResponseEntity<>(monitoringService.getNotifications(user, page), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/notification/ack", method = RequestMethod.POST)
