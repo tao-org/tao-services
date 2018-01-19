@@ -26,9 +26,9 @@ public class MessageConverter implements Converter<Message, ServiceMessage> {
         }
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(value.getTimestamp());
-        String user = String.valueOf(value.getData().get(Message.PRINCIPAL_KEY));
-        String msg = String.valueOf(value.getData().get(Message.PAYLOAD_KEY));
-        ServiceMessage serviceMessage = new ServiceMessage(calendar, user, String.valueOf(value.getSource()), msg);
+        String user = value.getUser();
+        String msg = value.getData();
+        ServiceMessage serviceMessage = new ServiceMessage(calendar, user, value.getItem(Message.SOURCE_KEY), msg);
         serviceMessage.setRead(value.isRead());
         return serviceMessage;
     }

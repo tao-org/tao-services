@@ -117,8 +117,8 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
-    public List<ServiceMessage> getNotifications(int userId, int page) {
-        final Page<Message> userMessages = persistenceManager.getUserMessages(userId, page);
+    public List<ServiceMessage> getNotifications(String user, int page) {
+        final Page<Message> userMessages = persistenceManager.getUserMessages(user, page);
         return userMessages != null ?
                 userMessages.getContent().stream()
                         .map(m -> new MessageConverter().to(m))
