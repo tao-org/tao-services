@@ -19,6 +19,7 @@ import ro.cs.tao.services.monitoring.app.MonitoringApp;
 public class Launcher {
 
     public static void main(String[] args) {
+        //LifeCycleProcessor.activate();
         new SpringApplicationBuilder()
                 .sources(MonitoringApp.class, ComponentApplication.class, ConfigurationApplication.class,
                          TopologyApplication.class, ContainerApplication.class)
