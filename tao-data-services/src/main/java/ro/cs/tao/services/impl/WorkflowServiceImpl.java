@@ -1,6 +1,7 @@
 package ro.cs.tao.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
@@ -38,8 +39,7 @@ public class WorkflowServiceImpl
 
     @Override
     public List<WorkflowDescriptor> list() {
-        // TODO persistenceManager.getWorkflows();
-        return null;
+        return persistenceManager.getAllWorkflows();
     }
 
     @Override
@@ -50,7 +50,11 @@ public class WorkflowServiceImpl
                 nodes.forEach(node -> node.setWorkflow(object));
             }
             validate(object);
-            // TODO persistenceManager.save(object);
+            try {
+                persistenceManager.saveWorkflowDescriptor(object);
+            } catch (PersistenceException e) {
+                logger.severe(e.getMessage());
+            }
         }
     }
 
@@ -88,14 +92,16 @@ public class WorkflowServiceImpl
         if (value == null || value.trim().isEmpty()) {
             errors.add("[node.name] cannot be empty");
         }
-        List<WorkflowNodeDescriptor> incomingNodes = node.getIncomingNodes();
-        if (incomingNodes != null) {
-            if (incomingNodes.stream().anyMatch(n -> n.getId() <= 0)) {
-                errors.add("[node.incomingNodes] contains some invalid node identifiers");
+        List<ComponentLink> incomingLinks = node.getIncomingLinks();
+        if (incomingLinks != null) {
+            if (incomingLinks.stream()
+                    .anyMatch(l -> l.getOutput().getParent().getId().equals(node.getComponentId()))) {
+                errors.add("[node.incomingLinks] contains some invalid node identifiers");
             }
-            incomingNodes.forEach(n -> {
-                if (workflow.getNodes().stream().noneMatch(nd -> nd.getId() == n.getId())) {
-                    errors.add("[node.incomingNodes] contains one or more invalid node identifiers");
+            incomingLinks.forEach(n -> {
+                if (workflow.getNodes().stream()
+                        .noneMatch(nd -> nd.getComponentId().equals(n.getInput().getParent().getId()))) {
+                    errors.add("[node.incomingLinks] contains one or more invalid node identifiers");
                 }
             });
         }
@@ -131,11 +137,11 @@ public class WorkflowServiceImpl
                         });
                     }
                     // Validate the compatibilities of the attached component with the declared incoming components
-                    if (incomingNodes != null) {
+                    if (incomingLinks != null) {
                         List<ProcessingComponent> linkedComponents = new ArrayList<>();
-                        for (WorkflowNodeDescriptor nodeDescriptor : incomingNodes) {
+                        for (ComponentLink link : incomingLinks) {
                             try {
-                                linkedComponents.add(persistenceManager.getProcessingComponentById(node.getComponentId()));
+                                linkedComponents.add(persistenceManager.getProcessingComponentById(link.getInput().getParent().getId()));
                             } catch (PersistenceException e) {
                                 errors.add(String.format("[node.componentId] cannot retrieve component with id = %s",
                                                          node.getComponentId()));
@@ -147,7 +153,7 @@ public class WorkflowServiceImpl
                             if (targets.stream()
                                        .noneMatch(t -> sources.stream()
                                                               .anyMatch(s -> s.isCompatibleWith(t)))) {
-                                errors.add(String.format("[node.incomingNodes] component %s is not compatible with component %s",
+                                errors.add(String.format("[node.incomingLinks] component %s is not compatible with component %s",
                                                          component.getId(), linkedComponent.getId()));
                             }
                         }
