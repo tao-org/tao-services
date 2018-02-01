@@ -3,6 +3,8 @@ package ro.cs.tao.services.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.SourceDescriptor;
+import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
 import ro.cs.tao.datasource.converters.ConversionException;
@@ -13,6 +15,8 @@ import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -28,24 +32,31 @@ public class WorkflowServiceImpl
 
     @Override
     public WorkflowDescriptor findById(String id) {
-        // TODO
+        // TODO persistenceManager.getWorkflow(id);
         return null;
     }
 
     @Override
     public List<WorkflowDescriptor> list() {
-        // TODO
+        // TODO persistenceManager.getWorkflows();
         return null;
     }
 
     @Override
     public void save(WorkflowDescriptor object) {
-        // TODO
+        if (object != null) {
+            List<WorkflowNodeDescriptor> nodes = object.getNodes();
+            if (nodes != null) {
+                nodes.forEach(node -> node.setWorkflow(object));
+            }
+            validate(object);
+            // TODO persistenceManager.save(object);
+        }
     }
 
     @Override
     public void update(WorkflowDescriptor object) {
-        // TODO
+        save(object);
     }
 
     @Override
@@ -72,10 +83,23 @@ public class WorkflowServiceImpl
     }
 
     private void validateNode(WorkflowDescriptor workflow, WorkflowNodeDescriptor node, List<String> errors) {
+        // Validate simple fields
         String value = node.getName();
         if (value == null || value.trim().isEmpty()) {
             errors.add("[node.name] cannot be empty");
         }
+        List<WorkflowNodeDescriptor> incomingNodes = node.getIncomingNodes();
+        if (incomingNodes != null) {
+            if (incomingNodes.stream().anyMatch(n -> n.getId() <= 0)) {
+                errors.add("[node.incomingNodes] contains some invalid node identifiers");
+            }
+            incomingNodes.forEach(n -> {
+                if (workflow.getNodes().stream().noneMatch(nd -> nd.getId() == n.getId())) {
+                    errors.add("[node.incomingNodes] contains one or more invalid node identifiers");
+                }
+            });
+        }
+        // Validate the attached processing component
         value = node.getComponentId();
         if (value == null || value.trim().isEmpty()) {
             errors.add("[node] is not linked to a processing component");
@@ -86,6 +110,7 @@ public class WorkflowServiceImpl
                     errors.add("[node.componentId] component does not exist");
                 } else {
                     List<ParameterValue> customValues = node.getCustomValues();
+                    // Validate custom parameter values for the attached component
                     if (customValues != null) {
                         final List<ParameterDescriptor> descriptors = component.getParameterDescriptors();
                         customValues.forEach(v -> {
@@ -105,21 +130,32 @@ public class WorkflowServiceImpl
                             }
                         });
                     }
+                    // Validate the compatibilities of the attached component with the declared incoming components
+                    if (incomingNodes != null) {
+                        List<ProcessingComponent> linkedComponents = new ArrayList<>();
+                        for (WorkflowNodeDescriptor nodeDescriptor : incomingNodes) {
+                            try {
+                                linkedComponents.add(persistenceManager.getProcessingComponentById(node.getComponentId()));
+                            } catch (PersistenceException e) {
+                                errors.add(String.format("[node.componentId] cannot retrieve component with id = %s",
+                                                         node.getComponentId()));
+                            }
+                        }
+                        List<SourceDescriptor> sources = Arrays.asList(component.getSources());
+                        for (ProcessingComponent linkedComponent : linkedComponents) {
+                            List<TargetDescriptor> targets = Arrays.asList(linkedComponent.getTargets());
+                            if (targets.stream()
+                                       .noneMatch(t -> sources.stream()
+                                                              .anyMatch(s -> s.isCompatibleWith(t)))) {
+                                errors.add(String.format("[node.incomingNodes] component %s is not compatible with component %s",
+                                                         component.getId(), linkedComponent.getId()));
+                            }
+                        }
+                    }
                 }
             } catch (PersistenceException e) {
                 logger.severe(e.getMessage());
             }
-        }
-        List<Long> incomingNodes = node.getIncomingNodes();
-        if (incomingNodes != null) {
-            if (incomingNodes.stream().anyMatch(n -> n <= 0)) {
-                errors.add("[node.incomingNodes] contains some invalid node identifiers");
-            }
-            incomingNodes.forEach(n -> {
-                if (workflow.getNodes().stream().noneMatch(nd -> nd.getId() == n)) {
-                    errors.add("[node.incomingNodes] contains one or more invalid node identifiers");
-                }
-            });
         }
     }
 }
