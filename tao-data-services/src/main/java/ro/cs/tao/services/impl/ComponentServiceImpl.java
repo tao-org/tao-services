@@ -7,14 +7,13 @@ import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.Variable;
-import ro.cs.tao.component.constraints.Constraint;
 import ro.cs.tao.component.constraints.ConstraintFactory;
-import ro.cs.tao.component.constraints.RasterConstraint;
 import ro.cs.tao.component.template.BasicTemplate;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
 import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.serialization.MediaType;
@@ -275,9 +274,6 @@ public class ComponentServiceImpl
                                      "$tilesize_int\n" +
                                      "-mode.vector.startlabel\n" +
                                      "$startlabel_int", false);
-        SourceDescriptor sourceDescriptor = new SourceDescriptor("sourceProductFile");
-        Constraint annotation = RasterConstraint.class.getAnnotation(Constraint.class);
-        sourceDescriptor.addConstraint(annotation != null ? annotation.name() : RasterConstraint.class.getName());
         ProcessingComponent component = new ProcessingComponent();
         component.setId(id);
         component.setLabel(label);
@@ -287,8 +283,12 @@ public class ComponentServiceImpl
         component.setFileLocation("E:\\OTB\\otbcli_Segmentation.bat");
         component.setWorkingDirectory("E:\\OTB");
         component.setNodeAffinity("Any");
-        component.setSources(new SourceDescriptor[] {sourceDescriptor});
-        component.setTargets(new TargetDescriptor[] { new TargetDescriptor("out_str") });
+        SourceDescriptor sourceDescriptor = new SourceDescriptor("sourceProductFile");
+        sourceDescriptor.setDataType(DataFormat.RASTER);
+        component.addSource(sourceDescriptor);
+        TargetDescriptor targetDescriptor = new TargetDescriptor("out_str");
+        targetDescriptor.setDataType(DataFormat.RASTER);
+        component.addTarget(targetDescriptor);
         component.setVersion("1.0");
         component.setParameterDescriptors(parameters);
         component.setVariables(variables);

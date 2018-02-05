@@ -1,6 +1,7 @@
 package ro.cs.tao.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
@@ -27,6 +28,7 @@ import java.util.logging.Logger;
 /**
  * @author Cosmin Cara
  */
+@Service("workflowService")
 public class WorkflowServiceImpl
         extends EntityService<WorkflowDescriptor> implements WorkflowService {
 
@@ -109,12 +111,12 @@ public class WorkflowServiceImpl
         List<ComponentLink> incomingLinks = node.getIncomingLinks();
         if (incomingLinks != null) {
             if (incomingLinks.stream()
-                    .anyMatch(l -> l.getOutput().getParent().getId().equals(node.getComponentId()))) {
+                    .anyMatch(l -> l.getOutput().getParentId().equals(node.getComponentId()))) {
                 errors.add("[node.incomingLinks] contains some invalid node identifiers");
             }
             incomingLinks.forEach(n -> {
                 if (workflow.getNodes().stream()
-                        .noneMatch(nd -> nd.getComponentId().equals(n.getInput().getParent().getId()))) {
+                        .noneMatch(nd -> nd.getComponentId().equals(n.getInput().getParentId()))) {
                     errors.add("[node.incomingLinks] contains one or more invalid node identifiers");
                 }
             });
@@ -155,7 +157,7 @@ public class WorkflowServiceImpl
                         List<ProcessingComponent> linkedComponents = new ArrayList<>();
                         for (ComponentLink link : incomingLinks) {
                             try {
-                                linkedComponents.add(persistenceManager.getProcessingComponentById(link.getInput().getParent().getId()));
+                                linkedComponents.add(persistenceManager.getProcessingComponentById(link.getInput().getParentId()));
                             } catch (PersistenceException e) {
                                 errors.add(String.format("[node.componentId] cannot retrieve component with id = %s",
                                                          node.getComponentId()));
