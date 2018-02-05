@@ -32,7 +32,7 @@ public class Launcher {
             if (!Files.exists(configDirectory)) {
                 Files.createDirectory(configDirectory);
             }
-            final Field field = ConfigurationManager.class.getField("configFolder");
+            final Field field = ConfigurationManager.class.getDeclaredField("configFolder");
             field.setAccessible(true);
             field.set(null, configDirectory);
         } catch (Exception e){

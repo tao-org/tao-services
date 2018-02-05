@@ -29,8 +29,10 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -42,29 +44,29 @@ public class ComponentServiceImpl
     extends EntityService<ProcessingComponent>
         implements ComponentService {
 
-    /*
-        private static final Map<String, ProcessingComponent> fakeComponents;
 
-        static {
-            fakeComponents = new HashMap<>();
-            fakeComponents.put("segmentation-cc-1", newComponent("segmentation-cc-1", "First segmentation component"));
-            fakeComponents.put("segmentation-cc-2", newComponent("segmentation-cc-2", "Second segmentation component"));
-        }
-    */
+    private static final Map<String, ProcessingComponent> fakeComponents;
+
+    static {
+        fakeComponents = new HashMap<>();
+        fakeComponents.put("segmentation-cc-1", newComponent("segmentation-cc-1", "First segmentation component"));
+        fakeComponents.put("segmentation-cc-2", newComponent("segmentation-cc-2", "Second segmentation component"));
+    }
+
     @Autowired
     private PersistenceManager persistenceManager;
     private Logger logger = Logger.getLogger(ComponentService.class.getName());
 
     @Override
     public ProcessingComponent findById(String id) {
-        //return fakeComponents.get(name);
-        ProcessingComponent component = null;
+        return fakeComponents.get(id);
+        /*ProcessingComponent component = null;
         try {
             component = persistenceManager.getProcessingComponentById(id);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
         }
-        return component;
+        return component;*/
     }
 
     @Override
@@ -234,7 +236,7 @@ public class ComponentServiceImpl
         }
     }
 
-    private static ProcessingComponent newComponent(String id, String label) {
+    static ProcessingComponent newComponent(String id, String label) {
         ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
         parameters.add(newParameter("outmode_string",
                                     String.class,
