@@ -195,11 +195,7 @@ public class WorkflowServiceImpl
             node.setxCoord(10 + 200 * (nodeNumber - 1));
             node.setyCoord(10 + 200 * (nodeNumber - 1));
             node.setComponentId("segmentation-cc-" + nodeNumber);
-            ArrayList<ParameterValue> values = new ArrayList<>();
-            ParameterValue value = new ParameterValue();
-            value.setParameterName("neighbor_bool");
-            value.setParameterValue(String.valueOf(nodeNumber % 2 == 1));
-            node.setCustomValues(values);
+            node.addCustomValue("neighbor_bool", String.valueOf(nodeNumber % 2 == 1));
             nodes.add(node);
         }
         ProcessingComponent component1 = componentService.findById(nodes.get(0).getComponentId());
