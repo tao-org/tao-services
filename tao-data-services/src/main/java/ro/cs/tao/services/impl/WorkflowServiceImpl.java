@@ -50,6 +50,7 @@ public class WorkflowServiceImpl
         mock.setUserName("admin");
         mock.setVisibility(Visibility.PRIVATE);
         addNodes(mock);
+        List<WorkflowNodeDescriptor> nodes = mock.getNodes();
         return mock;
     }
 
@@ -182,29 +183,36 @@ public class WorkflowServiceImpl
     }
 
     private void addNodes(WorkflowDescriptor parent) {
-        if (parent.getNodes() == null) {
-            parent.setNodes(new ArrayList<>());
-        }
         List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
-        for (int i = 0; i < 2; i++) {
-            int nodeNumber = i + 1;
+        for (int nodeNumber = 1; nodeNumber <= 6; nodeNumber++) {
             WorkflowNodeDescriptor node = new WorkflowNodeDescriptor();
             node.setId(nodeNumber);
             node.setWorkflow(parent);
             node.setName("Node-" + nodeNumber);
-            node.setxCoord(10 + 200 * (nodeNumber - 1));
-            node.setyCoord(10 + 200 * (nodeNumber - 1));
+            node.setxCoord(10 + 100 * (nodeNumber - 1));
+            node.setyCoord(10 + 100 * (nodeNumber - 1));
             node.setComponentId("segmentation-cc-" + nodeNumber);
             node.addCustomValue("neighbor_bool", String.valueOf(nodeNumber % 2 == 1));
             nodes.add(node);
+            if (nodeNumber == 2) {
+                ProcessingComponent component1 = componentService.findById(nodes.get(nodeNumber - 2).getComponentId());
+                ProcessingComponent component2 = componentService.findById(nodes.get(nodeNumber - 1).getComponentId());
+                ArrayList<ComponentLink> links = new ArrayList<>();
+                ComponentLink link = new ComponentLink(component1.getTargets()[0],
+                                                       component2.getSources()[0]);
+                links.add(link);
+                nodes.get(nodeNumber - 1).setIncomingLinks(links);
+            } else if (nodeNumber > 2) {
+                ProcessingComponent component1 = componentService.findById(nodes.get(nodeNumber - 3).getComponentId());
+                ProcessingComponent component2 = componentService.findById(nodes.get(nodeNumber - 1).getComponentId());
+                ArrayList<ComponentLink> links = new ArrayList<>();
+                ComponentLink link = new ComponentLink(component1.getTargets()[0],
+                                                       component2.getSources()[0]);
+                links.add(link);
+                nodes.get(nodeNumber - 1).setIncomingLinks(links);
+            }
+
         }
-        ProcessingComponent component1 = componentService.findById(nodes.get(0).getComponentId());
-        ProcessingComponent component2 = componentService.findById(nodes.get(1).getComponentId());
-        ArrayList<ComponentLink> links = new ArrayList<>();
-        ComponentLink link = new ComponentLink(component1.getTargets()[0],
-                                               component2.getSources()[0]);
-        links.add(link);
-        nodes.get(1).setIncomingLinks(links);
         parent.setNodes(nodes);
     }
 }
