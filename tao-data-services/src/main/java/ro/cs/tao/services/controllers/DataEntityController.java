@@ -3,10 +3,7 @@ package ro.cs.tao.services.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceError;
@@ -38,16 +35,18 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
         return new ResponseEntity<>(entity, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.GET)
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<List<T>> list() {
         List<T> objects = service.list();
-        if (objects == null || objects.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.OK);
-        }
+
+        // no need to check if there are no results; plus, an empty json should be in the HTTP response body, not an empty HTTP response body!
+//        if (objects == null || objects.isEmpty()) {
+//            return new ResponseEntity<>(HttpStatus.OK);
+//        }
         return new ResponseEntity<>(objects, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> save(@RequestBody T entity) {
         final ResponseEntity<?> validationResponse = validate(entity);
         if (validationResponse.getStatusCode() == HttpStatus.OK) {
@@ -58,7 +57,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
         }
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> update(@PathVariable("id") String id, @RequestBody T entity) {
         final ResponseEntity<?> validationResponse = validate(entity);
         if (validationResponse.getStatusCode() == HttpStatus.OK) {
@@ -70,7 +69,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
 
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
     public ResponseEntity<?> delete(@PathVariable("id") String id) {
         service.delete(id);
         return new ResponseEntity<>("{}", HttpStatus.OK);
@@ -79,7 +78,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
     private ResponseEntity<?> validate(T entity) {
         try {
             service.validate(entity);
-            return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(entity, HttpStatus.OK);
         } catch (ValidationException ex) {
             List<String> errors = new ArrayList<>();
             String message = ex.getMessage();
