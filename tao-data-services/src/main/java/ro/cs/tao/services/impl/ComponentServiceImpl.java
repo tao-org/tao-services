@@ -52,6 +52,10 @@ public class ComponentServiceImpl
         fakeComponents = new HashMap<>();
         fakeComponents.put("segmentation-cc-1", newComponent("segmentation-cc-1", "First segmentation component"));
         fakeComponents.put("segmentation-cc-2", newComponent("segmentation-cc-2", "Second segmentation component"));
+        fakeComponents.put("segmentation-cc-3", newComponent("segmentation-cc-3", "Third segmentation component"));
+        fakeComponents.put("segmentation-cc-4", newComponent("segmentation-cc-4", "Fourth segmentation component"));
+        fakeComponents.put("segmentation-cc-5", newComponent("segmentation-cc-5", "Fifth segmentation component"));
+        fakeComponents.put("segmentation-cc-6", newComponent("segmentation-cc-6", "Sixth segmentation component"));
     }
 
     @Autowired
