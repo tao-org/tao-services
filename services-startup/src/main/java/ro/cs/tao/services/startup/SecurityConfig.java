@@ -1,6 +1,7 @@
 package ro.cs.tao.services.startup;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,13 @@ import org.springframework.session.web.http.HttpSessionStrategy;
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter implements ApplicationContextAware {
 
+    /**
+     * WebSecurityConfigurerAdapter does not allow "out of the box" CSRF settings,
+     * we'll use the flag from .properties to disable CSRF
+     */
+    @Value("${security.enable-csrf}")
+    private boolean csrfEnabled;
+
     @Bean
     public HttpSessionStrategy httpSessionStrategy() {
         return new HeaderHttpSessionStrategy();
@@ -34,7 +42,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter implements Appl
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-          .csrf().disable()
           .authorizeRequests()
           .anyRequest().authenticated()
           .and()
@@ -42,5 +49,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter implements Appl
           .requestCache(new NullRequestCache())
           .and()
           .httpBasic();
+
+        if(!csrfEnabled)
+        {
+            http.csrf().disable();
+        }
     }
 }
