@@ -21,7 +21,6 @@ import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -164,9 +163,9 @@ public class WorkflowServiceImpl
                                                          node.getComponentId()));
                             }
                         }
-                        List<SourceDescriptor> sources = Arrays.asList(component.getSources());
+                        List<SourceDescriptor> sources = component.getSources();
                         for (ProcessingComponent linkedComponent : linkedComponents) {
-                            List<TargetDescriptor> targets = Arrays.asList(linkedComponent.getTargets());
+                            List<TargetDescriptor> targets = linkedComponent.getTargets();
                             if (targets.stream()
                                        .noneMatch(t -> sources.stream()
                                                               .anyMatch(s -> s.isCompatibleWith(t)))) {
@@ -198,16 +197,16 @@ public class WorkflowServiceImpl
                 ProcessingComponent component1 = componentService.findById(nodes.get(nodeNumber - 2).getComponentId());
                 ProcessingComponent component2 = componentService.findById(nodes.get(nodeNumber - 1).getComponentId());
                 ArrayList<ComponentLink> links = new ArrayList<>();
-                ComponentLink link = new ComponentLink(component1.getTargets()[0],
-                                                       component2.getSources()[0]);
+                ComponentLink link = new ComponentLink(component1.getTargets().get(0),
+                                                       component2.getSources().get(0));
                 links.add(link);
                 nodes.get(nodeNumber - 1).setIncomingLinks(links);
             } else if (nodeNumber > 2) {
                 ProcessingComponent component1 = componentService.findById(nodes.get(nodeNumber - 3).getComponentId());
                 ProcessingComponent component2 = componentService.findById(nodes.get(nodeNumber - 1).getComponentId());
                 ArrayList<ComponentLink> links = new ArrayList<>();
-                ComponentLink link = new ComponentLink(component1.getTargets()[0],
-                                                       component2.getSources()[0]);
+                ComponentLink link = new ComponentLink(component1.getTargets().get(0),
+                                                       component2.getSources().get(0));
                 links.add(link);
                 nodes.get(nodeNumber - 1).setIncomingLinks(links);
             }
