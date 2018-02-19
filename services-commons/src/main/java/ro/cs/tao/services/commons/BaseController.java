@@ -11,7 +11,7 @@ import javax.servlet.http.HttpSession;
 /**
  * @author Cosmin Cara
  */
-@CrossOrigin(origins = "http://localhost")
+@CrossOrigin(origins = {"http://localhost:8080", "http://localhost:63343"})
 @RequestMapping("/tao")
 public class BaseController {
 
