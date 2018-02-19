@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.messaging.Message;
-import ro.cs.tao.messaging.NotifiableComponent;
+import ro.cs.tao.messaging.Notifiable;
 import ro.cs.tao.messaging.Topics;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  * @author Cosmin Cara
  */
 @Service("monitoringService")
-public class MonitoringServiceImpl extends NotifiableComponent implements MonitoringService<ServiceMessage> {
+public class MonitoringServiceImpl extends Notifiable implements MonitoringService<ServiceMessage> {
 
     private static final int MAX_QUEUE_SIZE = 100;
     private final Queue<Message> messageQueue;
