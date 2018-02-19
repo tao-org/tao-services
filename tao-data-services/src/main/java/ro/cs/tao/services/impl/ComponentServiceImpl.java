@@ -305,6 +305,11 @@ public class ComponentServiceImpl
         component.setVariables(variables);
         component.setTemplateType(TemplateType.VELOCITY);
         component.setTemplate(template);
+        try {
+            System.out.println(SerializerFactory.create(ProcessingComponent.class, MediaType.XML).serialize(component));
+        } catch (SerializationException e) {
+            e.printStackTrace();
+        }
         return component;
     }
 
