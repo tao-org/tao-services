@@ -2,11 +2,7 @@ package ro.cs.tao.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.component.ComponentLink;
-import ro.cs.tao.component.ParameterDescriptor;
-import ro.cs.tao.component.ProcessingComponent;
-import ro.cs.tao.component.SourceDescriptor;
-import ro.cs.tao.component.TargetDescriptor;
+import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
 import ro.cs.tao.datasource.converters.ConversionException;
@@ -49,7 +45,6 @@ public class WorkflowServiceImpl
         mock.setUserName("admin");
         mock.setVisibility(Visibility.PRIVATE);
         addNodes(mock);
-        List<WorkflowNodeDescriptor> nodes = mock.getNodes();
         return mock;
     }
 
