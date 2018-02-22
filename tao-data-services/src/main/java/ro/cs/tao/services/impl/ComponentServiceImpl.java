@@ -2,12 +2,7 @@ package ro.cs.tao.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.component.DataDescriptor;
-import ro.cs.tao.component.ParameterDescriptor;
-import ro.cs.tao.component.ProcessingComponent;
-import ro.cs.tao.component.SourceDescriptor;
-import ro.cs.tao.component.TargetDescriptor;
-import ro.cs.tao.component.Variable;
+import ro.cs.tao.component.*;
 import ro.cs.tao.component.constraints.ConstraintFactory;
 import ro.cs.tao.component.template.BasicTemplate;
 import ro.cs.tao.component.template.Template;
@@ -28,13 +23,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -305,11 +294,6 @@ public class ComponentServiceImpl
         component.setVariables(variables);
         component.setTemplateType(TemplateType.VELOCITY);
         component.setTemplate(template);
-        try {
-            System.out.println(SerializerFactory.create(ProcessingComponent.class, MediaType.XML).serialize(component));
-        } catch (SerializationException e) {
-            e.printStackTrace();
-        }
         return component;
     }
 
