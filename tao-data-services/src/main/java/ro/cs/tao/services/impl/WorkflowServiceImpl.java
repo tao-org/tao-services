@@ -185,7 +185,7 @@ public class WorkflowServiceImpl
         List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         for (int nodeNumber = 1; nodeNumber <= 6; nodeNumber++) {
             WorkflowNodeDescriptor node = new WorkflowNodeDescriptor();
-            node.setId(nodeNumber);
+            node.setId(new Long(nodeNumber));
             node.setWorkflow(parent);
             node.setName("Node-" + nodeNumber);
             node.setxCoord(10 + 100 * (nodeNumber - 1));
