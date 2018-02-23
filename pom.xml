@@ -23,6 +23,7 @@
         <module>tao-services-kit</module>
         <module>monitoring-service</module>
         <module>services-startup</module>
+        <module>progress-report-service</module>
     </modules>
 
     <properties>

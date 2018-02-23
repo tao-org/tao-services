@@ -1,19 +1,20 @@
 package ro.cs.tao.services.query;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 /**
  * @author Cosmin Cara
  */
-@SpringBootApplication()
+@Configuration
 @ImportResource("classpath:data-query-service-context.xml")
-
-public class Application {
+@EnableWebMvc
+public class DataQueryServiceLauncher {
 
     public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
+        SpringApplication.run(DataQueryServiceLauncher.class, args);
     }
 
 }

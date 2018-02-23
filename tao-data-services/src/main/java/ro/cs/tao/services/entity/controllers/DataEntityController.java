@@ -1,9 +1,12 @@
-package ro.cs.tao.services.controllers;
+package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceError;

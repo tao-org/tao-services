@@ -3,14 +3,14 @@ package ro.cs.tds.test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import ro.cs.tao.services.app.TopologyApplication;
+import ro.cs.tao.services.entity.DataServicesLauncher;
 import ro.cs.tao.topology.NodeDescription;
 
 /**
  * Created by cosmin on 11/24/2017.
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = TopologyApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = DataServicesLauncher.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class TopologyServiceIntegrationTest extends AbstractServiceIntegrationTest<NodeDescription> {
 
     private static final String nodeId = "node08.tao.c-s.ro";

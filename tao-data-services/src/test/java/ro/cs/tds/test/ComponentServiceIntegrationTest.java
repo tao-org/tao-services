@@ -4,13 +4,13 @@ import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import ro.cs.tao.component.ProcessingComponent;
-import ro.cs.tao.services.app.ComponentApplication;
+import ro.cs.tao.services.entity.DataServicesLauncher;
 
 /**
  * Created by cosmin on 11/24/2017.
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = ComponentApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = DataServicesLauncher.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ComponentServiceIntegrationTest extends AbstractServiceIntegrationTest<ProcessingComponent> {
 
     private static final String componentId = "segmentation-cc-1";

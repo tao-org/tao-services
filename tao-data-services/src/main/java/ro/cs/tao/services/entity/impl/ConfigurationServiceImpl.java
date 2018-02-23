@@ -1,4 +1,4 @@
-package ro.cs.tao.services.impl;
+package ro.cs.tao.services.entity.impl;
 
 import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
