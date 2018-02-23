@@ -5,10 +5,11 @@ import ro.cs.tao.messaging.*;
 import ro.cs.tao.services.interfaces.ProgressReportService;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 @Service("progressReportService")
 public class ProgressReportServiceImpl extends Notifiable implements ProgressReportService {
-    private static final String TOPIC_PATTERN = "(.+)progress";
+    private static final Pattern TOPIC_PATTERN = Pattern.compile("(.+)progress");
     private static final Map<String, TaskProgress> tasksInProgress = Collections.synchronizedMap(new LinkedHashMap<>());
 
     public ProgressReportServiceImpl() {
