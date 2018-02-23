@@ -1,4 +1,4 @@
-package ro.cs.tao.services.impl;
+package ro.cs.tao.services.entity.impl;
 
 import ro.cs.tao.component.validation.ValidationException;
 

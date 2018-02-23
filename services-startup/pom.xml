@@ -14,7 +14,7 @@
     <packaging>war</packaging>
 
     <properties>
-        <start-class>ro.cs.tao.services.startup.Launcher</start-class>
+        <start-class>ro.cs.tao.services.startup.TaoServicesStartup</start-class>
     </properties>
 
     <dependencies>
@@ -31,6 +31,11 @@
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-data-services</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>progress-report-service</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
