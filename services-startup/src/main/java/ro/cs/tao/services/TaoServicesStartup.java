@@ -1,7 +1,6 @@
 package ro.cs.tao.services;
 
 import org.springframework.boot.ApplicationHome;
-import org.springframework.boot.Banner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -45,7 +44,7 @@ public class TaoServicesStartup {
                 .sources(TaoServicesStartup.class,
                          MonitoringServiceLauncer.class, DataServicesLauncher.class,
                          DataQueryServiceLauncher.class, ProgressReportLauncher.class)
-                .bannerMode(Banner.Mode.OFF)
+                //.bannerMode(Banner.Mode.OFF)
                 .build()
                 .run(args);
     }
