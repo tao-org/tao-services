@@ -14,7 +14,7 @@
     <packaging>war</packaging>
 
     <properties>
-        <start-class>ro.cs.tao.services.startup.TaoServicesStartup</start-class>
+        <start-class>ro.cs.tao.services.TaoServicesStartup</start-class>
     </properties>
 
     <dependencies>
