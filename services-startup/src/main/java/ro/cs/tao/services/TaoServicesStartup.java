@@ -1,9 +1,9 @@
-package ro.cs.tao.services.startup;
+package ro.cs.tao.services;
 
 import org.springframework.boot.ApplicationHome;
+import org.springframework.boot.Banner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.context.annotation.ImportResource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.entity.DataServicesLauncher;
@@ -18,9 +18,9 @@ import java.nio.file.Path;
 /**
  * @author Cosmin Cara
  */
-@SpringBootApplication()
+
+@SpringBootApplication
 @EnableScheduling
-@ImportResource("classpath*:tao-persistence-context.xml")
 public class TaoServicesStartup {
     private static final ApplicationHome home;
 
@@ -42,8 +42,11 @@ public class TaoServicesStartup {
     public static void main(String[] args) {
         //LifeCycleProcessor.activate();
         new SpringApplicationBuilder()
-                .sources(MonitoringServiceLauncer.class, DataServicesLauncher.class,
+                .sources(TaoServicesStartup.class,
+                         MonitoringServiceLauncer.class, DataServicesLauncher.class,
                          DataQueryServiceLauncher.class, ProgressReportLauncher.class)
+                .bannerMode(Banner.Mode.OFF)
+                .build()
                 .run(args);
     }
 
