@@ -1,0 +1,15 @@
+# Group identifier (n/a if independent) ; Short code ; Long code ; Args cardinality ; Value hint ; Value separator (if multiple) ; Optional ; Description
+
+# Add node to topology
+n/a ; cmd ; cmd ; 1 ; node-add|node-delete ; ; false ; The command to be executed
+n/a ; user ; user ; 1 ; string ; ; false ; The master node user
+n/a ; pass ; pass ; 1 ; string ; ; false ; The master node password
+n/a ; user ; user ; 1 ; string ; ; false ; The master node user
+n/a ; master ; master ; 1 ; string ; ; true ; The master node name or IP address. Defaults to localhost:8080
+n/a ; remoteHost ; remoteHost ; 1 ; string ; ; false ; The new node name or IP address
+n/a ; remoteUser ; remoteUser ; 1 ; string ; ; false ; The account that has admin privileges on the new node
+n/a ; remotePass ; remotePass ; 1 ; string ; ; false ; The password on the new node
+n/a ; processors ; processors ; 1 ; integer ; ; true ; The number of processors installed on the new node. Defaults to 1
+n/a ; memory ; memory ; 1 ; integer ; ; true ; The RAM memory (in GB) installed on the new node. Defaults to 4
+n/a ; disk ; disk ; 1 ; integer ; ; true ; The disk space (in GB) installed on the new node. Defaults to 100
+n/a ; description ; description ; 1 ; string ; ; true ; The description of the new node. Defaults to "New TAO node"

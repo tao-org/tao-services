@@ -28,7 +28,7 @@ public class TaoServicesStartup {
         try {
             Path configDirectory = homeDirectory().resolve("config");
             if (!Files.exists(configDirectory)) {
-                Files.createDirectory(configDirectory);
+                Files.createDirectories(configDirectory);
             }
             final Field field = ConfigurationManager.class.getDeclaredField("configFolder");
             field.setAccessible(true);
