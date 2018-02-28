@@ -9,6 +9,8 @@ import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
 import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.docker.Application;
+import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.eodata.enums.SensorType;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -18,6 +20,7 @@ import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.serialization.Serializer;
 import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.interfaces.ComponentService;
+import ro.cs.tao.services.interfaces.ContainerService;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
@@ -49,6 +52,9 @@ public class ComponentServiceImpl
 
     @Autowired
     private PersistenceManager persistenceManager;
+    @Autowired
+    private ContainerService containerService;
+
     private Logger logger = Logger.getLogger(ComponentService.class.getName());
 
     @Override
@@ -146,11 +152,12 @@ public class ComponentServiceImpl
             errors.add("[id] cannot be empty");
         }
         value = entity.getContainerId();
+        Container container = null;
         if (value == null || value.trim().isEmpty()) {
             errors.add("[containerId] cannot be empty");
         } else {
             try {
-                if (persistenceManager.getContainerById(value) == null) {
+                if ((container = persistenceManager.getContainerById(value)) == null) {
                     errors.add("[containerId] points to a non-existing container");
                 }
             } catch (PersistenceException e) {
@@ -169,10 +176,12 @@ public class ComponentServiceImpl
         if (value == null || value.trim().isEmpty()) {
             errors.add("[fileLocation] cannot be empty");
         } else {
-            try {
-                Paths.get(value);
-            } catch (InvalidPathException e) {
-                errors.add("[fileLocation] has an invalid value");
+            if (container != null) {
+                List<Application> applications = container.getApplications();
+                String v = value;
+                if (applications != null && applications.stream().noneMatch(a -> v.equals(a.getPath()))) {
+                    errors.add("[fileLocation] has an invalid value");
+                }
             }
         }
         value = entity.getWorkingDirectory();

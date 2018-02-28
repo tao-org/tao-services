@@ -53,51 +53,11 @@
 
     <build>
         <plugins>
-            <!-- Plugin for building the war -->
-<!--            <plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <configuration>
-                    <failOnMissingWebXml>false</failOnMissingWebXml>
-                </configuration>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
             </plugin>
--->
-            <!-- Plugin for building the jar, from the classes directory -->
-<!--            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>make-a-jar</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
--->
-            <!-- Plugin for installing the jar in the local repository -->
-<!--            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <configuration>
-                            <packaging>jar</packaging>
-                            <artifactId>${project.artifactId}</artifactId>
-                            <groupId>${project.groupId}</groupId>
-                            <version>${project.version}</version>
-                            <file>${project.build.directory}/${project.artifactId}-${project.version}.jar</file>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
--->
         </plugins>
     </build>
 
