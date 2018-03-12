@@ -25,6 +25,7 @@
         <module>progress-report-service</module>
         <module>tao-cli</module>
         <module>tao-orchestration-services</module>
+        <module>geostorm-client</module>
     </modules>
 
     <properties>
