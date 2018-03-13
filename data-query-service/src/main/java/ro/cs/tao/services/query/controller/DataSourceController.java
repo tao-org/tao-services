@@ -29,7 +29,7 @@ import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.DataSourceService;
-import ro.cs.tao.services.model.datasource.DataSourceInstance;
+import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.model.datasource.Query;
 
 import java.util.List;
@@ -46,8 +46,8 @@ public class DataSourceController extends BaseController {
     private DataSourceService dataSourceService;
 
     @RequestMapping(value = "/", method = RequestMethod.GET)
-    public ResponseEntity<List<DataSourceInstance>> getRegisteredSources() {
-        List<DataSourceInstance> instances = dataSourceService.getDatasourceInstances();
+    public ResponseEntity<List<DataSourceDescriptor>> getRegisteredSources() {
+        List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
         if (instances == null || instances.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }

@@ -23,7 +23,7 @@ import ro.cs.tao.datasource.param.ParameterDescriptor;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
-import ro.cs.tao.services.model.datasource.DataSourceInstance;
+import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.model.datasource.Query;
 
 import java.util.ArrayList;
@@ -48,13 +48,13 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
-    public List<DataSourceInstance> getDatasourceInstances() {
-        List<DataSourceInstance> instances = new ArrayList<>();
+    public List<DataSourceDescriptor> getDatasourceInstances() {
+        List<DataSourceDescriptor> instances = new ArrayList<>();
         final DataSourceManager dataSourceManager = DataSourceManager.getInstance();
         final SortedSet<String> sensors = dataSourceManager.getSupportedSensors();
         for (String sensor : sensors) {
             dataSourceManager.getNames(sensor).forEach(n ->
-                instances.add(new DataSourceInstance(sensor, n, dataSourceManager.getSupportedParameters(sensor, n))));
+                instances.add(new DataSourceDescriptor(sensor, n, dataSourceManager.getSupportedParameters(sensor, n))));
         }
         return instances;
     }
