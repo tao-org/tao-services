@@ -18,8 +18,8 @@ package ro.cs.tao.services.orchestration.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.component.execution.ExecutionTask;
 import ro.cs.tao.execution.ExecutionException;
+import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.interfaces.OrchestratorService;
