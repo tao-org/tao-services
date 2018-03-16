@@ -71,6 +71,11 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
+    public long count(Query queryObject) throws SerializationException {
+        return Query.toDataQuery(queryObject).getCount();
+    }
+
+    @Override
     public List<EOProduct> query(Query queryObject) throws SerializationException {
         return Query.toDataQuery(queryObject).execute();
     }

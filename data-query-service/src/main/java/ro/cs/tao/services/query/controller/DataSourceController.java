@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import ro.cs.tao.component.Variable;
 import ro.cs.tao.datasource.param.ParameterDescriptor;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.execution.model.Query;
@@ -32,8 +33,9 @@ import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 
-import java.util.List;
-import java.util.SortedSet;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Cosmin Cara
@@ -84,8 +86,8 @@ public class DataSourceController extends BaseController {
         return new ResponseEntity<>(params, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/exec", method = RequestMethod.POST)
-    public ResponseEntity<?> doQuery(@RequestBody Query query) {
+    @RequestMapping(value = "/count", method = RequestMethod.POST)
+    public ResponseEntity<?> doCount(@RequestBody Query query) {
         List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
         if (params == null) {
@@ -93,6 +95,61 @@ public class DataSourceController extends BaseController {
                                                                        query.getDataSource(),
                                                                        query.getSensor())),
                                         HttpStatus.BAD_REQUEST);
+        }
+        ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2);
+        try {
+            CompletionService<Variable> completionService = new ExecutorCompletionService<>(threadPool);
+            if (query.getValues().containsKey("tileId")) {
+                Map<String, String> counts = Collections.synchronizedMap(new HashMap<>());
+                List<Query> subQueries = query.splitByParameter("tileId");
+                for(Query subQuery : subQueries) {
+                    completionService.submit(() -> {
+                        Variable variable = new Variable();
+                        variable.setKey(subQuery.getValues().get("tileId"));
+                        long value;
+                        try {
+                            value = dataSourceService.count(subQuery);
+                        } catch (SerializationException e) {
+                            e.printStackTrace();
+                            value = 0;
+                        }
+                        variable.setValue(String.valueOf(value));
+                        return variable;
+                    });
+                }
+                AtomicInteger received = new AtomicInteger(subQueries.size());
+                while (received.get() > 0) {
+                    try {
+                        Future<Variable> result = completionService.take();
+                        Variable variable = result.get();
+                        counts.put(variable.getKey(), variable.getValue());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(received.decrementAndGet());
+                }
+                LinkedHashMap<String, String> sorted = new LinkedHashMap<>();
+                counts.keySet().stream().sorted().forEachOrdered(s -> sorted.put(s, counts.get(s)));
+                return new ResponseEntity<>(sorted, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(dataSourceService.count(query), HttpStatus.OK);
+            }
+        } catch (SerializationException ex) {
+            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        } finally {
+            threadPool.shutdownNow();
+        }
+    }
+
+    @RequestMapping(value = "/exec", method = RequestMethod.POST)
+    public ResponseEntity<?> doQuery(@RequestBody Query query) {
+        List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(query.getSensor(),
+                query.getDataSource());
+        if (params == null) {
+            return new ResponseEntity<>(new ServiceError(String.format("No data source named [%s] available for [%s]",
+                    query.getDataSource(),
+                    query.getSensor())),
+                    HttpStatus.BAD_REQUEST);
         }
         try {
             final List<EOProduct> results = dataSourceService.query(query);
