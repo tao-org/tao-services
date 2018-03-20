@@ -15,10 +15,24 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.docker.Application;
+import ro.cs.tao.docker.Container;
+import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.services.entity.impl.ComponentServiceImpl;
+import ro.cs.tao.services.interfaces.ComponentService;
+import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.workflow.WorkflowDescriptor;
+
+import java.util.List;
 
 /**
  * @author Cosmin Cara
@@ -27,4 +41,51 @@ import ro.cs.tao.workflow.WorkflowDescriptor;
 @RequestMapping("/workflow")
 public class WorkflowController extends DataEntityController<WorkflowDescriptor, WorkflowService> {
 
+    @Autowired
+    private ContainerService containerService;
+
+    @Autowired
+    private ComponentService componentService;
+
+    @Autowired
+    private WorkflowService workflowService;
+
+    @Autowired
+    private PersistenceManager persistenceManager;
+
+    @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> initialize() throws PersistenceException {
+        // Initialize container
+        List<Container> containers = containerService.list();
+        Container container;
+        if (containers != null && containers.size() > 0) {
+            container = containers.get(0);
+        } else {
+            container = new Container();
+            container.setName("TestContainer");
+            container.setTag("For test puproses only");
+            container.setApplicationPath("/usr/bin/apppath/");
+            container = persistenceManager.saveContainer(container);
+        }
+        List<Application> applications = container.getApplications();
+        if (applications == null || applications.size() == 0) {
+            for (int i = 1; i <= 6; i++) {
+                Application application = new Application();
+                application.setName("segmentation-cc-" + String.valueOf(i));
+                application.setPath("/usr/bin/apppath");
+                container.addApplication(application);
+            }
+            persistenceManager.updateContainer(container);
+        }
+        // Initialize Processing components
+        for (int i = 1; i <= 6; i++) {
+            ProcessingComponent component = ComponentServiceImpl.newComponent("segmentation-cc-" + String.valueOf(i),
+                    String.valueOf(i) + (i == 1 ? "st " : i == 2 ? "nd " : i == 3 ? "rd " : "th ") + "component");
+            componentService.save(component);
+        }
+        WorkflowDescriptor descriptor = workflowService.findById("1");
+        persistenceManager.saveWorkflowDescriptor(descriptor);
+
+        return new ResponseEntity<>("Initialization completed", HttpStatus.OK);
+    }
 }

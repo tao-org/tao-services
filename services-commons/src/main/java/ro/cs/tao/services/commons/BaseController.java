@@ -17,10 +17,34 @@ package ro.cs.tao.services.commons;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+
 /**
  * @author Cosmin Cara
  */
 @CrossOrigin(origins = {"http://localhost:8080", "http://localhost:63343"})
 public class BaseController {
 
+    private ExecutorService executorService;
+
+    protected void asyncExecute(Runnable runnable, Consumer<Exception> callback) {
+        if (this.executorService == null) {
+            executorService = Executors.newSingleThreadExecutor();
+        }
+
+        executorService.submit(() -> {
+            Exception exception = null;
+            try {
+                runnable.run();
+            } catch (Exception ex) {
+                exception = ex;
+            } finally {
+                if (callback != null) {
+                    callback.accept(exception);
+                }
+            }
+        });
+    }
 }
