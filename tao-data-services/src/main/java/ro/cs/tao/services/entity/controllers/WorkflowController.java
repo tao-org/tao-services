@@ -85,6 +85,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
         WorkflowDescriptor descriptor = workflowService.findById("1");
         persistenceManager.saveWorkflowDescriptor(descriptor);
+        /*for (WorkflowNodeDescriptor nodeDescriptor : descriptor.getNodes()) {
+            persistenceManager.saveWorkflowNodeDescriptor(nodeDescriptor, descriptor);
+        }*/
 
         return new ResponseEntity<>("Initialization completed", HttpStatus.OK);
     }
