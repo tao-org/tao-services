@@ -38,6 +38,11 @@
             <artifactId>progress-report-service</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-orchestration-services</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

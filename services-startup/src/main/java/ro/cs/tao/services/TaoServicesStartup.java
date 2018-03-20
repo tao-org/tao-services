@@ -22,6 +22,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.entity.DataServicesLauncher;
 import ro.cs.tao.services.monitoring.MonitoringServiceLauncer;
+import ro.cs.tao.services.orchestration.OrchestratorLauncher;
 import ro.cs.tao.services.progress.ProgressReportLauncher;
 import ro.cs.tao.services.query.DataQueryServiceLauncher;
 
@@ -58,7 +59,8 @@ public class TaoServicesStartup {
         new SpringApplicationBuilder()
                 .sources(TaoServicesStartup.class,
                          MonitoringServiceLauncer.class, DataServicesLauncher.class,
-                         DataQueryServiceLauncher.class, ProgressReportLauncher.class)
+                         DataQueryServiceLauncher.class, ProgressReportLauncher.class,
+                         OrchestratorLauncher.class)
                 //.bannerMode(Banner.Mode.OFF)
                 .build()
                 .run(args);

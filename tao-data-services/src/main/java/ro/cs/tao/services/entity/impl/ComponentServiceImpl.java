@@ -256,7 +256,7 @@ public class ComponentServiceImpl
         }
     }
 
-    static ProcessingComponent newComponent(String id, String label) {
+    public static ProcessingComponent newComponent(String id, String label) {
         ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
         parameters.add(newParameter("outmode_string",
                                     String.class,
@@ -306,13 +306,15 @@ public class ComponentServiceImpl
         component.setNodeAffinity("Any");
         component.setContainerId("DummyTestDockerContainer");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
-        SourceDescriptor sourceDescriptor = new SourceDescriptor("sourceProductFile");
+        SourceDescriptor sourceDescriptor = new SourceDescriptor();
+        sourceDescriptor.setName("sourceProductFile");
         DataDescriptor sourceData = new DataDescriptor();
         sourceData.setFormatType(DataFormat.RASTER);
         sourceData.setSensorType(SensorType.OPTICAL);
         sourceDescriptor.setDataDescriptor(sourceData);
         component.addSource(sourceDescriptor);
-        TargetDescriptor targetDescriptor = new TargetDescriptor("out_str");
+        TargetDescriptor targetDescriptor = new TargetDescriptor();
+        targetDescriptor.setName("out_str");
         DataDescriptor targetData = new DataDescriptor();
         targetData.setFormatType(DataFormat.RASTER);
         targetDescriptor.setDataDescriptor(targetData);
