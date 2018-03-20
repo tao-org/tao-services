@@ -25,10 +25,7 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.WorkflowService;
-import ro.cs.tao.workflow.ParameterValue;
-import ro.cs.tao.workflow.Visibility;
-import ro.cs.tao.workflow.WorkflowDescriptor;
-import ro.cs.tao.workflow.WorkflowNodeDescriptor;
+import ro.cs.tao.workflow.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -53,12 +50,14 @@ public class WorkflowServiceImpl
     public WorkflowDescriptor findById(String id) {
         // TODO persistenceManager.getWorkflow(id);
         WorkflowDescriptor mock = new WorkflowDescriptor();
-        mock.setId(1L);
+        //mock.setId(1L);
         mock.setName("Test workflow");
+        mock.setStatus(Status.DRAFT);
         mock.setCreated(LocalDateTime.now());
         mock.setActive(true);
         mock.setUserName("admin");
         mock.setVisibility(Visibility.PRIVATE);
+        mock.setCreated(LocalDateTime.now());
         addNodes(mock);
         return mock;
     }
@@ -121,13 +120,15 @@ public class WorkflowServiceImpl
         List<ComponentLink> incomingLinks = node.getIncomingLinks();
         if (incomingLinks != null) {
             if (incomingLinks.stream()
-                    .anyMatch(l -> l.getOutput().getParentId().equals(node.getComponentId()))) {
-                errors.add("[node.incomingLinks] contains some invalid node identifiers");
+                    .noneMatch(l -> l.getOutput().getParentId().equals(node.getComponentId()))) {
+                errors.add(String.format("[%s.incomingLinks] contains some invalid node identifiers",
+                                         node.getId()));
             }
             incomingLinks.forEach(n -> {
                 if (workflow.getNodes().stream()
                         .noneMatch(nd -> nd.getComponentId().equals(n.getInput().getParentId()))) {
-                    errors.add("[node.incomingLinks] contains one or more invalid node identifiers");
+                    errors.add(String.format("[%s.incomingLinks] contains one or more invalid node identifiers",
+                                             node.getId()));
                 }
             });
         }
@@ -195,13 +196,14 @@ public class WorkflowServiceImpl
         List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         for (int nodeNumber = 1; nodeNumber <= 6; nodeNumber++) {
             WorkflowNodeDescriptor node = new WorkflowNodeDescriptor();
-            node.setId(new Long(nodeNumber));
+            //node.setId((long) nodeNumber);
             node.setWorkflow(parent);
             node.setName("Node-" + nodeNumber);
             node.setxCoord(10 + 100 * (nodeNumber - 1));
             node.setyCoord(10 + 100 * (nodeNumber - 1));
             node.setComponentId("segmentation-cc-" + nodeNumber);
             node.addCustomValue("neighbor_bool", String.valueOf(nodeNumber % 2 == 1));
+            node.setCreated(LocalDateTime.now());
             nodes.add(node);
             if (nodeNumber == 2) {
                 ProcessingComponent component1 = componentService.findById(nodes.get(nodeNumber - 2).getComponentId());
