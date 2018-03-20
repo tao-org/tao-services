@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.constraints.ConstraintFactory;
+import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.template.BasicTemplate;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
@@ -194,7 +195,8 @@ public class ComponentServiceImpl
             if (container != null) {
                 List<Application> applications = container.getApplications();
                 String v = value;
-                if (applications != null && applications.stream().noneMatch(a -> v.equals(a.getPath()))) {
+                if (applications != null &&
+                        applications.stream().noneMatch(a -> v.equals(a.getPath()) || v.equals(Paths.get(a.getPath(), a.getName()).toString()))) {
                     errors.add("[fileLocation] has an invalid value");
                 }
             }
@@ -299,9 +301,11 @@ public class ComponentServiceImpl
         component.setDescription("Performs segmentation of an image, and output either a raster or a vector file. In vector mode, large input datasets are supported.");
         component.setAuthors("King Arthur");
         component.setCopyright("(C) Camelot Productions");
-        component.setFileLocation("E:\\OTB\\otbcli_Segmentation.bat");
-        component.setWorkingDirectory("E:\\OTB");
+        component.setFileLocation("/usr/bin/otb/otbcli_Segmentation.sh");
+        component.setWorkingDirectory("/home/user");
         component.setNodeAffinity("Any");
+        component.setContainerId("DummyTestDockerContainer");
+        component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         SourceDescriptor sourceDescriptor = new SourceDescriptor("sourceProductFile");
         DataDescriptor sourceData = new DataDescriptor();
         sourceData.setFormatType(DataFormat.RASTER);
@@ -323,6 +327,7 @@ public class ComponentServiceImpl
 
     private static ParameterDescriptor newParameter(String name, Class<?> clazz, String defaultValue, String description) {
         ParameterDescriptor ret = new ParameterDescriptor(name);
+        ret.setType(ParameterType.REGULAR);
         ret.setDataType(clazz);
         ret.setDefaultValue(defaultValue);
         ret.setDescription(description);
