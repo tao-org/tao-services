@@ -126,7 +126,6 @@ public class DataSourceController extends BaseController {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    System.out.println(received.decrementAndGet());
                 }
                 LinkedHashMap<String, String> sorted = new LinkedHashMap<>();
                 counts.keySet().stream().sorted().forEachOrdered(s -> sorted.put(s, counts.get(s)));
