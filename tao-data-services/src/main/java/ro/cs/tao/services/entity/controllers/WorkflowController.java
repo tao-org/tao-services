@@ -83,6 +83,34 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                     String.valueOf(i) + (i == 1 ? "st " : i == 2 ? "nd " : i == 3 ? "rd " : "th ") + "component");
             componentService.save(component);
         }
+        // Initialize data source components
+        /*DataSourceManager dataSourceManager = DataSourceManager.getInstance();
+        SortedSet<String> sensors = dataSourceManager.getSupportedSensors();
+        for (String sensor : sensors) {
+            List<String> names = dataSourceManager.getNames(sensor);
+            for (String name : names) {
+                DataSource dataSource = dataSourceManager.get(sensor, name);
+                DataSourceComponent dsComponent = new DataSourceComponent(sensor, name);
+                dsComponent.setId(sensor + "-" + name);
+                dsComponent.setUserName("admin");
+                dsComponent.setFetchMode(FetchMode.OVERWRITE);
+                dsComponent.setMaxRetries(1);
+                dsComponent.setAuthors("TAO Team");
+                dsComponent.setDescription(dataSource.getId());
+                dsComponent.setLabel("Query Component");
+                dsComponent.setVersion("1.0");
+                TargetDescriptor targetDescriptor = new TargetDescriptor();
+                //targetDescriptor.setName("results");
+                DataDescriptor dataDescriptor = new DataDescriptor();
+                dataDescriptor.setSensorType(sensor.equals("Sentinel1") ? SensorType.RADAR : SensorType.OPTICAL);
+                dataDescriptor.setFormatType(DataFormat.RASTER);
+                targetDescriptor.setDataDescriptor(dataDescriptor);
+                dsComponent.addTarget(targetDescriptor);
+                persistenceManager.saveDataSourceComponent(dsComponent);
+            }
+        }*/
+
+        // Initialize test workflow
         WorkflowDescriptor descriptor = workflowService.findById("1");
         persistenceManager.saveWorkflowDescriptor(descriptor);
         /*for (WorkflowNodeDescriptor nodeDescriptor : descriptor.getNodes()) {
