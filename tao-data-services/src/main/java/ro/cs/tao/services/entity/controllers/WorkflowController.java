@@ -79,9 +79,15 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
         // Initialize Processing components
         for (int i = 1; i <= 6; i++) {
-            ProcessingComponent component = ComponentServiceImpl.newComponent("segmentation-cc-" + String.valueOf(i),
-                    String.valueOf(i) + (i == 1 ? "st " : i == 2 ? "nd " : i == 3 ? "rd " : "th ") + "component");
-            componentService.save(component);
+            String componentId = "segmentation-cc-" + String.valueOf(i);
+            ProcessingComponent component;
+            try {
+                component = persistenceManager.getProcessingComponentById(componentId);
+            } catch (PersistenceException pex) {
+                component = ComponentServiceImpl.newComponent(componentId,
+                        String.valueOf(i) + (i == 1 ? "st " : i == 2 ? "nd " : i == 3 ? "rd " : "th ") + "component");
+                componentService.save(component);
+            }
         }
         // Initialize data source components
         /*DataSourceManager dataSourceManager = DataSourceManager.getInstance();
@@ -117,6 +123,6 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             persistenceManager.saveWorkflowNodeDescriptor(nodeDescriptor, descriptor);
         }*/
 
-        return new ResponseEntity<>("Initialization completed", HttpStatus.OK);
+        return new ResponseEntity<>(descriptor, HttpStatus.OK);
     }
 }
