@@ -28,7 +28,6 @@ import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.enums.DataFormat;
-import ro.cs.tao.eodata.enums.SensorType;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.serialization.MediaType;
@@ -75,14 +74,14 @@ public class ComponentServiceImpl
 
     @Override
     public ProcessingComponent findById(String id) {
-        return fakeComponents.get(id);
-        /*ProcessingComponent component = null;
+        //return fakeComponents.get(id);
+        ProcessingComponent component = null;
         try {
             component = persistenceManager.getProcessingComponentById(id);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
         }
-        return component;*/
+        return component;
     }
 
     @Override
@@ -307,16 +306,19 @@ public class ComponentServiceImpl
         component.setContainerId("DummyTestDockerContainer");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         SourceDescriptor sourceDescriptor = new SourceDescriptor();
+        sourceDescriptor.setId(UUID.randomUUID().toString());
         sourceDescriptor.setName("sourceProductFile");
         DataDescriptor sourceData = new DataDescriptor();
         sourceData.setFormatType(DataFormat.RASTER);
-        sourceData.setSensorType(SensorType.OPTICAL);
+        //sourceData.setSensorType(SensorType.OPTICAL);
         sourceDescriptor.setDataDescriptor(sourceData);
         component.addSource(sourceDescriptor);
         TargetDescriptor targetDescriptor = new TargetDescriptor();
+        targetDescriptor.setId(UUID.randomUUID().toString());
         targetDescriptor.setName("out_str");
         DataDescriptor targetData = new DataDescriptor();
         targetData.setFormatType(DataFormat.RASTER);
+        targetData.setLocation("/mnt/out/outfile_" + component.getId() + ".png");
         targetDescriptor.setDataDescriptor(targetData);
         component.addTarget(targetDescriptor);
         component.setVersion("1.0");
