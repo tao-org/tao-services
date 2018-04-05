@@ -11,7 +11,7 @@
 
     <artifactId>services-startup</artifactId>
     <name>TAO Services Launcher</name>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
 
     <properties>
         <start-class>ro.cs.tao.services.TaoServicesStartup</start-class>
@@ -54,13 +54,13 @@
             </plugin>
 
             <!-- Plugin for building the war -->
-            <plugin>
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
-            </plugin>
+            </plugin>-->
 
             <!-- Plugin for building the jar, from the classes directory -->
             <plugin>
