@@ -16,15 +16,16 @@
 
 package ro.cs.tao.services.entity.demo;
 
-import ro.cs.tao.component.*;
+import ro.cs.tao.component.ParameterDescriptor;
+import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.SourceDescriptor;
+import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.eodata.enums.DataFormat;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 public class SNAPDemo extends DemoBase {
 
@@ -39,78 +40,119 @@ public class SNAPDemo extends DemoBase {
                 Float.class,
                 1f,
                 "The value of the NIR source band is multiplied by this value"));
-        parameters.add(newParameter("transformTypeIdScaleY", "transform.type.id.scaley",
-                Float.class,
-                1f,
-                "Y scaling"));
-        parameters.add(newParameter("transformTypeTranslationTX", "transform.type.translation.tx",
-                Float.class,
-                0f,
-                "The X translation (in physical units)"));
-        parameters.add(newParameter("transformTypeTranslationTY", "transform.type.translation.ty",
-                Float.class,
-                0f,
-                "The Y translation (in physical units)"));
-        parameters.add(newParameter("transformTypeTranslationScaleX", "transform.type.translation.scalex",
-                Float.class,
-                1f,
-                "X scaling"));
-        parameters.add(newParameter("transformTypeTranslationScaleY", "transform.type.translation.scaley",
-                Float.class,
-                1f,
-                "Y scaling"));
-        parameters.add(newParameter("transformTypeRotationAngle", "transform.type.rotation.angle",
-                Float.class,
-                0f,
-                "Rotation angle"));
-        parameters.add(newParameter("transformTypeRotationScaleX", "transform.type.rotation.scalex",
-                Float.class,
-                1f,
-                "X scaling"));
-        parameters.add(newParameter("transformTypeRotationScaleY", "transform.type.rotation.scaley",
-                Float.class,
-                1f,
-                "Y scaling"));
-        parameters.add(newParameter("interpolator", "interpolator",
+        parameters.add(newParameter("nirSourceBand", "PnirSourceBand",
                 String.class,
-                "bco",
-                "Interpolation [nn/linear/bco]",
-                "nn", "linear", "bco"));
-        parameters.add(newParameter("interpolatorBcoRadius", "interpolator.bco.radius",
-                Integer.class,
-                2,
-                "Radius for bicubic interpolation"));
-        SourceDescriptor sourceDescriptor = newSourceDescriptor("in", DataFormat.RASTER);
-
-        Set<Variable> variables = new HashSet<>();
-        variables.add(new Variable("ITK_AUTOLOAD_PATH", "C:\\Tools\\OTB-6.4.0\\bin"));
+                "B8",
+                "The near-infrared band for the S2REP computation. If not provided, the operator will try to find the best fitting band"));
+        parameters.add(newParameter("redB4Factor", "PredB4Factor",
+                Float.class,
+                1f,
+                "The value of the red source band (B4) is multiplied by this value"));
+        parameters.add(newParameter("redB5Factor", "PredB5Factor",
+                Float.class,
+                1f,
+                "The value of the red source band (B5) is multiplied by this value"));
+        parameters.add(newParameter("redB6Factor", "PredB6Factor",
+                Float.class,
+                1f,
+                "The value of the red source band (B6) is multiplied by this value"));
+        parameters.add(newParameter("redSourceBand4", "PredSourceBand4",
+                String.class,
+                "B4",
+                "The red band (B4) for the S2REP computation. If not provided, the operator will try to find the best fitting band"));
+        parameters.add(newParameter("redSourceBand5", "PredSourceBand5",
+                String.class,
+                "B5",
+                "The red band (B5) for the S2REP computation. If not provided, the operator will try to find the best fitting band"));
+        parameters.add(newParameter("redSourceBand6", "PredSourceBand6",
+                String.class,
+                "B6",
+                "The red band (B6) for the S2REP computation. If not provided, the operator will try to find the best fitting band"));
+        parameters.add(newParameter("resampleType", "PresampleType",
+                String.class,
+                "Lowest resolution",
+                "If selected bands differ in size, the resample method used before computing the index",
+                "None", "Lowest resolution", "Highest resolution"));
+        parameters.add(newParameter("upsampling", "Pupsampling",
+                String.class,
+                "Nearest",
+                "The method used for interpolation (upsampling to a finer resolution)",
+                "Nearest", "Bilinear", "Bicubic"));
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("Ssource", DataFormat.RASTER);
 
         ProcessingComponent component = new ProcessingComponent();
-        component.setId("otb-rigid-transform");
-        component.setLabel("OTB Rigid Transform Resample");
-        component.setDescription("Resamples an image with a rigid transform");
-        component.setVersion("6.4.0");
-        component.setAuthors("OTB Team");
-        component.setCopyright("(C) OTB Team");
-        component.setFileLocation("C:\\Tools\\OTB-6.4.0\\bin\\otbcli_RigidTransformResample.bat");
+        component.setId("snap-s2rep");
+        component.setLabel("Sentinel-2 red-edge position index");
+        component.setDescription("Sentinel-2 red-edge position index");
+        component.setVersion("6.0.0");
+        component.setAuthors("SNAP Team");
+        component.setCopyright("(C) SNAP Team");
+        component.setFileLocation("gpt.exe");
         component.setWorkingDirectory(".");
         component.setNodeAffinity("Any");
         component.setContainerId("DummyTestDockerContainer");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
 
-        TargetDescriptor targetDescriptor = newTargetDescriptor("out", DataFormat.RASTER,
+        TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
                 "file:///D:/img/out/output_" + component.getId() + ".tif");
         component.addTarget(targetDescriptor);
 
-        Template template = newTemplate("otb-rigid-transform.vm", component);
-
         component.setParameterDescriptors(parameters);
-        component.setVariables(variables);
+
+        Template template = newTemplate("snap-s2rep.vm", "S2repOp", component, "=");
+
         component.setTemplateType(TemplateType.VELOCITY);
         component.setTemplate(template);
         component.setActive(true);
         return component;
     }
 
+    public static ProcessingComponent ndvi() {
+        ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
+        parameters.add(newParameter("nirFactor", "PnirFactor",
+                Float.class,
+                1f,
+                "The value of the NIR source band is multiplied by this value"));
+        parameters.add(newParameter("nirSourceBand", "PnirSourceBand",
+                String.class,
+                "B8",
+                "The near-infrared band for the NDVI computation. If not provided, the operator will try to find the best fitting band"));
+        parameters.add(newParameter("redFactor", "PredFactor",
+                Float.class,
+                1f,
+                "The value of the red source band is multiplied by this value"));
+        parameters.add(newParameter("redSourceBand", "PredSourceBand",
+                String.class,
+                "B4",
+                "The red band for the NDVI computation. If not provided, the operator will try to find the best fitting band"));
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("Ssource", DataFormat.RASTER);
+
+        ProcessingComponent component = new ProcessingComponent();
+        component.setId("snap-ndvi");
+        component.setLabel("Normalized Difference Vegetation Index");
+        component.setDescription("Normalized Difference Vegetation Index");
+        component.setVersion("6.0.0");
+        component.setAuthors("SNAP Team");
+        component.setCopyright("(C) SNAP Team");
+        component.setFileLocation("gpt.exe");
+        component.setWorkingDirectory(".");
+        component.setNodeAffinity("Any");
+        component.setContainerId("DummyTestDockerContainer");
+        component.setVisibility(ProcessingComponentVisibility.SYSTEM);
+        component.addSource(sourceDescriptor);
+
+        TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
+                "file:///D:/img/out/output_" + component.getId() + ".tif");
+        component.addTarget(targetDescriptor);
+
+        component.setParameterDescriptors(parameters);
+
+        Template template = newTemplate("snap-ndvi.vm", "NdviOp", component, "=");
+
+        component.setTemplateType(TemplateType.VELOCITY);
+        component.setTemplate(template);
+        component.setActive(true);
+        return component;
+    }
 }
