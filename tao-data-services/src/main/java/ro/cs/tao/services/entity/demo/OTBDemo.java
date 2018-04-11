@@ -14,21 +14,19 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-package ro.cs.tao.services.entity.impl;
+package ro.cs.tao.services.entity.demo;
 
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
-import ro.cs.tao.component.template.BasicTemplate;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.eodata.enums.DataFormat;
 
-import java.net.URI;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
-public class OTBDemo {
+public class OTBDemo extends DemoBase {
 
     public static ProcessingComponent rigidTransform() {
         ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
@@ -82,12 +80,7 @@ public class OTBDemo {
                                     Integer.class,
                                     2,
                                     "Radius for bicubic interpolation"));
-        SourceDescriptor sourceDescriptor = new SourceDescriptor();
-        sourceDescriptor.setId(UUID.randomUUID().toString());
-        sourceDescriptor.setName("in");
-        DataDescriptor sourceData = new DataDescriptor();
-        sourceData.setFormatType(DataFormat.RASTER);
-        sourceDescriptor.setDataDescriptor(sourceData);
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("in", DataFormat.RASTER);
 
         Set<Variable> variables = new HashSet<>();
         variables.add(new Variable("ITK_AUTOLOAD_PATH", "C:\\Tools\\OTB-6.4.0\\bin"));
@@ -106,29 +99,11 @@ public class OTBDemo {
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
 
-        TargetDescriptor targetDescriptor = new TargetDescriptor();
-        targetDescriptor.setId(UUID.randomUUID().toString());
-        targetDescriptor.setName("out");
-        DataDescriptor targetData = new DataDescriptor();
-        targetData.setFormatType(DataFormat.RASTER);
-        targetData.setLocation("file:///D:/img/out/output_" + component.getId() + ".tif");
-        targetDescriptor.setDataDescriptor(targetData);
-
+        TargetDescriptor targetDescriptor = newTargetDescriptor("out", DataFormat.RASTER,
+                                                                "file:///D:/img/out/output_" + component.getId() + ".tif");
         component.addTarget(targetDescriptor);
 
-        Template template = new BasicTemplate();
-        template.setName("otb-rigid-transform.vm");
-        template.setTemplateType(TemplateType.VELOCITY);
-        StringBuilder builder = new StringBuilder();
-        builder.append("-").append(sourceDescriptor.getName()).append("\n")
-                .append("$").append(sourceDescriptor.getName()).append("\n");
-        for (ParameterDescriptor parameter : parameters) {
-            builder.append("-").append(parameter.getLabel()).append("\n")
-                    .append("$").append(parameter.getId()).append("\n");
-        }
-        builder.append("-").append(targetDescriptor.getName()).append("\n")
-                .append(Paths.get(URI.create(targetData.getLocation())).toString());
-        template.setContents(builder.toString(), false);
+        Template template = newTemplate("otb-rigid-transform.vm", component);
 
         component.setParameterDescriptors(parameters);
         component.setVariables(variables);
@@ -151,12 +126,7 @@ public class OTBDemo {
                 "Vegetation:LAIFromReflLinear", "Vegetation:LAIFromNDVIFormo", "Water:NDWI", "Water:NDWI2",
                 "Water:MNDWI", "Water:NDPI", "Water:NDTI", "Soil:RI", "Soil:CI", "Soil:BI", "Soil:BI"));
 
-        SourceDescriptor sourceDescriptor = new SourceDescriptor();
-        sourceDescriptor.setId(UUID.randomUUID().toString());
-        sourceDescriptor.setName("in");
-        DataDescriptor sourceData = new DataDescriptor();
-        sourceData.setFormatType(DataFormat.RASTER);
-        sourceDescriptor.setDataDescriptor(sourceData);
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("in", DataFormat.RASTER);
 
         Set<Variable> variables = new HashSet<>();
         variables.add(new Variable("ITK_AUTOLOAD_PATH", "C:\\Tools\\OTB-6.4.0\\bin"));
@@ -175,28 +145,11 @@ public class OTBDemo {
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
 
-        TargetDescriptor targetDescriptor = new TargetDescriptor();
-        targetDescriptor.setId(UUID.randomUUID().toString());
-        targetDescriptor.setName("out");
-        DataDescriptor targetData = new DataDescriptor();
-        targetData.setFormatType(DataFormat.RASTER);
-        targetData.setLocation("file:///D:/img/out/output_" + component.getId() + ".tif");
-        targetDescriptor.setDataDescriptor(targetData);
+        TargetDescriptor targetDescriptor = newTargetDescriptor("out", DataFormat.RASTER,
+                                                                "file:///D:/img/out/output_" + component.getId() + ".tif");
         component.addTarget(targetDescriptor);
 
-        Template template = new BasicTemplate();
-        template.setName("otb-radiometric-indices.vm");
-        template.setTemplateType(TemplateType.VELOCITY);
-        StringBuilder builder = new StringBuilder();
-        builder.append("-").append(sourceDescriptor.getName()).append("\n")
-                .append("$").append(sourceDescriptor.getName()).append("\n");
-        for (ParameterDescriptor parameter : parameters) {
-            builder.append("-").append(parameter.getLabel()).append("\n")
-                    .append("$").append(parameter.getId()).append("\n");
-        }
-        builder.append("-").append(targetDescriptor.getName()).append("\n")
-                .append(Paths.get(URI.create(targetData.getLocation())).toString());
-        template.setContents(builder.toString(), false);
+        Template template = newTemplate("otb-radiometric-indices.vm", component);
 
         component.setParameterDescriptors(parameters);
         component.setVariables(variables);
@@ -204,20 +157,5 @@ public class OTBDemo {
         component.setTemplate(template);
         component.setActive(true);
         return component;
-    }
-
-    private static <T> ParameterDescriptor newParameter(String name, String label, Class<T> clazz, T defaultValue, String description, T... values) {
-        ParameterDescriptor ret = new ParameterDescriptor(name);
-        ret.setType(ParameterType.REGULAR);
-        ret.setDataType(clazz);
-        ret.setDefaultValue(String.valueOf(defaultValue));
-        ret.setDescription(description);
-        ret.setLabel(label);
-        if (values != null) {
-            String[] set = new String[values.length];
-            Arrays.stream(values).map(String::valueOf).collect(Collectors.toList()).toArray(set);
-            ret.setValueSet(set);
-        }
-        return ret;
     }
 }

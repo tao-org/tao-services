@@ -26,6 +26,7 @@ import ro.cs.tao.services.interfaces.OrchestratorService;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
+import java.util.Map;
 
 @Service("orchestrationService")
 public class OrchestrationServiceImpl implements OrchestratorService {
@@ -34,8 +35,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     private PersistenceManager persistenceManager;
 
     @Override
-    public void startWorkflow(long workflowId) throws ExecutionException {
-        Orchestrator.getInstance().startWorkflow(workflowId);
+    public void startWorkflow(long workflowId, Map<String, String> inputs) throws ExecutionException {
+        Orchestrator.getInstance().startWorkflow(workflowId, inputs);
     }
 
     @Override

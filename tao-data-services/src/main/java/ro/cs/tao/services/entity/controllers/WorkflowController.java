@@ -27,7 +27,7 @@ import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.services.entity.impl.OTBDemo;
+import ro.cs.tao.services.entity.demo.OTBDemo;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WorkflowService;
