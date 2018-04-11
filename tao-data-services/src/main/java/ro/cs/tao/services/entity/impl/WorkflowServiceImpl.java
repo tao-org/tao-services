@@ -25,9 +25,10 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.WorkflowService;
-import ro.cs.tao.workflow.*;
+import ro.cs.tao.workflow.ParameterValue;
+import ro.cs.tao.workflow.WorkflowDescriptor;
+import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -47,19 +48,8 @@ public class WorkflowServiceImpl
     private Logger logger = Logger.getLogger(WorkflowService.class.getName());
 
     @Override
-    public WorkflowDescriptor findById(String id) {
-        // TODO persistenceManager.getWorkflow(id);
-        WorkflowDescriptor mock = new WorkflowDescriptor();
-        //mock.setId(1L);
-        mock.setName("Test workflow");
-        mock.setStatus(Status.DRAFT);
-        mock.setCreated(LocalDateTime.now());
-        mock.setActive(true);
-        mock.setUserName("admin");
-        mock.setVisibility(Visibility.PRIVATE);
-        mock.setCreated(LocalDateTime.now());
-        addNodes(mock);
-        return mock;
+    public WorkflowDescriptor findById(String id) throws PersistenceException {
+        return persistenceManager.getWorkflowDescriptor(Long.parseLong(id));
     }
 
     @Override
@@ -89,7 +79,7 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(String id) throws PersistenceException {
         WorkflowDescriptor descriptor = findById(id);
         if (descriptor != null) {
             descriptor.setActive(false);
@@ -190,40 +180,5 @@ public class WorkflowServiceImpl
                 logger.severe(e.getMessage());
             }
         }
-    }
-
-    private void addNodes(WorkflowDescriptor parent) {
-        List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
-        for (int nodeNumber = 1; nodeNumber <= 6; nodeNumber++) {
-            WorkflowNodeDescriptor node = new WorkflowNodeDescriptor();
-            //node.setId((long) nodeNumber);
-            node.setWorkflow(parent);
-            node.setName("Node-" + nodeNumber);
-            node.setxCoord(10 + 100 * (nodeNumber - 1));
-            node.setyCoord(10 + 100 * (nodeNumber - 1));
-            node.setComponentId("segmentation-cc-" + nodeNumber);
-            node.addCustomValue("neighbor_bool", String.valueOf(nodeNumber % 2 == 1));
-            node.setCreated(LocalDateTime.now());
-            nodes.add(node);
-            if (nodeNumber == 2) {
-                ProcessingComponent component1 = componentService.findById(nodes.get(nodeNumber - 2).getComponentId());
-                ProcessingComponent component2 = componentService.findById(nodes.get(nodeNumber - 1).getComponentId());
-                ArrayList<ComponentLink> links = new ArrayList<>();
-                ComponentLink link = new ComponentLink(component1.getTargets().get(0),
-                                                       component2.getSources().get(0));
-                links.add(link);
-                nodes.get(nodeNumber - 1).setIncomingLinks(links);
-            } else if (nodeNumber > 2) {
-                ProcessingComponent component1 = componentService.findById(nodes.get(nodeNumber - 3).getComponentId());
-                ProcessingComponent component2 = componentService.findById(nodes.get(nodeNumber - 1).getComponentId());
-                ArrayList<ComponentLink> links = new ArrayList<>();
-                ComponentLink link = new ComponentLink(component1.getTargets().get(0),
-                                                       component2.getSources().get(0));
-                links.add(link);
-                nodes.get(nodeNumber - 1).setIncomingLinks(links);
-            }
-
-        }
-        parent.setNodes(nodes);
     }
 }

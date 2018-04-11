@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.CRUDService;
@@ -44,7 +45,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
     protected S service;
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<?> get(@PathVariable("id") String id) {
+    public ResponseEntity<?> get(@PathVariable("id") String id) throws PersistenceException {
         T entity = service.findById(id);
         if (entity == null) {
             return new ResponseEntity<>(new ServiceError(String.format("Entity [%s] not found", id)),
@@ -88,7 +89,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
     }
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
-    public ResponseEntity<?> delete(@PathVariable("id") String id) {
+    public ResponseEntity<?> delete(@PathVariable("id") String id) throws PersistenceException {
         service.delete(id);
         return new ResponseEntity<>("{}", HttpStatus.OK);
     }
