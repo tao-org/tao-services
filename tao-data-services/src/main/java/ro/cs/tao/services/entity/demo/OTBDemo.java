@@ -103,9 +103,9 @@ public class OTBDemo extends DemoBase {
                                                                 "file:///D:/img/out/output_" + component.getId() + ".tif");
         component.addTarget(targetDescriptor);
 
-        Template template = newTemplate("otb-rigid-transform.vm", component);
-
         component.setParameterDescriptors(parameters);
+        Template template = newTemplate("otb-rigid-transform.vm", null, component, "\n");
+
         component.setVariables(variables);
         component.setTemplateType(TemplateType.VELOCITY);
         component.setTemplate(template);
@@ -148,10 +148,10 @@ public class OTBDemo extends DemoBase {
         TargetDescriptor targetDescriptor = newTargetDescriptor("out", DataFormat.RASTER,
                                                                 "file:///D:/img/out/output_" + component.getId() + ".tif");
         component.addTarget(targetDescriptor);
-
-        Template template = newTemplate("otb-radiometric-indices.vm", component);
-
         component.setParameterDescriptors(parameters);
+
+        Template template = newTemplate("otb-radiometric-indices.vm", null, component, "\n");
+
         component.setVariables(variables);
         component.setTemplateType(TemplateType.VELOCITY);
         component.setTemplate(template);

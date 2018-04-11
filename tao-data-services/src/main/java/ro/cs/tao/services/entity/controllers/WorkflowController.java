@@ -28,6 +28,7 @@ import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.entity.demo.OTBDemo;
+import ro.cs.tao.services.entity.demo.SNAPDemo;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WorkflowService;
@@ -101,6 +102,20 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             component = OTBDemo.radiometricIndices();
             componentService.save(component);
         }
+        componentId = "snap-s2rep";
+        try {
+            component = persistenceManager.getProcessingComponentById(componentId);
+        } catch (PersistenceException pex) {
+            component = SNAPDemo.s2rep();
+            componentService.save(component);
+        }
+        componentId = "snap-ndvi";
+        try {
+            component = persistenceManager.getProcessingComponentById(componentId);
+        } catch (PersistenceException pex) {
+            component = SNAPDemo.ndvi();
+            componentService.save(component);
+        }
         // Initialize data source components
         /*DataSourceManager dataSourceManager = DataSourceManager.getInstance();
         SortedSet<String> sensors = dataSourceManager.getSupportedSensors();
@@ -151,8 +166,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node1.setName("Node-1");
         node1.setxCoord(100);
         node1.setyCoord(100);
-        node1.setComponentId("otb-radiometric-indices");
-        node1.addCustomValue("list", "Vegetation:RVI");
+        node1.setComponentId("snap-ndvi");
+        //node1.addCustomValue("list", "Vegetation:RVI");
         node1.setCreated(LocalDateTime.now());
         nodes.add(node1);
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();

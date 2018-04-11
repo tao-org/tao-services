@@ -67,20 +67,23 @@ public abstract class DemoBase {
         return targetDescriptor;
     }
 
-    protected static Template newTemplate(String name, ProcessingComponent component) {
+    protected static Template newTemplate(String name, String opName, ProcessingComponent component, String valueSeparator) {
         Template template = new BasicTemplate();
         template.setName(name);
         template.setTemplateType(TemplateType.VELOCITY);
         StringBuilder builder = new StringBuilder();
+        if (opName != null) {
+            builder.append(opName).append("\n");
+        }
         List<SourceDescriptor> sources = component.getSources();
         if (sources != null) {
             for (SourceDescriptor srcDescriptor : sources) {
-                builder.append("-").append(srcDescriptor.getName()).append("\n")
+                builder.append("-").append(srcDescriptor.getName()).append(valueSeparator)
                         .append("$").append(srcDescriptor.getName()).append("\n");
             }
         }
         for (ParameterDescriptor parameter : component.getParameterDescriptors()) {
-            builder.append("-").append(parameter.getLabel()).append("\n")
+            builder.append("-").append(parameter.getLabel()).append(valueSeparator)
                     .append("$").append(parameter.getId()).append("\n");
         }
         List<TargetDescriptor> targets = component.getTargets();
@@ -93,5 +96,4 @@ public abstract class DemoBase {
         template.setContents(builder.toString(), false);
         return template;
     }
-
 }
