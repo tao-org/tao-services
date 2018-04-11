@@ -17,17 +17,15 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.component.*;
+import ro.cs.tao.component.ParameterDescriptor;
+import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.constraints.ConstraintFactory;
-import ro.cs.tao.component.enums.ProcessingComponentVisibility;
-import ro.cs.tao.component.template.BasicTemplate;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
 import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
-import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.serialization.MediaType;
@@ -41,7 +39,8 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -51,19 +50,6 @@ import java.util.logging.Logger;
 public class ComponentServiceImpl
     extends EntityService<ProcessingComponent>
         implements ComponentService {
-
-
-    private static final Map<String, ProcessingComponent> fakeComponents;
-
-    static {
-        fakeComponents = new HashMap<>();
-        fakeComponents.put("segmentation-cc-1", newComponent("segmentation-cc-1", "First segmentation component"));
-        fakeComponents.put("segmentation-cc-2", newComponent("segmentation-cc-2", "Second segmentation component"));
-        fakeComponents.put("segmentation-cc-3", newComponent("segmentation-cc-3", "Third segmentation component"));
-        fakeComponents.put("segmentation-cc-4", newComponent("segmentation-cc-4", "Fourth segmentation component"));
-        fakeComponents.put("segmentation-cc-5", newComponent("segmentation-cc-5", "Fifth segmentation component"));
-        fakeComponents.put("segmentation-cc-6", newComponent("segmentation-cc-6", "Sixth segmentation component"));
-    }
 
     @Autowired
     private PersistenceManager persistenceManager;
@@ -255,7 +241,7 @@ public class ComponentServiceImpl
         }
     }
 
-    public static ProcessingComponent newComponent(String id, String label) {
+    /*public static ProcessingComponent newComponent(String id, String label) {
         ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
         parameters.add(newParameter("outmode_string",
                                     String.class,
@@ -326,6 +312,7 @@ public class ComponentServiceImpl
         component.setVariables(variables);
         component.setTemplateType(TemplateType.VELOCITY);
         component.setTemplate(template);
+        component.setActive(true);
         return component;
     }
 
@@ -337,5 +324,5 @@ public class ComponentServiceImpl
         ret.setDescription(description);
         ret.setLabel(name);
         return ret;
-    }
+    }*/
 }
