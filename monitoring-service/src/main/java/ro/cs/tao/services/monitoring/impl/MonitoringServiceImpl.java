@@ -28,12 +28,14 @@ import ro.cs.tao.services.commons.ServiceMessage;
 import ro.cs.tao.services.interfaces.MonitoringService;
 import ro.cs.tao.services.model.monitoring.*;
 import ro.cs.tao.services.model.monitoring.Runtime;
+import ro.cs.tao.topology.NodeDescription;
+import ro.cs.tao.topology.TopologyManager;
+import ro.cs.tao.utils.executors.Executor;
+import ro.cs.tao.utils.executors.ExecutorType;
 
 import java.lang.management.*;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.net.InetAddress;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -146,6 +148,52 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
             });
         }
         return notifications;
+    }
+
+    @Override
+    public Map<String, Boolean> getNodesOnlineStatus() {
+        Map<String, Boolean> statuses = new HashMap<>();
+        List<NodeDescription> nodes = TopologyManager.getInstance().list();
+        if (nodes != null) {
+            try {
+                String masterHost = InetAddress.getLocalHost().getHostName();
+                for (NodeDescription node : nodes) {
+                    if ("localhost".equals(node.getHostName())) {
+                        NodeDescription master = new NodeDescription();
+                        master.setHostName(masterHost);
+                        master.setUserName(node.getUserName());
+                        master.setUserPass(node.getUserPass());
+                        master.setDescription(node.getDescription());
+                        master.setServicesStatus(node.getServicesStatus());
+                        master.setProcessorCount(node.getProcessorCount());
+                        master.setDiskSpaceSizeGB(node.getDiskSpaceSizeGB());
+                        master.setMemorySizeGB(node.getMemorySizeGB());
+                        master.setActive(true);
+                        master = persistenceManager.saveExecutionNode(master);
+                        persistenceManager.deleteExecutionNode(node.getHostName());
+                        node = master;
+                        logger.info(String.format("Node [localhost] has been renamed to [%s]", masterHost));
+                    }
+                    Executor executor;
+                    if (node.getHostName().equals(masterHost)) {
+                        executor = Executor.create(ExecutorType.PROCESS, node.getHostName(), null);
+                    } else {
+                        executor = Executor.create(ExecutorType.SSH2, node.getHostName(), null);
+                        executor.setUser(node.getUserName());
+                        executor.setPassword(node.getUserPass());
+                    }
+                    boolean canConnect = false;
+                    try {
+                        canConnect = executor.canConnect();
+                    } catch (Exception ignored) {
+                    }
+                    statuses.put(node.getHostName(), canConnect);
+                }
+            } catch (Exception ex) {
+                logger.severe(ex.getMessage());
+            }
+        }
+        return statuses;
     }
 
     @Override
