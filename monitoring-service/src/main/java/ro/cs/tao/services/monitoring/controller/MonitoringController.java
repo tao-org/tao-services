@@ -27,6 +27,7 @@ import ro.cs.tao.services.interfaces.MonitoringService;
 import ro.cs.tao.services.model.monitoring.Snapshot;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Cosmin Cara
@@ -72,6 +73,11 @@ public class MonitoringController extends BaseController {
     @RequestMapping(value = "/notification/ack", method = RequestMethod.POST)
     public ResponseEntity<?> acknowledgeNotifications(@RequestBody List<Message> notifications) {
         return new ResponseEntity<>(monitoringService.acknowledgeNotification(notifications), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/status", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, Boolean>> getNodesOnlineStatus() {
+        return new ResponseEntity<Map<String, Boolean>>(monitoringService.getNodesOnlineStatus(), HttpStatus.OK);
     }
 
 }
