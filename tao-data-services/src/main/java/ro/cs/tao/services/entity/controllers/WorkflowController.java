@@ -179,14 +179,14 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         persistenceManager.saveWorkflowDescriptor(descriptor1);
 
         WorkflowDescriptor descriptor2 = new WorkflowDescriptor();
-        descriptor2.setName("SNAP NDVI + OTB RESAMPLE workflow");
+        descriptor2.setName("OTB Radiometric Indices + OTB RESAMPLE workflow");
         descriptor2.setStatus(Status.DRAFT);
         descriptor2.setCreated(LocalDateTime.now());
         descriptor2.setActive(true);
         descriptor2.setUserName("admin");
         descriptor2.setVisibility(Visibility.PRIVATE);
         descriptor2.setCreated(LocalDateTime.now());
-        addNodes1(descriptor2);
+        addNodes2(descriptor2);
         persistenceManager.saveWorkflowDescriptor(descriptor2);
 
         return new ResponseEntity<>(new WorkflowDescriptor[] { descriptor1, descriptor2 }, HttpStatus.OK);
