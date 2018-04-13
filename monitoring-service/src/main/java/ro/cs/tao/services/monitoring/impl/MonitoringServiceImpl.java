@@ -26,14 +26,13 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.MessageConverter;
 import ro.cs.tao.services.commons.ServiceMessage;
 import ro.cs.tao.services.interfaces.MonitoringService;
-import ro.cs.tao.services.model.monitoring.*;
-import ro.cs.tao.services.model.monitoring.Runtime;
+import ro.cs.tao.services.model.monitoring.RuntimeInfo;
+import ro.cs.tao.services.monitoring.os.OSRuntimeInfo;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.utils.executors.Executor;
 import ro.cs.tao.utils.executors.ExecutorType;
 
-import java.lang.management.*;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -56,61 +55,27 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
     }
 
     @Override
-    public Snapshot getMasterSnapshot() {
-        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
-        Runtime runtimeInfo = new Runtime(TimeUnit.SECONDS);
-        runtimeInfo.setStartTime(runtimeMXBean.getStartTime());
-        runtimeInfo.setUpTime(runtimeMXBean.getUptime());
-
-        OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
-        runtimeInfo.setLastMinuteSystemLoad(operatingSystemMXBean.getSystemLoadAverage());
-        runtimeInfo.setAvailableProcessors(operatingSystemMXBean.getAvailableProcessors());
-
-        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-        runtimeInfo.setThreadCount(threadMXBean.getThreadCount());
-        runtimeInfo.setDaemonThreadCount(threadMXBean.getDaemonThreadCount());
-        runtimeInfo.setPeakThreadCount(threadMXBean.getPeakThreadCount());
-        runtimeInfo.setCurrentThreadUserTime(threadMXBean.getCurrentThreadUserTime());
-        runtimeInfo.setCurrentThreadCpuTime(threadMXBean.getCurrentThreadCpuTime());
-
-        MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
-        Memory memoryInfo = new Memory(MemoryUnit.MEGABYTE);
-        final MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
-        final MemoryUsage nonHeapMemoryUsage = memoryMXBean.getNonHeapMemoryUsage();
-        memoryInfo.setHeapCommitted(heapMemoryUsage.getCommitted());
-        memoryInfo.setHeapInitial(heapMemoryUsage.getInit());
-        memoryInfo.setHeapMax(heapMemoryUsage.getMax());
-        memoryInfo.setHeapUsed(heapMemoryUsage.getUsed());
-        memoryInfo.setNonHeapCommitted(nonHeapMemoryUsage.getCommitted());
-        memoryInfo.setNonHeapInitial(nonHeapMemoryUsage.getInit());
-        memoryInfo.setNonHeapMax(nonHeapMemoryUsage.getMax());
-        memoryInfo.setNonHeapUsed(nonHeapMemoryUsage.getUsed());
-
-        Snapshot snapshot = new Snapshot();
-        snapshot.setMemory(memoryInfo);
-        snapshot.setRuntime(runtimeInfo);
-        return snapshot;
+    public RuntimeInfo getMasterSnapshot() {
+        RuntimeInfo runtimeInfo = null;
+        try {
+            OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(TopologyManager.getInstance().getMasterNodeInfo());
+            runtimeInfo = inspector.getSnapshot();
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+        }
+        return runtimeInfo;
     }
 
     @Override
-    public Snapshot getNodeSnapshot(String hostName) {
-        Snapshot snapshot = new Snapshot();
+    public RuntimeInfo getNodeSnapshot(String hostName) {
+        RuntimeInfo runtimeInfo = null;
         try {
-            SnmpClient client = new SnmpClient(hostName);
-            client.start();
-            logger.info(client.getAsString(SnmpClient.ProcessorCount));
-            logger.info(client.getAsString(SnmpClient.SystemDescription));
-            logger.info(client.getAsString(SnmpClient.LastMinuteCPULoad));
-            logger.info(client.getAsString(SnmpClient.PercentageUserCPUTime));
-            logger.info(client.getAsString(SnmpClient.SystemUpTime));
-            logger.info(client.getAsString(SnmpClient.TotalMemoryUsed));
-            logger.info(client.getAsString(SnmpClient.TotalMemoryFree));
+            NodeDescription node = persistenceManager.getNodeByHostName(hostName);
+            runtimeInfo = OSRuntimeInfo.createInspector(node).getSnapshot();
         } catch (Throwable ex) {
             logger.warning(ex.getMessage());
         }
-        snapshot.setMemory(new Memory(MemoryUnit.MEGABYTE));
-        snapshot.setRuntime(new Runtime(TimeUnit.SECONDS));
-        return snapshot;
+        return runtimeInfo;
     }
 
     @Override

@@ -25,6 +25,27 @@
             <version>2.5.0</version>
         </dependency>
 
+        <!--<dependency>
+            <groupId>com.github.oshi</groupId>
+            <artifactId>oshi-parent</artifactId>
+            <version>3.4.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.oshi</groupId>
+            <artifactId>oshi-core</artifactId>
+            <version>3.4.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.oshi</groupId>
+            <artifactId>oshi-core-shaded</artifactId>
+            <version>3.4.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.oshi</groupId>
+            <artifactId>oshi-dist</artifactId>
+            <version>3.4.5</version>
+        </dependency>-->
+
     </dependencies>
 
     <build>
