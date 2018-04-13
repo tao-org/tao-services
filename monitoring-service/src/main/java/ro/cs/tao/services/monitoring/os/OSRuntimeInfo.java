@@ -186,7 +186,7 @@ public abstract class OSRuntimeInfo {
             long mem = 0;
             try {
                 List<String> args = new ArrayList<>();
-                Collections.addAll(args, "wmic logicaldisk get size /value".split(" "));
+                Collections.addAll(args, "wmic logicaldisk get freespace /value".split(" "));
                 Executor executor = Executor.create(ExecutorType.PROCESS, this.node.getHostName(), args);
                 Consumer consumer = new Consumer();
                 executor.setOutputConsumer(consumer);
