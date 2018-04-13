@@ -263,7 +263,7 @@ public abstract class OSRuntimeInfo {
                     for (String message : messages) {
                         if (message.startsWith("MemTotal")) {
                             message = message.replace("MemTotal:", "").trim();
-                            String value = message.substring(0, message.indexOf("kB"));
+                            String value = message.substring(0, message.indexOf(" kB"));
                             mem = Long.parseLong(value) / MemoryUnit.KILOBYTE.value();
                             break;
                         }
@@ -292,7 +292,7 @@ public abstract class OSRuntimeInfo {
                     for (String message : messages) {
                         if (message.startsWith("MemFree")) {
                             message = message.replace("MemFree:", "").trim();
-                            String value = message.substring(0, message.indexOf("kB"));
+                            String value = message.substring(0, message.indexOf(" kB"));
                             mem = Long.parseLong(value) / MemoryUnit.KILOBYTE.value();
                             break;
                         }
@@ -321,7 +321,7 @@ public abstract class OSRuntimeInfo {
                     for (String message : messages) {
                         if (message.startsWith("total")) {
                             String[] values = message.replace("total", "").trim().split(" ");
-                            mem = Long.parseLong(values[0]) / MemoryUnit.GIGABYTE.value();
+                            mem = Long.parseLong(values[0]) / MemoryUnit.MEGABYTE.value();
                             break;
                         }
                     }
@@ -349,7 +349,7 @@ public abstract class OSRuntimeInfo {
                     for (String message : messages) {
                         if (message.startsWith("total")) {
                             String[] values = message.replace("total", "").trim().split(" ");
-                            mem = Long.parseLong(values[1]) / MemoryUnit.GIGABYTE.value();
+                            mem = Long.parseLong(values[1]) / MemoryUnit.MEGABYTE.value();
                             break;
                         }
                     }
