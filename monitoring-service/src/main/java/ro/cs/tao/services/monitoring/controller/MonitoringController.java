@@ -24,7 +24,7 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.MonitoringService;
-import ro.cs.tao.services.model.monitoring.Snapshot;
+import ro.cs.tao.services.model.monitoring.RuntimeInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class MonitoringController extends BaseController {
 
     @RequestMapping(value = "/master", method = RequestMethod.GET)
     public ResponseEntity<?> getMasterSnapshot() {
-        final Snapshot snapshot = monitoringService.getMasterSnapshot();
+        final RuntimeInfo snapshot = monitoringService.getMasterSnapshot();
         if (snapshot == null) {
             return new ResponseEntity<>(new ServiceError("No information available for master node"),
                                         HttpStatus.NO_CONTENT);
@@ -51,7 +51,7 @@ public class MonitoringController extends BaseController {
 
     @RequestMapping(value = "/{host:.+}", method = RequestMethod.GET)
     public ResponseEntity<?> getNodeSnapshot(@PathVariable("host") String host) {
-        final Snapshot snapshot = monitoringService.getNodeSnapshot(host);
+        final RuntimeInfo snapshot = monitoringService.getNodeSnapshot(host);
         if (snapshot == null) {
             return new ResponseEntity<>(new ServiceError("No information available for node ['" + host + "']"),
                                         HttpStatus.NO_CONTENT);

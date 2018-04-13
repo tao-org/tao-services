@@ -26,9 +26,13 @@ import ro.cs.tao.services.orchestration.OrchestratorLauncher;
 import ro.cs.tao.services.progress.ProgressReportLauncher;
 import ro.cs.tao.services.query.DataQueryServiceLauncher;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
 
 /**
  * @author Cosmin Cara
@@ -46,9 +50,24 @@ public class TaoServicesStartup {
             if (!Files.exists(configDirectory)) {
                 Files.createDirectories(configDirectory);
             }
-            final Field field = ConfigurationManager.class.getDeclaredField("configFolder");
+            Field field = ConfigurationManager.class.getDeclaredField("configFolder");
             field.setAccessible(true);
             field.set(null, configDirectory);
+            Path configFile = configDirectory.resolve("tao.properties");
+            if (!Files.exists(configFile)) {
+                byte[] buffer = new byte[1024];
+                try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream("/ro/cs/tao/configuration/tao.properties"));
+                     OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile))) {
+                    int read;
+                    while ((read = is.read(buffer)) != -1) {
+                        os.write(buffer, 0, read);
+                    }
+                    os.flush();
+                }
+            }
+            field = ConfigurationManager.class.getDeclaredField("settings");
+            field.setAccessible(true);
+            ((Properties) field.get(ConfigurationManager.getInstance())).load(Files.newInputStream(configFile));
         } catch (Exception e){
             e.printStackTrace();
         }
