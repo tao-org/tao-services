@@ -95,7 +95,6 @@ public class OTBDemo extends DemoBase {
         component.setFileLocation("C:\\Tools\\OTB-6.4.0\\bin\\otbcli_RigidTransformResample.bat");
         component.setWorkingDirectory(".");
         component.setNodeAffinity("Any");
-        component.setContainerId("DummyTestDockerContainer");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
 
@@ -141,7 +140,6 @@ public class OTBDemo extends DemoBase {
         component.setFileLocation("C:\\Tools\\OTB-6.4.0\\bin\\otbcli_RadiometricIndices.bat");
         component.setWorkingDirectory(".");
         component.setNodeAffinity("Any");
-        component.setContainerId("DummyTestDockerContainer");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
 

@@ -32,6 +32,7 @@ import ro.cs.tao.services.entity.demo.SNAPDemo;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.utils.Platform;
 import ro.cs.tao.workflow.Status;
 import ro.cs.tao.workflow.Visibility;
 import ro.cs.tao.workflow.WorkflowDescriptor;
@@ -40,6 +41,7 @@ import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Cosmin Cara
@@ -62,37 +64,81 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> initialize() throws PersistenceException {
-        // Initialize container
-        List<Container> containers = containerService.list();
-        Container container;
-        if (containers != null && containers.size() > 0) {
-            container = containers.get(0);
-        } else {
-            container = new Container();
-            container.setName("OTBContainer");
-            container.setTag("For test puproses only");
-            container.setApplicationPath("C:\\Tools\\OTB-6.4.0\\bin");
-            container = persistenceManager.saveContainer(container);
+
+        Platform currentPlatform = Platform.getCurrentPlatform();
+        // Initialize OTB test otbContainer
+        Container otbContainer = null;
+        try {
+            otbContainer = persistenceManager.getContainerById("OTBContainer");
+        } catch (PersistenceException ignored) { }
+        if (otbContainer == null) {
+            otbContainer = new Container();
+            otbContainer.setId(UUID.randomUUID().toString());
+            otbContainer.setName("OTBContainer");
+            otbContainer.setTag("For test puproses only");
+            switch (currentPlatform.getId()) {
+                case win:
+                    otbContainer.setApplicationPath("C:\\Tools\\OTB-6.4.0\\bin");
+                    break;
+                default:
+                    otbContainer.setApplicationPath("/opt/OTB-6.4.0-Linux64/bin/");
+                    break;
+            }
+            otbContainer = persistenceManager.saveContainer(otbContainer);
         }
-        List<Application> applications = container.getApplications();
+        List<Application> applications = otbContainer.getApplications();
         if (applications == null || applications.size() == 0) {
             Application application = new Application();
             application.setName("otb-rigid-transform");
-            application.setPath("C:\\Tools\\OTB-6.4.0\\bin");
-            container.addApplication(application);
+            application.setPath(otbContainer.getApplicationPath());
+            otbContainer.addApplication(application);
             application = new Application();
             application.setName("otb-radiometric-indices");
-            application.setPath("C:\\Tools\\OTB-6.4.0\\bin");
-            container.addApplication(application);
-            persistenceManager.updateContainer(container);
+            application.setPath(otbContainer.getApplicationPath());
+            otbContainer.addApplication(application);
+            persistenceManager.updateContainer(otbContainer);
         }
-        // Initialize Processing components
+        // Initialize SNAP test otbContainer
+        Container snapContainer = null;
+        try {
+            snapContainer = persistenceManager.getContainerById("SNAPContainer");
+        } catch (PersistenceException ignored) { }
+        if (snapContainer == null) {
+            snapContainer = new Container();
+            snapContainer.setId(UUID.randomUUID().toString());
+            snapContainer.setName("SNAPContainer");
+            snapContainer.setTag("For test puproses only");
+            switch (currentPlatform.getId()) {
+                case win:
+                    snapContainer.setApplicationPath("");
+                    break;
+                default:
+                    snapContainer.setApplicationPath("/opt/SNAP-6.0.0-Linux64/bin/");
+                    break;
+            }
+            snapContainer = persistenceManager.saveContainer(snapContainer);
+        }
+        applications = snapContainer.getApplications();
+        if (applications == null || applications.size() == 0) {
+            Application application = new Application();
+            application.setName("snap-ndvi");
+            application.setPath(snapContainer.getApplicationPath());
+            otbContainer.addApplication(application);
+            application = new Application();
+            application.setName("snap-s2rep");
+            application.setPath(snapContainer.getApplicationPath());
+            otbContainer.addApplication(application);
+            persistenceManager.updateContainer(otbContainer);
+        }
+
+        // Initialize OTB processing components
         ProcessingComponent component;
         String componentId = "otb-rigid-transform";
         try {
             component = persistenceManager.getProcessingComponentById(componentId);
         } catch (PersistenceException pex) {
             component = OTBDemo.rigidTransform();
+            component.setContainerId(otbContainer.getId());
             componentService.save(component);
         }
         componentId = "otb-radiometric-indices";
@@ -100,6 +146,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             component = persistenceManager.getProcessingComponentById(componentId);
         } catch (PersistenceException pex) {
             component = OTBDemo.radiometricIndices();
+            component.setContainerId(otbContainer.getId());
             componentService.save(component);
         }
         componentId = "snap-s2rep";
@@ -107,6 +154,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             component = persistenceManager.getProcessingComponentById(componentId);
         } catch (PersistenceException pex) {
             component = SNAPDemo.s2rep();
+            component.setContainerId(snapContainer.getId());
             componentService.save(component);
         }
         componentId = "snap-ndvi";
@@ -114,52 +162,37 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             component = persistenceManager.getProcessingComponentById(componentId);
         } catch (PersistenceException pex) {
             component = SNAPDemo.ndvi();
+            component.setContainerId(snapContainer.getId());
             componentService.save(component);
         }
-        // Initialize data source components
-        /*DataSourceManager dataSourceManager = DataSourceManager.getInstance();
-        SortedSet<String> sensors = dataSourceManager.getSupportedSensors();
-        for (String sensor : sensors) {
-            List<String> names = dataSourceManager.getNames(sensor);
-            for (String name : names) {
-                DataSource dataSource = dataSourceManager.get(sensor, name);
-                DataSourceComponent dsComponent = new DataSourceComponent(sensor, name);
-                dsComponent.setId(sensor + "-" + name);
-                dsComponent.setUserName("admin");
-                dsComponent.setFetchMode(FetchMode.OVERWRITE);
-                dsComponent.setMaxRetries(1);
-                dsComponent.setAuthors("TAO Team");
-                dsComponent.setDescription(dataSource.getId());
-                dsComponent.setLabel("Query Component");
-                dsComponent.setVersion("1.0");
-                TargetDescriptor targetDescriptor = new TargetDescriptor();
-                //targetDescriptor.setName("results");
-                DataDescriptor dataDescriptor = new DataDescriptor();
-                dataDescriptor.setSensorType(sensor.equals("Sentinel1") ? SensorType.RADAR : SensorType.OPTICAL);
-                dataDescriptor.setFormatType(DataFormat.RASTER);
-                targetDescriptor.setDataDescriptor(dataDescriptor);
-                dsComponent.addTarget(targetDescriptor);
-                persistenceManager.saveDataSourceComponent(dsComponent);
-            }
-        }*/
 
-        // Initialize test workflow
-        WorkflowDescriptor descriptor = new WorkflowDescriptor();
-        descriptor.setName("Test workflow");
-        descriptor.setStatus(Status.DRAFT);
-        descriptor.setCreated(LocalDateTime.now());
-        descriptor.setActive(true);
-        descriptor.setUserName("admin");
-        descriptor.setVisibility(Visibility.PRIVATE);
-        descriptor.setCreated(LocalDateTime.now());
-        addNodes(descriptor);
+        // Initialize test workflows
+        WorkflowDescriptor descriptor1 = new WorkflowDescriptor();
+        descriptor1.setName("SNAP NDVI + OTB RESAMPLE workflow");
+        descriptor1.setStatus(Status.DRAFT);
+        descriptor1.setCreated(LocalDateTime.now());
+        descriptor1.setActive(true);
+        descriptor1.setUserName("admin");
+        descriptor1.setVisibility(Visibility.PRIVATE);
+        descriptor1.setCreated(LocalDateTime.now());
+        addNodes1(descriptor1);
+        persistenceManager.saveWorkflowDescriptor(descriptor1);
 
-        persistenceManager.saveWorkflowDescriptor(descriptor);
+        WorkflowDescriptor descriptor2 = new WorkflowDescriptor();
+        descriptor2.setName("SNAP NDVI + OTB RESAMPLE workflow");
+        descriptor2.setStatus(Status.DRAFT);
+        descriptor2.setCreated(LocalDateTime.now());
+        descriptor2.setActive(true);
+        descriptor2.setUserName("admin");
+        descriptor2.setVisibility(Visibility.PRIVATE);
+        descriptor2.setCreated(LocalDateTime.now());
+        addNodes1(descriptor2);
+        persistenceManager.saveWorkflowDescriptor(descriptor2);
 
-        return new ResponseEntity<>(descriptor, HttpStatus.OK);
+        return new ResponseEntity<>(new WorkflowDescriptor[] { descriptor1, descriptor2 }, HttpStatus.OK);
     }
 
-    private void addNodes(WorkflowDescriptor parent) throws PersistenceException {
+    private void addNodes1(WorkflowDescriptor parent) throws PersistenceException {
         List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
@@ -185,6 +218,37 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         ArrayList<ComponentLink> links = new ArrayList<>();
         ComponentLink link = new ComponentLink(component1.getTargets().get(0),
                                                component2.getSources().get(0));
+        links.add(link);
+        node2.setIncomingLinks(links);
+        parent.setNodes(nodes);
+    }
+
+    private void addNodes2(WorkflowDescriptor parent) throws PersistenceException {
+        List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
+        WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
+        node1.setWorkflow(parent);
+        node1.setName("Node-3");
+        node1.setxCoord(100);
+        node1.setyCoord(100);
+        node1.setComponentId("otb-radiometric-indices");
+        node1.addCustomValue("list", "Vegetation:RVI");
+        node1.setCreated(LocalDateTime.now());
+        nodes.add(node1);
+        WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
+        node2.setWorkflow(parent);
+        node2.setName("Node-4");
+        node2.setxCoord(300);
+        node2.setyCoord(100);
+        node2.setComponentId("otb-rigid-transform");
+        node2.addCustomValue("transformTypeIdScaleX", "0.5");
+        node2.addCustomValue("transformTypeIdScaleY", "0.5");
+        node2.setCreated(LocalDateTime.now());
+        nodes.add(node2);
+        ProcessingComponent component1 = componentService.findById(node1.getComponentId());
+        ProcessingComponent component2 = componentService.findById(node2.getComponentId());
+        ArrayList<ComponentLink> links = new ArrayList<>();
+        ComponentLink link = new ComponentLink(component1.getTargets().get(0),
+                component2.getSources().get(0));
         links.add(link);
         node2.setIncomingLinks(links);
         parent.setNodes(nodes);

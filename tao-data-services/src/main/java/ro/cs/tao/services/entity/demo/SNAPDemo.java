@@ -90,7 +90,6 @@ public class SNAPDemo extends DemoBase {
         component.setFileLocation("gpt.exe");
         component.setWorkingDirectory(".");
         component.setNodeAffinity("Any");
-        component.setContainerId("DummyTestDockerContainer");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
 
@@ -138,7 +137,6 @@ public class SNAPDemo extends DemoBase {
         component.setFileLocation("gpt.exe");
         component.setWorkingDirectory(".");
         component.setNodeAffinity("Any");
-        component.setContainerId("DummyTestDockerContainer");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
 
