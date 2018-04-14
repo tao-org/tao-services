@@ -20,11 +20,17 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.data.jsonutil.JacksonUtil;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.services.entity.controllers.ContainerController;
 import ro.cs.tao.services.interfaces.ContainerService;
+import ro.cs.tao.utils.Platform;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -94,6 +100,49 @@ public class ContainerServiceImpl
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
         }
+    }
+
+    @Override
+    public Container initOTB(String path) {
+        List<Container> containers = persistenceManager.getContainers();
+        boolean isWin = Platform.getCurrentPlatform().getId().equals(Platform.ID.win);
+        Container otbContainer = null;
+        if (containers == null || containers.stream().noneMatch(c -> c.getName().equals("OTB-6.4.0"))) {
+            otbContainer = new Container();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("otb_container.json")))) {
+                String str = String.join("", reader.lines().collect(Collectors.toList()));
+                otbContainer = JacksonUtil.fromString(str, Container.class);
+                otbContainer.setApplicationPath(path);
+                otbContainer.getApplications().forEach(a -> {
+                    if (a.getPath() == null) {
+                        a.setPath(a.getName());
+                    }
+                    if (isWin && !a.getPath().endsWith(".bat")) {
+                        a.setPath(a.getPath() + ".bat");
+                    }
+                });
+                otbContainer = persistenceManager.saveContainer(otbContainer);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            otbContainer = containers.stream().filter(c -> c.getName().equals("OTB-6.4.0")).findFirst().orElse(null);
+            try {
+                otbContainer.setApplicationPath(path);
+                otbContainer.getApplications().forEach(a -> {
+                    if (a.getPath() == null) {
+                        a.setPath(a.getName());
+                    }
+                    if (isWin && !a.getPath().endsWith(".bat")) {
+                        a.setPath(a.getPath() + ".bat");
+                    }
+                });
+                otbContainer = persistenceManager.updateContainer(otbContainer);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return otbContainer;
     }
 
     @Override

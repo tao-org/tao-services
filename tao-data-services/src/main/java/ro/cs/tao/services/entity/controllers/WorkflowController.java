@@ -69,35 +69,14 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         // Initialize OTB test otbContainer
         Container otbContainer = null;
         try {
-            otbContainer = persistenceManager.getContainerById("OTBContainer");
+            otbContainer = persistenceManager.getContainerById("690d6747-7b76-4290-bb5d-87d775b5d23a");
         } catch (PersistenceException ignored) { }
         if (otbContainer == null) {
-            otbContainer = new Container();
-            otbContainer.setId(UUID.randomUUID().toString());
-            otbContainer.setName("OTBContainer");
-            otbContainer.setTag("For test puproses only");
-            switch (currentPlatform.getId()) {
-                case win:
-                    otbContainer.setApplicationPath("C:\\Tools\\OTB-6.4.0\\bin");
-                    break;
-                default:
-                    otbContainer.setApplicationPath("/opt/OTB-6.4.0-Linux64/bin/");
-                    break;
-            }
-            otbContainer = persistenceManager.saveContainer(otbContainer);
+            String otbPath = currentPlatform.getId().equals(Platform.ID.win) ?
+                    "C:\\Tools\\OTB-6.4.0\\bin" : "/opt/OTB-6.4.0-Linux64/bin/";
+            otbContainer = containerService.initOTB(otbPath);
         }
-        List<Application> applications = otbContainer.getApplications();
-        if (applications == null || applications.size() == 0) {
-            Application application = new Application();
-            application.setName("otb-rigid-transform");
-            application.setPath(otbContainer.getApplicationPath());
-            otbContainer.addApplication(application);
-            application = new Application();
-            application.setName("otb-radiometric-indices");
-            application.setPath(otbContainer.getApplicationPath());
-            otbContainer.addApplication(application);
-            persistenceManager.updateContainer(otbContainer);
-        }
+
         // Initialize SNAP test otbContainer
         Container snapContainer = null;
         try {
@@ -118,35 +97,33 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             }
             snapContainer = persistenceManager.saveContainer(snapContainer);
         }
-        applications = snapContainer.getApplications();
+        List<Application> applications = snapContainer.getApplications();
         if (applications == null || applications.size() == 0) {
             Application application = new Application();
             application.setName("snap-ndvi");
             application.setPath(snapContainer.getApplicationPath());
-            otbContainer.addApplication(application);
+            snapContainer.addApplication(application);
             application = new Application();
             application.setName("snap-s2rep");
             application.setPath(snapContainer.getApplicationPath());
-            otbContainer.addApplication(application);
-            persistenceManager.updateContainer(otbContainer);
+            snapContainer.addApplication(application);
+            persistenceManager.updateContainer(snapContainer);
         }
 
         // Initialize OTB processing components
         ProcessingComponent component;
-        String componentId = "otb-rigid-transform";
+        String componentId = "otbcli_RigidTransformResample";
         try {
             component = persistenceManager.getProcessingComponentById(componentId);
         } catch (PersistenceException pex) {
-            component = OTBDemo.rigidTransform();
-            component.setContainerId(otbContainer.getId());
+            component = OTBDemo.rigidTransform(otbContainer);
             componentService.save(component);
         }
-        componentId = "otb-radiometric-indices";
+        componentId = "otbcli_RadiometricIndices";
         try {
             component = persistenceManager.getProcessingComponentById(componentId);
         } catch (PersistenceException pex) {
-            component = OTBDemo.radiometricIndices();
-            component.setContainerId(otbContainer.getId());
+            component = OTBDemo.radiometricIndices(otbContainer);
             componentService.save(component);
         }
         componentId = "snap-s2rep";
@@ -208,7 +185,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node2.setName("Node-2");
         node2.setxCoord(300);
         node2.setyCoord(100);
-        node2.setComponentId("otb-rigid-transform");
+        node2.setComponentId("otbcli_RigidTransformResample");
         node2.addCustomValue("transformTypeIdScaleX", "0.5");
         node2.addCustomValue("transformTypeIdScaleY", "0.5");
         node2.setCreated(LocalDateTime.now());
@@ -230,7 +207,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node1.setName("Node-3");
         node1.setxCoord(100);
         node1.setyCoord(100);
-        node1.setComponentId("otb-radiometric-indices");
+        node1.setComponentId("otbcli_RadiometricIndices");
         node1.addCustomValue("list", "Vegetation:RVI");
         node1.setCreated(LocalDateTime.now());
         nodes.add(node1);
@@ -239,7 +216,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node2.setName("Node-4");
         node2.setxCoord(300);
         node2.setyCoord(100);
-        node2.setComponentId("otb-rigid-transform");
+        node2.setComponentId("otbcli_RigidTransformResample");
         node2.addCustomValue("transformTypeIdScaleX", "0.5");
         node2.addCustomValue("transformTypeIdScaleY", "0.5");
         node2.setCreated(LocalDateTime.now());

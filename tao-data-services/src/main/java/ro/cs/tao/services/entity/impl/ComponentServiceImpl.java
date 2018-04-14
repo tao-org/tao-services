@@ -180,8 +180,9 @@ public class ComponentServiceImpl
             if (container != null) {
                 List<Application> applications = container.getApplications();
                 String v = value;
+                final Container c = container;
                 if (applications != null &&
-                        applications.stream().noneMatch(a -> v.equals(a.getPath()) || v.equals(Paths.get(a.getPath(), a.getName()).toString()))) {
+                        applications.stream().noneMatch(a -> v.equals(a.getPath()) || v.equals(Paths.get(c.getApplicationPath(), a.getName()).toString()))) {
                     errors.add("[fileLocation] has an invalid value");
                 }
             }
