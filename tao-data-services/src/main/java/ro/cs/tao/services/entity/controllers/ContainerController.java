@@ -15,15 +15,21 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.TopologyManager;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -32,6 +38,13 @@ import java.util.List;
 @Controller
 @RequestMapping("/docker")
 public class ContainerController extends DataEntityController<Container, ContainerService> {
+
+    @Autowired
+    private PersistenceManager persistenceManager;
+
+    @Autowired
+    private ContainerService containerService;
+
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public ResponseEntity<List<Container>> list() {
@@ -40,5 +53,10 @@ public class ContainerController extends DataEntityController<Container, Contain
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         return new ResponseEntity<>(objects, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/initotb", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> initialize(@RequestBody String otbPath) throws UnsupportedEncodingException {
+        return new ResponseEntity<>(containerService.initOTB(URLDecoder.decode(otbPath, StandardCharsets.UTF_8.toString())), HttpStatus.OK);
     }
 }

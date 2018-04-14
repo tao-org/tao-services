@@ -94,7 +94,7 @@ public class SNAPDemo extends DemoBase {
         component.addSource(sourceDescriptor);
 
         TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
-                "file:///D:/img/out/output_" + component.getId() + ".tif");
+                "file:///D:/img/out/output_" + component.getId() + ".tiff");
         component.addTarget(targetDescriptor);
 
         component.setParameterDescriptors(parameters);
@@ -141,7 +141,7 @@ public class SNAPDemo extends DemoBase {
         component.addSource(sourceDescriptor);
 
         TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
-                "file:///D:/img/out/output_" + component.getId() + ".tif");
+                "file:///D:/img/out/output_" + component.getId() + ".tiff");
         component.addTarget(targetDescriptor);
 
         component.setParameterDescriptors(parameters);

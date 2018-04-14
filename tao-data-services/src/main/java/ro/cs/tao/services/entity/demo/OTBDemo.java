@@ -20,15 +20,18 @@ import ro.cs.tao.component.*;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateType;
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.enums.DataFormat;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 public class OTBDemo extends DemoBase {
 
-    public static ProcessingComponent rigidTransform() {
+    public static ProcessingComponent rigidTransform(Container container) {
         ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
         parameters.add(newParameter("transformType", "transform.type",
                                     String.class,
@@ -83,23 +86,23 @@ public class OTBDemo extends DemoBase {
         SourceDescriptor sourceDescriptor = newSourceDescriptor("in", DataFormat.RASTER);
 
         Set<Variable> variables = new HashSet<>();
-        variables.add(new Variable("ITK_AUTOLOAD_PATH", "C:\\Tools\\OTB-6.4.0\\bin"));
+        variables.add(new Variable("ITK_AUTOLOAD_PATH", container.getApplicationPath()));
 
         ProcessingComponent component = new ProcessingComponent();
-        component.setId("otb-rigid-transform");
+        component.setId("otbcli_RigidTransformResample");
         component.setLabel("OTB Rigid Transform Resample");
         component.setDescription("Resamples an image with a rigid transform");
         component.setVersion("6.4.0");
         component.setAuthors("OTB Team");
         component.setCopyright("(C) OTB Team");
-        component.setFileLocation("C:\\Tools\\OTB-6.4.0\\bin\\otbcli_RigidTransformResample.bat");
+        component.setFileLocation(container.getApplications().stream().filter(a -> component.getId().equals(a.getName())).findFirst().get().getPath());
         component.setWorkingDirectory(".");
         component.setNodeAffinity("Any");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
-
+        String rootPath = ConfigurationManager.getInstance().getValue("product.location");
         TargetDescriptor targetDescriptor = newTargetDescriptor("out", DataFormat.RASTER,
-                                                                "file:///D:/img/out/output_" + component.getId() + ".tif");
+                Paths.get(rootPath).resolve("output_" + component.getId() + ".tiff").toUri().toString());
         component.addTarget(targetDescriptor);
 
         component.setParameterDescriptors(parameters);
@@ -109,10 +112,11 @@ public class OTBDemo extends DemoBase {
         component.setTemplateType(TemplateType.VELOCITY);
         component.setTemplate(template);
         component.setActive(true);
+        component.setContainerId(container.getId());
         return component;
     }
 
-    public static ProcessingComponent radiometricIndices() {
+    public static ProcessingComponent radiometricIndices(Container container) {
         ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
         parameters.add(newParameter("channelsBlue", "channels.blue", Integer.class, 1, "Blue Channel"));
         parameters.add(newParameter("channelsGreen", "channels.green", Integer.class, 1, "Green Channel"));
@@ -128,23 +132,23 @@ public class OTBDemo extends DemoBase {
         SourceDescriptor sourceDescriptor = newSourceDescriptor("in", DataFormat.RASTER);
 
         Set<Variable> variables = new HashSet<>();
-        variables.add(new Variable("ITK_AUTOLOAD_PATH", "C:\\Tools\\OTB-6.4.0\\bin"));
+        variables.add(new Variable("ITK_AUTOLOAD_PATH", container.getApplicationPath()));
 
         ProcessingComponent component = new ProcessingComponent();
-        component.setId("otb-radiometric-indices");
+        component.setId("otbcli_RadiometricIndices");
         component.setLabel("OTB Radiometric Indies");
         component.setDescription("Computes radiometric indices");
         component.setVersion("6.4.0");
         component.setAuthors("OTB Team");
         component.setCopyright("(C) OTB Team");
-        component.setFileLocation("C:\\Tools\\OTB-6.4.0\\bin\\otbcli_RadiometricIndices.bat");
+        component.setFileLocation(container.getApplications().stream().filter(a -> component.getId().equals(a.getName())).findFirst().get().getPath());
         component.setWorkingDirectory(".");
         component.setNodeAffinity("Any");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
-
+        String rootPath = ConfigurationManager.getInstance().getValue("product.location");
         TargetDescriptor targetDescriptor = newTargetDescriptor("out", DataFormat.RASTER,
-                                                                "file:///D:/img/out/output_" + component.getId() + ".tif");
+                Paths.get(rootPath).resolve("output_" + component.getId() + ".tiff").toUri().toString());
         component.addTarget(targetDescriptor);
         component.setParameterDescriptors(parameters);
 
@@ -154,6 +158,7 @@ public class OTBDemo extends DemoBase {
         component.setTemplateType(TemplateType.VELOCITY);
         component.setTemplate(template);
         component.setActive(true);
+        component.setContainerId(container.getId());
         return component;
     }
 }
