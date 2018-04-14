@@ -25,12 +25,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.execution.ExecutionException;
+import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.orchestration.beans.ServiceTask;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,8 +48,8 @@ public class OrchestrationController extends BaseController {
     public ResponseEntity<?> start(@PathVariable("id") long workflowId,
                                    @RequestBody Map<String, String> input) {
         try {
-            orchestrationService.startWorkflow(workflowId, input);
-            return new ResponseEntity<>("Execution started", HttpStatus.OK);
+            long jobId = orchestrationService.startWorkflow(workflowId, input);
+            return new ResponseEntity<>(String.format("Execution started [job = %s]", jobId), HttpStatus.OK);
         } catch (ExecutionException ex) {
             return new ResponseEntity<>(String.format("Execution cannot be started: %s", ex.getMessage()),
                                         HttpStatus.OK);
@@ -97,5 +99,14 @@ public class OrchestrationController extends BaseController {
                                                             t.getResourceId(), t.getExecutionNodeHostName(),
                                                             t.getStartTime())).collect(Collectors.toList()),
                                     HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/{jobId}", method = RequestMethod.GET)
+    public ResponseEntity<Map<Long, ExecutionStatus>> getJobTaskStatuses(@PathVariable("jobId") long jobId) {
+        Map<Long, ExecutionStatus> tasks = orchestrationService.getTasksStatus(jobId);
+        if (tasks == null) {
+            tasks = new HashMap<>();
+        }
+        return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
 }

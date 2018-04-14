@@ -19,6 +19,8 @@ package ro.cs.tao.services.orchestration.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.execution.ExecutionException;
+import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -27,6 +29,7 @@ import ro.cs.tao.services.interfaces.OrchestratorService;
 import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service("orchestrationService")
 public class OrchestrationServiceImpl implements OrchestratorService {
@@ -35,8 +38,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     private PersistenceManager persistenceManager;
 
     @Override
-    public void startWorkflow(long workflowId, Map<String, String> inputs) throws ExecutionException {
-        Orchestrator.getInstance().startWorkflow(workflowId, inputs);
+    public long startWorkflow(long workflowId, Map<String, String> inputs) throws ExecutionException {
+        return Orchestrator.getInstance().startWorkflow(workflowId, inputs);
     }
 
     @Override
@@ -57,6 +60,15 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Override
     public List<ExecutionTask> getRunningTasks() {
         return persistenceManager.getRunningTasks();
+    }
+
+    @Override
+    public Map<Long, ExecutionStatus> getTasksStatus(long jobId) {
+        ExecutionJob job = persistenceManager.getJobById(jobId);
+        return job != null ?
+            job.getTasks().stream().collect(Collectors.toMap(ExecutionTask::getId, ExecutionTask::getExecutionStatus)) :
+                null;
+
     }
 
     @PostConstruct
