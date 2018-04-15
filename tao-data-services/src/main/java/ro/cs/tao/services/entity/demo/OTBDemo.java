@@ -31,6 +31,10 @@ import java.util.Set;
 
 public class OTBDemo extends DemoBase {
 
+    private static final String OTB_COPYRIGHT = "(C) CNES Apache License";
+    private static final String OTB_AUTHORS = "OTB Team";
+    private static final String OTB_VERSION = "6.4.0";
+
     public static ProcessingComponent rigidTransform(Container container) {
         ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
         parameters.add(newParameter("transformType", "transform.type",
@@ -92,9 +96,9 @@ public class OTBDemo extends DemoBase {
         component.setId("otbcli_RigidTransformResample");
         component.setLabel("OTB Rigid Transform Resample");
         component.setDescription("Resamples an image with a rigid transform");
-        component.setVersion("6.4.0");
-        component.setAuthors("OTB Team");
-        component.setCopyright("(C) OTB Team");
+        component.setVersion(OTB_VERSION);
+        component.setAuthors(OTB_AUTHORS);
+        component.setCopyright(OTB_COPYRIGHT);
         component.setFileLocation(container.getApplications().stream().filter(a -> component.getId().equals(a.getName())).findFirst().get().getPath());
         component.setWorkingDirectory(".");
         component.setNodeAffinity("Any");
@@ -138,9 +142,9 @@ public class OTBDemo extends DemoBase {
         component.setId("otbcli_RadiometricIndices");
         component.setLabel("OTB Radiometric Indies");
         component.setDescription("Computes radiometric indices");
-        component.setVersion("6.4.0");
-        component.setAuthors("OTB Team");
-        component.setCopyright("(C) OTB Team");
+        component.setVersion(OTB_VERSION);
+        component.setAuthors(OTB_AUTHORS);
+        component.setCopyright(OTB_COPYRIGHT);
         component.setFileLocation(container.getApplications().stream().filter(a -> component.getId().equals(a.getName())).findFirst().get().getPath());
         component.setWorkingDirectory(".");
         component.setNodeAffinity("Any");
@@ -153,6 +157,45 @@ public class OTBDemo extends DemoBase {
         component.setParameterDescriptors(parameters);
 
         Template template = newTemplate("otb-radiometric-indices.vm", null, component, "\n");
+
+        component.setVariables(variables);
+        component.setTemplateType(TemplateType.VELOCITY);
+        component.setTemplate(template);
+        component.setActive(true);
+        component.setContainerId(container.getId());
+        return component;
+    }
+
+    public static ProcessingComponent concatenateImages(Container container) {
+        ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
+        parameters.add(newParameter("progress", "progress", Boolean.class, true, "Report progress"));
+
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("il", DataFormat.RASTER);
+
+        Set<Variable> variables = new HashSet<>();
+        variables.add(new Variable("ITK_AUTOLOAD_PATH", container.getApplicationPath()));
+
+        ProcessingComponent component = new ProcessingComponent();
+        component.setId("otbcli_ConcatenateImages");
+        component.setLabel("OTB Concatenate Images");
+        component.setDescription("Concatenates a list of images of the same size into a single multi-channel one");
+        component.setVersion(OTB_VERSION);
+        component.setAuthors(OTB_AUTHORS);
+        component.setCopyright(OTB_COPYRIGHT);
+        component.setFileLocation(container.getApplications().stream().filter(a -> component.getId().equals(a.getName())).findFirst().get().getPath());
+        component.setWorkingDirectory(".");
+        component.setNodeAffinity("Any");
+        component.setVisibility(ProcessingComponentVisibility.SYSTEM);
+        component.addSource(sourceDescriptor);
+        // the input is a list
+        component.setSourceCardinality(0);
+        String rootPath = ConfigurationManager.getInstance().getValue("product.location");
+        TargetDescriptor targetDescriptor = newTargetDescriptor("out", DataFormat.RASTER,
+                Paths.get(rootPath).resolve("output_" + component.getId() + ".tiff").toUri().toString());
+        component.addTarget(targetDescriptor);
+        component.setParameterDescriptors(parameters);
+
+        Template template = newTemplate("otb-concatenate-images.vm", null, component, "\n");
 
         component.setVariables(variables);
         component.setTemplateType(TemplateType.VELOCITY);
