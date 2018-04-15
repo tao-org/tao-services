@@ -56,7 +56,12 @@ public class ContainerController extends DataEntityController<Container, Contain
     }
 
     @RequestMapping(value = "/initotb", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<?> initialize(@RequestBody String otbPath) throws UnsupportedEncodingException {
+    public ResponseEntity<?> initOtb(@RequestBody String otbPath) throws UnsupportedEncodingException {
         return new ResponseEntity<>(containerService.initOTB(URLDecoder.decode(otbPath, StandardCharsets.UTF_8.toString())), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/initsnap", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> initSnap(@RequestBody String snapPath) throws UnsupportedEncodingException {
+        return new ResponseEntity<>(containerService.initSNAP(URLDecoder.decode(snapPath, StandardCharsets.UTF_8.toString())), HttpStatus.OK);
     }
 }

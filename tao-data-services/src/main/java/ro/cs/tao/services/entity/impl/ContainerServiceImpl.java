@@ -145,6 +145,48 @@ public class ContainerServiceImpl
         return otbContainer;
     }
 
+    public Container initSNAP(String path) {
+        List<Container> containers = persistenceManager.getContainers();
+        boolean isWin = Platform.getCurrentPlatform().getId().equals(Platform.ID.win);
+        Container snapContainer;
+        if (containers == null || containers.stream().noneMatch(c -> c.getName().equals("SNAP-6.0.0"))) {
+            snapContainer = new Container();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("snap_container.json")))) {
+                String str = String.join("", reader.lines().collect(Collectors.toList()));
+                snapContainer = JacksonUtil.fromString(str, Container.class);
+                snapContainer.setApplicationPath(path);
+                snapContainer.getApplications().forEach(a -> {
+                    if (a.getPath() == null) {
+                        a.setPath("gpt");
+                    }
+                    if (isWin && !a.getPath().endsWith(".exe")) {
+                        a.setPath(a.getPath() + ".exe");
+                    }
+                });
+                snapContainer = persistenceManager.saveContainer(snapContainer);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            snapContainer = containers.stream().filter(c -> c.getName().equals("SNAP-6.0.0")).findFirst().orElse(null);
+            try {
+                snapContainer.setApplicationPath(path);
+                snapContainer.getApplications().forEach(a -> {
+                    if (a.getPath() == null) {
+                        a.setPath(a.getName());
+                    }
+                    if (isWin && !a.getPath().endsWith(".bat")) {
+                        a.setPath(a.getPath() + ".bat");
+                    }
+                });
+                snapContainer = persistenceManager.updateContainer(snapContainer);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return snapContainer;
+    }
+
     @Override
     protected void validateFields(Container entity, List<String> errors) {
         String value = entity.getId();

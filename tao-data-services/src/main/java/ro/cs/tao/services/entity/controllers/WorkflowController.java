@@ -41,7 +41,6 @@ import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * @author Cosmin Cara
@@ -80,22 +79,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         // Initialize SNAP test otbContainer
         Container snapContainer = null;
         try {
-            snapContainer = persistenceManager.getContainerById("SNAPContainer");
+            snapContainer = persistenceManager.getContainerById("caefe468-3830-45ba-a7b8-053397460899");
         } catch (PersistenceException ignored) { }
         if (snapContainer == null) {
-            snapContainer = new Container();
-            snapContainer.setId(UUID.randomUUID().toString());
-            snapContainer.setName("SNAPContainer");
-            snapContainer.setTag("For test puproses only");
-            switch (currentPlatform.getId()) {
-                case win:
-                    snapContainer.setApplicationPath("");
-                    break;
-                default:
-                    snapContainer.setApplicationPath("/opt/SNAP-6.0.0-Linux64/bin");
-                    break;
-            }
-            snapContainer = persistenceManager.saveContainer(snapContainer);
+            String snapPath = currentPlatform.getId().equals(Platform.ID.win) ?
+                    "" : "/opt/SNAP-6.0.0-Linux64/bin";
+            snapContainer = containerService.initSNAP(snapPath);
         }
         List<Application> applications = snapContainer.getApplications();
         if (applications == null || applications.size() == 0) {
@@ -105,6 +94,14 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             snapContainer.addApplication(application);
             application = new Application();
             application.setName("snap-s2rep");
+            application.setPath(snapContainer.getApplicationPath());
+            snapContainer.addApplication(application);
+            application = new Application();
+            application.setName("snap-msavi");
+            application.setPath(snapContainer.getApplicationPath());
+            snapContainer.addApplication(application);
+            application = new Application();
+            application.setName("snap-resample");
             application.setPath(snapContainer.getApplicationPath());
             snapContainer.addApplication(application);
             persistenceManager.updateContainer(snapContainer);
@@ -151,6 +148,22 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             component.setContainerId(snapContainer.getId());
             componentService.save(component);
         }
+        componentId = "snap-msavi";
+        try {
+            component = persistenceManager.getProcessingComponentById(componentId);
+        } catch (PersistenceException pex) {
+            component = SNAPDemo.msavi();
+            component.setContainerId(snapContainer.getId());
+            componentService.save(component);
+        }
+        componentId = "snap-resample";
+        try {
+            component = persistenceManager.getProcessingComponentById(componentId);
+        } catch (PersistenceException pex) {
+            component = SNAPDemo.resample();
+            component.setContainerId(snapContainer.getId());
+            componentService.save(component);
+        }
 
         // Initialize test workflows
         // Workflow 1: SNAP NDVI -> OTB RESAMPLE
@@ -189,8 +202,19 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         addNodes3(descriptor3);
         persistenceManager.updateWorkflowDescriptor(descriptor3);
 
+        // Workflow 4: SNAP Resample -> {SNAP NDVI + SNAP MSAVI} -> OTB CONCATENATE
+        WorkflowDescriptor descriptor4 = new WorkflowDescriptor();
+        descriptor4.setName("SNAP Resample, NDVI, MSAVI and OTB Concatenate");
+        descriptor4.setStatus(Status.DRAFT);
+        descriptor4.setCreated(LocalDateTime.now());
+        descriptor4.setActive(true);
+        descriptor4.setUserName("admin");
+        descriptor4.setVisibility(Visibility.PRIVATE);
+        descriptor4.setCreated(LocalDateTime.now());
+        addNodes4(descriptor4);
+        persistenceManager.updateWorkflowDescriptor(descriptor4);
 
-        return new ResponseEntity<>(new WorkflowDescriptor[] { descriptor1, descriptor2, descriptor3 }, HttpStatus.OK);
+        return new ResponseEntity<>(new WorkflowDescriptor[] { descriptor1, descriptor2, descriptor3, descriptor4 }, HttpStatus.OK);
     }
 
     private void addNodes1(WorkflowDescriptor parent) throws PersistenceException {
@@ -297,6 +321,78 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         WorkflowNodeDescriptor node4 = new WorkflowNodeDescriptor();
         node4.setWorkflow(parent);
         node4.setName("Node-8");
+        node4.setxCoord(500);
+        node4.setyCoord(100);
+        node4.setComponentId("otbcli_ConcatenateImages");
+        node4.setCreated(LocalDateTime.now());
+        nodes.add(node4);
+
+        parent.setNodes(nodes);
+        persistenceManager.saveWorkflowDescriptor(parent);
+
+        ProcessingComponent component1 = componentService.findById(node1.getComponentId());
+        ProcessingComponent component2 = componentService.findById(node2.getComponentId());
+        ProcessingComponent component3 = componentService.findById(node3.getComponentId());
+        ProcessingComponent component4 = componentService.findById(node4.getComponentId());
+        ArrayList<ComponentLink> links1 = new ArrayList<>();
+        ComponentLink link1 = new ComponentLink(node1.getId(),
+                component1.getTargets().get(0),
+                component2.getSources().get(0));
+        links1.add(link1);
+        node2.setIncomingLinks(links1);
+
+        ArrayList<ComponentLink> links2 = new ArrayList<>();
+        ComponentLink link2 = new ComponentLink(node1.getId(),
+                component1.getTargets().get(0),
+                component3.getSources().get(0));
+        links2.add(link2);
+        node3.setIncomingLinks(links2);
+
+        ArrayList<ComponentLink> links3 = new ArrayList<>();
+        ComponentLink link3 = new ComponentLink(node2.getId(),
+                component2.getTargets().get(0),
+                component4.getSources().get(0));
+        links3.add(link3);
+        ComponentLink link4 = new ComponentLink(node3.getId(),
+                component3.getTargets().get(0),
+                component4.getSources().get(0));
+        links3.add(link4);
+        node4.setIncomingLinks(links3);
+    }
+
+    private void addNodes4(WorkflowDescriptor parent) throws PersistenceException {
+        List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
+        WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
+        node1.setWorkflow(parent);
+        node1.setName("Node-9");
+        node1.setxCoord(100);
+        node1.setyCoord(100);
+        node1.setComponentId("snap-resample");
+        node1.addCustomValue("targetResolution", "60");
+        node1.setCreated(LocalDateTime.now());
+        nodes.add(node1);
+
+        WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
+        node2.setWorkflow(parent);
+        node2.setName("Node-10");
+        node2.setxCoord(300);
+        node2.setyCoord(0);
+        node2.setComponentId("snap-ndvi");
+        node2.setCreated(LocalDateTime.now());
+        nodes.add(node2);
+
+        WorkflowNodeDescriptor node3 = new WorkflowNodeDescriptor();
+        node3.setWorkflow(parent);
+        node3.setName("Node-11");
+        node3.setxCoord(300);
+        node3.setyCoord(300);
+        node3.setComponentId("snap-msavi");
+        node3.setCreated(LocalDateTime.now());
+        nodes.add(node3);
+
+        WorkflowNodeDescriptor node4 = new WorkflowNodeDescriptor();
+        node4.setWorkflow(parent);
+        node4.setName("Node-12");
         node4.setxCoord(500);
         node4.setyCoord(100);
         node4.setComponentId("otbcli_ConcatenateImages");
