@@ -89,7 +89,7 @@ public class SNAPDemo extends DemoBase {
         component.setVersion("6.0.0");
         component.setAuthors("SNAP Team");
         component.setCopyright("(C) SNAP Team");
-        component.setFileLocation("gpt.exe");
+        component.setFileLocation("gpt");
         component.setWorkingDirectory(".");
         component.setNodeAffinity("Any");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
@@ -136,7 +136,7 @@ public class SNAPDemo extends DemoBase {
         component.setVersion("6.0.0");
         component.setAuthors("SNAP Team");
         component.setCopyright("(C) SNAP Team");
-        component.setFileLocation("gpt.exe");
+        component.setFileLocation("gpt");
         component.setWorkingDirectory(".");
         component.setNodeAffinity("Any");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
