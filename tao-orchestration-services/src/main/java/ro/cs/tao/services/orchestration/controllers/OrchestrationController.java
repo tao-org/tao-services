@@ -29,6 +29,7 @@ import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.OrchestratorService;
+import ro.cs.tao.services.orchestration.beans.JobResponse;
 import ro.cs.tao.services.orchestration.beans.ServiceTask;
 
 import java.util.ArrayList;
@@ -45,15 +46,16 @@ public class OrchestrationController extends BaseController {
     private OrchestratorService orchestrationService;
 
     @RequestMapping(value = "/start/{id}", method = RequestMethod.POST)
-    public ResponseEntity<?> start(@PathVariable("id") long workflowId,
+    public ResponseEntity<JobResponse> start(@PathVariable("id") long workflowId,
                                    @RequestBody Map<String, String> input) {
+        JobResponse response = new JobResponse();
         try {
-            long jobId = orchestrationService.startWorkflow(workflowId, input);
-            return new ResponseEntity<>(String.format("Execution started [job = %s]", jobId), HttpStatus.OK);
+            response.setJob(orchestrationService.startWorkflow(workflowId, input));
+            response.setMessage("Execution started");
         } catch (ExecutionException ex) {
-            return new ResponseEntity<>(String.format("Execution cannot be started: %s", ex.getMessage()),
-                                        HttpStatus.OK);
+            response.setMessage(String.format("Execution cannot be started: %s", ex.getMessage()));
         }
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @RequestMapping(value = "/stop/{id}", method = RequestMethod.GET)
     public ResponseEntity<?> stop(@PathVariable("id") long workflowId) {

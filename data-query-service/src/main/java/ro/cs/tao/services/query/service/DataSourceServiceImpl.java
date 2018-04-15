@@ -20,6 +20,7 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.param.ParameterDescriptor;
+import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.serialization.SerializationException;
@@ -85,6 +86,7 @@ public class DataSourceServiceImpl implements DataSourceService {
         if (products != null) {
             DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
             dsComponent.setUserCredentials(query.getUser(), query.getPassword());
+            dsComponent.setFetchMode(FetchMode.OVERWRITE);
             String path = ConfigurationManager.getInstance().getValue("product.location");
             products = dsComponent.doFetch(products, null, path);
         }
