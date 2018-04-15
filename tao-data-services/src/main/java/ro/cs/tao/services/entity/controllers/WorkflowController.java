@@ -170,9 +170,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         // let's have a DataSourceComponent
         componentId = "Sentinel2-Amazon Web Services";
         DataSourceComponent dataSourceComponent;
-        try {
-            dataSourceComponent = persistenceManager.getDataSourceInstance(componentId);
-        } catch (PersistenceException pex) {
+        dataSourceComponent = persistenceManager.getDataSourceInstance(componentId);
+        if (dataSourceComponent == null) {
             dataSourceComponent = new DataSourceComponent("Sentinel2", "Amazon Web Services");
             dataSourceComponent.setFetchMode(FetchMode.OVERWRITE);
             dataSourceComponent.setLabel(dataSourceComponent.getSensorName() + " from " + dataSourceComponent.getDataSourceName());
@@ -400,7 +399,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node1.setWorkflow(parent);
         node1.setName("SNAP Resample");
         node1.setxCoord(300);
-        node1.setyCoord(500);
+        node1.setyCoord(150);
         node1.setComponentId("snap-resample");
         node1.addCustomValue("targetResolution", "60");
         node1.setCreated(LocalDateTime.now());
@@ -409,8 +408,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
         node2.setWorkflow(parent);
         node2.setName("SNAP NDVI");
-        node2.setxCoord(600);
-        node2.setyCoord(150);
+        node2.setxCoord(500);
+        node2.setyCoord(50);
         node2.setComponentId("snap-ndvi");
         node2.setCreated(LocalDateTime.now());
         nodes.add(node2);
@@ -418,8 +417,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         WorkflowNodeDescriptor node3 = new WorkflowNodeDescriptor();
         node3.setWorkflow(parent);
         node3.setName("SNAP MSAVI");
-        node3.setxCoord(600);
-        node3.setyCoord(750);
+        node3.setxCoord(500);
+        node3.setyCoord(250);
         node3.setComponentId("snap-msavi");
         node3.setCreated(LocalDateTime.now());
         nodes.add(node3);
@@ -427,8 +426,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         WorkflowNodeDescriptor node4 = new WorkflowNodeDescriptor();
         node4.setWorkflow(parent);
         node4.setName("OTB Combine");
-        node4.setxCoord(900);
-        node4.setyCoord(600);
+        node4.setxCoord(800);
+        node4.setyCoord(150);
         node4.setComponentId("otbcli_ConcatenateImages");
         node4.setCreated(LocalDateTime.now());
         nodes.add(node4);
