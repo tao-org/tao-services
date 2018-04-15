@@ -106,7 +106,7 @@ public class OTBDemo extends DemoBase {
         component.addSource(sourceDescriptor);
         String rootPath = ConfigurationManager.getInstance().getValue("product.location");
         TargetDescriptor targetDescriptor = newTargetDescriptor("out", DataFormat.RASTER,
-                Paths.get(rootPath).resolve("output_" + component.getId() + ".tiff").toUri().toString());
+                Paths.get(rootPath).resolve("output_" + component.getId() + ".tif").toUri().toString());
         component.addTarget(targetDescriptor);
 
         component.setParameterDescriptors(parameters);
@@ -152,7 +152,7 @@ public class OTBDemo extends DemoBase {
         component.addSource(sourceDescriptor);
         String rootPath = ConfigurationManager.getInstance().getValue("product.location");
         TargetDescriptor targetDescriptor = newTargetDescriptor("out", DataFormat.RASTER,
-                Paths.get(rootPath).resolve("output_" + component.getId() + ".tiff").toUri().toString());
+                Paths.get(rootPath).resolve("output_" + component.getId() + ".tif").toUri().toString());
         component.addTarget(targetDescriptor);
         component.setParameterDescriptors(parameters);
 
@@ -191,7 +191,7 @@ public class OTBDemo extends DemoBase {
         component.setSourceCardinality(0);
         String rootPath = ConfigurationManager.getInstance().getValue("product.location");
         TargetDescriptor targetDescriptor = newTargetDescriptor("out", DataFormat.RASTER,
-                Paths.get(rootPath).resolve("output_" + component.getId() + ".tiff").toUri().toString());
+                Paths.get(rootPath).resolve("output_" + component.getId() + ".tif").toUri().toString());
         component.addTarget(targetDescriptor);
         component.setParameterDescriptors(parameters);
 

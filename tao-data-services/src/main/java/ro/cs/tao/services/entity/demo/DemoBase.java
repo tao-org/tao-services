@@ -22,8 +22,6 @@ import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.eodata.enums.DataFormat;
 
-import java.net.URI;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -90,8 +88,12 @@ public abstract class DemoBase {
         if (targets != null) {
             for (TargetDescriptor targetDescriptor : targets) {
                 builder.append("-").append(targetDescriptor.getName()).append("\n")
-                        .append(Paths.get(URI.create(targetDescriptor.getDataDescriptor().getLocation())).toString());
+                        //.append(Paths.get(URI.create(targetDescriptor.getDataDescriptor().getLocation())).toString());
+                        .append("$").append(targetDescriptor.getName()).append("\n");
             }
+        }
+        if (opName != null) {
+            builder.append("-f\nGeoTIFF\n");
         }
         template.setContents(builder.toString(), false);
         return template;

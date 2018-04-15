@@ -96,7 +96,7 @@ public class SNAPDemo extends DemoBase {
         component.addSource(sourceDescriptor);
         String rootPath = ConfigurationManager.getInstance().getValue("product.location");
         TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
-                Paths.get(rootPath).resolve("output_" + component.getId() + ".tiff").toUri().toString());
+                Paths.get(rootPath).resolve("output_" + component.getId() + ".tif").toUri().toString());
         component.addTarget(targetDescriptor);
 
         component.setParameterDescriptors(parameters);
@@ -143,7 +143,7 @@ public class SNAPDemo extends DemoBase {
         component.addSource(sourceDescriptor);
         String rootPath = ConfigurationManager.getInstance().getValue("product.location");
         TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
-                Paths.get(rootPath).resolve("output_" + component.getId() + ".tiff").toUri().toString());
+                Paths.get(rootPath).resolve("output_" + component.getId() + ".tif").toUri().toString());
         component.addTarget(targetDescriptor);
 
         component.setParameterDescriptors(parameters);
