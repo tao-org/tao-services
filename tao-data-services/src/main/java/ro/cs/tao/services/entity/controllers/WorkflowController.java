@@ -126,6 +126,15 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             component = OTBDemo.radiometricIndices(otbContainer);
             componentService.save(component);
         }
+        componentId = "otbcli_ConcatenateImages";
+        try {
+            component = persistenceManager.getProcessingComponentById(componentId);
+        } catch (PersistenceException pex) {
+            component = OTBDemo.concatenateImages(otbContainer);
+            componentService.save(component);
+        }
+
+        // Initialize SNAP processing components
         componentId = "snap-s2rep";
         try {
             component = persistenceManager.getProcessingComponentById(componentId);
@@ -144,6 +153,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
 
         // Initialize test workflows
+        // Workflow 1: SNAP NDVI -> OTB RESAMPLE
         WorkflowDescriptor descriptor1 = new WorkflowDescriptor();
         descriptor1.setName("SNAP NDVI + OTB RESAMPLE workflow");
         descriptor1.setStatus(Status.DRAFT);
@@ -153,8 +163,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         descriptor1.setVisibility(Visibility.PRIVATE);
         descriptor1.setCreated(LocalDateTime.now());
         addNodes1(descriptor1);
-        persistenceManager.saveWorkflowDescriptor(descriptor1);
+        persistenceManager.updateWorkflowDescriptor(descriptor1);
 
+        // Workflow 1: OTB RI -> OTB RESAMPLE
         WorkflowDescriptor descriptor2 = new WorkflowDescriptor();
         descriptor2.setName("OTB Radiometric Indices + OTB RESAMPLE workflow");
         descriptor2.setStatus(Status.DRAFT);
@@ -164,9 +175,22 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         descriptor2.setVisibility(Visibility.PRIVATE);
         descriptor2.setCreated(LocalDateTime.now());
         addNodes2(descriptor2);
-        persistenceManager.saveWorkflowDescriptor(descriptor2);
+        persistenceManager.updateWorkflowDescriptor(descriptor2);
 
-        return new ResponseEntity<>(new WorkflowDescriptor[] { descriptor1, descriptor2 }, HttpStatus.OK);
+        // Workflow 3: OTB RESAMPLE -> {OTB RI NDVI + OTB RI TNDVI} -> OTB CONCATENATE
+        WorkflowDescriptor descriptor3 = new WorkflowDescriptor();
+        descriptor3.setName("OTB Resample, NDVI, TNDVI and Concatenate");
+        descriptor3.setStatus(Status.DRAFT);
+        descriptor3.setCreated(LocalDateTime.now());
+        descriptor3.setActive(true);
+        descriptor3.setUserName("admin");
+        descriptor3.setVisibility(Visibility.PRIVATE);
+        descriptor3.setCreated(LocalDateTime.now());
+        addNodes3(descriptor3);
+        persistenceManager.updateWorkflowDescriptor(descriptor3);
+
+
+        return new ResponseEntity<>(new WorkflowDescriptor[] { descriptor1, descriptor2, descriptor3 }, HttpStatus.OK);
     }
 
     private void addNodes1(WorkflowDescriptor parent) throws PersistenceException {
@@ -190,14 +214,18 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node2.addCustomValue("transformTypeIdScaleY", "0.5");
         node2.setCreated(LocalDateTime.now());
         nodes.add(node2);
+        parent.setNodes(nodes);
+
+        persistenceManager.saveWorkflowDescriptor(parent);
+
         ProcessingComponent component1 = componentService.findById(node1.getComponentId());
         ProcessingComponent component2 = componentService.findById(node2.getComponentId());
         ArrayList<ComponentLink> links = new ArrayList<>();
-        ComponentLink link = new ComponentLink(component1.getTargets().get(0),
-                                               component2.getSources().get(0));
+        ComponentLink link = new ComponentLink(node1.getId(),
+                                                component1.getTargets().get(0),
+                                                component2.getSources().get(0));
         links.add(link);
         node2.setIncomingLinks(links);
-        parent.setNodes(nodes);
     }
 
     private void addNodes2(WorkflowDescriptor parent) throws PersistenceException {
@@ -221,13 +249,90 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node2.addCustomValue("transformTypeIdScaleY", "0.5");
         node2.setCreated(LocalDateTime.now());
         nodes.add(node2);
+        parent.setNodes(nodes);
+        persistenceManager.saveWorkflowDescriptor(parent);
         ProcessingComponent component1 = componentService.findById(node1.getComponentId());
         ProcessingComponent component2 = componentService.findById(node2.getComponentId());
         ArrayList<ComponentLink> links = new ArrayList<>();
-        ComponentLink link = new ComponentLink(component1.getTargets().get(0),
-                component2.getSources().get(0));
+        ComponentLink link = new ComponentLink(node1.getId(),
+                                                component1.getTargets().get(0),
+                                                component2.getSources().get(0));
         links.add(link);
         node2.setIncomingLinks(links);
+    }
+
+    private void addNodes3(WorkflowDescriptor parent) throws PersistenceException {
+        List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
+        WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
+        node1.setWorkflow(parent);
+        node1.setName("Node-5");
+        node1.setxCoord(100);
+        node1.setyCoord(100);
+        node1.setComponentId("otbcli_RigidTransformResample");
+        node1.addCustomValue("transformTypeIdScaleX", "0.5");
+        node1.addCustomValue("transformTypeIdScaleY", "0.5");
+        node1.setCreated(LocalDateTime.now());
+        nodes.add(node1);
+
+        WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
+        node2.setWorkflow(parent);
+        node2.setName("Node-6");
+        node2.setxCoord(300);
+        node2.setyCoord(0);
+        node2.setComponentId("otbcli_RadiometricIndices");
+        node2.addCustomValue("list", "Vegetation:NDVI");
+        node2.setCreated(LocalDateTime.now());
+        nodes.add(node2);
+
+        WorkflowNodeDescriptor node3 = new WorkflowNodeDescriptor();
+        node3.setWorkflow(parent);
+        node3.setName("Node-7");
+        node3.setxCoord(300);
+        node3.setyCoord(300);
+        node3.setComponentId("otbcli_RadiometricIndices");
+        node3.addCustomValue("list", "Vegetation:TNDVI");
+        node3.setCreated(LocalDateTime.now());
+        nodes.add(node3);
+
+        WorkflowNodeDescriptor node4 = new WorkflowNodeDescriptor();
+        node4.setWorkflow(parent);
+        node4.setName("Node-8");
+        node4.setxCoord(500);
+        node4.setyCoord(100);
+        node4.setComponentId("otbcli_ConcatenateImages");
+        node4.setCreated(LocalDateTime.now());
+        nodes.add(node4);
+
         parent.setNodes(nodes);
+        persistenceManager.saveWorkflowDescriptor(parent);
+
+        ProcessingComponent component1 = componentService.findById(node1.getComponentId());
+        ProcessingComponent component2 = componentService.findById(node2.getComponentId());
+        ProcessingComponent component3 = componentService.findById(node3.getComponentId());
+        ProcessingComponent component4 = componentService.findById(node4.getComponentId());
+        ArrayList<ComponentLink> links1 = new ArrayList<>();
+        ComponentLink link1 = new ComponentLink(node1.getId(),
+                component1.getTargets().get(0),
+                component2.getSources().get(0));
+        links1.add(link1);
+        node2.setIncomingLinks(links1);
+
+        ArrayList<ComponentLink> links2 = new ArrayList<>();
+        ComponentLink link2 = new ComponentLink(node1.getId(),
+                component1.getTargets().get(0),
+                component3.getSources().get(0));
+        links2.add(link2);
+        node3.setIncomingLinks(links2);
+
+        ArrayList<ComponentLink> links3 = new ArrayList<>();
+        ComponentLink link3 = new ComponentLink(node2.getId(),
+                component2.getTargets().get(0),
+                component4.getSources().get(0));
+        links3.add(link3);
+        ComponentLink link4 = new ComponentLink(node3.getId(),
+                component3.getTargets().get(0),
+                component4.getSources().get(0));
+        links3.add(link4);
+        node4.setIncomingLinks(links3);
     }
 }
