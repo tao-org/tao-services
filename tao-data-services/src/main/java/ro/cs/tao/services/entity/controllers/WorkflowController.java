@@ -73,7 +73,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         } catch (PersistenceException ignored) { }
         if (otbContainer == null) {
             String otbPath = currentPlatform.getId().equals(Platform.ID.win) ?
-                    "C:\\Tools\\OTB-6.4.0\\bin" : "/opt/OTB-6.4.0-Linux64/bin/";
+                    "C:\\Tools\\OTB-6.4.0\\bin" : "/opt/OTB-6.4.0-Linux64/bin";
             otbContainer = containerService.initOTB(otbPath);
         }
 
@@ -92,7 +92,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                     snapContainer.setApplicationPath("");
                     break;
                 default:
-                    snapContainer.setApplicationPath("/opt/SNAP-6.0.0-Linux64/bin/");
+                    snapContainer.setApplicationPath("/opt/SNAP-6.0.0-Linux64/bin");
                     break;
             }
             snapContainer = persistenceManager.saveContainer(snapContainer);
