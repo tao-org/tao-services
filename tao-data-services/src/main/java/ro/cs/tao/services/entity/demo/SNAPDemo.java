@@ -72,7 +72,7 @@ public class SNAPDemo extends DemoBase {
                 "The red band (B6) for the S2REP computation. If not provided, the operator will try to find the best fitting band"));
         parameters.add(newParameter("resampleType", "PresampleType",
                 String.class,
-                "Lowest resolution",
+                "None",
                 "If selected bands differ in size, the resample method used before computing the index",
                 "None", "Lowest resolution", "Highest resolution"));
         parameters.add(newParameter("upsampling", "Pupsampling",
@@ -84,7 +84,7 @@ public class SNAPDemo extends DemoBase {
 
         ProcessingComponent component = new ProcessingComponent();
         component.setId("snap-s2rep");
-        component.setLabel("Sentinel-2 red-edge position index");
+        component.setLabel("SNAP S2Rep Index");
         component.setDescription("Sentinel-2 red-edge position index");
         component.setVersion("6.0.0");
         component.setAuthors("SNAP Team");
@@ -102,6 +102,72 @@ public class SNAPDemo extends DemoBase {
         component.setParameterDescriptors(parameters);
 
         Template template = newTemplate("snap-s2rep.vm", "S2repOp", component, "=");
+
+        component.setTemplateType(TemplateType.VELOCITY);
+        component.setTemplate(template);
+        component.setActive(true);
+        return component;
+    }
+
+    public static ProcessingComponent msavi() {
+        ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
+        parameters.add(newParameter("downsampling", "Pdownsampling",
+                String.class,
+                "First",
+                "The method used for aggregation (downsampling to a coarser resolution)",
+                "First", "Min", "Max", "Mean", "Median"));
+        parameters.add(newParameter("nirFactor", "PnirFactor",
+                Float.class,
+                1f,
+                "The value of the NIR source band is multiplied by this value"));
+        parameters.add(newParameter("nirSourceBand", "PnirSourceBand",
+                String.class,
+                "B8",
+                "The near-infrared band for the MSAVI computation. If not provided, the operator will try to find the best fitting band"));
+        parameters.add(newParameter("redFactor", "PredFactor",
+                Float.class,
+                1f,
+                "The value of the red source band is multiplied by this value"));
+        parameters.add(newParameter("redSourceBand", "PredSourceBand",
+                String.class,
+                "B4",
+                "The red band for the MSAVI computation. If not provided, the operator will try to find the best fitting band"));
+        parameters.add(newParameter("slope", "Pslope",
+                Float.class,
+                0.5f,
+                "The soil line slope"));
+        parameters.add(newParameter("resampleType", "PresampleType",
+                String.class,
+                "None",
+                "If selected bands differ in size, the resample method used before computing the index",
+                "None", "Lowest resolution", "Highest resolution"));
+        parameters.add(newParameter("upsampling", "Pupsampling",
+                String.class,
+                "Nearest",
+                "The method used for interpolation (upsampling to a finer resolution)",
+                "Nearest", "Bilinear", "Bicubic"));
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("Ssource", DataFormat.RASTER);
+
+        ProcessingComponent component = new ProcessingComponent();
+        component.setId("snap-msavi");
+        component.setLabel("SNAP MSAVI Index");
+        component.setDescription("Retrieves the Modified Soil Adjusted Vegetation Index (MSAVI)");
+        component.setVersion("6.0.0");
+        component.setAuthors("SNAP Team");
+        component.setCopyright("(C) SNAP Team");
+        component.setFileLocation("gpt");
+        component.setWorkingDirectory(".");
+        component.setNodeAffinity("Any");
+        component.setVisibility(ProcessingComponentVisibility.SYSTEM);
+        component.addSource(sourceDescriptor);
+        String rootPath = ConfigurationManager.getInstance().getValue("product.location");
+        TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
+                Paths.get(rootPath).resolve("output_" + component.getId() + ".tif").toUri().toString());
+        component.addTarget(targetDescriptor);
+
+        component.setParameterDescriptors(parameters);
+
+        Template template = newTemplate("snap-msavi.vm", "MsaviOp", component, "=");
 
         component.setTemplateType(TemplateType.VELOCITY);
         component.setTemplate(template);
@@ -131,8 +197,8 @@ public class SNAPDemo extends DemoBase {
 
         ProcessingComponent component = new ProcessingComponent();
         component.setId("snap-ndvi");
-        component.setLabel("Normalized Difference Vegetation Index");
-        component.setDescription("Normalized Difference Vegetation Index");
+        component.setLabel("SNAP NDVI");
+        component.setDescription("Computes Normalized Difference Vegetation Index");
         component.setVersion("6.0.0");
         component.setAuthors("SNAP Team");
         component.setCopyright("(C) SNAP Team");
@@ -149,6 +215,51 @@ public class SNAPDemo extends DemoBase {
         component.setParameterDescriptors(parameters);
 
         Template template = newTemplate("snap-ndvi.vm", "NdviOp", component, "=");
+
+        component.setTemplateType(TemplateType.VELOCITY);
+        component.setTemplate(template);
+        component.setActive(true);
+        return component;
+    }
+
+    public static ProcessingComponent resample() {
+        ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
+        parameters.add(newParameter("targetResolution", "PtargetResolution",
+                Integer.class,
+                60,
+                "The resolution that all bands of the target product shall have. The same value will be applied to scale image widths and heights"));
+        parameters.add(newParameter("downsampling", "Pdownsampling",
+                String.class,
+                "First",
+                "The method used for aggregation (downsampling to a coarser resolution)",
+                "First", "Min", "Max", "Mean", "Median"));
+        parameters.add(newParameter("upsampling", "Pupsampling",
+                String.class,
+                "Nearest",
+                "The method used for interpolation (upsampling to a finer resolution)",
+                "Nearest", "Bilinear", "Bicubic"));
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("SsourceProduct", DataFormat.RASTER);
+
+        ProcessingComponent component = new ProcessingComponent();
+        component.setId("snap-resample");
+        component.setLabel("SNAP Resample");
+        component.setDescription("Resampling of a multi-size source product to a single-size target product");
+        component.setVersion("6.0.0");
+        component.setAuthors("SNAP Team");
+        component.setCopyright("(C) SNAP Team");
+        component.setFileLocation("gpt");
+        component.setWorkingDirectory(".");
+        component.setNodeAffinity("Any");
+        component.setVisibility(ProcessingComponentVisibility.SYSTEM);
+        component.addSource(sourceDescriptor);
+        String rootPath = ConfigurationManager.getInstance().getValue("product.location");
+        TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
+                Paths.get(rootPath).resolve("output_" + component.getId() + ".tif").toUri().toString());
+        component.addTarget(targetDescriptor);
+
+        component.setParameterDescriptors(parameters);
+
+        Template template = newTemplate("snap-resample.vm", "Resample", component, "=");
 
         component.setTemplateType(TemplateType.VELOCITY);
         component.setTemplate(template);
