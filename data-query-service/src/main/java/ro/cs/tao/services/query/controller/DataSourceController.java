@@ -32,6 +32,7 @@ import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
+import ro.cs.tao.services.query.beans.FetchRequest;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -157,6 +158,19 @@ public class DataSourceController extends BaseController {
             }
             return new ResponseEntity<>(results, HttpStatus.OK);
         } catch (SerializationException ex) {
+            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @RequestMapping(value = "/fetch", method = RequestMethod.POST)
+    public ResponseEntity<?> doFetch(@RequestBody FetchRequest request) {
+        try {
+            final List<EOProduct> results = dataSourceService.fetch(request.getQuery(), request.getProducts());
+            if (results == null) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            return new ResponseEntity<>(results, HttpStatus.OK);
+        } catch (Exception ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }

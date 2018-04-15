@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -165,6 +167,24 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             componentService.save(component);
         }
 
+        // let's have a DataSourceComponent
+        componentId = "Sentinel2-Amazon Web Services";
+        DataSourceComponent dataSourceComponent;
+        try {
+            dataSourceComponent = persistenceManager.getDataSourceInstance(componentId);
+        } catch (PersistenceException pex) {
+            dataSourceComponent = new DataSourceComponent("Sentinel2", "Amazon Web Services");
+            dataSourceComponent.setFetchMode(FetchMode.OVERWRITE);
+            dataSourceComponent.setLabel(dataSourceComponent.getSensorName() + " from " + dataSourceComponent.getDataSourceName());
+            dataSourceComponent.setVersion("1.0");
+            dataSourceComponent.setDescription(dataSourceComponent.getId());
+            dataSourceComponent.setAuthors("TAO Team");
+            dataSourceComponent.setCopyright("(C) TAO Team");
+            dataSourceComponent.setNodeAffinity("Any");
+            dataSourceComponent.setSourceCardinality(0);
+            persistenceManager.saveDataSourceComponent(dataSourceComponent);
+        }
+
         // Initialize test workflows
         // Workflow 1: SNAP NDVI -> OTB RESAMPLE
         WorkflowDescriptor descriptor1 = new WorkflowDescriptor();
@@ -214,25 +234,39 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         addNodes4(descriptor4);
         persistenceManager.updateWorkflowDescriptor(descriptor4);
 
-        return new ResponseEntity<>(new WorkflowDescriptor[] { descriptor1, descriptor2, descriptor3, descriptor4 }, HttpStatus.OK);
+        // Workflow 4: Just a data query + fetch
+        WorkflowDescriptor descriptor5 = new WorkflowDescriptor();
+        descriptor5.setName("AWS Download");
+        descriptor5.setStatus(Status.DRAFT);
+        descriptor5.setCreated(LocalDateTime.now());
+        descriptor5.setActive(true);
+        descriptor5.setUserName("admin");
+        descriptor5.setVisibility(Visibility.PRIVATE);
+        descriptor5.setCreated(LocalDateTime.now());
+        addNodes5(descriptor5, dataSourceComponent);
+        persistenceManager.updateWorkflowDescriptor(descriptor5);
+
+        return new ResponseEntity<>(new WorkflowDescriptor[]
+                { descriptor1, descriptor2, descriptor3, descriptor4, descriptor5 },
+                HttpStatus.OK);
     }
 
     private void addNodes1(WorkflowDescriptor parent) throws PersistenceException {
         List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
-        node1.setName("Node-1");
-        node1.setxCoord(100);
-        node1.setyCoord(100);
+        node1.setName("SNAP NDVI");
+        node1.setxCoord(300);
+        node1.setyCoord(500);
         node1.setComponentId("snap-ndvi");
         //node1.addCustomValue("list", "Vegetation:RVI");
         node1.setCreated(LocalDateTime.now());
         nodes.add(node1);
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
         node2.setWorkflow(parent);
-        node2.setName("Node-2");
-        node2.setxCoord(300);
-        node2.setyCoord(100);
+        node2.setName("OTB Resample");
+        node2.setxCoord(600);
+        node2.setyCoord(500);
         node2.setComponentId("otbcli_RigidTransformResample");
         node2.addCustomValue("transformTypeIdScaleX", "0.5");
         node2.addCustomValue("transformTypeIdScaleY", "0.5");
@@ -256,18 +290,18 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
-        node1.setName("Node-3");
-        node1.setxCoord(100);
-        node1.setyCoord(100);
+        node1.setName("OTB RI");
+        node1.setxCoord(300);
+        node1.setyCoord(500);
         node1.setComponentId("otbcli_RadiometricIndices");
         node1.addCustomValue("list", "Vegetation:RVI");
         node1.setCreated(LocalDateTime.now());
         nodes.add(node1);
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
         node2.setWorkflow(parent);
-        node2.setName("Node-4");
-        node2.setxCoord(300);
-        node2.setyCoord(100);
+        node2.setName("OTB Resample");
+        node2.setxCoord(600);
+        node2.setyCoord(500);
         node2.setComponentId("otbcli_RigidTransformResample");
         node2.addCustomValue("transformTypeIdScaleX", "0.5");
         node2.addCustomValue("transformTypeIdScaleY", "0.5");
@@ -289,9 +323,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
-        node1.setName("Node-5");
-        node1.setxCoord(100);
-        node1.setyCoord(100);
+        node1.setName("OTB Resample");
+        node1.setxCoord(300);
+        node1.setyCoord(500);
         node1.setComponentId("otbcli_RigidTransformResample");
         node1.addCustomValue("transformTypeIdScaleX", "0.5");
         node1.addCustomValue("transformTypeIdScaleY", "0.5");
@@ -300,9 +334,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
         node2.setWorkflow(parent);
-        node2.setName("Node-6");
-        node2.setxCoord(300);
-        node2.setyCoord(0);
+        node2.setName("OTB Indices");
+        node2.setxCoord(600);
+        node2.setyCoord(150);
         node2.setComponentId("otbcli_RadiometricIndices");
         node2.addCustomValue("list", "Vegetation:NDVI");
         node2.setCreated(LocalDateTime.now());
@@ -310,9 +344,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
         WorkflowNodeDescriptor node3 = new WorkflowNodeDescriptor();
         node3.setWorkflow(parent);
-        node3.setName("Node-7");
-        node3.setxCoord(300);
-        node3.setyCoord(300);
+        node3.setName("OTB Indices");
+        node3.setxCoord(600);
+        node3.setyCoord(750);
         node3.setComponentId("otbcli_RadiometricIndices");
         node3.addCustomValue("list", "Vegetation:TNDVI");
         node3.setCreated(LocalDateTime.now());
@@ -320,9 +354,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
         WorkflowNodeDescriptor node4 = new WorkflowNodeDescriptor();
         node4.setWorkflow(parent);
-        node4.setName("Node-8");
-        node4.setxCoord(500);
-        node4.setyCoord(100);
+        node4.setName("OTB Concatenate");
+        node4.setxCoord(900);
+        node4.setyCoord(600);
         node4.setComponentId("otbcli_ConcatenateImages");
         node4.setCreated(LocalDateTime.now());
         nodes.add(node4);
@@ -364,9 +398,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
-        node1.setName("Node-9");
-        node1.setxCoord(100);
-        node1.setyCoord(100);
+        node1.setName("SNAP Resample");
+        node1.setxCoord(300);
+        node1.setyCoord(500);
         node1.setComponentId("snap-resample");
         node1.addCustomValue("targetResolution", "60");
         node1.setCreated(LocalDateTime.now());
@@ -374,27 +408,27 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
         node2.setWorkflow(parent);
-        node2.setName("Node-10");
-        node2.setxCoord(300);
-        node2.setyCoord(0);
+        node2.setName("SNAP NDVI");
+        node2.setxCoord(600);
+        node2.setyCoord(150);
         node2.setComponentId("snap-ndvi");
         node2.setCreated(LocalDateTime.now());
         nodes.add(node2);
 
         WorkflowNodeDescriptor node3 = new WorkflowNodeDescriptor();
         node3.setWorkflow(parent);
-        node3.setName("Node-11");
-        node3.setxCoord(300);
-        node3.setyCoord(300);
+        node3.setName("SNAP MSAVI");
+        node3.setxCoord(600);
+        node3.setyCoord(750);
         node3.setComponentId("snap-msavi");
         node3.setCreated(LocalDateTime.now());
         nodes.add(node3);
 
         WorkflowNodeDescriptor node4 = new WorkflowNodeDescriptor();
         node4.setWorkflow(parent);
-        node4.setName("Node-12");
-        node4.setxCoord(500);
-        node4.setyCoord(100);
+        node4.setName("OTB Combine");
+        node4.setxCoord(900);
+        node4.setyCoord(600);
         node4.setComponentId("otbcli_ConcatenateImages");
         node4.setCreated(LocalDateTime.now());
         nodes.add(node4);
@@ -430,5 +464,19 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                 component4.getSources().get(0));
         links3.add(link4);
         node4.setIncomingLinks(links3);
+    }
+
+    private void addNodes5(WorkflowDescriptor parent, DataSourceComponent component) throws PersistenceException {
+        List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
+        WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
+        node1.setWorkflow(parent);
+        node1.setName("AWS Download");
+        node1.setxCoord(300);
+        node1.setyCoord(500);
+        node1.setComponentId(component.getId());
+        node1.setCreated(LocalDateTime.now());
+        nodes.add(node1);
+        parent.setNodes(nodes);
+        persistenceManager.saveWorkflowDescriptor(parent);
     }
 }
