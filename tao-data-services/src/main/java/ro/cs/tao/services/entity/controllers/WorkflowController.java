@@ -85,7 +85,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         } catch (PersistenceException ignored) { }
         if (snapContainer == null) {
             String snapPath = currentPlatform.getId().equals(Platform.ID.win) ?
-                    "" : "/opt/SNAP-6.0.0-Linux64/bin";
+                    "" : "/opt/snap/bin";
             snapContainer = containerService.initSNAP(snapPath);
         }
         List<Application> applications = snapContainer.getApplications();
