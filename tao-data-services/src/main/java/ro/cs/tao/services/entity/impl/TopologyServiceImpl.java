@@ -43,13 +43,15 @@ public class TopologyServiceImpl
     }
 
     @Override
-    public void save(NodeDescription node) {
+    public NodeDescription save(NodeDescription node) {
         TopologyManager.getInstance().add(node);
+        return node;
     }
 
     @Override
-    public void update(NodeDescription node) {
+    public NodeDescription update(NodeDescription node) {
         TopologyManager.getInstance().update(node);
+        return node;
     }
 
     @Override

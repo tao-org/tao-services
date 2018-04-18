@@ -67,29 +67,30 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public void save(Container object) {
+    public Container save(Container object) {
         if (object != null) {
             try {
                 Container shouldBeNull = findById(object.getId());
                 if (shouldBeNull != null) {
-                    update(object);
+                    return update(object);
                 } else {
-                    persistenceManager.saveContainer(object);
+                    return persistenceManager.saveContainer(object);
                 }
             } catch (PersistenceException e) {
                 logger.severe(e.getMessage());
+                return null;
             }
         }
+        return null;
     }
 
     @Override
-    public void update(Container object) {
-        if (object != null) {
-            try {
-                persistenceManager.updateContainer(object);
-            } catch (PersistenceException e) {
-                logger.severe(e.getMessage());
-            }
+    public Container update(Container object) {
+        try {
+            return persistenceManager.updateContainer(object);
+        } catch (PersistenceException e) {
+            logger.severe(e.getMessage());
+            return null;
         }
     }
 

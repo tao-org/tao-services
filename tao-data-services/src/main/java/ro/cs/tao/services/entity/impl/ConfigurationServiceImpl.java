@@ -51,13 +51,15 @@ public class ConfigurationServiceImpl
     }
 
     @Override
-    public void save(KeyValuePair object) {
+    public KeyValuePair save(KeyValuePair object) {
         //TODO: delegate to user preferences
+        return null;
     }
 
     @Override
-    public void update(KeyValuePair object) {
+    public KeyValuePair update(KeyValuePair object) {
         //TODO: delegate to user preferences
+        return null;
     }
 
     @Override

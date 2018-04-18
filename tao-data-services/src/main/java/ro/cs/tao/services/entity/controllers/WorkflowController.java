@@ -22,6 +22,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.component.ComponentLink;
+import ro.cs.tao.component.GroupComponent;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.remote.FetchMode;
@@ -33,12 +34,10 @@ import ro.cs.tao.services.entity.demo.OTBDemo;
 import ro.cs.tao.services.entity.demo.SNAPDemo;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.ContainerService;
+import ro.cs.tao.services.interfaces.GroupComponentService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.utils.Platform;
-import ro.cs.tao.workflow.Status;
-import ro.cs.tao.workflow.Visibility;
-import ro.cs.tao.workflow.WorkflowDescriptor;
-import ro.cs.tao.workflow.WorkflowNodeDescriptor;
+import ro.cs.tao.workflow.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -56,6 +55,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     @Autowired
     private ComponentService componentService;
+
+    @Autowired
+    private GroupComponentService groupComponentService;
 
     @Autowired
     private WorkflowService workflowService;
@@ -233,9 +235,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         addNodes4(descriptor4);
         persistenceManager.updateWorkflowDescriptor(descriptor4);
 
-        // Workflow 4: Just a data query + fetch
+        // Workflow 5: Data query + fetch 2 products -> Group { SNAP NDVI + OTB RESAMPLE }
         WorkflowDescriptor descriptor5 = new WorkflowDescriptor();
-        descriptor5.setName("AWS Download");
+        descriptor5.setName("AWS Download, { SNAP NDVI and OTB Resample }");
         descriptor5.setStatus(Status.DRAFT);
         descriptor5.setCreated(LocalDateTime.now());
         descriptor5.setActive(true);
@@ -467,15 +469,65 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     private void addNodes5(WorkflowDescriptor parent, DataSourceComponent component) throws PersistenceException {
         List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
+        WorkflowNodeDescriptor dsNode = new WorkflowNodeDescriptor();
+        dsNode.setWorkflow(parent);
+        dsNode.setName("AWS Download");
+        dsNode.setxCoord(300);
+        dsNode.setyCoord(500);
+        dsNode.setComponentId(component.getId());
+        dsNode.setCreated(LocalDateTime.now());
+        nodes.add(dsNode);
+
+        WorkflowNodeGroupDescriptor grpNode = new WorkflowNodeGroupDescriptor();
+        grpNode.setWorkflow(parent);
+        grpNode.setName("Group-1");
+        grpNode.setxCoord(100);
+        grpNode.setyCoord(100);
+        grpNode.setCreated(LocalDateTime.now());
+
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
-        node1.setName("AWS Download");
+        node1.setName("SNAP NDVI");
         node1.setxCoord(300);
         node1.setyCoord(500);
-        node1.setComponentId(component.getId());
+        node1.setComponentId("snap-ndvi");
+        //node1.addCustomValue("list", "Vegetation:RVI");
         node1.setCreated(LocalDateTime.now());
-        nodes.add(node1);
+        grpNode.addNode(node1);
+
+        WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
+        node2.setWorkflow(parent);
+        node2.setName("OTB Resample");
+        node2.setxCoord(600);
+        node2.setyCoord(500);
+        node2.setComponentId("otbcli_RigidTransformResample");
+        node2.addCustomValue("transformTypeIdScaleX", "0.5");
+        node2.addCustomValue("transformTypeIdScaleY", "0.5");
+        node2.setCreated(LocalDateTime.now());
+        grpNode.addNode(node2);
+
+        ProcessingComponent component1 = componentService.findById(node1.getComponentId());
+        ProcessingComponent component2 = componentService.findById(node2.getComponentId());
+
+        GroupComponent groupComponent = GroupComponent.create(component1.getSources(), component.getTargetCardinality(),
+                                                              component2.getTargets(), component.getTargetCardinality());
+        groupComponent = groupComponentService.save(groupComponent);
+        grpNode.setComponentId(groupComponent.getId());
+
+        nodes.add(grpNode);
         parent.setNodes(nodes);
+
         persistenceManager.saveWorkflowDescriptor(parent);
+
+        ArrayList<ComponentLink> external = new ArrayList<>();
+        external.add(new ComponentLink(dsNode.getId(),
+                                       component.getTargets().get(0), groupComponent.getSources().get(0)));
+        grpNode.setIncomingLinks(external);
+
+        ArrayList<ComponentLink> internalLinks = new ArrayList<>();
+        internalLinks.add(new ComponentLink(node1.getId(),
+                                            component1.getTargets().get(0), component2.getSources().get(0)));
+        node2.setIncomingLinks(internalLinks);
+
     }
 }
