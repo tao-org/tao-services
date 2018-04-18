@@ -58,7 +58,7 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public void save(WorkflowDescriptor object) {
+    public WorkflowDescriptor save(WorkflowDescriptor object) {
         if (object != null) {
             List<WorkflowNodeDescriptor> nodes = object.getNodes();
             if (nodes != null) {
@@ -66,16 +66,18 @@ public class WorkflowServiceImpl
             }
             validate(object);
             try {
-                persistenceManager.saveWorkflowDescriptor(object);
+                return persistenceManager.saveWorkflowDescriptor(object);
             } catch (PersistenceException e) {
                 logger.severe(e.getMessage());
+                return null;
             }
         }
+        return null;
     }
 
     @Override
-    public void update(WorkflowDescriptor object) {
-        save(object);
+    public WorkflowDescriptor update(WorkflowDescriptor object) {
+        return save(object);
     }
 
     @Override

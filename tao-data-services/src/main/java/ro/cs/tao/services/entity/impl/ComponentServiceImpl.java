@@ -33,7 +33,6 @@ import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.serialization.Serializer;
 import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.interfaces.ComponentService;
-import ro.cs.tao.services.interfaces.ContainerService;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
@@ -53,9 +52,6 @@ public class ComponentServiceImpl
 
     @Autowired
     private PersistenceManager persistenceManager;
-    @Autowired
-    private ContainerService containerService;
-
     private Logger logger = Logger.getLogger(ComponentService.class.getName());
 
     @Override
@@ -83,40 +79,34 @@ public class ComponentServiceImpl
     }
 
     @Override
-    public void save(ProcessingComponent component) {
-        //fakeComponents.put(component.getId(), component);\
+    public ProcessingComponent save(ProcessingComponent component) {
         if (component != null) {
-
-            if(persistenceManager.checkIfExistsComponentById(component.getId()))
-            {
-                update(component);
-            }
-            else
-            {
+            if (persistenceManager.checkIfExistsComponentById(component.getId())) {
+                return update(component);
+            } else {
                 try {
-                    persistenceManager.saveProcessingComponent(component);
+                    return persistenceManager.saveProcessingComponent(component);
                 } catch (PersistenceException e) {
                     logger.severe(e.getMessage());
+                    return null;
                 }
             }
         }
+        return null;
     }
 
     @Override
-    public void update(ProcessingComponent component) {
-        //fakeComponents.put(component.getId(), component);
-        if (component != null) {
-            try {
-                persistenceManager.updateProcessingComponent(component);
-            } catch (PersistenceException e) {
-                logger.severe(e.getMessage());
-            }
+    public ProcessingComponent update(ProcessingComponent component) {
+        try {
+            return persistenceManager.updateProcessingComponent(component);
+        } catch (PersistenceException e) {
+            logger.severe(e.getMessage());
+            return null;
         }
     }
 
     @Override
     public void delete(String name) {
-        //fakeComponents.remove(name);
         try {
             persistenceManager.deleteProcessingComponent(name);
         } catch (PersistenceException e) {
