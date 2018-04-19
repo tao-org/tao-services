@@ -476,7 +476,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         dsNode.setyCoord(500);
         dsNode.setComponentId(component.getId());
         dsNode.setCreated(LocalDateTime.now());
-        nodes.add(dsNode);
+        parent.addNode(dsNode);
 
         WorkflowNodeGroupDescriptor grpNode = new WorkflowNodeGroupDescriptor();
         grpNode.setWorkflow(parent);
@@ -484,6 +484,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         grpNode.setxCoord(100);
         grpNode.setyCoord(100);
         grpNode.setCreated(LocalDateTime.now());
+        parent.addNode(grpNode);
 
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
@@ -491,9 +492,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node1.setxCoord(300);
         node1.setyCoord(500);
         node1.setComponentId("snap-ndvi");
-        //node1.addCustomValue("list", "Vegetation:RVI");
         node1.setCreated(LocalDateTime.now());
-        grpNode.addNode(node1);
+        parent.addNode(node1);
 
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
         node2.setWorkflow(parent);
@@ -504,7 +504,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node2.addCustomValue("transformTypeIdScaleX", "0.5");
         node2.addCustomValue("transformTypeIdScaleY", "0.5");
         node2.setCreated(LocalDateTime.now());
-        grpNode.addNode(node2);
+        parent.addNode(node2);
 
         ProcessingComponent component1 = componentService.findById(node1.getComponentId());
         ProcessingComponent component2 = componentService.findById(node2.getComponentId());
@@ -513,9 +513,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                                               component2.getTargets(), component.getTargetCardinality());
         groupComponent = groupComponentService.save(groupComponent);
         grpNode.setComponentId(groupComponent.getId());
-
-        nodes.add(grpNode);
-        parent.setNodes(nodes);
+        grpNode.addNode(node1);
+        grpNode.addNode(node2);
 
         persistenceManager.saveWorkflowDescriptor(parent);
 
