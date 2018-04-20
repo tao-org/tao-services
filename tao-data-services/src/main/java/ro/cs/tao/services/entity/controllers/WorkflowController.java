@@ -24,12 +24,15 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.component.GroupComponent;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.entity.demo.OTBDemo;
 import ro.cs.tao.services.entity.demo.SNAPDemo;
 import ro.cs.tao.services.interfaces.ComponentService;
@@ -41,7 +44,9 @@ import ro.cs.tao.workflow.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Cosmin Cara
@@ -182,7 +187,6 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             dataSourceComponent.setAuthors("TAO Team");
             dataSourceComponent.setCopyright("(C) TAO Team");
             dataSourceComponent.setNodeAffinity("Any");
-            dataSourceComponent.setSourceCardinality(0);
             persistenceManager.saveDataSourceComponent(dataSourceComponent);
         }
 
@@ -519,14 +523,36 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         persistenceManager.saveWorkflowDescriptor(parent);
 
         ArrayList<ComponentLink> external = new ArrayList<>();
+        TargetDescriptor target1 = component.getTargets().get(0);
         external.add(new ComponentLink(dsNode.getId(),
-                                       component.getTargets().get(0), groupComponent.getSources().get(0)));
+                                       target1, groupComponent.getSources().get(0)));
         grpNode.setIncomingLinks(external);
 
         ArrayList<ComponentLink> internalLinks = new ArrayList<>();
+        TargetDescriptor target2 = component1.getTargets().get(0);
         internalLinks.add(new ComponentLink(node1.getId(),
-                                            component1.getTargets().get(0), component2.getSources().get(0)));
+                                            target2, component2.getSources().get(0)));
         node2.setIncomingLinks(internalLinks);
+
+        persistenceManager.updateWorkflowNodeDescriptor(grpNode);
+        persistenceManager.updateWorkflowNodeDescriptor(node2);
+
+        Query dsQuery = new Query();
+        dsQuery.setUserId(SystemPrincipal.instance().getName());
+        dsQuery.setSensor("Sentinel2");
+        dsQuery.setDataSource("Amazon Web Services");
+        dsQuery.setPageNumber(1);
+        dsQuery.setPageSize(10);
+        dsQuery.setLimit(2);
+        Map<String, String> values = new HashMap<>();
+        values.put("beginPosition", "2018-01-01");
+        values.put("endPosition", "2018-01-01");
+        values.put("footprint", "POLYGON((22.8042573604346 43.8379609098684, " +
+                "24.83885442747927 43.8379609098684, 24.83885442747927 44.795645304033826, " +
+                "22.8042573604346 44.795645304033826, 22.8042573604346 43.8379609098684))");
+        dsQuery.setValues(values);
+        dsQuery.setWorkflowNodeId(dsNode.getId());
+        persistenceManager.saveQuery(dsQuery);
 
     }
 }
