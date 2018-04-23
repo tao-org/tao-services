@@ -22,14 +22,14 @@ import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 
 import javax.annotation.PostConstruct;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Service("orchestrationService")
 public class OrchestrationServiceImpl implements OrchestratorService {
@@ -63,12 +63,22 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public Map<Long, ExecutionStatus> getTasksStatus(long jobId) {
-        ExecutionJob job = persistenceManager.getJobById(jobId);
-        return job != null ?
-            job.getTasks().stream().collect(Collectors.toMap(ExecutionTask::getId, ExecutionTask::getExecutionStatus)) :
-                null;
+    public List<ExecutionTaskSummary> getTasksStatus(long jobId) {
+        return persistenceManager.getTasksStatus(jobId);
 
+    }
+
+    @Override
+    public List<ExecutionTaskSummary> getCompletedJobs() {
+        List<ExecutionTaskSummary> summaries = new ArrayList<>();
+        Set<ExecutionStatus> statuses = new HashSet<>();
+        Collections.addAll(statuses, ExecutionStatus.SUSPENDED, ExecutionStatus.DONE,
+                                     ExecutionStatus.FAILED, ExecutionStatus.CANCELLED);
+        List<ExecutionJob> jobs = persistenceManager.getJobs(SystemPrincipal.instance().getName(), statuses);
+        for (ExecutionJob job : jobs) {
+            summaries.addAll(getTasksStatus(job.getId()));
+        }
+        return summaries;
     }
 
     @PostConstruct

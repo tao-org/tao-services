@@ -15,11 +15,17 @@
  */
 package ro.cs.tao.services;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationHome;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.entity.DataServicesLauncher;
 import ro.cs.tao.services.monitoring.MonitoringServiceLauncer;
 import ro.cs.tao.services.orchestration.OrchestratorLauncher;
@@ -40,8 +46,11 @@ import java.util.Properties;
 
 @SpringBootApplication
 @EnableScheduling
-public class TaoServicesStartup {
+public class TaoServicesStartup implements ApplicationListener {
     private static final ApplicationHome home;
+
+    @Autowired
+    private PersistenceManager persistenceManager;
 
     static {
         home = new ApplicationHome(TaoServicesStartup.class);
@@ -86,4 +95,11 @@ public class TaoServicesStartup {
     }
 
     private static Path homeDirectory() { return home.getDir().getParentFile().toPath(); }
+
+    @Override
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof ContextRefreshedEvent) {
+            Messaging.setPersister(this.persistenceManager);
+        }
+    }
 }
