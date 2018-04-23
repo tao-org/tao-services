@@ -25,15 +25,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.execution.ExecutionException;
-import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.orchestration.beans.JobResponse;
 import ro.cs.tao.services.orchestration.beans.ServiceTask;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -90,7 +89,7 @@ public class OrchestrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.GET)
+    @RequestMapping(value = "/running", method = RequestMethod.GET)
     public ResponseEntity<List<ServiceTask>> getRunningTasks() {
         List<ExecutionTask> tasks = orchestrationService.getRunningTasks();
         if (tasks == null) {
@@ -104,11 +103,20 @@ public class OrchestrationController extends BaseController {
     }
 
     @RequestMapping(value = "/{jobId}", method = RequestMethod.GET)
-    public ResponseEntity<Map<Long, ExecutionStatus>> getJobTaskStatuses(@PathVariable("jobId") long jobId) {
-        Map<Long, ExecutionStatus> tasks = orchestrationService.getTasksStatus(jobId);
-        if (tasks == null) {
-            tasks = new HashMap<>();
+    public ResponseEntity<List<ExecutionTaskSummary>> getJobTaskStatuses(@PathVariable("jobId") long jobId) {
+        List<ExecutionTaskSummary> summaries = orchestrationService.getTasksStatus(jobId);
+        if (summaries == null) {
+            summaries = new ArrayList<>();
         }
-        return new ResponseEntity<>(tasks, HttpStatus.OK);
+        return new ResponseEntity<>(summaries, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/history", method = RequestMethod.GET)
+    public ResponseEntity<List<ExecutionTaskSummary>> getJobsHistory() {
+        List<ExecutionTaskSummary> summaries = orchestrationService.getCompletedJobs();
+        if (summaries == null) {
+            summaries = new ArrayList<>();
+        }
+        return new ResponseEntity<>(summaries, HttpStatus.OK);
     }
 }
