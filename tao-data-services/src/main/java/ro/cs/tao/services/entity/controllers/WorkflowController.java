@@ -488,6 +488,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         grpNode.setxCoord(100);
         grpNode.setyCoord(100);
         grpNode.setCreated(LocalDateTime.now());
+        grpNode.setPreserveOutput(true);
         parent.addNode(grpNode);
 
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
@@ -497,6 +498,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node1.setyCoord(500);
         node1.setComponentId("snap-ndvi");
         node1.setCreated(LocalDateTime.now());
+        node1.setPreserveOutput(true);
         parent.addNode(node1);
 
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
@@ -508,6 +510,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node2.addCustomValue("transformTypeIdScaleX", "0.5");
         node2.addCustomValue("transformTypeIdScaleY", "0.5");
         node2.setCreated(LocalDateTime.now());
+        node2.setPreserveOutput(true);
         parent.addNode(node2);
 
         ProcessingComponent component1 = componentService.findById(node1.getComponentId());

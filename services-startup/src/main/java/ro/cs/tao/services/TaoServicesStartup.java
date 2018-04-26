@@ -31,14 +31,18 @@ import ro.cs.tao.services.monitoring.MonitoringServiceLauncer;
 import ro.cs.tao.services.orchestration.OrchestratorLauncher;
 import ro.cs.tao.services.progress.ProgressReportLauncher;
 import ro.cs.tao.services.query.DataQueryServiceLauncher;
+import ro.cs.tao.topology.NodeDescription;
+import ro.cs.tao.topology.TopologyManager;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * @author Cosmin Cara
@@ -100,6 +104,32 @@ public class TaoServicesStartup implements ApplicationListener {
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof ContextRefreshedEvent) {
             Messaging.setPersister(this.persistenceManager);
+            updateLocalhost();
+        }
+    }
+
+    private void updateLocalhost() {
+        Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
+        NodeDescription node = TopologyManager.getInstance().get("localhost");
+        if (node != null) {
+            try {
+                String masterHost = InetAddress.getLocalHost().getHostName();
+                NodeDescription master = new NodeDescription();
+                master.setHostName(masterHost);
+                master.setUserName(node.getUserName());
+                master.setUserPass(node.getUserPass());
+                master.setDescription(node.getDescription());
+                master.setServicesStatus(node.getServicesStatus());
+                master.setProcessorCount(node.getProcessorCount());
+                master.setDiskSpaceSizeGB(node.getDiskSpaceSizeGB());
+                master.setMemorySizeGB(node.getMemorySizeGB());
+                master.setActive(true);
+                persistenceManager.saveExecutionNode(master);
+                persistenceManager.deleteExecutionNode(node.getHostName());
+                logger.info(String.format("Node [localhost] has been renamed to [%s]", masterHost));
+            } catch (Exception ex) {
+                logger.severe("Cannot update localhost name: " + ex.getMessage());
+            }
         }
     }
 }

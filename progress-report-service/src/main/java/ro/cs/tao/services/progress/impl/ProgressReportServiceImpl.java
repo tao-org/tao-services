@@ -33,7 +33,7 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
 
     @Override
     protected void onMessageReceived(Message message) {
-        logger.info(message.getItem(Message.PAYLOAD_KEY));
+        logger.fine(message.getItem(Message.PAYLOAD_KEY));
         String contents = message.getItem(Message.PAYLOAD_KEY);
         String taskName;
         if (contents.startsWith("Started") && !contents.contains(":")) {
