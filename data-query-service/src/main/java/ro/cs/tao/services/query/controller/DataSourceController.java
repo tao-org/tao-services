@@ -33,9 +33,13 @@ import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.query.beans.FetchRequest;
+import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -97,7 +101,8 @@ public class DataSourceController extends BaseController {
                                                                        query.getSensor())),
                                         HttpStatus.BAD_REQUEST);
         }
-        ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2);
+        ExecutorService threadPool = new NamedThreadPoolExecutor("data-query-pool", Runtime.getRuntime().availableProcessors() / 2);
+        //Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2);
         try {
             CompletionService<Variable> completionService = new ExecutorCompletionService<>(threadPool);
             if (query.getValues().containsKey("tileId")) {

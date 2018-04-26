@@ -16,9 +16,9 @@
 package ro.cs.tao.services.commons;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
+import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
@@ -31,7 +31,7 @@ public class BaseController {
 
     protected void asyncExecute(Runnable runnable, Consumer<Exception> callback) {
         if (this.executorService == null) {
-            executorService = Executors.newSingleThreadExecutor();
+            executorService = new NamedThreadPoolExecutor("controller-async", 1);//Executors.newSingleThreadExecutor();
         }
 
         executorService.submit(() -> {
