@@ -24,8 +24,13 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.DataSource;
+import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.datasource.DataSourceManager;
+import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.entity.DataServicesLauncher;
 import ro.cs.tao.services.monitoring.MonitoringServiceLauncer;
 import ro.cs.tao.services.orchestration.OrchestratorLauncher;
@@ -41,7 +46,11 @@ import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Properties;
+import java.util.SortedSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 /**
@@ -52,6 +61,7 @@ import java.util.logging.Logger;
 @EnableScheduling
 public class TaoServicesStartup implements ApplicationListener {
     private static final ApplicationHome home;
+    private final ExecutorService backgroundWorker = Executors.newSingleThreadExecutor();
 
     @Autowired
     private PersistenceManager persistenceManager;
@@ -105,6 +115,7 @@ public class TaoServicesStartup implements ApplicationListener {
         if (event instanceof ContextRefreshedEvent) {
             Messaging.setPersister(this.persistenceManager);
             updateLocalhost();
+            backgroundWorker.submit(this::registerDataSourceComponents);
         }
     }
 
@@ -129,6 +140,37 @@ public class TaoServicesStartup implements ApplicationListener {
                 logger.info(String.format("Node [localhost] has been renamed to [%s]", masterHost));
             } catch (Exception ex) {
                 logger.severe("Cannot update localhost name: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void registerDataSourceComponents() {
+        SortedSet<String> sensors = DataSourceManager.getInstance().getSupportedSensors();
+        if (sensors != null) {
+            String componentId;
+            for (String sensor : sensors) {
+                List<String> dsNames = DataSourceManager.getInstance().getNames(sensor);
+                for (String dsName : dsNames) {
+                    DataSource dataSource = DataSourceManager.getInstance().get(sensor, dsName);
+                    componentId = sensor + "-" + dsName;
+                    DataSourceComponent dataSourceComponent;
+                    dataSourceComponent = persistenceManager.getDataSourceInstance(componentId);
+                    if (dataSourceComponent == null) {
+                        dataSourceComponent = new DataSourceComponent(sensor, dsName);
+                        dataSourceComponent.setFetchMode(FetchMode.OVERWRITE);
+                        dataSourceComponent.setLabel(sensor + " from " + dsName);
+                        dataSourceComponent.setVersion("1.0");
+                        dataSourceComponent.setDescription(dataSourceComponent.getId());
+                        dataSourceComponent.setAuthors("TAO Team");
+                        dataSourceComponent.setCopyright("(C) TAO Team");
+                        dataSourceComponent.setNodeAffinity("Any");
+                        try {
+                            persistenceManager.saveDataSourceComponent(dataSourceComponent);
+                        } catch (PersistenceException e) {
+                            Logger.getLogger(TaoServicesStartup.class.getName()).severe(e.getMessage());
+                        }
+                    }
+                }
             }
         }
     }

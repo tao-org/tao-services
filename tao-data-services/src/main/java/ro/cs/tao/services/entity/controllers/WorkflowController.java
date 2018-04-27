@@ -21,10 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import ro.cs.tao.component.ComponentLink;
-import ro.cs.tao.component.GroupComponent;
 import ro.cs.tao.component.ProcessingComponent;
-import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.docker.Application;
@@ -43,7 +40,6 @@ import ro.cs.tao.utils.Platform;
 import ro.cs.tao.workflow.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -200,8 +196,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         descriptor1.setUserName("admin");
         descriptor1.setVisibility(Visibility.PRIVATE);
         descriptor1.setCreated(LocalDateTime.now());
+        persistenceManager.saveWorkflowDescriptor(descriptor1);
         addNodes1(descriptor1);
-        persistenceManager.updateWorkflowDescriptor(descriptor1);
 
         // Workflow 1: OTB RI -> OTB RESAMPLE
         WorkflowDescriptor descriptor2 = new WorkflowDescriptor();
@@ -212,8 +208,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         descriptor2.setUserName("admin");
         descriptor2.setVisibility(Visibility.PRIVATE);
         descriptor2.setCreated(LocalDateTime.now());
+        persistenceManager.saveWorkflowDescriptor(descriptor2);
         addNodes2(descriptor2);
-        persistenceManager.updateWorkflowDescriptor(descriptor2);
 
         // Workflow 3: OTB RESAMPLE -> {OTB RI NDVI + OTB RI TNDVI} -> OTB CONCATENATE
         WorkflowDescriptor descriptor3 = new WorkflowDescriptor();
@@ -224,8 +220,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         descriptor3.setUserName("admin");
         descriptor3.setVisibility(Visibility.PRIVATE);
         descriptor3.setCreated(LocalDateTime.now());
+        persistenceManager.saveWorkflowDescriptor(descriptor3);
         addNodes3(descriptor3);
-        persistenceManager.updateWorkflowDescriptor(descriptor3);
 
         // Workflow 4: SNAP Resample -> {SNAP NDVI + SNAP MSAVI} -> OTB CONCATENATE
         WorkflowDescriptor descriptor4 = new WorkflowDescriptor();
@@ -236,8 +232,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         descriptor4.setUserName("admin");
         descriptor4.setVisibility(Visibility.PRIVATE);
         descriptor4.setCreated(LocalDateTime.now());
+        persistenceManager.saveWorkflowDescriptor(descriptor4);
         addNodes4(descriptor4);
-        persistenceManager.updateWorkflowDescriptor(descriptor4);
 
         // Workflow 5: Data query + fetch 2 products -> Group { SNAP NDVI + OTB RESAMPLE }
         WorkflowDescriptor descriptor5 = new WorkflowDescriptor();
@@ -248,8 +244,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         descriptor5.setUserName("admin");
         descriptor5.setVisibility(Visibility.PRIVATE);
         descriptor5.setCreated(LocalDateTime.now());
+        persistenceManager.saveWorkflowDescriptor(descriptor5);
         addNodes5(descriptor5, dataSourceComponent);
-        persistenceManager.updateWorkflowDescriptor(descriptor5);
 
         return new ResponseEntity<>(new WorkflowDescriptor[]
                 { descriptor1, descriptor2, descriptor3, descriptor4, descriptor5 },
@@ -257,16 +253,15 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     }
 
     private void addNodes1(WorkflowDescriptor parent) throws PersistenceException {
-        List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
         node1.setName("SNAP NDVI");
         node1.setxCoord(300);
         node1.setyCoord(500);
         node1.setComponentId("snap-ndvi");
-        //node1.addCustomValue("list", "Vegetation:RVI");
         node1.setCreated(LocalDateTime.now());
-        nodes.add(node1);
+        node1 = workflowService.addNode(parent.getId(), node1);
+
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
         node2.setWorkflow(parent);
         node2.setName("OTB Resample");
@@ -276,23 +271,16 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node2.addCustomValue("transformTypeIdScaleX", "0.5");
         node2.addCustomValue("transformTypeIdScaleY", "0.5");
         node2.setCreated(LocalDateTime.now());
-        nodes.add(node2);
-        parent.setNodes(nodes);
-
-        persistenceManager.saveWorkflowDescriptor(parent);
+        node2 = workflowService.addNode(parent.getId(), node2);
 
         ProcessingComponent component1 = componentService.findById(node1.getComponentId());
         ProcessingComponent component2 = componentService.findById(node2.getComponentId());
-        ArrayList<ComponentLink> links = new ArrayList<>();
-        ComponentLink link = new ComponentLink(node1.getId(),
-                                                component1.getTargets().get(0),
-                                                component2.getSources().get(0));
-        links.add(link);
-        node2.setIncomingLinks(links);
+
+        workflowService.addLink(node1.getId(), component1.getTargets().get(0).getId(),
+                                node2.getId(), component2.getSources().get(0).getId());
     }
 
     private void addNodes2(WorkflowDescriptor parent) throws PersistenceException {
-        List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
         node1.setName("OTB RI");
@@ -301,7 +289,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node1.setComponentId("otbcli_RadiometricIndices");
         node1.addCustomValue("list", "Vegetation:RVI");
         node1.setCreated(LocalDateTime.now());
-        nodes.add(node1);
+        node1 = workflowService.addNode(parent.getId(), node1);
+
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
         node2.setWorkflow(parent);
         node2.setName("OTB Resample");
@@ -311,21 +300,16 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node2.addCustomValue("transformTypeIdScaleX", "0.5");
         node2.addCustomValue("transformTypeIdScaleY", "0.5");
         node2.setCreated(LocalDateTime.now());
-        nodes.add(node2);
-        parent.setNodes(nodes);
-        persistenceManager.saveWorkflowDescriptor(parent);
+        node2 = workflowService.addNode(parent.getId(), node2);
+
         ProcessingComponent component1 = componentService.findById(node1.getComponentId());
         ProcessingComponent component2 = componentService.findById(node2.getComponentId());
-        ArrayList<ComponentLink> links = new ArrayList<>();
-        ComponentLink link = new ComponentLink(node1.getId(),
-                                                component1.getTargets().get(0),
-                                                component2.getSources().get(0));
-        links.add(link);
-        node2.setIncomingLinks(links);
+
+        workflowService.addLink(node1.getId(), component1.getTargets().get(0).getId(),
+                                node2.getId(), component2.getSources().get(0).getId());
     }
 
     private void addNodes3(WorkflowDescriptor parent) throws PersistenceException {
-        List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
         node1.setName("OTB Resample");
@@ -335,7 +319,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node1.addCustomValue("transformTypeIdScaleX", "0.5");
         node1.addCustomValue("transformTypeIdScaleY", "0.5");
         node1.setCreated(LocalDateTime.now());
-        nodes.add(node1);
+        node1 = workflowService.addNode(parent.getId(), node1);
 
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
         node2.setWorkflow(parent);
@@ -345,7 +329,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node2.setComponentId("otbcli_RadiometricIndices");
         node2.addCustomValue("list", "Vegetation:NDVI");
         node2.setCreated(LocalDateTime.now());
-        nodes.add(node2);
+        node2 = workflowService.addNode(parent.getId(), node2);
 
         WorkflowNodeDescriptor node3 = new WorkflowNodeDescriptor();
         node3.setWorkflow(parent);
@@ -355,7 +339,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node3.setComponentId("otbcli_RadiometricIndices");
         node3.addCustomValue("list", "Vegetation:TNDVI");
         node3.setCreated(LocalDateTime.now());
-        nodes.add(node3);
+        node3 = workflowService.addNode(parent.getId(), node3);
 
         WorkflowNodeDescriptor node4 = new WorkflowNodeDescriptor();
         node4.setWorkflow(parent);
@@ -364,43 +348,26 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node4.setyCoord(600);
         node4.setComponentId("otbcli_ConcatenateImages");
         node4.setCreated(LocalDateTime.now());
-        nodes.add(node4);
-
-        parent.setNodes(nodes);
-        persistenceManager.saveWorkflowDescriptor(parent);
+        node4 = workflowService.addNode(parent.getId(), node4);
 
         ProcessingComponent component1 = componentService.findById(node1.getComponentId());
         ProcessingComponent component2 = componentService.findById(node2.getComponentId());
         ProcessingComponent component3 = componentService.findById(node3.getComponentId());
         ProcessingComponent component4 = componentService.findById(node4.getComponentId());
-        ArrayList<ComponentLink> links1 = new ArrayList<>();
-        ComponentLink link1 = new ComponentLink(node1.getId(),
-                component1.getTargets().get(0),
-                component2.getSources().get(0));
-        links1.add(link1);
-        node2.setIncomingLinks(links1);
 
-        ArrayList<ComponentLink> links2 = new ArrayList<>();
-        ComponentLink link2 = new ComponentLink(node1.getId(),
-                component1.getTargets().get(0),
-                component3.getSources().get(0));
-        links2.add(link2);
-        node3.setIncomingLinks(links2);
+        workflowService.addLink(node1.getId(), component1.getTargets().get(0).getId(),
+                                node2.getId(), component2.getSources().get(0).getId());
 
-        ArrayList<ComponentLink> links3 = new ArrayList<>();
-        ComponentLink link3 = new ComponentLink(node2.getId(),
-                component2.getTargets().get(0),
-                component4.getSources().get(0));
-        links3.add(link3);
-        ComponentLink link4 = new ComponentLink(node3.getId(),
-                component3.getTargets().get(0),
-                component4.getSources().get(0));
-        links3.add(link4);
-        node4.setIncomingLinks(links3);
+        workflowService.addLink(node1.getId(), component1.getTargets().get(0).getId(),
+                                node3.getId(), component3.getSources().get(0).getId());
+
+        workflowService.addLink(node2.getId(), component2.getTargets().get(0).getId(),
+                                node4.getId(), component4.getSources().get(0).getId());
+        workflowService.addLink(node3.getId(), component3.getTargets().get(0).getId(),
+                                node4.getId(), component4.getSources().get(0).getId());
     }
 
     private void addNodes4(WorkflowDescriptor parent) throws PersistenceException {
-        List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
         node1.setName("SNAP Resample");
@@ -409,7 +376,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node1.setComponentId("snap-resample");
         node1.addCustomValue("targetResolution", "60");
         node1.setCreated(LocalDateTime.now());
-        nodes.add(node1);
+        node1 = workflowService.addNode(parent.getId(), node1);
 
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
         node2.setWorkflow(parent);
@@ -418,7 +385,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node2.setyCoord(50);
         node2.setComponentId("snap-ndvi");
         node2.setCreated(LocalDateTime.now());
-        nodes.add(node2);
+        node2 = workflowService.addNode(parent.getId(), node2);
 
         WorkflowNodeDescriptor node3 = new WorkflowNodeDescriptor();
         node3.setWorkflow(parent);
@@ -427,7 +394,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node3.setyCoord(250);
         node3.setComponentId("snap-msavi");
         node3.setCreated(LocalDateTime.now());
-        nodes.add(node3);
+        node3 = workflowService.addNode(parent.getId(), node3);
 
         WorkflowNodeDescriptor node4 = new WorkflowNodeDescriptor();
         node4.setWorkflow(parent);
@@ -436,43 +403,27 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node4.setyCoord(150);
         node4.setComponentId("otbcli_ConcatenateImages");
         node4.setCreated(LocalDateTime.now());
-        nodes.add(node4);
-
-        parent.setNodes(nodes);
-        persistenceManager.saveWorkflowDescriptor(parent);
+        node4 = workflowService.addNode(parent.getId(), node4);
 
         ProcessingComponent component1 = componentService.findById(node1.getComponentId());
         ProcessingComponent component2 = componentService.findById(node2.getComponentId());
         ProcessingComponent component3 = componentService.findById(node3.getComponentId());
         ProcessingComponent component4 = componentService.findById(node4.getComponentId());
-        ArrayList<ComponentLink> links1 = new ArrayList<>();
-        ComponentLink link1 = new ComponentLink(node1.getId(),
-                component1.getTargets().get(0),
-                component2.getSources().get(0));
-        links1.add(link1);
-        node2.setIncomingLinks(links1);
 
-        ArrayList<ComponentLink> links2 = new ArrayList<>();
-        ComponentLink link2 = new ComponentLink(node1.getId(),
-                component1.getTargets().get(0),
-                component3.getSources().get(0));
-        links2.add(link2);
-        node3.setIncomingLinks(links2);
 
-        ArrayList<ComponentLink> links3 = new ArrayList<>();
-        ComponentLink link3 = new ComponentLink(node2.getId(),
-                component2.getTargets().get(0),
-                component4.getSources().get(0));
-        links3.add(link3);
-        ComponentLink link4 = new ComponentLink(node3.getId(),
-                component3.getTargets().get(0),
-                component4.getSources().get(0));
-        links3.add(link4);
-        node4.setIncomingLinks(links3);
+        workflowService.addLink(node1.getId(), component1.getTargets().get(0).getId(),
+                                node2.getId(), component2.getSources().get(0).getId());
+
+        workflowService.addLink(node1.getId(), component1.getTargets().get(0).getId(),
+                                node3.getId(), component3.getSources().get(0).getId());
+
+        workflowService.addLink(node2.getId(), component2.getTargets().get(0).getId(),
+                                node4.getId(), component4.getSources().get(0).getId());
+        workflowService.addLink(node3.getId(), component3.getTargets().get(0).getId(),
+                                node4.getId(), component4.getSources().get(0).getId());
     }
 
     private void addNodes5(WorkflowDescriptor parent, DataSourceComponent component) throws PersistenceException {
-        List<WorkflowNodeDescriptor> nodes = new ArrayList<>();
         WorkflowNodeDescriptor dsNode = new WorkflowNodeDescriptor();
         dsNode.setWorkflow(parent);
         dsNode.setName("AWS Download");
@@ -480,7 +431,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         dsNode.setyCoord(500);
         dsNode.setComponentId(component.getId());
         dsNode.setCreated(LocalDateTime.now());
-        parent.addNode(dsNode);
+        dsNode = workflowService.addNode(parent.getId(), dsNode);
 
         WorkflowNodeGroupDescriptor grpNode = new WorkflowNodeGroupDescriptor();
         grpNode.setWorkflow(parent);
@@ -489,7 +440,6 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         grpNode.setyCoord(100);
         grpNode.setCreated(LocalDateTime.now());
         grpNode.setPreserveOutput(true);
-        parent.addNode(grpNode);
 
         WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
         node1.setWorkflow(parent);
@@ -499,7 +449,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node1.setComponentId("snap-ndvi");
         node1.setCreated(LocalDateTime.now());
         node1.setPreserveOutput(true);
-        parent.addNode(node1);
+        node1 = workflowService.addNode(parent.getId(), node1);
 
         WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
         node2.setWorkflow(parent);
@@ -511,34 +461,16 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         node2.addCustomValue("transformTypeIdScaleY", "0.5");
         node2.setCreated(LocalDateTime.now());
         node2.setPreserveOutput(true);
-        parent.addNode(node2);
+        node2 = workflowService.addNode(parent.getId(), node2);
 
         ProcessingComponent component1 = componentService.findById(node1.getComponentId());
         ProcessingComponent component2 = componentService.findById(node2.getComponentId());
 
-        GroupComponent groupComponent = GroupComponent.create(component1.getSources(), component.getTargetCardinality(),
-                                                              component2.getTargets(), component.getTargetCardinality());
-        groupComponent = groupComponentService.save(groupComponent);
-        grpNode.setComponentId(groupComponent.getId());
-        grpNode.addNode(node1);
-        grpNode.addNode(node2);
+        workflowService.addLink(node1.getId(), component1.getTargets().get(0).getId(),
+                                node2.getId(), component2.getSources().get(0).getId());
 
-        persistenceManager.saveWorkflowDescriptor(parent);
-
-        ArrayList<ComponentLink> external = new ArrayList<>();
-        TargetDescriptor target1 = component.getTargets().get(0);
-        external.add(new ComponentLink(dsNode.getId(),
-                                       target1, groupComponent.getSources().get(0)));
-        grpNode.setIncomingLinks(external);
-
-        ArrayList<ComponentLink> internalLinks = new ArrayList<>();
-        TargetDescriptor target2 = component1.getTargets().get(0);
-        internalLinks.add(new ComponentLink(node1.getId(),
-                                            target2, component2.getSources().get(0)));
-        node2.setIncomingLinks(internalLinks);
-
-        persistenceManager.updateWorkflowNodeDescriptor(grpNode);
-        persistenceManager.updateWorkflowNodeDescriptor(node2);
+        workflowService.addGroup(parent.getId(), grpNode, dsNode.getId(),
+                                 new WorkflowNodeDescriptor[] { node1, node2 });
 
         Query dsQuery = new Query();
         dsQuery.setUserId(SystemPrincipal.instance().getName());
