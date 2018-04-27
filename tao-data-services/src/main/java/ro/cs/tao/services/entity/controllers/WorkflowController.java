@@ -19,8 +19,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.remote.FetchMode;
@@ -30,6 +33,7 @@ import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.entity.demo.OTBDemo;
 import ro.cs.tao.services.entity.demo.SNAPDemo;
 import ro.cs.tao.services.interfaces.ComponentService;
@@ -43,6 +47,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author Cosmin Cara
@@ -67,29 +72,28 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     private PersistenceManager persistenceManager;
 
     @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<?> initialize() throws PersistenceException {
+    public ResponseEntity<?> initialize(@RequestParam("otbContainer") String otbContainerName,
+                                        @RequestParam("otbPath") String otbPath,
+                                        @RequestParam("snapContainer") String snapContainerName,
+                                        @RequestParam("snapPath") String snapPath) throws PersistenceException {
 
         Platform currentPlatform = Platform.getCurrentPlatform();
         // Initialize OTB test otbContainer
         Container otbContainer = null;
         try {
-            otbContainer = persistenceManager.getContainerById("690d6747-7b76-4290-bb5d-87d775b5d23a");
+            otbContainer = persistenceManager.getContainerById(otbContainerName);
         } catch (PersistenceException ignored) { }
         if (otbContainer == null) {
-            String otbPath = currentPlatform.getId().equals(Platform.ID.win) ?
-                    "C:\\Tools\\OTB-6.4.0\\bin" : "/opt/OTB-6.4.0-Linux64/bin";
-            otbContainer = containerService.initOTB(otbPath);
+            otbContainer = containerService.initOTB(otbContainerName, otbPath);
         }
 
         // Initialize SNAP test otbContainer
         Container snapContainer = null;
         try {
-            snapContainer = persistenceManager.getContainerById("caefe468-3830-45ba-a7b8-053397460899");
+            snapContainer = persistenceManager.getContainerById(snapContainerName);
         } catch (PersistenceException ignored) { }
         if (snapContainer == null) {
-            String snapPath = currentPlatform.getId().equals(Platform.ID.win) ?
-                    "" : "/opt/snap/bin";
-            snapContainer = containerService.initSNAP(snapPath);
+            snapContainer = containerService.initSNAP(snapContainerName, snapPath);
         }
         List<Application> applications = snapContainer.getApplications();
         if (applications == null || applications.size() == 0) {
@@ -250,6 +254,77 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return new ResponseEntity<>(new WorkflowDescriptor[]
                 { descriptor1, descriptor2, descriptor3, descriptor4, descriptor5 },
                 HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/node", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> addNode(@RequestParam("workflowId") long workflowId,
+                                    @RequestBody WorkflowNodeDescriptor node) {
+        ResponseEntity<?> responseEntity;
+        try {
+            responseEntity = new ResponseEntity<>(workflowService.addNode(workflowId, node),
+                                                  HttpStatus.OK);
+        } catch (PersistenceException e) {
+            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
+            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/node", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<?> updateNode(@RequestParam("workflowId") long workflowId,
+                                     @RequestBody WorkflowNodeDescriptor node) {
+        ResponseEntity<?> responseEntity;
+        try {
+            responseEntity = new ResponseEntity<>(workflowService.updateNode(workflowId, node),
+                                                  HttpStatus.OK);
+        } catch (PersistenceException e) {
+            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
+            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/node", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<?> removeNode(@RequestParam("workflowId") long workflowId,
+                                        @RequestBody WorkflowNodeDescriptor node) {
+        ResponseEntity<?> responseEntity;
+        try {
+            responseEntity = new ResponseEntity<>(workflowService.removeNode(workflowId, node),
+                                                  HttpStatus.OK);
+        } catch (PersistenceException e) {
+            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
+            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/link", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> addLink(@RequestParam("sourceNodeId") long sourceNodeId,
+                                     @RequestParam("sourceTargetId") String sourceTargetId,
+                                     @RequestParam("targetNodeId") long targetNodeId,
+                                     @RequestParam("targetSourceId") String targetSourceId) {
+        ResponseEntity<?> responseEntity;
+        try {
+            responseEntity = new ResponseEntity<>(workflowService.addLink(sourceNodeId, sourceTargetId,
+                                                                          targetNodeId, targetSourceId),
+                                                  HttpStatus.OK);
+        } catch (PersistenceException e) {
+            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
+            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/link", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<?> removeLink(@RequestBody ComponentLink link) {
+        ResponseEntity<?> responseEntity;
+        try {
+            responseEntity = new ResponseEntity<>(workflowService.removeLink(link), HttpStatus.OK);
+        } catch (PersistenceException e) {
+            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
+            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+        }
+        return responseEntity;
     }
 
     private void addNodes1(WorkflowDescriptor parent) throws PersistenceException {
