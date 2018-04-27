@@ -104,57 +104,77 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public Container initOTB(String path) {
+    public Container initializeContainer(String name, String path, List<String> applicationNames) {
         List<Container> containers = persistenceManager.getContainers();
         boolean isWin = Platform.getCurrentPlatform().getId().equals(Platform.ID.win);
-        Container otbContainer = null;
-        if (containers == null || containers.stream().noneMatch(c -> c.getName().equals("OTB-6.4.0"))) {
-            otbContainer = new Container();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("otb_container.json")))) {
-                String str = String.join("", reader.lines().collect(Collectors.toList()));
-                otbContainer = JacksonUtil.fromString(str, Container.class);
-                otbContainer.setApplicationPath(path);
-                otbContainer.getApplications().forEach(a -> {
-                    if (a.getPath() == null) {
-                        a.setPath(a.getName());
-                    }
-                    if (isWin && !a.getPath().endsWith(".bat")) {
-                        a.setPath(a.getPath() + ".bat");
-                    }
-                });
-                otbContainer = persistenceManager.saveContainer(otbContainer);
+        Container container = null;
+        if (containers == null || containers.stream().noneMatch(c -> c.getName().equals(name))) {
+            container = new Container();
+            container.setId(name);
+            container.setName(name);
+            container.setTag(name);
+            container.setApplicationPath(path);
+            String appPath;
+            for (String appName : applicationNames) {
+                Application application = new Application();
+                appPath = appName + (isWin && !path.endsWith(".bat") ? ".bat" : "");
+                application.setName(appName);
+                application.setPath(appPath);
+                container.addApplication(application);
+            }
+            try {
+                container = persistenceManager.saveContainer(container);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
             }
         } else {
-            otbContainer = containers.stream().filter(c -> c.getName().equals("OTB-6.4.0")).findFirst().orElse(null);
-            try {
-                otbContainer.setApplicationPath(path);
-                otbContainer.getApplications().forEach(a -> {
-                    if (a.getPath() == null) {
-                        a.setPath(a.getName());
-                    }
-                    if (isWin && !a.getPath().endsWith(".bat")) {
-                        a.setPath(a.getPath() + ".bat");
-                    }
-                });
-                otbContainer = persistenceManager.updateContainer(otbContainer);
-            } catch (Exception e) {
-                e.printStackTrace();
+            container = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
+            container.setName(name);
+            container.setTag(name);
+            String appPath;
+            for (String appName : applicationNames) {
+                Application application = new Application();
+                appPath = appName + (isWin && !path.endsWith(".bat") ? ".bat" : "");
+                application.setName(appName);
+                application.setPath(appPath);
+                container.addApplication(application);
             }
+            try {
+                container = persistenceManager.updateContainer(container);
+            } catch (Exception e) {
+                logger.severe(e.getMessage());
+            }
+        }
+        return container;
+    }
+
+    @Override
+    public Container initOTB(String name, String path) {
+        Container otbContainer = null;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("otb_container.json")))) {
+            String str = String.join("", reader.lines().collect(Collectors.toList()));
+            Container tmp = JacksonUtil.fromString(str, Container.class);
+            List<String> applications = tmp.getApplications().stream().map(Application::getName).collect(Collectors.toList());
+            otbContainer = initializeContainer(name, path, applications);
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
         }
         return otbContainer;
     }
 
-    public Container initSNAP(String path) {
+    @Override
+    public Container initSNAP(String name, String path) {
         List<Container> containers = persistenceManager.getContainers();
         boolean isWin = Platform.getCurrentPlatform().getId().equals(Platform.ID.win);
         Container snapContainer;
-        if (containers == null || containers.stream().noneMatch(c -> c.getName().equals("SNAP-6.0.0"))) {
+        if (containers == null || containers.stream().noneMatch(c -> c.getName().equals(name))) {
             snapContainer = new Container();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("snap_container.json")))) {
                 String str = String.join("", reader.lines().collect(Collectors.toList()));
                 snapContainer = JacksonUtil.fromString(str, Container.class);
+                snapContainer.setId(name);
+                snapContainer.setName(name);
+                snapContainer.setTag(name);
                 snapContainer.setApplicationPath(path);
                 snapContainer.getApplications().forEach(a -> {
                     if (a.getPath() == null) {
@@ -169,15 +189,17 @@ public class ContainerServiceImpl
                 e.printStackTrace();
             }
         } else {
-            snapContainer = containers.stream().filter(c -> c.getName().equals("SNAP-6.0.0")).findFirst().orElse(null);
+            snapContainer = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
             try {
+                snapContainer.setName(name);
+                snapContainer.setTag(name);
                 snapContainer.setApplicationPath(path);
                 snapContainer.getApplications().forEach(a -> {
                     if (a.getPath() == null) {
-                        a.setPath(a.getName());
+                        a.setPath("gpt");
                     }
-                    if (isWin && !a.getPath().endsWith(".bat")) {
-                        a.setPath(a.getPath() + ".bat");
+                    if (isWin && !a.getPath().endsWith(".exe")) {
+                        a.setPath(a.getPath() + ".exe");
                     }
                 });
                 snapContainer = persistenceManager.updateContainer(snapContainer);

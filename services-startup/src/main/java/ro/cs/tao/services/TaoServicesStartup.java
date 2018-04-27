@@ -125,19 +125,22 @@ public class TaoServicesStartup implements ApplicationListener {
         if (node != null) {
             try {
                 String masterHost = InetAddress.getLocalHost().getHostName();
-                NodeDescription master = new NodeDescription();
-                master.setHostName(masterHost);
-                master.setUserName(node.getUserName());
-                master.setUserPass(node.getUserPass());
-                master.setDescription(node.getDescription());
-                master.setServicesStatus(node.getServicesStatus());
-                master.setProcessorCount(node.getProcessorCount());
-                master.setDiskSpaceSizeGB(node.getDiskSpaceSizeGB());
-                master.setMemorySizeGB(node.getMemorySizeGB());
-                master.setActive(true);
-                persistenceManager.saveExecutionNode(master);
-                persistenceManager.deleteExecutionNode(node.getHostName());
-                logger.info(String.format("Node [localhost] has been renamed to [%s]", masterHost));
+                NodeDescription master = persistenceManager.getNodeByHostName(masterHost);
+                if (master == null) {
+                    master = new NodeDescription();
+                    master.setHostName(masterHost);
+                    master.setUserName(node.getUserName());
+                    master.setUserPass(node.getUserPass());
+                    master.setDescription(node.getDescription());
+                    master.setServicesStatus(node.getServicesStatus());
+                    master.setProcessorCount(node.getProcessorCount());
+                    master.setDiskSpaceSizeGB(node.getDiskSpaceSizeGB());
+                    master.setMemorySizeGB(node.getMemorySizeGB());
+                    master.setActive(true);
+                    persistenceManager.saveExecutionNode(master);
+                    persistenceManager.deleteExecutionNode(node.getHostName());
+                    logger.info(String.format("Node [localhost] has been renamed to [%s]", masterHost));
+                }
             } catch (Exception ex) {
                 logger.severe("Cannot update localhost name: " + ex.getMessage());
             }
