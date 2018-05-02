@@ -44,6 +44,11 @@
             <artifactId>tao-gdalinfo</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-integration-geostorm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
