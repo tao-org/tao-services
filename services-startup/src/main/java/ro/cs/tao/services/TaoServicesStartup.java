@@ -129,8 +129,10 @@ public class TaoServicesStartup implements ApplicationListener {
                 if (master == null) {
                     master = new NodeDescription();
                     master.setHostName(masterHost);
-                    master.setUserName(node.getUserName());
-                    master.setUserPass(node.getUserPass());
+                    String user = ConfigurationManager.getInstance().getValue("topology.master.user", node.getUserName());
+                    master.setUserName(user);
+                    String pwd = ConfigurationManager.getInstance().getValue("topology.master.password", node.getUserPass());
+                    master.setUserPass(pwd);
                     master.setDescription(node.getDescription());
                     master.setServicesStatus(node.getServicesStatus());
                     master.setProcessorCount(node.getProcessorCount());
@@ -138,7 +140,7 @@ public class TaoServicesStartup implements ApplicationListener {
                     master.setMemorySizeGB(node.getMemorySizeGB());
                     master.setActive(true);
                     persistenceManager.saveExecutionNode(master);
-                    persistenceManager.deleteExecutionNode(node.getHostName());
+                    persistenceManager.removeExecutionNode(node.getHostName());
                     logger.info(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                 }
             } catch (Exception ex) {
