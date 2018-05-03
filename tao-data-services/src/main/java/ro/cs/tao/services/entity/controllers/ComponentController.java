@@ -23,11 +23,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.SourceDescriptor;
+import ro.cs.tao.component.TargetDescriptor;
+import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.ComponentService;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Cosmin Cara
@@ -48,23 +53,44 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         return new ResponseEntity<>(objects, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = "application/json")
-    public ResponseEntity<?> importFrom(@RequestBody ProcessingComponent component) throws PersistenceException {
+    @RequestMapping(value = "/import", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> importFrom(@RequestBody ProcessingComponent component) {
+        ResponseEntity<?> responseEntity;
         if (component != null) {
-            String componentId = component.getId();
-            if (componentId != null) {
-                try {
-                    component = this.persistenceManager.getProcessingComponentById(componentId);
-                } catch (PersistenceException e) {
-                    component = this.persistenceManager.saveProcessingComponent(component);
+            try {
+                List<SourceDescriptor> sources = component.getSources();
+                if (sources != null) {
+                    sources.forEach(sourceDescriptor -> {
+                        if (sourceDescriptor != null) {
+                            if (sourceDescriptor.getId() == null || sourceDescriptor.getId().isEmpty()) {
+                                sourceDescriptor.setId(UUID.randomUUID().toString());
+                            }
+                        }
+                    });
                 }
-            } else {
-                component = this.persistenceManager.updateProcessingComponent(component);
+                List<TargetDescriptor> targets = component.getTargets();
+                if (targets != null) {
+                    targets.forEach(targetDescriptor -> {
+                        if (targetDescriptor != null) {
+                            if (targetDescriptor.getId() == null || targetDescriptor.getId().isEmpty()) {
+                                targetDescriptor.setId(UUID.randomUUID().toString());
+                            }
+                        }
+                    });
+                }
+                this.service.validate(component);
+                this.persistenceManager.saveProcessingComponent(component);
+                responseEntity = new ResponseEntity<>(component, HttpStatus.OK);
+            } catch (ValidationException vex) {
+                responseEntity = new ResponseEntity<>(new ArrayList<>(vex.getAdditionalInfo().keySet()),
+                                                      HttpStatus.OK);
+            } catch (PersistenceException e) {
+                responseEntity = new ResponseEntity<>(e.getMessage(), HttpStatus.OK);
             }
-            return new ResponseEntity<>(component, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("No body", HttpStatus.BAD_REQUEST);
+            responseEntity = new ResponseEntity<>("No body", HttpStatus.BAD_REQUEST);
         }
+        return responseEntity;
     }
 
 }
