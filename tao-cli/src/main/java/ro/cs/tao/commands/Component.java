@@ -18,6 +18,9 @@ package ro.cs.tao.commands;
 
 import org.apache.commons.cli.CommandLine;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,6 +50,27 @@ public class Component {
         protected Map<String, Object> readParameters(CommandLine commandLine) {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("id", commandLine.getOptionValue("id"));
+            return parameters;
+        }
+    };
+
+    public static final BaseCommand Import = new BaseCommand("component-import", "component/import", "POST") {
+        @Override
+        protected String[][] getArgumentsDefinition() {
+            return new String[][] {
+                    new String[] { "in", "1", "file", "", "false", "The component descriptor file" }
+            };
+        }
+
+        @Override
+        protected Map<String, Object> readParameters(CommandLine commandLine) {
+            Map<String, Object> parameters = new HashMap<>();
+            String fileName = commandLine.getOptionValue("in");
+            try {
+                parameters.put("in", new String(Files.readAllBytes(Paths.get(fileName))));
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
             return parameters;
         }
     };

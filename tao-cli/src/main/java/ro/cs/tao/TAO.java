@@ -35,10 +35,11 @@ public class TAO {
         commands.put(Workflow.Export.getName(), Workflow.Export);
         commands.put(Component.List.getName(), Component.List);
         commands.put(Component.Export.getName(), Component.Export);
+        commands.put(Component.Import.getName(), Component.Import);
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length >= 5) {
+        if (args.length >= 3) {
             BaseCommand command = commands.get(args[0]);
             if (command == null) {
                 System.err.println("Unsupported command");
