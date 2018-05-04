@@ -28,7 +28,9 @@ import ro.cs.tao.utils.Platform;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -39,6 +41,8 @@ import java.util.stream.Collectors;
 public class ContainerServiceImpl
     extends EntityService<Container>
         implements ContainerService {
+
+    private static final Set<String> winExtensions = new HashSet<String>() {{ add(".bat"); add(".exe"); }};
 
     @Autowired
     private PersistenceManager persistenceManager;
@@ -117,7 +121,8 @@ public class ContainerServiceImpl
             String appPath;
             for (String appName : applicationNames) {
                 Application application = new Application();
-                appPath = appName + (isWin && !path.endsWith(".bat") ? ".bat" : "");
+                appPath = appName + (isWin && (winExtensions.stream()
+                                                            .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
                 application.setName(appName);
                 application.setPath(appPath);
                 container.addApplication(application);
@@ -134,7 +139,8 @@ public class ContainerServiceImpl
             String appPath;
             for (String appName : applicationNames) {
                 Application application = new Application();
-                appPath = appName + (isWin && !path.endsWith(".bat") ? ".bat" : "");
+                appPath = appName + (isWin && (winExtensions.stream()
+                                                            .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
                 application.setName(appName);
                 application.setPath(appPath);
                 container.addApplication(application);
