@@ -24,6 +24,7 @@ import org.apache.commons.cli.*;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
 
@@ -118,13 +119,27 @@ public abstract class BaseCommand {
                     conn.setRequestProperty("Authorization", authToken);
                 }
                 if (parameters != null) {
-                    String contents = "{" + expandParameters(parameters) + "}";
+                    String contents = expandParameters(parameters);
+                    if (!contents.startsWith("{")) {
+                        contents = "{" + contents;
+                    }
+                    if (!contents.endsWith("}")) {
+                        contents += "}";
+                    }
                     try (OutputStream outStream = conn.getOutputStream()) {
                         outStream.write(contents.getBytes());
                         outStream.flush();
                     }
                 }
                 retCode = conn.getResponseCode() == 200 ? 0 : 2;
+                byte[] buffer = new byte[4096];
+                int read = -1;
+                try (InputStream inStream = conn.getInputStream()) {
+                    while((read = inStream.read(buffer)) != -1) {
+                        System.out.print(new String(Arrays.copyOfRange(buffer, 0, read)));
+                    }
+                    System.out.println();
+                }
                 break;
             case "GET":
             default:
@@ -165,6 +180,13 @@ public abstract class BaseCommand {
 
     private String expandParameters(Map<String, Object> params) {
         StringBuilder builder = new StringBuilder();
+        if (params.size() == 1) {
+            String value = params.values().stream().findFirst().get().toString();
+            if (value.startsWith("{") && value.endsWith("}")) {
+                builder.append(value);
+                params.remove(params.keySet().stream().findFirst().get());
+            }
+        }
         for (Map.Entry<String, Object> entry : params.entrySet()) {
             builder.append("\"").append(entry.getKey()).append(":");
             Object value = entry.getValue();
