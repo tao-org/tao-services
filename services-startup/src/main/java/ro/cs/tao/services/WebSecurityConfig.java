@@ -28,6 +28,7 @@ import org.springframework.session.web.http.HttpSessionStrategy;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import ro.cs.tao.services.security.TaoUserDetailsService;
 
 /**
  * @author Cosmin Cara
@@ -40,12 +41,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     private AuthenticationEntryPoint entryPoint;
 
     @Autowired
+    private TaoUserDetailsService userDetailsService;
+
+    @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth
+        /*auth
                 .inMemoryAuthentication()
                 .withUser("admin").password("admin").roles("ADMIN")
                 .and()
-                .withUser("user").password("user").roles("USER");
+                .withUser("user").password("user").roles("USER");*/
+
+        auth.userDetailsService(userDetailsService);
     }
 
     @Bean
