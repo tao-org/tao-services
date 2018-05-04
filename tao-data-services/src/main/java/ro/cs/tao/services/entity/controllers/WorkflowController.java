@@ -34,6 +34,7 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.ServiceError;
+import ro.cs.tao.services.entity.demo.GDALDemo;
 import ro.cs.tao.services.entity.demo.OTBDemo;
 import ro.cs.tao.services.entity.demo.SNAPDemo;
 import ro.cs.tao.services.interfaces.ComponentService;
@@ -137,6 +138,13 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             component = persistenceManager.getProcessingComponentById(componentId);
         } catch (PersistenceException pex) {
             component = OTBDemo.concatenateImages(otbContainer);
+            componentService.save(component);
+        }
+        componentId = "gdal_translate";
+        try {
+            component = persistenceManager.getProcessingComponentById(componentId);
+        } catch (PersistenceException pex) {
+            component = GDALDemo.gdalTranslate(otbContainer);
             componentService.save(component);
         }
 
@@ -251,8 +259,20 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         persistenceManager.saveWorkflowDescriptor(descriptor5);
         addNodes5(descriptor5, dataSourceComponent);
 
+        // Workflow 6: Data query + fetch 2 products -> SNAP NDVI + OTB RESAMPLE ( without grouping)
+        WorkflowDescriptor descriptor6 = new WorkflowDescriptor();
+        descriptor6.setName("AWS Download, SNAP NDVI and OTB Resample (no group)");
+        descriptor6.setStatus(Status.DRAFT);
+        descriptor6.setCreated(LocalDateTime.now());
+        descriptor6.setActive(true);
+        descriptor6.setUserName("admin");
+        descriptor6.setVisibility(Visibility.PRIVATE);
+        descriptor6.setCreated(LocalDateTime.now());
+        persistenceManager.saveWorkflowDescriptor(descriptor6);
+        addNodes6(descriptor6, dataSourceComponent);
+
         return new ResponseEntity<>(new WorkflowDescriptor[]
-                { descriptor1, descriptor2, descriptor3, descriptor4, descriptor5 },
+                { descriptor1, descriptor2, descriptor3, descriptor4, descriptor5, descriptor6 },
                 HttpStatus.OK);
     }
 
@@ -546,6 +566,66 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
         workflowService.addGroup(parent.getId(), grpNode, dsNode.getId(),
                                  new WorkflowNodeDescriptor[] { node1, node2 });
+
+        Query dsQuery = new Query();
+        dsQuery.setUserId(SystemPrincipal.instance().getName());
+        dsQuery.setSensor("Sentinel2");
+        dsQuery.setDataSource("Amazon Web Services");
+        dsQuery.setPageNumber(1);
+        dsQuery.setPageSize(10);
+        dsQuery.setLimit(2);
+        Map<String, String> values = new HashMap<>();
+        values.put("beginPosition", "2018-01-01");
+        values.put("endPosition", "2018-01-01");
+        values.put("footprint", "POLYGON((22.8042573604346 43.8379609098684, " +
+                "24.83885442747927 43.8379609098684, 24.83885442747927 44.795645304033826, " +
+                "22.8042573604346 44.795645304033826, 22.8042573604346 43.8379609098684))");
+        dsQuery.setValues(values);
+        dsQuery.setWorkflowNodeId(dsNode.getId());
+        persistenceManager.saveQuery(dsQuery);
+
+    }
+
+    private void addNodes6(WorkflowDescriptor parent, DataSourceComponent component) throws PersistenceException {
+        WorkflowNodeDescriptor dsNode = new WorkflowNodeDescriptor();
+        dsNode.setWorkflow(parent);
+        dsNode.setName("AWS Download");
+        dsNode.setxCoord(300);
+        dsNode.setyCoord(500);
+        dsNode.setComponentId(component.getId());
+        dsNode.setCreated(LocalDateTime.now());
+        dsNode = workflowService.addNode(parent.getId(), dsNode);
+
+        WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
+        node1.setWorkflow(parent);
+        node1.setName("SNAP NDVI");
+        node1.setxCoord(300);
+        node1.setyCoord(500);
+        node1.setComponentId("snap-ndvi");
+        node1.setCreated(LocalDateTime.now());
+        node1.setPreserveOutput(true);
+        node1 = workflowService.addNode(parent.getId(), node1);
+
+        WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
+        node2.setWorkflow(parent);
+        node2.setName("OTB Resample");
+        node2.setxCoord(600);
+        node2.setyCoord(500);
+        node2.setComponentId("otbcli_RigidTransformResample");
+        node2.addCustomValue("transformTypeIdScaleX", "0.5");
+        node2.addCustomValue("transformTypeIdScaleY", "0.5");
+        node2.setCreated(LocalDateTime.now());
+        node2.setPreserveOutput(true);
+        node2 = workflowService.addNode(parent.getId(), node2);
+
+        ProcessingComponent component1 = componentService.findById(node1.getComponentId());
+        ProcessingComponent component2 = componentService.findById(node2.getComponentId());
+
+        workflowService.addLink(dsNode.getId(), component.getTargets().get(0).getId(),
+                                node1.getId(), component1.getSources().get(0).getId());
+
+        workflowService.addLink(node1.getId(), component1.getTargets().get(0).getId(),
+                                node2.getId(), component2.getSources().get(0).getId());
 
         Query dsQuery = new Query();
         dsQuery.setUserId(SystemPrincipal.instance().getName());

@@ -435,6 +435,10 @@
 		{
 			"path": null,
 			"name": "otbcli_VertexComponentAnalysis"
+		},
+		{
+			"path": null,
+			"name": "gdal_translate.exe"
 		}
 	]
 }
