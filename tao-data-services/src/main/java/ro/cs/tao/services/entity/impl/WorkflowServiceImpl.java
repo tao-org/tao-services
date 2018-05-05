@@ -129,6 +129,7 @@ public class WorkflowServiceImpl
         if (workflow == null) {
             throw new PersistenceException("Node is not attached to an existing workflow");
         }
+        nodeDescriptor.setWorkflow(workflow);
         List<String> validationErrors = new ArrayList<>();
         validateNode(workflow, nodeDescriptor, validationErrors);
         if (validationErrors.size() > 0) {
@@ -152,6 +153,7 @@ public class WorkflowServiceImpl
         if (workflow == null) {
             throw new PersistenceException("Node is not attached to an existing workflow");
         }
+        nodeDescriptor.setWorkflow(workflow);
         persistenceManager.delete(nodeDescriptor);
         return persistenceManager.getWorkflowDescriptor(workflow.getId());
     }
@@ -322,7 +324,7 @@ public class WorkflowServiceImpl
             errors.add("[node.name] cannot be empty");
         }
         List<ComponentLink> incomingLinks = node.getIncomingLinks();
-        if (incomingLinks != null) {
+        if (incomingLinks != null && incomingLinks.size() > 0) {
             if (incomingLinks.stream()
                     .noneMatch(l -> l.getOutput().getParentId().equals(node.getComponentId()))) {
                 errors.add(String.format("[%s.incomingLinks] contains some invalid node identifiers",
@@ -347,12 +349,12 @@ public class WorkflowServiceImpl
             } else {
                 List<ParameterValue> customValues = node.getCustomValues();
                 // Validate custom parameter values for the attached component
-                if (customValues != null) {
+                if (customValues != null && customValues.size() > 0) {
                     List<ParameterDescriptor> descriptors = null;
                     if (component instanceof ProcessingComponent) {
                         descriptors = ((ProcessingComponent) component).getParameterDescriptors();
                     }
-                    if (descriptors != null) {
+                    if (descriptors != null && descriptors.size() > 0) {
                         final List<ParameterDescriptor> descriptorList = descriptors;
                         customValues.forEach(v -> {
                             ParameterDescriptor descriptor = descriptorList.stream()
@@ -373,18 +375,23 @@ public class WorkflowServiceImpl
                     }
                 }
                 // Validate the compatibilities of the attached component with the declared incoming components
-                if (incomingLinks != null) {
-                    List<ProcessingComponent> linkedComponents = new ArrayList<>();
+                if (incomingLinks != null && incomingLinks.size() > 0) {
+                    List<TaoComponent> linkedComponents = new ArrayList<>();
                     for (ComponentLink link : incomingLinks) {
+                        String parentId = link.getInput().getParentId();
                         try {
-                            linkedComponents.add(persistenceManager.getProcessingComponentById(link.getInput().getParentId()));
+                            TaoComponent parentComponent = findComponent(parentId);
+                            if (parentComponent == null) {
+                                throw new PersistenceException();
+                            }
+                            linkedComponents.add(parentComponent);
                         } catch (PersistenceException e) {
                             errors.add(String.format("[node.componentId] cannot retrieve component with id = %s",
-                                                     node.getComponentId()));
+                                                     parentId));
                         }
                     }
                     List<SourceDescriptor> sources = component.getSources();
-                    for (ProcessingComponent linkedComponent : linkedComponents) {
+                    for (TaoComponent linkedComponent : linkedComponents) {
                         List<TargetDescriptor> targets = linkedComponent.getTargets();
                         if (targets.stream()
                                    .noneMatch(t -> sources.stream()
