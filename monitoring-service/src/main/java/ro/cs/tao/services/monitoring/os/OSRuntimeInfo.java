@@ -61,6 +61,7 @@ public abstract class OSRuntimeInfo {
     public abstract long getAvailableMemoryMB();
     public abstract long getTotalDiskGB();
     public abstract long getUsedDiskGB();
+    public abstract RuntimeInfo getInfo();
 
     public RuntimeInfo getSnapshot() {
         RuntimeInfo runtimeInfo = new RuntimeInfo();
@@ -78,6 +79,54 @@ public abstract class OSRuntimeInfo {
 
         Windows(NodeDescription host, boolean remote) {
             super(host, remote);
+        }
+
+        @Override
+        public RuntimeInfo getInfo() {
+            RuntimeInfo runtimeInfo = new RuntimeInfo();
+            List<String> args = new ArrayList<>();
+            Collections.addAll(args, "cmd", "/c");
+            args.add("wmic cpu get loadpercentage /value && " +
+                             "wmic os get totalvisiblememorysize /value && " +
+                             "wmic os get freephysicalmemory /value && " +
+                             "wmic logicaldisk get size /value && " +
+                             "wmic logicaldisk get freespace /value");
+            Executor executor = Executor.create(ExecutorType.PROCESS, this.node.getHostName(), args);
+            Consumer consumer = new Consumer();
+            executor.setOutputConsumer(consumer);
+            try {
+                long diskSize = 0, freeSpace = 0;
+                if (executor.execute(false) == 0) {
+                    List<String> messages = consumer.getMessages();
+                    for (String message : messages) {
+                        if (message.startsWith("LoadPercentage")) {
+                            runtimeInfo.setCpuTotal(Double.parseDouble(message.split("=")[1]));
+                        } else if (message.startsWith("TotalVisibleMemorySize")) {
+                            runtimeInfo.setTotalMemory(Long.parseLong(message.split("=")[1]) / MemoryUnit.KILOBYTE.value());
+                        } else if (message.startsWith("FreePhysicalMemory")) {
+                            // WMIC returns total memory in kilobytes
+                            runtimeInfo.setAvailableMemory(Long.parseLong(message.split("=")[1]) / MemoryUnit.KILOBYTE.value());
+                        } else if (message.startsWith("Size") && message.length() > 5) {
+                            String strSize = message.split("=")[1];
+                            if (strSize != null && !strSize.isEmpty()) {
+                                diskSize += Long.parseLong(strSize);
+                            }
+                        } else if (message.startsWith("FreeSpace=") && message.length() > 10) {
+                            String strSize = message.split("=")[1];
+                            if (strSize != null && !strSize.isEmpty()) {
+                                freeSpace += Long.parseLong(strSize);
+                            }
+                        }
+                    }
+                    // WMIC returns total disk in bytes
+                    diskSize = diskSize / MemoryUnit.GIGABYTE.value();
+                    runtimeInfo.setDiskTotal(diskSize);
+                    runtimeInfo.setDiskUsed(diskSize - freeSpace / MemoryUnit.GIGABYTE.value());
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(OSRuntimeInfo.class.getName()).severe(ex.getMessage());
+            }
+            return runtimeInfo;
         }
 
         @Override
@@ -215,6 +264,11 @@ public abstract class OSRuntimeInfo {
 
         Linux(NodeDescription host, boolean remote) {
             super(host, remote);
+        }
+
+        @Override
+        public RuntimeInfo getInfo() {
+            return getSnapshot();
         }
 
         @Override
