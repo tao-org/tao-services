@@ -58,11 +58,11 @@ public class ComponentServiceImpl
     public ProcessingComponent findById(String id) {
         //return fakeComponents.get(id);
         ProcessingComponent component = null;
-        try {
+        //try {
             component = persistenceManager.getProcessingComponentById(id);
-        } catch (PersistenceException e) {
-            logger.severe(e.getMessage());
-        }
+//        } catch (PersistenceException e) {
+//            logger.severe(e.getMessage());
+//        }
         return component;
     }
 

@@ -102,63 +102,71 @@ public class WorkflowDemo {
         // Initialize OTB processing components
         ProcessingComponent component;
         String componentId = "otbcli_RigidTransformResample";
-        try {
+        //try {
             component = persistenceManager.getProcessingComponentById(componentId);
-        } catch (PersistenceException pex) {
+        //} catch (PersistenceException pex) {
+        if (component == null) {
             component = OTBDemo.rigidTransform(otbContainer);
             componentService.save(component);
         }
         componentId = "otbcli_RadiometricIndices";
-        try {
+        //try {
             component = persistenceManager.getProcessingComponentById(componentId);
-        } catch (PersistenceException pex) {
+        //} catch (PersistenceException pex) {
+        if (component == null) {
             component = OTBDemo.radiometricIndices(otbContainer);
             componentService.save(component);
         }
         componentId = "otbcli_ConcatenateImages";
-        try {
+        //try {
             component = persistenceManager.getProcessingComponentById(componentId);
-        } catch (PersistenceException pex) {
+        //} catch (PersistenceException pex) {
+        if (component == null) {
             component = OTBDemo.concatenateImages(otbContainer);
             componentService.save(component);
         }
-        componentId = "gdal_translate";
-        try {
+        componentId = "gdal_translate.exe";
+        //try {
             component = persistenceManager.getProcessingComponentById(componentId);
-        } catch (PersistenceException pex) {
+        //} catch (PersistenceException pex) {
+        if (component == null) {
             component = GDALDemo.gdalTranslate(otbContainer);
             componentService.save(component);
         }
 
         // Initialize SNAP processing components
         componentId = "snap-s2rep";
-        try {
+        //try {
             component = persistenceManager.getProcessingComponentById(componentId);
-        } catch (PersistenceException pex) {
+        //} catch (PersistenceException pex) {
+        if (component == null) {
             component = SNAPDemo.s2rep();
             component.setContainerId(snapContainer.getId());
             componentService.save(component);
         }
         componentId = "snap-ndvi";
-        try {
+        //try {
             component = persistenceManager.getProcessingComponentById(componentId);
-        } catch (PersistenceException pex) {
+        //} catch (PersistenceException pex) {
+        if (component == null) {
             component = SNAPDemo.ndvi();
             component.setContainerId(snapContainer.getId());
             componentService.save(component);
         }
         componentId = "snap-msavi";
-        try {
+        //try {
             component = persistenceManager.getProcessingComponentById(componentId);
-        } catch (PersistenceException pex) {
+        //} catch (PersistenceException pex) {
+        if (component == null) {
             component = SNAPDemo.msavi();
             component.setContainerId(snapContainer.getId());
             componentService.save(component);
         }
         componentId = "snap-resample";
-        try {
+        //try {
             component = persistenceManager.getProcessingComponentById(componentId);
-        } catch (PersistenceException pex) {
+        //} catch (PersistenceException pex) {
+        if (component == null) {
             component = SNAPDemo.resample();
             component.setContainerId(snapContainer.getId());
             componentService.save(component);
