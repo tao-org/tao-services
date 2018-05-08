@@ -59,7 +59,7 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
         RuntimeInfo runtimeInfo = null;
         try {
             OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(TopologyManager.getInstance().getMasterNodeInfo());
-            runtimeInfo = inspector.getSnapshot();
+            runtimeInfo = inspector.getInfo();
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
