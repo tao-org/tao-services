@@ -26,10 +26,7 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.GroupComponentService;
 import ro.cs.tao.services.interfaces.WorkflowService;
-import ro.cs.tao.workflow.ParameterValue;
-import ro.cs.tao.workflow.WorkflowDescriptor;
-import ro.cs.tao.workflow.WorkflowNodeDescriptor;
-import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
+import ro.cs.tao.workflow.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -164,28 +161,18 @@ public class WorkflowServiceImpl
         if (sourceTargetId == null || targetSourceId == null || sourceNodeId == 0 || targetNodeId == 0) {
             throw new PersistenceException("Invalid link data");
         }
-
         WorkflowNodeDescriptor sourceNode = persistenceManager.getWorkflowNodeById(sourceNodeId);
-        if (sourceNode == null) {
-            throw new PersistenceException("Source node does not exist");
-        }
         WorkflowNodeDescriptor targetNode = persistenceManager.getWorkflowNodeById(targetNodeId);
         if (targetNode == null) {
             throw new PersistenceException("Target node does not exist");
         }
-        TaoComponent sourceComponent = findComponent(sourceNode.getComponentId());
+        TaoComponent sourceComponent = findComponent(sourceNode.getComponentId(), sourceNode.getComponentType());
         if (sourceComponent == null) {
             throw new PersistenceException("Source component not found");
         }
-        TaoComponent targetComponent = findComponent(targetNode.getComponentId());
+        TaoComponent targetComponent = findComponent(targetNode.getComponentId(), targetNode.getComponentType());
         if (targetComponent == null) {
             throw new PersistenceException("Target component not found");
-        }
-        if (targetNode.getIncomingLinks() != null &&
-                targetNode.getIncomingLinks().stream().anyMatch(l -> l.getInput().getId().equals(sourceTargetId) &&
-                                                                     l.getOutput().getId().equals(targetSourceId) &&
-                                                                     l.getSourceNodeId().equals(sourceNodeId))) {
-            throw new PersistenceException("Link already exists");
         }
         TargetDescriptor linkInput = sourceComponent.getTargets().stream()
                                                     .filter(t -> t.getId().equals(sourceTargetId))
@@ -205,12 +192,15 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public WorkflowDescriptor removeLink(ComponentLink link) throws PersistenceException {
+    public WorkflowDescriptor removeLink(long nodeId, ComponentLink link) throws PersistenceException {
         if (link == null) {
             throw new PersistenceException("Cannot remove a null link");
         }
-        if (link.getSourceNodeId() == null || link.getSourceNodeId() == 0) {
+        if (link.getSourceNodeId() == 0) {
             throw new PersistenceException("Link doesn't have a source node set");
+        }
+        if (nodeId == 0) {
+            throw new PersistenceException("Link doesn't have a target node set");
         }
         if (link.getInput() == null) {
             throw new PersistenceException("Invalid link input");
@@ -218,27 +208,13 @@ public class WorkflowServiceImpl
         if (link.getOutput() == null) {
             throw new PersistenceException("Invalid link output");
         }
-        WorkflowNodeDescriptor node = persistenceManager.getWorkflowNodeById(link.getSourceNodeId());
+        WorkflowNodeDescriptor node = persistenceManager.getWorkflowNodeById(nodeId);
         if (node == null) {
-            throw new PersistenceException("Link source does not exist");
-        }
-        String componentId = link.getOutput().getParentId();
-        TaoComponent component = findComponent(componentId);
-        if (component == null) {
-            throw new PersistenceException(String.format("Inexistent component with identifier %s", componentId));
-        }
-        WorkflowDescriptor workflow = node.getWorkflow();
-        List<WorkflowNodeDescriptor> nodes = persistenceManager.getWorkflowNodesByComponentId(workflow.getId(), componentId);
-        node = nodes.stream().filter(n -> n.getIncomingLinks() != null &&
-                n.getIncomingLinks().stream().anyMatch(l -> l.equals(link)))
-                .findFirst()
-                .orElse(null);
-        if (node == null) {
-            throw new PersistenceException("Link not found");
+            throw new PersistenceException("Parent node does not exist");
         }
         node.getIncomingLinks().removeIf(l -> l.equals(link));
-        persistenceManager.updateWorkflowNodeDescriptor(node);
-        return persistenceManager.getWorkflowDescriptor(workflow.getId());
+        node = persistenceManager.updateWorkflowNodeDescriptor(node);
+        return persistenceManager.getWorkflowDescriptor(node.getWorkflow().getId());
     }
 
     @Override
@@ -254,13 +230,14 @@ public class WorkflowServiceImpl
         WorkflowNodeDescriptor nodeBefore = persistenceManager.getWorkflowNodeById(nodeBeforeId);
         TaoComponent component = null;
         if (nodeBefore != null) {
-            component = findComponent(nodeBefore.getComponentId());
+            component = findComponent(nodeBefore.getComponentId(), nodeBefore.getComponentType());
         }
         int cardinality = component != null ? component.getTargetCardinality() : 1;
         GroupComponent groupComponent = GroupComponent.create(firstComponent.getSources(), cardinality,
                                                               lastComponent.getTargets(), cardinality);
         groupComponent = groupComponentService.save(groupComponent);
         groupDescriptor.setComponentId(groupComponent.getId());
+        groupDescriptor.setComponentType(ComponentType.GROUP);
         WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
 
         for (WorkflowNodeDescriptor node : nodes) {
@@ -270,9 +247,9 @@ public class WorkflowServiceImpl
 
         if (component != null) {
             List<ComponentLink> external = new ArrayList<>();
-            TargetDescriptor target1 = component.getTargets().get(0);
-            external.add(new ComponentLink(nodeBefore.getId(), target1,
-                                           groupComponent.getSources().get(0)));
+            TargetDescriptor target = component.getTargets().get(0);
+            SourceDescriptor source = groupComponent.getSources().get(0);
+            external.add(new ComponentLink(nodeBefore.getId(), target, source));
             groupDescriptor.setIncomingLinks(external);
             persistenceManager.updateWorkflowNodeDescriptor(groupDescriptor);
         }
@@ -303,16 +280,22 @@ public class WorkflowServiceImpl
         }
     }
 
-    private TaoComponent findComponent(String id) {
-        TaoComponent component;
+    private TaoComponent findComponent(String id, ComponentType type) {
+        TaoComponent component = null;
         try {
-            component = persistenceManager.getProcessingComponentById(id);
-        } catch (Exception ignored1) {
-            try {
-                component = persistenceManager.getGroupComponentById(id);
-            } catch (Exception ignored2) {
-                component = persistenceManager.getDataSourceInstance(id);
+            switch (type) {
+                case DATASOURCE:
+                    component = persistenceManager.getDataSourceInstance(id);
+                    break;
+                case PROCESSING:
+                    component = persistenceManager.getProcessingComponentById(id);
+                    break;
+                case GROUP:
+                    component = persistenceManager.getGroupComponentById(id);
+                    break;
             }
+        } catch (PersistenceException pex) {
+            logger.warning(pex.getMessage());
         }
         return component;
     }
@@ -339,65 +322,79 @@ public class WorkflowServiceImpl
             });
         }
         // Validate the attached processing component
-        value = node.getComponentId();
-        if (value == null || value.trim().isEmpty()) {
-            errors.add("[node] is not linked to a processing component");
+        if (node.getComponentType() == null) {
+            errors.add("[node.componentType] is empty");
         } else {
-            TaoComponent component = findComponent(value);
-            if (component == null) {
-                errors.add("[node.componentId] component does not exist");
+            value = node.getComponentId();
+            if (value == null || value.trim().isEmpty()) {
+                errors.add("[node] is not linked to a processing component");
             } else {
-                List<ParameterValue> customValues = node.getCustomValues();
-                // Validate custom parameter values for the attached component
-                if (customValues != null && customValues.size() > 0) {
-                    List<ParameterDescriptor> descriptors = null;
-                    if (component instanceof ProcessingComponent) {
-                        descriptors = ((ProcessingComponent) component).getParameterDescriptors();
-                    }
-                    if (descriptors != null && descriptors.size() > 0) {
-                        final List<ParameterDescriptor> descriptorList = descriptors;
-                        customValues.forEach(v -> {
-                            ParameterDescriptor descriptor = descriptorList.stream()
-                                    .filter(d -> d.getId().equals(v.getParameterName()))
-                                    .findFirst().orElse(null);
-                            if (descriptor == null) {
-                                errors.add("[node.customValues.parameterName] invalid parameter name");
-                            } else {
-                                ParameterConverter converter = ConverterFactory.getInstance().create(descriptor);
-                                try {
-                                    converter.fromString(v.getParameterValue());
-                                } catch (ConversionException e) {
-                                    errors.add(String.format("[node.customValues.parameterValue] invalid value for parameter '%s'",
-                                                             v.getParameterName()));
+                TaoComponent component = findComponent(value, node.getComponentType());
+                if (component == null) {
+                    errors.add("[node.componentId] component does not exist");
+                } else {
+                    List<ParameterValue> customValues = node.getCustomValues();
+                    // Validate custom parameter values for the attached component
+                    if (customValues != null && customValues.size() > 0) {
+                        List<ParameterDescriptor> descriptors = null;
+                        if (component instanceof ProcessingComponent) {
+                            descriptors = ((ProcessingComponent) component).getParameterDescriptors();
+                        }
+                        if (descriptors != null && descriptors.size() > 0) {
+                            final List<ParameterDescriptor> descriptorList = descriptors;
+                            customValues.forEach(v -> {
+                                ParameterDescriptor descriptor = descriptorList.stream()
+                                        .filter(d -> d.getId().equals(v.getParameterName()))
+                                        .findFirst().orElse(null);
+                                if (descriptor == null) {
+                                    errors.add("[node.customValues.parameterName] invalid parameter name");
+                                } else {
+                                    ParameterConverter converter = ConverterFactory.getInstance().create(descriptor);
+                                    try {
+                                        converter.fromString(v.getParameterValue());
+                                    } catch (ConversionException e) {
+                                        errors.add(String.format("[node.customValues.parameterValue] invalid value for parameter '%s'",
+                                                                 v.getParameterName()));
+                                    }
                                 }
-                            }
-                        });
-                    }
-                }
-                // Validate the compatibilities of the attached component with the declared incoming components
-                if (incomingLinks != null && incomingLinks.size() > 0) {
-                    List<TaoComponent> linkedComponents = new ArrayList<>();
-                    for (ComponentLink link : incomingLinks) {
-                        String parentId = link.getInput().getParentId();
-                        try {
-                            TaoComponent parentComponent = findComponent(parentId);
-                            if (parentComponent == null) {
-                                throw new PersistenceException();
-                            }
-                            linkedComponents.add(parentComponent);
-                        } catch (PersistenceException e) {
-                            errors.add(String.format("[node.componentId] cannot retrieve component with id = %s",
-                                                     parentId));
+                            });
                         }
                     }
-                    List<SourceDescriptor> sources = component.getSources();
-                    for (TaoComponent linkedComponent : linkedComponents) {
-                        List<TargetDescriptor> targets = linkedComponent.getTargets();
-                        if (targets.stream()
-                                   .noneMatch(t -> sources.stream()
-                                                          .anyMatch(s -> s.isCompatibleWith(t)))) {
-                            errors.add(String.format("[node.incomingLinks] component %s is not compatible with component %s",
-                                                     component.getId(), linkedComponent.getId()));
+                    // Validate the compatibilities of the attached component with the declared incoming components
+                    if (incomingLinks != null && incomingLinks.size() > 0) {
+                        List<TaoComponent> linkedComponents = new ArrayList<>();
+                        WorkflowNodeDescriptor nodeBefore;
+                        List<WorkflowNodeDescriptor> workflowNodes = workflow.getNodes();
+                        for (ComponentLink link : incomingLinks) {
+                            String parentId = link.getInput().getParentId();
+                            nodeBefore = workflowNodes.stream()
+                                    .filter(n -> link.getSourceNodeId() == n.getId())
+                                    .findFirst().orElse(null);
+                            if (nodeBefore != null) {
+                                try {
+                                    TaoComponent parentComponent = findComponent(parentId, nodeBefore.getComponentType());
+                                    if (parentComponent == null) {
+                                        throw new PersistenceException();
+                                    }
+                                    linkedComponents.add(parentComponent);
+                                } catch (PersistenceException e) {
+                                    errors.add(String.format("[node.componentId] cannot retrieve component with id = %s",
+                                                             parentId));
+                                }
+                            } else {
+                                errors.add(String.format("[node.incomingLinks] source node %s not found",
+                                                         link.getSourceNodeId()));
+                            }
+                        }
+                        List<SourceDescriptor> sources = component.getSources();
+                        for (TaoComponent linkedComponent : linkedComponents) {
+                            List<TargetDescriptor> targets = linkedComponent.getTargets();
+                            if (targets.stream()
+                                    .noneMatch(t -> sources.stream()
+                                            .anyMatch(s -> s.isCompatibleWith(t)))) {
+                                errors.add(String.format("[node.incomingLinks] component %s is not compatible with component %s",
+                                                         component.getId(), linkedComponent.getId()));
+                            }
                         }
                     }
                 }
