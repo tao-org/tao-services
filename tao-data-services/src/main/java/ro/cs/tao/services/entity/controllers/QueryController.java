@@ -95,17 +95,23 @@ public class QueryController {
     }
 
     @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = "application/json")
-    public Query findById(@PathVariable("id") long id) throws PersistenceException {
-        return queryService.getQueryById(id);
+    public ResponseEntity<Query> findById(@PathVariable("id") long id) throws PersistenceException {
+        return new ResponseEntity<>(queryService.getQueryById(id), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
-    public Query save(@RequestBody Query object) {
-        return queryService.save(object);
+    public ResponseEntity<Query> save(@RequestBody Query object) {
+        return new ResponseEntity<>(queryService.save(object), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
-    public Query update(@RequestBody Query object) {
-        return queryService.update(object);
+    public ResponseEntity<?> update(@RequestBody Query object) {
+        ResponseEntity<?> response;
+        try {
+            response = new ResponseEntity<>(queryService.update(object), HttpStatus.OK);
+        } catch (PersistenceException pex) {
+            response = new ResponseEntity<>(null, HttpStatus.OK);
+        }
+        return response;
     }
 }

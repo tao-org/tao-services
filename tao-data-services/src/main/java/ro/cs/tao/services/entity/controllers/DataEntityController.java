@@ -80,8 +80,11 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
     public ResponseEntity<?> update(@PathVariable("id") String id, @RequestBody T entity) {
         final ResponseEntity<?> validationResponse = validate(entity);
         if (validationResponse.getStatusCode() == HttpStatus.OK) {
-            service.update(entity);
-            return new ResponseEntity<>(entity, HttpStatus.OK);
+            try {
+                return new ResponseEntity<>(service.update(entity), HttpStatus.OK);
+            } catch (PersistenceException e) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.OK);
+            }
         } else {
             return validationResponse;
         }
@@ -94,7 +97,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
         return new ResponseEntity<>("{}", HttpStatus.OK);
     }
 
-    private ResponseEntity<?> validate(T entity) {
+    ResponseEntity<?> validate(T entity) {
         try {
             service.validate(entity);
             return new ResponseEntity<>(entity, HttpStatus.OK);
