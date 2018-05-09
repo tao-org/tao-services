@@ -77,8 +77,17 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public WorkflowDescriptor update(WorkflowDescriptor object) {
-        return save(object);
+    public WorkflowDescriptor update(WorkflowDescriptor object) throws PersistenceException {
+        WorkflowDescriptor existing = persistenceManager.getWorkflowDescriptor(object.getId());
+        existing.setName(object.getName());
+        existing.setPath(object.getPath());
+        existing.setStatus(object.getStatus());
+        existing.setUserName(object.getUserName());
+        existing.setVisibility(object.getVisibility());
+        existing.setxCoord(object.getxCoord());
+        existing.setyCoord(object.getyCoord());
+        existing.setZoom(object.getZoom());
+        return persistenceManager.updateWorkflowDescriptor(existing);
     }
 
     @Override
