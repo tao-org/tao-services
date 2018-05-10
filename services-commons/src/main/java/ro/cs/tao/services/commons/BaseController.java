@@ -15,6 +15,8 @@
  */
 package ro.cs.tao.services.commons;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
@@ -28,6 +30,11 @@ import java.util.function.Consumer;
 public class BaseController {
 
     private ExecutorService executorService;
+
+    protected String currentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getName();
+    }
 
     protected void asyncExecute(Runnable runnable, Consumer<Exception> callback) {
         if (this.executorService == null) {
