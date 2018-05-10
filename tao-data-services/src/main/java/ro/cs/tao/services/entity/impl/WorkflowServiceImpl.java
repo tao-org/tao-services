@@ -27,6 +27,8 @@ import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.GroupComponentService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.workflow.*;
+import ro.cs.tao.workflow.enums.Status;
+import ro.cs.tao.workflow.enums.Visibility;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +58,21 @@ public class WorkflowServiceImpl
     @Override
     public List<WorkflowDescriptor> list() {
         return persistenceManager.getAllWorkflows();
+    }
+
+    @Override
+    public List<WorkflowDescriptor> getUserWorkflowsByStatus(String user, Status status) {
+        return persistenceManager.getUserWorkflowsByStatus(user, status.value());
+    }
+
+    @Override
+    public List<WorkflowDescriptor> getUserPublishedWorkflowsByVisibility(String user, Visibility visibility) {
+        return persistenceManager.getUserPublishedWorkflowsByVisibility(user, visibility.value());
+    }
+
+    @Override
+    public List<WorkflowDescriptor> getOtherPublicWorkflows(String user) {
+        return persistenceManager.getOtherPublicWorkflows(user);
     }
 
     @Override

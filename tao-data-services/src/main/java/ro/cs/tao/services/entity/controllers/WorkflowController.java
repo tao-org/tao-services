@@ -19,10 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -35,6 +32,8 @@ import ro.cs.tao.services.interfaces.GroupComponentService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
+import ro.cs.tao.workflow.enums.Status;
+import ro.cs.tao.workflow.enums.Visibility;
 
 import java.util.logging.Logger;
 
@@ -59,6 +58,24 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     @Autowired
     private PersistenceManager persistenceManager;
+
+    @RequestMapping(value = "/status/{status}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> getUserWorkflowsByStatus(@PathVariable("status") Status status) {
+        return new ResponseEntity<>(workflowService.getUserWorkflowsByStatus(currentUser(), status),
+                                    HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/visibility/{visibility}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> getUserWorkflowsByVisibility(@PathVariable("visibility")Visibility visibility) {
+        return new ResponseEntity<>(workflowService.getUserPublishedWorkflowsByVisibility(currentUser(), visibility),
+                                    HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/public", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> getOtherPublicWorkflows() {
+        return new ResponseEntity<>(workflowService.getOtherPublicWorkflows(currentUser()),
+                                    HttpStatus.OK);
+    }
 
     @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> initialize(@RequestParam("otbContainer") String otbContainerName,
