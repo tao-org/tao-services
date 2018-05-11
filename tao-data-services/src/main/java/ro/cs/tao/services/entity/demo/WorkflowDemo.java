@@ -24,7 +24,7 @@ import ro.cs.tao.docker.Container;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WorkflowService;
@@ -525,7 +525,7 @@ public class WorkflowDemo {
                                  new WorkflowNodeDescriptor[] { node1, node2 });
 
         Query dsQuery = new Query();
-        dsQuery.setUserId(SystemPrincipal.instance().getName());
+        dsQuery.setUserId(SessionStore.currentContext().getPrincipal().getName());
         dsQuery.setSensor("Sentinel2");
         dsQuery.setDataSource("Amazon Web Services");
         dsQuery.setPageNumber(1);
@@ -588,7 +588,7 @@ public class WorkflowDemo {
                                 node2.getId(), component2.getSources().get(0).getId());
 
         Query dsQuery = new Query();
-        dsQuery.setUserId(SystemPrincipal.instance().getName());
+        dsQuery.setUserId(SessionStore.currentContext().getPrincipal().getName());
         dsQuery.setSensor("Sentinel2");
         dsQuery.setDataSource("Amazon Web Services");
         dsQuery.setPageNumber(1);

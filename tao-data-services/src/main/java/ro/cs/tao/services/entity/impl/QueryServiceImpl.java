@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.QueryService;
 
 import java.util.List;
@@ -48,7 +48,7 @@ public class QueryServiceImpl extends EntityService<Query>
 
     @Override
     public List<Query> list() {
-        return persistenceManager.getQueries(SystemPrincipal.instance().getName());
+        return persistenceManager.getQueries(SessionStore.currentContext().getPrincipal().getName());
     }
 
     @Override
