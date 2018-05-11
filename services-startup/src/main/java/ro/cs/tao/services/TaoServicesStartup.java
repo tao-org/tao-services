@@ -31,11 +31,13 @@ import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.entity.DataServicesLauncher;
 import ro.cs.tao.services.monitoring.MonitoringServiceLauncer;
 import ro.cs.tao.services.orchestration.OrchestratorLauncher;
 import ro.cs.tao.services.progress.ProgressReportLauncher;
 import ro.cs.tao.services.query.DataQueryServiceLauncher;
+import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
 
@@ -114,6 +116,8 @@ public class TaoServicesStartup implements ApplicationListener {
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof ContextRefreshedEvent) {
             Messaging.setPersister(this.persistenceManager);
+            SpringSessionProvider.setPersistenceManager(this.persistenceManager);
+            SessionStore.setSessionContextProvider(new SpringSessionProvider());
             updateLocalhost();
             backgroundWorker.submit(this::registerDataSourceComponents);
         }

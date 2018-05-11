@@ -23,6 +23,7 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.session.web.http.HeaderHttpSessionStrategy;
@@ -54,6 +55,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .withUser("user").password("user").roles("USER");*/
 
         auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
     }
 
     @Bean
@@ -93,6 +95,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .and()
                 .httpBasic()
                 .authenticationEntryPoint(entryPoint);
+        http.sessionManagement().maximumSessions(1);
         http.cors();
     }
 }
