@@ -18,11 +18,13 @@ package ro.cs.tao.services.security;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.ExternalSessionContextProvider;
 import ro.cs.tao.security.SessionContext;
+import ro.cs.tao.user.UserPreference;
 
 import java.security.Principal;
-import java.util.Map;
+import java.util.List;
 
 public class SpringSessionProvider implements ExternalSessionContextProvider {
     public static PersistenceManager persistenceManager;
@@ -41,9 +43,14 @@ public class SpringSessionProvider implements ExternalSessionContextProvider {
             }
 
             @Override
-            protected Map<String, String> setPreferences() {
-                return persistenceManager != null ? persistenceManager.getUserPreferences(getPrincipal().getName()) :
-                        null;
+            protected List<UserPreference> setPreferences() {
+                try {
+                    return persistenceManager != null ? persistenceManager.getUserPreferences(getPrincipal().getName()) :
+                            null;
+                } catch (PersistenceException e) {
+                    e.printStackTrace();
+                }
+                return null;
             }
         };
     }
