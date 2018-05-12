@@ -20,11 +20,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 
+import javax.security.auth.Subject;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 
-public class SecurityUser extends User implements UserDetails {
+public class SecurityUser extends User implements UserDetails, Principal {
 
     private static final long serialVersionUID = 1L;
 
@@ -46,7 +48,7 @@ public class SecurityUser extends User implements UserDetails {
     public Collection getAuthorities() {
 
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        Set<Group> userGroups = this.getGroups();
+        List<Group> userGroups = this.getGroups();
 
         if (userGroups != null) {
             for (Group group : userGroups) {
@@ -86,4 +88,10 @@ public class SecurityUser extends User implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+    @Override
+    public String getName() { return getUsername(); }
+
+    @Override
+    public boolean implies(Subject subject) { return true; }
 }
