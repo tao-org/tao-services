@@ -32,7 +32,6 @@ public class SpringSessionProvider implements ExternalSessionContextProvider {
     @Override
     public SessionContext currentContext() {
         return new SessionContext() {
-            private String userName;
 
             @Override
             protected Principal setPrincipal() {
