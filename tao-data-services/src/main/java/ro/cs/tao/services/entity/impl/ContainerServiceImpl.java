@@ -213,6 +213,40 @@ public class ContainerServiceImpl
                 e.printStackTrace();
             }
         }
+        // UNCOMMENT BELOW TO IMPORT AVAILABLE SNAP OPERATORS DIRECTLY FROM GPT (may take some time)
+        /*
+        Path rootPath = Paths.get(ConfigurationManager.getInstance().getValue("product.location"));
+        for (Application app : snapContainer.getApplications()) {
+            List<String> args = new ArrayList<>();
+            args.add(app.getPath());
+            args.add(app.getName());
+            args.add("-h");
+            Executor executor = ProcessExecutor.create(ExecutorType.PROCESS, "localhost", args, true);
+            OutputAccumulator accumulator = new OutputAccumulator();
+            executor.setOutputConsumer(accumulator);
+            try {
+                int ret = executor.execute(true);
+                if (ret == 0) {
+                    String output = accumulator.getOutput();
+                    String xml = output.substring(output.indexOf("Graph XML Format:") + 18);
+                    ProcessingComponent component = DescriptorConverter.fromXml(xml);
+                    component.setAuthors("SNAP Team");
+                    component.setCopyright("(C) SNAP Team");
+                    component.setFileLocation("gpt");
+                    component.setWorkingDirectory(".");
+                    component.setNodeAffinity("Any");
+                    component.setVisibility(ProcessingComponentVisibility.SYSTEM);
+                    component.getTargets().get(0).getDataDescriptor()
+                            .setLocation(rootPath.resolve(component.getTargets().get(0).getDataDescriptor().getLocation()).toUri().toString());
+                    component.setTemplateType(TemplateType.VELOCITY);
+                    component.setTemplate(SNAPDemo.newTemplate(component.getId() + ".vm", component.getLabel(), component, "="));
+                    component.setActive(true);
+                    persistenceManager.saveProcessingComponent(component);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }*/
         return snapContainer;
     }
 

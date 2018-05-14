@@ -65,7 +65,7 @@ public abstract class DemoBase {
         return targetDescriptor;
     }
 
-    protected static Template newTemplate(String name, String opName, ProcessingComponent component, String valueSeparator) {
+    public static Template newTemplate(String name, String opName, ProcessingComponent component, String valueSeparator) {
         Template template = new BasicTemplate();
         template.setName(name);
         template.setTemplateType(TemplateType.VELOCITY);
