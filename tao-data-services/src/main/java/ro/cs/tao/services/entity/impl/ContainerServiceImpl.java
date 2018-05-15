@@ -17,6 +17,7 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -191,6 +192,16 @@ public class ContainerServiceImpl
                     }
                 });
                 snapContainer = persistenceManager.saveContainer(snapContainer);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("snap_operators.json")))) {
+                String str = String.join("", reader.lines().collect(Collectors.toList()));
+                ProcessingComponent[] components = JacksonUtil.OBJECT_MAPPER.readValue(str, ProcessingComponent[].class);
+                for (ProcessingComponent component : components) {
+                    component.setContainerId(snapContainer.getId());
+                    persistenceManager.saveProcessingComponent(component);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

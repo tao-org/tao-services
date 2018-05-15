@@ -23,10 +23,8 @@ import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateType;
-import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.enums.DataFormat;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class SNAPDemo extends DemoBase {
@@ -94,9 +92,8 @@ public class SNAPDemo extends DemoBase {
         component.setNodeAffinity("Any");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
-        String rootPath = ConfigurationManager.getInstance().getValue("product.location");
         TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
-                Paths.get(rootPath).resolve("output_" + component.getId() + ".tif").toUri().toString());
+                                                                "output_" + component.getId() + ".tif");
         component.addTarget(targetDescriptor);
 
         component.setParameterDescriptors(parameters);
@@ -160,9 +157,8 @@ public class SNAPDemo extends DemoBase {
         component.setNodeAffinity("Any");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
-        String rootPath = ConfigurationManager.getInstance().getValue("product.location");
         TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
-                Paths.get(rootPath).resolve("output_" + component.getId() + ".tif").toUri().toString());
+                                                                "output_" + component.getId() + ".tif");
         component.addTarget(targetDescriptor);
 
         component.setParameterDescriptors(parameters);
@@ -207,9 +203,8 @@ public class SNAPDemo extends DemoBase {
         component.setNodeAffinity("Any");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
-        String rootPath = ConfigurationManager.getInstance().getValue("product.location");
         TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
-                Paths.get(rootPath).resolve("output_" + component.getId() + ".tif").toUri().toString());
+                                                                "output_" + component.getId() + ".tif");
         component.addTarget(targetDescriptor);
 
         component.setParameterDescriptors(parameters);
@@ -252,9 +247,8 @@ public class SNAPDemo extends DemoBase {
         component.setNodeAffinity("Any");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
-        String rootPath = ConfigurationManager.getInstance().getValue("product.location");
         TargetDescriptor targetDescriptor = newTargetDescriptor("t", DataFormat.RASTER,
-                Paths.get(rootPath).resolve("output_" + component.getId() + ".tif").toUri().toString());
+                                                                "output_" + component.getId() + ".tif");
         component.addTarget(targetDescriptor);
 
         component.setParameterDescriptors(parameters);
