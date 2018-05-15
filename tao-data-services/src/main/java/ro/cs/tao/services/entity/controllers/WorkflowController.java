@@ -154,7 +154,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             } else {
                 responseEntity = new ResponseEntity<>(new ServiceError("Could not save link"), HttpStatus.OK);
             }
-        } catch (PersistenceException e) {
+        } catch (Exception e) {
             Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
             responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
         }
