@@ -17,6 +17,10 @@
 package ro.cs.tao.services.orchestration.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.concurrent.DelegatingSecurityContextExecutorService;
+import org.springframework.security.concurrent.DelegatingSecurityContextRunnable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJob;
@@ -24,12 +28,16 @@ import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.orchestration.Orchestrator;
+import ro.cs.tao.orchestration.RunnableContextFactory;
+import ro.cs.tao.orchestration.RunnableDelegateProvider;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service("orchestrationService")
 public class OrchestrationServiceImpl implements OrchestratorService {
@@ -37,9 +45,13 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Autowired
     private PersistenceManager persistenceManager;
 
+    @Autowired
+    private ExecutorService executor;
+
     @Override
     public long startWorkflow(long workflowId, Map<String, String> inputs) throws ExecutionException {
-        return Orchestrator.getInstance().startWorkflow(workflowId, inputs);
+        return Orchestrator.getInstance().startWorkflow(workflowId, inputs,
+                                                        new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2)));
     }
 
     @Override
@@ -81,8 +93,25 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         return summaries;
     }
 
+    @Bean
+    private ExecutorService executor() {
+        return new DelegatingSecurityContextExecutorService(Executors.newSingleThreadExecutor());
+    }
+
     @PostConstruct
     private void initialize() {
+        RunnableContextFactory.setDelegateProvider(new RunnableDelegateProvider() {
+            @Override
+            public Runnable wrap(Runnable runnable) {
+                return new DelegatingSecurityContextRunnable(runnable, SecurityContextHolder.getContext());
+            }
+        });
+        /*ExecutorServiceFactory.setDelegateProvider(new ExecutorServiceDelegateProvider() {
+            @Override
+            public ExecutorService createExecutor(int threads) {
+                return executor;
+            }
+        });*/
         Orchestrator.getInstance().setPersistenceManager(persistenceManager);
     }
 }
