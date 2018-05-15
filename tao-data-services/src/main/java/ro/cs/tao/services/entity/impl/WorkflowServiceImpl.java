@@ -206,15 +206,19 @@ public class WorkflowServiceImpl
         SourceDescriptor linkOutput = targetComponent.getSources().stream()
                                                     .filter(s -> s.getId().equals(targetSourceId))
                                                     .findFirst().get();
-        ComponentLink link = new ComponentLink(sourceNodeId, linkInput, linkOutput);
-        List<ComponentLink> links = targetNode.getIncomingLinks();
-        if (links == null) {
-            links = new ArrayList<>();
+        try {
+            ComponentLink link = new ComponentLink(sourceNodeId, linkInput, linkOutput);
+            List<ComponentLink> links = targetNode.getIncomingLinks();
+            if (links == null) {
+                links = new ArrayList<>();
+            }
+            links.add(link);
+            targetNode.setIncomingLinks(links);
+            persistenceManager.updateWorkflowNodeDescriptor(targetNode);
+            return persistenceManager.getWorkflowDescriptor(targetNode.getWorkflow().getId());
+        } catch (Exception e) {
+            throw new PersistenceException(e);
         }
-        links.add(link);
-        targetNode.setIncomingLinks(links);
-        persistenceManager.updateWorkflowNodeDescriptor(targetNode);
-        return persistenceManager.getWorkflowDescriptor(targetNode.getWorkflow().getId());
     }
 
     @Override
