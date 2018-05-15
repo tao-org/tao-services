@@ -51,6 +51,21 @@ public class SpringSessionProvider implements ExternalSessionContextProvider {
                 }
                 return null;
             }
+
+            @Override
+            public int hashCode() {
+                return getPrincipal() != null ? getPrincipal().getName().hashCode() : super.hashCode();
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (!(obj instanceof SessionContext)) {
+                    return false;
+                }
+                SessionContext other = (SessionContext) obj;
+                return (this.getPrincipal() == null && other.getPrincipal() == null) ||
+                        (this.getPrincipal().getName().equals(other.getPrincipal().getName()));
+            }
         };
     }
 }
