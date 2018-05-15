@@ -148,9 +148,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                      @RequestParam("targetSourceId") String targetSourceId) {
         ResponseEntity<?> responseEntity;
         try {
-            responseEntity = new ResponseEntity<>(workflowService.addLink(sourceNodeId, sourceTargetId,
-                                                                          targetNodeId, targetSourceId),
-                                                  HttpStatus.OK);
+            WorkflowDescriptor descriptor = workflowService.addLink(sourceNodeId, sourceTargetId, targetNodeId, targetSourceId);
+            if (descriptor != null) {
+                responseEntity = new ResponseEntity<>(new ServiceError("OK"), HttpStatus.OK);
+            } else {
+                responseEntity = new ResponseEntity<>(new ServiceError("Could not save link"), HttpStatus.OK);
+            }
         } catch (PersistenceException e) {
             Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
             responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
