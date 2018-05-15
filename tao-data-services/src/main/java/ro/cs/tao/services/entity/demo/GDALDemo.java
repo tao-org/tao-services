@@ -23,11 +23,9 @@ import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateType;
-import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.enums.DataFormat;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class GDALDemo extends DemoBase {
@@ -67,9 +65,8 @@ public class GDALDemo extends DemoBase {
         component.setNodeAffinity("Any");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
-        String rootPath = ConfigurationManager.getInstance().getValue("product.location");
-        TargetDescriptor targetDescriptor = newTargetDescriptor("dst", DataFormat.RASTER,
-                                                                Paths.get(rootPath).resolve("output_" + component.getId()).toUri().toString());
+        //String rootPath = ConfigurationManager.getInstance().getValue("product.location");
+        TargetDescriptor targetDescriptor = newTargetDescriptor("dst", DataFormat.RASTER, "output_" + component.getId());
         component.addTarget(targetDescriptor);
 
         component.setParameterDescriptors(parameters);
