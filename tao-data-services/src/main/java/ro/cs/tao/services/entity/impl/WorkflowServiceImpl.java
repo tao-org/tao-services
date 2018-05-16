@@ -171,7 +171,7 @@ public class WorkflowServiceImpl
         if (nodeDescriptor == null) {
             throw new PersistenceException("Cannot remove a null node");
         }
-        if (nodeDescriptor.getId() != null) {
+        if (nodeDescriptor.getId() == null) {
             throw new PersistenceException(String.format("Node [name:%s] is not an existing node",
                                                          nodeDescriptor.getName()));
         }
@@ -180,7 +180,17 @@ public class WorkflowServiceImpl
             throw new PersistenceException("Node is not attached to an existing workflow");
         }
         nodeDescriptor.setWorkflow(workflow);
-        persistenceManager.delete(nodeDescriptor);
+        List<ComponentLink> links = nodeDescriptor.getIncomingLinks();
+        if (links != null && links.size() > 0) {
+            ComponentLink[] linkArray = new ComponentLink[links.size()];
+            linkArray = links.toArray(linkArray);
+            for (ComponentLink link : linkArray) {
+                nodeDescriptor.removeLink(link);
+            }
+        }
+        persistenceManager.updateWorkflowNodeDescriptor(nodeDescriptor);
+        workflow.removeNode(nodeDescriptor);
+        persistenceManager.updateWorkflowDescriptor(workflow);
     }
 
     @Override
