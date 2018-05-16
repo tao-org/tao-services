@@ -132,8 +132,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                         @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<?> responseEntity;
         try {
-            responseEntity = new ResponseEntity<>(workflowService.removeNode(workflowId, node),
-                                                  HttpStatus.OK);
+            workflowService.removeNode(workflowId, node);
+            responseEntity = new ResponseEntity<>("OK", HttpStatus.OK);
         } catch (PersistenceException e) {
             Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
             responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
@@ -148,7 +148,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                      @RequestParam("targetSourceId") String targetSourceId) {
         ResponseEntity<?> responseEntity;
         try {
-            WorkflowDescriptor descriptor = workflowService.addLink(sourceNodeId, sourceTargetId, targetNodeId, targetSourceId);
+            WorkflowNodeDescriptor descriptor = workflowService.addLink(sourceNodeId, sourceTargetId, targetNodeId, targetSourceId);
             if (descriptor != null) {
                 responseEntity = new ResponseEntity<>(new ServiceError("OK"), HttpStatus.OK);
             } else {

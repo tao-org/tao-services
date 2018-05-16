@@ -207,7 +207,6 @@ public class WorkflowDemo {
         descriptor1.setActive(true);
         descriptor1.setUserName("admin");
         descriptor1.setVisibility(Visibility.PRIVATE);
-        descriptor1.setCreated(LocalDateTime.now());
         persistenceManager.saveWorkflowDescriptor(descriptor1);
         addNodes1(descriptor1);
         return descriptor1;
@@ -222,7 +221,6 @@ public class WorkflowDemo {
         descriptor2.setActive(true);
         descriptor2.setUserName("admin");
         descriptor2.setVisibility(Visibility.PRIVATE);
-        descriptor2.setCreated(LocalDateTime.now());
         persistenceManager.saveWorkflowDescriptor(descriptor2);
         addNodes2(descriptor2);
         return descriptor2;
@@ -237,7 +235,6 @@ public class WorkflowDemo {
         descriptor3.setActive(true);
         descriptor3.setUserName("admin");
         descriptor3.setVisibility(Visibility.PRIVATE);
-        descriptor3.setCreated(LocalDateTime.now());
         persistenceManager.saveWorkflowDescriptor(descriptor3);
         addNodes3(descriptor3);
         return descriptor3;
@@ -252,7 +249,6 @@ public class WorkflowDemo {
         descriptor4.setActive(true);
         descriptor4.setUserName("admin");
         descriptor4.setVisibility(Visibility.PRIVATE);
-        descriptor4.setCreated(LocalDateTime.now());
         persistenceManager.saveWorkflowDescriptor(descriptor4);
         addNodes4(descriptor4);
         return descriptor4;
@@ -267,7 +263,6 @@ public class WorkflowDemo {
         descriptor5.setActive(true);
         descriptor5.setUserName("admin");
         descriptor5.setVisibility(Visibility.PRIVATE);
-        descriptor5.setCreated(LocalDateTime.now());
         persistenceManager.saveWorkflowDescriptor(descriptor5);
         addNodes5(descriptor5, dataSourceComponent);
         return descriptor5;
@@ -282,7 +277,6 @@ public class WorkflowDemo {
         descriptor6.setActive(true);
         descriptor6.setUserName("admin");
         descriptor6.setVisibility(Visibility.PRIVATE);
-        descriptor6.setCreated(LocalDateTime.now());
         persistenceManager.saveWorkflowDescriptor(descriptor6);
         addNodes6(descriptor6, dataSourceComponent);
         return descriptor6;
