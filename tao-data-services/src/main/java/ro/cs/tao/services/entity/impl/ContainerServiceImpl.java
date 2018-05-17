@@ -28,7 +28,10 @@ import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.utils.Platform;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -163,6 +166,16 @@ public class ContainerServiceImpl
             Container tmp = JacksonUtil.fromString(str, Container.class);
             List<String> applications = tmp.getApplications().stream().map(Application::getName).collect(Collectors.toList());
             otbContainer = initializeContainer(name, path, applications);
+            try (InputStream in = ContainerController.class.getResourceAsStream("otb_logo.png")) {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                int read;
+                byte[] buffer = new byte[1024];
+                while ((read = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, read);
+                }
+                out.flush();
+                otbContainer.setLogo(Base64.getEncoder().encodeToString(out.toByteArray()));
+            }
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
@@ -191,6 +204,16 @@ public class ContainerServiceImpl
                         a.setPath(a.getPath() + ".exe");
                     }
                 });
+                try (InputStream in = ContainerController.class.getResourceAsStream("otb_logo.png")) {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    int read;
+                    byte[] buffer = new byte[1024];
+                    while ((read = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, read);
+                    }
+                    out.flush();
+                    snapContainer.setLogo(Base64.getEncoder().encodeToString(out.toByteArray()));
+                }
                 snapContainer = persistenceManager.saveContainer(snapContainer);
             } catch (Exception e) {
                 e.printStackTrace();
