@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -180,6 +181,7 @@ public class WorkflowServiceImpl
             throw new PersistenceException("Node is not attached to an existing workflow");
         }
         nodeDescriptor.setWorkflow(workflow);
+        // delete any incoming links the node may have
         List<ComponentLink> links = nodeDescriptor.getIncomingLinks();
         if (links != null && links.size() > 0) {
             ComponentLink[] linkArray = new ComponentLink[links.size()];
@@ -188,6 +190,22 @@ public class WorkflowServiceImpl
                 nodeDescriptor.removeLink(link);
             }
         }
+        // delete any outgoing links
+        List<WorkflowNodeDescriptor> allNodes = workflow.getNodes();
+        List<WorkflowNodeDescriptor> children = workflow.findChildren(allNodes, nodeDescriptor);
+        if (children != null) {
+            for (WorkflowNodeDescriptor child : children) {
+                List<ComponentLink> incomingLinks = child.getIncomingLinks();
+                incomingLinks = incomingLinks.stream()
+                                             .filter(l -> l.getSourceNodeId() == nodeDescriptor.getId())
+                                             .collect(Collectors.toList());
+                for (ComponentLink link : incomingLinks) {
+                    child.removeLink(link);
+                }
+                persistenceManager.updateWorkflowNodeDescriptor(child);
+            }
+        }
+
         persistenceManager.updateWorkflowNodeDescriptor(nodeDescriptor);
         workflow.removeNode(nodeDescriptor);
         persistenceManager.updateWorkflowDescriptor(workflow);
