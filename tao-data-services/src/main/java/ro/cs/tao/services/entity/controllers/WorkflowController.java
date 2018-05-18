@@ -150,7 +150,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         try {
             WorkflowNodeDescriptor descriptor = workflowService.addLink(sourceNodeId, sourceTargetId, targetNodeId, targetSourceId);
             if (descriptor != null) {
-                responseEntity = new ResponseEntity<>(new ServiceError("OK"), HttpStatus.OK);
+                responseEntity = new ResponseEntity<>(descriptor, HttpStatus.OK);
             } else {
                 responseEntity = new ResponseEntity<>(new ServiceError("Could not save link"), HttpStatus.OK);
             }
