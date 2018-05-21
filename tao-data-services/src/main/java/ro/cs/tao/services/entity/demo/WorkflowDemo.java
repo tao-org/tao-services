@@ -128,7 +128,7 @@ public class WorkflowDemo {
         //} catch (PersistenceException pex) {
         if (component == null) {
             component = OTBDemo.concatenateImages(otbContainer);
-            componentService.save(component);
+            component = componentService.save(component);
         }
         componentId = "gdal_translate.exe";
         //try {
