@@ -18,6 +18,8 @@ package ro.cs.tao.services.entity.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.SourceDescriptor;
+import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -31,10 +33,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -175,6 +174,27 @@ public class ContainerServiceImpl
                 }
                 out.flush();
                 otbContainer.setLogo(Base64.getEncoder().encodeToString(out.toByteArray()));
+            }
+            try (BufferedReader reader2 = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("otb_applications.json")))) {
+                String str2 = String.join("", reader2.lines().collect(Collectors.toList()));
+                ProcessingComponent[] components = JacksonUtil.OBJECT_MAPPER.readValue(str2, ProcessingComponent[].class);
+                for (ProcessingComponent component : components) {
+                    if (!component.getId().equals("otbcli_ConcatenateImages")) {
+                        component.setContainerId(otbContainer.getId());
+                        component.setLabel(component.getId());
+                        List<SourceDescriptor> sources = component.getSources();
+                        if (sources != null) {
+                            sources.forEach(s -> s.setId(UUID.randomUUID().toString()));
+                        }
+                        List<TargetDescriptor> targets = component.getTargets();
+                        if (targets != null) {
+                            targets.forEach(t -> t.setId(UUID.randomUUID().toString()));
+                        }
+                        persistenceManager.saveProcessingComponent(component);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         } catch (Exception e) {
             logger.severe(e.getMessage());
