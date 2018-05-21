@@ -25,17 +25,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.execution.ExecutionException;
-import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.execution.model.ExecutionJobSummary;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.orchestration.beans.JobResponse;
-import ro.cs.tao.services.orchestration.beans.ServiceTask;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/orchestrator")
@@ -89,17 +87,26 @@ public class OrchestrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/running", method = RequestMethod.GET)
-    public ResponseEntity<List<ServiceTask>> getRunningTasks() {
-        List<ExecutionTask> tasks = orchestrationService.getRunningTasks();
+    @RequestMapping(value = "/running/tasks", method = RequestMethod.GET)
+    public ResponseEntity<List<ExecutionTaskSummary>> getRunningTasks() {
+        List<ExecutionTaskSummary> tasks = orchestrationService.getRunningTasks();
         if (tasks == null) {
             tasks = new ArrayList<>();
         }
-        return new ResponseEntity<>(tasks.stream().map(t ->
+        return new ResponseEntity<>(tasks,/*.stream().map(t ->
                                             new ServiceTask(t.getId(), t.getWorkflowNodeId(),
                                                             t.getResourceId(), t.getExecutionNodeHostName(),
-                                                            t.getStartTime())).collect(Collectors.toList()),
+                                                            t.getStartTime())).collect(Collectors.toList()),*/
                                     HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/running/jobs", method = RequestMethod.GET)
+    public ResponseEntity<List<ExecutionJobSummary>> getRunningJobs() {
+        List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs();
+        if (summaries == null) {
+            summaries = new ArrayList<>();
+        }
+        return new ResponseEntity<>(summaries, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/{jobId}", method = RequestMethod.GET)
@@ -112,8 +119,8 @@ public class OrchestrationController extends BaseController {
     }
 
     @RequestMapping(value = "/history", method = RequestMethod.GET)
-    public ResponseEntity<List<ExecutionTaskSummary>> getJobsHistory() {
-        List<ExecutionTaskSummary> summaries = orchestrationService.getCompletedJobs();
+    public ResponseEntity<List<ExecutionJobSummary>> getJobsHistory() {
+        List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs();
         if (summaries == null) {
             summaries = new ArrayList<>();
         }

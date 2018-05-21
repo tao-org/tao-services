@@ -24,14 +24,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.ExecutionJobSummary;
 import ro.cs.tao.execution.model.ExecutionStatus;
-import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
 import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 
 import javax.annotation.PostConstruct;
@@ -70,8 +69,15 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<ExecutionTask> getRunningTasks() {
-        return persistenceManager.getRunningTasks();
+    public List<ExecutionTaskSummary> getRunningTasks() {
+        List<ExecutionTaskSummary> summaries = new ArrayList<>();
+        Set<ExecutionStatus> statuses = new HashSet<>();
+        Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
+        List<ExecutionJob> jobs = persistenceManager.getJobs(SecurityContextHolder.getContext().getAuthentication().getName(), statuses);
+        for (ExecutionJob job : jobs) {
+            summaries.addAll(getTasksStatus(job.getId()));
+        }
+        return summaries;
     }
 
     @Override
@@ -81,14 +87,42 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<ExecutionTaskSummary> getCompletedJobs() {
-        List<ExecutionTaskSummary> summaries = new ArrayList<>();
+    public List<ExecutionJobSummary> getRunningJobs() {
+        List<ExecutionJobSummary> summaries = new ArrayList<>();
+        Set<ExecutionStatus> statuses = new HashSet<>();
+        Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
+        List<ExecutionJob> jobs = persistenceManager.getJobs(SecurityContextHolder.getContext().getAuthentication().getName(), statuses);
+        for (ExecutionJob job : jobs) {
+            List<ExecutionTaskSummary> tasksStatus = getTasksStatus(job.getId());
+            ExecutionJobSummary summary = new ExecutionJobSummary();
+            summary.setUser(job.getUserName());
+            summary.setWorkflowName(tasksStatus.stream().findFirst().get().getWorkflowName());
+            summary.setJobStatus(job.getExecutionStatus());
+            summary.setJobStart(job.getStartTime());
+            summary.setJobEnd(job.getEndTime());
+            summary.setTaskSummaries(tasksStatus);
+            summaries.add(summary);
+        }
+        return summaries;
+    }
+
+    @Override
+    public List<ExecutionJobSummary> getCompletedJobs() {
+        List<ExecutionJobSummary> summaries = new ArrayList<>();
         Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.SUSPENDED, ExecutionStatus.DONE,
                                      ExecutionStatus.FAILED, ExecutionStatus.CANCELLED);
-        List<ExecutionJob> jobs = persistenceManager.getJobs(SystemPrincipal.instance().getName(), statuses);
+        List<ExecutionJob> jobs = persistenceManager.getJobs(SecurityContextHolder.getContext().getAuthentication().getName(), statuses);
         for (ExecutionJob job : jobs) {
-            summaries.addAll(getTasksStatus(job.getId()));
+            List<ExecutionTaskSummary> tasksStatus = getTasksStatus(job.getId());
+            ExecutionJobSummary summary = new ExecutionJobSummary();
+            summary.setUser(job.getUserName());
+            summary.setWorkflowName(tasksStatus.stream().findFirst().get().getWorkflowName());
+            summary.setJobStatus(job.getExecutionStatus());
+            summary.setJobStart(job.getStartTime());
+            summary.setJobEnd(job.getEndTime());
+            summary.setTaskSummaries(tasksStatus);
+            summaries.add(summary);
         }
         return summaries;
     }
