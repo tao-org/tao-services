@@ -74,7 +74,7 @@ public class WorkflowDemo {
             otbContainer = containerService.initOTB(otbContainerName, otbPath);
         }
 
-        // Initialize SNAP test otbContainer
+        // Initialize SNAP test snapContainer
         Container snapContainer = null;
         try {
             snapContainer = persistenceManager.getContainerById(snapContainerName);

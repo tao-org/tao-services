@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.component.constraints.ConstraintFactory;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
@@ -28,6 +29,7 @@ import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.serialization.MediaType;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.serialization.Serializer;
@@ -56,19 +58,11 @@ public class ComponentServiceImpl
 
     @Override
     public ProcessingComponent findById(String id) {
-        //return fakeComponents.get(id);
-        ProcessingComponent component = null;
-        //try {
-            component = persistenceManager.getProcessingComponentById(id);
-//        } catch (PersistenceException e) {
-//            logger.severe(e.getMessage());
-//        }
-        return component;
+        return persistenceManager.getProcessingComponentById(id);
     }
 
     @Override
     public List<ProcessingComponent> list() {
-        //return new ArrayList<>(fakeComponents.values());
         List<ProcessingComponent> components = null;
         try {
             components = persistenceManager.getProcessingComponents();
@@ -184,7 +178,11 @@ public class ComponentServiceImpl
             try {
                 Paths.get(value);
             } catch (InvalidPathException e) {
-                errors.add("[workingDirectory] has an invalid value");
+                try {
+                    Paths.get(value.replace(SystemVariable.USER_WORKSPACE.key(), SystemSessionContext.instance().getWorkspace().toString()));
+                } catch (InvalidPathException e1) {
+                    errors.add("[workingDirectory] has an invalid value");
+                }
             }
         }
         TemplateType templateType = entity.getTemplateType();
@@ -231,89 +229,4 @@ public class ComponentServiceImpl
             }
         }
     }
-
-    /*public static ProcessingComponent newComponent(String id, String label) {
-        ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
-        parameters.add(newParameter("outmode_string",
-                                    String.class,
-                                    "ulco",
-                                    "This allows setting the writing behaviour for the output vector file. Please note that the actual behaviour depends on the file format."));
-        parameters.add(newParameter("neighbor_bool",
-                                    Boolean.class,
-                                    Boolean.TRUE.toString(),
-                                    "Activate 8-Neighborhood connectivity (default is 4)."));
-        Set<Variable> variables = new HashSet<>();
-        variables.add(new Variable("ITK_AUTOLOAD_PATH", "E:\\OTB\\bin"));
-        Template template = new BasicTemplate();
-        template.setName("segmentation-cc-template.vm");
-        template.setTemplateType(TemplateType.VELOCITY);
-        template.setContents("-in\n" +
-                                     "$sourceProductFile\n" +
-                                     "-filter.cc.expr\n" +
-                                     "$expr_string\n" +
-                                     "-mode.vector.out\n" +
-                                     "$out_str\n" +
-                                     "-mode.vector.outmode\n" +
-                                     "$outmode_string\n" +
-                                     "-mode.vector.neighbor\n" +
-                                     "$neighbor_bool\n" +
-                                     "-mode.vector.stitch\n" +
-                                     "$stitch_bool\n" +
-                                     "-mode.vector.minsize\n" +
-                                     "$minsize_int\n" +
-                                     "-mode.vector.simplify\n" +
-                                     "$simplify_float\n" +
-                                     "-mode.vector.layername\n" +
-                                     "$layername_string\n" +
-                                     "-mode.vector.fieldname\n" +
-                                     "$fieldname_string\n" +
-                                     "-mode.vector.tilesize\n" +
-                                     "$tilesize_int\n" +
-                                     "-mode.vector.startlabel\n" +
-                                     "$startlabel_int", false);
-        ProcessingComponent component = new ProcessingComponent();
-        component.setId(id);
-        component.setLabel(label);
-        component.setDescription("Performs segmentation of an image, and output either a raster or a vector file. In vector mode, large input datasets are supported.");
-        component.setAuthors("King Arthur");
-        component.setCopyright("(C) Camelot Productions");
-        component.setFileLocation("/usr/bin/otb/otbcli_Segmentation.sh");
-        component.setWorkingDirectory("/home/user");
-        component.setNodeAffinity("Any");
-        component.setContainerId("DummyTestDockerContainer");
-        component.setVisibility(ProcessingComponentVisibility.SYSTEM);
-        SourceDescriptor sourceDescriptor = new SourceDescriptor();
-        sourceDescriptor.setId(UUID.randomUUID().toString());
-        sourceDescriptor.setName("sourceProductFile");
-        DataDescriptor sourceData = new DataDescriptor();
-        sourceData.setFormatType(DataFormat.RASTER);
-        //sourceData.setSensorType(SensorType.OPTICAL);
-        sourceDescriptor.setDataDescriptor(sourceData);
-        component.addSource(sourceDescriptor);
-        TargetDescriptor targetDescriptor = new TargetDescriptor();
-        targetDescriptor.setId(UUID.randomUUID().toString());
-        targetDescriptor.setName("out_str");
-        DataDescriptor targetData = new DataDescriptor();
-        targetData.setFormatType(DataFormat.RASTER);
-        targetData.setLocation("/mnt/out/outfile_" + component.getId() + ".png");
-        targetDescriptor.setDataDescriptor(targetData);
-        component.addTarget(targetDescriptor);
-        component.setVersion("1.0");
-        component.setParameterDescriptors(parameters);
-        component.setVariables(variables);
-        component.setTemplateType(TemplateType.VELOCITY);
-        component.setTemplate(template);
-        component.setActive(true);
-        return component;
-    }
-
-    private static ParameterDescriptor newParameter(String name, Class<?> clazz, String defaultValue, String description) {
-        ParameterDescriptor ret = new ParameterDescriptor(name);
-        ret.setType(ParameterType.REGULAR);
-        ret.setDataType(clazz);
-        ret.setDefaultValue(defaultValue);
-        ret.setDescription(description);
-        ret.setLabel(name);
-        return ret;
-    }*/
 }
