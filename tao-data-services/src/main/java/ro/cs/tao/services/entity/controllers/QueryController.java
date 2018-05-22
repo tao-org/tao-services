@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.model.Query;
@@ -54,22 +55,31 @@ public class QueryController {
                 if (!userId.isPresent()) {
                     responseEntity = new ResponseEntity<>(new ServiceError("Missing userId"), HttpStatus.OK);
                 } else {
-                    if (sensor.isPresent()) {
-                        responseEntity =
-                                dataSource.map(s -> new ResponseEntity<>(queryService.getQuery(userId.get(),
-                                                                                               sensor.get(),
-                                                                                               s),
-                                                                         HttpStatus.OK))
-                                        .orElseGet(() -> new ResponseEntity<>(queryService.getQueriesBySensor(userId.get(),
-                                                                                                              sensor.get()),
-                                                                              HttpStatus.OK));
+                    if (sensor.isPresent() && dataSource.isPresent() && workflowNodeId.isPresent()) {
+                        responseEntity = new ResponseEntity<>(queryService.getQuery(userId.get(),
+                                                                                    sensor.get(),
+                                                                                    dataSource.get(),
+                                                                                    workflowNodeId.get()),
+                                                              HttpStatus.OK);
+                    } else if (sensor.isPresent() && dataSource.isPresent()) {
+                        responseEntity = new ResponseEntity<>(queryService.getQueries(userId.get(),
+                                                                                      sensor.get(),
+                                                                                      dataSource.get()),
+                                                              HttpStatus.OK);
+                    } else if (sensor.isPresent()) {
+                        responseEntity = new ResponseEntity<>(queryService.getQueriesBySensor(userId.get(),
+                                                                                              sensor.get()),
+                                                              HttpStatus.OK);
+                    } else if (dataSource.isPresent()) {
+                        responseEntity = new ResponseEntity<>(queryService.getQueriesByDataSource(userId.get(),
+                                                                                                  dataSource.get()),
+                                                              HttpStatus.OK);
+                    } else if (workflowNodeId.isPresent()) {
+                        responseEntity = new ResponseEntity<>(queryService.getQueries(userId.get(),
+                                                                                      workflowNodeId.get()),
+                                                              HttpStatus.OK);
                     } else {
-                        responseEntity =
-                                dataSource.map(s -> new ResponseEntity<>(queryService.getQueriesByDataSource(userId.get(),
-                                                                                                             s),
-                                                                                  HttpStatus.OK))
-                                        .orElseGet(() -> new ResponseEntity<>(queryService.getQueries(userId.get()),
-                                                                              HttpStatus.OK));
+                        responseEntity = new ResponseEntity<>(queryService.getQueries(userId.get()), HttpStatus.OK);
                     }
                 }
             }
@@ -101,6 +111,7 @@ public class QueryController {
 
     @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<Query> save(@RequestBody Query object) {
+        object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
         return new ResponseEntity<>(queryService.save(object), HttpStatus.OK);
     }
 
@@ -108,6 +119,7 @@ public class QueryController {
     public ResponseEntity<?> update(@RequestBody Query object) {
         ResponseEntity<?> response;
         try {
+            object.setUser(SecurityContextHolder.getContext().getAuthentication().getName());
             response = new ResponseEntity<>(queryService.update(object), HttpStatus.OK);
         } catch (PersistenceException pex) {
             response = new ResponseEntity<>(null, HttpStatus.OK);
