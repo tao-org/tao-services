@@ -43,11 +43,7 @@ public class GroupComponentServiceImpl
     @Override
     public GroupComponent findById(String id) throws PersistenceException {
         GroupComponent component = null;
-        try {
-            component = persistenceManager.getGroupComponentById(id);
-        } catch (PersistenceException e) {
-            logger.severe(e.getMessage());
-        }
+        component = persistenceManager.getGroupComponentById(id);
         return component;
     }
 

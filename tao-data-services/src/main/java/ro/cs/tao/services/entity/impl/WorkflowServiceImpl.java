@@ -400,20 +400,16 @@ public class WorkflowServiceImpl
 
     private TaoComponent findComponent(String id, ComponentType type) {
         TaoComponent component = null;
-        try {
-            switch (type) {
-                case DATASOURCE:
-                    component = persistenceManager.getDataSourceInstance(id);
-                    break;
-                case PROCESSING:
-                    component = persistenceManager.getProcessingComponentById(id);
-                    break;
-                case GROUP:
-                    component = persistenceManager.getGroupComponentById(id);
-                    break;
-            }
-        } catch (PersistenceException pex) {
-            logger.warning(pex.getMessage());
+        switch (type) {
+            case DATASOURCE:
+                component = persistenceManager.getDataSourceInstance(id);
+                break;
+            case PROCESSING:
+                component = persistenceManager.getProcessingComponentById(id);
+                break;
+            case GROUP:
+                component = persistenceManager.getGroupComponentById(id);
+                break;
         }
         return component;
     }
