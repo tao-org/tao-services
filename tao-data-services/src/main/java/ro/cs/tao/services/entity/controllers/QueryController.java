@@ -119,7 +119,7 @@ public class QueryController {
     public ResponseEntity<?> update(@RequestBody Query object) {
         ResponseEntity<?> response;
         try {
-            object.setUser(SecurityContextHolder.getContext().getAuthentication().getName());
+            object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
             response = new ResponseEntity<>(queryService.update(object), HttpStatus.OK);
         } catch (PersistenceException pex) {
             response = new ResponseEntity<>(null, HttpStatus.OK);
