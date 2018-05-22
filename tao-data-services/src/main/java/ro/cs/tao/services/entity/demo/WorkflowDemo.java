@@ -548,38 +548,117 @@ public class WorkflowDemo {
         dsNode.setCreated(LocalDateTime.now());
         dsNode = workflowService.addNode(parent.getId(), dsNode);
 
-        WorkflowNodeDescriptor node1 = new WorkflowNodeDescriptor();
-        node1.setWorkflow(parent);
-        node1.setName("SNAP NDVI");
-        node1.setxCoord(300);
-        node1.setyCoord(500);
-        node1.setComponentId("snap-ndvi");
-        node1.setComponentType(ComponentType.PROCESSING);
-        node1.setCreated(LocalDateTime.now());
-        node1.setPreserveOutput(true);
-        node1 = workflowService.addNode(parent.getId(), node1);
+        WorkflowNodeDescriptor node11 = new WorkflowNodeDescriptor();
+        node11.setWorkflow(parent);
+        node11.setName("SNAP NDVI");
+        node11.setxCoord(400);
+        node11.setyCoord(400);
+        node11.setComponentId("snap-ndvi");
+        node11.setComponentType(ComponentType.PROCESSING);
+        node11.setCreated(LocalDateTime.now());
+        node11.setPreserveOutput(true);
+        node11 = workflowService.addNode(parent.getId(), node11);
 
-        WorkflowNodeDescriptor node2 = new WorkflowNodeDescriptor();
-        node2.setWorkflow(parent);
-        node2.setName("OTB Resample");
-        node2.setxCoord(600);
-        node2.setyCoord(500);
-        node2.setComponentId("otbcli_RigidTransformResample");
-        node2.setComponentType(ComponentType.PROCESSING);
-        node2.addCustomValue("transformTypeIdScaleX", "0.5");
-        node2.addCustomValue("transformTypeIdScaleY", "0.5");
-        node2.setCreated(LocalDateTime.now());
-        node2.setPreserveOutput(true);
-        node2 = workflowService.addNode(parent.getId(), node2);
+        WorkflowNodeDescriptor node12 = new WorkflowNodeDescriptor();
+        node12.setWorkflow(parent);
+        node12.setName("SNAP RVI");
+        node12.setxCoord(400);
+        node12.setyCoord(500);
+        node12.setComponentId("snap-rviop");
+        node12.setComponentType(ComponentType.PROCESSING);
+        node12.setCreated(LocalDateTime.now());
+        node12.setPreserveOutput(true);
+        node12 = workflowService.addNode(parent.getId(), node12);
 
-        ProcessingComponent component1 = componentService.findById(node1.getComponentId());
-        ProcessingComponent component2 = componentService.findById(node2.getComponentId());
+        WorkflowNodeDescriptor node13 = new WorkflowNodeDescriptor();
+        node13.setWorkflow(parent);
+        node13.setName("SNAP SAVI");
+        node13.setxCoord(400);
+        node13.setyCoord(600);
+        node13.setComponentId("snap-saviop");
+        node13.setComponentType(ComponentType.PROCESSING);
+        node13.setCreated(LocalDateTime.now());
+        node13.setPreserveOutput(true);
+        node13 = workflowService.addNode(parent.getId(), node13);
+
+        WorkflowNodeDescriptor node21 = new WorkflowNodeDescriptor();
+        node21.setWorkflow(parent);
+        node21.setName("OTB Resample");
+        node21.setxCoord(500);
+        node21.setyCoord(400);
+        node21.setComponentId("otbcli_RigidTransformResample");
+        node21.setComponentType(ComponentType.PROCESSING);
+        node21.addCustomValue("transformTypeIdScaleX", "0.5");
+        node21.addCustomValue("transformTypeIdScaleY", "0.5");
+        node21.setCreated(LocalDateTime.now());
+        node21.setPreserveOutput(true);
+        node21 = workflowService.addNode(parent.getId(), node21);
+
+        WorkflowNodeDescriptor node22 = new WorkflowNodeDescriptor();
+        node22.setWorkflow(parent);
+        node22.setName("OTB Resample");
+        node22.setxCoord(500);
+        node22.setyCoord(500);
+        node22.setComponentId("otbcli_RigidTransformResample");
+        node22.setComponentType(ComponentType.PROCESSING);
+        node22.addCustomValue("transformTypeIdScaleX", "0.5");
+        node22.addCustomValue("transformTypeIdScaleY", "0.5");
+        node22.setCreated(LocalDateTime.now());
+        node22.setPreserveOutput(true);
+        node22 = workflowService.addNode(parent.getId(), node22);
+
+        WorkflowNodeDescriptor node23 = new WorkflowNodeDescriptor();
+        node23.setWorkflow(parent);
+        node23.setName("OTB Resample");
+        node23.setxCoord(500);
+        node23.setyCoord(600);
+        node23.setComponentId("otbcli_RigidTransformResample");
+        node23.setComponentType(ComponentType.PROCESSING);
+        node23.addCustomValue("transformTypeIdScaleX", "0.5");
+        node23.addCustomValue("transformTypeIdScaleY", "0.5");
+        node23.setCreated(LocalDateTime.now());
+        node23.setPreserveOutput(true);
+        node23 = workflowService.addNode(parent.getId(), node23);
+
+        WorkflowNodeDescriptor node3 = new WorkflowNodeDescriptor();
+        node3.setWorkflow(parent);
+        node3.setName("OTB Concatenate");
+        node3.setxCoord(600);
+        node3.setyCoord(500);
+        node3.setComponentId("otbcli_ConcatenateImages");
+        node3.setComponentType(ComponentType.PROCESSING);
+        node3.setCreated(LocalDateTime.now());
+        node3.setPreserveOutput(true);
+        node3 = workflowService.addNode(parent.getId(), node3);
+
+        ProcessingComponent component11 = componentService.findById(node11.getComponentId());
+        ProcessingComponent component12 = componentService.findById(node12.getComponentId());
+        ProcessingComponent component13 = componentService.findById(node13.getComponentId());
+        ProcessingComponent component21 = componentService.findById(node21.getComponentId());
+        ProcessingComponent component22 = componentService.findById(node22.getComponentId());
+        ProcessingComponent component23 = componentService.findById(node23.getComponentId());
+        ProcessingComponent component3 = componentService.findById(node3.getComponentId());
 
         workflowService.addLink(dsNode.getId(), component.getTargets().get(0).getId(),
-                                node1.getId(), component1.getSources().get(0).getId());
+                                node11.getId(), component11.getSources().get(0).getId());
+        workflowService.addLink(dsNode.getId(), component.getTargets().get(0).getId(),
+                                node12.getId(), component12.getSources().get(0).getId());
+        workflowService.addLink(dsNode.getId(), component.getTargets().get(0).getId(),
+                                node13.getId(), component13.getSources().get(0).getId());
 
-        workflowService.addLink(node1.getId(), component1.getTargets().get(0).getId(),
-                                node2.getId(), component2.getSources().get(0).getId());
+        workflowService.addLink(node11.getId(), component11.getTargets().get(0).getId(),
+                                node21.getId(), component21.getSources().get(0).getId());
+        workflowService.addLink(node12.getId(), component12.getTargets().get(0).getId(),
+                                node22.getId(), component22.getSources().get(0).getId());
+        workflowService.addLink(node13.getId(), component13.getTargets().get(0).getId(),
+                                node23.getId(), component23.getSources().get(0).getId());
+
+        workflowService.addLink(node21.getId(), component21.getTargets().get(0).getId(),
+                                node3.getId(), component3.getSources().get(0).getId());
+        workflowService.addLink(node22.getId(), component22.getTargets().get(0).getId(),
+                                node3.getId(), component3.getSources().get(0).getId());
+        workflowService.addLink(node23.getId(), component23.getTargets().get(0).getId(),
+                                node3.getId(), component3.getSources().get(0).getId());
 
         Query dsQuery = new Query();
         dsQuery.setUserId(SessionStore.currentContext().getPrincipal().getName());

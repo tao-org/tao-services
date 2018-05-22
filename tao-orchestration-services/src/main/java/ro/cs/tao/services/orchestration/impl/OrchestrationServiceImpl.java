@@ -50,7 +50,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Override
     public long startWorkflow(long workflowId, Map<String, String> inputs) throws ExecutionException {
         return Orchestrator.getInstance().startWorkflow(workflowId, inputs,
-                                                        new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2)));
+                                                        new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
+                                                                                                     SecurityContextHolder.getContext()));
     }
 
     @Override
