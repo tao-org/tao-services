@@ -178,13 +178,13 @@ public class WorkflowDemo {
         }
     }
 
-    public static DataSourceComponent initDataSourceComponent() throws PersistenceException {
+    public static DataSourceComponent initDataSourceComponent(String sensor, String dataSource) throws PersistenceException {
         // let's have a DataSourceComponent
-        String componentId = "Sentinel2-Amazon Web Services";
+        String componentId = sensor + "-" + dataSource;
         DataSourceComponent dataSourceComponent;
         dataSourceComponent = persistenceManager.getDataSourceInstance(componentId);
         if (dataSourceComponent == null) {
-            dataSourceComponent = new DataSourceComponent("Sentinel2", "Amazon Web Services");
+            dataSourceComponent = new DataSourceComponent(sensor, dataSource);
             dataSourceComponent.setFetchMode(FetchMode.OVERWRITE);
             dataSourceComponent.setLabel(dataSourceComponent.getSensorName() + " from " + dataSourceComponent.getDataSourceName());
             dataSourceComponent.setVersion("1.0");
@@ -675,6 +675,19 @@ public class WorkflowDemo {
                 "22.8042573604346 44.795645304033826, 22.8042573604346 43.8379609098684))");
         dsQuery.setValues(values);
         dsQuery.setWorkflowNodeId(dsNode.getId());
+        /*dsQuery.setUserId(SessionStore.currentContext().getPrincipal().getName());
+        dsQuery.setSensor("Sentinel2");
+        dsQuery.setDataSource("Local Database");
+        dsQuery.setPageNumber(1);
+        dsQuery.setPageSize(10);
+        dsQuery.setLimit(2);
+        Map<String, String> values = new HashMap<>();
+        values.put("acquisition_date", "2018-01-01");
+        values.put("geometry", "POLYGON((22.8042573604346 43.8379609098684, " +
+                "24.83885442747927 43.8379609098684, 24.83885442747927 44.795645304033826, " +
+                "22.8042573604346 44.795645304033826, 22.8042573604346 43.8379609098684))");
+        dsQuery.setValues(values);
+        dsQuery.setWorkflowNodeId(dsNode.getId());*/
         persistenceManager.saveQuery(dsQuery);
 
     }
