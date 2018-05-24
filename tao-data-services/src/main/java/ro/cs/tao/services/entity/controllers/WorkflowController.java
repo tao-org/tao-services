@@ -87,7 +87,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         WorkflowDemo.setComponentService(componentService);
         WorkflowDemo.setWorkflowService(workflowService);
         WorkflowDemo.initComponents(otbContainerName, otbPath, snapContainerName, snapPath);
-        DataSourceComponent dataSourceComponent = WorkflowDemo.initDataSourceComponent("Sentinel2", "Local Database");
+        DataSourceComponent dataSourceComponent = WorkflowDemo.initDataSourceComponent("Sentinel2", "Amazon Web Services");
         WorkflowDescriptor descriptor1 = WorkflowDemo.initWorkflow1();
         WorkflowDescriptor descriptor2 = WorkflowDemo.initWorkflow2();
         WorkflowDescriptor descriptor3 = WorkflowDemo.initWorkflow3();
