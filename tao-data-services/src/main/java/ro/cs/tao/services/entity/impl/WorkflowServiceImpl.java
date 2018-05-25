@@ -21,6 +21,8 @@ import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
 import ro.cs.tao.datasource.converters.ConversionException;
+import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
@@ -396,6 +398,24 @@ public class WorkflowServiceImpl
                 validateNode(entity, node, errors);
             }
         }
+    }
+
+    @Override
+    public List<ExecutionJob> getWorkflowExecutions(long workflowId) throws PersistenceException {
+        final WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        if (workflow == null) {
+            throw new PersistenceException("There is no workflow having the given identifier " + String.valueOf(workflowId));
+        }
+        return persistenceManager.getJobs(workflowId);
+    }
+
+    @Override
+    public List<ExecutionTask> getWorkflowExecutionTasks(long executionJobId) throws PersistenceException {
+        final ExecutionJob workflowExecution = persistenceManager.getJobById(executionJobId);
+        if (workflowExecution == null) {
+            throw new PersistenceException("There is no workflow execution having the given identifier " + String.valueOf(executionJobId));
+        }
+        return workflowExecution.getTasks();
     }
 
     private TaoComponent findComponent(String id, ComponentType type) {
