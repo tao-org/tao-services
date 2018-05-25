@@ -174,5 +174,30 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
+    @RequestMapping(value = "/{workflowId}/executions", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> getWorkflowExecutions(@PathVariable("workflowId") long workflowId) {
+        ResponseEntity<?> responseEntity;
+        try {
+            responseEntity = new ResponseEntity<>(workflowService.getWorkflowExecutions(workflowId),
+              HttpStatus.OK);
+        } catch (PersistenceException e) {
+            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
+            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/{workflowId}/executions/{executionId}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> getWorkflowExecutionTasks(@PathVariable("executionId") long executionId) {
+        ResponseEntity<?> responseEntity;
+        try {
+            responseEntity = new ResponseEntity<>(workflowService.getWorkflowExecutionTasks(executionId),
+              HttpStatus.OK);
+        } catch (PersistenceException e) {
+            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
+            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+        }
+        return responseEntity;
+    }
 
 }
