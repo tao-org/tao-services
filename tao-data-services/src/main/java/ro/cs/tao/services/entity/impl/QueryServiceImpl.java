@@ -20,11 +20,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.QueryService;
+import ro.cs.tao.utils.Crypto;
 
 import java.util.List;
 
@@ -88,6 +90,12 @@ public class QueryServiceImpl extends EntityService<Query>
 
     @Override
     public Query save(Query object) {
+        if (object.getUser() != null && object.getPassword() != null) {
+            if (Crypto.decrypt(object.getPassword(), object.getUser()) == null) {
+                // we have an unencrypted password
+                object.setPassword(Crypto.encrypt(object.getPassword(), object.getUser()));
+            }
+        }
         try {
             return persistenceManager.saveQuery(object);
         } catch (PersistenceException e) {
@@ -107,6 +115,19 @@ public class QueryServiceImpl extends EntityService<Query>
 
     @Override
     protected void validateFields(Query entity, List<String> errors) {
-
+        if (entity.getWorkflowNodeId() <= 0) {
+            errors.add("[workflowNodeId] Invalid node identifier");
+        }
+        String value = entity.getSensor();
+        if (value == null || value.isEmpty() ||
+                !DataSourceManager.getInstance().getSupportedSensors().contains(value)) {
+            errors.add("[sensor] Invalid value");
+        } else {
+            value = entity.getDataSource();
+            if (value == null || value.isEmpty() ||
+                    DataSourceManager.getInstance().get(entity.getSensor(), value) == null) {
+                errors.add("[dataSource] Invalid value");
+            }
+        }
     }
 }
