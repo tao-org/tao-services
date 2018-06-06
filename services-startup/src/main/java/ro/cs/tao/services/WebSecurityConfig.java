@@ -19,6 +19,9 @@ import com.google.common.collect.ImmutableList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.jaas.*;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -31,6 +34,8 @@ import org.springframework.session.web.http.HttpSessionStrategy;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import ro.cs.tao.services.security.CustomAuthenticationProvider;
+import ro.cs.tao.services.security.TaoAuthorityGranter;
 import ro.cs.tao.services.security.TaoUserDetailsService;
 
 /**
@@ -43,24 +48,38 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     @Autowired
     private AuthenticationEntryPoint entryPoint;
 
-    @Autowired
-    private TaoUserDetailsService userDetailsService;
+    /*@Autowired
+    private TaoUserDetailsService userDetailsService;*/
 
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        /**
+         * 1st way, in memory auth
+         */
         /*auth
                 .inMemoryAuthentication()
                 .withUser("admin").password("admin").roles("ADMIN")
                 .and()
                 .withUser("user").password("user").roles("USER");*/
 
-        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        /**
+         * 2nd way, with UserDetailsService
+         */
+        /*auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);*/
+
+        /**
+         * 3rd way, with JAAS custom auth provider
+         */
+        auth.authenticationProvider(customAuthProvider());
+
+
         SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        PasswordEncoder encoder = new BCryptPasswordEncoder();
+        final PasswordEncoder encoder = new BCryptPasswordEncoder();
         return encoder;
     }
 
@@ -97,5 +116,21 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .authenticationEntryPoint(entryPoint);
         http.sessionManagement().maximumSessions(1);
         http.cors();
+    }
+
+    @Bean
+    public AuthenticationProvider customAuthProvider() {
+        return new CustomAuthenticationProvider(jaasAuthProvider());
+    }
+
+    @Bean
+    public JaasAuthenticationProvider jaasAuthProvider() {
+        JaasAuthenticationProvider authenticationProvider = new JaasAuthenticationProvider();
+        authenticationProvider.setAuthorityGranters(new AuthorityGranter[] { new TaoAuthorityGranter() });
+        authenticationProvider.setCallbackHandlers(new JaasAuthenticationCallbackHandler[] {
+          new JaasNameCallbackHandler(), new JaasPasswordCallbackHandler() });
+        authenticationProvider.setLoginContextName("taologin");
+        authenticationProvider.setLoginConfig(new ClassPathResource("tao_jaas.config"));
+        return authenticationProvider;
     }
 }
