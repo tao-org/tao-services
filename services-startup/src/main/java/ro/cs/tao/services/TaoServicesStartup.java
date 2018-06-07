@@ -38,6 +38,7 @@ import ro.cs.tao.services.orchestration.OrchestratorLauncher;
 import ro.cs.tao.services.progress.ProgressReportLauncher;
 import ro.cs.tao.services.query.DataQueryServiceLauncher;
 import ro.cs.tao.services.security.SpringSessionProvider;
+import ro.cs.tao.services.security.TaoLocalLoginModule;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
 
@@ -118,6 +119,7 @@ public class TaoServicesStartup implements ApplicationListener {
             Messaging.setPersister(this.persistenceManager);
             SpringSessionProvider.setPersistenceManager(this.persistenceManager);
             SessionStore.setSessionContextProvider(new SpringSessionProvider());
+            TaoLocalLoginModule.setPersistenceManager(this.persistenceManager);
             updateLocalhost();
             backgroundWorker.submit(this::registerDataSourceComponents);
         }
