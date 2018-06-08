@@ -24,8 +24,12 @@ import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class LdapLoginModule implements LoginModule {
+
+    private static final Logger logger = Logger.getLogger(LdapLoginModule.class.getName());
+
     private UserPrincipal userPrincipal;
     private Subject subject;
     private CallbackHandler callbackHandler;
@@ -39,7 +43,7 @@ public class LdapLoginModule implements LoginModule {
     public TaoLdapClient ldapClient;
 
     public LdapLoginModule() {
-        System.out.println("LDAP Login Module - constructor called");
+        logger.info("LDAP Login Module - constructor called");
         ldapClient = new TaoLdapClient();
     }
 
@@ -47,7 +51,7 @@ public class LdapLoginModule implements LoginModule {
     public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState,
                            Map<String, ?> options) {
 
-        System.out.println("Login Module - initialize called");
+        logger.info("LDAP Login Module - initialize called");
         this.subject = subject;
         this.callbackHandler = callbackHandler;
         this.sharedState = sharedState;
@@ -58,7 +62,7 @@ public class LdapLoginModule implements LoginModule {
 
     @Override
     public boolean login() throws LoginException {
-        System.out.println("Login Module - login called");
+        logger.info("LDAP Login Module - login called");
         if (callbackHandler == null) {
             throw new LoginException("CallbackHandler null!");
         }
@@ -84,12 +88,12 @@ public class LdapLoginModule implements LoginModule {
 
         // verify the username and password
         if (ldapClient.checkLoginCredentials(username, password)) {
-            System.out.println("Successful login!");
+            logger.info("LDAP Login Module - Successful login!");
             succeeded = true;
             return succeeded;
 
         } else {
-            System.out.println("Invalid login credentials");
+            logger.info("LDAP Login Module - Invalid login credentials");
             succeeded = false;
 
             username = null;
@@ -107,7 +111,7 @@ public class LdapLoginModule implements LoginModule {
      */
     @Override
     public boolean commit() throws LoginException {
-        System.out.println("Login Module - commit called");
+        logger.info("LDAP Login Module - commit called");
         //return succeeded;
 
         if (succeeded == false) {
@@ -131,7 +135,7 @@ public class LdapLoginModule implements LoginModule {
 
     @Override
     public boolean logout() throws LoginException {
-        System.out.println("Login Module - logout called");
+        logger.info("LDAP Login Module - logout called");
         subject.getPrincipals().remove(userPrincipal);
         succeeded = false;
         succeeded = commitSucceeded;
@@ -149,7 +153,7 @@ public class LdapLoginModule implements LoginModule {
      */
     @Override
     public boolean abort() throws LoginException {
-        System.out.println("Login Module - abort called");
+        logger.info("LDAP Login Module - abort called");
         if (succeeded == false) {
             return false;
         } else if (commitSucceeded == false) {
