@@ -37,8 +37,8 @@ public class SpringSessionProvider implements ExternalSessionContextProvider {
 
             @Override
             protected Principal setPrincipal() {
-                return new UserPrincipal(((SecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
-                                                 .getUsername());
+                Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                return new UserPrincipal(principal instanceof Principal ? ((Principal) principal).getName() : principal.toString());
             }
 
             @Override
