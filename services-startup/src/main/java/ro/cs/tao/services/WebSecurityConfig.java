@@ -148,8 +148,19 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 //.addFilterAfter(verifyingProcessingFilter, FilteredOAuth2AuthenticationProcessingFilter.class)
           .authorizeRequests()
                 .antMatchers(GLOBAL_PATH_EXPRESSION)
-                .permitAll()
+
+                // TODO: permit all after token management
+                /*.permitAll()
+                .and()*/
+
+                // TODO replace with code above after token management
+                .authenticated()
                 .and()
+                .httpBasic()
+                .and()
+                .authenticationProvider(customAuthProvider())
+
+
                 .csrf()
                 .disable();
         http.cors();
