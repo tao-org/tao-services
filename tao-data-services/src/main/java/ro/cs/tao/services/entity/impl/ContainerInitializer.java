@@ -37,6 +37,7 @@ import ro.cs.tao.workflow.enums.Visibility;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class ContainerInitializer {
     private static PersistenceManager persistenceManager;
@@ -68,6 +69,7 @@ public class ContainerInitializer {
         }
         if (snapContainer == null) {
             snapContainer = containerService.initSNAP(snapContainerName, snapPath);
+            Logger.getLogger(ContainerInitializer.class.getName()).info("Registered SNAP container");
         }
     }
 
@@ -79,6 +81,7 @@ public class ContainerInitializer {
         }
         if (otbContainer == null) {
             otbContainer = containerService.initOTB(otbContainerName, otbPath);
+            Logger.getLogger(ContainerInitializer.class.getName()).info("Registered OTB container");
         }
     }
 
