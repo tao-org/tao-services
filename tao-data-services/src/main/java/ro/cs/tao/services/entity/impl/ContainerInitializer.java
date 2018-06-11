@@ -14,12 +14,11 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-package ro.cs.tao.services.entity.demo;
+package ro.cs.tao.services.entity.impl;
 
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.remote.FetchMode;
-import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -37,32 +36,53 @@ import ro.cs.tao.workflow.enums.Visibility;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public class WorkflowDemo {
+public class ContainerInitializer {
     private static PersistenceManager persistenceManager;
     private static ContainerService containerService;
     private static ComponentService componentService;
     private static WorkflowService workflowService;
 
     public static void setPersistenceManager(PersistenceManager persistenceManager) {
-        WorkflowDemo.persistenceManager = persistenceManager;
+        ContainerInitializer.persistenceManager = persistenceManager;
     }
 
     public static void setContainerService(ContainerService containerService) {
-        WorkflowDemo.containerService = containerService;
+        ContainerInitializer.containerService = containerService;
     }
 
     public static void setComponentService(ComponentService componentService) {
-        WorkflowDemo.componentService = componentService;
+        ContainerInitializer.componentService = componentService;
     }
 
     public static void setWorkflowService(WorkflowService workflowService) {
-        WorkflowDemo.workflowService = workflowService;
+        ContainerInitializer.workflowService = workflowService;
     }
 
-    public static void initComponents(String otbContainerName, String otbPath,
+    public static void initSnap(String snapContainerName, String snapPath) {
+        Container snapContainer = null;
+        try {
+            snapContainer = persistenceManager.getContainerById(snapContainerName);
+        } catch (PersistenceException ignored) {
+        }
+        if (snapContainer == null) {
+            snapContainer = containerService.initSNAP(snapContainerName, snapPath);
+        }
+    }
+
+    public static void initOtb(String otbContainerName, String otbPath) {
+        Container otbContainer = null;
+        try {
+            otbContainer = persistenceManager.getContainerById(otbContainerName);
+        } catch (PersistenceException ignored) {
+        }
+        if (otbContainer == null) {
+            otbContainer = containerService.initOTB(otbContainerName, otbPath);
+        }
+    }
+
+    /*public static void initComponents(String otbContainerName, String otbPath,
                                       String snapContainerName, String snapPath) throws PersistenceException {
         // Initialize OTB test otbContainer
         Container otbContainer = null;
@@ -176,7 +196,7 @@ public class WorkflowDemo {
             component.setContainerId(snapContainer.getId());
             componentService.save(component);
         }
-    }
+    }*/
 
     public static DataSourceComponent initDataSourceComponent(String sensor, String dataSource) throws PersistenceException {
         // let's have a DataSourceComponent

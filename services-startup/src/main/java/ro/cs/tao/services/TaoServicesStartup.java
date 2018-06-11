@@ -34,6 +34,8 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.auth.service.AuthenticationServiceLauncher;
 import ro.cs.tao.services.entity.DataServicesLauncher;
+import ro.cs.tao.services.entity.impl.ContainerInitializer;
+import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.monitoring.MonitoringServiceLauncer;
 import ro.cs.tao.services.orchestration.OrchestratorLauncher;
 import ro.cs.tao.services.progress.ProgressReportLauncher;
@@ -42,14 +44,17 @@ import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.services.security.TaoLocalLoginModule;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
+import ro.cs.tao.utils.Platform;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
 import java.util.SortedSet;
@@ -69,6 +74,9 @@ public class TaoServicesStartup implements ApplicationListener {
 
     @Autowired
     private PersistenceManager persistenceManager;
+
+    @Autowired
+    private ContainerService containerService;
 
     static {
         home = new ApplicationHome(TaoServicesStartup.class);
@@ -122,6 +130,7 @@ public class TaoServicesStartup implements ApplicationListener {
             SessionStore.setSessionContextProvider(new SpringSessionProvider());
             TaoLocalLoginModule.setPersistenceManager(this.persistenceManager);
             updateLocalhost();
+            backgroundWorker.submit(this::registerEmbeddedContainers);
             backgroundWorker.submit(this::registerDataSourceComponents);
         }
     }
@@ -153,6 +162,43 @@ public class TaoServicesStartup implements ApplicationListener {
             } catch (Exception ex) {
                 logger.severe("Cannot update localhost name: " + ex.getMessage());
             }
+        }
+    }
+
+    private void registerEmbeddedContainers() {
+        String systemPath = System.getenv("Path");
+        String[] paths = systemPath.split(File.pathSeparator);
+        String snapContainer = ConfigurationManager.getInstance().getValue("embedded.snap.container.name");
+        String otbContainer = ConfigurationManager.getInstance().getValue("embedded.otb.container.name");
+        final boolean isWindows = Platform.ID.win.equals(Platform.getCurrentPlatform().getId());
+        String snapExec = "gpt" + (isWindows ? ".exe" : "");
+        String otbExec = "otbcli_BandMath" + (isWindows ? ".bat" : "");
+        String snapPath = null, otbPath = null;
+        Path currentPath;
+        for (String path : paths) {
+            currentPath = Paths.get(path).resolve(snapExec);
+            if (Files.exists(currentPath)) {
+                snapPath = currentPath.toString();
+            }
+            currentPath = Paths.get(path).resolve(otbExec);
+            if (Files.exists(currentPath)) {
+                otbPath = currentPath.toString();
+            }
+            if (snapPath != null && otbPath != null) {
+                break;
+            }
+        }
+        if (snapPath != null) {
+            ContainerInitializer.setPersistenceManager(persistenceManager);
+            ContainerInitializer.setContainerService(containerService);
+            ContainerInitializer.initSnap(snapContainer, snapPath);
+        } else {
+            Logger.getLogger(TaoServicesStartup.class.getName()).warning("SNAP was not found in system path");
+        }
+        if (otbPath != null) {
+            ContainerInitializer.initOtb(otbContainer, otbPath);
+        } else {
+            Logger.getLogger(TaoServicesStartup.class.getName()).warning("OTB was not found in system path");
         }
     }
 
