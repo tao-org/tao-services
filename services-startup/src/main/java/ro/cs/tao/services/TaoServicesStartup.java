@@ -111,7 +111,7 @@ public class TaoServicesStartup implements ApplicationListener {
                 .run(args);
     }
 
-    private static Path homeDirectory() { return home.getDir().getParentFile().toPath(); }
+    static Path homeDirectory() { return home.getDir().getParentFile().toPath(); }
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
