@@ -178,11 +178,11 @@ public class TaoServicesStartup implements ApplicationListener {
         for (String path : paths) {
             currentPath = Paths.get(path).resolve(snapExec);
             if (Files.exists(currentPath)) {
-                snapPath = currentPath.toString();
+                snapPath = path;
             }
             currentPath = Paths.get(path).resolve(otbExec);
             if (Files.exists(currentPath)) {
-                otbPath = currentPath.toString();
+                otbPath = path;
             }
             if (snapPath != null && otbPath != null) {
                 break;
