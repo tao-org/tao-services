@@ -82,12 +82,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                         @RequestParam("otbPath") String otbPath,
                                         @RequestParam("snapContainer") String snapContainerName,
                                         @RequestParam("snapPath") String snapPath) throws PersistenceException {
-        ContainerInitializer.setPersistenceManager(persistenceManager);
-        ContainerInitializer.setContainerService(containerService);
+        /*ContainerInitializer.setPersistenceManager(persistenceManager);
+        ContainerInitializer.setContainerService(containerService);*/
         ContainerInitializer.setComponentService(componentService);
         ContainerInitializer.setWorkflowService(workflowService);
-        ContainerInitializer.initSnap(snapContainerName, snapPath);
-        ContainerInitializer.initOtb(otbContainerName, otbPath);
+        //ContainerInitializer.initSnap(snapContainerName, snapPath);
+        //ContainerInitializer.initOtb(otbContainerName, otbPath);
         //ContainerInitializer.initComponents(otbContainerName, otbPath, snapContainerName, snapPath);
         //DataSourceComponent dataSourceComponent = ContainerInitializer.initDataSourceComponent("Sentinel2", "Amazon Web Services");
         DataSourceComponent dataSourceComponent = persistenceManager.getDataSourceInstance("Sentinel2-Amazon Web Services");

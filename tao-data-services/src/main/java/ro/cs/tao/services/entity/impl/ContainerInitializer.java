@@ -227,7 +227,7 @@ public class ContainerInitializer {
         descriptor1.setActive(true);
         descriptor1.setUserName("admin");
         descriptor1.setVisibility(Visibility.PRIVATE);
-        persistenceManager.saveWorkflowDescriptor(descriptor1);
+        descriptor1 = persistenceManager.saveWorkflowDescriptor(descriptor1);
         addNodes1(descriptor1);
         return descriptor1;
     }
@@ -309,7 +309,7 @@ public class ContainerInitializer {
         node1.setName("SNAP NDVI");
         node1.setxCoord(300);
         node1.setyCoord(500);
-        node1.setComponentId("snap-ndvi");
+        node1.setComponentId("snap-ndviop");
         node1.setComponentType(ComponentType.PROCESSING);
         node1.setCreated(LocalDateTime.now());
         node1 = workflowService.addNode(parent.getId(), node1);
@@ -319,10 +319,10 @@ public class ContainerInitializer {
         node2.setName("OTB Resample");
         node2.setxCoord(600);
         node2.setyCoord(500);
-        node2.setComponentId("otbcli_RigidTransformResample");
+        node2.setComponentId("RigidTransformResample");
         node2.setComponentType(ComponentType.PROCESSING);
-        node2.addCustomValue("transformTypeIdScaleX", "0.5");
-        node2.addCustomValue("transformTypeIdScaleY", "0.5");
+        node2.addCustomValue("transform_type_id_scalex_number", "0.5");
+        node2.addCustomValue("transform_type_id_scaley_number", "0.5");
         node2.setCreated(LocalDateTime.now());
         node2 = workflowService.addNode(parent.getId(), node2);
 
@@ -339,9 +339,9 @@ public class ContainerInitializer {
         node1.setName("OTB RI");
         node1.setxCoord(300);
         node1.setyCoord(500);
-        node1.setComponentId("otbcli_RadiometricIndices");
+        node1.setComponentId("RadiometricIndices");
         node1.setComponentType(ComponentType.PROCESSING);
-        node1.addCustomValue("list", "Vegetation:RVI");
+        node1.addCustomValue("list_str", "Vegetation:RVI");
         node1.setCreated(LocalDateTime.now());
         node1 = workflowService.addNode(parent.getId(), node1);
 
@@ -350,10 +350,10 @@ public class ContainerInitializer {
         node2.setName("OTB Resample");
         node2.setxCoord(600);
         node2.setyCoord(500);
-        node2.setComponentId("otbcli_RigidTransformResample");
+        node2.setComponentId("RigidTransformResample");
         node2.setComponentType(ComponentType.PROCESSING);
-        node2.addCustomValue("transformTypeIdScaleX", "0.5");
-        node2.addCustomValue("transformTypeIdScaleY", "0.5");
+        node2.addCustomValue("transform_type_id_scalex_number", "0.5");
+        node2.addCustomValue("transform_type_id_scaley_number", "0.5");
         node2.setCreated(LocalDateTime.now());
         node2 = workflowService.addNode(parent.getId(), node2);
 
@@ -370,10 +370,10 @@ public class ContainerInitializer {
         node1.setName("OTB Resample");
         node1.setxCoord(300);
         node1.setyCoord(500);
-        node1.setComponentId("otbcli_RigidTransformResample");
+        node1.setComponentId("RigidTransformResample");
         node1.setComponentType(ComponentType.PROCESSING);
-        node1.addCustomValue("transformTypeIdScaleX", "0.5");
-        node1.addCustomValue("transformTypeIdScaleY", "0.5");
+        node1.addCustomValue("transform_type_id_scalex_number", "0.5");
+        node1.addCustomValue("transform_type_id_scaley_number", "0.5");
         node1.setCreated(LocalDateTime.now());
         node1 = workflowService.addNode(parent.getId(), node1);
 
@@ -382,9 +382,9 @@ public class ContainerInitializer {
         node2.setName("OTB Indices");
         node2.setxCoord(600);
         node2.setyCoord(150);
-        node2.setComponentId("otbcli_RadiometricIndices");
+        node2.setComponentId("RadiometricIndices");
         node2.setComponentType(ComponentType.PROCESSING);
-        node2.addCustomValue("list", "Vegetation:NDVI");
+        node2.addCustomValue("list_str", "Vegetation:NDVI");
         node2.setCreated(LocalDateTime.now());
         node2 = workflowService.addNode(parent.getId(), node2);
 
@@ -393,9 +393,9 @@ public class ContainerInitializer {
         node3.setName("OTB Indices");
         node3.setxCoord(600);
         node3.setyCoord(750);
-        node3.setComponentId("otbcli_RadiometricIndices");
+        node3.setComponentId("RadiometricIndices");
         node3.setComponentType(ComponentType.PROCESSING);
-        node3.addCustomValue("list", "Vegetation:TNDVI");
+        node3.addCustomValue("list_str", "Vegetation:TNDVI");
         node3.setCreated(LocalDateTime.now());
         node3 = workflowService.addNode(parent.getId(), node3);
 
@@ -404,7 +404,7 @@ public class ContainerInitializer {
         node4.setName("OTB Concatenate");
         node4.setxCoord(900);
         node4.setyCoord(600);
-        node4.setComponentId("otbcli_ConcatenateImages");
+        node4.setComponentId("ConcatenateImages");
         node4.setComponentType(ComponentType.PROCESSING);
         node4.setCreated(LocalDateTime.now());
         node4 = workflowService.addNode(parent.getId(), node4);
@@ -443,7 +443,7 @@ public class ContainerInitializer {
         node2.setName("SNAP NDVI");
         node2.setxCoord(500);
         node2.setyCoord(50);
-        node2.setComponentId("snap-ndvi");
+        node2.setComponentId("snap-ndviop");
         node2.setComponentType(ComponentType.PROCESSING);
         node2.setCreated(LocalDateTime.now());
         node2 = workflowService.addNode(parent.getId(), node2);
@@ -453,7 +453,7 @@ public class ContainerInitializer {
         node3.setName("SNAP MSAVI");
         node3.setxCoord(500);
         node3.setyCoord(250);
-        node3.setComponentId("snap-msavi");
+        node3.setComponentId("snap-msaviop");
         node3.setComponentType(ComponentType.PROCESSING);
         node3.setCreated(LocalDateTime.now());
         node3 = workflowService.addNode(parent.getId(), node3);
@@ -463,7 +463,7 @@ public class ContainerInitializer {
         node4.setName("OTB Combine");
         node4.setxCoord(800);
         node4.setyCoord(150);
-        node4.setComponentId("otbcli_ConcatenateImages");
+        node4.setComponentId("ConcatenateImages");
         node4.setComponentType(ComponentType.PROCESSING);
         node4.setCreated(LocalDateTime.now());
         node4 = workflowService.addNode(parent.getId(), node4);
@@ -510,7 +510,7 @@ public class ContainerInitializer {
         node1.setName("SNAP NDVI");
         node1.setxCoord(300);
         node1.setyCoord(500);
-        node1.setComponentId("snap-ndvi");
+        node1.setComponentId("snap-ndviop");
         node1.setComponentType(ComponentType.PROCESSING);
         node1.setCreated(LocalDateTime.now());
         node1.setPreserveOutput(true);
@@ -521,10 +521,10 @@ public class ContainerInitializer {
         node2.setName("OTB Resample");
         node2.setxCoord(600);
         node2.setyCoord(500);
-        node2.setComponentId("otbcli_RigidTransformResample");
+        node2.setComponentId("RigidTransformResample");
         node2.setComponentType(ComponentType.PROCESSING);
-        node2.addCustomValue("transformTypeIdScaleX", "0.5");
-        node2.addCustomValue("transformTypeIdScaleY", "0.5");
+        node2.addCustomValue("transform_type_id_scalex_number", "0.5");
+        node2.addCustomValue("transform_type_id_scaley_number", "0.5");
         node2.setCreated(LocalDateTime.now());
         node2.setPreserveOutput(true);
         node2 = workflowService.addNode(parent.getId(), node2);
@@ -573,7 +573,7 @@ public class ContainerInitializer {
         node11.setName("SNAP NDVI");
         node11.setxCoord(400);
         node11.setyCoord(400);
-        node11.setComponentId("snap-ndvi");
+        node11.setComponentId("snap-ndviop");
         node11.setComponentType(ComponentType.PROCESSING);
         node11.setCreated(LocalDateTime.now());
         node11.setPreserveOutput(true);
@@ -606,10 +606,10 @@ public class ContainerInitializer {
         node21.setName("OTB Resample");
         node21.setxCoord(500);
         node21.setyCoord(400);
-        node21.setComponentId("otbcli_RigidTransformResample");
+        node21.setComponentId("RigidTransformResample");
         node21.setComponentType(ComponentType.PROCESSING);
-        node21.addCustomValue("transformTypeIdScaleX", "0.5");
-        node21.addCustomValue("transformTypeIdScaleY", "0.5");
+        node21.addCustomValue("transform_type_id_scalex_number", "0.5");
+        node21.addCustomValue("transform_type_id_scaley_number", "0.5");
         node21.setCreated(LocalDateTime.now());
         node21.setPreserveOutput(true);
         node21 = workflowService.addNode(parent.getId(), node21);
@@ -619,10 +619,10 @@ public class ContainerInitializer {
         node22.setName("OTB Resample");
         node22.setxCoord(500);
         node22.setyCoord(500);
-        node22.setComponentId("otbcli_RigidTransformResample");
+        node22.setComponentId("RigidTransformResample");
         node22.setComponentType(ComponentType.PROCESSING);
-        node22.addCustomValue("transformTypeIdScaleX", "0.5");
-        node22.addCustomValue("transformTypeIdScaleY", "0.5");
+        node22.addCustomValue("transform_type_id_scalex_number", "0.5");
+        node22.addCustomValue("transform_type_id_scaley_number", "0.5");
         node22.setCreated(LocalDateTime.now());
         node22.setPreserveOutput(true);
         node22 = workflowService.addNode(parent.getId(), node22);
@@ -632,10 +632,10 @@ public class ContainerInitializer {
         node23.setName("OTB Resample");
         node23.setxCoord(500);
         node23.setyCoord(600);
-        node23.setComponentId("otbcli_RigidTransformResample");
+        node23.setComponentId("RigidTransformResample");
         node23.setComponentType(ComponentType.PROCESSING);
-        node23.addCustomValue("transformTypeIdScaleX", "0.5");
-        node23.addCustomValue("transformTypeIdScaleY", "0.5");
+        node23.addCustomValue("transform_type_id_scalex_number", "0.5");
+        node23.addCustomValue("transform_type_id_scaley_number", "0.5");
         node23.setCreated(LocalDateTime.now());
         node23.setPreserveOutput(true);
         node23 = workflowService.addNode(parent.getId(), node23);
@@ -645,7 +645,7 @@ public class ContainerInitializer {
         node3.setName("OTB Concatenate");
         node3.setxCoord(600);
         node3.setyCoord(500);
-        node3.setComponentId("otbcli_ConcatenateImages");
+        node3.setComponentId("ConcatenateImages");
         node3.setComponentType(ComponentType.PROCESSING);
         node3.setCreated(LocalDateTime.now());
         node3.setPreserveOutput(true);
