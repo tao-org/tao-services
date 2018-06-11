@@ -17,6 +17,7 @@ package ro.cs.tao.services;
 
 import com.google.common.collect.ImmutableList;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -26,9 +27,11 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.session.web.http.HeaderHttpSessionStrategy;
 import org.springframework.session.web.http.HttpSessionStrategy;
 import org.springframework.web.cors.CorsConfiguration;
@@ -38,12 +41,22 @@ import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.TaoAuthorityGranter;
 import ro.cs.tao.services.security.TaoUserDetailsService;
 
+import javax.servlet.Filter;
+
 /**
  * @author Cosmin Cara
  */
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implements ApplicationContextAware {
+
+    public static final String LOGIN_PATH_EXPRESSION = "/auth/login";
+    public static final String API_PATH_EXPRESSION = "/api/**/*";
+    public static final String GLOBAL_PATH_EXPRESSION = "/**/*";
+
+    /*@Autowired
+    @Qualifier("ssoFilter")
+    private Filter ssoFilter;*/
 
     @Autowired
     private AuthenticationEntryPoint entryPoint;
@@ -65,8 +78,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
         /**
          * 2nd way, with UserDetailsService
          */
-        /*auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
-        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);*/
+        //auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
 
         /**
          * 3rd way, with JAAS custom auth provider
@@ -106,7 +118,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http
+        /*http
                 .csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/**").authenticated()
@@ -114,6 +126,43 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .httpBasic()
                 .authenticationEntryPoint(entryPoint);
         http.sessionManagement().maximumSessions(1);
+        http.cors();*/
+
+        http
+          .sessionManagement()
+                .maximumSessions(1)
+                .and()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+          .and()
+          .authorizeRequests()
+                .antMatchers(LOGIN_PATH_EXPRESSION)
+                .authenticated()
+                .and()
+                .httpBasic()
+                .and()
+                .authenticationProvider(customAuthProvider())
+          .authorizeRequests()
+                .antMatchers(API_PATH_EXPRESSION).authenticated()
+                .and()
+                //.addFilterBefore(ssoFilter, BasicAuthenticationFilter.class)
+                //.addFilterAfter(verifyingProcessingFilter, FilteredOAuth2AuthenticationProcessingFilter.class)
+          .authorizeRequests()
+                .antMatchers(GLOBAL_PATH_EXPRESSION)
+
+                // TODO: permit all after token management
+                /*.permitAll()
+                .and()*/
+
+                // TODO replace with code above after token management
+                .authenticated()
+                .and()
+                .httpBasic()
+                .and()
+                .authenticationProvider(customAuthProvider())
+
+
+                .csrf()
+                .disable();
         http.cors();
     }
 

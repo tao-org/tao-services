@@ -32,6 +32,7 @@ import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.services.auth.service.AuthenticationServiceLauncher;
 import ro.cs.tao.services.entity.DataServicesLauncher;
 import ro.cs.tao.services.monitoring.MonitoringServiceLauncer;
 import ro.cs.tao.services.orchestration.OrchestratorLauncher;
@@ -105,7 +106,7 @@ public class TaoServicesStartup implements ApplicationListener {
                 .sources(TaoServicesStartup.class,
                          MonitoringServiceLauncer.class, DataServicesLauncher.class,
                          DataQueryServiceLauncher.class, ProgressReportLauncher.class,
-                         OrchestratorLauncher.class)
+                         OrchestratorLauncher.class, AuthenticationServiceLauncher.class)
                 //.bannerMode(Banner.Mode.OFF)
                 .build()
                 .run(args);
