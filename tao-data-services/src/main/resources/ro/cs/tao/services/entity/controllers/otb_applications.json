@@ -52,7 +52,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "il",
-      "parentId": "otbcli_BandMath"
+      "parentId": "BandMath"
     }
   ],
   "targetCardinality": 1,
@@ -67,7 +67,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_BandMath"
+      "parentId": "BandMath"
     }
   ],
   "templatecontents": "-il$il_str\n-out$out_str\n-exp$exp_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -142,7 +142,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "il",
-      "parentId": "otbcli_BandMathX"
+      "parentId": "BandMathX"
     }
   ],
   "targetCardinality": 2,
@@ -157,7 +157,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_BandMathX"
+      "parentId": "BandMathX"
     },
     {
       "dataDescriptor": {
@@ -169,7 +169,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outcontext",
-      "parentId": "otbcli_BandMathX"
+      "parentId": "BandMathX"
     }
   ],
   "templatecontents": "-il$il_str\n-out$out_str\n-exp$exp_str\n-incontext$incontext_file\n-outcontext$outcontext_file\n-outputpixeltype$outputpixeltype_number\n",
@@ -382,7 +382,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_BinaryMorphologicalOperation"
+      "parentId": "BinaryMorphologicalOperation"
     }
   ],
   "targetCardinality": 1,
@@ -397,7 +397,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_BinaryMorphologicalOperation"
+      "parentId": "BinaryMorphologicalOperation"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-channel$channel_number\n-structype$structype_str\n-structype.ball.xradius$structype_ball_xradius_number\n-structype.ball.yradius$structype_ball_yradius_number\n-filter$filter_str\n-filter.dilate.foreval$filter_dilate_foreval_number\n-filter.dilate.backval$filter_dilate_backval_number\n-filter.erode.foreval$filter_erode_foreval_number\n-filter.erode.backval$filter_erode_backval_number\n-filter.opening.foreval$filter_opening_foreval_number\n-filter.opening.backval$filter_opening_backval_number\n-filter.closing.foreval$filter_closing_foreval_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -784,7 +784,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.inleft",
-      "parentId": "otbcli_BlockMatching"
+      "parentId": "BlockMatching"
     },
     {
       "constraints": null,
@@ -798,7 +798,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.inright",
-      "parentId": "otbcli_BlockMatching"
+      "parentId": "BlockMatching"
     },
     {
       "constraints": null,
@@ -812,7 +812,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "bm.initdisp.maps.hmap",
-      "parentId": "otbcli_BlockMatching"
+      "parentId": "BlockMatching"
     },
     {
       "constraints": null,
@@ -826,7 +826,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "bm.initdisp.maps.vmap",
-      "parentId": "otbcli_BlockMatching"
+      "parentId": "BlockMatching"
     }
   ],
   "targetCardinality": 2,
@@ -841,7 +841,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.out",
-      "parentId": "otbcli_BlockMatching"
+      "parentId": "BlockMatching"
     },
     {
       "dataDescriptor": {
@@ -853,7 +853,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.outmask",
-      "parentId": "otbcli_BlockMatching"
+      "parentId": "BlockMatching"
     }
   ],
   "templatecontents": "-io.inleft$io_inleft_str\n-io.inright$io_inright_str\n-io.out$io_out_str\n-io.outmask$io_outmask_str\n-io.outmetric$io_outmetric_bool\n-mask.inleft$mask_inleft_str\n-mask.inright$mask_inright_str\n-mask.nodata$mask_nodata_number\n-mask.variancet$mask_variancet_number\n-bm.metric$bm_metric_str\n-bm.metric.lp.p$bm_metric_lp_p_number\n-bm.radius$bm_radius_number\n-bm.minhd$bm_minhd_number\n-bm.maxhd$bm_maxhd_number\n-bm.minvd$bm_minvd_number\n-bm.maxvd$bm_maxvd_number\n-bm.subpixel$bm_subpixel_str\n-bm.step$bm_step_number\n-bm.startx$bm_startx_number\n-bm.starty$bm_starty_number\n-bm.medianfilter.radius$bm_medianfilter_radius_number\n-bm.medianfilter.incoherence$bm_medianfilter_incoherence_number\n-bm.initdisp$bm_initdisp_str\n-bm.initdisp.uniform.hdisp$bm_initdisp_uniform_hdisp_number\n-bm.initdisp.uniform.vdisp$bm_initdisp_uniform_vdisp_number\n-bm.initdisp.uniform.hrad$bm_initdisp_uniform_hrad_number\n-bm.initdisp.uniform.vrad$bm_initdisp_uniform_vrad_number\n-bm.initdisp.maps.hmap$bm_initdisp_maps_hmap_str\n-bm.initdisp.maps.vmap$bm_initdisp_maps_vmap_str\n-bm.initdisp.maps.hrad$bm_initdisp_maps_hrad_number\n-bm.initdisp.maps.vrad$bm_initdisp_maps_vrad_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -1082,7 +1082,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inp",
-      "parentId": "otbcli_BundleToPerfectSensor"
+      "parentId": "BundleToPerfectSensor"
     },
     {
       "constraints": null,
@@ -1096,7 +1096,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inxs",
-      "parentId": "otbcli_BundleToPerfectSensor"
+      "parentId": "BundleToPerfectSensor"
     }
   ],
   "targetCardinality": 1,
@@ -1111,7 +1111,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_BundleToPerfectSensor"
+      "parentId": "BundleToPerfectSensor"
     }
   ],
   "templatecontents": "-inp$inp_str\n-inxs$inxs_str\n-out$out_str\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-mode$mode_str\n-method$method_str\n-method.lmvm.radiusx$method_lmvm_radiusx_number\n-method.lmvm.radiusy$method_lmvm_radiusy_number\n-method.bayes.lambda$method_bayes_lambda_number\n-method.bayes.s$method_bayes_s_number\n-lms$lms_number\n-interpolator$interpolator_str\n-interpolator.bco.radius$interpolator_bco_radius_number\n-fv$fv_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -1238,7 +1238,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.in",
-      "parentId": "otbcli_ClassificationMapRegularization"
+      "parentId": "ClassificationMapRegularization"
     }
   ],
   "targetCardinality": 1,
@@ -1253,7 +1253,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.out",
-      "parentId": "otbcli_ClassificationMapRegularization"
+      "parentId": "ClassificationMapRegularization"
     }
   ],
   "templatecontents": "-io.in$io_in_str\n-io.out$io_out_str\n-ip.radius$ip_radius_number\n-ip.suvbool$ip_suvbool_bool\n-ip.nodatalabel$ip_nodatalabel_number\n-ip.undecidedlabel$ip_undecidedlabel_number\n-ip.onlyisolatedpixels$ip_onlyisolatedpixels_bool\n-ip.isolatedthreshold$ip_isolatedthreshold_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -1456,7 +1456,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ColorMapping"
+      "parentId": "ColorMapping"
     },
     {
       "constraints": null,
@@ -1470,7 +1470,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "method.custom.lut",
-      "parentId": "otbcli_ColorMapping"
+      "parentId": "ColorMapping"
     },
     {
       "constraints": null,
@@ -1484,7 +1484,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "method.image.in",
-      "parentId": "otbcli_ColorMapping"
+      "parentId": "ColorMapping"
     }
   ],
   "targetCardinality": 1,
@@ -1499,7 +1499,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ColorMapping"
+      "parentId": "ColorMapping"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-op$op_str\n-op.colortolabel.notfound$op_colortolabel_notfound_number\n-method$method_str\n-method.custom.lut$method_custom_lut_file\n-method.continuous.lut$method_continuous_lut_str\n-method.continuous.min$method_continuous_min_number\n-method.continuous.max$method_continuous_max_number\n-method.optimal.background$method_optimal_background_number\n-method.image.in$method_image_in_str\n-method.image.nodatavalue$method_image_nodatavalue_number\n-method.image.low$method_image_low_number\n-method.image.up$method_image_up_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -1613,7 +1613,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "ref.in",
-      "parentId": "otbcli_CompareImages"
+      "parentId": "CompareImages"
     },
     {
       "constraints": null,
@@ -1627,7 +1627,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "meas.in",
-      "parentId": "otbcli_CompareImages"
+      "parentId": "CompareImages"
     }
   ],
   "targetCardinality": 0,
@@ -1748,7 +1748,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ComputeConfusionMatrix"
+      "parentId": "ComputeConfusionMatrix"
     },
     {
       "constraints": null,
@@ -1762,7 +1762,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "ref.raster.in",
-      "parentId": "otbcli_ComputeConfusionMatrix"
+      "parentId": "ComputeConfusionMatrix"
     },
     {
       "constraints": null,
@@ -1776,7 +1776,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "ref.vector.in",
-      "parentId": "otbcli_ComputeConfusionMatrix"
+      "parentId": "ComputeConfusionMatrix"
     }
   ],
   "targetCardinality": 1,
@@ -1791,7 +1791,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ComputeConfusionMatrix"
+      "parentId": "ComputeConfusionMatrix"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_file\n-format$format_str\n-ref$ref_str\n-ref.raster.in$ref_raster_in_str\n-ref.raster.nodata$ref_raster_nodata_number\n-ref.vector.in$ref_vector_in_file\n-ref.vector.field$ref_vector_field_str\n-ref.vector.nodata$ref_vector_nodata_number\n-nodatalabel$nodatalabel_number\n",
@@ -1840,7 +1840,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "il",
-      "parentId": "otbcli_ComputeImagesStatistics"
+      "parentId": "ComputeImagesStatistics"
     }
   ],
   "targetCardinality": 1,
@@ -1855,7 +1855,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ComputeImagesStatistics"
+      "parentId": "ComputeImagesStatistics"
     }
   ],
   "templatecontents": "-il$il_str\n-bv$bv_number\n-out$out_file\n",
@@ -1904,7 +1904,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ComputeModulusAndPhase"
+      "parentId": "ComputeModulusAndPhase"
     }
   ],
   "targetCardinality": 2,
@@ -1919,7 +1919,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "modulus",
-      "parentId": "otbcli_ComputeModulusAndPhase"
+      "parentId": "ComputeModulusAndPhase"
     },
     {
       "dataDescriptor": {
@@ -1931,7 +1931,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "phase",
-      "parentId": "otbcli_ComputeModulusAndPhase"
+      "parentId": "ComputeModulusAndPhase"
     }
   ],
   "templatecontents": "-in$in_str\n-modulus$modulus_str\n-phase$phase_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -1993,7 +1993,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outstats",
-      "parentId": "otbcli_ComputeOGRLayersFeaturesStatistics"
+      "parentId": "ComputeOGRLayersFeaturesStatistics"
     }
   ],
   "templatecontents": "-inshp$inshp_str\n-outstats$outstats_file\n-feat$feat_str\n",
@@ -2107,7 +2107,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ComputePolylineFeatureFromImage"
+      "parentId": "ComputePolylineFeatureFromImage"
     }
   ],
   "targetCardinality": 1,
@@ -2122,7 +2122,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ComputePolylineFeatureFromImage"
+      "parentId": "ComputePolylineFeatureFromImage"
     }
   ],
   "templatecontents": "-in$in_str\n-vd$vd_str\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-expr$expr_str\n-field$field_str\n-out$out_str\n",
@@ -2171,7 +2171,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "il",
-      "parentId": "otbcli_ConcatenateImages"
+      "parentId": "ConcatenateImages"
     }
   ],
   "targetCardinality": 1,
@@ -2186,7 +2186,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ConcatenateImages"
+      "parentId": "ConcatenateImages"
     }
   ],
   "templatecontents": "-il$il_str\n-out$out_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -2221,7 +2221,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "vd",
-      "parentId": "otbcli_ConcatenateVectorData"
+      "parentId": "ConcatenateVectorData"
     }
   ],
   "targetCardinality": 1,
@@ -2236,7 +2236,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ConcatenateVectorData"
+      "parentId": "ConcatenateVectorData"
     }
   ],
   "templatecontents": "-vd$vd_str\n-out$out_str\n",
@@ -2363,7 +2363,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ConnectedComponentSegmentation"
+      "parentId": "ConnectedComponentSegmentation"
     }
   ],
   "targetCardinality": 1,
@@ -2378,7 +2378,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ConnectedComponentSegmentation"
+      "parentId": "ConnectedComponentSegmentation"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-mask$mask_str\n-expr$expr_str\n-minsize$minsize_number\n-obia$obia_str\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n",
@@ -2657,7 +2657,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ContrastEnhancement"
+      "parentId": "ContrastEnhancement"
     }
   ],
   "targetCardinality": 1,
@@ -2672,7 +2672,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ContrastEnhancement"
+      "parentId": "ContrastEnhancement"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-bins$bins_number\n-hfact$hfact_number\n-nodata$nodata_number\n-spatial$spatial_str\n-spatial.local.h$spatial_local_h_number\n-spatial.local.w$spatial_local_w_number\n-minmax$minmax_str\n-minmax.auto.global$minmax_auto_global_bool\n-minmax.manual.min$minmax_manual_min_number\n-minmax.manual.max$minmax_manual_max_number\n-mode$mode_str\n-mode.lum.red.ch$mode_lum_red_ch_number\n-mode.lum.red.coef$mode_lum_red_coef_number\n-mode.lum.green.ch$mode_lum_green_ch_number\n-mode.lum.green.coef$mode_lum_green_coef_number\n-mode.lum.blue.ch$mode_lum_blue_ch_number\n-mode.lum.blue.coef$mode_lum_blue_coef_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -2859,7 +2859,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_Convert"
+      "parentId": "Convert"
     }
   ],
   "targetCardinality": 1,
@@ -2874,7 +2874,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_Convert"
+      "parentId": "Convert"
     }
   ],
   "templatecontents": "-in$in_str\n-type$type_str\n-type.linear.gamma$type_linear_gamma_number\n-mask$mask_str\n-hcp.high$hcp_high_number\n-hcp.low$hcp_low_number\n-out$out_str\n-channels$channels_str\n-channels.grayscale.channel$channels_grayscale_channel_number\n-channels.rgb.red$channels_rgb_red_number\n-channels.rgb.green$channels_rgb_green_number\n-channels.rgb.blue$channels_rgb_blue_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -3042,7 +3042,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ConvertSensorToGeoPoint"
+      "parentId": "ConvertSensorToGeoPoint"
     }
   ],
   "targetCardinality": 0,
@@ -3078,7 +3078,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_DEMConvert"
+      "parentId": "DEMConvert"
     }
   ],
   "targetCardinality": 1,
@@ -3093,7 +3093,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_DEMConvert"
+      "parentId": "DEMConvert"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_file\n",
@@ -3264,7 +3264,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_Despeckle"
+      "parentId": "Despeckle"
     }
   ],
   "targetCardinality": 1,
@@ -3279,7 +3279,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_Despeckle"
+      "parentId": "Despeckle"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-filter$filter_str\n-filter.lee.rad$filter_lee_rad_number\n-filter.lee.nblooks$filter_lee_nblooks_number\n-filter.frost.rad$filter_frost_rad_number\n-filter.frost.deramp$filter_frost_deramp_number\n-filter.gammamap.rad$filter_gammamap_rad_number\n-filter.gammamap.nblooks$filter_gammamap_nblooks_number\n-filter.kuan.rad$filter_kuan_rad_number\n-filter.kuan.nblooks$filter_kuan_nblooks_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -3419,7 +3419,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.in",
-      "parentId": "otbcli_DisparityMapToElevationMap"
+      "parentId": "DisparityMapToElevationMap"
     },
     {
       "constraints": null,
@@ -3433,7 +3433,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.left",
-      "parentId": "otbcli_DisparityMapToElevationMap"
+      "parentId": "DisparityMapToElevationMap"
     },
     {
       "constraints": null,
@@ -3447,7 +3447,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.right",
-      "parentId": "otbcli_DisparityMapToElevationMap"
+      "parentId": "DisparityMapToElevationMap"
     },
     {
       "constraints": null,
@@ -3461,7 +3461,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.lgrid",
-      "parentId": "otbcli_DisparityMapToElevationMap"
+      "parentId": "DisparityMapToElevationMap"
     },
     {
       "constraints": null,
@@ -3475,7 +3475,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.rgrid",
-      "parentId": "otbcli_DisparityMapToElevationMap"
+      "parentId": "DisparityMapToElevationMap"
     }
   ],
   "targetCardinality": 1,
@@ -3490,7 +3490,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.out",
-      "parentId": "otbcli_DisparityMapToElevationMap"
+      "parentId": "DisparityMapToElevationMap"
     }
   ],
   "templatecontents": "-io.in$io_in_str\n-io.left$io_left_str\n-io.right$io_right_str\n-io.lgrid$io_lgrid_str\n-io.rgrid$io_rgrid_str\n-io.out$io_out_str\n-io.mask$io_mask_str\n-step$step_number\n-hmin$hmin_number\n-hmax$hmax_number\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -3620,7 +3620,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_DomainTransform"
+      "parentId": "DomainTransform"
     }
   ],
   "targetCardinality": 1,
@@ -3635,7 +3635,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_DomainTransform"
+      "parentId": "DomainTransform"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-mode$mode_str\n-mode.fft.shift$mode_fft_shift_bool\n-mode.wavelet.form$mode_wavelet_form_str\n-mode.wavelet.nlevels$mode_wavelet_nlevels_number\n-direction$direction_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -3726,7 +3726,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "tiledir",
-      "parentId": "otbcli_DownloadSRTMTiles"
+      "parentId": "DownloadSRTMTiles"
     }
   ],
   "targetCardinality": 0,
@@ -3893,7 +3893,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_DSFuzzyModelEstimation"
+      "parentId": "DSFuzzyModelEstimation"
     }
   ],
   "templatecontents": "-psin$psin_str\n-nsin$nsin_str\n-belsup$belsup_str\n-plasup$plasup_str\n-cri$cri_str\n-wgt$wgt_number\n-initmod$initmod_file\n-desclist$desclist_str\n-maxnbit$maxnbit_number\n-optobs$optobs_bool\n-out$out_file\n",
@@ -4105,7 +4105,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_DynamicConvert"
+      "parentId": "DynamicConvert"
     }
   ],
   "targetCardinality": 1,
@@ -4120,7 +4120,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_DynamicConvert"
+      "parentId": "DynamicConvert"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-type$type_str\n-type.linear.gamma$type_linear_gamma_number\n-mask$mask_str\n-quantile.high$quantile_high_number\n-quantile.low$quantile_low_number\n-channels$channels_str\n-channels.grayscale.channel$channels_grayscale_channel_number\n-channels.rgb.red$channels_rgb_red_number\n-channels.rgb.green$channels_rgb_green_number\n-channels.rgb.blue$channels_rgb_blue_number\n-outmin$outmin_number\n-outmax$outmax_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -4225,7 +4225,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_EdgeExtraction"
+      "parentId": "EdgeExtraction"
     }
   ],
   "targetCardinality": 1,
@@ -4240,7 +4240,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_EdgeExtraction"
+      "parentId": "EdgeExtraction"
     }
   ],
   "templatecontents": "-in$in_str\n-channel$channel_number\n-filter$filter_str\n-filter.touzi.xradius$filter_touzi_xradius_number\n-filter.touzi.yradius$filter_touzi_yradius_number\n-out$out_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -4565,7 +4565,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ExtractROI"
+      "parentId": "ExtractROI"
     },
     {
       "constraints": null,
@@ -4579,7 +4579,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "mode.fit.im",
-      "parentId": "otbcli_ExtractROI"
+      "parentId": "ExtractROI"
     }
   ],
   "targetCardinality": 1,
@@ -4594,7 +4594,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ExtractROI"
+      "parentId": "ExtractROI"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-mode$mode_str\n-mode.fit.im$mode_fit_im_str\n-mode.fit.vect$mode_fit_vect_str\n-mode.extent.ulx$mode_extent_ulx_number\n-mode.extent.uly$mode_extent_uly_number\n-mode.extent.lrx$mode_extent_lrx_number\n-mode.extent.lry$mode_extent_lry_number\n-mode.extent.unit$mode_extent_unit_str\n-mode.radius.r$mode_radius_r_number\n-mode.radius.unitr$mode_radius_unitr_str\n-mode.radius.cx$mode_radius_cx_number\n-mode.radius.cy$mode_radius_cy_number\n-mode.radius.unitc$mode_radius_unitc_str\n-startx$startx_number\n-starty$starty_number\n-sizex$sizex_number\n-sizey$sizey_number\n-cl$cl_str\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -4877,7 +4877,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "ref",
-      "parentId": "otbcli_FineRegistration"
+      "parentId": "FineRegistration"
     },
     {
       "constraints": null,
@@ -4891,7 +4891,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "sec",
-      "parentId": "otbcli_FineRegistration"
+      "parentId": "FineRegistration"
     }
   ],
   "targetCardinality": 2,
@@ -4906,7 +4906,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_FineRegistration"
+      "parentId": "FineRegistration"
     },
     {
       "dataDescriptor": {
@@ -4918,7 +4918,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "wo",
-      "parentId": "otbcli_FineRegistration"
+      "parentId": "FineRegistration"
     }
   ],
   "templatecontents": "-ref$ref_str\n-sec$sec_str\n-out$out_str\n-erx$erx_number\n-ery$ery_number\n-mrx$mrx_number\n-mry$mry_number\n-w$w_str\n-wo$wo_str\n-cox$cox_number\n-coy$coy_number\n-ssrx$ssrx_number\n-ssry$ssry_number\n-rgsx$rgsx_number\n-rgsy$rgsy_number\n-sgsx$sgsx_number\n-sgsy$sgsy_number\n-m$m_str\n-spa$spa_number\n-cva$cva_number\n-vmlt$vmlt_number\n-vmut$vmut_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -5027,7 +5027,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "il",
-      "parentId": "otbcli_FusionOfClassifications"
+      "parentId": "FusionOfClassifications"
     },
     {
       "constraints": null,
@@ -5041,7 +5041,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "method.dempstershafer.cmfl",
-      "parentId": "otbcli_FusionOfClassifications"
+      "parentId": "FusionOfClassifications"
     }
   ],
   "targetCardinality": 1,
@@ -5056,7 +5056,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_FusionOfClassifications"
+      "parentId": "FusionOfClassifications"
     }
   ],
   "templatecontents": "-il$il_str\n-method$method_str\n-method.dempstershafer.cmfl$method_dempstershafer_cmfl_str\n-method.dempstershafer.mob$method_dempstershafer_mob_str\n-nodatalabel$nodatalabel_number\n-undecidedlabel$undecidedlabel_number\n-out$out_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -5166,7 +5166,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "indem",
-      "parentId": "otbcli_GeneratePlyFile"
+      "parentId": "GeneratePlyFile"
     },
     {
       "constraints": null,
@@ -5180,7 +5180,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "incolor",
-      "parentId": "otbcli_GeneratePlyFile"
+      "parentId": "GeneratePlyFile"
     }
   ],
   "targetCardinality": 1,
@@ -5195,7 +5195,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_GeneratePlyFile"
+      "parentId": "GeneratePlyFile"
     }
   ],
   "templatecontents": "-indem$indem_str\n-mode$mode_str\n-map$map_str\n-map.utm.zone$map_utm_zone_number\n-map.utm.northhem$map_utm_northhem_bool\n-map.epsg.code$map_epsg_code_str\n-incolor$incolor_str\n-out$out_file\n",
@@ -5328,7 +5328,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inpoints",
-      "parentId": "otbcli_GenerateRPCSensorModel"
+      "parentId": "GenerateRPCSensorModel"
     }
   ],
   "targetCardinality": 3,
@@ -5343,7 +5343,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outgeom",
-      "parentId": "otbcli_GenerateRPCSensorModel"
+      "parentId": "GenerateRPCSensorModel"
     },
     {
       "dataDescriptor": {
@@ -5355,7 +5355,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outstat",
-      "parentId": "otbcli_GenerateRPCSensorModel"
+      "parentId": "GenerateRPCSensorModel"
     },
     {
       "dataDescriptor": {
@@ -5367,7 +5367,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outvector",
-      "parentId": "otbcli_GenerateRPCSensorModel"
+      "parentId": "GenerateRPCSensorModel"
     }
   ],
   "templatecontents": "-outgeom$outgeom_file\n-inpoints$inpoints_file\n-outstat$outstat_file\n-outvector$outvector_file\n-map$map_str\n-map.utm.zone$map_utm_zone_number\n-map.utm.northhem$map_utm_northhem_bool\n-map.epsg.code$map_epsg_code_str\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n",
@@ -5489,7 +5489,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_GrayScaleMorphologicalOperation"
+      "parentId": "GrayScaleMorphologicalOperation"
     }
   ],
   "targetCardinality": 1,
@@ -5504,7 +5504,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_GrayScaleMorphologicalOperation"
+      "parentId": "GrayScaleMorphologicalOperation"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-channel$channel_number\n-structype$structype_str\n-structype.ball.xradius$structype_ball_xradius_number\n-structype.ball.yradius$structype_ball_yradius_number\n-filter$filter_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -5690,7 +5690,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.in",
-      "parentId": "otbcli_GridBasedImageResampling"
+      "parentId": "GridBasedImageResampling"
     },
     {
       "constraints": null,
@@ -5704,7 +5704,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "grid.in",
-      "parentId": "otbcli_GridBasedImageResampling"
+      "parentId": "GridBasedImageResampling"
     }
   ],
   "targetCardinality": 1,
@@ -5719,7 +5719,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.out",
-      "parentId": "otbcli_GridBasedImageResampling"
+      "parentId": "GridBasedImageResampling"
     }
   ],
   "templatecontents": "-io.in$io_in_str\n-io.out$io_out_str\n-grid.in$grid_in_str\n-grid.type$grid_type_str\n-out.ulx$out_ulx_number\n-out.uly$out_uly_number\n-out.sizex$out_sizex_number\n-out.sizey$out_sizey_number\n-out.spacingx$out_spacingx_number\n-out.spacingy$out_spacingy_number\n-out.default$out_default_number\n-interpolator$interpolator_str\n-interpolator.bco.radius$interpolator_bco_radius_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -5889,7 +5889,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_HaralickTextureExtraction"
+      "parentId": "HaralickTextureExtraction"
     }
   ],
   "targetCardinality": 1,
@@ -5904,7 +5904,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_HaralickTextureExtraction"
+      "parentId": "HaralickTextureExtraction"
     }
   ],
   "templatecontents": "-in$in_str\n-channel$channel_number\n-step$step_number\n-parameters.xrad$parameters_xrad_number\n-parameters.yrad$parameters_yrad_number\n-parameters.xoff$parameters_xoff_number\n-parameters.yoff$parameters_yoff_number\n-parameters.min$parameters_min_number\n-parameters.max$parameters_max_number\n-parameters.nbbin$parameters_nbbin_number\n-texture$texture_str\n-out$out_str\n",
@@ -6167,7 +6167,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in1",
-      "parentId": "otbcli_HomologousPointsExtraction"
+      "parentId": "HomologousPointsExtraction"
     },
     {
       "constraints": null,
@@ -6181,7 +6181,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in2",
-      "parentId": "otbcli_HomologousPointsExtraction"
+      "parentId": "HomologousPointsExtraction"
     }
   ],
   "targetCardinality": 2,
@@ -6196,7 +6196,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_HomologousPointsExtraction"
+      "parentId": "HomologousPointsExtraction"
     },
     {
       "dataDescriptor": {
@@ -6208,7 +6208,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outvector",
-      "parentId": "otbcli_HomologousPointsExtraction"
+      "parentId": "HomologousPointsExtraction"
     }
   ],
   "templatecontents": "-in1$in1_str\n-band1$band1_number\n-in2$in2_str\n-band2$band2_number\n-algorithm$algorithm_str\n-threshold$threshold_number\n-backmatching$backmatching_bool\n-mode$mode_str\n-mode.geobins.binsize$mode_geobins_binsize_number\n-mode.geobins.binsizey$mode_geobins_binsizey_number\n-mode.geobins.binstep$mode_geobins_binstep_number\n-mode.geobins.binstepy$mode_geobins_binstepy_number\n-mode.geobins.margin$mode_geobins_margin_number\n-precision$precision_number\n-mfilter$mfilter_bool\n-2wgs84$2wgs84_bool\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-out$out_file\n-outvector$outvector_file\n",
@@ -6270,7 +6270,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "ingt",
-      "parentId": "otbcli_HooverCompareSegmentation"
+      "parentId": "HooverCompareSegmentation"
     },
     {
       "constraints": null,
@@ -6284,7 +6284,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inms",
-      "parentId": "otbcli_HooverCompareSegmentation"
+      "parentId": "HooverCompareSegmentation"
     }
   ],
   "targetCardinality": 2,
@@ -6299,7 +6299,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outgt",
-      "parentId": "otbcli_HooverCompareSegmentation"
+      "parentId": "HooverCompareSegmentation"
     },
     {
       "dataDescriptor": {
@@ -6311,7 +6311,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outms",
-      "parentId": "otbcli_HooverCompareSegmentation"
+      "parentId": "HooverCompareSegmentation"
     }
   ],
   "templatecontents": "-ingt$ingt_str\n-inms$inms_str\n-bg$bg_number\n-th$th_number\n-outgt$outgt_str\n-outms$outms_str\n",
@@ -6378,7 +6378,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_HyperspectralUnmixing"
+      "parentId": "HyperspectralUnmixing"
     },
     {
       "constraints": null,
@@ -6392,7 +6392,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "ie",
-      "parentId": "otbcli_HyperspectralUnmixing"
+      "parentId": "HyperspectralUnmixing"
     }
   ],
   "targetCardinality": 1,
@@ -6407,7 +6407,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_HyperspectralUnmixing"
+      "parentId": "HyperspectralUnmixing"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-ie$ie_str\n-ua$ua_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -6495,7 +6495,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ImageClassifier"
+      "parentId": "ImageClassifier"
     },
     {
       "constraints": null,
@@ -6509,7 +6509,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "model",
-      "parentId": "otbcli_ImageClassifier"
+      "parentId": "ImageClassifier"
     }
   ],
   "targetCardinality": 2,
@@ -6524,7 +6524,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ImageClassifier"
+      "parentId": "ImageClassifier"
     },
     {
       "dataDescriptor": {
@@ -6536,7 +6536,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "confmap",
-      "parentId": "otbcli_ImageClassifier"
+      "parentId": "ImageClassifier"
     }
   ],
   "templatecontents": "-in$in_str\n-mask$mask_str\n-model$model_file\n-imstat$imstat_file\n-nodatalabel$nodatalabel_number\n-out$out_str\n-confmap$confmap_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -6637,7 +6637,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ImageEnvelope"
+      "parentId": "ImageEnvelope"
     }
   ],
   "targetCardinality": 1,
@@ -6652,7 +6652,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ImageEnvelope"
+      "parentId": "ImageEnvelope"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-sr$sr_number\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-proj$proj_str\n",
@@ -6808,7 +6808,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_LargeScaleMeanShift"
+      "parentId": "LargeScaleMeanShift"
     }
   ],
   "targetCardinality": 2,
@@ -6823,7 +6823,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "mode.vector.out",
-      "parentId": "otbcli_LargeScaleMeanShift"
+      "parentId": "LargeScaleMeanShift"
     },
     {
       "dataDescriptor": {
@@ -6835,7 +6835,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "mode.raster.out",
-      "parentId": "otbcli_LargeScaleMeanShift"
+      "parentId": "LargeScaleMeanShift"
     }
   ],
   "templatecontents": "-in$in_str\n-spatialr$spatialr_number\n-ranger$ranger_number\n-minsize$minsize_number\n-tilesizex$tilesizex_number\n-tilesizey$tilesizey_number\n-mode$mode_str\n-mode.vector.imfield$mode_vector_imfield_str\n-mode.vector.out$mode_vector_out_file\n-mode.raster.out$mode_raster_out_str\n-cleanup$cleanup_bool\n-outputpixeltype$outputpixeltype_number\n",
@@ -6923,7 +6923,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_LineSegmentDetection"
+      "parentId": "LineSegmentDetection"
     }
   ],
   "targetCardinality": 1,
@@ -6938,7 +6938,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_LineSegmentDetection"
+      "parentId": "LineSegmentDetection"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-norescale$norescale_bool\n",
@@ -7013,7 +7013,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_LocalStatisticExtraction"
+      "parentId": "LocalStatisticExtraction"
     }
   ],
   "targetCardinality": 1,
@@ -7028,7 +7028,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_LocalStatisticExtraction"
+      "parentId": "LocalStatisticExtraction"
     }
   ],
   "templatecontents": "-in$in_str\n-channel$channel_number\n-radius$radius_number\n-out$out_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -7181,7 +7181,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_LSMSSegmentation"
+      "parentId": "LSMSSegmentation"
     }
   ],
   "targetCardinality": 1,
@@ -7196,7 +7196,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_LSMSSegmentation"
+      "parentId": "LSMSSegmentation"
     }
   ],
   "templatecontents": "-in$in_str\n-inpos$inpos_str\n-out$out_str\n-spatialr$spatialr_number\n-ranger$ranger_number\n-minsize$minsize_number\n-tilesizex$tilesizex_number\n-tilesizey$tilesizey_number\n-tmpdir$tmpdir_file\n-cleanup$cleanup_bool\n-outputpixeltype$outputpixeltype_number\n",
@@ -7284,7 +7284,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_LSMSSmallRegionsMerging"
+      "parentId": "LSMSSmallRegionsMerging"
     },
     {
       "constraints": null,
@@ -7298,7 +7298,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inseg",
-      "parentId": "otbcli_LSMSSmallRegionsMerging"
+      "parentId": "LSMSSmallRegionsMerging"
     }
   ],
   "targetCardinality": 1,
@@ -7313,7 +7313,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_LSMSSmallRegionsMerging"
+      "parentId": "LSMSSmallRegionsMerging"
     }
   ],
   "templatecontents": "-in$in_str\n-inseg$inseg_str\n-out$out_str\n-minsize$minsize_number\n-tilesizex$tilesizex_number\n-tilesizey$tilesizey_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -7375,7 +7375,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_LSMSVectorization"
+      "parentId": "LSMSVectorization"
     },
     {
       "constraints": null,
@@ -7389,7 +7389,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inseg",
-      "parentId": "otbcli_LSMSVectorization"
+      "parentId": "LSMSVectorization"
     }
   ],
   "targetCardinality": 1,
@@ -7404,7 +7404,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_LSMSVectorization"
+      "parentId": "LSMSVectorization"
     }
   ],
   "templatecontents": "-in$in_str\n-inseg$inseg_str\n-out$out_file\n-tilesizex$tilesizex_number\n-tilesizey$tilesizey_number\n",
@@ -7535,7 +7535,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ManageNoData"
+      "parentId": "ManageNoData"
     },
     {
       "constraints": null,
@@ -7549,7 +7549,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "mode.apply.mask",
-      "parentId": "otbcli_ManageNoData"
+      "parentId": "ManageNoData"
     }
   ],
   "targetCardinality": 1,
@@ -7564,7 +7564,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_ManageNoData"
+      "parentId": "ManageNoData"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-usenan$usenan_bool\n-mode$mode_str\n-mode.buildmask.inv$mode_buildmask_inv_number\n-mode.buildmask.outv$mode_buildmask_outv_number\n-mode.changevalue.newv$mode_changevalue_newv_number\n-mode.apply.mask$mode_apply_mask_str\n-mode.apply.ndval$mode_apply_ndval_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -7691,7 +7691,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_MeanShiftSmoothing"
+      "parentId": "MeanShiftSmoothing"
     }
   ],
   "targetCardinality": 2,
@@ -7706,7 +7706,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "fout",
-      "parentId": "otbcli_MeanShiftSmoothing"
+      "parentId": "MeanShiftSmoothing"
     },
     {
       "dataDescriptor": {
@@ -7718,7 +7718,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "foutpos",
-      "parentId": "otbcli_MeanShiftSmoothing"
+      "parentId": "MeanShiftSmoothing"
     }
   ],
   "templatecontents": "-in$in_str\n-fout$fout_str\n-foutpos$foutpos_str\n-spatialr$spatialr_number\n-ranger$ranger_number\n-thres$thres_number\n-maxiter$maxiter_number\n-rangeramp$rangeramp_number\n-modesearch$modesearch_bool\n-outputpixeltype$outputpixeltype_number\n",
@@ -7822,7 +7822,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_MorphologicalClassification"
+      "parentId": "MorphologicalClassification"
     }
   ],
   "targetCardinality": 1,
@@ -7837,7 +7837,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_MorphologicalClassification"
+      "parentId": "MorphologicalClassification"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-channel$channel_number\n-structype$structype_str\n-radius$radius_number\n-sigma$sigma_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -7954,7 +7954,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_MorphologicalMultiScaleDecomposition"
+      "parentId": "MorphologicalMultiScaleDecomposition"
     }
   ],
   "targetCardinality": 3,
@@ -7969,7 +7969,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outconvex",
-      "parentId": "otbcli_MorphologicalMultiScaleDecomposition"
+      "parentId": "MorphologicalMultiScaleDecomposition"
     },
     {
       "dataDescriptor": {
@@ -7981,7 +7981,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outconcave",
-      "parentId": "otbcli_MorphologicalMultiScaleDecomposition"
+      "parentId": "MorphologicalMultiScaleDecomposition"
     },
     {
       "dataDescriptor": {
@@ -7993,7 +7993,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outleveling",
-      "parentId": "otbcli_MorphologicalMultiScaleDecomposition"
+      "parentId": "MorphologicalMultiScaleDecomposition"
     }
   ],
   "templatecontents": "-in$in_str\n-outconvex$outconvex_str\n-outconcave$outconcave_str\n-outleveling$outleveling_str\n-channel$channel_number\n-structype$structype_str\n-radius$radius_number\n-step$step_number\n-levels$levels_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -8144,7 +8144,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_MorphologicalProfilesAnalysis"
+      "parentId": "MorphologicalProfilesAnalysis"
     }
   ],
   "targetCardinality": 1,
@@ -8159,7 +8159,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_MorphologicalProfilesAnalysis"
+      "parentId": "MorphologicalProfilesAnalysis"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-channel$channel_number\n-structype$structype_str\n-size$size_number\n-radius$radius_number\n-step$step_number\n-profile$profile_str\n-profile.classification.sigma$profile_classification_sigma_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -8271,7 +8271,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "il",
-      "parentId": "otbcli_MultiImageSamplingRate"
+      "parentId": "MultiImageSamplingRate"
     },
     {
       "constraints": null,
@@ -8285,7 +8285,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "strategy.byclass.in",
-      "parentId": "otbcli_MultiImageSamplingRate"
+      "parentId": "MultiImageSamplingRate"
     }
   ],
   "targetCardinality": 1,
@@ -8300,7 +8300,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_MultiImageSamplingRate"
+      "parentId": "MultiImageSamplingRate"
     }
   ],
   "templatecontents": "-il$il_str\n-out$out_file\n-strategy$strategy_str\n-strategy.byclass.in$strategy_byclass_in_str\n-strategy.constant.nb$strategy_constant_nb_str\n-strategy.percent.p$strategy_percent_p_str\n-strategy.total.v$strategy_total_v_str\n-mim$mim_str\n",
@@ -8401,7 +8401,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_MultiResolutionPyramid"
+      "parentId": "MultiResolutionPyramid"
     }
   ],
   "targetCardinality": 1,
@@ -8416,7 +8416,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_MultiResolutionPyramid"
+      "parentId": "MultiResolutionPyramid"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-level$level_number\n-sfactor$sfactor_number\n-vfactor$vfactor_number\n-fast$fast_bool\n-outputpixeltype$outputpixeltype_number\n",
@@ -8465,7 +8465,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in1",
-      "parentId": "otbcli_MultivariateAlterationDetector"
+      "parentId": "MultivariateAlterationDetector"
     },
     {
       "constraints": null,
@@ -8479,7 +8479,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in2",
-      "parentId": "otbcli_MultivariateAlterationDetector"
+      "parentId": "MultivariateAlterationDetector"
     }
   ],
   "targetCardinality": 1,
@@ -8494,7 +8494,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_MultivariateAlterationDetector"
+      "parentId": "MultivariateAlterationDetector"
     }
   ],
   "templatecontents": "-in1$in1_str\n-in2$in2_str\n-out$out_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -8617,7 +8617,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "instats",
-      "parentId": "otbcli_OGRLayerClassifier"
+      "parentId": "OGRLayerClassifier"
     }
   ],
   "targetCardinality": 1,
@@ -8632,7 +8632,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "insvm",
-      "parentId": "otbcli_OGRLayerClassifier"
+      "parentId": "OGRLayerClassifier"
     }
   ],
   "templatecontents": "-inshp$inshp_str\n-instats$instats_file\n-insvm$insvm_file\n-feat$feat_str\n-cfield$cfield_str\n",
@@ -9003,7 +9003,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_OpticalCalibration"
+      "parentId": "OpticalCalibration"
     }
   ],
   "targetCardinality": 1,
@@ -9018,7 +9018,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_OpticalCalibration"
+      "parentId": "OpticalCalibration"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-level$level_str\n-milli$milli_bool\n-clamp$clamp_bool\n-acqui.minute$acqui_minute_number\n-acqui.hour$acqui_hour_number\n-acqui.day$acqui_day_number\n-acqui.month$acqui_month_number\n-acqui.year$acqui_year_number\n-acqui.fluxnormcoeff$acqui_fluxnormcoeff_number\n-acqui.sun.elev$acqui_sun_elev_number\n-acqui.sun.azim$acqui_sun_azim_number\n-acqui.view.elev$acqui_view_elev_number\n-acqui.view.azim$acqui_view_azim_number\n-acqui.gainbias$acqui_gainbias_file\n-acqui.solarilluminations$acqui_solarilluminations_file\n-atmo.aerosol$atmo_aerosol_str\n-atmo.oz$atmo_oz_number\n-atmo.wa$atmo_wa_number\n-atmo.pressure$atmo_pressure_number\n-atmo.opt$atmo_opt_number\n-atmo.aeronet$atmo_aeronet_file\n-atmo.rsr$atmo_rsr_file\n-atmo.radius$atmo_radius_number\n-atmo.pixsize$atmo_pixsize_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -9382,7 +9382,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.in",
-      "parentId": "otbcli_OrthoRectification"
+      "parentId": "OrthoRectification"
     }
   ],
   "targetCardinality": 1,
@@ -9397,7 +9397,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.out",
-      "parentId": "otbcli_OrthoRectification"
+      "parentId": "OrthoRectification"
     }
   ],
   "templatecontents": "-io.in$io_in_str\n-io.out$io_out_str\n-map$map_str\n-map.utm.zone$map_utm_zone_number\n-map.utm.northhem$map_utm_northhem_bool\n-map.epsg.code$map_epsg_code_str\n-outputs.mode$outputs_mode_str\n-outputs.ulx$outputs_ulx_number\n-outputs.uly$outputs_uly_number\n-outputs.sizex$outputs_sizex_number\n-outputs.sizey$outputs_sizey_number\n-outputs.spacingx$outputs_spacingx_number\n-outputs.spacingy$outputs_spacingy_number\n-outputs.lrx$outputs_lrx_number\n-outputs.lry$outputs_lry_number\n-outputs.ortho$outputs_ortho_str\n-outputs.isotropic$outputs_isotropic_bool\n-outputs.default$outputs_default_number\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-interpolator$interpolator_str\n-interpolator.bco.radius$interpolator_bco_radius_number\n-opt.rpc$opt_rpc_number\n-opt.gridspacing$opt_gridspacing_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -9511,7 +9511,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "support",
-      "parentId": "otbcli_OSMDownloader"
+      "parentId": "OSMDownloader"
     }
   ],
   "targetCardinality": 1,
@@ -9526,7 +9526,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_OSMDownloader"
+      "parentId": "OSMDownloader"
     }
   ],
   "templatecontents": "-out$out_str\n-support$support_str\n-key$key_str\n-value$value_str\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-printclasses$printclasses_bool\n",
@@ -9644,7 +9644,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inp",
-      "parentId": "otbcli_Pansharpening"
+      "parentId": "Pansharpening"
     },
     {
       "constraints": null,
@@ -9658,7 +9658,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inxs",
-      "parentId": "otbcli_Pansharpening"
+      "parentId": "Pansharpening"
     }
   ],
   "targetCardinality": 1,
@@ -9673,7 +9673,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_Pansharpening"
+      "parentId": "Pansharpening"
     }
   ],
   "templatecontents": "-inp$inp_str\n-inxs$inxs_str\n-out$out_str\n-method$method_str\n-method.lmvm.radiusx$method_lmvm_radiusx_number\n-method.lmvm.radiusy$method_lmvm_radiusy_number\n-method.bayes.lambda$method_bayes_lambda_number\n-method.bayes.s$method_bayes_s_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -9778,7 +9778,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_PixelValue"
+      "parentId": "PixelValue"
     }
   ],
   "targetCardinality": 0,
@@ -9893,7 +9893,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_PolygonClassStatistics"
+      "parentId": "PolygonClassStatistics"
     },
     {
       "constraints": null,
@@ -9907,7 +9907,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "vec",
-      "parentId": "otbcli_PolygonClassStatistics"
+      "parentId": "PolygonClassStatistics"
     }
   ],
   "targetCardinality": 1,
@@ -9922,7 +9922,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_PolygonClassStatistics"
+      "parentId": "PolygonClassStatistics"
     }
   ],
   "templatecontents": "-in$in_str\n-mask$mask_str\n-vec$vec_file\n-out$out_file\n-field$field_str\n-layer$layer_number\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n",
@@ -9997,7 +9997,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_PredictRegression"
+      "parentId": "PredictRegression"
     },
     {
       "constraints": null,
@@ -10011,7 +10011,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "model",
-      "parentId": "otbcli_PredictRegression"
+      "parentId": "PredictRegression"
     }
   ],
   "targetCardinality": 1,
@@ -10026,7 +10026,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_PredictRegression"
+      "parentId": "PredictRegression"
     }
   ],
   "templatecontents": "-in$in_str\n-mask$mask_str\n-model$model_file\n-imstat$imstat_file\n-out$out_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -10179,7 +10179,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_Quicklook"
+      "parentId": "Quicklook"
     }
   ],
   "targetCardinality": 1,
@@ -10194,7 +10194,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_Quicklook"
+      "parentId": "Quicklook"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-cl$cl_str\n-rox$rox_number\n-roy$roy_number\n-rsx$rsx_number\n-rsy$rsy_number\n-sr$sr_number\n-sx$sx_number\n-sy$sy_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -10321,7 +10321,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_RadiometricIndices"
+      "parentId": "RadiometricIndices"
     }
   ],
   "targetCardinality": 1,
@@ -10336,7 +10336,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_RadiometricIndices"
+      "parentId": "RadiometricIndices"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-channels.blue$channels_blue_number\n-channels.green$channels_green_number\n-channels.red$channels_red_number\n-channels.nir$channels_nir_number\n-channels.mir$channels_mir_number\n-list$list_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -10557,7 +10557,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_Rasterization"
+      "parentId": "Rasterization"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-im$im_str\n-szx$szx_number\n-szy$szy_number\n-epsg$epsg_str\n-orx$orx_number\n-ory$ory_number\n-spx$spx_number\n-spy$spy_number\n-background$background_number\n-mode$mode_str\n-mode.binary.foreground$mode_binary_foreground_number\n-mode.attribute.field$mode_attribute_field_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -10606,7 +10606,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_ReadImageInfo"
+      "parentId": "ReadImageInfo"
     }
   ],
   "targetCardinality": 1,
@@ -10621,7 +10621,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outkwl",
-      "parentId": "otbcli_ReadImageInfo"
+      "parentId": "ReadImageInfo"
     }
   ],
   "templatecontents": "-in$in_str\n-keywordlist$keywordlist_bool\n-outkwl$outkwl_file\n",
@@ -10754,7 +10754,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "ingeom",
-      "parentId": "otbcli_RefineSensorModel"
+      "parentId": "RefineSensorModel"
     },
     {
       "constraints": null,
@@ -10768,7 +10768,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inpoints",
-      "parentId": "otbcli_RefineSensorModel"
+      "parentId": "RefineSensorModel"
     }
   ],
   "targetCardinality": 3,
@@ -10783,7 +10783,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outgeom",
-      "parentId": "otbcli_RefineSensorModel"
+      "parentId": "RefineSensorModel"
     },
     {
       "dataDescriptor": {
@@ -10795,7 +10795,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outstat",
-      "parentId": "otbcli_RefineSensorModel"
+      "parentId": "RefineSensorModel"
     },
     {
       "dataDescriptor": {
@@ -10807,7 +10807,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outvector",
-      "parentId": "otbcli_RefineSensorModel"
+      "parentId": "RefineSensorModel"
     }
   ],
   "templatecontents": "-ingeom$ingeom_file\n-outgeom$outgeom_file\n-inpoints$inpoints_file\n-outstat$outstat_file\n-outvector$outvector_file\n-map$map_str\n-map.utm.zone$map_utm_zone_number\n-map.utm.northhem$map_utm_northhem_bool\n-map.epsg.code$map_epsg_code_str\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n",
@@ -10882,7 +10882,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_Rescale"
+      "parentId": "Rescale"
     }
   ],
   "targetCardinality": 1,
@@ -10897,7 +10897,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_Rescale"
+      "parentId": "Rescale"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-outmin$outmin_number\n-outmax$outmax_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -11110,7 +11110,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_RigidTransformResample"
+      "parentId": "RigidTransformResample"
     }
   ],
   "targetCardinality": 1,
@@ -11125,7 +11125,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_RigidTransformResample"
+      "parentId": "RigidTransformResample"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-transform.type$transform_type_str\n-transform.type.id.scalex$transform_type_id_scalex_number\n-transform.type.id.scaley$transform_type_id_scaley_number\n-transform.type.translation.tx$transform_type_translation_tx_number\n-transform.type.translation.ty$transform_type_translation_ty_number\n-transform.type.translation.scalex$transform_type_translation_scalex_number\n-transform.type.translation.scaley$transform_type_translation_scaley_number\n-transform.type.rotation.angle$transform_type_rotation_angle_number\n-transform.type.rotation.scalex$transform_type_rotation_scalex_number\n-transform.type.rotation.scaley$transform_type_rotation_scaley_number\n-interpolator$interpolator_str\n-interpolator.bco.radius$interpolator_bco_radius_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -11282,7 +11282,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_SampleAugmentation"
+      "parentId": "SampleAugmentation"
     }
   ],
   "targetCardinality": 1,
@@ -11297,7 +11297,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_SampleAugmentation"
+      "parentId": "SampleAugmentation"
     }
   ],
   "templatecontents": "-in$in_file\n-out$out_file\n-field$field_str\n-layer$layer_number\n-label$label_number\n-samples$samples_number\n-exclude$exclude_str\n-strategy$strategy_str\n-strategy.jitter.stdfactor$strategy_jitter_stdfactor_number\n-strategy.smote.neighbors$strategy_smote_neighbors_number\n-seed$seed_number\n",
@@ -11401,7 +11401,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_SampleExtraction"
+      "parentId": "SampleExtraction"
     },
     {
       "constraints": null,
@@ -11415,7 +11415,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "vec",
-      "parentId": "otbcli_SampleExtraction"
+      "parentId": "SampleExtraction"
     }
   ],
   "targetCardinality": 1,
@@ -11430,7 +11430,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_SampleExtraction"
+      "parentId": "SampleExtraction"
     }
   ],
   "templatecontents": "-in$in_str\n-vec$vec_file\n-out$out_file\n-outfield$outfield_str\n-outfield.prefix.name$outfield_prefix_name_str\n-outfield.list.names$outfield_list_names_str\n-field$field_str\n-layer$layer_number\n",
@@ -11645,7 +11645,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_SampleSelection"
+      "parentId": "SampleSelection"
     },
     {
       "constraints": null,
@@ -11659,7 +11659,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "vec",
-      "parentId": "otbcli_SampleSelection"
+      "parentId": "SampleSelection"
     },
     {
       "constraints": null,
@@ -11673,7 +11673,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "instats",
-      "parentId": "otbcli_SampleSelection"
+      "parentId": "SampleSelection"
     },
     {
       "constraints": null,
@@ -11687,7 +11687,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "strategy.byclass.in",
-      "parentId": "otbcli_SampleSelection"
+      "parentId": "SampleSelection"
     }
   ],
   "targetCardinality": 2,
@@ -11702,7 +11702,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_SampleSelection"
+      "parentId": "SampleSelection"
     },
     {
       "dataDescriptor": {
@@ -11714,7 +11714,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outrates",
-      "parentId": "otbcli_SampleSelection"
+      "parentId": "SampleSelection"
     }
   ],
   "templatecontents": "-in$in_str\n-mask$mask_str\n-vec$vec_file\n-out$out_file\n-instats$instats_file\n-outrates$outrates_file\n-sampler$sampler_str\n-sampler.periodic.jitter$sampler_periodic_jitter_number\n-strategy$strategy_str\n-strategy.byclass.in$strategy_byclass_in_file\n-strategy.constant.nb$strategy_constant_nb_number\n-strategy.percent.p$strategy_percent_p_number\n-strategy.total.v$strategy_total_v_number\n-field$field_str\n-layer$layer_number\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-rand$rand_number\n",
@@ -11794,7 +11794,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_SARCalibration"
+      "parentId": "SARCalibration"
     }
   ],
   "targetCardinality": 1,
@@ -11809,7 +11809,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_SARCalibration"
+      "parentId": "SARCalibration"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-noise$noise_bool\n-lut$lut_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -11858,7 +11858,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_SARDeburst"
+      "parentId": "SARDeburst"
     }
   ],
   "targetCardinality": 1,
@@ -11873,7 +11873,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_SARDeburst"
+      "parentId": "SARDeburst"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -11979,7 +11979,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inhh",
-      "parentId": "otbcli_SARDecompositions"
+      "parentId": "SARDecompositions"
     },
     {
       "constraints": null,
@@ -11993,7 +11993,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "invv",
-      "parentId": "otbcli_SARDecompositions"
+      "parentId": "SARDecompositions"
     }
   ],
   "targetCardinality": 1,
@@ -12008,7 +12008,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_SARDecompositions"
+      "parentId": "SARDecompositions"
     }
   ],
   "templatecontents": "-inhh$inhh_str\n-inhv$inhv_str\n-invh$invh_str\n-invv$invv_str\n-out$out_str\n-decomp$decomp_str\n-inco.kernelsize$inco_kernelsize_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -12149,7 +12149,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outc",
-      "parentId": "otbcli_SARPolarMatrixConvert"
+      "parentId": "SARPolarMatrixConvert"
     },
     {
       "dataDescriptor": {
@@ -12161,7 +12161,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outf",
-      "parentId": "otbcli_SARPolarMatrixConvert"
+      "parentId": "SARPolarMatrixConvert"
     }
   ],
   "templatecontents": "-inc$inc_str\n-inf$inf_str\n-inhh$inhh_str\n-inhv$inhv_str\n-invh$invh_str\n-invv$invv_str\n-outc$outc_str\n-outf$outf_str\n-conv$conv_str\n",
@@ -12305,7 +12305,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_SARPolarSynth"
+      "parentId": "SARPolarSynth"
     }
   ],
   "targetCardinality": 1,
@@ -12320,7 +12320,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_SARPolarSynth"
+      "parentId": "SARPolarSynth"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-psii$psii_number\n-khii$khii_number\n-psir$psir_number\n-khir$khir_number\n-emissionh$emissionh_number\n-emissionv$emissionv_number\n-mode$mode_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -12707,7 +12707,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_Segmentation"
+      "parentId": "Segmentation"
     }
   ],
   "targetCardinality": 2,
@@ -12722,7 +12722,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "mode.vector.out",
-      "parentId": "otbcli_Segmentation"
+      "parentId": "Segmentation"
     },
     {
       "dataDescriptor": {
@@ -12734,7 +12734,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "mode.raster.out",
-      "parentId": "otbcli_Segmentation"
+      "parentId": "Segmentation"
     }
   ],
   "templatecontents": "-in$in_str\n-filter$filter_str\n-filter.meanshift.spatialr$filter_meanshift_spatialr_number\n-filter.meanshift.ranger$filter_meanshift_ranger_number\n-filter.meanshift.thres$filter_meanshift_thres_number\n-filter.meanshift.maxiter$filter_meanshift_maxiter_number\n-filter.meanshift.minsize$filter_meanshift_minsize_number\n-filter.cc.expr$filter_cc_expr_str\n-filter.watershed.threshold$filter_watershed_threshold_number\n-filter.watershed.level$filter_watershed_level_number\n-filter.mprofiles.size$filter_mprofiles_size_number\n-filter.mprofiles.start$filter_mprofiles_start_number\n-filter.mprofiles.step$filter_mprofiles_step_number\n-filter.mprofiles.sigma$filter_mprofiles_sigma_number\n-mode$mode_str\n-mode.vector.out$mode_vector_out_file\n-mode.vector.outmode$mode_vector_outmode_str\n-mode.vector.inmask$mode_vector_inmask_str\n-mode.vector.neighbor$mode_vector_neighbor_bool\n-mode.vector.stitch$mode_vector_stitch_bool\n-mode.vector.minsize$mode_vector_minsize_number\n-mode.vector.simplify$mode_vector_simplify_number\n-mode.vector.layername$mode_vector_layername_str\n-mode.vector.fieldname$mode_vector_fieldname_str\n-mode.vector.tilesize$mode_vector_tilesize_number\n-mode.vector.startlabel$mode_vector_startlabel_number\n-mode.vector.ogroptions$mode_vector_ogroptions_str\n-mode.raster.out$mode_raster_out_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -12861,7 +12861,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_SFSTextureExtraction"
+      "parentId": "SFSTextureExtraction"
     }
   ],
   "targetCardinality": 1,
@@ -12876,7 +12876,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_SFSTextureExtraction"
+      "parentId": "SFSTextureExtraction"
     }
   ],
   "templatecontents": "-in$in_str\n-channel$channel_number\n-parameters.spethre$parameters_spethre_number\n-parameters.spathre$parameters_spathre_number\n-parameters.nbdir$parameters_nbdir_number\n-parameters.alpha$parameters_alpha_number\n-parameters.maxcons$parameters_maxcons_number\n-out$out_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -13007,7 +13007,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_Smoothing"
+      "parentId": "Smoothing"
     }
   ],
   "targetCardinality": 1,
@@ -13022,7 +13022,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_Smoothing"
+      "parentId": "Smoothing"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-type$type_str\n-type.mean.radius$type_mean_radius_number\n-type.gaussian.radius$type_gaussian_radius_number\n-type.anidif.timestep$type_anidif_timestep_number\n-type.anidif.nbiter$type_anidif_nbiter_number\n-type.anidif.conductance$type_anidif_conductance_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -13227,7 +13227,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_SOMClassification"
+      "parentId": "SOMClassification"
     }
   ],
   "targetCardinality": 2,
@@ -13242,7 +13242,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_SOMClassification"
+      "parentId": "SOMClassification"
     },
     {
       "dataDescriptor": {
@@ -13254,7 +13254,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "som",
-      "parentId": "otbcli_SOMClassification"
+      "parentId": "SOMClassification"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-vm$vm_str\n-tp$tp_number\n-ts$ts_number\n-som$som_str\n-sx$sx_number\n-sy$sy_number\n-nx$nx_number\n-ny$ny_number\n-ni$ni_number\n-bi$bi_number\n-bf$bf_number\n-iv$iv_number\n-rand$rand_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -13303,7 +13303,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_SplitImage"
+      "parentId": "SplitImage"
     }
   ],
   "targetCardinality": 1,
@@ -13318,7 +13318,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_SplitImage"
+      "parentId": "SplitImage"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -13802,7 +13802,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "input.il",
-      "parentId": "otbcli_StereoFramework"
+      "parentId": "StereoFramework"
     }
   ],
   "targetCardinality": 1,
@@ -13817,7 +13817,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "output.out",
-      "parentId": "otbcli_StereoFramework"
+      "parentId": "StereoFramework"
     }
   ],
   "templatecontents": "-input.il$input_il_str\n-input.co$input_co_str\n-input.channel$input_channel_number\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-output.res$output_res_number\n-output.nodata$output_nodata_number\n-output.fusionmethod$output_fusionmethod_str\n-output.out$output_out_str\n-output.mode$output_mode_str\n-output.mode.user.ulx$output_mode_user_ulx_number\n-output.mode.user.uly$output_mode_user_uly_number\n-output.mode.user.sizex$output_mode_user_sizex_number\n-output.mode.user.sizey$output_mode_user_sizey_number\n-output.mode.user.spacingx$output_mode_user_spacingx_number\n-output.mode.user.spacingy$output_mode_user_spacingy_number\n-map$map_str\n-map.utm.zone$map_utm_zone_number\n-map.utm.northhem$map_utm_northhem_bool\n-map.epsg.code$map_epsg_code_str\n-stereorect.fwdgridstep$stereorect_fwdgridstep_number\n-stereorect.invgridssrate$stereorect_invgridssrate_number\n-bm.metric$bm_metric_str\n-bm.metric.lp.p$bm_metric_lp_p_number\n-bm.radius$bm_radius_number\n-bm.minhoffset$bm_minhoffset_number\n-bm.maxhoffset$bm_maxhoffset_number\n-postproc.bij$postproc_bij_bool\n-postproc.med$postproc_med_bool\n-postproc.metrict$postproc_metrict_number\n-mask.left$mask_left_str\n-mask.right$mask_right_str\n-mask.variancet$mask_variancet_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -13957,7 +13957,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.inleft",
-      "parentId": "otbcli_StereoRectificationGridGenerator"
+      "parentId": "StereoRectificationGridGenerator"
     },
     {
       "constraints": null,
@@ -13971,7 +13971,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.inright",
-      "parentId": "otbcli_StereoRectificationGridGenerator"
+      "parentId": "StereoRectificationGridGenerator"
     }
   ],
   "targetCardinality": 4,
@@ -13986,7 +13986,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.outleft",
-      "parentId": "otbcli_StereoRectificationGridGenerator"
+      "parentId": "StereoRectificationGridGenerator"
     },
     {
       "dataDescriptor": {
@@ -13998,7 +13998,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.outright",
-      "parentId": "otbcli_StereoRectificationGridGenerator"
+      "parentId": "StereoRectificationGridGenerator"
     },
     {
       "dataDescriptor": {
@@ -14010,7 +14010,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inverse.outleft",
-      "parentId": "otbcli_StereoRectificationGridGenerator"
+      "parentId": "StereoRectificationGridGenerator"
     },
     {
       "dataDescriptor": {
@@ -14022,7 +14022,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inverse.outright",
-      "parentId": "otbcli_StereoRectificationGridGenerator"
+      "parentId": "StereoRectificationGridGenerator"
     }
   ],
   "templatecontents": "-io.inleft$io_inleft_str\n-io.inright$io_inright_str\n-io.outleft$io_outleft_str\n-io.outright$io_outright_str\n-epi.elevation.dem$epi_elevation_dem_file\n-epi.elevation.geoid$epi_elevation_geoid_file\n-epi.elevation.default$epi_elevation_default_number\n-epi.elevation.avgdem.step$epi_elevation_avgdem_step_number\n-epi.scale$epi_scale_number\n-epi.step$epi_step_number\n-inverse.outleft$inverse_outleft_str\n-inverse.outright$inverse_outright_str\n-inverse.ssrate$inverse_ssrate_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -14182,7 +14182,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inr",
-      "parentId": "otbcli_Superimpose"
+      "parentId": "Superimpose"
     },
     {
       "constraints": null,
@@ -14196,7 +14196,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "inm",
-      "parentId": "otbcli_Superimpose"
+      "parentId": "Superimpose"
     }
   ],
   "targetCardinality": 1,
@@ -14211,7 +14211,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_Superimpose"
+      "parentId": "Superimpose"
     }
   ],
   "templatecontents": "-inr$inr_str\n-inm$inm_str\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-lms$lms_number\n-fv$fv_number\n-out$out_str\n-mode$mode_str\n-interpolator$interpolator_str\n-interpolator.bco.radius$interpolator_bco_radius_number\n-outputpixeltype$outputpixeltype_number\n",
@@ -14286,7 +14286,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "il",
-      "parentId": "otbcli_TileFusion"
+      "parentId": "TileFusion"
     }
   ],
   "targetCardinality": 1,
@@ -14301,7 +14301,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_TileFusion"
+      "parentId": "TileFusion"
     }
   ],
   "templatecontents": "-il$il_str\n-cols$cols_number\n-rows$rows_number\n-out$out_str\n-outputpixeltype$outputpixeltype_number\n",
@@ -15073,7 +15073,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.il",
-      "parentId": "otbcli_TrainImagesClassifier"
+      "parentId": "TrainImagesClassifier"
     },
     {
       "constraints": null,
@@ -15087,7 +15087,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.vd",
-      "parentId": "otbcli_TrainImagesClassifier"
+      "parentId": "TrainImagesClassifier"
     }
   ],
   "targetCardinality": 2,
@@ -15102,7 +15102,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.out",
-      "parentId": "otbcli_TrainImagesClassifier"
+      "parentId": "TrainImagesClassifier"
     },
     {
       "dataDescriptor": {
@@ -15114,7 +15114,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.confmatout",
-      "parentId": "otbcli_TrainImagesClassifier"
+      "parentId": "TrainImagesClassifier"
     }
   ],
   "templatecontents": "-io.il$io_il_str\n-io.vd$io_vd_str\n-io.valid$io_valid_str\n-io.imstat$io_imstat_file\n-io.out$io_out_file\n-io.confmatout$io_confmatout_file\n-cleanup$cleanup_bool\n-sample.mt$sample_mt_number\n-sample.mv$sample_mv_number\n-sample.bm$sample_bm_number\n-sample.vtr$sample_vtr_number\n-sample.vfn$sample_vfn_str\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n-classifier$classifier_str\n-classifier.libsvm.k$classifier_libsvm_k_str\n-classifier.libsvm.m$classifier_libsvm_m_str\n-classifier.libsvm.c$classifier_libsvm_c_number\n-classifier.libsvm.nu$classifier_libsvm_nu_number\n-classifier.libsvm.opt$classifier_libsvm_opt_bool\n-classifier.libsvm.prob$classifier_libsvm_prob_bool\n-classifier.boost.t$classifier_boost_t_str\n-classifier.boost.w$classifier_boost_w_number\n-classifier.boost.r$classifier_boost_r_number\n-classifier.boost.m$classifier_boost_m_number\n-classifier.dt.max$classifier_dt_max_number\n-classifier.dt.min$classifier_dt_min_number\n-classifier.dt.ra$classifier_dt_ra_number\n-classifier.dt.cat$classifier_dt_cat_number\n-classifier.dt.f$classifier_dt_f_number\n-classifier.dt.r$classifier_dt_r_bool\n-classifier.dt.t$classifier_dt_t_bool\n-classifier.gbt.w$classifier_gbt_w_number\n-classifier.gbt.s$classifier_gbt_s_number\n-classifier.gbt.p$classifier_gbt_p_number\n-classifier.gbt.max$classifier_gbt_max_number\n-classifier.ann.t$classifier_ann_t_str\n-classifier.ann.sizes$classifier_ann_sizes_str\n-classifier.ann.f$classifier_ann_f_str\n-classifier.ann.a$classifier_ann_a_number\n-classifier.ann.b$classifier_ann_b_number\n-classifier.ann.bpdw$classifier_ann_bpdw_number\n-classifier.ann.bpms$classifier_ann_bpms_number\n-classifier.ann.rdw$classifier_ann_rdw_number\n-classifier.ann.rdwm$classifier_ann_rdwm_number\n-classifier.ann.term$classifier_ann_term_str\n-classifier.ann.eps$classifier_ann_eps_number\n-classifier.ann.iter$classifier_ann_iter_number\n-classifier.rf.max$classifier_rf_max_number\n-classifier.rf.min$classifier_rf_min_number\n-classifier.rf.ra$classifier_rf_ra_number\n-classifier.rf.cat$classifier_rf_cat_number\n-classifier.rf.var$classifier_rf_var_number\n-classifier.rf.nbtrees$classifier_rf_nbtrees_number\n-classifier.rf.acc$classifier_rf_acc_number\n-classifier.knn.k$classifier_knn_k_number\n-rand$rand_number\n",
@@ -15794,7 +15794,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.il",
-      "parentId": "otbcli_TrainRegression"
+      "parentId": "TrainRegression"
     }
   ],
   "targetCardinality": 1,
@@ -15809,7 +15809,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.out",
-      "parentId": "otbcli_TrainRegression"
+      "parentId": "TrainRegression"
     }
   ],
   "templatecontents": "-io.il$io_il_str\n-io.csv$io_csv_file\n-io.imstat$io_imstat_file\n-io.out$io_out_file\n-sample.mt$sample_mt_number\n-sample.mv$sample_mv_number\n-sample.vtr$sample_vtr_number\n-classifier$classifier_str\n-classifier.libsvm.k$classifier_libsvm_k_str\n-classifier.libsvm.m$classifier_libsvm_m_str\n-classifier.libsvm.c$classifier_libsvm_c_number\n-classifier.libsvm.nu$classifier_libsvm_nu_number\n-classifier.libsvm.opt$classifier_libsvm_opt_bool\n-classifier.libsvm.prob$classifier_libsvm_prob_bool\n-classifier.libsvm.eps$classifier_libsvm_eps_number\n-classifier.dt.max$classifier_dt_max_number\n-classifier.dt.min$classifier_dt_min_number\n-classifier.dt.ra$classifier_dt_ra_number\n-classifier.dt.cat$classifier_dt_cat_number\n-classifier.dt.f$classifier_dt_f_number\n-classifier.dt.r$classifier_dt_r_bool\n-classifier.dt.t$classifier_dt_t_bool\n-classifier.gbt.t$classifier_gbt_t_str\n-classifier.gbt.w$classifier_gbt_w_number\n-classifier.gbt.s$classifier_gbt_s_number\n-classifier.gbt.p$classifier_gbt_p_number\n-classifier.gbt.max$classifier_gbt_max_number\n-classifier.ann.t$classifier_ann_t_str\n-classifier.ann.sizes$classifier_ann_sizes_str\n-classifier.ann.f$classifier_ann_f_str\n-classifier.ann.a$classifier_ann_a_number\n-classifier.ann.b$classifier_ann_b_number\n-classifier.ann.bpdw$classifier_ann_bpdw_number\n-classifier.ann.bpms$classifier_ann_bpms_number\n-classifier.ann.rdw$classifier_ann_rdw_number\n-classifier.ann.rdwm$classifier_ann_rdwm_number\n-classifier.ann.term$classifier_ann_term_str\n-classifier.ann.eps$classifier_ann_eps_number\n-classifier.ann.iter$classifier_ann_iter_number\n-classifier.rf.max$classifier_rf_max_number\n-classifier.rf.min$classifier_rf_min_number\n-classifier.rf.ra$classifier_rf_ra_number\n-classifier.rf.cat$classifier_rf_cat_number\n-classifier.rf.var$classifier_rf_var_number\n-classifier.rf.nbtrees$classifier_rf_nbtrees_number\n-classifier.rf.acc$classifier_rf_acc_number\n-classifier.knn.k$classifier_knn_k_number\n-classifier.knn.rule$classifier_knn_rule_str\n-rand$rand_number\n",
@@ -16529,7 +16529,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.vd",
-      "parentId": "otbcli_TrainVectorClassifier"
+      "parentId": "TrainVectorClassifier"
     }
   ],
   "targetCardinality": 2,
@@ -16544,7 +16544,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.out",
-      "parentId": "otbcli_TrainVectorClassifier"
+      "parentId": "TrainVectorClassifier"
     },
     {
       "dataDescriptor": {
@@ -16556,7 +16556,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.confmatout",
-      "parentId": "otbcli_TrainVectorClassifier"
+      "parentId": "TrainVectorClassifier"
     }
   ],
   "templatecontents": "-io.vd$io_vd_str\n-io.stats$io_stats_file\n-io.out$io_out_file\n-io.confmatout$io_confmatout_file\n-layer$layer_number\n-feat$feat_str\n-valid.vd$valid_vd_str\n-valid.layer$valid_layer_number\n-cfield$cfield_str\n-v$v_bool\n-classifier$classifier_str\n-classifier.libsvm.k$classifier_libsvm_k_str\n-classifier.libsvm.m$classifier_libsvm_m_str\n-classifier.libsvm.c$classifier_libsvm_c_number\n-classifier.libsvm.nu$classifier_libsvm_nu_number\n-classifier.libsvm.opt$classifier_libsvm_opt_bool\n-classifier.libsvm.prob$classifier_libsvm_prob_bool\n-classifier.boost.t$classifier_boost_t_str\n-classifier.boost.w$classifier_boost_w_number\n-classifier.boost.r$classifier_boost_r_number\n-classifier.boost.m$classifier_boost_m_number\n-classifier.dt.max$classifier_dt_max_number\n-classifier.dt.min$classifier_dt_min_number\n-classifier.dt.ra$classifier_dt_ra_number\n-classifier.dt.cat$classifier_dt_cat_number\n-classifier.dt.f$classifier_dt_f_number\n-classifier.dt.r$classifier_dt_r_bool\n-classifier.dt.t$classifier_dt_t_bool\n-classifier.gbt.w$classifier_gbt_w_number\n-classifier.gbt.s$classifier_gbt_s_number\n-classifier.gbt.p$classifier_gbt_p_number\n-classifier.gbt.max$classifier_gbt_max_number\n-classifier.ann.t$classifier_ann_t_str\n-classifier.ann.sizes$classifier_ann_sizes_str\n-classifier.ann.f$classifier_ann_f_str\n-classifier.ann.a$classifier_ann_a_number\n-classifier.ann.b$classifier_ann_b_number\n-classifier.ann.bpdw$classifier_ann_bpdw_number\n-classifier.ann.bpms$classifier_ann_bpms_number\n-classifier.ann.rdw$classifier_ann_rdw_number\n-classifier.ann.rdwm$classifier_ann_rdwm_number\n-classifier.ann.term$classifier_ann_term_str\n-classifier.ann.eps$classifier_ann_eps_number\n-classifier.ann.iter$classifier_ann_iter_number\n-classifier.rf.max$classifier_rf_max_number\n-classifier.rf.min$classifier_rf_min_number\n-classifier.rf.ra$classifier_rf_ra_number\n-classifier.rf.cat$classifier_rf_cat_number\n-classifier.rf.var$classifier_rf_var_number\n-classifier.rf.nbtrees$classifier_rf_nbtrees_number\n-classifier.rf.acc$classifier_rf_acc_number\n-classifier.knn.k$classifier_knn_k_number\n-rand$rand_number\n",
@@ -16657,7 +16657,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "model",
-      "parentId": "otbcli_VectorClassifier"
+      "parentId": "VectorClassifier"
     }
   ],
   "targetCardinality": 1,
@@ -16672,7 +16672,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_VectorClassifier"
+      "parentId": "VectorClassifier"
     }
   ],
   "templatecontents": "-in$in_str\n-instat$instat_file\n-model$model_file\n-cfield$cfield_str\n-feat$feat_str\n-confmap$confmap_bool\n-out$out_file\n",
@@ -16773,7 +16773,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "descmod",
-      "parentId": "otbcli_VectorDataDSValidation"
+      "parentId": "VectorDataDSValidation"
     }
   ],
   "targetCardinality": 1,
@@ -16788,7 +16788,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_VectorDataDSValidation"
+      "parentId": "VectorDataDSValidation"
     }
   ],
   "templatecontents": "-in$in_str\n-descmod$descmod_file\n-belsup$belsup_str\n-plasup$plasup_str\n-cri$cri_str\n-thd$thd_number\n-out$out_str\n",
@@ -16876,7 +16876,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.in",
-      "parentId": "otbcli_VectorDataExtractROI"
+      "parentId": "VectorDataExtractROI"
     }
   ],
   "targetCardinality": 1,
@@ -16891,7 +16891,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "io.out",
-      "parentId": "otbcli_VectorDataExtractROI"
+      "parentId": "VectorDataExtractROI"
     }
   ],
   "templatecontents": "-io.vd$io_vd_str\n-io.in$io_in_str\n-io.out$io_out_str\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n",
@@ -17053,7 +17053,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in.vd",
-      "parentId": "otbcli_VectorDataReprojection"
+      "parentId": "VectorDataReprojection"
     },
     {
       "constraints": null,
@@ -17067,7 +17067,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out.proj.image.in",
-      "parentId": "otbcli_VectorDataReprojection"
+      "parentId": "VectorDataReprojection"
     }
   ],
   "targetCardinality": 1,
@@ -17082,7 +17082,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out.vd",
-      "parentId": "otbcli_VectorDataReprojection"
+      "parentId": "VectorDataReprojection"
     }
   ],
   "templatecontents": "-in.vd$in_vd_file\n-in.kwl$in_kwl_str\n-out.vd$out_vd_file\n-out.proj$out_proj_str\n-out.proj.image.in$out_proj_image_in_str\n-out.proj.user.map$out_proj_user_map_str\n-out.proj.user.map.utm.zone$out_proj_user_map_utm_zone_number\n-out.proj.user.map.utm.northhem$out_proj_user_map_utm_northhem_bool\n-out.proj.user.map.epsg.code$out_proj_user_map_epsg_code_number\n-elev.dem$elev_dem_file\n-elev.geoid$elev_geoid_file\n-elev.default$elev_default_number\n",
@@ -17157,7 +17157,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_VectorDataSetField"
+      "parentId": "VectorDataSetField"
     }
   ],
   "templatecontents": "-in$in_str\n-out$out_str\n-fn$fn_str\n-fv$fv_str\n",
@@ -17284,7 +17284,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_VectorDataTransform"
+      "parentId": "VectorDataTransform"
     }
   ],
   "targetCardinality": 1,
@@ -17299,7 +17299,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "out",
-      "parentId": "otbcli_VectorDataTransform"
+      "parentId": "VectorDataTransform"
     }
   ],
   "templatecontents": "-vd$vd_str\n-out$out_str\n-in$in_str\n-transform.tx$transform_tx_number\n-transform.ty$transform_ty_number\n-transform.ro$transform_ro_number\n-transform.centerx$transform_centerx_number\n-transform.centery$transform_centery_number\n-transform.scale$transform_scale_number\n",
@@ -17374,7 +17374,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "in",
-      "parentId": "otbcli_VertexComponentAnalysis"
+      "parentId": "VertexComponentAnalysis"
     }
   ],
   "targetCardinality": 1,
@@ -17389,7 +17389,7 @@
       },
       "id": "PLACEHOLDER_ID",
       "name": "outendm",
-      "parentId": "otbcli_VertexComponentAnalysis"
+      "parentId": "VertexComponentAnalysis"
     }
   ],
   "templatecontents": "-in$in_str\n-ne$ne_number\n-outendm$outendm_str\n-rand$rand_number\n-outputpixeltype$outputpixeltype_number\n",

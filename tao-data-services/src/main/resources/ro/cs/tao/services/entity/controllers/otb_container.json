@@ -5,440 +5,436 @@
 	"applicationPath": null,
 	"applications": [
 		{
-			"path": null,
-			"name": "otbcli_Aggregate"
+			"path": "otbcli_Aggregate",
+			"name": "Aggregate"
 		},
 		{
-			"path": null,
-			"name": "otbcli_BandMath"
+			"path": "otbcli_BandMath",
+			"name": "BandMath"
 		},
 		{
-			"path": null,
-			"name": "otbcli_BandMathX"
+			"path": "otbcli_BandMathX",
+			"name": "BandMathX"
 		},
 		{
-			"path": null,
-			"name": "otbcli_BinaryMorphologicalOperation"
+			"path": "otbcli_BinaryMorphologicalOperation",
+			"name": "BinaryMorphologicalOperation"
 		},
 		{
-			"path": null,
-			"name": "otbcli_BlockMatching"
+			"path": "otbcli_BlockMatching",
+			"name": "BlockMatching"
 		},
 		{
-			"path": null,
-			"name": "otbcli_BundleToPerfectSensor"
+			"path": "otbcli_BundleToPerfectSensor",
+			"name": "BundleToPerfectSensor"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ClassificationMapRegularization"
+			"path": "otbcli_ClassificationMapRegularization",
+			"name": "ClassificationMapRegularization"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ColorMapping"
+			"path": "otbcli_ColorMapping",
+			"name": "ColorMapping"
 		},
 		{
-			"path": null,
-			"name": "otbcli_CompareImages"
+			"path": "otbcli_CompareImages",
+			"name": "CompareImages"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ComputeConfusionMatrix"
+			"path": "otbcli_ComputeConfusionMatrix",
+			"name": "ComputeConfusionMatrix"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ComputeImagesStatistics"
+			"path": "otbcli_ComputeImagesStatistics",
+			"name": "ComputeImagesStatistics"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ComputeModulusAndPhase"
+			"path": "otbcli_ComputeModulusAndPhase",
+			"name": "ComputeModulusAndPhase"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ComputeOGRLayersFeaturesStatistics"
+			"path": "otbcli_ComputeOGRLayersFeaturesStatistics",
+			"name": "ComputeOGRLayersFeaturesStatistics"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ComputePolylineFeatureFromImage"
+			"path": "otbcli_ComputePolylineFeatureFromImage",
+			"name": "ComputePolylineFeatureFromImage"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ConcatenateImages"
+			"path": "otbcli_ConcatenateImages",
+			"name": "ConcatenateImages"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ConcatenateVectorData"
+			"path": "otbcli_ConcatenateVectorData",
+			"name": "ConcatenateVectorData"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ConnectedComponentSegmentation"
+			"path": "otbcli_ConnectedComponentSegmentation",
+			"name": "ConnectedComponentSegmentation"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ContrastEnhancement"
+			"path": "otbcli_ContrastEnhancement",
+			"name": "ContrastEnhancement"
 		},
 		{
-			"path": null,
-			"name": "otbcli_Convert"
+			"path": "otbcli_Convert",
+			"name": "Convert"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ConvertCartoToGeoPoint"
+			"path": "otbcli_ConvertCartoToGeoPoint",
+			"name": "ConvertCartoToGeoPoint"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ConvertSensorToGeoPoint"
+			"path": "otbcli_ConvertSensorToGeoPoint",
+			"name": "_ConvertSensorToGeoPoint"
 		},
 		{
-			"path": null,
-			"name": "otbcli_DEMConvert"
+			"path": "otbcli_DEMConvert",
+			"name": "DEMConvert"
 		},
 		{
-			"path": null,
-			"name": "otbcli_Despeckle"
+			"path": "otbcli_Despeckle",
+			"name": "Despeckle"
 		},
 		{
-			"path": null,
-			"name": "otbcli_DimensionalityReduction"
+			"path": "otbcli_DimensionalityReduction",
+			"name": "DimensionalityReduction"
 		},
 		{
-			"path": null,
-			"name": "otbcli_DisparityMapToElevationMap"
+			"path": "otbcli_DisparityMapToElevationMap",
+			"name": "DisparityMapToElevationMap"
 		},
 		{
-			"path": null,
-			"name": "otbcli_DomainTransform"
+			"path": "otbcli_DomainTransform",
+			"name": "DomainTransform"
 		},
 		{
-			"path": null,
-			"name": "otbcli_DownloadSRTMTiles"
+			"path": "otbcli_DownloadSRTMTiles",
+			"name": "DownloadSRTMTiles"
 		},
 		{
-			"path": null,
-			"name": "otbcli_DSFuzzyModelEstimation"
+			"path": "otbcli_DSFuzzyModelEstimation",
+			"name": "DSFuzzyModelEstimation"
 		},
 		{
-			"path": null,
-			"name": "otbcli_DynamicConvert"
+			"path": "otbcli_DynamicConvert",
+			"name": "DynamicConvert"
 		},
 		{
-			"path": null,
-			"name": "otbcli_EdgeExtraction"
+			"path": "otbcli_EdgeExtraction",
+			"name": "EdgeExtraction"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ExtractROI"
+			"path": "otbcli_ExtractROI",
+			"name": "ExtractROI"
 		},
 		{
-			"path": null,
-			"name": "otbcli_FineRegistration"
+			"path": "otbcli_FineRegistration",
+			"name": "FineRegistration"
 		},
 		{
-			"path": null,
-			"name": "otbcli_FusionOfClassifications"
+			"path": "otbcli_FusionOfClassifications",
+			"name": "FusionOfClassifications"
 		},
 		{
-			"path": null,
-			"name": "otbcli_GeneratePlyFile"
+			"path": "otbcli_GeneratePlyFile",
+			"name": "GeneratePlyFile"
 		},
 		{
-			"path": null,
-			"name": "otbcli_GenerateRPCSensorModel"
+			"path": "otbcli_GenerateRPCSensorModel",
+			"name": "GenerateRPCSensorModel"
 		},
 		{
-			"path": null,
-			"name": "otbcli_GenericRegionMerging"
+			"path": "otbcli_GenericRegionMerging",
+			"name": "GenericRegionMerging"
 		},
 		{
-			"path": null,
-			"name": "otbcli_GrayScaleMorphologicalOperation"
+			"path": "otbcli_GrayScaleMorphologicalOperation",
+			"name": "GrayScaleMorphologicalOperation"
 		},
 		{
-			"path": null,
-			"name": "otbcli_GridBasedImageResampling"
+			"path": "otbcli_GridBasedImageResampling",
+			"name": "GridBasedImageResampling"
 		},
 		{
-			"path": null,
-			"name": "otbcli_HaralickTextureExtraction"
+			"path": "otbcli_HaralickTextureExtraction",
+			"name": "HaralickTextureExtraction"
 		},
 		{
-			"path": null,
-			"name": "otbcli_HomologousPointsExtraction"
+			"path": "otbcli_HomologousPointsExtraction",
+			"name": "HomologousPointsExtraction"
 		},
 		{
-			"path": null,
-			"name": "otbcli_HooverCompareSegmentation"
+			"path": "otbcli_HooverCompareSegmentation",
+			"name": "HooverCompareSegmentation"
 		},
 		{
-			"path": null,
-			"name": "otbcli_HyperspectralUnmixing"
+			"path": "otbcli_HyperspectralUnmixing",
+			"name": "HyperspectralUnmixing"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ImageClassifier"
+			"path": "otbcli_ImageClassifier",
+			"name": "ImageClassifier"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ImageEnvelope"
+			"path": "otbcli_ImageEnvelope",
+			"name": "ImageEnvelope"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ImageTimeSeriesGapFilling"
+			"path": "otbcli_ImageTimeSeriesGapFilling",
+			"name": "ImageTimeSeriesGapFilling"
 		},
 		{
-			"path": null,
-			"name": "otbcli_KMeansClassification"
+			"path": "otbcli_KMeansClassification",
+			"name": "KMeansClassification"
 		},
 		{
-			"path": null,
-			"name": "otbcli_LargeScaleMeanShift"
+			"path": "otbcli_LargeScaleMeanShift",
+			"name": "LargeScaleMeanShift"
 		},
 		{
-			"path": null,
-			"name": "otbcli_LineSegmentDetection"
+			"path": "otbcli_LineSegmentDetection",
+			"name": "LineSegmentDetection"
 		},
 		{
-			"path": null,
-			"name": "otbcli_LocalStatisticExtraction"
+			"path": "otbcli_LocalStatisticExtraction",
+			"name": "LocalStatisticExtraction"
 		},
 		{
-			"path": null,
-			"name": "otbcli_LSMSSegmentation"
+			"path": "otbcli_LSMSSegmentation",
+			"name": "LSMSSegmentation"
 		},
 		{
-			"path": null,
-			"name": "otbcli_LSMSSmallRegionsMerging"
+			"path": "otbcli_LSMSSmallRegionsMerging",
+			"name": "LSMSSmallRegionsMerging"
 		},
 		{
-			"path": null,
-			"name": "otbcli_LSMSVectorization"
+			"path": "otbcli_LSMSVectorization",
+			"name": "LSMSVectorization"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ManageNoData"
+			"path": "otbcli_ManageNoData",
+			"name": "ManageNoData"
 		},
 		{
-			"path": null,
-			"name": "otbcli_MeanShiftSmoothing"
+			"path": "otbcli_MeanShiftSmoothing",
+			"name": "MeanShiftSmoothing"
 		},
 		{
-			"path": null,
-			"name": "otbcli_MorphologicalClassification"
+			"path": "otbcli_MorphologicalClassification",
+			"name": "MorphologicalClassification"
 		},
 		{
-			"path": null,
-			"name": "otbcli_MorphologicalMultiScaleDecomposition"
+			"path": "otbcli_MorphologicalMultiScaleDecomposition",
+			"name": "MorphologicalMultiScaleDecomposition"
 		},
 		{
-			"path": null,
-			"name": "otbcli_MorphologicalProfilesAnalysis"
+			"path": "otbcli_MorphologicalProfilesAnalysis",
+			"name": "MorphologicalProfilesAnalysis"
 		},
 		{
-			"path": null,
-			"name": "otbcli_Mosaic"
+			"path": "otbcli_Mosaic",
+			"name": "Mosaic"
 		},
 		{
-			"path": null,
-			"name": "otbcli_MultiImageSamplingRate"
+			"path": "otbcli_MultiImageSamplingRate",
+			"name": "MultiImageSamplingRate"
 		},
 		{
-			"path": null,
-			"name": "otbcli_MultiResolutionPyramid"
+			"path": "otbcli_MultiResolutionPyramid",
+			"name": "MultiResolutionPyramid"
 		},
 		{
-			"path": null,
-			"name": "otbcli_MultivariateAlterationDetector"
+			"path": "otbcli_MultivariateAlterationDetector",
+			"name": "MultivariateAlterationDetector"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ObjectsRadiometricStatistics"
+			"path": "otbcli_ObjectsRadiometricStatistics",
+			"name": "ObjectsRadiometricStatistics"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ObtainUTMZoneFromGeoPoint"
+			"path": "otbcli_ObtainUTMZoneFromGeoPoint",
+			"name": "ObtainUTMZoneFromGeoPoint"
 		},
 		{
-			"path": null,
-			"name": "otbcli_OGRLayerClassifier"
+			"path": "otbcli_OGRLayerClassifier",
+			"name": "OGRLayerClassifier"
 		},
 		{
-			"path": null,
-			"name": "otbcli_OpticalCalibration"
+			"path": "otbcli_OpticalCalibration",
+			"name": "OpticalCalibration"
 		},
 		{
-			"path": null,
-			"name": "otbcli_OrthoRectification"
+			"path": "otbcli_OrthoRectification",
+			"name": "OrthoRectification"
 		},
 		{
-			"path": null,
-			"name": "otbcli_OSMDownloader"
+			"path": "otbcli_OSMDownloader",
+			"name": "OSMDownloader"
 		},
 		{
-			"path": null,
-			"name": "otbcli_Pansharpening"
+			"path": "otbcli_Pansharpening",
+			"name": "Pansharpening"
 		},
 		{
-			"path": null,
-			"name": "otbcli_PixelValue"
+			"path": "otbcli_PixelValue",
+			"name": "PixelValue"
 		},
 		{
-			"path": null,
-			"name": "otbcli_PolygonClassStatistics"
+			"path": "otbcli_PolygonClassStatistics",
+			"name": "PolygonClassStatistics"
 		},
 		{
-			"path": null,
-			"name": "otbcli_PredictGMMApp"
+			"path": "otbcli_PredictGMMApp",
+			"name": "PredictGMMApp"
 		},
 		{
-			"path": null,
-			"name": "otbcli_PredictRegression"
+			"path": "otbcli_PredictRegression",
+			"name": "PredictRegression"
 		},
 		{
-			"path": null,
-			"name": "otbcli_Quicklook"
+			"path": "otbcli_Quicklook",
+			"name": "Quicklook"
 		},
 		{
-			"path": null,
-			"name": "otbcli_RadiometricIndices"
+			"path": "otbcli_RadiometricIndices",
+			"name": "RadiometricIndices"
 		},
 		{
-			"path": null,
-			"name": "otbcli_Rasterization"
+			"path": "otbcli_Rasterization",
+			"name": "Rasterization"
 		},
 		{
-			"path": null,
-			"name": "otbcli_ReadImageInfo"
+			"path": "otbcli_ReadImageInfo",
+			"name": "ReadImageInfo"
 		},
 		{
-			"path": null,
-			"name": "otbcli_RefineSensorModel"
+			"path": "otbcli_RefineSensorModel",
+			"name": "RefineSensorModel"
 		},
 		{
-			"path": null,
-			"name": "otbcli_Rescale"
+			"path": "otbcli_Rescale",
+			"name": "Rescale"
 		},
 		{
-			"path": null,
-			"name": "otbcli_RigidTransformResample"
+			"path": "otbcli_RigidTransformResample",
+			"name": "RigidTransformResample"
 		},
 		{
-			"path": null,
-			"name": "otbcli_SampleExtraction"
+			"path": "otbcli_SampleExtraction",
+			"name": "SampleExtraction"
 		},
 		{
-			"path": null,
-			"name": "otbcli_SampleSelection"
+			"path": "otbcli_SampleSelection",
+			"name": "SampleSelection"
 		},
 		{
-			"path": null,
-			"name": "otbcli_SARCalibration"
+			"path": "otbcli_SARCalibration",
+			"name": "SARCalibration"
 		},
 		{
-			"path": null,
-			"name": "otbcli_SARDeburst"
+			"path": "otbcli_SARDeburst",
+			"name": "SARDeburst"
 		},
 		{
-			"path": null,
-			"name": "otbcli_SARDecompositions"
+			"path": "otbcli_SARDecompositions",
+			"name": "SARDecompositions"
 		},
 		{
-			"path": null,
-			"name": "otbcli_SARPolarMatrixConvert"
+			"path": "otbcli_SARPolarMatrixConvert",
+			"name": "SARPolarMatrixConvert"
 		},
 		{
-			"path": null,
-			"name": "otbcli_SARPolarSynth"
+			"path": "otbcli_SARPolarSynth",
+			"name": "SARPolarSynth"
 		},
 		{
-			"path": null,
-			"name": "otbcli_Segmentation"
+			"path": "otbcli_Segmentation",
+			"name": "Segmentation"
 		},
 		{
-			"path": null,
-			"name": "otbcli_SFSTextureExtraction"
+			"path": "otbcli_SFSTextureExtraction",
+			"name": "SFSTextureExtraction"
 		},
 		{
-			"path": null,
-			"name": "otbcli_Smoothing"
+			"path": "otbcli_Smoothing",
+			"name": "Smoothing"
 		},
 		{
-			"path": null,
-			"name": "otbcli_SOMClassification"
+			"path": "otbcli_SOMClassification",
+			"name": "SOMClassification"
 		},
 		{
-			"path": null,
-			"name": "otbcli_SplitImage"
+			"path": "otbcli_SplitImage",
+			"name": "SplitImage"
 		},
 		{
-			"path": null,
-			"name": "otbcli_StereoFramework"
+			"path": "otbcli_StereoFramework",
+			"name": "StereoFramework"
 		},
 		{
-			"path": null,
-			"name": "otbcli_StereoRectificationGridGenerator"
+			"path": "otbcli_StereoRectificationGridGenerator",
+			"name": "StereoRectificationGridGenerator"
 		},
 		{
-			"path": null,
-			"name": "otbcli_Superimpose"
+			"path": "otbcli_Superimpose",
+			"name": "Superimpose"
 		},
 		{
-			"path": null,
-			"name": "otbcli_TestApplication"
+			"path": "otbcli_TileFusion",
+			"name": "TileFusion"
 		},
 		{
-			"path": null,
-			"name": "otbcli_TileFusion"
+			"path": "otbcli_TrainGMMApp",
+			"name": "TrainGMMApp"
 		},
 		{
-			"path": null,
-			"name": "otbcli_TrainGMMApp"
+			"path": "otbcli_TrainGMMSelectionApp",
+			"name": "TrainGMMSelectionApp"
 		},
 		{
-			"path": null,
-			"name": "otbcli_TrainGMMSelectionApp"
+			"path": "otbcli_TrainImagesClassifier",
+			"name": "TrainImagesClassifier"
 		},
 		{
-			"path": null,
-			"name": "otbcli_TrainImagesClassifier"
+			"path": "otbcli_TrainRegression",
+			"name": "TrainRegression"
 		},
 		{
-			"path": null,
-			"name": "otbcli_TrainRegression"
+			"path": "otbcli_TrainVectorClassifier",
+			"name": "TrainVectorClassifier"
 		},
 		{
-			"path": null,
-			"name": "otbcli_TrainVectorClassifier"
+			"path": "otbcli_VectorClassifier",
+			"name": "VectorClassifier"
 		},
 		{
-			"path": null,
-			"name": "otbcli_VectorClassifier"
+			"path": "otbcli_VectorDataDSValidation",
+			"name": "VectorDataDSValidation"
 		},
 		{
-			"path": null,
-			"name": "otbcli_VectorDataDSValidation"
+			"path": "otbcli_VectorDataExtractROI",
+			"name": "VectorDataExtractROI"
 		},
 		{
-			"path": null,
-			"name": "otbcli_VectorDataExtractROI"
+			"path": "otbcli_VectorDataReprojection",
+			"name": "VectorDataReprojection"
 		},
 		{
-			"path": null,
-			"name": "otbcli_VectorDataReprojection"
+			"path": "otbcli_VectorDataSetField",
+			"name": "VectorDataSetField"
 		},
 		{
-			"path": null,
-			"name": "otbcli_VectorDataSetField"
+			"path": "otbcli_VectorDataTransform",
+			"name": "VectorDataTransform"
 		},
 		{
-			"path": null,
-			"name": "otbcli_VectorDataTransform"
+			"path": "otbcli_VertexComponentAnalysis",
+			"name": "VertexComponentAnalysis"
 		},
 		{
-			"path": null,
-			"name": "otbcli_VertexComponentAnalysis"
-		},
-		{
-			"path": null,
-			"name": "gdal_translate.exe"
+			"path": "gdal_translate.exe",
+			"name": "GDALTranslate"
 		}
 	]
 }

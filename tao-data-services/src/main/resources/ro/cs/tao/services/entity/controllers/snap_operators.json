@@ -3,7 +3,7 @@
 		"id": "snap-aatsr.sst",
 		"label": "Aatsr.SST",
 		"version": "1.0",
-		"description": "Aatsr.SST operator",
+		"description": "Computes sea surface temperature (SST) from (A)ATSR products.",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -38,75 +38,69 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "dual",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "dual",
+				"defaultValue": true,
+				"description": "Enables/disables generation of the dual-view SST.",
 				"label": "Pdual",
-
 				"notNull": false
 			},
 			{
 				"id": "dualCoefficientsFile",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "dualCoefficientsFile",
+				"defaultValue": "AVERAGE_POLAR_DUAL_VIEW",
+				"description": "Coefficient file for the dual-view SST",
 				"label": "PdualCoefficientsFile",
-
+				"valueSet": ["AVERAGE_POLAR_DUAL_VIEW","AVERAGE_TEMPERATE_DUAL_VIEW","AVERAGE_TROPICAL_DUAL_VIEW","GRIDDED_POLAR_DUAL_VIEW","GRIDDED_TEMPERATE_DUAL_VIEW","GRIDDED_TROPICAL_DUAL_VIEW","GRIDDED_DUAL_VIEW_IPF"],
 				"notNull": false
 			},
 			{
 				"id": "dualMaskExpression",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "dualMaskExpression",
+				"defaultValue": "!cloud_flags_nadir.LAND and !cloud_flags_nadir.CLOUDY and !cloud_flags_nadir.SUN_GLINT and !cloud_flags_fward.LAND and !cloud_flags_fward.CLOUDY and !cloud_flags_fward.SUN_GLINT",
+				"description": "ROI-mask used for the dual-view SST",
 				"label": "PdualMaskExpression",
-
 				"notNull": false
 			},
 			{
 				"id": "nadir",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "nadir",
+				"defaultValue": true,
+				"description": "Enables/disables generation of the nadir-view SST",
 				"label": "Pnadir",
-
 				"notNull": false
 			},
 			{
 				"id": "nadirCoefficientsFile",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "nadirCoefficientsFile",
+				"defaultValue": "AVERAGE_POLAR_SINGLE_VIEW",
+				"description": "Coefficient file for the nadir-view SST",
 				"label": "PnadirCoefficientsFile",
-
+				"valueSet": ["AVERAGE_POLAR_SINGLE_VIEW","AVERAGE_TEMPERATE_SINGLE_VIEW","AVERAGE_TROPICAL_SINGLE_VIEW","GRIDDED_POLAR_SINGLE_VIEW","GRIDDED_TEMPERATE_SINGLE_VIEW","GRIDDED_TROPICAL_SINGLE_VIEW" ],
 				"notNull": false
 			},
 			{
 				"id": "nadirMaskExpression",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "nadirMaskExpression",
+				"defaultValue": "!cloud_flags_nadir.LAND and !cloud_flags_nadir.CLOUDY and !cloud_flags_nadir.SUN_GLINT",
+				"description": "ROI-mask used for the nadir-view SST",
 				"label": "PnadirMaskExpression",
-
 				"notNull": false
 			},
 			{
 				"id": "invalidSstValue",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": null,
-				"description": "invalidSstValue",
+				"defaultValue": -999.0,
+				"description": "Value used to fill invalid SST pixels",
 				"label": "PinvalidSstValue",
-
 				"notNull": false
 			}
 		],
@@ -116,7 +110,7 @@
 		"id": "snap-aatsr.ungrid",
 		"label": "AATSR.Ungrid",
 		"version": "1.0",
-		"description": "AATSR.Ungrid operator",
+		"description": "Ungrids (A)ATSR L1B products and extracts geolocation and pixel field of view data",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -151,45 +145,40 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "L1BCharacterisationFile",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "L1BCharacterisationFile",
+				"description": "L1B characterisation file is needed to specify first forward pixel and first nadir pixel",
 				"label": "PL1BCharacterisationFile",
-
 				"notNull": false
 			},
 			{
 				"id": "cornerReferenceFlag",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "cornerReferenceFlag",
+				"defaultValue": true,
+				"description": "Choose the pixel coordinate reference point for use in the output file. Check for Corner (default), un-check for Centre",
 				"label": "PcornerReferenceFlag",
-
 				"notNull": false
 			},
 			{
 				"id": "topographicFlag",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "topographicFlag",
+				"defaultValue": false,
+				"description": "Option to apply topographic corrections to tie points",
 				"label": "PtopographicFlag",
-
 				"notNull": false
 			},
 			{
 				"id": "topographyHomogenity",
 				"type": "REGULAR",
-				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "topographyHomogenity",
+				"dataType": "java.lang.Double",
+				"defaultValue": 0.05,
+				"description": "Distance (image coordinates) pixel can be from tie-point to have topo correction applied",
 				"label": "PtopographyHomogenity",
-
 				"notNull": false
 			}
 		],
@@ -199,7 +188,7 @@
 		"id": "snap-adaptivethresholding",
 		"label": "AdaptiveThresholding",
 		"version": "1.0",
-		"description": "AdaptiveThresholding operator",
+		"description": "Detect ships using Constant False Alarm Rate detector",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -234,55 +223,49 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "targetWindowSizeInMeter",
 				"type": "REGULAR",
 				"dataType": "java.lang.Integer",
-				"defaultValue": null,
-				"description": "targetWindowSizeInMeter",
+				"defaultValue": 50,
+				"description": "Target window size",
 				"label": "PtargetWindowSizeInMeter",
-
 				"notNull": false
 			},
 			{
 				"id": "guardWindowSizeInMeter",
 				"type": "REGULAR",
-				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "guardWindowSizeInMeter",
+				"dataType": "java.lang.Double",
+				"defaultValue": 500.0,
+				"description": "Guard window size",
 				"label": "PguardWindowSizeInMeter",
-
 				"notNull": false
 			},
 			{
 				"id": "backgroundWindowSizeInMeter",
 				"type": "REGULAR",
-				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "backgroundWindowSizeInMeter",
+				"dataType": "java.lang.Double",
+				"defaultValue": 800.0,
+				"description": "Background window size",
 				"label": "PbackgroundWindowSizeInMeter",
-
 				"notNull": false
 			},
 			{
 				"id": "pfa",
 				"type": "REGULAR",
-				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "pfa",
+				"dataType": "java.lang.Double",
+				"defaultValue": 6.5,
+				"description": "Probability of false alarm",
 				"label": "Ppfa",
-
 				"notNull": false
 			},
 			{
 				"id": "estimateBackground",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "estimateBackground",
+				"defaultValue": false,
+				"description": "Rough estimation of background threshold for quicker processing",
 				"label": "PestimateBackground",
-
 				"notNull": false
 			}
 		],
@@ -292,7 +275,7 @@
 		"id": "snap-addelevation",
 		"label": "AddElevation",
 		"version": "1.0",
-		"description": "AddElevation operator",
+		"description": "Creates a DEM band",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -327,25 +310,22 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "demName",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "demName",
+				"defaultValue": "SRTM 3Sec",
+				"description": "The digital elevation model",
 				"label": "PdemName",
-
 				"notNull": false
 			},
 			{
 				"id": "demResamplingMethod",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "demResamplingMethod",
+				"defaultValue": "BICUBIC_INTERPOLATION",
+				"description": "Sets parameter 'demResamplingMethod' to <string>",
 				"label": "PdemResamplingMethod",
-
 				"notNull": false
 			},
 			{
@@ -353,7 +333,7 @@
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "externalDEMFile",
+				"description": "Sets parameter 'externalDEMFile' to <file>",
 				"label": "PexternalDEMFile",
 
 				"notNull": false
@@ -361,9 +341,9 @@
 			{
 				"id": "externalDEMNoDataValue",
 				"type": "REGULAR",
-				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "externalDEMNoDataValue",
+				"dataType": "java.lang.Double",
+				"defaultValue": 0.0,
+				"description": "Sets parameter 'externalDEMNoDataValue' to <double>",
 				"label": "PexternalDEMNoDataValue",
 
 				"notNull": false
@@ -372,10 +352,9 @@
 				"id": "elevationBandName",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "elevationBandName",
+				"defaultValue": "elevation",
+				"description": "The elevation band name",
 				"label": "PelevationBandName",
-
 				"notNull": false
 			}
 		],
@@ -385,7 +364,7 @@
 		"id": "snap-addlandcover",
 		"label": "AddLandCover",
 		"version": "1.0",
-		"description": "AddLandCover operator",
+		"description": "Creates a land cover band",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -420,15 +399,13 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "landCoverNames",
 				"type": "REGULAR",
 				"dataType": "[Ljava.lang.String;",
-				"defaultValue": null,
-				"description": "landCoverNames",
+				"defaultValue": "AAFC Canada Sand Pct",
+				"description": "The land cover model",
 				"label": "PlandCoverNames",
-
 				"notNull": false
 			},
 			{
@@ -436,19 +413,17 @@
 				"type": "REGULAR",
 				"dataType": "[Ljava.lang.String;",
 				"defaultValue": null,
-				"description": "externalFiles",
+				"description": "The external landcover files",
 				"label": "PexternalFiles",
-
 				"notNull": false
 			},
 			{
 				"id": "resamplingMethod",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "resamplingMethod",
+				"defaultValue": "NEAREST_NEIGHBOUR",
+				"description": "Sets parameter 'resamplingMethod' to <string>",
 				"label": "PresamplingMethod",
-
 				"notNull": false
 			}
 		],
@@ -458,7 +433,7 @@
 		"id": "snap-aerosolretrieval.s2.master",
 		"label": "AerosolRetrieval.S2.Master",
 		"version": "1.0",
-		"description": "AerosolRetrieval.S2.Master operator",
+		"description": "Aerosol retrieval from S2 MSI following USwansea algorithm as used in GlobAlbedo project",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -493,25 +468,22 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "climatologiesFile",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "climatologiesFile",
+				"description": "A product to read climatology data from. Only required if the aerosol type shall be retrieved. If not provided, a default product will be written to the local aux data directory",
 				"label": "PclimatologiesFile",
-
 				"notNull": false
 			},
 			{
 				"id": "copyToaReflBands",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "copyToaReflBands",
+				"defaultValue": true,
+				"description": "Sets parameter 'copyToaReflBands' to <boolean>",
 				"label": "PcopyToaReflBands",
-
 				"notNull": false
 			},
 			{
@@ -519,69 +491,62 @@
 				"type": "REGULAR",
 				"dataType": "[Ljava.lang.String;",
 				"defaultValue": null,
-				"description": "reflectanceBandNames",
+				"description": "The reflectance bands which shall be considered for aot retrieval.Note that bands B3 and B11 cannot be left out",
 				"label": "PreflectanceBandNames",
-
 				"notNull": false
 			},
 			{
 				"id": "copyGeometryBands",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "copyGeometryBands",
+				"defaultValue": true,
+				"description": "Sets parameter 'copyGeometryBands' to <boolean>",
 				"label": "PcopyGeometryBands",
-
 				"notNull": false
 			},
 			{
 				"id": "computeAerosol",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "computeAerosol",
+				"defaultValue": true,
+				"description": "If true, aerosol retrieval is done",
 				"label": "PcomputeAerosol",
-
 				"notNull": false
 			},
 			{
 				"id": "computeWaterVapour",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "computeWaterVapour",
+				"defaultValue": true,
+				"description": "If true, water vapour retrieval is done",
 				"label": "PcomputeWaterVapour",
-
 				"notNull": false
 			},
 			{
 				"id": "computeAerosolType",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "computeAerosolType",
+				"defaultValue": true,
+				"description": "If true, aerosol type retrieval is done",
 				"label": "PcomputeAerosolType",
-
 				"notNull": false
 			},
 			{
 				"id": "filling",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "filling",
+				"defaultValue": true,
+				"description": "Sets parameter 'filling' to <boolean>",
 				"label": "Pfilling",
-
 				"notNull": false
 			},
 			{
 				"id": "upscaling",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "upscaling",
+				"defaultValue": true,
+				"description": "Sets parameter 'upscaling' to <boolean>",
 				"label": "Pupscaling",
-
 				"notNull": false
 			},
 			{
@@ -589,19 +554,17 @@
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "pathToLut",
+				"description": "Full path to S2 Lookup Table",
 				"label": "PpathToLut",
-
 				"notNull": false
 			},
 			{
 				"id": "scale",
 				"type": "REGULAR",
 				"dataType": "java.lang.Integer",
-				"defaultValue": null,
-				"description": "scale",
+				"defaultValue": 20,
+				"description": "The downscaling factor for AOT retrieval grid. E.g. 20 for S2 60m --> 1.2km",
 				"label": "Pscale",
-
 				"notNull": false
 			},
 			{
@@ -609,9 +572,8 @@
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "nameOfAODDefault",
+				"description": "If given, AOD default values will be taken from the source products's raster data node with this name",
 				"label": "PnameOfAODDefault",
-
 				"notNull": false
 			}
 		],
@@ -621,7 +583,7 @@
 		"id": "snap-alos-deskewing",
 		"label": "ALOS-Deskewing",
 		"version": "1.0",
-		"description": "ALOS-Deskewing operator",
+		"description": "Deskes an ALOS product",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -656,25 +618,22 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "sourceBands",
 				"type": "REGULAR",
 				"dataType": "[Ljava.lang.String;",
 				"defaultValue": null,
-				"description": "sourceBands",
+				"description": "The list of source bands",
 				"label": "PsourceBands",
-
 				"notNull": false
 			},
 			{
 				"id": "demName",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "demName",
+				"defaultValue": "SRTM 3Sec",
+				"description": "The digital elevation model",
 				"label": "PdemName",
-
 				"notNull": false
 			}
 		],
@@ -684,7 +643,7 @@
 		"id": "snap-apply-orbit-file",
 		"label": "Apply-Orbit-File",
 		"version": "1.0",
-		"description": "Apply-Orbit-File operator",
+		"description": "Apply orbit file",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -719,35 +678,32 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "orbitType",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "orbitType",
+				"defaultValue": "Sentinel Precise (Auto Download)",
+				"description": "Sets parameter 'orbitType' to <string>",
 				"label": "PorbitType",
-
+				"valueSet": ["Sentinel Precise (Auto Download)","Sentinel Restituted (Auto Download)","DORIS Preliminary POR (ENVISAT)","DORIS Precise VOR (ENVISAT) (Auto Download)","DELFT Precise (ENVISAT, ERS1&2) (Auto Download)","PRARE Precise (ERS1&2) (Auto Download)","Kompsat5 Precise"],
 				"notNull": false
 			},
 			{
 				"id": "polyDegree",
 				"type": "REGULAR",
 				"dataType": "java.lang.Integer",
-				"defaultValue": null,
-				"description": "polyDegree",
+				"defaultValue": 3,
+				"description": "Sets parameter 'polyDegree' to <int>",
 				"label": "PpolyDegree",
-
 				"notNull": false
 			},
 			{
 				"id": "continueOnFail",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "continueOnFail",
+				"defaultValue": false,
+				"description": "Sets parameter 'continueOnFail' to <boolean>",
 				"label": "PcontinueOnFail",
-
 				"notNull": false
 			}
 		],
@@ -757,7 +713,7 @@
 		"id": "snap-arc.sst",
 		"label": "Arc.SST",
 		"version": "1.0",
-		"description": "Arc.SST operator",
+		"description": "Computes sea surface temperature (SST) from (A)ATSR products",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -792,35 +748,32 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "tcwvExpression",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "tcwvExpression",
+				"defaultValue": "30.0",
+				"description": "TCWV value to use in SST retrieval",
 				"label": "PtcwvExpression",
-
 				"notNull": false
 			},
 			{
 				"id": "asdi",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "asdi",
+				"defaultValue": true,
+				"description": "Enables/disables generation of ATSR Saharan Dust Index",
 				"label": "Pasdi",
-
 				"notNull": false
 			},
 			{
 				"id": "asdiCoefficientsFile",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "asdiCoefficientsFile",
+				"defaultValue": "ASDI_AATSR",
+				"description": "Coefficient file for ASDI",
 				"label": "PasdiCoefficientsFile",
-
+				"valueSet": ["ASDI_ATSR1","ASDI_ATSR2","ASDI_AATSR"],
 				"notNull": false
 			},
 			{
@@ -828,29 +781,27 @@
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "asdiMaskExpression",
+				"description": "ROI-mask used for the ASDI",
 				"label": "PasdiMaskExpression",
-
 				"notNull": false
 			},
 			{
 				"id": "dual",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "dual",
+				"defaultValue": true,
+				"description": "Enables/disables generation of the dual-view SST",
 				"label": "Pdual",
-
 				"notNull": false
 			},
 			{
 				"id": "dualCoefficientsFile",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "dualCoefficientsFile",
+				"defaultValue": "ARC_D2_AATSR",
+				"description": "Coefficient file for the dual-view SST",
 				"label": "PdualCoefficientsFile",
-
+				"valueSet": ["ARC_D2_ATSR1","ARC_D2_ATSR2","ARC_D2_AATSR","ARC_D2_SLSTR","ARC_D3_ATSR1","ARC_D3_ATSR2","ARC_D3_AATSR","ARC_D3_SLSTR"],
 				"notNull": false
 			},
 			{
@@ -858,29 +809,27 @@
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "dualMaskExpression",
+				"description": "ROI-mask used for the dual-view SST",
 				"label": "PdualMaskExpression",
-
 				"notNull": false
 			},
 			{
 				"id": "nadir",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "nadir",
+				"defaultValue": true,
+				"description": "Enables/disables generation of the nadir-view SST",
 				"label": "Pnadir",
-
 				"notNull": false
 			},
 			{
 				"id": "nadirCoefficientsFile",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "nadirCoefficientsFile",
+				"defaultValue": "ARC_N2_AATSR",
+				"description": "Coefficient file for the nadir-view SST",
 				"label": "PnadirCoefficientsFile",
-
+				"valueSet": ["ARC_N2_ATSR1","ARC_N2_ATSR2","ARC_N2_AATSR","ARC_N2_SLSTR","ARC_N3_ATSR1","ARC_N3_ATSR2","ARC_N3_AATSR","ARC_N3_SLSTR"],
 				"notNull": false
 			},
 			{
@@ -888,19 +837,17 @@
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "nadirMaskExpression",
+				"description": "ROI-mask used for the nadir-view SST",
 				"label": "PnadirMaskExpression",
-
 				"notNull": false
 			},
 			{
 				"id": "invalidSstValue",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": null,
-				"description": "invalidSstValue",
+				"defaultValue": -999.0,
+				"description": "Value used to fill invalid SST pixels",
 				"label": "PinvalidSstValue",
-
 				"notNull": false
 			}
 		],
@@ -910,7 +857,7 @@
 		"id": "snap-arviop",
 		"label": "ArviOp",
 		"version": "1.0",
-		"description": "ArviOp operator",
+		"description": "Atmospherically Resistant Vegetation Index belongs to a family of indices with built-in atmospheric corrections",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -945,7 +892,6 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "resampleType",
 				"type": "REGULAR",
@@ -994,50 +940,45 @@
 				"id": "redFactor",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": "1.0",
+				"defaultValue": 1.0,
 				"description": "The value of the red source band is multiplied by this value",
 				"label": "PredFactor",
-
 				"notNull": false
 			},
 			{
 				"id": "blueFactor",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": "1.0",
-				"description": "blueFactor",
+				"defaultValue": 1.0,
+				"description": "The value of the BLUE source band is multiplied by this value",
 				"label": "PblueFactor",
-
 				"notNull": false
 			},
 			{
 				"id": "nirFactor",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": "1.0",
+				"defaultValue": 1.0,
 				"description": "The value of the NIR source band is multiplied by this value",
 				"label": "PnirFactor",
-
 				"notNull": false
 			},
 			{
 				"id": "gammaParameter",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": null,
-				"description": "gammaParameter",
+				"defaultValue": 1.0,
+				"description": "The gamma parameter is like a weighting function that depends on the aerosol type",
 				"label": "PgammaParameter",
-
 				"notNull": false
 			},
 			{
 				"id": "redSourceBand",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": "B4",
-				"description": "The red band for the MSAVI computation. If not provided, the operator will try to find the best fitting band",
+				"defaultValue": null,
+				"description": "The red band for the ARVI computation. If not provided, the operator will try to find the best fitting band",
 				"label": "PredSourceBand",
-
 				"notNull": false
 			},
 			{
@@ -1045,19 +986,17 @@
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "blueSourceBand",
+				"description": "The blue band for the ARVI computation. If not provided, the operator will try to find the best fitting band",
 				"label": "PblueSourceBand",
-
 				"notNull": false
 			},
 			{
 				"id": "nirSourceBand",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": "B8",
-				"description": "The near-infrared band for the MSAVI computation. If not provided, the operator will try to find the best fitting band",
+				"defaultValue": null,
+				"description": "The near-infrared band for the ARVI computation. If not provided, the operator will try to find the best fitting band",
 				"label": "PnirSourceBand",
-
 				"notNull": false
 			}
 		],
@@ -1067,7 +1006,7 @@
 		"id": "snap-azimuthfilter",
 		"label": "AzimuthFilter",
 		"version": "1.0",
-		"description": "AzimuthFilter operator",
+		"description": "Azimuth Filter",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -1102,35 +1041,34 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "fftLength",
 				"type": "REGULAR",
 				"dataType": "java.lang.Integer",
-				"defaultValue": null,
-				"description": "fftLength",
+				"defaultValue": 256,
+				"description": "Length of filtering window",
 				"label": "PfftLength",
-
+				"valueSet": [64, 128, 256, 512, 1024, 2048],
 				"notNull": false
 			},
 			{
 				"id": "aziFilterOverlap",
 				"type": "REGULAR",
 				"dataType": "java.lang.Integer",
-				"defaultValue": null,
-				"description": "aziFilterOverlap",
+				"defaultValue": 0,
+				"description": "Overlap between filtering windows in azimuth direction [lines]",
 				"label": "PaziFilterOverlap",
-
+				"valueSet": [0, 8, 16, 32, 64, 128, 256],
 				"notNull": false
 			},
 			{
 				"id": "alphaHamming",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": null,
-				"description": "alphaHamming",
+				"defaultValue": 0.75,
+				"description": "Weight for Hamming filter (1 is rectangular window)",
 				"label": "PalphaHamming",
-
+				"valueSet": [0.5, 0.75, 0.8, 0.9, 1.0],
 				"notNull": false
 			}
 		],
@@ -1140,7 +1078,7 @@
 		"id": "snap-back-geocoding",
 		"label": "Back-Geocoding",
 		"version": "1.0",
-		"description": "Back-Geocoding operator",
+		"description": "Bursts co-registration using orbit and DEM",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -1175,25 +1113,22 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "demName",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "demName",
+				"defaultValue": "SRTM 3Sec",
+				"description": "The digital elevation model",
 				"label": "PdemName",
-
 				"notNull": false
 			},
 			{
 				"id": "demResamplingMethod",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "demResamplingMethod",
+				"defaultValue": "BICUBIC_INTERPOLATION",
+				"description": "Sets parameter 'demResamplingMethod' to <string>",
 				"label": "PdemResamplingMethod",
-
 				"notNull": false
 			},
 			{
@@ -1201,69 +1136,62 @@
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "externalDEMFile",
+				"description": "Sets parameter 'externalDEMFile' to <file>",
 				"label": "PexternalDEMFile",
-
 				"notNull": false
 			},
 			{
 				"id": "externalDEMNoDataValue",
 				"type": "REGULAR",
-				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "externalDEMNoDataValue",
+				"dataType": "java.lang.Double",
+				"defaultValue": 0.0,
+				"description": "Sets parameter 'externalDEMNoDataValue' to <double>",
 				"label": "PexternalDEMNoDataValue",
-
 				"notNull": false
 			},
 			{
 				"id": "resamplingType",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": null,
-				"description": "resamplingType",
+				"defaultValue": "BISINC_5_POINT_INTERPOLATION",
+				"description": "The method to be used when resampling the slave grid onto the master grid",
 				"label": "PresamplingType",
-
 				"notNull": false
 			},
 			{
 				"id": "maskOutAreaWithoutElevation",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "maskOutAreaWithoutElevation",
+				"defaultValue": true,
+				"description": "Sets parameter 'maskOutAreaWithoutElevation' to <boolean>",
 				"label": "PmaskOutAreaWithoutElevation",
-
 				"notNull": false
 			},
 			{
 				"id": "outputRangeAzimuthOffset",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "outputRangeAzimuthOffset",
+				"defaultValue": false,
+				"description": "Sets parameter 'outputRangeAzimuthOffset' to <boolean>",
 				"label": "PoutputRangeAzimuthOffset",
-
 				"notNull": false
 			},
 			{
 				"id": "outputDerampDemodPhase",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "outputDerampDemodPhase",
+				"defaultValue": false,
+				"description": "Sets parameter 'outputDerampDemodPhase' to <boolean>",
 				"label": "PoutputDerampDemodPhase",
-
 				"notNull": false
 			},
 			{
 				"id": "disableReramp",
 				"type": "REGULAR",
 				"dataType": "java.lang.Boolean",
-				"defaultValue": null,
-				"description": "disableReramp",
+				"defaultValue": false,
+				"description": "Sets parameter 'disableReramp' to <boolean>",
 				"label": "PdisableReramp",
-
 				"notNull": false
 			}
 		],
@@ -1273,7 +1201,7 @@
 		"id": "snap-bandmerge",
 		"label": "BandMerge",
 		"version": "1.0",
-		"description": "BandMerge operator",
+		"description": "Allows copying raster data from any number of source products to a specified 'master' product",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -1308,25 +1236,22 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "sourceBands",
 				"type": "REGULAR",
 				"dataType": "[Ljava.lang.String;",
 				"defaultValue": null,
-				"description": "sourceBands",
+				"description": "The list of source bands",
 				"label": "PsourceBands",
-
 				"notNull": false
 			},
 			{
 				"id": "geographicError",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": "1.0E-5f",
-				"description": "geographicError",
+				"defaultValue": 0.00001,
+				"description": "Defines the maximum lat/lon error in degree between the products",
 				"label": "PgeographicError",
-
 				"notNull": false
 			}
 		],
@@ -1336,7 +1261,7 @@
 		"id": "snap-bandselect",
 		"label": "BandSelect",
 		"version": "1.0",
-		"description": "BandSelect operator",
+		"description": "Creates a new product with only selected bands",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -1371,15 +1296,13 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "selectedPolarisations",
 				"type": "REGULAR",
 				"dataType": "[Ljava.lang.String;",
 				"defaultValue": null,
-				"description": "selectedPolarisations",
+				"description": "The list of polarisations",
 				"label": "PselectedPolarisations",
-
 				"notNull": false
 			},
 			{
@@ -1387,9 +1310,8 @@
 				"type": "REGULAR",
 				"dataType": "[Ljava.lang.String;",
 				"defaultValue": null,
-				"description": "sourceBands",
+				"description": "The list of source bands",
 				"label": "PsourceBands",
-
 				"notNull": false
 			},
 			{
@@ -1397,9 +1319,8 @@
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "bandNamePattern",
+				"description": "Band name regular expression pattern",
 				"label": "PbandNamePattern",
-
 				"notNull": false
 			}
 		],
@@ -1409,7 +1330,7 @@
 		"id": "snap-bi2op",
 		"label": "Bi2Op",
 		"version": "1.0",
-		"description": "Bi2Op operator",
+		"description": "The Brightness index represents the average of the brightness of a satellite image. This index is sensitive to the brightness of soils which is highly correlated with the humidity and the presence of salts in surface",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -1444,7 +1365,6 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "resampleType",
 				"type": "REGULAR",
@@ -1493,40 +1413,36 @@
 				"id": "redFactor",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": "1.0",
+				"defaultValue": 1.0,
 				"description": "The value of the red source band is multiplied by this value",
 				"label": "PredFactor",
-
 				"notNull": false
 			},
 			{
 				"id": "greenFactor",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": "1.0",
+				"defaultValue": 1.0,
 				"description": "greenFactor",
 				"label": "PgreenFactor",
-
 				"notNull": false
 			},
 			{
 				"id": "nirFactor",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": "1.0",
+				"defaultValue": 1.0,
 				"description": "The value of the NIR source band is multiplied by this value",
 				"label": "PnirFactor",
-
 				"notNull": false
 			},
 			{
 				"id": "redSourceBand",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": "B4",
-				"description": "The red band for the MSAVI computation. If not provided, the operator will try to find the best fitting band",
+				"defaultValue": null,
+				"description": "The red band for the BI2 computation. If not provided, the operator will try to find the best fitting band",
 				"label": "PredSourceBand",
-
 				"notNull": false
 			},
 			{
@@ -1534,7 +1450,7 @@
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "greenSourceBand",
+				"description": "The green band for the BI2 computation. If not provided, the operator will try to find the best fitting band",
 				"label": "PgreenSourceBand",
 
 				"notNull": false
@@ -1543,10 +1459,9 @@
 				"id": "nirSourceBand",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": "B8",
-				"description": "The near-infrared band for the MSAVI computation. If not provided, the operator will try to find the best fitting band",
+				"defaultValue": null,
+				"description": "The near-infrared band for the BI2 computation. If not provided, the operator will try to find the best fitting band",
 				"label": "PnirSourceBand",
-
 				"notNull": false
 			}
 		],
@@ -1556,7 +1471,7 @@
 		"id": "snap-biop",
 		"label": "BiOp",
 		"version": "1.0",
-		"description": "BiOp operator",
+		"description": "The Brightness index represents the average of the brightness of a satellite image",
 		"authors": "SNAP Team",
 		"copyright": "(C) SNAP Team",
 		"nodeAffinity": "Any",
@@ -1591,7 +1506,6 @@
 		"visibility": "SYSTEM",
 		"active": true,
 		"parameterDescriptors": [
-
 			{
 				"id": "resampleType",
 				"type": "REGULAR",
@@ -1640,30 +1554,27 @@
 				"id": "redFactor",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": "1.0",
+				"defaultValue": 1.0,
 				"description": "The value of the red source band is multiplied by this value",
 				"label": "PredFactor",
-
 				"notNull": false
 			},
 			{
 				"id": "greenFactor",
 				"type": "REGULAR",
 				"dataType": "java.lang.Float",
-				"defaultValue": "1.0",
-				"description": "greenFactor",
+				"defaultValue": 1.0,
+				"description": "The value of the green source band is multiplied by this value",
 				"label": "PgreenFactor",
-
 				"notNull": false
 			},
 			{
 				"id": "redSourceBand",
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
-				"defaultValue": "B4",
-				"description": "The red band for the MSAVI computation. If not provided, the operator will try to find the best fitting band",
+				"defaultValue": null,
+				"description": "The red band for the BI computation. If not provided, the operator will try to find the best fitting band",
 				"label": "PredSourceBand",
-
 				"notNull": false
 			},
 			{
@@ -1671,7 +1582,7 @@
 				"type": "REGULAR",
 				"dataType": "java.lang.String",
 				"defaultValue": null,
-				"description": "greenSourceBand",
+				"description": "The green band for the BI computation. If not provided, the operator will try to find the best fitting band",
 				"label": "PgreenSourceBand",
 
 				"notNull": false
