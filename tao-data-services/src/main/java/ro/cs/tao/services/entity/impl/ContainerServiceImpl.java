@@ -111,7 +111,7 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public Container initializeContainer(String name, String path, List<String> applicationNames) {
+    public Container initializeContainer(String name, String path, List<Application> applications) {
         List<Container> containers = persistenceManager.getContainers();
         boolean isWin = Platform.getCurrentPlatform().getId().equals(Platform.ID.win);
         Container container = null;
@@ -122,11 +122,11 @@ public class ContainerServiceImpl
             container.setTag(name);
             container.setApplicationPath(path);
             String appPath;
-            for (String appName : applicationNames) {
+            for (Application app : applications) {
                 Application application = new Application();
-                appPath = appName + (isWin && (winExtensions.stream()
-                                                            .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
-                application.setName(appName);
+                appPath = app.getName() + (isWin && (winExtensions.stream()
+                                                                  .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
+                application.setName(app.getName());
                 application.setPath(appPath);
                 container.addApplication(application);
             }
@@ -140,11 +140,11 @@ public class ContainerServiceImpl
             container.setName(name);
             container.setTag(name);
             String appPath;
-            for (String appName : applicationNames) {
+            for (Application app : applications) {
                 Application application = new Application();
-                appPath = appName + (isWin && (winExtensions.stream()
+                appPath = app.getName() + (isWin && (winExtensions.stream()
                                                             .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
-                application.setName(appName);
+                application.setName(app.getName());
                 application.setPath(appPath);
                 container.addApplication(application);
             }
@@ -163,7 +163,7 @@ public class ContainerServiceImpl
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("otb_container.json")))) {
             String str = String.join("", reader.lines().collect(Collectors.toList()));
             Container tmp = JacksonUtil.fromString(str, Container.class);
-            List<String> applications = tmp.getApplications().stream().map(Application::getName).collect(Collectors.toList());
+            List<Application> applications = tmp.getApplications();
             otbContainer = initializeContainer(name, path, applications);
             try (InputStream in = ContainerController.class.getResourceAsStream("otb_logo.png")) {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -179,19 +179,17 @@ public class ContainerServiceImpl
                 String str2 = String.join("", reader2.lines().collect(Collectors.toList()));
                 ProcessingComponent[] components = JacksonUtil.OBJECT_MAPPER.readValue(str2, ProcessingComponent[].class);
                 for (ProcessingComponent component : components) {
-                    if (!component.getId().equals("otbcli_ConcatenateImages")) {
-                        component.setContainerId(otbContainer.getId());
-                        component.setLabel(component.getId());
-                        List<SourceDescriptor> sources = component.getSources();
-                        if (sources != null) {
-                            sources.forEach(s -> s.setId(UUID.randomUUID().toString()));
-                        }
-                        List<TargetDescriptor> targets = component.getTargets();
-                        if (targets != null) {
-                            targets.forEach(t -> t.setId(UUID.randomUUID().toString()));
-                        }
-                        persistenceManager.saveProcessingComponent(component);
+                    component.setContainerId(otbContainer.getId());
+                    component.setLabel(component.getId());
+                    List<SourceDescriptor> sources = component.getSources();
+                    if (sources != null) {
+                        sources.forEach(s -> s.setId(UUID.randomUUID().toString()));
                     }
+                    List<TargetDescriptor> targets = component.getTargets();
+                    if (targets != null) {
+                        targets.forEach(t -> t.setId(UUID.randomUUID().toString()));
+                    }
+                    persistenceManager.saveProcessingComponent(component);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -224,7 +222,7 @@ public class ContainerServiceImpl
                         a.setPath(a.getPath() + ".exe");
                     }
                 });
-                try (InputStream in = ContainerController.class.getResourceAsStream("otb_logo.png")) {
+                try (InputStream in = ContainerController.class.getResourceAsStream("snap_logo.png")) {
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                     int read;
                     byte[] buffer = new byte[1024];
@@ -267,40 +265,6 @@ public class ContainerServiceImpl
                 e.printStackTrace();
             }
         }
-        // UNCOMMENT BELOW TO IMPORT AVAILABLE SNAP OPERATORS DIRECTLY FROM GPT (may take some time)
-        /*
-        Path rootPath = Paths.get(ConfigurationManager.getInstance().getValue("product.location"));
-        for (Application app : snapContainer.getApplications()) {
-            List<String> args = new ArrayList<>();
-            args.add(app.getPath());
-            args.add(app.getName());
-            args.add("-h");
-            Executor executor = ProcessExecutor.create(ExecutorType.PROCESS, "localhost", args, true);
-            OutputAccumulator accumulator = new OutputAccumulator();
-            executor.setOutputConsumer(accumulator);
-            try {
-                int ret = executor.execute(true);
-                if (ret == 0) {
-                    String output = accumulator.getOutput();
-                    String xml = output.substring(output.indexOf("Graph XML Format:") + 18);
-                    ProcessingComponent component = DescriptorConverter.fromXml(xml);
-                    component.setAuthors("SNAP Team");
-                    component.setCopyright("(C) SNAP Team");
-                    component.setFileLocation("gpt");
-                    component.setWorkingDirectory(".");
-                    component.setNodeAffinity("Any");
-                    component.setVisibility(ProcessingComponentVisibility.SYSTEM);
-                    component.getTargets().get(0).getDataDescriptor()
-                            .setLocation(rootPath.resolve(component.getTargets().get(0).getDataDescriptor().getLocation()).toUri().toString());
-                    component.setTemplateType(TemplateType.VELOCITY);
-                    component.setTemplate(SNAPDemo.newTemplate(component.getId() + ".vm", component.getLabel(), component, "="));
-                    component.setActive(true);
-                    persistenceManager.saveProcessingComponent(component);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }*/
         return snapContainer;
     }
 
