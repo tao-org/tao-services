@@ -45,14 +45,14 @@ public class TaoLocalLoginModule implements LoginModule {
     public static void setPersistenceManager(PersistenceManager manager) { persistenceManager = manager; }
 
     public TaoLocalLoginModule() {
-        logger.info("TAO Local Login Module - constructor called");
+        logger.fine("TAO Local Login Module - constructor called");
     }
 
     @Override
     public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState,
                            Map<String, ?> options) {
 
-        logger.info("TAO Local Login Module - initialize called");
+        logger.fine("TAO Local Login Module - initialize called");
         this.subject = subject;
         this.callbackHandler = callbackHandler;
         this.sharedState = sharedState;
@@ -63,7 +63,7 @@ public class TaoLocalLoginModule implements LoginModule {
 
     @Override
     public boolean login() throws LoginException {
-        logger.info("TAO Local Login Module - login called");
+        logger.fine("TAO Local Login Module - login called");
         if (callbackHandler == null) {
             throw new LoginException("CallbackHandler null!");
         }
@@ -89,12 +89,12 @@ public class TaoLocalLoginModule implements LoginModule {
 
         // verify the username and password
         if (persistenceManager.checkLoginCredentials(username, password)) {
-            logger.info("TAO Local Login Module - Successful login!");
+            logger.fine("TAO Local Login Module - Successful login!");
             succeeded = true;
             return succeeded;
 
         } else {
-            logger.info("TAO Local Login Module - Invalid login credentials");
+            logger.fine("TAO Local Login Module - Invalid login credentials");
             succeeded = false;
 
             username = null;
@@ -112,7 +112,7 @@ public class TaoLocalLoginModule implements LoginModule {
      */
     @Override
     public boolean commit() throws LoginException {
-        logger.info("TAO Local Login Module - commit called");
+        logger.fine("TAO Local Login Module - commit called");
         //return succeeded;
 
         if (succeeded == false) {
@@ -136,7 +136,7 @@ public class TaoLocalLoginModule implements LoginModule {
 
     @Override
     public boolean logout() throws LoginException {
-        logger.info("TAO Local Login Module - logout called");
+        logger.fine("TAO Local Login Module - logout called");
         subject.getPrincipals().remove(userPrincipal);
         succeeded = false;
         succeeded = commitSucceeded;
@@ -154,7 +154,7 @@ public class TaoLocalLoginModule implements LoginModule {
      */
     @Override
     public boolean abort() throws LoginException {
-        logger.info("TAO Local Login Module - abort called");
+        logger.fine("TAO Local Login Module - abort called");
         if (succeeded == false) {
             return false;
         } else if (commitSucceeded == false) {

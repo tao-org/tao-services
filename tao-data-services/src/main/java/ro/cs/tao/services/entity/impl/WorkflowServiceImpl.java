@@ -340,7 +340,7 @@ public class WorkflowServiceImpl
             return null;
         }
         WorkflowDescriptor clone = new WorkflowDescriptor();
-        clone.setName(workflow.getName());
+        clone.setName(workflow.getName() + " - " + String.valueOf(System.currentTimeMillis()));
         clone.setStatus(Status.DRAFT);
         clone.setCreated(LocalDateTime.now());
         clone.setActive(workflow.isActive());
@@ -368,21 +368,25 @@ public class WorkflowServiceImpl
             }
             clonedNode = addNode(clone.getId(), clonedNode);
             cloneMap.put(node.getId(), clonedNode);
+            clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
+        }
+        for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
             List<ComponentLink> links = node.getIncomingLinks();
             if (links != null) {
+                WorkflowNodeDescriptor clonedTarget = cloneMap.get(node.getId());
                 for (ComponentLink link : links) {
                     WorkflowNodeDescriptor clonedSource = cloneMap.get(link.getSourceNodeId());
-                    TargetDescriptor input = findTarget(link.getInput().getId(), node);
-                    SourceDescriptor output = findSource(link.getOutput().getId(), clonedNode);
+                    TargetDescriptor input = findTarget(link.getInput().getId(), clonedSource);
+                    SourceDescriptor output = findSource(link.getOutput().getId(), clonedTarget);
                     ComponentLink clonedLink = new ComponentLink(clonedSource.getId(), input, output);
-                    List<ComponentLink> clonedLinks = clonedNode.getIncomingLinks();
+                    List<ComponentLink> clonedLinks = clonedTarget.getIncomingLinks();
                     if (clonedLinks == null) {
                         clonedLinks = new ArrayList<>();
                     }
                     clonedLinks.add(clonedLink);
-                    clonedNode.setIncomingLinks(links);
+                    clonedTarget.setIncomingLinks(clonedLinks);
                 }
-                clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
+                clonedTarget = persistenceManager.updateWorkflowNodeDescriptor(clonedTarget);
             }
         }
         return persistenceManager.getWorkflowDescriptor(clone.getId());
@@ -437,13 +441,13 @@ public class WorkflowServiceImpl
     }
 
     private TargetDescriptor findTarget(String id, WorkflowNodeDescriptor nodeDescriptor) throws PersistenceException {
-        ProcessingComponent component = componentService.findById(nodeDescriptor.getComponentId());
+        TaoComponent component = findComponent(nodeDescriptor.getComponentId(), nodeDescriptor.getComponentType());
         return component != null ?
                 component.getTargets().stream().filter(t -> t.getId().equals(id)).findFirst().orElse(null) : null;
     }
 
     private SourceDescriptor findSource(String id, WorkflowNodeDescriptor nodeDescriptor) throws PersistenceException {
-        ProcessingComponent component = componentService.findById(nodeDescriptor.getComponentId());
+        TaoComponent component = findComponent(nodeDescriptor.getComponentId(), nodeDescriptor.getComponentType());
         return component != null ?
                 component.getSources().stream().filter(s -> s.getId().equals(id)).findFirst().orElse(null) : null;
     }
