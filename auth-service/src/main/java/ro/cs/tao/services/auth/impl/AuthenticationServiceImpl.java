@@ -15,34 +15,34 @@
  */
 package ro.cs.tao.services.auth.impl;
 
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
 
-import java.time.Clock;
-import java.time.LocalDateTime;
-import java.util.UUID;
 import java.util.logging.Logger;
 
+/**
+ *
+ * @author Oana H.
+ */
 @Service("authenticationService")
 public class AuthenticationServiceImpl implements AuthenticationService {
 
     private static final Logger logger = Logger.getLogger(AuthenticationServiceImpl.class.getName());
 
+    @Autowired
+    private TokenManagementService tokenService;
+
     @Override
     public AuthInfo login(String username, String password) {
-        logger.info("Login called (" + username + ")...");
+        logger.info("Login (" + username + ")...");
         // if arrived here, this means that the JAAS login was successful
 
-        String key = UUID.randomUUID().toString().toUpperCase() +
-          "|" + username +
-          "|" + LocalDateTime.now();
-
-        StandardPBEStringEncryptor jasypt = new StandardPBEStringEncryptor();
-        jasypt.setPassword("ARwkYz");
-        // this is the authentication token user will send in order to use the web service
-        String authenticationToken = jasypt.encrypt(key);
+        String authenticationToken = tokenService.getUserToken(username);
+        logger.info("Token " + authenticationToken);
 
         // TODO retrieve user group and send it as profile
         return new AuthInfo(true, authenticationToken, null);

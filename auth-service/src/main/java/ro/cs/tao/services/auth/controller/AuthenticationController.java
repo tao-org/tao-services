@@ -28,6 +28,10 @@ import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
 import ro.cs.tao.utils.StringUtils;
 
+/**
+ *
+ * @author Oana H.
+ */
 @Controller
 @RequestMapping("/auth")
 public class AuthenticationController extends BaseController {
