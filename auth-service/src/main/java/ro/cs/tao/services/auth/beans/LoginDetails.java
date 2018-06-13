@@ -15,6 +15,10 @@
  */
 package ro.cs.tao.services.auth.beans;
 
+/**
+ *
+ * @author Oana H.
+ */
 public class LoginDetails {
     private String username;
     private String password;

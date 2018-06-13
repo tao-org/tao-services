@@ -18,14 +18,31 @@ package ro.cs.tao.services.security;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.jaas.JaasAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import ro.cs.tao.services.auth.token.TokenManagementService;
+import ro.cs.tao.services.security.token.AuthenticationWithToken;
 
+import java.util.List;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+/**
+ * Custom JAAS authentication provider
+ *
+ * @author  Oana H.
+ */
 
 public class CustomAuthenticationProvider implements AuthenticationProvider {
 
+    private static final Logger logger = Logger.getLogger(CustomAuthenticationProvider.class.getName());
+
     private AuthenticationProvider delegate;
 
-    public CustomAuthenticationProvider(AuthenticationProvider delegate) {
+    private TokenManagementService tokenService;
+
+    public CustomAuthenticationProvider(AuthenticationProvider delegate, TokenManagementService tokenMngService) {
         this.delegate = delegate;
+        this.tokenService = tokenMngService;
     }
 
     @Override
@@ -38,6 +55,14 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new UserPrincipal(userName));
             // TODO: why user group is needed here?
             //jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new GroupPrincipal("admin"));
+
+            // generate and store a new authentication token
+            AuthenticationWithToken authenticationWithToken = new AuthenticationWithToken(jaasAuthenticationToken.getPrincipal(), jaasAuthenticationToken.getCredentials(), jaasAuthenticationToken.getAuthorities().stream().collect(Collectors.toList()), jaasAuthenticationToken.getLoginContext());
+            final String newToken = tokenService.generateNewToken();
+            authenticationWithToken.setToken(newToken);
+            tokenService.store(newToken, authenticationWithToken);
+
+            logger.info("Stored token: " + newToken);
 
             return jaasAuthenticationToken;
         } else {
