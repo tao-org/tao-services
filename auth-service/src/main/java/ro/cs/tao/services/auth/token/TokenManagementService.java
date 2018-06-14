@@ -25,10 +25,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
- *
  * @author Oana H.
  */
 @Component
@@ -49,6 +50,11 @@ public class TokenManagementService {
     }
 
     public void store(String token, Authentication authentication) {
+        // when storing a new token for a user, make sure to delete existing alive tokens for the same user, if any
+        final String username = authentication.getPrincipal().toString();
+        removeUserTokens(username);
+
+        // store the new token
         authTokenCache.put(new Element(token, authentication));
     }
 
@@ -60,13 +66,37 @@ public class TokenManagementService {
         return (Authentication) authTokenCache.get(token).getObjectValue();
     }
 
-    public String getUserToken(String username){
-        for (Object key: authTokenCache.getKeys()) {
+    public String getUserToken(String username) {
+        List<String> tokens = new ArrayList<>();
+        for (Object key : authTokenCache.getKeys()) {
             Element element = authTokenCache.get(key);
-            if (element != null && ((Authentication)element.getObjectValue()).getPrincipal().toString().equals(username)) {
+            if (element != null && ((Authentication) element.getObjectValue()).getPrincipal().toString().equals(username)) {
+                tokens.add(key.toString());
+            }
+        }
+        logger.info("User " + username + " has the token(s): " + tokens.toString());
+
+        for (Object key : authTokenCache.getKeys()) {
+            Element element = authTokenCache.get(key);
+            if (element != null && ((Authentication) element.getObjectValue()).getPrincipal().toString().equals(username)) {
                 return key.toString();
             }
         }
         return null;
+    }
+
+    public void removeUserTokens(String username) {
+        List<String> tokens = new ArrayList<>();
+        for (Object key : authTokenCache.getKeys()) {
+            Element element = authTokenCache.get(key);
+            if (element != null && ((Authentication) element.getObjectValue()).getPrincipal().toString().equals(username)) {
+                tokens.add(key.toString());
+            }
+        }
+        logger.info("User " + username + " had the token(s): " + tokens.toString());
+
+        for (String token : tokens) {
+            authTokenCache.remove(token);
+        }
     }
 }

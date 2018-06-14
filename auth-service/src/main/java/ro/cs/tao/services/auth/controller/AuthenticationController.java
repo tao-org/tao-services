@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.services.auth.beans.LoginDetails;
+import ro.cs.tao.services.auth.beans.LogoutDetails;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
@@ -45,18 +46,37 @@ public class AuthenticationController extends BaseController {
             return new ResponseEntity<>("No body request present!", HttpStatus.BAD_REQUEST);
         }
 
-        if (StringUtils.isNullOrEmpty(request.getUsername()) || StringUtils.isNullOrEmpty(request.getPassword())) {
+        if (StringUtils.isNullOrEmpty(request.getUsername())) {
             return new ResponseEntity<>("Empty credentials in body request!", HttpStatus.BAD_REQUEST);
         }
 
         try {
-            final AuthInfo authInfo = authenticationService.login(request.getUsername(), request.getPassword());
+            final AuthInfo authInfo = authenticationService.login(request.getUsername());
             if (authInfo != null && authInfo.isAuthenticated()) {
                 return new ResponseEntity<>(authInfo, HttpStatus.OK);
             }
             else {
                 return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
             }
+        } catch (Exception ex) {
+            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @RequestMapping(value = "/logout", method = RequestMethod.POST)
+    public ResponseEntity<?> logout(@RequestBody LogoutDetails request) {
+        if (request == null) {
+            return new ResponseEntity<>("No body request present!", HttpStatus.BAD_REQUEST);
+        }
+
+        if (StringUtils.isNullOrEmpty(request.getUsername())) {
+            return new ResponseEntity<>("Empty credentials in body request!", HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            authenticationService.logout(request.getUsername());
+            return new ResponseEntity<>(null, HttpStatus.OK);
+
         } catch (Exception ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
         }

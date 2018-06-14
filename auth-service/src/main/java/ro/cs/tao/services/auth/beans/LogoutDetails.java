@@ -19,13 +19,13 @@ package ro.cs.tao.services.auth.beans;
  *
  * @author Oana H.
  */
-public class LoginDetails {
+public class LogoutDetails {
     private String username;
 
-    public LoginDetails() {
+    public LogoutDetails() {
     }
 
-    public LoginDetails(String username) {
+    public LogoutDetails(String username) {
         this.username = username;
     }
 
