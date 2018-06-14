@@ -77,19 +77,29 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                     HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/clone", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> cloneWorkflow(@RequestParam("workflowId") long workflowId) {
+        ResponseEntity<?> responseEntity;
+        WorkflowDescriptor source = persistenceManager.getWorkflowDescriptor(workflowId);
+        try {
+            responseEntity = new ResponseEntity<>(source != null ?
+                                                          workflowService.clone(source) :
+                                                          new ServiceError("No such workflow"),
+                                                  HttpStatus.OK);
+        } catch (PersistenceException e) {
+            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
+            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+        }
+        return responseEntity;
+    }
+
     @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> initialize(@RequestParam("otbContainer") String otbContainerName,
                                         @RequestParam("otbPath") String otbPath,
                                         @RequestParam("snapContainer") String snapContainerName,
                                         @RequestParam("snapPath") String snapPath) throws PersistenceException {
-        /*ContainerInitializer.setPersistenceManager(persistenceManager);
-        ContainerInitializer.setContainerService(containerService);*/
         ContainerInitializer.setComponentService(componentService);
         ContainerInitializer.setWorkflowService(workflowService);
-        //ContainerInitializer.initSnap(snapContainerName, snapPath);
-        //ContainerInitializer.initOtb(otbContainerName, otbPath);
-        //ContainerInitializer.initComponents(otbContainerName, otbPath, snapContainerName, snapPath);
-        //DataSourceComponent dataSourceComponent = ContainerInitializer.initDataSourceComponent("Sentinel2", "Amazon Web Services");
         DataSourceComponent dataSourceComponent = persistenceManager.getDataSourceInstance("Sentinel2-Amazon Web Services");
         WorkflowDescriptor descriptor1 = ContainerInitializer.initWorkflow1();
         WorkflowDescriptor descriptor2 = ContainerInitializer.initWorkflow2();
