@@ -42,6 +42,9 @@ import java.util.logging.Logger;
 public class AuthenticationFilter extends GenericFilterBean {
     private static final Logger logger = Logger.getLogger(AuthenticationFilter.class.getName());
 
+    public static final String AUTH_LOGIN_URL = "/auth/login";
+    public static final String AUTH_LOGIN_METHOD = "POST";
+
     private AuthenticationManager authenticationManager;
 
     public AuthenticationFilter(AuthenticationManager authenticationManager) {
@@ -58,13 +61,12 @@ public class AuthenticationFilter extends GenericFilterBean {
         String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
 
         try {
-            if (token.isPresent()) {
+            if (token.isPresent() && !postToAuthenticate(httpRequest, resourcePath)) {
                 logger.info("Trying to authenticate user by X-Auth-Token method. Token: " + token);
                 processTokenAuthentication(token);
             }
 
-            logger.info("AuthenticationFilter is passing request down the filter chain");
-
+            logger.info("AuthenticationFilter is passing the request through the filter chain");
             filterChain.doFilter(servletRequest, servletResponse);
 
         } catch (InternalAuthenticationServiceException internalAuthenticationServiceException) {
@@ -95,5 +97,10 @@ public class AuthenticationFilter extends GenericFilterBean {
         }
         logger.info("User successfully authenticated");
         return responseAuthentication;
+    }
+
+    private boolean postToAuthenticate(HttpServletRequest httpRequest, String resourcePath) {
+        return AUTH_LOGIN_URL.equalsIgnoreCase(resourcePath) &&
+               httpRequest.getMethod().equals(AUTH_LOGIN_METHOD);
     }
 }

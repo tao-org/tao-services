@@ -37,8 +37,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private TokenManagementService tokenService;
 
     @Override
-    public AuthInfo login(String username, String password) {
-        logger.info("Login (" + username + ")...");
+    public AuthInfo login(String username) {
+        logger.info("Logged in (" + username + ")...");
         // if arrived here, this means that the JAAS login was successful
 
         String authenticationToken = tokenService.getUserToken(username);
@@ -50,6 +50,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public void logout(String username) {
-
+        logger.info("Logging out (" + username + ")...");
+        tokenService.removeUserTokens(username);
     }
 }

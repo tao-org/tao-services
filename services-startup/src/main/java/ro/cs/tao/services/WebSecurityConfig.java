@@ -49,7 +49,8 @@ import ro.cs.tao.services.security.token.TokenAuthenticationProvider;
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implements ApplicationContextAware {
 
-    public static final String LOGIN_PATH_EXPRESSION = "/auth/login";
+    public static final String LOGIN_PATH_EXPRESSION = AuthenticationFilter.AUTH_LOGIN_URL;
+    public static final String LOGOUT_PATH_EXPRESSION = "/auth/logout";
     public static final String API_PATH_EXPRESSION = "/api/**/*";
     public static final String GLOBAL_PATH_EXPRESSION = "/**/*";
 
@@ -144,7 +145,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .and()
                 .authenticationProvider(customAuthProvider())
           .authorizeRequests()
-                .antMatchers(API_PATH_EXPRESSION)
+                .antMatchers(API_PATH_EXPRESSION, LOGOUT_PATH_EXPRESSION)
                 .authenticated()
                 .and()
                 .authenticationProvider(tokenAuthProvider())
