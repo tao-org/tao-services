@@ -49,8 +49,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public void logout(String username) {
-        logger.info("Logging out (" + username + ")...");
-        tokenService.removeUserTokens(username);
+    public boolean logout(String authToken) {
+        if (tokenService.contains(authToken)) {
+            final String username = tokenService.retrieve(authToken).getPrincipal().toString();
+            logger.info("Logging out (" + username + ")...");
+            tokenService.removeUserTokens(username);
+            return true;
+        }
+        else {
+            logger.info("Invalid auth token received at logout: " + authToken);
+            return false;
+        }
     }
 }
