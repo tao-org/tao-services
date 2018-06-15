@@ -23,6 +23,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceComponent;
@@ -46,10 +47,7 @@ import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.utils.Platform;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.nio.file.Files;
@@ -132,6 +130,13 @@ public class TaoServicesStartup implements ApplicationListener {
             updateLocalhost();
             backgroundWorker.submit(this::registerEmbeddedContainers);
             backgroundWorker.submit(this::registerDataSourceComponents);
+            try {
+                Files.createDirectories(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
+                Files.createDirectories(Paths.get(SystemVariable.SHARED_FILES.value()));
+            } catch (IOException e) {
+                Logger.getLogger(TaoServicesStartup.class.getName()).severe("Cannot create required folders: " + e.getMessage());
+                System.exit(1);
+            }
         }
     }
 
