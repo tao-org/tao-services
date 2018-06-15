@@ -26,7 +26,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
-import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.FileObject;
 import ro.cs.tao.services.commons.ServiceError;
@@ -104,7 +103,7 @@ public class FileController extends BaseController {
             List<Path> list = storageService.listWorkspace(false).collect(Collectors.toList());
             List<FileObject> fileObjects = new ArrayList<>(list.size());
             long size;
-            Path realRoot = Paths.get(SystemVariable.USER_WORKSPACE.value());
+            Path realRoot = Paths.get(SystemVariable.SHARED_FILES.value());
             for (Path path : list) {
                 Path realPath = realRoot.resolve(path);
                 try {
@@ -129,7 +128,7 @@ public class FileController extends BaseController {
             List<Path> list = storageService.listWorkspace(false).collect(Collectors.toList());
             List<FileObject> fileObjects = new ArrayList<>(list.size());
             long size;
-            Path realRoot = Paths.get(SystemVariable.USER_WORKSPACE.value());
+            Path realRoot = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
             for (Path path : list) {
                 Path realPath = realRoot.resolve(path);
                 try {
@@ -147,9 +146,9 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @GetMapping("/{fileName:.+}")
+    @GetMapping("/")
     @ResponseBody
-    public ResponseEntity<?> download(@PathVariable("fileName") String fileName) {
+    public ResponseEntity<?> download(@RequestParam("fileName") String fileName) {
         ResponseEntity<?> responseEntity;
         try {
             Resource file = loadAsResource(fileName);
@@ -194,12 +193,16 @@ public class FileController extends BaseController {
     }
 
     private Resource loadAsResource(String fileName) throws IOException {
-        Path file = SessionStore.currentContext().getUploadPath().resolve(fileName);
+        if (fileName == null || fileName.isEmpty()) {
+            throw new IOException("[fileName] cannot be null or empty");
+        }
+        Path file = fileName.startsWith("public") ?
+                Paths.get(SystemVariable.SHARED_WORKSPACE.value(), fileName) :
+                Paths.get(SystemVariable.USER_WORKSPACE.value(), fileName);
         Resource resource = new UrlResource(file.toUri());
         if (resource.exists() || resource.isReadable()) {
             return resource;
-        }
-        else {
+        } else {
             throw new IOException("Could not read file: " + fileName);
         }
     }
