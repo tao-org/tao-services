@@ -18,8 +18,6 @@ package ro.cs.tao.services.auth.token;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
@@ -28,6 +26,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 /**
  * @author Oana H.
@@ -35,7 +34,7 @@ import java.util.UUID;
 @Component
 @Scope(value = "singleton")
 public class TokenManagementService {
-    private static final Logger logger = LoggerFactory.getLogger(TokenManagementService.class);
+    private static final Logger logger = Logger.getLogger(TokenManagementService.class.getName());
     private static final Cache authTokenCache = CacheManager.getInstance().getCache("authTokenCache");
     public static final int ONE_HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
 
@@ -74,7 +73,7 @@ public class TokenManagementService {
                 tokens.add(key.toString());
             }
         }
-        logger.info("User " + username + " has the token(s): " + tokens.toString());
+        logger.fine("User " + username + " has the token(s): " + tokens.toString());
 
         for (Object key : authTokenCache.getKeys()) {
             Element element = authTokenCache.get(key);
@@ -93,7 +92,7 @@ public class TokenManagementService {
                 tokens.add(key.toString());
             }
         }
-        logger.info("User " + username + " had the token(s): " + tokens.toString());
+        logger.fine("User " + username + " had the token(s): " + tokens.toString());
 
         for (String token : tokens) {
             authTokenCache.remove(token);

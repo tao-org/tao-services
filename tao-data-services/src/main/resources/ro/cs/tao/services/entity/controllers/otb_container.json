@@ -86,7 +86,7 @@
 		},
 		{
 			"path": "otbcli_ConvertSensorToGeoPoint",
-			"name": "_ConvertSensorToGeoPoint"
+			"name": "ConvertSensorToGeoPoint"
 		},
 		{
 			"path": "otbcli_DEMConvert",
@@ -319,6 +319,10 @@
 		{
 			"path": "otbcli_RigidTransformResample",
 			"name": "RigidTransformResample"
+		},
+		{
+			"path": "otbcli_SampleAugmentation",
+			"name": "SampleAugmentation"
 		},
 		{
 			"path": "otbcli_SampleExtraction",

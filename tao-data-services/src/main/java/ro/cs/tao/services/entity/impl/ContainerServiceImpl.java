@@ -17,6 +17,7 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
@@ -124,7 +125,7 @@ public class ContainerServiceImpl
             String appPath;
             for (Application app : applications) {
                 Application application = new Application();
-                appPath = app.getName() + (isWin && (winExtensions.stream()
+                appPath = app.getPath() + (isWin && (winExtensions.stream()
                                                                   .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
                 application.setName(app.getName());
                 application.setPath(appPath);
@@ -175,12 +176,25 @@ public class ContainerServiceImpl
                 out.flush();
                 otbContainer.setLogo(Base64.getEncoder().encodeToString(out.toByteArray()));
             }
+            ProcessingComponent current = null;
             try (BufferedReader reader2 = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("otb_applications.json")))) {
                 String str2 = String.join("", reader2.lines().collect(Collectors.toList()));
                 ProcessingComponent[] components = JacksonUtil.OBJECT_MAPPER.readValue(str2, ProcessingComponent[].class);
+                List<Application> containerApplications = otbContainer.getApplications();
                 for (ProcessingComponent component : components) {
+                    current = component;
                     component.setContainerId(otbContainer.getId());
                     component.setLabel(component.getId());
+                    component.setFileLocation(containerApplications.stream().filter(a -> a.getName().equals(component.getId())).findFirst().get().getPath());
+                    List<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
+                    if (parameterDescriptors != null) {
+                        parameterDescriptors.forEach(p -> {
+                            String[] valueSet = p.getValueSet();
+                            if (valueSet != null && valueSet.length > 0) {
+                                p.setDefaultValue(valueSet[0]);
+                            }
+                        });
+                    }
                     List<SourceDescriptor> sources = component.getSources();
                     if (sources != null) {
                         sources.forEach(s -> s.setId(UUID.randomUUID().toString()));
@@ -189,10 +203,31 @@ public class ContainerServiceImpl
                     if (targets != null) {
                         targets.forEach(t -> t.setId(UUID.randomUUID().toString()));
                     }
+                    String template = component.getTemplateContents();
+                    int i = 0;
+                    while (i < template.length()) {
+                        Character ch = template.charAt(i);
+                        if (ch == '$' && template.charAt(i - 1) != '\n') {
+                            template = template.substring(0, i) + "\n" + template.substring(i);
+                        }
+                        i++;
+                    }
+                    String[] tokens = template.split("\n");
+                    for (int j = 0; j < tokens.length; j++) {
+                        final int idx = j;
+                        if ((targets != null && targets.stream().anyMatch(t -> t.getName().equals(tokens[idx].substring(1)))) ||
+                            (sources != null && sources.stream().anyMatch(s -> s.getName().equals(tokens[idx].substring(1))))) {
+                            tokens[j + 1] = tokens[j].replace('-', '$');
+                            j++;
+                        }
+                    }
+                    component.setTemplateContents(String.join("\n", tokens));
                     persistenceManager.saveProcessingComponent(component);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.severe(String.format("Faulty component: %s. Error: %s",
+                                            current != null ? current.getId() : "n/a",
+                                            e.getMessage()));
             }
         } catch (Exception e) {
             logger.severe(e.getMessage());
