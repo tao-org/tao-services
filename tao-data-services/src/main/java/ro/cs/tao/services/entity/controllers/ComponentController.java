@@ -38,7 +38,7 @@ import java.util.UUID;
  * @author Cosmin Cara
  */
 @Controller
-@RequestMapping("/api/component")
+@RequestMapping("/component")
 public class ComponentController extends DataEntityController<ProcessingComponent, ComponentService> {
 
     @Autowired
