@@ -16,10 +16,13 @@
 
 package ro.cs.tao.services.commons;
 
+import java.util.Map;
+
 public class FileObject {
     private String relativePath;
     private boolean isFolder;
     private long size;
+    private Map<String, String> attributes;
 
     public FileObject(String relativePath, boolean isFolder, long size) {
         this.relativePath = relativePath;
@@ -32,4 +35,8 @@ public class FileObject {
     public boolean isFolder() { return isFolder; }
 
     public long getSize() { return size; }
+
+    public Map<String, String> getAttributes() { return attributes; }
+
+    public void setAttributes(Map<String, String> attributes) { this.attributes = attributes; }
 }
