@@ -1603,7 +1603,7 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
+    "sourceCardinality": 0,
     "targetCardinality": 1,
     "sources": [
       {
@@ -1622,7 +1622,7 @@
         "name": "out",
         "dataDescriptor": {
           "formatType": "RASTER",
-          "location": "output_otbcli_ConcatenateImages_1.tif"
+          "location": "output_otbcli_ConcatenateImages.tif"
         }
       }
     ],
@@ -1634,18 +1634,7 @@
     "multiThread": true,
     "visibility": "SYSTEM",
     "active": true,
-    "parameterDescriptors": [
-      {
-        "id": "outputpixeltype_number",
-        "type": "REGULAR",
-        "dataType": "java.lang.Number",
-        "defaultValue": "2",
-        "description": "Output pixel type",
-        "label": "outputpixeltype",
-        "notNull": true
-      }
-    ],
-    "templatecontents": "-il\n$il\n-out\n$out\n-outputpixeltype\n$outputpixeltype_number"
+    "templatecontents": "-il\n$il\n-out\n$out"
   },
   {
     "id": "ConcatenateVectorData",
@@ -1674,7 +1663,7 @@
         "name": "out",
         "dataDescriptor": {
           "formatType": "RASTER",
-          "location": "output_otbcli_ConcatenateVectorData_1.tif"
+          "location": "output_otbcli_ConcatenateVectorData.tif"
         }
       }
     ],

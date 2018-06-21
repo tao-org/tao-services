@@ -26,6 +26,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.eodata.VectorData;
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.FileObject;
 import ro.cs.tao.services.commons.ServiceError;
@@ -37,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Controller
@@ -45,6 +49,9 @@ public class FileController extends BaseController {
 
     @Autowired
     private StorageService<MultipartFile> storageService;
+
+    @Autowired
+    private PersistenceManager persistenceManager;
 
     @GetMapping("/user/uploaded")
     public ResponseEntity<?> listFiles() {
@@ -77,16 +84,34 @@ public class FileController extends BaseController {
         try {
             List<Path> list = storageService.listWorkspace(true).collect(Collectors.toList());
             List<FileObject> fileObjects = new ArrayList<>(list.size());
-            long size;
-            Path realRoot = Paths.get(SystemVariable.USER_WORKSPACE.value());
-            for (Path path : list) {
-                Path realPath = realRoot.resolve(path);
-                try {
-                    size = Files.size(realPath);
-                } catch (IOException e) {
-                    size = -1;
+            if (list.size() > 0) {
+                long size;
+                Path realRoot = Paths.get(SystemVariable.USER_WORKSPACE.value());
+                String[] strings = list.stream().map(p -> realRoot.resolve(p).toUri().toString()).toArray(String[]::new);
+                List<EOProduct> rasters = persistenceManager.getEOProducts(strings);
+                List<VectorData> vectors = persistenceManager.getVectorDataProducts(strings);
+                for (Path path : list) {
+                    Path realPath = realRoot.resolve(path);
+                    String realUri = realPath.toUri().toString();
+                    try {
+                        size = Files.size(realPath);
+                    } catch (IOException e) {
+                        size = -1;
+                    }
+                    FileObject fileObject = new FileObject(path.toString(), Files.isDirectory(realPath), size);
+                    Optional<EOProduct> product = rasters.stream()
+                                                         .filter(r -> realUri.equals(r.getLocation() + r.getEntryPoint()))
+                                                         .findFirst();
+                    if (product.isPresent()) {
+                        fileObject.setAttributes(product.get().toAttributeMap());
+                    } else {
+                        Optional<VectorData> vector = vectors.stream()
+                                                        .filter(v -> realUri.equals(v.getLocation() + v.getLocation()))
+                                                        .findFirst();
+                        vector.ifPresent(vectorData -> fileObject.setAttributes(vectorData.toAttributeMap()));
+                    }
+                    fileObjects.add(fileObject);
                 }
-                fileObjects.add(new FileObject(path.toString(), Files.isDirectory(realPath), size));
             }
             responseEntity = new ResponseEntity<>(fileObjects, HttpStatus.OK);
         } catch (IOException ex) {
