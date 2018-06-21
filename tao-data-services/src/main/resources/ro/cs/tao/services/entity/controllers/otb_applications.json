@@ -7,7 +7,7 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
+    "sourceCardinality": 0,
     "targetCardinality": 1,
     "sources": [
       {
@@ -59,7 +59,7 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
+    "sourceCardinality": 0,
     "targetCardinality": 2,
     "sources": [
       {
@@ -1278,7 +1278,7 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
+    "sourceCardinality": 0,
     "targetCardinality": 1,
     "sources": [
       {
@@ -1572,13 +1572,13 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
+    "sourceCardinality": 0,
     "targetCardinality": 1,
     "sources": [
       {
         "id": "38eb8d2b-cb80-415d-9b00-e49a329b2d5e",
         "parentId": "ConcatenateVectorData",
-        "name": "vd",
+        "name": "il",
         "dataDescriptor": {
           "formatType": "RASTER"
         }
