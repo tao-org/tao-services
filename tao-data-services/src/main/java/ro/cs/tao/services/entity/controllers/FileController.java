@@ -26,9 +26,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.VectorData;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.FileObject;
 import ro.cs.tao.services.commons.ServiceError;
@@ -90,6 +92,8 @@ public class FileController extends BaseController {
                 String[] strings = list.stream().map(p -> realRoot.resolve(p).toUri().toString()).toArray(String[]::new);
                 List<EOProduct> rasters = persistenceManager.getEOProducts(strings);
                 List<VectorData> vectors = persistenceManager.getVectorDataProducts(strings);
+                List<AuxiliaryData> auxData = persistenceManager.getAuxiliaryData(SessionStore.currentContext().getPrincipal().getName(),
+                                                                                  list.stream().map(Path::toString).toArray(String[]::new));
                 for (Path path : list) {
                     Path realPath = realRoot.resolve(path);
                     String realUri = realPath.toUri().toString();
@@ -108,7 +112,14 @@ public class FileController extends BaseController {
                         Optional<VectorData> vector = vectors.stream()
                                                         .filter(v -> realUri.equals(v.getLocation() + v.getLocation()))
                                                         .findFirst();
-                        vector.ifPresent(vectorData -> fileObject.setAttributes(vectorData.toAttributeMap()));
+                        if (vector.isPresent()) {
+                            fileObject.setAttributes(vector.get().toAttributeMap());
+                        } else {
+                            Optional<AuxiliaryData> aData = auxData.stream()
+                                                        .filter(a -> path.toString().equals(a.getLocation()))
+                                                        .findFirst();
+                            aData.ifPresent(auxiliaryData -> fileObject.setAttributes(auxiliaryData.toAttributeMap()));
+                        }
                     }
                     fileObjects.add(fileObject);
                 }
@@ -188,12 +199,13 @@ public class FileController extends BaseController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file,
+                                    @RequestParam("desc") String description) {
         ResponseEntity<?> responseEntity;
         try {
-            storageService.store(file);
+            storageService.store(file, description);
             responseEntity = new ResponseEntity<>("Upload succeeded", HttpStatus.OK);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             responseEntity = handleException(ex);
         }
         return responseEntity;
@@ -211,7 +223,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    private ResponseEntity<?> handleException(IOException ex) {
+    private ResponseEntity<?> handleException(Exception ex) {
         return  new ResponseEntity<>(new ServiceError(String.format("Failed with error: %s",
                                                                     ex.getMessage())),
                                      HttpStatus.OK);

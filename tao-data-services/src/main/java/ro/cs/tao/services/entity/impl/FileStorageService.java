@@ -16,10 +16,13 @@
 
 package ro.cs.tao.services.entity.impl;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.eodata.AuxiliaryData;
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.StorageService;
 
@@ -29,15 +32,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.stream.Stream;
 
 @Service("storageService")
 public class FileStorageService implements StorageService<MultipartFile> {
 
+    @Autowired
+    private PersistenceManager persistenceManager;
+
     public FileStorageService() { }
 
     @Override
-    public void store(MultipartFile file) throws IOException {
+    public void store(MultipartFile file, String description) throws Exception {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         if (file.isEmpty()) {
             throw new IOException("Failed to store empty file " + fileName);
@@ -46,11 +53,20 @@ public class FileStorageService implements StorageService<MultipartFile> {
             // This is a security check
             throw new IOException( "Cannot store file with relative path outside user directory " + fileName);
         }
+        Path filePath;
         try (InputStream inputStream = file.getInputStream()) {
             Path userPath = SessionStore.currentContext().getUploadPath();
             Files.createDirectories(userPath);
-            Files.copy(inputStream, userPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+            filePath = userPath.resolve(fileName);
+            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
+        AuxiliaryData data = new AuxiliaryData();
+        data.setLocation(SessionStore.currentContext().getWorkspace().relativize(filePath).toString());
+        data.setDescription(description);
+        data.setUserName(SessionStore.currentContext().getPrincipal().getName());
+        data.setCreated(LocalDateTime.now());
+        data.setModified(data.getCreated());
+        persistenceManager.saveAuxiliaryData(data);
     }
 
     @Override
@@ -59,7 +75,9 @@ public class FileStorageService implements StorageService<MultipartFile> {
             // This is a security check
             throw new IOException( "Cannot remove file with relative path outside user directory " + fileName);
         }
-        Files.delete(SessionStore.currentContext().getUploadPath().resolve(fileName));
+        Path filePath = SessionStore.currentContext().getUploadPath().resolve(fileName);
+        Files.delete(filePath);
+        persistenceManager.removeAuxiliaryData(SessionStore.currentContext().getWorkspace().relativize(filePath).toString());
     }
 
     @Override
