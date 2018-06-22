@@ -43,6 +43,7 @@ import ro.cs.tao.services.progress.ProgressReportLauncher;
 import ro.cs.tao.services.query.DataQueryServiceLauncher;
 import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.services.security.TaoLocalLoginModule;
+import ro.cs.tao.services.user.service.UserServiceLauncher;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.utils.Platform;
@@ -112,7 +113,8 @@ public class TaoServicesStartup implements ApplicationListener {
                 .sources(TaoServicesStartup.class,
                          MonitoringServiceLauncer.class, DataServicesLauncher.class,
                          DataQueryServiceLauncher.class, ProgressReportLauncher.class,
-                         OrchestratorLauncher.class, AuthenticationServiceLauncher.class)
+                         OrchestratorLauncher.class, AuthenticationServiceLauncher.class,
+                         UserServiceLauncher.class)
                 //.bannerMode(Banner.Mode.OFF)
                 .build()
                 .run(args);

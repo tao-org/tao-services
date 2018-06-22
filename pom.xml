@@ -26,6 +26,7 @@
         <module>tao-cli</module>
         <module>tao-orchestration-services</module>
         <module>auth-service</module>
+        <module>user-service</module>
     </modules>
 
     <properties>
