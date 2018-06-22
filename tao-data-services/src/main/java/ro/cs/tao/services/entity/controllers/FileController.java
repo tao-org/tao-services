@@ -41,6 +41,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -85,6 +86,7 @@ public class FileController extends BaseController {
         ResponseEntity<?> responseEntity;
         try {
             List<Path> list = storageService.listWorkspace(true).collect(Collectors.toList());
+            list.removeIf(p -> p.endsWith(".png") && list.contains(Paths.get(p.toString().replace(".png", ""))));
             List<FileObject> fileObjects = new ArrayList<>(list.size());
             if (list.size() > 0) {
                 long size;
@@ -162,6 +164,7 @@ public class FileController extends BaseController {
         ResponseEntity<?> responseEntity;
         try {
             List<Path> list = storageService.listWorkspace(false).collect(Collectors.toList());
+            list.removeIf(p -> p.endsWith(".png") && list.contains(Paths.get(p.toString().replace(".png", ""))));
             List<FileObject> fileObjects = new ArrayList<>(list.size());
             long size;
             Path realRoot = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
@@ -194,6 +197,19 @@ public class FileController extends BaseController {
                                            .body(file);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
+        }
+        return responseEntity;
+    }
+
+    @GetMapping("/preview")
+    public ResponseEntity<String> downloadPreview(@RequestParam("fileName") String fileName) {
+        ResponseEntity<String> responseEntity;
+        try {
+            Resource file = loadAsResource(fileName + ".png");
+            String result = Base64.getEncoder().encodeToString(Files.readAllBytes(file.getFile().toPath()));
+            responseEntity = new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (IOException ex) {
+            responseEntity = new ResponseEntity<>("", HttpStatus.OK);
         }
         return responseEntity;
     }
