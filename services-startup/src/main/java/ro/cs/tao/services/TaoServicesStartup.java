@@ -33,6 +33,7 @@ import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.services.admin.service.AdministrationServiceLauncher;
 import ro.cs.tao.services.auth.service.AuthenticationServiceLauncher;
 import ro.cs.tao.services.entity.DataServicesLauncher;
 import ro.cs.tao.services.entity.impl.ContainerInitializer;
@@ -41,6 +42,7 @@ import ro.cs.tao.services.monitoring.MonitoringServiceLauncer;
 import ro.cs.tao.services.orchestration.OrchestratorLauncher;
 import ro.cs.tao.services.progress.ProgressReportLauncher;
 import ro.cs.tao.services.query.DataQueryServiceLauncher;
+import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.services.security.TaoLocalLoginModule;
 import ro.cs.tao.services.user.service.UserServiceLauncher;
@@ -114,7 +116,7 @@ public class TaoServicesStartup implements ApplicationListener {
                          MonitoringServiceLauncer.class, DataServicesLauncher.class,
                          DataQueryServiceLauncher.class, ProgressReportLauncher.class,
                          OrchestratorLauncher.class, AuthenticationServiceLauncher.class,
-                         UserServiceLauncher.class)
+                         UserServiceLauncher.class, AdministrationServiceLauncher.class)
                 //.bannerMode(Banner.Mode.OFF)
                 .build()
                 .run(args);
@@ -129,6 +131,7 @@ public class TaoServicesStartup implements ApplicationListener {
             SpringSessionProvider.setPersistenceManager(this.persistenceManager);
             SessionStore.setSessionContextProvider(new SpringSessionProvider());
             TaoLocalLoginModule.setPersistenceManager(this.persistenceManager);
+            CustomAuthenticationProvider.setPersistenceManager(this.persistenceManager);
             updateLocalhost();
             backgroundWorker.submit(this::registerEmbeddedContainers);
             backgroundWorker.submit(this::registerDataSourceComponents);

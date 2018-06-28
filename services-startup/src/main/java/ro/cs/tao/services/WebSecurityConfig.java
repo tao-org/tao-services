@@ -37,6 +37,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import ro.cs.tao.services.auth.token.TokenManagementService;
+import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.TaoAuthorityGranter;
 import ro.cs.tao.services.security.token.AuthenticationFilter;
@@ -48,11 +49,6 @@ import ro.cs.tao.services.security.token.TokenAuthenticationProvider;
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implements ApplicationContextAware {
-
-    public static final String LOGIN_PATH_EXPRESSION = AuthenticationFilter.AUTH_LOGIN_URL;
-    public static final String LOGOUT_PATH_EXPRESSION = "/auth/logout";
-    public static final String API_PATH_EXPRESSION = "/api/**/*";
-    public static final String GLOBAL_PATH_EXPRESSION = "/**/*";
 
     @Autowired
     private AuthenticationEntryPoint entryPoint;
@@ -138,20 +134,22 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
           .and()
           .authorizeRequests()
-                .antMatchers(LOGIN_PATH_EXPRESSION)
+                .antMatchers(BaseController.LOGIN_ENDPOINT)
                 .authenticated()
                 .and()
                 .httpBasic()
                 .and()
                 .authenticationProvider(customAuthProvider())
+          /*.authorizeRequests()
+                .antMatchers(BaseController.ADMIN_SERVICE_PATH_EXPRESSION).hasRole("ADMIN").and()*/
           .authorizeRequests()
-                .antMatchers(API_PATH_EXPRESSION, LOGOUT_PATH_EXPRESSION)
+                .antMatchers(BaseController.API_PATH_EXPRESSION, BaseController.LOGOUT_ENDPOINT)
                 .authenticated()
                 .and()
                 .authenticationProvider(tokenAuthProvider())
                 .addFilterBefore(new AuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class)
           .authorizeRequests()
-                .antMatchers(GLOBAL_PATH_EXPRESSION)
+                .antMatchers(BaseController.GLOBAL_PATH_EXPRESSION)
 
                 // permit all after token management
                 .permitAll()

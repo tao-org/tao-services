@@ -19,8 +19,10 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.jaas.JaasAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.security.token.AuthenticationWithToken;
+import ro.cs.tao.user.Group;
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -40,10 +42,14 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     private TokenManagementService tokenService;
 
+    public static PersistenceManager persistenceManager;
+
     public CustomAuthenticationProvider(AuthenticationProvider delegate, TokenManagementService tokenMngService) {
         this.delegate = delegate;
         this.tokenService = tokenMngService;
     }
+
+    public static void setPersistenceManager(PersistenceManager manager) { persistenceManager = manager; }
 
     @Override
     public Authentication authenticate(Authentication authentication) {
@@ -53,8 +59,13 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         if (jaasAuthenticationToken.isAuthenticated()) {
             String userName = jaasAuthenticationToken.getPrincipal().toString();
             jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new UserPrincipal(userName));
-            // TODO: why user group is needed here?
-            //jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new GroupPrincipal("admin"));
+            // add user groups as roles
+            final List<Group> userGroups = persistenceManager.getUserGroups(userName);
+            if (userGroups != null) {
+                for (Group group : userGroups) {
+                    jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new GroupPrincipal(group.getName()));
+                }
+            }
 
             // generate and store a new authentication token
             AuthenticationWithToken authenticationWithToken = new AuthenticationWithToken(jaasAuthenticationToken.getPrincipal(), jaasAuthenticationToken.getCredentials(), jaasAuthenticationToken.getAuthorities().stream().collect(Collectors.toList()), jaasAuthenticationToken.getLoginContext());

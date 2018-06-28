@@ -27,6 +27,7 @@
         <module>tao-orchestration-services</module>
         <module>auth-service</module>
         <module>user-service</module>
+        <module>admin-service</module>
     </modules>
 
     <properties>

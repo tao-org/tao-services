@@ -49,7 +49,7 @@ public class UserController extends BaseController {
         }
         try {
             userService.activateUser(username);
-            return new ResponseEntity<>(true, HttpStatus.OK);
+            return new ResponseEntity<>(null, HttpStatus.OK);
 
         } catch (Exception ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);

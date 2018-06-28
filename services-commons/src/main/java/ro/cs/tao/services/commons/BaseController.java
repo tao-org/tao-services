@@ -29,6 +29,15 @@ import java.util.function.Consumer;
 @CrossOrigin(origins = {"http://localhost:8080", "http://localhost:63343"})
 public class BaseController {
 
+    public static final String LOGIN_ENDPOINT = "/auth/login";
+    public static final String LOGIN_ENDPOINT_METHOD = "POST";
+    public static final String LOGOUT_ENDPOINT = "/auth/logout";
+
+    public static final String ADMIN_SERVICE_PATH_EXPRESSION = "/admin/**/*";
+
+    public static final String API_PATH_EXPRESSION = "/api/**/*";
+    public static final String GLOBAL_PATH_EXPRESSION = "/**/*";
+
     private ExecutorService executorService;
 
     protected String currentUser() {
