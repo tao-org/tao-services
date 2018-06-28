@@ -24,6 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.util.UrlPathHelper;
+import ro.cs.tao.services.commons.BaseController;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -41,9 +42,6 @@ import java.util.logging.Logger;
  */
 public class AuthenticationFilter extends GenericFilterBean {
     private static final Logger logger = Logger.getLogger(AuthenticationFilter.class.getName());
-
-    public static final String AUTH_LOGIN_URL = "/auth/login";
-    public static final String AUTH_LOGIN_METHOD = "POST";
 
     private AuthenticationManager authenticationManager;
 
@@ -100,7 +98,7 @@ public class AuthenticationFilter extends GenericFilterBean {
     }
 
     private boolean postToAuthenticate(HttpServletRequest httpRequest, String resourcePath) {
-        return AUTH_LOGIN_URL.equalsIgnoreCase(resourcePath) &&
-               httpRequest.getMethod().equals(AUTH_LOGIN_METHOD);
+        return BaseController.LOGIN_ENDPOINT.equalsIgnoreCase(resourcePath) &&
+               httpRequest.getMethod().equals(BaseController.LOGIN_ENDPOINT_METHOD);
     }
 }
