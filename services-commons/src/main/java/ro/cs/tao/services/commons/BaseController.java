@@ -34,6 +34,19 @@ public class BaseController {
     public static final String LOGOUT_ENDPOINT = "/auth/logout";
 
     public static final String ADMIN_SERVICE_PATH_EXPRESSION = "/admin/**/*";
+    public static final String USER_SERVICE_PATH_EXPRESSION = "/user/**/*";
+    public static final String DATA_QUERY_SERVICE_PATH_EXPRESSION = "/query/*";
+    public static final String MONITORING_SERVICE_PATH_EXPRESSION = "/monitor/*";
+    public static final String COMPONENT_SERVICE_PATH_EXPRESSION = "/component/*";
+    public static final String CONFIGURATION_SERVICE_PATH_EXPRESSION = "/config";
+    public static final String CONTAINER_SERVICE_PATH_EXPRESSION = "/docker/*";
+    public static final String DATA_SOURCE_COMPONENT_SERVICE_PATH_EXPRESSION = "/datasource/*";
+    public static final String FILES_SERVICE_PATH_EXPRESSION = "/files/**/*";
+    public static final String PRODUCT_SERVICE_PATH_EXPRESSION = "/product/*";
+    public static final String QUERY_SERVICE_PATH_EXPRESSION = "/datasource/query/*";
+    public static final String TOPOLOGY_SERVICE_PATH_EXPRESSION = "/topology/*";
+    public static final String WORKFLOW_SERVICE_PATH_EXPRESSION = "/workflow/**/*";
+    public static final String ORCHESTRATOR_SERVICE_PATH_EXPRESSION = "/orchestrator/**/*";
 
     public static final String API_PATH_EXPRESSION = "/api/**/*";
     public static final String GLOBAL_PATH_EXPRESSION = "/**/*";

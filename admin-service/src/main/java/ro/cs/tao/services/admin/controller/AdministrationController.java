@@ -70,7 +70,7 @@ public class AdministrationController extends BaseController {
         return new ResponseEntity<>(userUnicityInfos, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/{status}", method = RequestMethod.GET)
+    @RequestMapping(value = "/users/{status}", method = RequestMethod.GET)
     public ResponseEntity<?> findUsersByStatus(@PathVariable("status") UserStatus activationStatus) {
         if (activationStatus == null) {
             return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
@@ -85,7 +85,7 @@ public class AdministrationController extends BaseController {
         return new ResponseEntity<>(groups, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/{username}", method = RequestMethod.GET)
+    @RequestMapping(value = "/users/{username}", method = RequestMethod.GET)
     public ResponseEntity<?> getUserInfo(@PathVariable("username") String username) {
         if (StringUtils.isNullOrEmpty(username)) {
             return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
@@ -102,7 +102,7 @@ public class AdministrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{username}", method = RequestMethod.POST)
+    @RequestMapping(value = "/users/{username}", method = RequestMethod.POST)
     public ResponseEntity<?> updateUserInfo(@RequestBody User updatedUserInfo) {
         if (updatedUserInfo == null) {
             return new ResponseEntity<>("The expected request body is empty!", HttpStatus.BAD_REQUEST);
