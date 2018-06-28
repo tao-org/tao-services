@@ -143,7 +143,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
           /*.authorizeRequests()
                 .antMatchers(BaseController.ADMIN_SERVICE_PATH_EXPRESSION).hasRole("ADMIN").and()*/
           .authorizeRequests()
-                .antMatchers(BaseController.API_PATH_EXPRESSION, BaseController.LOGOUT_ENDPOINT)
+                .antMatchers(apiEndpointsWithAuthToken())
                 .authenticated()
                 .and()
                 .authenticationProvider(tokenAuthProvider())
@@ -186,5 +186,19 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     @Bean
     public AuthenticationProvider tokenAuthProvider() {
         return tokenProvider;
+    }
+
+    private String[] apiEndpointsWithAuthToken() {
+        return new String[]{BaseController.ADMIN_SERVICE_PATH_EXPRESSION, BaseController.USER_SERVICE_PATH_EXPRESSION,
+          BaseController.DATA_QUERY_SERVICE_PATH_EXPRESSION,
+          //BaseController.MONITORING_SERVICE_PATH_EXPRESSION,
+          BaseController.COMPONENT_SERVICE_PATH_EXPRESSION,
+          //BaseController.CONFIGURATION_SERVICE_PATH_EXPRESSION,
+          BaseController.CONTAINER_SERVICE_PATH_EXPRESSION,
+          BaseController.DATA_SOURCE_COMPONENT_SERVICE_PATH_EXPRESSION,
+          BaseController.FILES_SERVICE_PATH_EXPRESSION, BaseController.PRODUCT_SERVICE_PATH_EXPRESSION,
+          BaseController.QUERY_SERVICE_PATH_EXPRESSION, BaseController.TOPOLOGY_SERVICE_PATH_EXPRESSION,
+          BaseController.WORKFLOW_SERVICE_PATH_EXPRESSION, BaseController.ORCHESTRATOR_SERVICE_PATH_EXPRESSION,
+          BaseController.LOGOUT_ENDPOINT};
     }
 }
