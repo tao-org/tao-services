@@ -44,7 +44,7 @@ public class OrchestrationController extends BaseController {
 
     @RequestMapping(value = "/start/{id}", method = RequestMethod.POST)
     public ResponseEntity<JobResponse> start(@PathVariable("id") long workflowId,
-                                   @RequestBody Map<String, String> input) {
+                                   @RequestBody Map<String, Map<String, String>> input) {
         JobResponse response = new JobResponse();
         try {
             response.setJob(orchestrationService.startWorkflow(workflowId, input));
