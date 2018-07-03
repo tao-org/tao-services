@@ -256,6 +256,7 @@ public class ContainerServiceImpl
                     if (isWin && !a.getPath().endsWith(".exe")) {
                         a.setPath(a.getPath() + ".exe");
                     }
+                    a.setParallelFlagTemplate("-q <integer>");
                 });
                 try (InputStream in = ContainerController.class.getResourceAsStream("snap_logo.png")) {
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -294,6 +295,7 @@ public class ContainerServiceImpl
                     if (isWin && !a.getPath().endsWith(".exe")) {
                         a.setPath(a.getPath() + ".exe");
                     }
+                    a.setParallelFlagTemplate("-q <integer>");
                 });
                 snapContainer = persistenceManager.updateContainer(snapContainer);
             } catch (Exception e) {
