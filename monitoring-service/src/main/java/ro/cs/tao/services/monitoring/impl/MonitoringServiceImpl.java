@@ -80,11 +80,10 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
 
     @Override
     public List<ServiceMessage> getLiveNotifications() {
-        List<ServiceMessage> messages = new ArrayList<>();
+        List<ServiceMessage> messages;
         synchronized (this.messageQueue) {
-            messages.addAll(this.messageQueue.stream()
-                                    .map(m -> new MessageConverter().to(m))
-                                    .collect(Collectors.toList()));
+            messages = this.messageQueue.stream()
+                    .map(m -> new MessageConverter().to(m)).collect(Collectors.toList());
             this.messageQueue.clear();
         }
         return messages;
