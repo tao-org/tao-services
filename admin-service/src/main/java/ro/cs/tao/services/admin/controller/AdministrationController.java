@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.services.admin.mail.MailSenderTLS;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.AdministrationService;
@@ -52,7 +53,10 @@ public class AdministrationController extends BaseController {
         try {
             final User userInfo = adminService.addNewUser(newUserInfo);
             if (userInfo != null) {
-                // TODO send email with activation link
+                //send email with activation link
+                MailSenderTLS mailSenderTLS = new MailSenderTLS();
+                String content = constructEmailContentForAccountActivation(userInfo.getFirstName() + " " + userInfo.getLastName(), "http://localhost:8080/user/activate/" + userInfo.getUsername());
+                mailSenderTLS.sendMail(userInfo.getEmail(), "TAO - User activation required", content);
 
                 return new ResponseEntity<>(userInfo, HttpStatus.OK);
             } else {
@@ -158,5 +162,72 @@ public class AdministrationController extends BaseController {
         } catch (Exception ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    private String constructEmailContentForAccountActivation(String userFullName, String activationLink){
+        String result = "";
+        result +="<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n" +
+          "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" +
+          "<head>\n" +
+          "    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
+          "\t<title>Account activation</title>\n" +
+          "<style type=\"text/css\">\n" +
+          "body{width:100% !important;}\n" +
+          "body{margin:0;padding:0;font-family: \"Helvetica Neue\", \"Helvetica\", Helvetica, Arial, sans-serif;font-size:12px;color:#333333;background-color: #FFFFFF;}\n" +
+          "img{border:0;line-height:100%;outline:none;text-decoration:none;}\n" +
+          "table td{border-collapse:collapse;}\n" +
+          "a:link, a:visited {color:#336699;}\n" +
+          "</style>\n" +
+          "</head>\n" +
+          "<body>\n" +
+          "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" height=\"100%\" width=\"100%\" id=\"bodyTable\" bgcolor=\"#38424B\">\n" +
+          "    <tr>\n" +
+          "        <td align=\"center\" valign=\"top\">\n" +
+          "            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"600\" id=\"emailContainer\">\n" +
+          "                <tr>\n" +
+          "                    <td align=\"center\" valign=\"top\">\n" +
+          "                        <table border=\"0\" cellpadding=\"20\" cellspacing=\"0\" width=\"100%\" id=\"emailHeader\">\n" +
+          "                            <tr>\n" +
+          "\t\t\t\t\t\t\t\t<td align=\"center\" valign=\"top\" style=\"border-collapse:collapse;color:#ffffff;font-size:14px;line-height:150%;text-align:center;\">\n" +
+          "TAO Platform - Account activation\n" +
+          "                                </td>\n" +
+          "                            </tr>\n" +
+          "                        </table>\n" +
+          "                    </td>\n" +
+          "                </tr>\n" +
+          "                <tr>\n" +
+          "                    <td align=\"center\" valign=\"top\">\n" +
+          "                        <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\" id=\"emailBody\" bgcolor=\"#ffffff\">\n" +
+          "                            <tr>\n" +
+          "                                <td align=\"left\" valign=\"top\" style=\"padding:10px;\">\n" +
+          "<p>\n" +
+          "To: " + userFullName + "\n" +
+          "<br><br>Hello! <br>You received this email as a consequence of your account creation. <br>For activating you account click on the following activation link: </br><strong><a href=\"" + activationLink + "\">Activate your account</a></strong>. \n" +
+          "</p>\n" +
+          "\n" +
+          "                                </td>\n" +
+          "                            </tr>\n" +
+          "                        </table>\n" +
+          "                    </td>\n" +
+          "                </tr>\n" +
+          "                <tr>\n" +
+          "                    <td align=\"center\" valign=\"top\">\n" +
+          "                        <table border=\"0\" cellpadding=\"20\" cellspacing=\"0\" width=\"100%\" id=\"emailFooter\">\n" +
+          "                            <tr>\n" +
+          "                                <td align=\"center\" valign=\"top\" style=\"border-collapse:collapse;color:#ffffff;font-size:12px;line-height:150%;text-align:center;\">\n" +
+          "<em>TAO Administration</em>\n" +
+          "                                </td>\n" +
+          "                            </tr>\n" +
+          "                        </table>\n" +
+          "                    </td>\n" +
+          "                </tr>\n" +
+          "            </table>\n" +
+          "        </td>\n" +
+          "    </tr>\n" +
+          "</table>\n" +
+          "</body>\n" +
+          "</html>";
+
+        return result;
     }
 }
