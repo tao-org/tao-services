@@ -40,10 +40,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -106,10 +103,24 @@ public class FileController extends BaseController {
                     }
                     FileObject fileObject = new FileObject(path.toString(), Files.isDirectory(realPath), size);
                     Optional<EOProduct> product = rasters.stream()
-                                                         .filter(r -> realUri.equals(r.getLocation() + r.getEntryPoint()))
+                                                         .filter(r -> realUri.equals(r.getLocation()))
                                                          .findFirst();
                     if (product.isPresent()) {
-                        fileObject.setAttributes(product.get().toAttributeMap());
+                        Map<String, String> attributeMap = product.get().toAttributeMap();
+                        attributeMap.remove("formatType");
+                        attributeMap.remove("width");
+                        attributeMap.remove("height");
+                        attributeMap.remove("pixelType");
+                        attributeMap.remove("sensorType");
+                        fileObject.setAttributes(attributeMap);
+                    } else {
+                        product = rasters.stream()
+                                .filter(r -> realUri.equals(r.getLocation() + r.getEntryPoint()))
+                                .findFirst();
+                    }
+                    if (product.isPresent() && !fileObject.isFolder()) {
+                        Map<String, String> attributeMap = product.get().toAttributeMap();
+                        fileObject.setAttributes(attributeMap);
                     } else {
                         Optional<VectorData> vector = vectors.stream()
                                                         .filter(v -> realUri.equals(v.getLocation() + v.getLocation()))
