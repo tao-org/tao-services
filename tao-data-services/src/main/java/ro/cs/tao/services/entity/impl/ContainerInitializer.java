@@ -20,6 +20,7 @@ import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -32,7 +33,6 @@ import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
 import ro.cs.tao.workflow.enums.Status;
-import ro.cs.tao.workflow.enums.Visibility;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;

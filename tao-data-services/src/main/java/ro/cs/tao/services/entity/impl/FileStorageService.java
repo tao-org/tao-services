@@ -103,6 +103,8 @@ public class FileStorageService implements StorageService<MultipartFile> {
     }
 
     private Stream<Path> list(Path path, int depth) throws IOException {
-        return Files.walk(path, depth).map(path::relativize);
+        return Files.walk(path, depth)
+                    .filter(p -> !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
+                    .map(path::relativize);
     }
 }

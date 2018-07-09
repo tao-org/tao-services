@@ -27,7 +27,7 @@ public class FileObject {
     public FileObject(String relativePath, boolean isFolder, long size) {
         this.relativePath = relativePath;
         this.isFolder = isFolder;
-        this.size = size;
+        this.size = this.isFolder ? 0 : size;
     }
 
     public String getRelativePath() { return relativePath; }

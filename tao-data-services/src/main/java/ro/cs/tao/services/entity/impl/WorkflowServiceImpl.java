@@ -21,6 +21,7 @@ import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
 import ro.cs.tao.datasource.converters.ConversionException;
+import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -33,7 +34,6 @@ import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.workflow.*;
 import ro.cs.tao.workflow.enums.Status;
-import ro.cs.tao.workflow.enums.Visibility;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
