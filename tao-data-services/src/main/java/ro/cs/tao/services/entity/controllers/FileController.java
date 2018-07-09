@@ -26,6 +26,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.VectorData;
@@ -39,6 +40,7 @@ import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.StorageService;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -177,7 +179,6 @@ public class FileController extends BaseController {
         ResponseEntity<?> responseEntity;
         try {
             List<Path> list = storageService.listWorkspace(false).collect(Collectors.toList());
-            //list.removeIf(p -> p.endsWith(".png") && list.contains(Paths.get(p.toString().replace(".png", ""))));
             List<FileObject> fileObjects = new ArrayList<>(list.size());
             long size;
             Path realRoot = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
@@ -190,6 +191,40 @@ public class FileController extends BaseController {
                 }
                 fileObjects.add(new FileObject(path.toString(), Files.isDirectory(realPath), size));
             }
+            List<EOProduct> publicProducts = persistenceManager.getPublicProducts();
+            Path root = Paths.get(ConfigurationManager.getInstance().getValue("product.location"));
+            for (EOProduct product : publicProducts) {
+                String location = product.getLocation();
+                if (location != null) {
+                    Path userPath = Paths.get(Paths.get(URI.create(location)).toString().replace(root.toString(), "")).getName(0);
+                    realRoot = root.resolve(userPath).resolve(product.getName());
+                    FileObject fileObject = new FileObject(root.relativize(realRoot).toString(), Files.isDirectory(realRoot), 0);
+                    Map<String, String> attributeMap = product.toAttributeMap();
+                    attributeMap.remove("formatType");
+                    attributeMap.remove("width");
+                    attributeMap.remove("height");
+                    attributeMap.remove("pixelType");
+                    attributeMap.remove("sensorType");
+                    fileObject.setAttributes(attributeMap);
+                    fileObjects.add(fileObject);
+                    String productFolder = root.relativize(realRoot).toString();
+                    list = storageService.listFiles(productFolder).collect(Collectors.toList());
+                    for (Path path : list) {
+                        if (!path.toString().isEmpty()) {
+                            Path realPath = realRoot.resolve(path);
+                            try {
+                                size = Files.size(realPath);
+                            } catch (IOException e) {
+                                size = -1;
+                            }
+                            FileObject fo = new FileObject(root.relativize(realPath).toString(), Files.isDirectory(realPath), size);
+                            fo.setAttributes(product.toAttributeMap());
+                            fileObjects.add(fo);
+                        }
+                    }
+                }
+            }
+
             responseEntity = new ResponseEntity<>(fileObjects, HttpStatus.OK);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -295,6 +330,10 @@ public class FileController extends BaseController {
         Path file = fileName.startsWith("public") ?
                 Paths.get(SystemVariable.SHARED_WORKSPACE.value(), fileName) :
                 Paths.get(SystemVariable.USER_WORKSPACE.value(), fileName);
+        if (!Files.exists(file)) {
+            // maybe it is a file published by another user
+            file = Paths.get(ConfigurationManager.getInstance().getValue("product.location"), fileName);
+        }
         Resource resource = new UrlResource(file.toUri());
         if (resource.exists() || resource.isReadable()) {
             return resource;

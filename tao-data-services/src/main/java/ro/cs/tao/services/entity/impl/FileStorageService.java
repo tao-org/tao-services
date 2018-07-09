@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
@@ -100,6 +101,15 @@ public class FileStorageService implements StorageService<MultipartFile> {
             Files.createDirectories(location);
         }
         return list(location, 3);
+    }
+
+    @Override
+    public Stream<Path> listFiles(String fromPath) throws IOException {
+        Path path = Paths.get(fromPath);
+        if (!path.isAbsolute()) {
+            path = Paths.get(ConfigurationManager.getInstance().getValue("product.location"), fromPath);
+        }
+        return list(path, 1);
     }
 
     private Stream<Path> list(Path path, int depth) throws IOException {
