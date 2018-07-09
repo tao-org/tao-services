@@ -22,6 +22,7 @@ import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 /**
  * @author Cosmin Cara
@@ -52,6 +53,7 @@ public class BaseController {
     public static final String GLOBAL_PATH_EXPRESSION = "/**/*";
 
     private ExecutorService executorService;
+    protected Logger logger = Logger.getLogger(getClass().getName());
 
     protected String currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
