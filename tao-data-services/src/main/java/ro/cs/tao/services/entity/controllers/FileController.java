@@ -305,12 +305,12 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @DeleteMapping("/{fileName:.+}")
-    public ResponseEntity<?> delete(@PathVariable("fileName") String fileName) {
+    @DeleteMapping("/")
+    public ResponseEntity<?> delete(@RequestParam("fileName") String fileName) {
         ResponseEntity<?> responseEntity;
         try {
             storageService.remove(fileName);
-            responseEntity = new ResponseEntity<>("Upload succeeded", HttpStatus.OK);
+            responseEntity = new ResponseEntity<>("Delete succeeded", HttpStatus.OK);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
