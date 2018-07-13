@@ -32,7 +32,6 @@ import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.VectorData;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.FileObject;
@@ -246,14 +245,14 @@ public class FileController extends BaseController {
                     eoProduct.setVisibility(visibility);
                     try {
                         persistenceManager.saveEOProduct(eoProduct);
-                    } catch (PersistenceException e) {
+                    } catch (Exception e) {
                         String message = String.format("Cannot update product %s. Reason: %s",
                                                        eoProduct.getName(), e.getMessage());
                         responseEntity = new ResponseEntity<>(message, HttpStatus.OK);
                         logger.warning(message);
                     }
                 }
-                if (responseEntity != null) {
+                if (responseEntity == null) {
                     responseEntity = new ResponseEntity<>(folder + " visibility changed", HttpStatus.OK);
                 }
             }
