@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
@@ -54,6 +55,12 @@ public class OrchestrationController extends BaseController {
         }
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @RequestMapping(value = "/start/parameters/{id}", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, List<Parameter>>> start(@PathVariable("id") long workflowId) {
+        return new ResponseEntity<>(orchestrationService.getWorkflowParameters(workflowId), HttpStatus.OK);
+    }
+
     @RequestMapping(value = "/stop/{id}", method = RequestMethod.GET)
     public ResponseEntity<?> stop(@PathVariable("id") long workflowId) {
         try {

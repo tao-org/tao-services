@@ -20,9 +20,13 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
+import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.datasource.DataSourceManager;
+import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.datasource.converters.ConversionException;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
@@ -36,10 +40,7 @@ import ro.cs.tao.workflow.*;
 import ro.cs.tao.workflow.enums.Status;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -422,6 +423,83 @@ public class WorkflowServiceImpl
             throw new PersistenceException("There is no workflow execution having the given identifier " + String.valueOf(executionJobId));
         }
         return ServiceTransformUtils.transformExecutionTasksToLightWrappers(workflowExecution.getTasks());
+    }
+
+    @Override
+    public Map<String, List<Parameter>> getWorkflowParameters(long workflowId) {
+        Map<String, List<Parameter>> parameters = new LinkedHashMap<>();
+        WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        final List<WorkflowNodeDescriptor> nodes = workflow.getOrderedNodes();
+        boolean prefixWithId = false;
+        final int size = nodes.size();
+        for (int i = 0; i < size - 1; i++) {
+            for (int j = i + 1; j < size; j++) {
+                if (nodes.get(i).getName().equals(nodes.get(j).getName())) {
+                    prefixWithId = true;
+                    break;
+                }
+            }
+        }
+        for (WorkflowNodeDescriptor node : nodes) {
+            if (node instanceof WorkflowNodeGroupDescriptor) {
+                continue;
+            }
+            ComponentType componentType = node.getComponentType();
+            TaoComponent component = findComponent(node.getComponentId(), componentType);
+            List<Parameter> componentParams = new ArrayList<>();
+            switch (componentType) {
+                case DATASOURCE:
+                    DataSourceComponent dataSourceComponent = (DataSourceComponent) component;
+                    Map<String, ro.cs.tao.datasource.param.ParameterDescriptor> params =
+                            DataSourceManager.getInstance().getSupportedParameters(dataSourceComponent.getSensorName(),
+                                                                                   dataSourceComponent.getDataSourceName());
+                    for (Map.Entry<String, ro.cs.tao.datasource.param.ParameterDescriptor> entry : params.entrySet()) {
+                        ro.cs.tao.datasource.param.ParameterDescriptor descriptor = entry.getValue();
+                        componentParams.add(new Parameter(entry.getKey(),
+                                                          descriptor.getType().getName(),
+                                                          String.valueOf(descriptor.getDefaultValue())));
+                    }
+                    Query query = persistenceManager.getQueries(SessionStore.currentContext().getPrincipal().getName(),
+                                                                dataSourceComponent.getSensorName(),
+                                                                dataSourceComponent.getDataSourceName(),
+                                                                node.getId());
+                    if (query != null) {
+                        for (Map.Entry<String, String> e : query.getValues().entrySet()) {
+                            componentParams.stream()
+                                    .filter(cp -> cp.getName().equals(e.getKey()))
+                                    .forEach(cp -> cp.setValue(e.getValue()));
+                        }
+                        componentParams.add(new Parameter("pageSize", Integer.class.getName(), String.valueOf(query.getPageSize())));
+                        componentParams.add(new Parameter("pageNumber", Integer.class.getName(), String.valueOf(query.getPageNumber())));
+                        componentParams.add(new Parameter("limit", Integer.class.getName(), String.valueOf(query.getLimit())));
+                    } else {
+                        componentParams.add(new Parameter("pageSize", Integer.class.getName(), "25"));
+                        componentParams.add(new Parameter("pageNumber", Integer.class.getName(), "1"));
+                        componentParams.add(new Parameter("limit", Integer.class.getName(), "25"));
+                    }
+                    break;
+                case PROCESSING:
+                    ProcessingComponent processingComponent = (ProcessingComponent) component;
+                    List<ParameterDescriptor> descriptors = processingComponent.getParameterDescriptors();
+                    for (ParameterDescriptor descriptor : descriptors) {
+                        componentParams.add(new Parameter(descriptor.getId(),
+                                                          descriptor.getDataType().getName(),
+                                                          descriptor.getDefaultValue()));
+                    }
+                    break;
+                case GROUP:
+                    continue;
+            }
+            List<ParameterValue> customValues = node.getCustomValues();
+            if (customValues != null) {
+                for (ParameterValue value : customValues) {
+                    componentParams.stream().filter(cp -> cp.getName().equals(value.getParameterName()))
+                            .forEach(cp -> cp.setValue(value.getParameterValue()));
+                }
+            }
+            parameters.put((prefixWithId ? node.getId() + ":" : "") + node.getName(), componentParams);
+        }
+        return parameters;
     }
 
     private TaoComponent findComponent(String id, ComponentType type) {

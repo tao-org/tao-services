@@ -22,6 +22,7 @@ import org.springframework.security.concurrent.DelegatingSecurityContextExecutor
 import org.springframework.security.concurrent.DelegatingSecurityContextRunnable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
@@ -32,6 +33,7 @@ import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.interfaces.OrchestratorService;
+import ro.cs.tao.services.interfaces.WorkflowService;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
@@ -47,11 +49,19 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Autowired
     private ExecutorService executor;
 
+    @Autowired
+    private WorkflowService workflowService;
+
     @Override
     public long startWorkflow(long workflowId, Map<String, Map<String, String>> inputs) throws ExecutionException {
         return Orchestrator.getInstance().startWorkflow(workflowId, inputs,
                                                         new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
                                                                                                      SecurityContextHolder.getContext()));
+    }
+
+    @Override
+    public Map<String, List<Parameter>> getWorkflowParameters(long workflowId) {
+        return workflowService.getWorkflowParameters(workflowId);
     }
 
     @Override
