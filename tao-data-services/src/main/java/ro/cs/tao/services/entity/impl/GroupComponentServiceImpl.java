@@ -41,7 +41,7 @@ public class GroupComponentServiceImpl
     private Logger logger = Logger.getLogger(ComponentService.class.getName());
 
     @Override
-    public GroupComponent findById(String id) throws PersistenceException {
+    public GroupComponent findById(String id) {
         GroupComponent component = null;
         component = persistenceManager.getGroupComponentById(id);
         return component;
@@ -79,7 +79,7 @@ public class GroupComponentServiceImpl
     }
 
     @Override
-    public void delete(String id) throws PersistenceException {
+    public void delete(String id) {
         if (id != null) {
             try {
                 persistenceManager.deleteGroupComponent(id);
