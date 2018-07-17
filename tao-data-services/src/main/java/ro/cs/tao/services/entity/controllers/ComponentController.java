@@ -85,7 +85,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
                 responseEntity = new ResponseEntity<>(new ArrayList<>(vex.getAdditionalInfo().keySet()),
                                                       HttpStatus.OK);
             } catch (PersistenceException e) {
-                responseEntity = new ResponseEntity<>(e.getMessage(), HttpStatus.OK);
+                responseEntity = handleException(e);
             }
         } else {
             responseEntity = new ResponseEntity<>("No body", HttpStatus.BAD_REQUEST);

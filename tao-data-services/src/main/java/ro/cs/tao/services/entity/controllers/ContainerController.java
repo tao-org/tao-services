@@ -19,10 +19,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topics;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.TopologyManager;
 
@@ -33,13 +40,13 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/docker")
-public class ContainerController extends DataEntityController<Container, ContainerService> {
+public class ContainerController extends DataEntityController<Container, ContainerService<MultipartFile>> {
 
     @Autowired
     private PersistenceManager persistenceManager;
 
     @Autowired
-    private ContainerService containerService;
+    private ContainerService<MultipartFile> containerService;
 
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET)
@@ -49,5 +56,32 @@ public class ContainerController extends DataEntityController<Container, Contain
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         return new ResponseEntity<>(objects, HttpStatus.OK);
+    }
+
+    @PostMapping("/upload")
+    public ResponseEntity<?> upload(@RequestParam("file") MultipartFile dockerFile,
+                                    @RequestParam("name") String shortName,
+                                    @RequestParam("desc") String description) {
+        asyncExecute(() -> {
+            try {
+                containerService.registerContainer(dockerFile, shortName, description);
+            } catch (Exception ex) {
+                handleException(ex);
+            }
+        }, this::registrationCallback);
+        return new ResponseEntity<>("Docker image registration started", HttpStatus.OK);
+    }
+
+    private void registrationCallback(Exception ex) {
+        final Message message = new Message();
+        final String topic;
+        if (ex != null) {
+            message.setData("Docker image registration failed. Reason: " + ex.getMessage());
+            topic = Topics.ERROR;
+        } else {
+            message.setData("Docker image registration completed");
+            topic = Topics.INFORMATION;
+        }
+        Messaging.send(SessionStore.currentContext().getPrincipal(), topic, message);
     }
 }

@@ -35,8 +35,6 @@ import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.Status;
 
-import java.util.logging.Logger;
-
 /**
  * @author Cosmin Cara
  */
@@ -87,8 +85,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                                           new ServiceError("No such workflow"),
                                                   HttpStatus.OK);
         } catch (PersistenceException e) {
-            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
-            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+            responseEntity = handleException(e);
         }
         return responseEntity;
     }
@@ -120,8 +117,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             responseEntity = new ResponseEntity<>(workflowService.addNode(workflowId, node),
                                                   HttpStatus.OK);
         } catch (PersistenceException e) {
-            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
-            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+            responseEntity = handleException(e);
         }
         return responseEntity;
     }
@@ -134,8 +130,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             responseEntity = new ResponseEntity<>(workflowService.updateNode(workflowId, node),
                                                   HttpStatus.OK);
         } catch (PersistenceException e) {
-            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
-            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+            responseEntity = handleException(e);
         }
         return responseEntity;
     }
@@ -148,8 +143,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             workflowService.removeNode(workflowId, node);
             responseEntity = new ResponseEntity<>("OK", HttpStatus.OK);
         } catch (PersistenceException e) {
-            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
-            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+            responseEntity = handleException(e);
         }
         return responseEntity;
     }
@@ -168,8 +162,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                 responseEntity = new ResponseEntity<>(new ServiceError("Could not save link"), HttpStatus.OK);
             }
         } catch (Exception e) {
-            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
-            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+            responseEntity = handleException(e);
         }
         return responseEntity;
     }
@@ -181,8 +174,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         try {
             responseEntity = new ResponseEntity<>(workflowService.removeLink(nodeId, link), HttpStatus.OK);
         } catch (PersistenceException e) {
-            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
-            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+            responseEntity = handleException(e);
         }
         return responseEntity;
     }
@@ -192,10 +184,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         ResponseEntity<?> responseEntity;
         try {
             responseEntity = new ResponseEntity<>(workflowService.getWorkflowExecutions(workflowId),
-              HttpStatus.OK);
+                                                  HttpStatus.OK);
         } catch (PersistenceException e) {
-            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
-            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+            responseEntity = handleException(e);
         }
         return responseEntity;
     }
@@ -205,10 +196,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         ResponseEntity<?> responseEntity;
         try {
             responseEntity = new ResponseEntity<>(workflowService.getWorkflowExecutionTasks(executionId),
-              HttpStatus.OK);
+                                                  HttpStatus.OK);
         } catch (PersistenceException e) {
-            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
-            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+            responseEntity = handleException(e);
         }
         return responseEntity;
     }

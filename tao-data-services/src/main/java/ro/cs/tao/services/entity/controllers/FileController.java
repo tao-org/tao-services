@@ -35,7 +35,6 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.FileObject;
-import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.StorageService;
 
 import java.io.IOException;
@@ -314,12 +313,6 @@ public class FileController extends BaseController {
             responseEntity = handleException(ex);
         }
         return responseEntity;
-    }
-
-    private ResponseEntity<?> handleException(Exception ex) {
-        return  new ResponseEntity<>(new ServiceError(String.format("Failed with error: %s",
-                                                                    ex.getMessage())),
-                                     HttpStatus.OK);
     }
 
     private Resource loadAsResource(String fileName) throws IOException {

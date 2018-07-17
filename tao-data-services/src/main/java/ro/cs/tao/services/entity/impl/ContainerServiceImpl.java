@@ -17,10 +17,13 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -28,12 +31,14 @@ import ro.cs.tao.persistence.data.jsonutil.JacksonUtil;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.entity.controllers.ContainerController;
 import ro.cs.tao.services.interfaces.ContainerService;
+import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.utils.Platform;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -44,7 +49,7 @@ import java.util.stream.Collectors;
 @Service("containerService")
 public class ContainerServiceImpl
     extends EntityService<Container>
-        implements ContainerService {
+        implements ContainerService<MultipartFile> {
 
     private static final Set<String> winExtensions = new HashSet<String>() {{ add(".bat"); add(".exe"); }};
 
@@ -108,6 +113,29 @@ public class ContainerServiceImpl
             persistenceManager.deleteContainer(id);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
+        }
+    }
+
+    @Override
+    public void registerContainer(MultipartFile dockerFile, String shortName, String description) throws IOException {
+        String fileName = StringUtils.cleanPath(dockerFile.getOriginalFilename());
+        if (dockerFile.isEmpty()) {
+            throw new IOException("Failed to store empty docker file " + fileName);
+        }
+        if (fileName.contains("..")) {
+            // This is a security check
+            throw new IOException( "Cannot store docker file with relative path outside image directory " + fileName);
+        }
+        Path filePath;
+        try (InputStream inputStream = dockerFile.getInputStream()) {
+            Path imagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), shortName.replace(" ", "-"));
+            Files.createDirectories(imagesPath);
+            filePath = imagesPath.resolve("Dockerfile");
+            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+        }
+        TopologyManager topologyManager = TopologyManager.getInstance();
+        if (topologyManager.getDockerImage(shortName) == null) {
+            topologyManager.registerImage(filePath, shortName, description);
         }
     }
 
