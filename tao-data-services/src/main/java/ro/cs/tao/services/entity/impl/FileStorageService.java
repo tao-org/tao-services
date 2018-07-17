@@ -40,6 +40,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 @Service("storageService")
@@ -92,9 +93,13 @@ public class FileStorageService implements StorageService<MultipartFile> {
             throw new IOException( "Operation not allowed");
         }
         if (fileName.startsWith("files")) {
-            Path filePath = uploadPath.resolve(fileName);
+            Path filePath = uploadPath.getParent().resolve(fileName);
             Files.delete(filePath);
-            persistenceManager.removeAuxiliaryData(SessionStore.currentContext().getWorkspace().relativize(filePath).toString());
+            try {
+                persistenceManager.removeAuxiliaryData(SessionStore.currentContext().getWorkspace().relativize(filePath).toString());
+            } catch (Exception e) {
+                Logger.getLogger(FileStorageService.class.getName()).warning(String.format("File %s was not found in database", fileName));
+            }
         } else { // it has to be a product folder
             Path filePath = SessionStore.currentContext().getWorkspace().resolve(fileName);
             List<EOProduct> products = persistenceManager.getEOProducts(filePath.toUri().toString());
@@ -103,15 +108,17 @@ public class FileStorageService implements StorageService<MultipartFile> {
                 if (vectorProducts.size() > 1) {
                     throw new IOException("Cannot remove vector products");
                 }
-                VectorData product = vectorProducts.get(0);
-                if (Visibility.PUBLIC.equals(product.getVisibility())) {
-                    throw new IOException("Cannot remove a public product. Please reduce its visibility first.");
-                }
-                FileUtils.deleteTree(filePath.toFile());
-                try {
-                    persistenceManager.remove(product);
-                } catch (PersistenceException e) {
-                    throw new IOException(e);
+                if (vectorProducts.size() == 1) {
+                    VectorData product = vectorProducts.get(0);
+                    if (Visibility.PUBLIC.equals(product.getVisibility())) {
+                        throw new IOException("Cannot remove a public product. Please reduce its visibility first.");
+                    }
+                    FileUtils.deleteTree(filePath.toFile());
+                    try {
+                        persistenceManager.remove(product);
+                    } catch (PersistenceException e) {
+                        throw new IOException(e);
+                    }
                 }
             } else {
                 if (products.size() > 1) {
