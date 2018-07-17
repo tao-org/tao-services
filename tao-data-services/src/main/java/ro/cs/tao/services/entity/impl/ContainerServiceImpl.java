@@ -140,13 +140,13 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public Container initializeContainer(String name, String path, List<Application> applications) {
+    public Container initializeContainer(String id, String name, String path, List<Application> applications) {
         List<Container> containers = persistenceManager.getContainers();
         boolean isWin = Platform.getCurrentPlatform().getId().equals(Platform.ID.win);
         Container container = null;
         if (containers == null || containers.stream().noneMatch(c -> c.getName().equals(name))) {
             container = new Container();
-            container.setId(name);
+            container.setId(id);
             container.setName(name);
             container.setTag(name);
             container.setApplicationPath(path);
@@ -166,6 +166,7 @@ public class ContainerServiceImpl
             }
         } else {
             container = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
+            container.setId(id);
             container.setName(name);
             container.setTag(name);
             String appPath;
@@ -187,13 +188,13 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public Container initOTB(String name, String path) {
+    public Container initOTB(String id, String name, String path) {
         Container otbContainer = null;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("otb_container.json")))) {
             String str = String.join("", reader.lines().collect(Collectors.toList()));
             Container tmp = JacksonUtil.fromString(str, Container.class);
             List<Application> applications = tmp.getApplications();
-            otbContainer = initializeContainer(name, path, applications);
+            otbContainer = initializeContainer(id, name, path, applications);
             try (InputStream in = ContainerController.class.getResourceAsStream("otb_logo.png")) {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 int read;
@@ -264,7 +265,7 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public Container initSNAP(String name, String path) {
+    public Container initSNAP(String id, String name, String path) {
         List<Container> containers = persistenceManager.getContainers();
         boolean isWin = Platform.getCurrentPlatform().getId().equals(Platform.ID.win);
         Container snapContainer;
@@ -273,7 +274,7 @@ public class ContainerServiceImpl
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("snap_container.json")))) {
                 String str = String.join("", reader.lines().collect(Collectors.toList()));
                 snapContainer = JacksonUtil.fromString(str, Container.class);
-                snapContainer.setId(name);
+                snapContainer.setId(id);
                 snapContainer.setName(name);
                 snapContainer.setTag(name);
                 snapContainer.setApplicationPath(path);
@@ -313,6 +314,7 @@ public class ContainerServiceImpl
         } else {
             snapContainer = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
             try {
+                snapContainer.setId(id);
                 snapContainer.setName(name);
                 snapContainer.setTag(name);
                 snapContainer.setApplicationPath(path);
