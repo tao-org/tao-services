@@ -222,7 +222,7 @@ public class TaoServicesStartup implements ApplicationListener {
                 }
                 TopologyManager topologyManager = TopologyManager.getInstance();
                 if (topologyManager.getDockerImage(snapContainer) == null) {
-                    topologyManager.registerImage(dockerfilePath, snapContainer, "SNAP");
+                    topologyManager.registerImage(dockerfilePath.toRealPath(), snapContainer, "SNAP");
                     snapPath = "/opt/snap/bin";
                 }
                 dockerfilePath = dockerImagesPath.resolve(otbContainer).resolve("Dockerfile");
@@ -239,7 +239,7 @@ public class TaoServicesStartup implements ApplicationListener {
                     }
                 }
                 if (topologyManager.getDockerImage(otbContainer) == null) {
-                    topologyManager.registerImage(dockerfilePath, otbContainer, "OTB");
+                    topologyManager.registerImage(dockerfilePath.toRealPath(), otbContainer, "OTB");
                     otbPath = "/opt/OTB-6.4.0-Linux64/bin";
                 }
             } catch (IOException e) {
