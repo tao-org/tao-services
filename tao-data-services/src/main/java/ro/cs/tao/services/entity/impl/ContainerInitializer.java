@@ -61,26 +61,26 @@ public class ContainerInitializer {
         ContainerInitializer.workflowService = workflowService;
     }
 
-    public static void initSnap(String snapContainerName, String snapPath) {
+    public static void initSnap(String snapContainerId, String snapContainerName, String snapPath) {
         Container snapContainer = null;
         try {
-            snapContainer = persistenceManager.getContainerById(snapContainerName);
+            snapContainer = persistenceManager.getContainerById(snapContainerId);
         } catch (PersistenceException ignored) {
         }
         if (snapContainer == null) {
-            snapContainer = containerService.initSNAP(snapContainerName, snapPath);
+            snapContainer = containerService.initSNAP(snapContainerId, snapContainerName, snapPath);
             Logger.getLogger(ContainerInitializer.class.getName()).info("Registered SNAP container");
         }
     }
 
-    public static void initOtb(String otbContainerName, String otbPath) {
+    public static void initOtb(String otbContainerId, String otbContainerName, String otbPath) {
         Container otbContainer = null;
         try {
-            otbContainer = persistenceManager.getContainerById(otbContainerName);
+            otbContainer = persistenceManager.getContainerById(otbContainerId);
         } catch (PersistenceException ignored) {
         }
         if (otbContainer == null) {
-            otbContainer = containerService.initOTB(otbContainerName, otbPath);
+            otbContainer = containerService.initOTB(otbContainerId, otbContainerName, otbPath);
             Logger.getLogger(ContainerInitializer.class.getName()).info("Registered OTB container");
         }
     }
