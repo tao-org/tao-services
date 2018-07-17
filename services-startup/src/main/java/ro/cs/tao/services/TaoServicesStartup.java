@@ -222,7 +222,9 @@ public class TaoServicesStartup implements ApplicationListener {
                 }
                 TopologyManager topologyManager = TopologyManager.getInstance();
                 if (topologyManager.getDockerImage(snapContainer) == null) {
+                    Logger.getLogger(TaoServicesStartup.class.getName()).info("Begin registering docker image for SNAP");
                     topologyManager.registerImage(dockerfilePath.toRealPath(), snapContainer, "SNAP");
+                    Logger.getLogger(TaoServicesStartup.class.getName()).info("Docker image for SNAP registration completed");
                     snapPath = "/opt/snap/bin";
                 }
                 dockerfilePath = dockerImagesPath.resolve(otbContainer).resolve("Dockerfile");
@@ -239,7 +241,9 @@ public class TaoServicesStartup implements ApplicationListener {
                     }
                 }
                 if (topologyManager.getDockerImage(otbContainer) == null) {
+                    Logger.getLogger(TaoServicesStartup.class.getName()).info("Begin registering docker image for SNAP");
                     topologyManager.registerImage(dockerfilePath.toRealPath(), otbContainer, "OTB");
+                    Logger.getLogger(TaoServicesStartup.class.getName()).info("Docker image for OTB registration completed");
                     otbPath = "/opt/OTB-6.4.0-Linux64/bin";
                 }
             } catch (IOException e) {
