@@ -186,16 +186,20 @@ public class TaoServicesStartup implements ApplicationListener {
     }
 
     private void registerEmbeddedContainers() {
-        List<String> arguments = new ArrayList<>();
-        arguments.add("docker");
-        boolean canUseDocker = false;
-        try {
-            Executor executor = ProcessExecutor.create(ExecutorType.PROCESS,
-                                                       InetAddress.getLocalHost().getHostName(),
-                                                       arguments);
-            executor.setOutputConsumer(new DebugOutputConsumer());
-            canUseDocker = executor.execute(false) == 0;
-        } catch (Exception ignored) { }
+        boolean localMode = Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.localmode", "true"));
+        boolean canUseDocker = !localMode;
+        if (!localMode) {
+            List<String> arguments = new ArrayList<>();
+            arguments.add("docker");
+            try {
+                Executor executor = ProcessExecutor.create(ExecutorType.PROCESS,
+                                                           InetAddress.getLocalHost().getHostName(),
+                                                           arguments);
+                executor.setOutputConsumer(new DebugOutputConsumer());
+                canUseDocker = executor.execute(false) == 0;
+            } catch (Exception ignored) {
+            }
+        }
         String snapContainer = ConfigurationManager.getInstance().getValue("embedded.snap.container.name");
         String otbContainer = ConfigurationManager.getInstance().getValue("embedded.otb.container.name");
         String snapPath = null, otbPath = null;
