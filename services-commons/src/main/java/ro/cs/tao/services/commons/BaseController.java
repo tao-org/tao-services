@@ -81,10 +81,19 @@ public class BaseController {
         });
     }
 
-    protected ResponseEntity<?> handleException(Exception ex) {
+    protected <T> ResponseEntity<ServiceResponse<T>> prepareResult(T result) {
+        return new ResponseEntity<>(new ServiceResponse<>(result), HttpStatus.OK);
+    }
+
+    protected ResponseEntity<ServiceResponse> prepareResult(String message, ResponseStatus status) {
+        return new ResponseEntity<>(new ServiceResponse<>(message, status), HttpStatus.OK);
+    }
+
+    protected ResponseEntity<ServiceResponse<?>> handleException(Exception ex) {
         Logger.getLogger(getClass().getName()).severe(ex.getMessage());
-        return new ResponseEntity<>(new ServiceError(String.format("Failed with error: %s",
-                                                                   ex.getMessage())),
+        return new ResponseEntity<>(new ServiceResponse<>(String.format("Failed with error: %s",
+                                                                        ex.getMessage()),
+                                                          ResponseStatus.FAILED),
                                     HttpStatus.OK);
     }
 }

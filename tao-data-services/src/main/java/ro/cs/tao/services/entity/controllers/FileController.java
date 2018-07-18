@@ -20,7 +20,6 @@ import com.google.common.net.HttpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +34,7 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.FileObject;
+import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.interfaces.StorageService;
 
 import java.io.IOException;
@@ -72,7 +72,7 @@ public class FileController extends BaseController {
                 }
                 fileObjects.add(new FileObject(path.toString(), Files.isDirectory(realPath), size));
             }
-            responseEntity = new ResponseEntity<>(fileObjects, HttpStatus.OK);
+            responseEntity = prepareResult(fileObjects);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -139,7 +139,7 @@ public class FileController extends BaseController {
                     fileObjects.add(fileObject);
                 }
             }
-            responseEntity = new ResponseEntity<>(fileObjects, HttpStatus.OK);
+            responseEntity = prepareResult(fileObjects);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -164,7 +164,7 @@ public class FileController extends BaseController {
                 }
                 fileObjects.add(new FileObject(path.toString(), Files.isDirectory(realPath), size));
             }
-            responseEntity = new ResponseEntity<>(fileObjects, HttpStatus.OK);
+            responseEntity = prepareResult(fileObjects);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -223,7 +223,7 @@ public class FileController extends BaseController {
                 }
             }
 
-            responseEntity = new ResponseEntity<>(fileObjects, HttpStatus.OK);
+            responseEntity = prepareResult(fileObjects);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -247,12 +247,12 @@ public class FileController extends BaseController {
                     } catch (Exception e) {
                         String message = String.format("Cannot update product %s. Reason: %s",
                                                        eoProduct.getName(), e.getMessage());
-                        responseEntity = new ResponseEntity<>(message, HttpStatus.OK);
+                        responseEntity = prepareResult(message, ResponseStatus.FAILED);
                         logger.warning(message);
                     }
                 }
                 if (responseEntity == null) {
-                    responseEntity = new ResponseEntity<>(folder + " visibility changed", HttpStatus.OK);
+                    responseEntity = prepareResult(folder + " visibility changed", ResponseStatus.SUCCEEDED);
                 }
             }
         } catch (Exception ex) {
@@ -278,14 +278,14 @@ public class FileController extends BaseController {
     }
 
     @GetMapping("/preview")
-    public ResponseEntity<String> downloadPreview(@RequestParam("fileName") String fileName) {
-        ResponseEntity<String> responseEntity;
+    public ResponseEntity<?> downloadPreview(@RequestParam("fileName") String fileName) {
+        ResponseEntity<?> responseEntity;
         try {
             Resource file = loadAsResource(fileName + ".png");
             String result = Base64.getEncoder().encodeToString(Files.readAllBytes(file.getFile().toPath()));
-            responseEntity = new ResponseEntity<>(result, HttpStatus.OK);
+            responseEntity = prepareResult(result);
         } catch (IOException ex) {
-            responseEntity = new ResponseEntity<>("", HttpStatus.OK);
+            responseEntity = handleException(ex);
         }
         return responseEntity;
     }
@@ -296,7 +296,7 @@ public class FileController extends BaseController {
         ResponseEntity<?> responseEntity;
         try {
             storageService.store(file, description);
-            responseEntity = new ResponseEntity<>("Upload succeeded", HttpStatus.OK);
+            responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
         }
@@ -308,7 +308,7 @@ public class FileController extends BaseController {
         ResponseEntity<?> responseEntity;
         try {
             storageService.remove(fileName);
-            responseEntity = new ResponseEntity<>("Delete succeeded", HttpStatus.OK);
+            responseEntity = prepareResult("Delete succeeded", ResponseStatus.SUCCEEDED);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
