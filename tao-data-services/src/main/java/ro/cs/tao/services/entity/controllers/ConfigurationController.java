@@ -42,7 +42,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
             List<Enum> values = new ArrayList<>();
             Enum[] enumConstants = anEnum.getEnumConstants();
             Collections.addAll(values, enumConstants);
-            enumValues.put(anEnum.getSimpleName(), values);
+            enumValues.put(anEnum.getName(), values);
         }
 
         return prepareResult(enumValues);
