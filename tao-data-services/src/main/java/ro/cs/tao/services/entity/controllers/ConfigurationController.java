@@ -15,10 +15,16 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import org.reflections.Reflections;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ConfigurationService;
 import ro.cs.tao.services.model.KeyValuePair;
+
+import java.util.*;
 
 /**
  * @author Cosmin Cara
@@ -26,4 +32,19 @@ import ro.cs.tao.services.model.KeyValuePair;
 @Controller
 @RequestMapping("/config")
 public class ConfigurationController extends DataEntityController<KeyValuePair, ConfigurationService> {
+
+    @RequestMapping(value = "/enums", method = RequestMethod.GET)
+    public ResponseEntity<ServiceResponse<Map<String, List<Enum>>>> getAvailableEnumValues() {
+        Map<String, List<Enum>> enumValues = new HashMap<>();
+        Reflections reflections = new Reflections("ro.cs.tao");
+        Set<Class<? extends Enum>> enums = reflections.getSubTypesOf(Enum.class);
+        for (Class<? extends Enum> anEnum : enums) {
+            List<Enum> values = new ArrayList<>();
+            Enum[] enumConstants = anEnum.getEnumConstants();
+            Collections.addAll(values, enumConstants);
+            enumValues.put(anEnum.getSimpleName(), values);
+        }
+
+        return prepareResult(enumValues);
+    }
 }
