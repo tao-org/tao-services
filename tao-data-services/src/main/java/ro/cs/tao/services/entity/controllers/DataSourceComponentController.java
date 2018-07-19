@@ -25,17 +25,4 @@ import ro.cs.tao.services.interfaces.DataSourceComponentService;
 @RequestMapping("/datasource")
 public class DataSourceComponentController extends DataEntityController<DataSourceComponent, DataSourceComponentService>{
 
-    /*@Autowired
-    private DataSourceComponentService dataSourceComponentService;
-
-    @RequestMapping(value = "/", method = RequestMethod.GET)
-    public ResponseEntity<List<DataSourceComponent>> getRegisteredSources() {
-        List<DataSourceComponent> instances = dataSourceComponentService.list();
-        if (instances == null || instances.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(instances, HttpStatus.OK);
-    }
-
-    */
 }
