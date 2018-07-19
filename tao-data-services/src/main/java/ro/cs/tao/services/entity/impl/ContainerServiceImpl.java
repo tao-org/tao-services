@@ -23,6 +23,7 @@ import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
+import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
@@ -251,6 +252,7 @@ public class ContainerServiceImpl
                         }
                     }
                     component.setTemplateContents(String.join("\n", tokens));
+                    component.setComponentType(ProcessingComponentType.EXECUTABLE);
                     persistenceManager.saveProcessingComponent(component);
                 }
             } catch (Exception e) {
@@ -306,6 +308,7 @@ public class ContainerServiceImpl
                 ProcessingComponent[] components = JacksonUtil.OBJECT_MAPPER.readValue(str, ProcessingComponent[].class);
                 for (ProcessingComponent component : components) {
                     component.setContainerId(snapContainer.getId());
+                    component.setComponentType(ProcessingComponentType.EXECUTABLE);
                     persistenceManager.saveProcessingComponent(component);
                 }
             } catch (Exception e) {
