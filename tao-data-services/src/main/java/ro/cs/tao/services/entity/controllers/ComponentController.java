@@ -18,10 +18,7 @@ package ro.cs.tao.services.entity.controllers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
@@ -66,8 +63,9 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         return super.save(entity);
     }
 
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     @Override
-    public ResponseEntity<?> update(String id, ProcessingComponent entity) {
+    public ResponseEntity<?> update(@PathVariable("id") String id, @RequestBody ProcessingComponent entity) {
         if (isCurrentUserAdmin()) {
             return super.update(id, entity);
         } else {
