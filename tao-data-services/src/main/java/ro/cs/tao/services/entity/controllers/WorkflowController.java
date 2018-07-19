@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.eodata.enums.Visibility;
-import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.entity.impl.ContainerInitializer;
@@ -51,27 +50,21 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     @Autowired
     private GroupComponentService groupComponentService;
 
-    @Autowired
-    private WorkflowService workflowService;
-
-    @Autowired
-    private PersistenceManager persistenceManager;
-
     @RequestMapping(value = "/status/{status}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> getUserWorkflowsByStatus(@PathVariable("status") Status status) {
-        return new ResponseEntity<>(workflowService.getUserWorkflowsByStatus(currentUser(), status),
+        return new ResponseEntity<>(service.getUserWorkflowsByStatus(currentUser(), status),
                                     HttpStatus.OK);
     }
 
     @RequestMapping(value = "/visibility/{visibility}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> getUserWorkflowsByVisibility(@PathVariable("visibility")Visibility visibility) {
-        return new ResponseEntity<>(workflowService.getUserPublishedWorkflowsByVisibility(currentUser(), visibility),
+        return new ResponseEntity<>(service.getUserPublishedWorkflowsByVisibility(currentUser(), visibility),
                                     HttpStatus.OK);
     }
 
     @RequestMapping(value = "/public", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> getOtherPublicWorkflows() {
-        return new ResponseEntity<>(workflowService.getOtherPublicWorkflows(currentUser()),
+        return new ResponseEntity<>(service.getOtherPublicWorkflows(currentUser()),
                                     HttpStatus.OK);
     }
 
@@ -81,7 +74,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         WorkflowDescriptor source = persistenceManager.getWorkflowDescriptor(workflowId);
         try {
             responseEntity = new ResponseEntity<>(source != null ?
-                                                          workflowService.clone(source) :
+                                                          service.clone(source) :
                                                           new ServiceError("No such workflow"),
                                                   HttpStatus.OK);
         } catch (PersistenceException e) {
@@ -96,7 +89,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                         @RequestParam("snapContainer") String snapContainerName,
                                         @RequestParam("snapPath") String snapPath) throws PersistenceException {
         ContainerInitializer.setComponentService(componentService);
-        ContainerInitializer.setWorkflowService(workflowService);
+        ContainerInitializer.setWorkflowService(service);
         DataSourceComponent dataSourceComponent = persistenceManager.getDataSourceInstance("Sentinel2-Amazon Web Services");
         WorkflowDescriptor descriptor1 = ContainerInitializer.initWorkflow1();
         WorkflowDescriptor descriptor2 = ContainerInitializer.initWorkflow2();
@@ -114,7 +107,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                     @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<?> responseEntity;
         try {
-            responseEntity = new ResponseEntity<>(workflowService.addNode(workflowId, node),
+            responseEntity = new ResponseEntity<>(service.addNode(workflowId, node),
                                                   HttpStatus.OK);
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
@@ -127,7 +120,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                      @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<?> responseEntity;
         try {
-            responseEntity = new ResponseEntity<>(workflowService.updateNode(workflowId, node),
+            responseEntity = new ResponseEntity<>(service.updateNode(workflowId, node),
                                                   HttpStatus.OK);
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
@@ -140,7 +133,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                         @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<?> responseEntity;
         try {
-            workflowService.removeNode(workflowId, node);
+            service.removeNode(workflowId, node);
             responseEntity = new ResponseEntity<>("OK", HttpStatus.OK);
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
@@ -155,7 +148,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                      @RequestParam("targetSourceId") String targetSourceId) {
         ResponseEntity<?> responseEntity;
         try {
-            WorkflowNodeDescriptor descriptor = workflowService.addLink(sourceNodeId, sourceTargetId, targetNodeId, targetSourceId);
+            WorkflowNodeDescriptor descriptor = service.addLink(sourceNodeId, sourceTargetId, targetNodeId, targetSourceId);
             if (descriptor != null) {
                 responseEntity = new ResponseEntity<>(descriptor, HttpStatus.OK);
             } else {
@@ -172,7 +165,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                         @RequestBody ComponentLink link) {
         ResponseEntity<?> responseEntity;
         try {
-            responseEntity = new ResponseEntity<>(workflowService.removeLink(nodeId, link), HttpStatus.OK);
+            responseEntity = new ResponseEntity<>(service.removeLink(nodeId, link), HttpStatus.OK);
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
@@ -183,7 +176,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     public ResponseEntity<?> getWorkflowExecutions(@PathVariable("workflowId") long workflowId) {
         ResponseEntity<?> responseEntity;
         try {
-            responseEntity = new ResponseEntity<>(workflowService.getWorkflowExecutions(workflowId),
+            responseEntity = new ResponseEntity<>(service.getWorkflowExecutions(workflowId),
                                                   HttpStatus.OK);
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
@@ -195,7 +188,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     public ResponseEntity<?> getWorkflowExecutionTasks(@PathVariable("executionId") long executionId) {
         ResponseEntity<?> responseEntity;
         try {
-            responseEntity = new ResponseEntity<>(workflowService.getWorkflowExecutionTasks(executionId),
+            responseEntity = new ResponseEntity<>(service.getWorkflowExecutionTasks(executionId),
                                                   HttpStatus.OK);
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
