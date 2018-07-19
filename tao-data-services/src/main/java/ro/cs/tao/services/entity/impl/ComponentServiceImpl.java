@@ -73,6 +73,16 @@ public class ComponentServiceImpl
     }
 
     @Override
+    public List<ProcessingComponent> getUserProcessingComponents(String userName) {
+        return persistenceManager.getUserProcessingComponents(userName);
+    }
+
+    @Override
+    public List<ProcessingComponent> getUserScriptComponents(String userName) {
+        return persistenceManager.getUserScriptComponents(userName);
+    }
+
+    @Override
     public ProcessingComponent save(ProcessingComponent component) {
         if (component != null) {
             if (persistenceManager.checkIfExistsComponentById(component.getId())) {

@@ -30,6 +30,7 @@ import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.data.jsonutil.JacksonUtil;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.entity.controllers.ContainerController;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.TopologyManager;
@@ -253,6 +254,7 @@ public class ContainerServiceImpl
                     }
                     component.setTemplateContents(String.join("\n", tokens));
                     component.setComponentType(ProcessingComponentType.EXECUTABLE);
+                    component.setOwner(SystemPrincipal.instance().getName());
                     persistenceManager.saveProcessingComponent(component);
                 }
             } catch (Exception e) {
@@ -309,6 +311,7 @@ public class ContainerServiceImpl
                 for (ProcessingComponent component : components) {
                     component.setContainerId(snapContainer.getId());
                     component.setComponentType(ProcessingComponentType.EXECUTABLE);
+                    component.setOwner(SystemPrincipal.instance().getName());
                     persistenceManager.saveProcessingComponent(component);
                 }
             } catch (Exception e) {

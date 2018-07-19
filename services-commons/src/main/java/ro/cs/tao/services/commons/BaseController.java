@@ -15,13 +15,18 @@
  */
 package ro.cs.tao.services.commons;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.user.Group;
 import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -55,6 +60,8 @@ public class BaseController {
     public static final String GLOBAL_PATH_EXPRESSION = "/**/*";
 
     private ExecutorService executorService;
+    @Autowired
+    protected PersistenceManager persistenceManager;
     protected Logger logger = Logger.getLogger(getClass().getName());
 
     protected String currentUser() {
@@ -79,6 +86,11 @@ public class BaseController {
                 }
             }
         });
+    }
+
+    protected boolean isCurrentUserAdmin() {
+        List<Group> groups = persistenceManager.getUserGroups(SessionStore.currentContext().getPrincipal().getName());
+        return (groups != null && groups.stream().anyMatch(g -> "ADMIN".equals(g.getName())));
     }
 
     protected <T> ResponseEntity<ServiceResponse<T>> prepareResult(T result) {

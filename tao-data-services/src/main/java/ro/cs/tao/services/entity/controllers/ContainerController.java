@@ -15,7 +15,6 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -28,7 +27,6 @@ import ro.cs.tao.docker.Container;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topics;
-import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.TopologyManager;
@@ -41,12 +39,6 @@ import java.util.List;
 @Controller
 @RequestMapping("/docker")
 public class ContainerController extends DataEntityController<Container, ContainerService<MultipartFile>> {
-
-    @Autowired
-    private PersistenceManager persistenceManager;
-
-    @Autowired
-    private ContainerService<MultipartFile> containerService;
 
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET)
@@ -64,7 +56,7 @@ public class ContainerController extends DataEntityController<Container, Contain
                                     @RequestParam("desc") String description) {
         asyncExecute(() -> {
             try {
-                containerService.registerContainer(dockerFile, shortName, description);
+                service.registerContainer(dockerFile, shortName, description);
             } catch (Exception ex) {
                 handleException(ex);
             }
