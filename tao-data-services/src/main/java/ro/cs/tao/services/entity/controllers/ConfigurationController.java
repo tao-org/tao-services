@@ -20,11 +20,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import ro.cs.tao.TaoEnum;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ConfigurationService;
 import ro.cs.tao.services.model.KeyValuePair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -34,15 +36,15 @@ import java.util.*;
 public class ConfigurationController extends DataEntityController<KeyValuePair, ConfigurationService> {
 
     @RequestMapping(value = "/enums", method = RequestMethod.GET)
-    public ResponseEntity<ServiceResponse<Map<String, List<Enum>>>> getAvailableEnumValues() {
-        Map<String, List<Enum>> enumValues = new HashMap<>();
+    public ResponseEntity<ServiceResponse<Map<String, List<KeyValuePair>>>> getAvailableEnumValues() {
+        Map<String, List<KeyValuePair>> enumValues = new HashMap<>();
         Reflections reflections = new Reflections("ro.cs.tao");
-        Set<Class<? extends Enum>> enums = reflections.getSubTypesOf(Enum.class);
-        for (Class<? extends Enum> anEnum : enums) {
-            List<Enum> values = new ArrayList<>();
-            Enum[] enumConstants = anEnum.getEnumConstants();
-            Collections.addAll(values, enumConstants);
-            enumValues.put(anEnum.getName(), values);
+        Set<Class<? extends TaoEnum>> enums = reflections.getSubTypesOf(TaoEnum.class);
+        for (Class<? extends TaoEnum> anEnum : enums) {
+            List<TaoEnum> values = Arrays.stream(anEnum.getEnumConstants()).collect(Collectors.toList());
+            enumValues.put(anEnum.getName(),
+                           values.stream().map(v -> new KeyValuePair(((Enum) v).name(), v.friendlyName()))
+                                          .collect(Collectors.toList()));
         }
 
         return prepareResult(enumValues);
