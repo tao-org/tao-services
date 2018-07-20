@@ -45,13 +45,14 @@ public abstract class DemoBase {
         return ret;
     }
 
-    protected static SourceDescriptor newSourceDescriptor(String name, DataFormat format) {
+    protected static SourceDescriptor newSourceDescriptor(String name, DataFormat format, int cardinality) {
         SourceDescriptor sourceDescriptor = new SourceDescriptor();
         sourceDescriptor.setId(UUID.randomUUID().toString());
         sourceDescriptor.setName(name);
         DataDescriptor sourceData = new DataDescriptor();
         sourceData.setFormatType(format);
         sourceDescriptor.setDataDescriptor(sourceData);
+        sourceDescriptor.setCardinality(cardinality);
         return sourceDescriptor;
     }
 
@@ -63,6 +64,7 @@ public abstract class DemoBase {
         targetData.setFormatType(format);
         targetData.setLocation(uriLocation);
         targetDescriptor.setDataDescriptor(targetData);
+        targetDescriptor.setCardinality(1);
         return targetDescriptor;
     }
 

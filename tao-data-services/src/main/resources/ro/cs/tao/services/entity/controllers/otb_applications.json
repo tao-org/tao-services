@@ -7,13 +7,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 0,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "8f313e4c-b824-4a74-952b-2090b5820666",
         "parentId": "BandMath",
         "name": "il",
+        "cardinality": 0,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -24,6 +23,7 @@
         "id": "a63174c7-81bc-4155-876b-268e71e342bd",
         "parentId": "BandMath",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_BandMath_1.tif"
