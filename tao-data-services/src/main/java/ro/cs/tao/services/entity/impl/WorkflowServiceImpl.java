@@ -27,6 +27,7 @@ import ro.cs.tao.datasource.converters.ConversionException;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.Query;
+import ro.cs.tao.orchestration.util.TaskUtilities;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
@@ -299,9 +300,8 @@ public class WorkflowServiceImpl
         if (nodeBefore != null) {
             component = findComponent(nodeBefore.getComponentId(), nodeBefore.getComponentType());
         }
-        int cardinality = component != null ? component.getTargetCardinality() : 1;
-        GroupComponent groupComponent = GroupComponent.create(firstComponent.getSources(), cardinality,
-                                                              lastComponent.getTargets(), cardinality);
+        int cardinality = component != null ? TaskUtilities.getSourceCardinality(component) : 1;
+        GroupComponent groupComponent = GroupComponent.create(firstComponent.getSources(), lastComponent.getTargets());
         groupComponent = groupComponentService.save(groupComponent);
         groupDescriptor.setComponentId(groupComponent.getId());
         groupDescriptor.setComponentType(ComponentType.GROUP);

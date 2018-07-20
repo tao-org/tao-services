@@ -51,7 +51,7 @@ public class GDALDemo extends DemoBase {
                                     Integer.class,
                                     0,
                                     "No data value"));
-        SourceDescriptor sourceDescriptor = newSourceDescriptor("src", DataFormat.RASTER);
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("src", DataFormat.RASTER, 1);
 
         ProcessingComponent component = new ProcessingComponent();
         component.setId("gdal_translate.exe");
