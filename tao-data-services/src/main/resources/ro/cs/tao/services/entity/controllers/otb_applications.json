@@ -59,13 +59,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 0,
-    "targetCardinality": 2,
     "sources": [
       {
         "id": "0b812c0d-d4d3-4c1c-935b-cdfc771b361a",
         "parentId": "BandMathX",
         "name": "il",
+        "cardinality": 0,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -76,6 +75,7 @@
         "id": "0574a6a9-ea91-4007-a65c-61086b6f3126",
         "parentId": "BandMathX",
         "name": "outcontext",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_BandMathX_2.tif"
@@ -85,6 +85,7 @@
         "id": "2335c3c7-d37b-4517-a1ae-18cb53f739e0",
         "parentId": "BandMathX",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_BandMathX_1.tif"
@@ -129,13 +130,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "f4fdb38a-7a5c-401c-ada8-91e40a9d9d4e",
         "parentId": "BinaryMorphologicalOperation",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -146,6 +146,7 @@
         "id": "8534def6-a513-4c61-bee0-6480e3148f36",
         "parentId": "BinaryMorphologicalOperation",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_BinaryMorphologicalOperation_1.tif"
@@ -290,13 +291,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 4,
-    "targetCardinality": 2,
     "sources": [
       {
         "id": "06005689-3a72-44ce-b41b-9fc511ec571b",
         "parentId": "BlockMatching",
         "name": "bm.initdisp.maps.vmap",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -305,6 +305,7 @@
         "id": "53f4f8e9-4700-4b88-bb58-82f03badea7b",
         "parentId": "BlockMatching",
         "name": "bm.initdisp.maps.hmap",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -313,6 +314,7 @@
         "id": "82f62b08-5791-4215-94e4-c851c8e5dab6",
         "parentId": "BlockMatching",
         "name": "io.inleft",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -321,6 +323,7 @@
         "id": "9b7e4b83-f0a2-43b4-b132-f999854f416b",
         "parentId": "BlockMatching",
         "name": "io.inright",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -331,6 +334,7 @@
         "id": "173dce18-5adc-40ad-b367-2da225999b82",
         "parentId": "BlockMatching",
         "name": "io.out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_BlockMatching_1.tif"
@@ -340,6 +344,7 @@
         "id": "edb45675-0e66-4001-934a-23e20cf185f1",
         "parentId": "BlockMatching",
         "name": "io.outmask",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_BlockMatching_2.tif"
@@ -607,13 +612,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "cc7c5bb8-4d62-4030-a168-8561dd3622ed",
         "parentId": "BundleToPerfectSensor",
         "name": "inxs",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -622,6 +626,7 @@
         "id": "dea3d793-98a3-4ee9-8c59-1313c7860fe8",
         "parentId": "BundleToPerfectSensor",
         "name": "inp",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -632,6 +637,7 @@
         "id": "cd9f4cae-60f7-4f58-a1d6-684bf2f62c67",
         "parentId": "BundleToPerfectSensor",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_BundleToPerfectSensor_1.tif"
@@ -789,13 +795,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "7e133167-80ad-4f0c-8d45-6ae8207a02a0",
         "parentId": "ClassificationMapRegularization",
         "name": "io.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -806,6 +811,7 @@
         "id": "ea5bab1b-1b41-4376-8ef9-27e24daf9582",
         "parentId": "ClassificationMapRegularization",
         "name": "io.out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ClassificationMapRegularization_1.tif"
@@ -886,13 +892,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 3,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "0d29fc2f-3630-4cfc-800b-8dad35148e4f",
         "parentId": "ColorMapping",
         "name": "method.image.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -901,6 +906,7 @@
         "id": "ba93f710-275d-4439-8740-f626636df2fe",
         "parentId": "ColorMapping",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -909,6 +915,7 @@
         "id": "f122a402-42d6-44f9-8c0e-05aaa1e6dffe",
         "parentId": "ColorMapping",
         "name": "method.custom.lut",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -919,6 +926,7 @@
         "id": "b9b55680-7ae3-41bf-b57a-67fe64de2d22",
         "parentId": "ColorMapping",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ColorMapping_1.tif"
@@ -1062,13 +1070,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 0,
     "sources": [
       {
         "id": "0ae1a14e-cacb-4d0d-961f-70a2125cdd15",
         "parentId": "CompareImages",
         "name": "meas.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1077,6 +1084,7 @@
         "id": "aec88930-6fca-46a9-9c08-547f3f4a2019",
         "parentId": "CompareImages",
         "name": "ref.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1157,13 +1165,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 3,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "5ff3d5a4-5d89-45b8-a19b-5d3e16d4319f",
         "parentId": "ComputeConfusionMatrix",
         "name": "ref.raster.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1172,6 +1179,7 @@
         "id": "f61d57d6-efb1-455d-8d5b-43327d6b7d8f",
         "parentId": "ComputeConfusionMatrix",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1180,6 +1188,7 @@
         "id": "f85378f2-d808-41cb-b1b6-c6a5026a807e",
         "parentId": "ComputeConfusionMatrix",
         "name": "ref.vector.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1190,6 +1199,7 @@
         "id": "d729ec97-48e7-46a9-8657-c1080a9c4e56",
         "parentId": "ComputeConfusionMatrix",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ComputeConfusionMatrix_1.tif"
@@ -1278,13 +1288,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 0,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "fe85e700-7e79-477f-a0cd-b3c61375ec0d",
         "parentId": "ComputeImagesStatistics",
         "name": "il",
+        "cardinality": 0,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1295,6 +1304,7 @@
         "id": "2fae53be-161a-4dc4-aa76-e77b16a9ed77",
         "parentId": "ComputeImagesStatistics",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ComputeImagesStatistics_1.tif"
@@ -1330,13 +1340,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 2,
     "sources": [
       {
         "id": "85e9dedd-f563-4a4b-821d-3f344c377bb7",
         "parentId": "ComputeModulusAndPhase",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1347,6 +1356,7 @@
         "id": "95d728d6-97d0-4cc8-9192-f62183b58d8a",
         "parentId": "ComputeModulusAndPhase",
         "name": "phase",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ComputeModulusAndPhase_2.tif"
@@ -1356,6 +1366,7 @@
         "id": "bfe24cf9-ca1f-46fa-80e8-9e0c7fb440c3",
         "parentId": "ComputeModulusAndPhase",
         "name": "modulus",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ComputeModulusAndPhase_1.tif"
@@ -1383,15 +1394,26 @@
     "nodeAffinity": "Any",
     "sourceCardinality": 0,
     "targetCardinality": 1,
-    "sources": [],
+    "sources": [
+      {
+        "id": "b863a5fe-3506-4cf2-8e2e-56fe9ec0a117",
+        "parentId": "ComputeOGRLayersFeaturesStatistics",
+        "name": "inshp",
+        "cardinality": 1,
+        "dataDescriptor": {
+          "formatType": "VECTOR"
+        }
+      }
+    ],
     "targets": [
       {
         "id": "8260bd6b-789e-4b5d-b321-95d87781ee5e",
         "parentId": "ComputeOGRLayersFeaturesStatistics",
         "name": "outstats",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
-          "location": "output_otbcli_ComputeOGRLayersFeaturesStatistics_1.tif"
+          "formatType": "OTHER",
+          "location": "output_otbcli_ComputeOGRLayersFeaturesStatistics_1.xml"
         }
       }
     ],
@@ -1433,13 +1455,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "0fca8c63-db07-4e50-a744-4249b3a62512",
         "parentId": "ComputePolylineFeatureFromImage",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1450,9 +1471,10 @@
         "id": "ef938dcd-217c-4de0-a911-ed286589948e",
         "parentId": "ComputePolylineFeatureFromImage",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
-          "location": "output_otbcli_ComputePolylineFeatureFromImage_1.tif"
+          "formatType": "VECTOR",
+          "location": "output_otbcli_ComputePolylineFeatureFromImage_1.shp"
         }
       }
     ],
@@ -1530,13 +1552,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 0,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "c992c79a-1df9-464a-88c0-872f416a5104",
         "parentId": "ConcatenateImages",
         "name": "il",
+        "cardinality": 0,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1547,6 +1568,7 @@
         "id": "7d83560c-65f3-44a5-97f7-a2f65df8ff05",
         "parentId": "ConcatenateImages",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ConcatenateImages.tif"
@@ -1572,15 +1594,14 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 0,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "38eb8d2b-cb80-415d-9b00-e49a329b2d5e",
         "parentId": "ConcatenateVectorData",
         "name": "il",
+        "cardinality": 0,
         "dataDescriptor": {
-          "formatType": "RASTER"
+          "formatType": "VECTOR"
         }
       }
     ],
@@ -1589,6 +1610,7 @@
         "id": "987dfad9-2755-487d-b5ec-d90cc8e716e7",
         "parentId": "ConcatenateVectorData",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ConcatenateVectorData.tif"
@@ -1614,13 +1636,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "ec0e33f3-79bb-4cb6-a2c6-899bb1e8475b",
         "parentId": "ConnectedComponentSegmentation",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1631,6 +1652,7 @@
         "id": "b7f68638-708f-40f0-bb92-fae7d583e68f",
         "parentId": "ConnectedComponentSegmentation",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ConnectedComponentSegmentation_1.tif"
@@ -1720,13 +1742,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "be395884-7d08-4f47-a9fc-b1f58bea0961",
         "parentId": "ContrastEnhancement",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1737,6 +1758,7 @@
         "id": "09dd89fa-124b-437a-b5c7-fc8e17f124fe",
         "parentId": "ContrastEnhancement",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ContrastEnhancement_1.tif"
@@ -1928,13 +1950,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "65ba0b0e-f96c-4e4d-987b-5126aa0070eb",
         "parentId": "Convert",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -1945,6 +1966,7 @@
         "id": "02f42eda-e00b-4028-8c28-d1600e1204b6",
         "parentId": "Convert",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_Convert_1.tif"
@@ -2071,8 +2093,6 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 0,
-    "targetCardinality": 0,
     "sources": [],
     "targets": [],
     "containerId": "OTB-6.4.0",
@@ -2163,6 +2183,7 @@
         "id": "54085b75-df19-49f7-9079-71410e63c14d",
         "parentId": "ConvertSensorToGeoPoint",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -2207,13 +2228,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "be616fee-c1fd-4abb-84c0-abf8cb6b99b5",
         "parentId": "DEMConvert",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -2224,6 +2244,7 @@
         "id": "903e2fe4-3eb1-4ff4-92d9-2f76eee17c59",
         "parentId": "DEMConvert",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_DEMConvert_1.tif"
@@ -2249,13 +2270,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "29466bcd-0172-480c-b5ba-a2e556e8e64c",
         "parentId": "Despeckle",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -2266,6 +2286,7 @@
         "id": "e7a7eef9-dc91-4f1c-b091-a1f9ca9d51b8",
         "parentId": "Despeckle",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_Despeckle_1.tif"
@@ -2379,13 +2400,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 5,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "03eb36d1-7b6b-46d9-b3f9-26b67e0eea82",
         "parentId": "DisparityMapToElevationMap",
         "name": "io.rgrid",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -2394,6 +2414,7 @@
         "id": "0fc59589-62ba-480c-b0ee-6b1904f7f226",
         "parentId": "DisparityMapToElevationMap",
         "name": "io.right",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -2402,6 +2423,7 @@
         "id": "528b937f-62be-4000-9f12-66cab1cb82a7",
         "parentId": "DisparityMapToElevationMap",
         "name": "io.left",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -2410,6 +2432,7 @@
         "id": "ade08097-6334-4266-bbac-2e01228510b8",
         "parentId": "DisparityMapToElevationMap",
         "name": "io.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -2418,6 +2441,7 @@
         "id": "c57498d6-ea36-4cb0-8de2-def2ff1e7bd8",
         "parentId": "DisparityMapToElevationMap",
         "name": "io.lgrid",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -2428,6 +2452,7 @@
         "id": "817e278a-9951-43e9-b8af-6dfeaafeb569",
         "parentId": "DisparityMapToElevationMap",
         "name": "io.out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_DisparityMapToElevationMap_1.tif"
@@ -2517,13 +2542,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "d8da08d0-2eb0-402c-957e-92db809fbacf",
         "parentId": "DomainTransform",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -2534,6 +2558,7 @@
         "id": "d2e8062d-d4e4-481e-b56f-9640fbdc3f82",
         "parentId": "DomainTransform",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_DomainTransform_1.tif"
@@ -2630,9 +2655,19 @@
       {
         "id": "fc92206c-1fc4-47ed-a0de-5c870413121b",
         "parentId": "DownloadSRTMTiles",
-        "name": "tiledir",
+        "name": "il",
+        "cardinality": 0,
         "dataDescriptor": {
           "formatType": "RASTER"
+        }
+      },
+      {
+        "id": "b992b69f-fb30-4ba1-9945-641b98214b31",
+        "parentId": "DownloadSRTMTiles",
+        "name": "vl",
+        "cardinality": 0,
+        "dataDescriptor": {
+          "formatType": "VECTOR"
         }
       }
     ],
@@ -2647,16 +2682,16 @@
     "active": true,
     "parameterDescriptors": [
       {
-        "id": "il_str",
+        "id": "tiledir",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
-        "description": "Input images list",
-        "label": "il",
+        "defaultValue": null,
+        "description": "Tiles directory",
+        "label": "tiledir",
         "notNull": true
       },
       {
-        "id": "mode_str",
+        "id": "mode",
         "type": "REGULAR",
         "dataType": "java.lang.String",
         "defaultValue": "download",
@@ -2669,25 +2704,16 @@
         "notNull": true
       },
       {
-        "id": "names_str",
+        "id": "names",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "True",
+        "defaultValue": null,
         "description": "Input tile names",
         "label": "names",
         "notNull": true
-      },
-      {
-        "id": "vl_str",
-        "type": "REGULAR",
-        "dataType": "java.lang.String",
-        "defaultValue": "None",
-        "description": "Input vector data list",
-        "label": "vl",
-        "notNull": true
       }
     ],
-    "templatecontents": "-il\n$il_str\n-vl\n$vl_str\n-names\n$names_str\n-tiledir\n$tiledir\n-mode\n$mode_str"
+    "templatecontents": "-il\n$il\n-vl\n$vl\n-names\n$names\n-tiledir\n$tiledir\n-mode\n$mode"
   },
   {
     "id": "DSFuzzyModelEstimation",
