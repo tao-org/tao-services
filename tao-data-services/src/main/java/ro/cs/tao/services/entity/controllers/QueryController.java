@@ -27,6 +27,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceError;
 import ro.cs.tao.services.interfaces.QueryService;
 
@@ -37,7 +38,7 @@ import java.util.logging.Logger;
 
 @Controller
 @RequestMapping("/datasource/query")
-public class QueryController {
+public class QueryController extends BaseController {
 
     @Autowired
     private QueryService queryService;
@@ -85,7 +86,7 @@ public class QueryController {
             }
         } catch (Exception e) {
             Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
-            responseEntity = new ResponseEntity<>(new ServiceError(e.getMessage()), HttpStatus.OK);
+            responseEntity = handleException(e);
         }
         return responseEntity;
     }
@@ -122,7 +123,7 @@ public class QueryController {
             object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
             response = new ResponseEntity<>(queryService.update(object), HttpStatus.OK);
         } catch (PersistenceException pex) {
-            response = new ResponseEntity<>(null, HttpStatus.OK);
+            response = handleException(pex);
         }
         return response;
     }

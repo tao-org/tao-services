@@ -15,19 +15,18 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
+import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.validation.ValidationException;
-import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.interfaces.ComponentService;
 
 import java.util.ArrayList;
@@ -41,8 +40,47 @@ import java.util.UUID;
 @RequestMapping("/component")
 public class ComponentController extends DataEntityController<ProcessingComponent, ComponentService> {
 
-    @Autowired
-    private PersistenceManager persistenceManager;
+    @RequestMapping(value = "/user", method = RequestMethod.GET)
+    public ResponseEntity<?> listUserComponents(@RequestParam("type") ProcessingComponentType componentType) {
+        ResponseEntity<?> response = null;
+        String userName = SessionStore.currentContext().getPrincipal().getName();
+        switch (componentType) {
+            case EXECUTABLE:
+                response = new ResponseEntity<>(service.getUserProcessingComponents(userName),
+                                                HttpStatus.OK);
+                break;
+            case SCRIPT:
+                response = new ResponseEntity<>(service.getUserScriptComponents(userName),
+                                                HttpStatus.OK);
+                break;
+        }
+        return response;
+    }
+
+    @Override
+    public ResponseEntity<?> save(ProcessingComponent entity) {
+        entity.setOwner(SessionStore.currentContext().getPrincipal().getName());
+        return super.save(entity);
+    }
+
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @Override
+    public ResponseEntity<?> update(@PathVariable("id") String id, @RequestBody ProcessingComponent entity) {
+        if (isCurrentUserAdmin()) {
+            return super.update(id, entity);
+        } else {
+            return prepareResult("Not authorized", ResponseStatus.FAILED);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> delete(String id) throws PersistenceException {
+        if (isCurrentUserAdmin()) {
+            return super.delete(id);
+        } else {
+            return prepareResult("Not authorized", ResponseStatus.FAILED);
+        }
+    }
 
     @RequestMapping(value = "/constraints", method = RequestMethod.GET)
     public ResponseEntity<?> listConstraints() {
@@ -85,7 +123,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
                 responseEntity = new ResponseEntity<>(new ArrayList<>(vex.getAdditionalInfo().keySet()),
                                                       HttpStatus.OK);
             } catch (PersistenceException e) {
-                responseEntity = new ResponseEntity<>(e.getMessage(), HttpStatus.OK);
+                responseEntity = handleException(e);
             }
         } else {
             responseEntity = new ResponseEntity<>("No body", HttpStatus.BAD_REQUEST);

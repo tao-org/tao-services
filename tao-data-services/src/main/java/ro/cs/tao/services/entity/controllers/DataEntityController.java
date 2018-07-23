@@ -83,7 +83,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
             try {
                 return new ResponseEntity<>(service.update(entity), HttpStatus.OK);
             } catch (PersistenceException e) {
-                return new ResponseEntity<>(e.getMessage(), HttpStatus.OK);
+                return handleException(e);
             }
         } else {
             return validationResponse;

@@ -14,15 +14,9 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-package ro.cs.tao.services.entity.controllers;
+package ro.cs.tao.services.commons;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import ro.cs.tao.datasource.DataSourceComponent;
-import ro.cs.tao.services.interfaces.DataSourceComponentService;
-
-@Controller
-@RequestMapping("/datasource")
-public class DataSourceComponentController extends DataEntityController<DataSourceComponent, DataSourceComponentService>{
-
+public enum ResponseStatus {
+    SUCCEEDED,
+    FAILED
 }

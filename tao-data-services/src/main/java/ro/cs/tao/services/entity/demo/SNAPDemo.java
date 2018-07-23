@@ -78,7 +78,7 @@ public class SNAPDemo extends DemoBase {
                 "Nearest",
                 "The method used for interpolation (upsampling to a finer resolution)",
                 "Nearest", "Bilinear", "Bicubic"));
-        SourceDescriptor sourceDescriptor = newSourceDescriptor("Ssource", DataFormat.RASTER);
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("Ssource", DataFormat.RASTER, 1);
 
         ProcessingComponent component = new ProcessingComponent();
         component.setId("snap-s2rep");
@@ -143,7 +143,7 @@ public class SNAPDemo extends DemoBase {
                 "Nearest",
                 "The method used for interpolation (upsampling to a finer resolution)",
                 "Nearest", "Bilinear", "Bicubic"));
-        SourceDescriptor sourceDescriptor = newSourceDescriptor("Ssource", DataFormat.RASTER);
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("Ssource", DataFormat.RASTER, 1);
 
         ProcessingComponent component = new ProcessingComponent();
         component.setId("snap-msavi");
@@ -189,7 +189,7 @@ public class SNAPDemo extends DemoBase {
                 String.class,
                 "B4",
                 "The red band for the NDVI computation. If not provided, the operator will try to find the best fitting band"));
-        SourceDescriptor sourceDescriptor = newSourceDescriptor("Ssource", DataFormat.RASTER);
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("Ssource", DataFormat.RASTER, 1);
 
         ProcessingComponent component = new ProcessingComponent();
         component.setId("snap-ndvi");
@@ -233,7 +233,7 @@ public class SNAPDemo extends DemoBase {
                 "Nearest",
                 "The method used for interpolation (upsampling to a finer resolution)",
                 "Nearest", "Bilinear", "Bicubic"));
-        SourceDescriptor sourceDescriptor = newSourceDescriptor("SsourceProduct", DataFormat.RASTER);
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("SsourceProduct", DataFormat.RASTER, 1);
 
         ProcessingComponent component = new ProcessingComponent();
         component.setId("snap-resample");

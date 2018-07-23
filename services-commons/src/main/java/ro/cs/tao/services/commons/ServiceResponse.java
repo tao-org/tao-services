@@ -14,15 +14,24 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-package ro.cs.tao.services.entity.controllers;
+package ro.cs.tao.services.commons;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import ro.cs.tao.datasource.DataSourceComponent;
-import ro.cs.tao.services.interfaces.DataSourceComponentService;
+public class ServiceResponse<T> {
+    private T data;
+    private String message;
+    private ResponseStatus status;
 
-@Controller
-@RequestMapping("/datasource")
-public class DataSourceComponentController extends DataEntityController<DataSourceComponent, DataSourceComponentService>{
+    public ServiceResponse(T data) {
+        this.data = data;
+        this.status = ResponseStatus.SUCCEEDED;
+    }
 
+    public ServiceResponse(String message, ResponseStatus status) {
+        this.message = message;
+        this.status = status;
+    }
+
+    public T getData() { return data; }
+    public String getMessage() { return message; }
+    public ResponseStatus getStatus() { return status; }
 }
