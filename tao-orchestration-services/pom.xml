@@ -54,6 +54,11 @@
             <artifactId>tao-integration-geostorm</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-data-services</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

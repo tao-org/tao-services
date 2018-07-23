@@ -85,7 +85,7 @@ public class OTBDemo extends DemoBase {
                                     Integer.class,
                                     2,
                                     "Radius for bicubic interpolation"));
-        SourceDescriptor sourceDescriptor = newSourceDescriptor("in", DataFormat.RASTER);
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("in", DataFormat.RASTER, 1);
 
         Set<Variable> variables = new HashSet<>();
         variables.add(new Variable("ITK_AUTOLOAD_PATH", container.getApplicationPath()));
@@ -130,7 +130,7 @@ public class OTBDemo extends DemoBase {
                 "Vegetation:LAIFromReflLinear", "Vegetation:LAIFromNDVIFormo", "Water:NDWI", "Water:NDWI2",
                 "Water:MNDWI", "Water:NDPI", "Water:NDTI", "Soil:RI", "Soil:CI", "Soil:BI", "Soil:BI"));
 
-        SourceDescriptor sourceDescriptor = newSourceDescriptor("in", DataFormat.RASTER);
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("in", DataFormat.RASTER, 1);
 
         Set<Variable> variables = new HashSet<>();
         variables.add(new Variable("ITK_AUTOLOAD_PATH", container.getApplicationPath()));
@@ -166,7 +166,7 @@ public class OTBDemo extends DemoBase {
         ArrayList<ParameterDescriptor> parameters = new ArrayList<>();
         parameters.add(newParameter("progress", "progress", Boolean.class, true, "Report progress"));
 
-        SourceDescriptor sourceDescriptor = newSourceDescriptor("il", DataFormat.RASTER);
+        SourceDescriptor sourceDescriptor = newSourceDescriptor("il", DataFormat.RASTER, 0);
 
         Set<Variable> variables = new HashSet<>();
         variables.add(new Variable("ITK_AUTOLOAD_PATH", container.getApplicationPath()));
@@ -183,8 +183,7 @@ public class OTBDemo extends DemoBase {
         component.setNodeAffinity("Any");
         component.setVisibility(ProcessingComponentVisibility.SYSTEM);
         component.addSource(sourceDescriptor);
-        // the input is a list
-        component.setSourceCardinality(0);
+
         TargetDescriptor targetDescriptor = newTargetDescriptor("out", DataFormat.RASTER,
                                                                 "output_" + component.getId() + ".tif");
         component.addTarget(targetDescriptor);

@@ -17,23 +17,30 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
+import ro.cs.tao.component.enums.ProcessingComponentType;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.data.jsonutil.JacksonUtil;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.entity.controllers.ContainerController;
 import ro.cs.tao.services.interfaces.ContainerService;
+import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.utils.Platform;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -44,7 +51,7 @@ import java.util.stream.Collectors;
 @Service("containerService")
 public class ContainerServiceImpl
     extends EntityService<Container>
-        implements ContainerService {
+        implements ContainerService<MultipartFile> {
 
     private static final Set<String> winExtensions = new HashSet<String>() {{ add(".bat"); add(".exe"); }};
 
@@ -112,13 +119,36 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public Container initializeContainer(String name, String path, List<Application> applications) {
+    public void registerContainer(MultipartFile dockerFile, String shortName, String description) throws IOException {
+        String fileName = StringUtils.cleanPath(dockerFile.getOriginalFilename());
+        if (dockerFile.isEmpty()) {
+            throw new IOException("Failed to store empty docker file " + fileName);
+        }
+        if (fileName.contains("..")) {
+            // This is a security check
+            throw new IOException( "Cannot store docker file with relative path outside image directory " + fileName);
+        }
+        Path filePath;
+        try (InputStream inputStream = dockerFile.getInputStream()) {
+            Path imagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), shortName.replace(" ", "-"));
+            Files.createDirectories(imagesPath);
+            filePath = imagesPath.resolve("Dockerfile");
+            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+        }
+        TopologyManager topologyManager = TopologyManager.getInstance();
+        if (topologyManager.getDockerImage(shortName) == null) {
+            topologyManager.registerImage(filePath, shortName, description);
+        }
+    }
+
+    @Override
+    public Container initializeContainer(String id, String name, String path, List<Application> applications) {
         List<Container> containers = persistenceManager.getContainers();
         boolean isWin = Platform.getCurrentPlatform().getId().equals(Platform.ID.win);
         Container container = null;
         if (containers == null || containers.stream().noneMatch(c -> c.getName().equals(name))) {
             container = new Container();
-            container.setId(name);
+            container.setId(id);
             container.setName(name);
             container.setTag(name);
             container.setApplicationPath(path);
@@ -138,6 +168,7 @@ public class ContainerServiceImpl
             }
         } else {
             container = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
+            container.setId(id);
             container.setName(name);
             container.setTag(name);
             String appPath;
@@ -159,13 +190,13 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public Container initOTB(String name, String path) {
+    public Container initOTB(String id, String name, String path) {
         Container otbContainer = null;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("otb_container.json")))) {
             String str = String.join("", reader.lines().collect(Collectors.toList()));
             Container tmp = JacksonUtil.fromString(str, Container.class);
             List<Application> applications = tmp.getApplications();
-            otbContainer = initializeContainer(name, path, applications);
+            otbContainer = initializeContainer(id, name, path, applications);
             try (InputStream in = ContainerController.class.getResourceAsStream("otb_logo.png")) {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 int read;
@@ -222,6 +253,8 @@ public class ContainerServiceImpl
                         }
                     }
                     component.setTemplateContents(String.join("\n", tokens));
+                    component.setComponentType(ProcessingComponentType.EXECUTABLE);
+                    component.setOwner(SystemPrincipal.instance().getName());
                     persistenceManager.saveProcessingComponent(component);
                 }
             } catch (Exception e) {
@@ -236,7 +269,7 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public Container initSNAP(String name, String path) {
+    public Container initSNAP(String id, String name, String path) {
         List<Container> containers = persistenceManager.getContainers();
         boolean isWin = Platform.getCurrentPlatform().getId().equals(Platform.ID.win);
         Container snapContainer;
@@ -245,7 +278,7 @@ public class ContainerServiceImpl
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("snap_container.json")))) {
                 String str = String.join("", reader.lines().collect(Collectors.toList()));
                 snapContainer = JacksonUtil.fromString(str, Container.class);
-                snapContainer.setId(name);
+                snapContainer.setId(id);
                 snapContainer.setName(name);
                 snapContainer.setTag(name);
                 snapContainer.setApplicationPath(path);
@@ -277,6 +310,8 @@ public class ContainerServiceImpl
                 ProcessingComponent[] components = JacksonUtil.OBJECT_MAPPER.readValue(str, ProcessingComponent[].class);
                 for (ProcessingComponent component : components) {
                     component.setContainerId(snapContainer.getId());
+                    component.setComponentType(ProcessingComponentType.EXECUTABLE);
+                    component.setOwner(SystemPrincipal.instance().getName());
                     persistenceManager.saveProcessingComponent(component);
                 }
             } catch (Exception e) {
@@ -285,6 +320,7 @@ public class ContainerServiceImpl
         } else {
             snapContainer = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
             try {
+                snapContainer.setId(id);
                 snapContainer.setName(name);
                 snapContainer.setTag(name);
                 snapContainer.setApplicationPath(path);

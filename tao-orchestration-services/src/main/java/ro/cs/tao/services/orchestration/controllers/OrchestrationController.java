@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
@@ -54,14 +55,19 @@ public class OrchestrationController extends BaseController {
         }
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @RequestMapping(value = "/start/parameters/{id}", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, List<Parameter>>> start(@PathVariable("id") long workflowId) {
+        return new ResponseEntity<>(orchestrationService.getWorkflowParameters(workflowId), HttpStatus.OK);
+    }
+
     @RequestMapping(value = "/stop/{id}", method = RequestMethod.GET)
     public ResponseEntity<?> stop(@PathVariable("id") long workflowId) {
         try {
             orchestrationService.stopWorkflow(workflowId);
             return new ResponseEntity<>("Execution stopped", HttpStatus.OK);
         } catch (ExecutionException ex) {
-            return new ResponseEntity<>(String.format("Execution cannot be stopped: %s", ex.getMessage()),
-                    HttpStatus.OK);
+            return handleException(ex);
         }
     }
 
@@ -71,8 +77,7 @@ public class OrchestrationController extends BaseController {
             orchestrationService.pauseWorkflow(workflowId);
             return new ResponseEntity<>("Execution suspended", HttpStatus.OK);
         } catch (ExecutionException ex) {
-            return new ResponseEntity<>(String.format("Execution cannot be suspended: %s", ex.getMessage()),
-                    HttpStatus.OK);
+            return handleException(ex);
         }
     }
 
@@ -82,8 +87,7 @@ public class OrchestrationController extends BaseController {
             orchestrationService.resumeWorkflow(workflowId);
             return new ResponseEntity<>("Execution resumed", HttpStatus.OK);
         } catch (ExecutionException ex) {
-            return new ResponseEntity<>(String.format("Execution cannot be resumed: %s", ex.getMessage()),
-                    HttpStatus.OK);
+            return handleException(ex);
         }
     }
 
@@ -93,11 +97,7 @@ public class OrchestrationController extends BaseController {
         if (tasks == null) {
             tasks = new ArrayList<>();
         }
-        return new ResponseEntity<>(tasks,/*.stream().map(t ->
-                                            new ServiceTask(t.getId(), t.getWorkflowNodeId(),
-                                                            t.getResourceId(), t.getExecutionNodeHostName(),
-                                                            t.getStartTime())).collect(Collectors.toList()),*/
-                                    HttpStatus.OK);
+        return new ResponseEntity<>(tasks,HttpStatus.OK);
     }
 
     @RequestMapping(value = "/running/jobs", method = RequestMethod.GET)

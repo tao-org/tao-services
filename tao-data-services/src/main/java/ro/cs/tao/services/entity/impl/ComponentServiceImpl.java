@@ -17,9 +17,7 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.component.ParameterDescriptor;
-import ro.cs.tao.component.ProcessingComponent;
-import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.component.*;
 import ro.cs.tao.component.constraints.ConstraintFactory;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
@@ -41,8 +39,11 @@ import java.io.StringReader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -70,6 +71,16 @@ public class ComponentServiceImpl
             logger.severe(e.getMessage());
         }
         return components;
+    }
+
+    @Override
+    public List<ProcessingComponent> getUserProcessingComponents(String userName) {
+        return persistenceManager.getUserProcessingComponents(userName);
+    }
+
+    @Override
+    public List<ProcessingComponent> getUserScriptComponents(String userName) {
+        return persistenceManager.getUserScriptComponents(userName);
     }
 
     @Override
@@ -226,6 +237,43 @@ public class ComponentServiceImpl
                 if (descriptor.isNotNull() && (value == null || value.trim().isEmpty())) {
                     errors.add(String.format("[$%s] is mandatory, but has no default value", descriptorId));
                 }
+            }
+        }
+        List<SourceDescriptor> sources = entity.getSources();
+        Set<String> uniques = new HashSet<>();
+        if (sources == null || sources.isEmpty()) {
+            errors.add("[sources] at least one source must be defined");
+        } else {
+            Set<String> duplicates = sources.stream().filter(s -> !uniques.add(s.getName()))
+                                                     .map(SourceDescriptor::getName)
+                                                     .collect(Collectors.toSet());
+            if (duplicates.size() > 0) {
+                errors.add(String.format("[sources] contain duplicate names: %s", String.join(",", duplicates)));
+                uniques.clear();
+            }
+            duplicates = sources.stream().filter(s -> s.getId() != null && !uniques.add(s.getId()))
+                                         .map(SourceDescriptor::getId).collect(Collectors.toSet());
+            if (duplicates.size() > 0) {
+                errors.add(String.format("[sources] contain duplicate ids: %s", String.join(",", duplicates)));
+                uniques.clear();
+            }
+        }
+        List<TargetDescriptor> targets = entity.getTargets();
+        if (targets == null || targets.isEmpty()) {
+            errors.add("[targets] at least one target must be defined");
+        } else {
+            Set<String> duplicates = targets.stream().filter(t -> !uniques.add(t.getName()))
+                    .map(TargetDescriptor::getName)
+                    .collect(Collectors.toSet());
+            if (duplicates.size() > 0) {
+                errors.add(String.format("[targets] contain duplicate names: %s", String.join(",", duplicates)));
+                uniques.clear();
+            }
+            duplicates = targets.stream().filter(t -> t.getId() != null && !uniques.add(t.getId()))
+                    .map(TargetDescriptor::getId).collect(Collectors.toSet());
+            if (duplicates.size() > 0) {
+                errors.add(String.format("[targets] contain duplicate ids: %s", String.join(",", duplicates)));
+                uniques.clear();
             }
         }
     }

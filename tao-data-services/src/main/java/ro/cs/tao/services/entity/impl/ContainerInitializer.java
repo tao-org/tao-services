@@ -20,6 +20,7 @@ import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -27,12 +28,11 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WorkflowService;
-import ro.cs.tao.workflow.ComponentType;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
+import ro.cs.tao.workflow.enums.ComponentType;
 import ro.cs.tao.workflow.enums.Status;
-import ro.cs.tao.workflow.enums.Visibility;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -61,26 +61,26 @@ public class ContainerInitializer {
         ContainerInitializer.workflowService = workflowService;
     }
 
-    public static void initSnap(String snapContainerName, String snapPath) {
+    public static void initSnap(String snapContainerId, String snapContainerName, String snapPath) {
         Container snapContainer = null;
         try {
-            snapContainer = persistenceManager.getContainerById(snapContainerName);
+            snapContainer = persistenceManager.getContainerById(snapContainerId);
         } catch (PersistenceException ignored) {
         }
         if (snapContainer == null) {
-            snapContainer = containerService.initSNAP(snapContainerName, snapPath);
+            snapContainer = containerService.initSNAP(snapContainerId, snapContainerName, snapPath);
             Logger.getLogger(ContainerInitializer.class.getName()).info("Registered SNAP container");
         }
     }
 
-    public static void initOtb(String otbContainerName, String otbPath) {
+    public static void initOtb(String otbContainerId, String otbContainerName, String otbPath) {
         Container otbContainer = null;
         try {
-            otbContainer = persistenceManager.getContainerById(otbContainerName);
+            otbContainer = persistenceManager.getContainerById(otbContainerId);
         } catch (PersistenceException ignored) {
         }
         if (otbContainer == null) {
-            otbContainer = containerService.initOTB(otbContainerName, otbPath);
+            otbContainer = containerService.initOTB(otbContainerId, otbContainerName, otbPath);
             Logger.getLogger(ContainerInitializer.class.getName()).info("Registered OTB container");
         }
     }
