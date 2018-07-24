@@ -36,6 +36,7 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.admin.service.AdministrationServiceLauncher;
 import ro.cs.tao.services.auth.service.AuthenticationServiceLauncher;
+import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.entity.DataServicesLauncher;
 import ro.cs.tao.services.entity.impl.ContainerInitializer;
 import ro.cs.tao.services.interfaces.ContainerService;
@@ -134,6 +135,7 @@ public class TaoServicesStartup implements ApplicationListener {
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof ContextRefreshedEvent) {
+            BaseController.setPersistenceManager(this.persistenceManager);
             Messaging.setPersister(this.persistenceManager);
             SpringSessionProvider.setPersistenceManager(this.persistenceManager);
             SessionStore.setSessionContextProvider(new SpringSessionProvider());

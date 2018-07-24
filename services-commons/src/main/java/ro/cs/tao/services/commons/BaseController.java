@@ -15,7 +15,6 @@
  */
 package ro.cs.tao.services.commons;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -58,11 +57,15 @@ public class BaseController {
 
     public static final String API_PATH_EXPRESSION = "/api/**/*";
     public static final String GLOBAL_PATH_EXPRESSION = "/**/*";
+    protected static PersistenceManager persistenceManager;
 
     private ExecutorService executorService;
-    @Autowired
-    protected PersistenceManager persistenceManager;
+
     protected Logger logger = Logger.getLogger(getClass().getName());
+
+    public static void setPersistenceManager(PersistenceManager persistenceManager) {
+        BaseController.persistenceManager = persistenceManager;
+    }
 
     protected String currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
