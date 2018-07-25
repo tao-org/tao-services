@@ -17,6 +17,7 @@ package ro.cs.tao.services.query.service;
 
 import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.param.ParameterDescriptor;
@@ -27,10 +28,7 @@ import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
+import java.util.*;
 
 /**
  * @author Cosmin Cara
@@ -82,13 +80,21 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
-    public List<EOProduct> fetch(Query query, List<EOProduct> products) {
+    public List<EOProduct> fetch(Query query, List<EOProduct> products, FetchMode mode, String localPath, String pathFormat) {
         if (products != null) {
             DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
             dsComponent.setUserCredentials(query.getUser(), query.getPassword());
-            dsComponent.setFetchMode(FetchMode.OVERWRITE);
+            dsComponent.setFetchMode(mode);
             String path = ConfigurationManager.getInstance().getValue("product.location");
-            products = dsComponent.doFetch(products, null, path);
+            if ((mode == FetchMode.SYMLINK || mode == FetchMode.COPY) && localPath != null) {
+                DataSource dataSource = DataSourceManager.getInstance().get(query.getSensor(), query.getDataSource());
+                String className = dataSource.getClass().getSimpleName();
+                Properties properties = new Properties();
+                properties.put("local.archive.path.format", pathFormat);
+                products = dsComponent.doFetch(products, null, path, localPath, properties);
+            } else {
+                products = dsComponent.doFetch(products, null, path);
+            }
         }
         return products;
     }
