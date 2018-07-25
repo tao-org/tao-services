@@ -26,8 +26,8 @@ import javax.mail.internet.MimeMessage;
 public class MailSenderTLS {
 
     private static final Logger logger = Logger.getLogger(MailSenderTLS.class.getName());
-    private Boolean mailSmtpAuth;
-    private Boolean mailSmtpStarttlsEnable;
+    private String mailSmtpAuth;
+    private String mailSmtpStartTlsEnable;
     private String mailSmptpHost;
     private String mailSmtpPort;
     private String mailFrom;
@@ -36,8 +36,8 @@ public class MailSenderTLS {
 
     public MailSenderTLS() {
         ConfigurationManager configManager = ConfigurationManager.getInstance();
-        this.mailSmtpAuth = Boolean.getBoolean(configManager.getValue("mail.smtp.auth"));
-        this.mailSmtpStarttlsEnable = Boolean.getBoolean(configManager.getValue("mail.smtp.starttls.enable"));
+        this.mailSmtpAuth = configManager.getValue("mail.smtp.auth");
+        this.mailSmtpStartTlsEnable = configManager.getValue("mail.smtp.starttls.enable");
         this.mailSmptpHost = configManager.getValue("mail.smtp.host");
         this.mailSmtpPort = configManager.getValue("mail.smtp.port");
         this.mailFrom = configManager.getValue("mail.tao.from");
@@ -45,10 +45,10 @@ public class MailSenderTLS {
         this.mailPassword = configManager.getValue("mail.tao.password");
     }
 
-    public void sendMail(String toAddress, String subject, String content) {
+   public void sendMail(String toAddress, String subject, String content) {
         Properties props = new Properties();
         props.put("mail.smtp.auth", mailSmtpAuth.toString());
-        props.put("mail.smtp.starttls.enable", mailSmtpStarttlsEnable.toString());
+        props.put("mail.smtp.starttls.enable", mailSmtpStartTlsEnable);
         props.put("mail.smtp.host", mailSmptpHost);
         props.put("mail.smtp.port", mailSmtpPort);
 
@@ -73,6 +73,5 @@ public class MailSenderTLS {
         } catch (MessagingException e) {
             throw new RuntimeException(e);
         }
-
     }
 }

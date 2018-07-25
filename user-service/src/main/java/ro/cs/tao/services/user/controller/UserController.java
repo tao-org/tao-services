@@ -16,10 +16,12 @@
 package ro.cs.tao.services.user.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.UserService;
@@ -49,7 +51,12 @@ public class UserController extends BaseController {
         }
         try {
             userService.activateUser(username);
-            return new ResponseEntity<>(null, HttpStatus.OK);
+            // we need a redirect to TAO login page from activation email within email that hits this endpoint
+            final ConfigurationManager configManager = ConfigurationManager.getInstance();
+            final String loginUIUrl = configManager.getValue("tao.ui.base") + configManager.getValue("tao.ui.login");
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Location", loginUIUrl);
+            return new ResponseEntity<String>(headers, HttpStatus.TEMPORARY_REDIRECT);
 
         } catch (Exception ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);

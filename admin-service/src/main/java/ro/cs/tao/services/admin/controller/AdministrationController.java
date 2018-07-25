@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.admin.mail.MailSenderTLS;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
@@ -54,9 +55,12 @@ public class AdministrationController extends BaseController {
             final User userInfo = adminService.addNewUser(newUserInfo);
             if (userInfo != null) {
                 //send email with activation link
-                MailSenderTLS mailSenderTLS = new MailSenderTLS();
-                String content = constructEmailContentForAccountActivation(userInfo.getFirstName() + " " + userInfo.getLastName(), "http://localhost:8080/user/activate/" + userInfo.getUsername());
-                mailSenderTLS.sendMail(userInfo.getEmail(), "TAO - User activation required", content);
+                final MailSenderTLS mailSenderTLS = new MailSenderTLS();
+                final ConfigurationManager configManager = ConfigurationManager.getInstance();
+                final String activationEndpointUrl = configManager.getValue("tao.services.base") + "/user/activate/" + userInfo.getUsername();
+                final String userFullName = userInfo.getFirstName() + " " + userInfo.getLastName();
+                final String activationEmailContent = constructEmailContentForAccountActivation(userFullName, activationEndpointUrl);
+                mailSenderTLS.sendMail(userInfo.getEmail(), "TAO - User activation required", activationEmailContent);
 
                 return new ResponseEntity<>(userInfo, HttpStatus.OK);
             } else {
@@ -180,7 +184,7 @@ public class AdministrationController extends BaseController {
           "</style>\n" +
           "</head>\n" +
           "<body>\n" +
-          "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" height=\"100%\" width=\"100%\" id=\"bodyTable\" bgcolor=\"#38424B\">\n" +
+          "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" height=\"100%\" width=\"100%\" id=\"bodyTable\" bgcolor=\"#07123a\">\n" +
           "    <tr>\n" +
           "        <td align=\"center\" valign=\"top\">\n" +
           "            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"600\" id=\"emailContainer\">\n" +
