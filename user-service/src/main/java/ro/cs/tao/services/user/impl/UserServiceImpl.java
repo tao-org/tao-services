@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.UserService;
+import ro.cs.tao.services.model.user.ResetPasswordInfo;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
 
@@ -37,6 +38,11 @@ public class UserServiceImpl implements UserService{
     @Override
     public void activateUser(String username) throws PersistenceException {
         persistenceManager.activateUser(username);
+    }
+
+    @Override
+    public void resetPassword(String username, ResetPasswordInfo resetInfo) throws PersistenceException {
+        persistenceManager.resetUserPassword(username, resetInfo.getResetKey(), resetInfo.getNewPassword());
     }
 
     @Override

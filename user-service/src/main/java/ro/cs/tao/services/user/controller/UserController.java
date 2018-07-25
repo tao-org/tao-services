@@ -25,11 +25,13 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.UserService;
+import ro.cs.tao.services.model.user.ResetPasswordInfo;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
 import ro.cs.tao.utils.StringUtils;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Oana H.
@@ -51,12 +53,48 @@ public class UserController extends BaseController {
         }
         try {
             userService.activateUser(username);
-            // we need a redirect to TAO login page from activation email within email that hits this endpoint
-            final ConfigurationManager configManager = ConfigurationManager.getInstance();
-            final String loginUIUrl = configManager.getValue("tao.ui.base") + configManager.getValue("tao.ui.login");
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("Location", loginUIUrl);
-            return new ResponseEntity<String>(headers, HttpStatus.TEMPORARY_REDIRECT);
+
+            // we need to know if the user is TAO internal or external
+            final User userInfo = userService.getUserInfo(username);
+
+            if (!userInfo.isExternal()) {
+                // internal TAO authenticated users need to set a password
+                // we need a redirect to TAO reset password page from activation email within email that hits this endpoint
+                final String passwordResetKey = UUID.randomUUID().toString();
+                // save the reset key on user entity
+                userInfo.setPasswordResetKey(passwordResetKey);
+                userService.updateUserInfo(userInfo);
+
+                final ConfigurationManager configManager = ConfigurationManager.getInstance();
+                final String passwordResetUIUrl = configManager.getValue("tao.ui.base") + configManager.getValue("tao.ui.password.reset") + "?rk=" + passwordResetKey;
+                HttpHeaders headers = new HttpHeaders();
+                headers.add("Location", passwordResetUIUrl);
+                return new ResponseEntity<String>(headers, HttpStatus.TEMPORARY_REDIRECT);
+            }
+            else {
+                // external authenticated users have already a password in the external authentication mechanism
+                // redirect to TAO login page from activation email within email that hits this endpoint
+                final ConfigurationManager configManager = ConfigurationManager.getInstance();
+                final String loginUIUrl = configManager.getValue("tao.ui.base") + configManager.getValue("tao.ui.login");
+                HttpHeaders headers = new HttpHeaders();
+                headers.add("Location", loginUIUrl);
+                return new ResponseEntity<String>(headers, HttpStatus.TEMPORARY_REDIRECT);
+            }
+
+        } catch (Exception ex) {
+            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @RequestMapping(value = "/reset/{username}", method = RequestMethod.POST)
+    public ResponseEntity<?> resetPassword(@PathVariable("username") String username, @RequestBody ResetPasswordInfo resetPasswordInfo) {
+        if (StringUtils.isNullOrEmpty(username) || resetPasswordInfo == null ||
+            StringUtils.isNullOrEmpty(resetPasswordInfo.getResetKey()) || StringUtils.isNullOrEmpty(resetPasswordInfo.getNewPassword())) {
+            return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
+        }
+        try {
+            userService.resetPassword(username, resetPasswordInfo);
+            return new ResponseEntity<>("Password reset successfully!", HttpStatus.OK);
 
         } catch (Exception ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
