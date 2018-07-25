@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,8 +27,9 @@ public class ErrorController implements org.springframework.boot.autoconfigure.w
     private static final String errorPath = "/error";
 
     @RequestMapping(value = errorPath)
-    public String error() {
-        return "Method not supported";
+    @ExceptionHandler(Exception.class)
+    public String error(Exception e) {
+        return e.getMessage();
     }
 
     @Override

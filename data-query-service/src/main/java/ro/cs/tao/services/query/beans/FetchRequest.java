@@ -16,6 +16,7 @@
 
 package ro.cs.tao.services.query.beans;
 
+import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.execution.model.Query;
 
@@ -24,6 +25,9 @@ import java.util.List;
 public class FetchRequest {
     private Query query;
     private List<EOProduct> products;
+    private FetchMode mode;
+    private String localPath;
+    private String pathFormat;
 
     public Query getQuery() {
         return query;
@@ -39,5 +43,25 @@ public class FetchRequest {
 
     public void setProducts(List<EOProduct> products) {
         this.products = products;
+    }
+
+    public FetchMode getMode() { return mode; }
+
+    public void setMode(FetchMode mode) { this.mode = mode; }
+
+    public String getLocalPath() {
+        return localPath;
+    }
+
+    public void setLocalPath(String localPath) {
+        this.localPath = localPath;
+    }
+
+    public String getPathFormat() {
+        return pathFormat;
+    }
+
+    public void setPathFormat(String pathFormat) {
+        this.pathFormat = pathFormat;
     }
 }

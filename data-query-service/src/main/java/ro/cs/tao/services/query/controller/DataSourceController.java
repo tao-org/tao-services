@@ -167,10 +167,17 @@ public class DataSourceController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/fetch", method = RequestMethod.POST)
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    @RequestMapping(value = "/fetch", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> doFetch(@RequestBody FetchRequest request) {
         try {
-            final List<EOProduct> results = dataSourceService.fetch(request.getQuery(), request.getProducts());
+            final List<EOProduct> results;
+            if (request.getLocalPath() != null && request.getPathFormat() != null) {
+                results = dataSourceService.fetch(request.getQuery(), request.getProducts(),
+                                                  request.getMode(), request.getLocalPath(), request.getPathFormat());
+            } else {
+                results = dataSourceService.fetch(request.getQuery(), request.getProducts(), request.getMode(), null, null);
+            }
             if (results == null) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
