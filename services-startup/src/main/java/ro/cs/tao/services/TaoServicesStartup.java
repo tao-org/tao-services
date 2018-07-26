@@ -25,7 +25,6 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.remote.FetchMode;
@@ -189,114 +188,118 @@ public class TaoServicesStartup implements ApplicationListener {
     }
 
     private void registerEmbeddedContainers() {
-        boolean localMode = Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.localmode", "true"));
-        boolean canUseDocker = !localMode;
-        if (!localMode) {
-            List<String> arguments = new ArrayList<>();
-            arguments.add("docker");
-            try {
-                Executor executor = ProcessExecutor.create(ExecutorType.PROCESS,
-                                                           InetAddress.getLocalHost().getHostName(),
-                                                           arguments);
-                executor.setOutputConsumer(new DebugOutputConsumer());
-                canUseDocker = executor.execute(false) == 0;
-            } catch (Exception ignored) {
+        try {
+            boolean localMode = Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.localmode", "true"));
+            boolean canUseDocker = !localMode;
+            if (!localMode) {
+                List<String> arguments = new ArrayList<>();
+                arguments.add("docker");
+                try {
+                    Executor executor = ProcessExecutor.create(ExecutorType.PROCESS,
+                                                               InetAddress.getLocalHost().getHostName(),
+                                                               arguments);
+                    executor.setOutputConsumer(new DebugOutputConsumer());
+                    canUseDocker = executor.execute(false) == 0;
+                } catch (Exception ignored) {
+                }
             }
-        }
-        String snapContainerName = ConfigurationManager.getInstance().getValue("embedded.snap.container.name");
-        String otbContainerName = ConfigurationManager.getInstance().getValue("embedded.otb.container.name");
-        String snapPath = null, otbPath = null;
-        Container snapContainer = null, otbContainer = null;
-        if (canUseDocker) {
-            try {
-                Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"));
-                Files.createDirectories(dockerImagesPath);
-                Path dockerfilePath = dockerImagesPath.resolve(snapContainerName).resolve("Dockerfile");
-                if (!Files.exists(dockerfilePath)) {
-                    Files.createDirectories(dockerfilePath.getParent());
-                    byte[] buffer = new byte[1024];
-                    try (BufferedInputStream is = new BufferedInputStream(TopologyManager.class.getResourceAsStream("docker/snap/Dockerfile"));
-                         OutputStream os = new BufferedOutputStream(Files.newOutputStream(dockerfilePath))) {
-                        int read;
-                        while ((read = is.read(buffer)) != -1) {
-                            os.write(buffer, 0, read);
+            String snapContainerName = ConfigurationManager.getInstance().getValue("embedded.snap.container.name");
+            String otbContainerName = ConfigurationManager.getInstance().getValue("embedded.otb.container.name");
+            String snapPath = null, otbPath = null;
+            Container snapContainer = null, otbContainer = null;
+            if (canUseDocker) {
+                try {
+                    Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"));
+                    Files.createDirectories(dockerImagesPath);
+                    Path dockerfilePath = dockerImagesPath.resolve(snapContainerName).resolve("Dockerfile");
+                    if (!Files.exists(dockerfilePath)) {
+                        Files.createDirectories(dockerfilePath.getParent());
+                        byte[] buffer = new byte[1024];
+                        try (BufferedInputStream is = new BufferedInputStream(TopologyManager.class.getResourceAsStream("docker/snap/Dockerfile"));
+                             OutputStream os = new BufferedOutputStream(Files.newOutputStream(dockerfilePath))) {
+                            int read;
+                            while ((read = is.read(buffer)) != -1) {
+                                os.write(buffer, 0, read);
+                            }
+                            os.flush();
                         }
-                        os.flush();
+                    }
+                    TopologyManager topologyManager = TopologyManager.getInstance();
+                    if (topologyManager.getDockerImage(snapContainerName) == null) {
+                        Logger.getLogger(TaoServicesStartup.class.getName()).info("Begin registering docker image for SNAP");
+                        topologyManager.registerImage(dockerfilePath.toRealPath(), snapContainerName, "SNAP");
+                        Logger.getLogger(TaoServicesStartup.class.getName()).info("Docker image for SNAP registration completed");
+                    }
+                    snapContainer = topologyManager.getDockerImage(snapContainerName);
+                    snapPath = "/opt/snap/bin";
+                    dockerfilePath = dockerImagesPath.resolve(otbContainerName).resolve("Dockerfile");
+                    if (!Files.exists(dockerfilePath)) {
+                        Files.createDirectories(dockerfilePath.getParent());
+                        byte[] buffer = new byte[1024];
+                        try (BufferedInputStream is = new BufferedInputStream(TopologyManager.class.getResourceAsStream("docker/otb/Dockerfile"));
+                             OutputStream os = new BufferedOutputStream(Files.newOutputStream(dockerfilePath))) {
+                            int read;
+                            while ((read = is.read(buffer)) != -1) {
+                                os.write(buffer, 0, read);
+                            }
+                            os.flush();
+                        }
+                    }
+                    if (topologyManager.getDockerImage(otbContainerName) == null) {
+                        Logger.getLogger(TaoServicesStartup.class.getName()).info("Begin registering docker image for OTB");
+                        topologyManager.registerImage(dockerfilePath.toRealPath(), otbContainerName, "OTB");
+                        Logger.getLogger(TaoServicesStartup.class.getName()).info("Docker image for OTB registration completed");
+                    }
+                    otbContainer = topologyManager.getDockerImage(otbContainerName);
+                    otbPath = "/opt/OTB-6.4.0-Linux64/bin";
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                String systemPath = System.getenv("Path");
+                String[] paths = systemPath.split(File.pathSeparator);
+                final boolean isWindows = Platform.ID.win.equals(Platform.getCurrentPlatform().getId());
+                String snapExec = "gpt" + (isWindows ? ".exe" : "");
+                String otbExec = "otbcli_BandMath" + (isWindows ? ".bat" : "");
+                Path currentPath;
+                for (String path : paths) {
+                    currentPath = Paths.get(path).resolve(snapExec);
+                    if (Files.exists(currentPath)) {
+                        snapPath = path;
+                    }
+                    currentPath = Paths.get(path).resolve(otbExec);
+                    if (Files.exists(currentPath)) {
+                        otbPath = path;
+                    }
+                    if (snapPath != null && otbPath != null) {
+                        break;
                     }
                 }
-                TopologyManager topologyManager = TopologyManager.getInstance();
-                if (topologyManager.getDockerImage(snapContainerName) == null) {
-                    Logger.getLogger(TaoServicesStartup.class.getName()).info("Begin registering docker image for SNAP");
-                    topologyManager.registerImage(dockerfilePath.toRealPath(), snapContainerName, "SNAP");
-                    Logger.getLogger(TaoServicesStartup.class.getName()).info("Docker image for SNAP registration completed");
-                }
-                snapContainer = topologyManager.getDockerImage(snapContainerName);
-                snapPath = "/opt/snap/bin";
-                dockerfilePath = dockerImagesPath.resolve(otbContainerName).resolve("Dockerfile");
-                if (!Files.exists(dockerfilePath)) {
-                    Files.createDirectories(dockerfilePath.getParent());
-                    byte[] buffer = new byte[1024];
-                    try (BufferedInputStream is = new BufferedInputStream(TopologyManager.class.getResourceAsStream("docker/otb/Dockerfile"));
-                         OutputStream os = new BufferedOutputStream(Files.newOutputStream(dockerfilePath))) {
-                        int read;
-                        while ((read = is.read(buffer)) != -1) {
-                            os.write(buffer, 0, read);
-                        }
-                        os.flush();
-                    }
-                }
-                if (topologyManager.getDockerImage(otbContainerName) == null) {
-                    Logger.getLogger(TaoServicesStartup.class.getName()).info("Begin registering docker image for OTB");
-                    topologyManager.registerImage(dockerfilePath.toRealPath(), otbContainerName, "OTB");
-                    Logger.getLogger(TaoServicesStartup.class.getName()).info("Docker image for OTB registration completed");
-                }
-                otbContainer = topologyManager.getDockerImage(otbContainerName);
-                otbPath = "/opt/OTB-6.4.0-Linux64/bin";
-            } catch (IOException e) {
-                e.printStackTrace();
+                snapContainer = new Container();
+                snapContainer.setId(snapContainerName);
+                snapContainer.setName(snapContainerName);
+                otbContainer = new Container();
+                otbContainer.setId(otbContainerName);
+                otbContainer.setName(otbContainerName);
             }
-        } else {
-            String systemPath = System.getenv("Path");
-            String[] paths = systemPath.split(File.pathSeparator);
-            final boolean isWindows = Platform.ID.win.equals(Platform.getCurrentPlatform().getId());
-            String snapExec = "gpt" + (isWindows ? ".exe" : "");
-            String otbExec = "otbcli_BandMath" + (isWindows ? ".bat" : "");
-            Path currentPath;
-            for (String path : paths) {
-                currentPath = Paths.get(path).resolve(snapExec);
-                if (Files.exists(currentPath)) {
-                    snapPath = path;
+            ContainerInitializer.setPersistenceManager(persistenceManager);
+            ContainerInitializer.setContainerService(containerService);
+            if (snapPath != null) {
+                if (snapContainer != null) {
+                    ContainerInitializer.initSnap(snapContainer.getId(), snapContainerName, snapPath);
                 }
-                currentPath = Paths.get(path).resolve(otbExec);
-                if (Files.exists(currentPath)) {
-                    otbPath = path;
+            } else {
+                Logger.getLogger(TaoServicesStartup.class.getName()).warning("SNAP was not found in system path");
+            }
+            if (otbPath != null) {
+                if (otbContainer != null) {
+                    ContainerInitializer.initOtb(otbContainer.getId(), otbContainerName, otbPath);
                 }
-                if (snapPath != null && otbPath != null) {
-                    break;
-                }
+            } else {
+                Logger.getLogger(TaoServicesStartup.class.getName()).warning("OTB was not found in system path");
             }
-            snapContainer = new Container();
-            snapContainer.setId(snapContainerName);
-            snapContainer.setName(snapContainerName);
-            otbContainer = new Container();
-            otbContainer.setId(otbContainerName);
-            otbContainer.setName(otbContainerName);
-        }
-        ContainerInitializer.setPersistenceManager(persistenceManager);
-        ContainerInitializer.setContainerService(containerService);
-        if (snapPath != null) {
-            if (snapContainer != null) {
-                ContainerInitializer.initSnap(snapContainer.getId(), snapContainerName, snapPath);
-            }
-        } else {
-            Logger.getLogger(TaoServicesStartup.class.getName()).warning("SNAP was not found in system path");
-        }
-        if (otbPath != null) {
-            if (otbContainer != null) {
-                ContainerInitializer.initOtb(otbContainer.getId(), otbContainerName, otbPath);
-            }
-        } else {
-            Logger.getLogger(TaoServicesStartup.class.getName()).warning("OTB was not found in system path");
+        } catch (Exception ex) {
+            Logger.getLogger(TaoServicesStartup.class.getName()).severe("Error encountered while initializing Docker images: " + ex.getMessage());
         }
     }
 
@@ -307,7 +310,6 @@ public class TaoServicesStartup implements ApplicationListener {
             for (String sensor : sensors) {
                 List<String> dsNames = DataSourceManager.getInstance().getNames(sensor);
                 for (String dsName : dsNames) {
-                    DataSource dataSource = DataSourceManager.getInstance().get(sensor, dsName);
                     componentId = sensor + "-" + dsName;
                     DataSourceComponent dataSourceComponent;
                     dataSourceComponent = persistenceManager.getDataSourceInstance(componentId);
