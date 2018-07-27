@@ -86,7 +86,7 @@ public class UserController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/reset/{username}", method = RequestMethod.POST)
+    @RequestMapping(value = "/{username}/reset", method = RequestMethod.POST)
     public ResponseEntity<?> resetPassword(@PathVariable("username") String username, @RequestBody ResetPasswordInfo resetPasswordInfo) {
         if (StringUtils.isNullOrEmpty(username) || resetPasswordInfo == null ||
             StringUtils.isNullOrEmpty(resetPasswordInfo.getResetKey()) || StringUtils.isNullOrEmpty(resetPasswordInfo.getNewPassword())) {
@@ -101,7 +101,7 @@ public class UserController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{username}", method = RequestMethod.GET)
+    @RequestMapping(value = "/{username}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> getUserInfo(@PathVariable("username") String username) {
         if (StringUtils.isNullOrEmpty(username)) {
             return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
@@ -118,7 +118,7 @@ public class UserController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{username}", method = RequestMethod.POST)
+    @RequestMapping(value = "/{username}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> updateUserInfo(@RequestBody User updatedUserInfo) {
         if (updatedUserInfo == null) {
             return new ResponseEntity<>("The expected request body is empty!", HttpStatus.BAD_REQUEST);
@@ -135,7 +135,7 @@ public class UserController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/prefs", method = RequestMethod.POST)
+    @RequestMapping(value = "/prefs", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> saveOrUpdateUserPreferences(@RequestBody List<UserPreference> userPreferences, @RequestHeader("X-Auth-Token") String authToken) {
         if (userPreferences == null || userPreferences.isEmpty() || StringUtils.isNullOrEmpty(authToken)) {
             return new ResponseEntity<>("The expected request body is empty!", HttpStatus.BAD_REQUEST);
@@ -153,7 +153,7 @@ public class UserController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/prefs", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/prefs", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> removeUserPreferences(@RequestBody List<String> userPrefsKeysToDelete, @RequestHeader("X-Auth-Token") String authToken) {
         if (userPrefsKeysToDelete == null || userPrefsKeysToDelete.isEmpty() || StringUtils.isNullOrEmpty(authToken)) {
             return new ResponseEntity<>("The expected request body is empty!", HttpStatus.BAD_REQUEST);

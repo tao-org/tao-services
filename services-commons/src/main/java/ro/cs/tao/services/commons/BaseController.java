@@ -42,7 +42,7 @@ public class BaseController {
 
     public static final String ADMIN_SERVICE_PATH_EXPRESSION = "/admin/**/*";
     //public static final String USER_SERVICE_PATH_EXPRESSION = "/user/**/*";
-    public static final String USER_SERVICE_PATH_EXPRESSION = "/user/*"; //  "/user/activate/{username}" should remain free (accessed from activation email)
+    public static final String USER_SERVICE_PATH_EXPRESSION = "/user/*"; //  "/user/activate/{username}", "/user/reset/{username}"  should remain free (accessed from activation email)
     public static final String DATA_QUERY_SERVICE_PATH_EXPRESSION = "/query/*";
     public static final String MONITORING_SERVICE_PATH_EXPRESSION = "/monitor/*";
     public static final String COMPONENT_SERVICE_PATH_EXPRESSION = "/component/*";
