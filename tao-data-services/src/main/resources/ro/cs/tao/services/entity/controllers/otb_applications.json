@@ -43,7 +43,7 @@
         "id": "exp_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "Expressions",
         "label": "exp",
         "notNull": false
@@ -113,8 +113,8 @@
       {
         "id": "incontext_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Import context",
         "label": "incontext",
         "notNull": true
@@ -432,7 +432,7 @@
         "id": "bm_maxhd_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Maximum horizontal disparity",
         "label": "bm.maxhd",
         "notNull": false
@@ -441,7 +441,7 @@
         "id": "bm_maxvd_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Maximum vertical disparity",
         "label": "bm.maxvd",
         "notNull": false
@@ -450,7 +450,7 @@
         "id": "bm_medianfilter_incoherence_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Incoherence threshold",
         "label": "bm.medianfilter.incoherence",
         "notNull": true
@@ -459,7 +459,7 @@
         "id": "bm_medianfilter_radius_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Radius",
         "label": "bm.medianfilter.radius",
         "notNull": true
@@ -491,7 +491,7 @@
         "id": "bm_minhd_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Minimum horizontal disparity",
         "label": "bm.minhd",
         "notNull": false
@@ -500,7 +500,7 @@
         "id": "bm_minvd_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Minimum vertical disparity",
         "label": "bm.minvd",
         "notNull": false
@@ -541,6 +541,7 @@
         "label": "bm.step",
         "notNull": true
       },
+
       {
         "id": "bm_subpixel_str",
         "type": "REGULAR",
@@ -569,7 +570,7 @@
         "id": "mask_inleft_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Mask to discard left pixels",
         "label": "mask.inleft",
         "notNull": true
@@ -578,7 +579,7 @@
         "id": "mask_inright_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Mask to discard right pixels",
         "label": "mask.inright",
         "notNull": true
@@ -665,8 +666,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -674,8 +675,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -1168,6 +1169,7 @@
     "sources": [
       {
         "id": "5ff3d5a4-5d89-45b8-a19b-5d3e16d4319f",
+
         "parentId": "ComputeConfusionMatrix",
         "name": "ref.raster.in",
         "cardinality": 1,
@@ -1190,7 +1192,7 @@
         "name": "ref.vector.in",
         "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER"
+          "formatType": "VECTOR"
         }
       }
     ],
@@ -1263,7 +1265,7 @@
         "id": "ref_vector_field_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": "",
         "description": "Field name",
         "label": "ref.vector.field",
         "notNull": true
@@ -1297,6 +1299,7 @@
         "dataDescriptor": {
           "formatType": "RASTER"
         }
+
       }
     ],
     "targets": [
@@ -1324,7 +1327,7 @@
         "id": "bv_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Background Value",
         "label": "bv",
         "notNull": true
@@ -1392,8 +1395,6 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 0,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "b863a5fe-3506-4cf2-8e2e-56fe9ec0a117",
@@ -1430,19 +1431,10 @@
         "id": "feat_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": "",
         "description": "Field names to be calculated.",
         "label": "feat",
         "notNull": true
-      },
-      {
-        "id": "inshp_str",
-        "type": "REGULAR",
-        "dataType": "java.lang.String",
-        "defaultValue": "None",
-        "description": "Name of the input shapefile",
-        "label": "inshp",
-        "notNull": false
       }
     ],
     "templatecontents": "-inshp\n$inshp_str\n-outstats\n$outstats\n-feat\n$feat_str"
@@ -1499,8 +1491,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -1508,8 +1500,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -1518,7 +1510,7 @@
         "id": "expr_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "Connected Component Expression",
         "label": "expr",
         "notNull": false
@@ -1527,7 +1519,7 @@
         "id": "field_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Field Name",
         "label": "field",
         "notNull": true
@@ -1536,7 +1528,7 @@
         "id": "vd_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Input Vector data",
         "label": "vd",
         "notNull": false
@@ -1598,7 +1590,7 @@
       {
         "id": "38eb8d2b-cb80-415d-9b00-e49a329b2d5e",
         "parentId": "ConcatenateVectorData",
-        "name": "il",
+        "name": "vd",
         "cardinality": 0,
         "dataDescriptor": {
           "formatType": "VECTOR"
@@ -1626,7 +1618,7 @@
     "visibility": "SYSTEM",
     "active": true,
     "parameterDescriptors": [],
-    "templatecontents": "-il\n$il\n-out\n$out"
+    "templatecontents": "-vd\n$vd\n-out\n$out"
   },
   {
     "id": "ConnectedComponentSegmentation",
@@ -1680,8 +1672,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -1689,8 +1681,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -1699,7 +1691,7 @@
         "id": "expr_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "Connected Component Expression",
         "label": "expr",
         "notNull": false
@@ -1708,7 +1700,7 @@
         "id": "mask_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "InputMask",
         "label": "mask",
         "notNull": true
@@ -1726,7 +1718,7 @@
         "id": "obia_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "OBIA Expression",
         "label": "obia",
         "notNull": true
@@ -1787,7 +1779,7 @@
         "id": "hfact_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Contrast Limitation",
         "label": "hfact",
         "notNull": true
@@ -1805,7 +1797,7 @@
         "id": "minmax_manuel_max_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Maximum value",
         "label": "minmax.manuel.max",
         "notNull": true
@@ -1814,7 +1806,7 @@
         "id": "minmax_manuel_min_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Minimum value",
         "label": "minmax.manuel.min",
         "notNull": true
@@ -1903,7 +1895,7 @@
         "id": "nodata_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Nodata Value",
         "label": "nodata",
         "notNull": true
@@ -1995,7 +1987,7 @@
         "id": "channels_rgb_blue_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Blue Channel",
         "label": "channels.rgb.blue",
         "notNull": false
@@ -2004,7 +1996,7 @@
         "id": "channels_rgb_green_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Green Channel",
         "label": "channels.rgb.green",
         "notNull": false
@@ -2013,7 +2005,7 @@
         "id": "channels_rgb_red_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Red Channel",
         "label": "channels.rgb.red",
         "notNull": false
@@ -2054,7 +2046,7 @@
         "id": "mask_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "InputMask",
         "label": "mask",
         "notNull": true
@@ -2093,7 +2085,26 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sources": [],
+    "sources": [
+      {
+        "id": "d882a367-c23a-4167-8dad-99d1d5a767a2",
+        "parentId": "ConvertCartoToGeoPoint",
+        "name": "carto.x",
+        "cardinality": 1,
+        "dataDescriptor": {
+          "formatType": "RASTER"
+        }
+      },
+      {
+        "id": "83ba5906-b879-480d-a7fb-5cebc43f865f",
+        "parentId": "ConvertCartoToGeoPoint",
+        "name": "carto.y",
+        "cardinality": 1,
+        "dataDescriptor": {
+          "formatType": "RASTER"
+        }
+      }
+    ],
     "targets": [],
     "containerId": "OTB-6.4.0",
     "fileLocation": "otbcli_ConvertCartoToGeoPoint.bat",
@@ -2104,24 +2115,6 @@
     "visibility": "SYSTEM",
     "active": true,
     "parameterDescriptors": [
-      {
-        "id": "carto_x_number",
-        "type": "REGULAR",
-        "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
-        "description": "X cartographic coordinates",
-        "label": "carto.x",
-        "notNull": false
-      },
-      {
-        "id": "carto_y_number",
-        "type": "REGULAR",
-        "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
-        "description": "Y cartographic coordinates",
-        "label": "carto.y",
-        "notNull": false
-      },
       {
         "id": "mapproj_epsg_code_str",
         "type": "REGULAR",
@@ -2166,7 +2159,7 @@
         "notNull": true
       }
     ],
-    "templatecontents": "-carto.x\n$carto_x_number\n-carto.y\n$carto_y_number\n-mapproj\n$mapproj_str\n-mapproj.utm.zone\n$mapproj_utm_zone_number\n-mapproj.utm.northhem\n$mapproj_utm_northhem_bool\n-mapproj.epsg.code\n$mapproj_epsg_code_str"
+    "templatecontents": "-carto.x\n$carto.x\n-carto.y\n$carto.y\n-mapproj\n$mapproj_str\n-mapproj.utm.zone\n$mapproj_utm_zone_number\n-mapproj.utm.northhem\n$mapproj_utm_northhem_bool\n-mapproj.epsg.code\n$mapproj_epsg_code_str"
   },
   {
     "id": "ConvertSensorToGeoPoint",
@@ -2176,8 +2169,6 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 0,
     "sources": [
       {
         "id": "54085b75-df19-49f7-9079-71410e63c14d",
@@ -2342,7 +2333,7 @@
         "id": "filter_kuan_nblooks_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Number of looks",
         "label": "filter.kuan.nblooks",
         "notNull": false
@@ -2351,7 +2342,7 @@
         "id": "filter_kuan_rad_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Radius",
         "label": "filter.kuan.rad",
         "notNull": false
@@ -2480,8 +2471,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -2489,8 +2480,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -2517,7 +2508,7 @@
         "id": "io_mask_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Disparity mask",
         "label": "io.mask",
         "notNull": true
@@ -2649,8 +2640,6 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 0,
     "sources": [
       {
         "id": "fc92206c-1fc4-47ed-a0de-5c870413121b",
@@ -2723,14 +2712,32 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 0,
-    "targetCardinality": 1,
-    "sources": [],
+    "sources": [
+      {
+        "id": "351452c8-58de-42fc-b3a4-7339a0e24105",
+        "parentId": "DSFuzzyModelEstimation",
+        "name": "psin",
+        "cardinality": 1,
+        "dataDescriptor": {
+          "formatType": "VECTOR"
+        }
+      },
+      {
+        "id": "e70deca3-e49f-4732-b186-d4bd32ce5ad0",
+        "parentId": "DSFuzzyModelEstimation",
+        "name": "nsin",
+        "cardinality": 1,
+        "dataDescriptor": {
+          "formatType": "VECTOR"
+        }
+      }
+    ],
     "targets": [
       {
         "id": "d719f2c8-f817-487f-9e19-254171ddd12d",
         "parentId": "DSFuzzyModelEstimation",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_DSFuzzyModelEstimation_1.tif"
@@ -2750,7 +2757,7 @@
         "id": "belsup_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "True",
+        "defaultValue": null,
         "description": "Belief Support",
         "label": "belsup",
         "notNull": true
@@ -2759,7 +2766,7 @@
         "id": "cri_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": "(Belief + Plausibility)/2",
         "description": "Criterion",
         "label": "cri",
         "notNull": true
@@ -2768,7 +2775,7 @@
         "id": "desclist_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "True",
+        "defaultValue": null,
         "description": "Descriptor list",
         "label": "desclist",
         "notNull": true
@@ -2776,8 +2783,8 @@
       {
         "id": "initmod_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "initialization model",
         "label": "initmod",
         "notNull": true
@@ -2792,15 +2799,6 @@
         "notNull": true
       },
       {
-        "id": "nsin_str",
-        "type": "REGULAR",
-        "dataType": "java.lang.String",
-        "defaultValue": "None",
-        "description": "Input Negative Vector Data",
-        "label": "nsin",
-        "notNull": false
-      },
-      {
         "id": "optobs_bool",
         "type": "REGULAR",
         "dataType": "java.lang.Boolean",
@@ -2813,19 +2811,10 @@
         "id": "plasup_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "True",
+        "defaultValue": null,
         "description": "Plausibility Support",
         "label": "plasup",
         "notNull": true
-      },
-      {
-        "id": "psin_str",
-        "type": "REGULAR",
-        "dataType": "java.lang.String",
-        "defaultValue": "None",
-        "description": "Input Positive Vector Data",
-        "label": "psin",
-        "notNull": false
       },
       {
         "id": "wgt_number",
@@ -2837,7 +2826,7 @@
         "notNull": true
       }
     ],
-    "templatecontents": "-psin\n$psin_str\n-nsin\n$nsin_str\n-belsup\n$belsup_str\n-plasup\n$plasup_str\n-cri\n$cri_str\n-wgt\n$wgt_number\n-initmod\n$initmod_file\n-desclist\n$desclist_str\n-maxnbit\n$maxnbit_number\n-optobs\n$optobs_bool\n-out\n$out"
+    "templatecontents": "-psin\n$psin\n-nsin\n$nsin\n-belsup\n$belsup_str\n-plasup\n$plasup_str\n-cri\n$cri_str\n-wgt\n$wgt_number\n-initmod\n$initmod_file\n-desclist\n$desclist_str\n-maxnbit\n$maxnbit_number\n-optobs\n$optobs_bool\n-out\n$out"
   },
   {
     "id": "DynamicConvert",
@@ -2847,13 +2836,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "f261c3c4-10ac-40f4-915d-40856e3aae3d",
         "parentId": "DynamicConvert",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -2864,6 +2852,7 @@
         "id": "a355563a-8630-4c87-82c4-4f1f1d51957d",
         "parentId": "DynamicConvert",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_DynamicConvert_1.tif"
@@ -2892,7 +2881,7 @@
         "id": "channels_rgb_blue_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Blue Channel",
         "label": "channels.rgb.blue",
         "notNull": false
@@ -2901,7 +2890,7 @@
         "id": "channels_rgb_green_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Green Channel",
         "label": "channels.rgb.green",
         "notNull": false
@@ -2910,7 +2899,7 @@
         "id": "channels_rgb_red_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Red Channel",
         "label": "channels.rgb.red",
         "notNull": false
@@ -2933,7 +2922,7 @@
         "id": "mask_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "InputMask",
         "label": "mask",
         "notNull": true
@@ -3007,13 +2996,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "c214faee-74d6-463d-af42-6fd215047175",
         "parentId": "EdgeExtraction",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -3024,6 +3012,7 @@
         "id": "40eea18c-1fac-4231-8d6c-6dc462a7eafb",
         "parentId": "EdgeExtraction",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_EdgeExtraction_1.tif"
@@ -3091,13 +3080,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "a153cfa3-7c79-47e2-8718-4ae19dd6131b",
         "parentId": "ExtractROI",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -3106,6 +3094,7 @@
         "id": "da5cf682-0f4a-4426-a152-307e869b83ae",
         "parentId": "ExtractROI",
         "name": "mode.fit.im",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -3116,6 +3105,7 @@
         "id": "d3e262d3-ba68-49f2-9770-1a083f37c1de",
         "parentId": "ExtractROI",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ExtractROI_1.tif"
@@ -3135,7 +3125,7 @@
         "id": "cl_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": "",
         "description": "Channel List",
         "label": "cl",
         "notNull": true
@@ -3152,8 +3142,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -3161,8 +3151,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -3221,7 +3211,7 @@
         "id": "mode_fit_vect_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Reference vector",
         "label": "mode.fit.vect",
         "notNull": false
@@ -3342,13 +3332,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 2,
     "sources": [
       {
         "id": "904cfdb4-9bdb-4736-9895-59248c3fa0e0",
         "parentId": "FineRegistration",
         "name": "ref",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -3357,6 +3346,7 @@
         "id": "bb30bab5-8959-4fbe-a634-2ebeea34ef37",
         "parentId": "FineRegistration",
         "name": "sec",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -3367,6 +3357,7 @@
         "id": "0eb7cbd8-32b9-4b1f-bba9-69d794cad497",
         "parentId": "FineRegistration",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_FineRegistration_1.tif"
@@ -3376,6 +3367,7 @@
         "id": "60bf5453-55a9-4407-ac3d-94c82711c237",
         "parentId": "FineRegistration",
         "name": "wo",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_FineRegistration_2.tif"
@@ -3422,7 +3414,7 @@
         "id": "erx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Exploration Radius X",
         "label": "erx",
         "notNull": false
@@ -3431,7 +3423,7 @@
         "id": "ery_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Exploration Radius Y",
         "label": "ery",
         "notNull": false
@@ -3440,16 +3432,23 @@
         "id": "m_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": "CC",
         "description": "Metric",
         "label": "m",
+        "valueSet": [
+          "CC",
+          "CCSM",
+          "MSD",
+          "MRSD",
+          "MI"
+        ],
         "notNull": true
       },
       {
         "id": "mrx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Metric Radius X",
         "label": "mrx",
         "notNull": false
@@ -3458,7 +3457,7 @@
         "id": "mry_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Metric Radius Y",
         "label": "mry",
         "notNull": false
@@ -3467,7 +3466,7 @@
         "id": "rgsx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Reference Gaussian Smoothing X",
         "label": "rgsx",
         "notNull": true
@@ -3476,7 +3475,7 @@
         "id": "rgsy_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Reference Gaussian Smoothing Y",
         "label": "rgsy",
         "notNull": true
@@ -3485,7 +3484,7 @@
         "id": "sgsx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Secondary Gaussian Smoothing X",
         "label": "sgsx",
         "notNull": true
@@ -3494,7 +3493,7 @@
         "id": "sgsy_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Secondary Gaussian Smoothing Y",
         "label": "sgsy",
         "notNull": true
@@ -3530,7 +3529,7 @@
         "id": "vmlt_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Validity Mask Lower Threshold",
         "label": "vmlt",
         "notNull": true
@@ -3539,7 +3538,7 @@
         "id": "vmut_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Validity Mask Upper Threshold",
         "label": "vmut",
         "notNull": true
@@ -3548,7 +3547,7 @@
         "id": "w_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Image To Warp",
         "label": "w",
         "notNull": true
@@ -3564,13 +3563,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "d2a211dc-8ca1-446a-9677-4c70e1839744",
         "parentId": "FusionOfClassifications",
         "name": "il",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -3579,6 +3577,7 @@
         "id": "dd6eb619-6fea-4a0f-85db-25ec777875c0",
         "parentId": "FusionOfClassifications",
         "name": "method.dempstershafer.cmfl",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -3589,6 +3588,7 @@
         "id": "0ce08bc4-2ff8-4216-a586-4666e7afec3f",
         "parentId": "FusionOfClassifications",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_FusionOfClassifications_1.tif"
@@ -3661,13 +3661,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "a1b84d78-4880-491b-8b30-78226eac9f77",
         "parentId": "GeneratePlyFile",
         "name": "indem",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -3676,6 +3675,7 @@
         "id": "ae6752c2-a98b-494c-984c-e0efe8b2e9c2",
         "parentId": "GeneratePlyFile",
         "name": "incolor",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -3686,6 +3686,7 @@
         "id": "646b04b2-0e50-45e3-97ec-3319c2a4a5c9",
         "parentId": "GeneratePlyFile",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_GeneratePlyFile_1.tif"
@@ -3768,13 +3769,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 3,
     "sources": [
       {
         "id": "3abacb42-a266-4907-9574-300ce094ba74",
         "parentId": "GenerateRPCSensorModel",
         "name": "inpoints",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -3785,8 +3785,9 @@
         "id": "5f9ee11e-2a44-44a3-aff7-e274c7f70b92",
         "parentId": "GenerateRPCSensorModel",
         "name": "outvector",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
+          "formatType": "VECTOR",
           "location": "output_otbcli_GenerateRPCSensorModel_3.tif"
         }
       },
@@ -3794,6 +3795,7 @@
         "id": "8ef47eb5-3f17-42c4-92cd-02fb8d6886dc",
         "parentId": "GenerateRPCSensorModel",
         "name": "outstat",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_GenerateRPCSensorModel_2.tif"
@@ -3803,6 +3805,7 @@
         "id": "9f2b14c3-6834-4f6c-9574-74f969e70b4a",
         "parentId": "GenerateRPCSensorModel",
         "name": "outgeom",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_GenerateRPCSensorModel_1.tif"
@@ -3830,8 +3833,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -3839,8 +3842,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -3899,13 +3902,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "a5943678-de5a-44a5-97e9-8d03bf8cf0ac",
         "parentId": "GrayScaleMorphologicalOperation",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -3916,6 +3918,7 @@
         "id": "b7461550-e824-472c-ae61-b0c1cf84a713",
         "parentId": "GrayScaleMorphologicalOperation",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_GrayScaleMorphologicalOperation_1.tif"
@@ -3997,13 +4000,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "456fac13-bb3c-43dc-b390-f2c3b077d3d2",
         "parentId": "GridBasedImageResampling",
         "name": "grid.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4012,6 +4014,7 @@
         "id": "b9cea235-4b82-4c21-b2b3-521e6c47fbf2",
         "parentId": "GridBasedImageResampling",
         "name": "io.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4022,6 +4025,7 @@
         "id": "d7a62690-426d-421d-8241-cae3ef54cc43",
         "parentId": "GridBasedImageResampling",
         "name": "io.out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_GridBasedImageResampling_1.tif"
@@ -4086,7 +4090,7 @@
         "id": "out_sizex_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Size X",
         "label": "out.sizex",
         "notNull": false
@@ -4095,7 +4099,7 @@
         "id": "out_sizey_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Size Y",
         "label": "out.sizey",
         "notNull": false
@@ -4147,13 +4151,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "93daa7f0-4108-47a2-bd99-e26ef5676dd3",
         "parentId": "HaralickTextureExtraction",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4164,6 +4167,7 @@
         "id": "4f6db9ab-25c5-4089-9f1b-635d34fa0f03",
         "parentId": "HaralickTextureExtraction",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_HaralickTextureExtraction_1.tif"
@@ -4285,13 +4289,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 2,
     "sources": [
       {
         "id": "4effe17c-2965-4eb6-b5bb-2c2a6bd67da2",
         "parentId": "HomologousPointsExtraction",
         "name": "in1",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4300,6 +4303,7 @@
         "id": "f2bbe23f-0689-4a92-98bb-fa052ae31eeb",
         "parentId": "HomologousPointsExtraction",
         "name": "in2",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4310,6 +4314,7 @@
         "id": "e44be134-9f63-4d68-9425-83b43c2012e8",
         "parentId": "HomologousPointsExtraction",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_HomologousPointsExtraction_1.tif"
@@ -4319,8 +4324,9 @@
         "id": "ec3b8dd5-9e17-475a-9d8e-1b1d9c49a872",
         "parentId": "HomologousPointsExtraction",
         "name": "outvector",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
+          "formatType": "VECTOR",
           "location": "output_otbcli_HomologousPointsExtraction_2.tif"
         }
       }
@@ -4395,8 +4401,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -4404,8 +4410,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -4432,7 +4438,7 @@
         "id": "mode_geobins_binsizey_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Size of bin (y direction)",
         "label": "mode.geobins.binsizey",
         "notNull": true
@@ -4450,7 +4456,7 @@
         "id": "mode_geobins_binstepy_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Steps between bins (y direction)",
         "label": "mode.geobins.binstepy",
         "notNull": true
@@ -4506,13 +4512,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 2,
     "sources": [
       {
         "id": "0fceee22-b8a0-46b9-8154-8d71dd8fed75",
         "parentId": "HooverCompareSegmentation",
         "name": "inms",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4521,6 +4526,7 @@
         "id": "4b760259-205b-483e-b7fa-5f65efabc157",
         "parentId": "HooverCompareSegmentation",
         "name": "ingt",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4531,6 +4537,7 @@
         "id": "2c98dd79-3272-4b68-a88f-7e6ec236c004",
         "parentId": "HooverCompareSegmentation",
         "name": "outgt",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_HooverCompareSegmentation_1.tif"
@@ -4540,6 +4547,7 @@
         "id": "a3da259c-ae49-438b-8142-96312320adac",
         "parentId": "HooverCompareSegmentation",
         "name": "outms",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_HooverCompareSegmentation_2.tif"
@@ -4584,13 +4592,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "b6ce2523-ca8d-4986-910d-ccd00ce8d705",
         "parentId": "HyperspectralUnmixing",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4599,6 +4606,7 @@
         "id": "beaac6af-a1c6-4fd2-bf66-5e0ab15c00c9",
         "parentId": "HyperspectralUnmixing",
         "name": "ie",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4609,6 +4617,7 @@
         "id": "bf061984-f903-4191-9a50-fa1c4dfb0d35",
         "parentId": "HyperspectralUnmixing",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_HyperspectralUnmixing_1.tif"
@@ -4650,13 +4659,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 2,
     "sources": [
       {
         "id": "1f968542-ee3c-439f-8941-1ed020a29b3e",
         "parentId": "ImageClassifier",
         "name": "model",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4665,6 +4673,7 @@
         "id": "3bccd89c-84ee-46ae-abdc-9ac075452481",
         "parentId": "ImageClassifier",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4675,6 +4684,7 @@
         "id": "5550c4a4-138f-4060-90bc-2b08367f3175",
         "parentId": "ImageClassifier",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ImageClassifier_1.tif"
@@ -4684,6 +4694,7 @@
         "id": "8c582366-57c8-465a-8cc3-612b5481b758",
         "parentId": "ImageClassifier",
         "name": "confmap",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ImageClassifier_2.tif"
@@ -4702,8 +4713,8 @@
       {
         "id": "imstat_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Statistics file",
         "label": "imstat",
         "notNull": true
@@ -4712,7 +4723,7 @@
         "id": "mask_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "InputMask",
         "label": "mask",
         "notNull": true
@@ -4737,13 +4748,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "06d2a604-17e4-4ace-8101-057476d33c34",
         "parentId": "ImageEnvelope",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4754,8 +4764,9 @@
         "id": "86c3d3cf-3bd3-4a50-bb31-d35654e41413",
         "parentId": "ImageEnvelope",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
+          "formatType": "VECTOR",
           "location": "output_otbcli_ImageEnvelope_1.tif"
         }
       }
@@ -4781,8 +4792,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -4790,8 +4801,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -4800,7 +4811,7 @@
         "id": "proj_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "Projection",
         "label": "proj",
         "notNull": true
@@ -4825,13 +4836,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 2,
     "sources": [
       {
         "id": "14e87bd4-77bf-441a-b99f-1b98e2b5b665",
         "parentId": "LargeScaleMeanShift",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4842,6 +4852,7 @@
         "id": "0a337c8f-fc57-4245-af9a-59b4e5f624fa",
         "parentId": "LargeScaleMeanShift",
         "name": "mode.raster.out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_LargeScaleMeanShift_2.tif"
@@ -4851,8 +4862,9 @@
         "id": "8a09bd34-e02e-4a2f-87f4-47a17f49a259",
         "parentId": "LargeScaleMeanShift",
         "name": "mode.vector.out",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
+          "formatType": "VECTOR",
           "location": "output_otbcli_LargeScaleMeanShift_1.tif"
         }
       }
@@ -4901,7 +4913,7 @@
         "id": "mode_vector_imfield_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Support image for field computation",
         "label": "mode.vector.imfield",
         "notNull": true
@@ -4953,13 +4965,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "9349c532-1f92-458c-84f3-cabe66f2ad9b",
         "parentId": "LineSegmentDetection",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -4970,6 +4981,7 @@
         "id": "f3b416f9-f7d7-497e-9a9c-a02e07a81c66",
         "parentId": "LineSegmentDetection",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_LineSegmentDetection_1.tif"
@@ -4997,8 +5009,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -5006,8 +5018,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -5032,13 +5044,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "de5f595e-fd12-418f-8638-4adf9e4bc9ff",
         "parentId": "LocalStatisticExtraction",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5049,6 +5060,7 @@
         "id": "29ea4807-fc5c-4eb7-ac60-08779db3d87d",
         "parentId": "LocalStatisticExtraction",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_LocalStatisticExtraction_1.tif"
@@ -5093,13 +5105,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "1addbc95-e149-423c-a6da-d1b4dee2d84c",
         "parentId": "LSMSSegmentation",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5110,6 +5121,7 @@
         "id": "7393fa93-b874-417a-a5ae-6ad76592d3d4",
         "parentId": "LSMSSegmentation",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_LSMSSegmentation_1.tif"
@@ -5138,7 +5150,7 @@
         "id": "inpos_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Filtered position image",
         "label": "inpos",
         "notNull": true
@@ -5191,8 +5203,8 @@
       {
         "id": "tmpdir_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Directory where to write temporary files",
         "label": "tmpdir",
         "notNull": true
@@ -5208,13 +5220,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "8cd26be5-db6d-4dab-a4f5-e5358bf08566",
         "parentId": "LSMSSmallRegionsMerging",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5223,6 +5234,7 @@
         "id": "bd8d4e5a-e3d9-46b0-836c-021f5413b3b9",
         "parentId": "LSMSSmallRegionsMerging",
         "name": "inseg",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5233,6 +5245,7 @@
         "id": "89ed17ed-d80e-49a2-b1d2-dc572affe7ec",
         "parentId": "LSMSSmallRegionsMerging",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_LSMSSmallRegionsMerging_1.tif"
@@ -5286,13 +5299,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "7833443f-5b71-49a3-8deb-c5d535dd66d3",
         "parentId": "LSMSVectorization",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5301,6 +5313,7 @@
         "id": "8598fc23-543a-44b3-a7ad-0c8826d15efa",
         "parentId": "LSMSVectorization",
         "name": "inseg",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5311,8 +5324,9 @@
         "id": "e3ff59a5-f282-4397-bbe5-ab2cb3f0cdb8",
         "parentId": "LSMSVectorization",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
+          "formatType": "VECTOR",
           "location": "output_otbcli_LSMSVectorization_1.tif"
         }
       }
@@ -5352,16 +5366,16 @@
     "label": "ManageNoData",
     "version": "6.4.0",
     "description": "Manage No-Data",
+
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "b145ebae-2a49-4d37-9c22-63f06fefd9ac",
         "parentId": "ManageNoData",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5370,6 +5384,7 @@
         "id": "c6c6ab0c-4d34-4374-810f-27c5f2f24d20",
         "parentId": "ManageNoData",
         "name": "mode.apply.mask",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5380,6 +5395,7 @@
         "id": "d22b320d-d1fe-47be-887b-38403af385f6",
         "parentId": "ManageNoData",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ManageNoData_1.tif"
@@ -5465,13 +5481,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 2,
     "sources": [
       {
         "id": "712dedea-11e7-4c1b-860f-eb0b126feb2b",
         "parentId": "MeanShiftSmoothing",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5482,6 +5497,7 @@
         "id": "0038604f-733d-4e60-9e8d-4d710601d6f2",
         "parentId": "MeanShiftSmoothing",
         "name": "fout",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_MeanShiftSmoothing_1.tif"
@@ -5491,6 +5507,7 @@
         "id": "94c3f1ad-e509-430b-b4f7-aecc5373a069",
         "parentId": "MeanShiftSmoothing",
         "name": "foutpos",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_MeanShiftSmoothing_2.tif"
@@ -5571,13 +5588,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "1cd83637-a269-4f09-bb74-cd1349382344",
         "parentId": "MorphologicalClassification",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5588,6 +5604,7 @@
         "id": "18589e13-621b-4ada-9e58-9d7841e4e339",
         "parentId": "MorphologicalClassification",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_MorphologicalClassification_1.tif"
@@ -5654,13 +5671,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 3,
     "sources": [
       {
         "id": "867c6c18-0932-418f-9ab7-da8c625bc975",
         "parentId": "MorphologicalMultiScaleDecomposition",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5671,6 +5687,7 @@
         "id": "5b3ffed2-d9e4-41e5-85ac-435bdee2d895",
         "parentId": "MorphologicalMultiScaleDecomposition",
         "name": "outconcave",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_MorphologicalMultiScaleDecomposition_2.tif"
@@ -5680,6 +5697,7 @@
         "id": "9e3196c6-0401-4850-8d58-ae0ebaaeb215",
         "parentId": "MorphologicalMultiScaleDecomposition",
         "name": "outleveling",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_MorphologicalMultiScaleDecomposition_3.tif"
@@ -5689,6 +5707,7 @@
         "id": "c7808c0e-8487-4b82-9ee2-d4334eb5e293",
         "parentId": "MorphologicalMultiScaleDecomposition",
         "name": "outconvex",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_MorphologicalMultiScaleDecomposition_1.tif"
@@ -5764,13 +5783,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "55104926-5048-4c02-b22f-b28481add809",
         "parentId": "MorphologicalProfilesAnalysis",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5781,6 +5799,7 @@
         "id": "47831f48-b579-478e-8863-913dd2f0958c",
         "parentId": "MorphologicalProfilesAnalysis",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_MorphologicalProfilesAnalysis_1.tif"
@@ -5883,13 +5902,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "07af82d6-c630-45c3-9af1-00d7a7515ae1",
         "parentId": "MultiImageSamplingRate",
         "name": "il",
+        "cardinality": 0,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5898,6 +5916,7 @@
         "id": "e442c426-4627-4373-a169-aa70324c4683",
         "parentId": "MultiImageSamplingRate",
         "name": "strategy.byclass.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -5908,6 +5927,7 @@
         "id": "8b6eba33-1998-4103-8eaa-4526833f175d",
         "parentId": "MultiImageSamplingRate",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_MultiImageSamplingRate_1.tif"
@@ -5941,7 +5961,7 @@
         "id": "strategy_constant_nb_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "Number of samples for all classes",
         "label": "strategy.constant.nb",
         "notNull": false
@@ -5950,7 +5970,7 @@
         "id": "strategy_percent_p_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "The percentage(s) to use",
         "label": "strategy.percent.p",
         "notNull": false
@@ -5976,7 +5996,7 @@
         "id": "strategy_total_v_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "The number of samples to generate",
         "label": "strategy.total.v",
         "notNull": false
@@ -5992,13 +6012,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "8fd3c6b5-5480-4ff1-b701-12ab1d28a560",
         "parentId": "MultiResolutionPyramid",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -6009,6 +6028,7 @@
         "id": "bc866bc2-2e41-424e-be45-8438b026e50a",
         "parentId": "MultiResolutionPyramid",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_MultiResolutionPyramid_1.tif"
@@ -6071,13 +6091,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "5088f9eb-8546-48ae-b9a3-4f313c093cc8",
         "parentId": "MultivariateAlterationDetector",
         "name": "in2",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -6086,6 +6105,7 @@
         "id": "646d00a6-6cb5-4b1e-9f21-1a5ecd5afc81",
         "parentId": "MultivariateAlterationDetector",
         "name": "in1",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -6096,6 +6116,7 @@
         "id": "5fdbf85d-77fb-446c-96f2-6d342e7f56c6",
         "parentId": "MultivariateAlterationDetector",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_MultivariateAlterationDetector_1.tif"
@@ -6121,8 +6142,6 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 0,
-    "targetCardinality": 0,
     "sources": [],
     "targets": [],
     "containerId": "OTB-6.4.0",
@@ -6138,7 +6157,7 @@
         "id": "lat_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Latitude",
         "label": "lat",
         "notNull": false
@@ -6147,7 +6166,7 @@
         "id": "lon_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Longitude",
         "label": "lon",
         "notNull": false
@@ -6163,13 +6182,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "69ae8eda-44bf-489a-9e6d-aecfdec1c408",
         "parentId": "OGRLayerClassifier",
         "name": "instats",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -6180,6 +6198,7 @@
         "id": "a05a29cf-fa3f-4a53-b6e6-5ce057d4e1e6",
         "parentId": "OGRLayerClassifier",
         "name": "insvm",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_OGRLayerClassifier_1.tif"
@@ -6208,7 +6227,7 @@
         "id": "feat_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": "",
         "description": "Field names to be calculated.",
         "label": "feat",
         "notNull": true
@@ -6217,7 +6236,7 @@
         "id": "inshp_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Name of the input shapefile",
         "label": "inshp",
         "notNull": false
@@ -6233,13 +6252,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "8ff372ee-c97a-43ba-8d8c-446a7cbbc3f9",
         "parentId": "OpticalCalibration",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -6250,6 +6268,7 @@
         "id": "6871c97f-0590-415d-a4c1-1b8d4fc1f6ff",
         "parentId": "OpticalCalibration",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_OpticalCalibration_1.tif"
@@ -6278,7 +6297,7 @@
         "id": "acqui_fluxnormcoeff_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Flux Normalization",
         "label": "acqui.fluxnormcoeff",
         "notNull": true
@@ -6286,8 +6305,8 @@
       {
         "id": "acqui_gainbias_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Gains or biases",
         "label": "acqui.gainbias",
         "notNull": true
@@ -6322,8 +6341,8 @@
       {
         "id": "acqui_solarilluminations_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Solar illuminations",
         "label": "acqui.solarilluminations",
         "notNull": true
@@ -6376,8 +6395,8 @@
       {
         "id": "atmo_aeronet_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Aeronet File",
         "label": "atmo.aeronet",
         "notNull": true
@@ -6446,8 +6465,8 @@
       {
         "id": "atmo_rsr_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Relative Spectral Response File",
         "label": "atmo.rsr",
         "notNull": true
@@ -6504,13 +6523,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "f0c96b8d-03b5-4cf9-b2bd-0b32b81cf244",
         "parentId": "OrthoRectification",
         "name": "io.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -6521,6 +6539,7 @@
         "id": "fec0c878-96b4-48e8-8658-e43aa0ac85dc",
         "parentId": "OrthoRectification",
         "name": "io.out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_OrthoRectification_1.tif"
@@ -6548,8 +6567,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -6557,8 +6576,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -6669,7 +6688,7 @@
         "id": "outputs_lrx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Lower right X",
         "label": "outputs.lrx",
         "notNull": true
@@ -6678,7 +6697,7 @@
         "id": "outputs_lry_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Lower right Y",
         "label": "outputs.lry",
         "notNull": true
@@ -6700,10 +6719,11 @@
         "notNull": true
       },
       {
+
         "id": "outputs_ortho_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Model ortho-image",
         "label": "outputs.ortho",
         "notNull": true
@@ -6712,7 +6732,7 @@
         "id": "outputs_sizex_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Size X",
         "label": "outputs.sizex",
         "notNull": false
@@ -6721,7 +6741,7 @@
         "id": "outputs_sizey_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Size Y",
         "label": "outputs.sizey",
         "notNull": false
@@ -6730,7 +6750,7 @@
         "id": "outputs_spacingx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Pixel Size X",
         "label": "outputs.spacingx",
         "notNull": false
@@ -6739,7 +6759,7 @@
         "id": "outputs_spacingy_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Pixel Size Y",
         "label": "outputs.spacingy",
         "notNull": false
@@ -6748,7 +6768,7 @@
         "id": "outputs_ulx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Upper Left X",
         "label": "outputs.ulx",
         "notNull": false
@@ -6757,7 +6777,7 @@
         "id": "outputs_uly_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Upper Left Y",
         "label": "outputs.uly",
         "notNull": false
@@ -6773,13 +6793,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "7e19ec0c-6e09-4847-a265-8bae1a84b76b",
         "parentId": "OSMDownloader",
         "name": "support",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -6790,8 +6809,9 @@
         "id": "850e39b8-9dd9-4d9c-ae95-a4673121521e",
         "parentId": "OSMDownloader",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
+          "formatType": "VECTOR",
           "location": "output_otbcli_OSMDownloader_1.tif"
         }
       }
@@ -6817,8 +6837,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -6826,8 +6846,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -6836,7 +6856,7 @@
         "id": "key_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "OSM tag key",
         "label": "key",
         "notNull": true
@@ -6854,7 +6874,7 @@
         "id": "value_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "OSM tag value",
         "label": "value",
         "notNull": true
@@ -6870,13 +6890,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "6660d369-0fe0-4791-906d-0fea12fb72b3",
         "parentId": "Pansharpening",
         "name": "inxs",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -6885,6 +6904,7 @@
         "id": "c7e6cd1b-df79-4acd-a6c1-361181636a6a",
         "parentId": "Pansharpening",
         "name": "inp",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -6895,6 +6915,7 @@
         "id": "7502bf20-fa9d-4029-a01b-b7f130cfe9ca",
         "parentId": "Pansharpening",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_Pansharpening_1.tif"
@@ -6971,13 +6992,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 0,
     "sources": [
       {
         "id": "becad271-df95-4b9b-9463-7419594c925f",
         "parentId": "PixelValue",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -6997,7 +7017,7 @@
         "id": "cl_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": "",
         "description": "Channel List",
         "label": "cl",
         "notNull": true
@@ -7006,7 +7026,7 @@
         "id": "coordx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "X coordinate",
         "label": "coordx",
         "notNull": false
@@ -7015,7 +7035,7 @@
         "id": "coordy_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Y coordinate",
         "label": "coordy",
         "notNull": false
@@ -7024,7 +7044,7 @@
         "id": "mode_epsg_code_str",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "EPSG code",
         "label": "mode.epsg.code",
         "notNull": true
@@ -7054,13 +7074,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "49f0996c-7c7f-418d-bd02-80282218c369",
         "parentId": "PolygonClassStatistics",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -7069,8 +7088,9 @@
         "id": "e17e92f3-4cf3-48b3-9b2f-2c6fc11eee65",
         "parentId": "PolygonClassStatistics",
         "name": "vec",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER"
+          "formatType": "VECTOR"
         }
       }
     ],
@@ -7079,6 +7099,7 @@
         "id": "49a2a8ee-e815-4f32-ae3e-e27a31e470be",
         "parentId": "PolygonClassStatistics",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_PolygonClassStatistics_1.tif"
@@ -7106,8 +7127,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -7115,8 +7136,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -7125,7 +7146,7 @@
         "id": "field_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": "",
         "description": "Field Name",
         "label": "field",
         "notNull": true
@@ -7143,7 +7164,7 @@
         "id": "mask_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "InputMask",
         "label": "mask",
         "notNull": true
@@ -7159,13 +7180,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "3b791db6-eaf1-4984-95c1-45c9ff736e58",
         "parentId": "PredictRegression",
         "name": "model",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -7174,6 +7194,7 @@
         "id": "ef0d6697-9594-4e6f-bdbe-f0bc7f9734a4",
         "parentId": "PredictRegression",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -7184,6 +7205,7 @@
         "id": "d55783be-ce07-4d79-abe1-a2b5b8836d41",
         "parentId": "PredictRegression",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_PredictRegression_1.tif"
@@ -7202,8 +7224,8 @@
       {
         "id": "imstat_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Statistics file",
         "label": "imstat",
         "notNull": true
@@ -7212,7 +7234,7 @@
         "id": "mask_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "InputMask",
         "label": "mask",
         "notNull": true
@@ -7228,13 +7250,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "dac3ad2a-1fea-4de6-bc68-87a51f6c15ad",
         "parentId": "Quicklook",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -7245,6 +7266,7 @@
         "id": "8dce01de-c04b-442c-ab7e-0753a479eb00",
         "parentId": "Quicklook",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_Quicklook_1.tif"
@@ -7264,7 +7286,7 @@
         "id": "cl_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": "",
         "description": "Channel List",
         "label": "cl",
         "notNull": true
@@ -7318,7 +7340,7 @@
         "id": "sx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 32,
+        "defaultValue": null,
         "description": "SizeX",
         "label": "sx",
         "notNull": true
@@ -7327,7 +7349,7 @@
         "id": "sy_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 32,
+        "defaultValue": null,
         "description": "SizeY",
         "label": "sy",
         "notNull": true
@@ -7343,13 +7365,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "cb33e5b0-9ea3-46c7-a4fb-64e35493c3ca",
         "parentId": "RadiometricIndices",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -7360,6 +7381,7 @@
         "id": "cb21dbae-fb9c-42b5-bc7f-4fb63ae37c1e",
         "parentId": "RadiometricIndices",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_RadiometricIndices_1.tif"
@@ -7424,9 +7446,29 @@
         "id": "list_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": "ndvi",
         "description": "Available Radiometric Indices",
         "label": "list",
+        "valueSet": [
+          "ndvi",
+          "tndvi",
+          "rvi",
+          "savi",
+          "tsavi",
+          "msavi",
+          "msavi2",
+          "gemi",
+          "ipvi",
+          "ndwi",
+          "ndwi2",
+          "mndwi",
+          "ndpi",
+          "ndti",
+          "ri",
+          "ci",
+          "bi",
+          "bi2"
+        ],
         "notNull": true
       }
     ],
@@ -7440,14 +7482,23 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 0,
-    "targetCardinality": 1,
-    "sources": [],
+    "sources": [
+      {
+        "id": "250b63f4-d70e-47da-b924-65e9642357f4",
+        "parentId": "Rasterization",
+        "name": "in",
+        "cardinality": 1,
+        "dataDescriptor": {
+          "formatType": "VECTOR"
+        }
+      }
+    ],
     "targets": [
       {
         "id": "d6a3abc2-c777-466a-9468-1f3bbfc429e6",
         "parentId": "Rasterization",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_Rasterization_1.tif"
@@ -7476,7 +7527,7 @@
         "id": "epsg_str",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Output EPSG code",
         "label": "epsg",
         "notNull": true
@@ -7485,19 +7536,10 @@
         "id": "im_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Input reference image",
         "label": "im",
         "notNull": true
-      },
-      {
-        "id": "in_str",
-        "type": "REGULAR",
-        "dataType": "java.lang.String",
-        "defaultValue": "None",
-        "description": "Input",
-        "label": "in",
-        "notNull": false
       },
       {
         "id": "mode_attribute_field_str",
@@ -7534,7 +7576,7 @@
         "id": "orx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Output Upper-left x",
         "label": "orx",
         "notNull": true
@@ -7543,7 +7585,7 @@
         "id": "ory_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Output Upper-left y",
         "label": "ory",
         "notNull": true
@@ -7552,7 +7594,7 @@
         "id": "spx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Spacing (GSD) x",
         "label": "spx",
         "notNull": true
@@ -7561,7 +7603,7 @@
         "id": "spy_number",
         "type": "REGULAR",
         "dataType": "java.lang.Float",
-        "defaultValue": 0.0,
+        "defaultValue": null,
         "description": "Spacing (GSD) y",
         "label": "spy",
         "notNull": true
@@ -7570,7 +7612,7 @@
         "id": "szx_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Output size x",
         "label": "szx",
         "notNull": true
@@ -7579,13 +7621,13 @@
         "id": "szy_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Output size y",
         "label": "szy",
         "notNull": true
       }
     ],
-    "templatecontents": "-in\n$in_str\n-out\n$out\n-im\n$im_str\n-szx\n$szx_number\n-szy\n$szy_number\n-epsg\n$epsg_str\n-orx\n$orx_number\n-ory\n$ory_number\n-spx\n$spx_number\n-spy\n$spy_number\n-background\n$background_number\n-mode\n$mode_str\n-mode.binary.foreground\n$mode_binary_foreground_number\n-mode.attribute.field\n$mode_attribute_field_str"
+    "templatecontents": "-in\n$in\n-out\n$out\n-im\n$im_str\n-szx\n$szx_number\n-szy\n$szy_number\n-epsg\n$epsg_str\n-orx\n$orx_number\n-ory\n$ory_number\n-spx\n$spx_number\n-spy\n$spy_number\n-background\n$background_number\n-mode\n$mode_str\n-mode.binary.foreground\n$mode_binary_foreground_number\n-mode.attribute.field\n$mode_attribute_field_str"
   },
   {
     "id": "ReadImageInfo",
@@ -7595,13 +7637,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "7e79730c-f85c-4e14-a489-5297d0fab35e",
         "parentId": "ReadImageInfo",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -7612,6 +7653,7 @@
         "id": "cd98dcf3-a807-4e7b-8620-6e65e58a7508",
         "parentId": "ReadImageInfo",
         "name": "outkwl",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_ReadImageInfo_1.tif"
@@ -7647,13 +7689,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 3,
     "sources": [
       {
         "id": "01912810-f5e3-4ae7-b3f5-3f47d43e78c2",
         "parentId": "RefineSensorModel",
         "name": "ingeom",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -7662,6 +7703,7 @@
         "id": "137b125d-96a7-45fe-83ea-2ad3def4e2e8",
         "parentId": "RefineSensorModel",
         "name": "inpoints",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -7672,6 +7714,7 @@
         "id": "0951d889-16aa-47aa-af0a-32b0071da185",
         "parentId": "RefineSensorModel",
         "name": "outgeom",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_RefineSensorModel_1.tif"
@@ -7681,6 +7724,7 @@
         "id": "0f880ec9-0c0d-4144-8058-4c5b36f62473",
         "parentId": "RefineSensorModel",
         "name": "outstat",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_RefineSensorModel_2.tif"
@@ -7690,8 +7734,9 @@
         "id": "24dfc12f-085a-422d-8b5c-a99840d536b5",
         "parentId": "RefineSensorModel",
         "name": "outvector",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
+          "formatType": "VECTOR",
           "location": "output_otbcli_RefineSensorModel_3.tif"
         }
       }
@@ -7717,8 +7762,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -7726,8 +7771,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.lang.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -7786,13 +7831,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "d689af31-be27-46e2-9983-b2e6cea7d2d0",
         "parentId": "Rescale",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -7803,6 +7847,7 @@
         "id": "3f7e6920-0167-4cf1-a2af-beaa06378cc4",
         "parentId": "Rescale",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_Rescale_1.tif"
@@ -7847,13 +7892,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "5eed4979-fd75-4cad-98df-cbc2e75a80b3",
         "parentId": "RigidTransformResample",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -7864,6 +7908,7 @@
         "id": "0a12c05b-480b-429a-a083-e03c66d98779",
         "parentId": "RigidTransformResample",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_RigidTransformResample.tif"
@@ -8008,13 +8053,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "cdb62fd4-3f04-476b-811b-51e9b6b567a6",
         "parentId": "SampleAugmentation",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -8025,6 +8069,7 @@
         "id": "9fbe8624-b14f-4ce4-bc5a-5f6f20f5ef28",
         "parentId": "SampleAugmentation",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_SampleAugmentation.tif"
@@ -8140,13 +8185,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "81749fe0-ab13-47d2-8165-65c47116d047",
         "parentId": "SampleExtraction",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -8155,8 +8199,9 @@
         "id": "e1b36774-edb9-4bb5-a353-9eb32324f8f6",
         "parentId": "SampleExtraction",
         "name": "vec",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER"
+          "formatType": "VECTOR"
         }
       }
     ],
@@ -8165,8 +8210,9 @@
         "id": "7e3987b0-9c1c-4f0e-a079-fe068ca93abe",
         "parentId": "SampleExtraction",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
+          "formatType": "VECTOR",
           "location": "output_otbcli_SampleExtraction_1.tif"
         }
       }
@@ -8184,7 +8230,7 @@
         "id": "field_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": "",
         "description": "Field Name",
         "label": "field",
         "notNull": true
@@ -8202,7 +8248,7 @@
         "id": "outfield_list_names_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "True",
+        "defaultValue": null,
         "description": "Output field names",
         "label": "outfield.list.names",
         "notNull": true
@@ -8240,21 +8286,21 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 4,
-    "targetCardinality": 2,
     "sources": [
       {
         "id": "110f8782-0542-46de-93da-d94192f90d3a",
         "parentId": "SampleSelection",
         "name": "vec",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER"
+          "formatType": "VECTOR"
         }
       },
       {
         "id": "2bad9225-47c4-4346-a575-ea943082c691",
         "parentId": "SampleSelection",
         "name": "instats",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -8263,6 +8309,7 @@
         "id": "addcc4d5-f634-458d-98e9-47ab64228af0",
         "parentId": "SampleSelection",
         "name": "strategy.byclass.in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -8271,6 +8318,7 @@
         "id": "e0d9fa7f-bec6-4013-9993-8faac3e65436",
         "parentId": "SampleSelection",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -8281,6 +8329,7 @@
         "id": "37c4a985-d1c4-48d0-a23b-3d5f81ed34a1",
         "parentId": "SampleSelection",
         "name": "outrates",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_SampleSelection_2.tif"
@@ -8290,8 +8339,9 @@
         "id": "3f63fe79-acca-4724-b94c-100245a9d605",
         "parentId": "SampleSelection",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
+          "formatType": "VECTOR",
           "location": "output_otbcli_SampleSelection_1.tif"
         }
       }
@@ -8317,8 +8367,8 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.long.String",
+        "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
         "notNull": true
@@ -8326,8 +8376,8 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.io.File",
-        "defaultValue": "None",
+        "dataType": "java.long.String",
+        "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
         "notNull": true
@@ -8336,7 +8386,7 @@
         "id": "field_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": "",
         "description": "Field Name",
         "label": "field",
         "notNull": true
@@ -8354,7 +8404,7 @@
         "id": "mask_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "InputMask",
         "label": "mask",
         "notNull": true
@@ -8363,7 +8413,7 @@
         "id": "rand_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "set user defined seed",
         "label": "rand",
         "notNull": true
@@ -8394,7 +8444,7 @@
         "id": "strategy_constant_nb_number",
         "type": "REGULAR",
         "dataType": "java.lang.Integer",
-        "defaultValue": 0,
+        "defaultValue": null,
         "description": "Number of samples for all classes",
         "label": "strategy.constant.nb",
         "notNull": false
@@ -8445,13 +8495,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "31f11873-ea2f-4c26-88c2-299eb2b18b37",
         "parentId": "SARCalibration",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -8462,6 +8511,7 @@
         "id": "59c68cba-6114-4d7e-8ad7-1073d3a0ec02",
         "parentId": "SARCalibration",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_SARCalibration_1.tif"
@@ -8512,13 +8562,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "3af25d72-1c0f-47f4-93e7-7bea295996ea",
         "parentId": "SARDeburst",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -8529,6 +8578,7 @@
         "id": "e71e2ed5-92dc-4b10-8848-6fa25d71c7e8",
         "parentId": "SARDeburst",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_SARDeburst_1.tif"
@@ -8554,13 +8604,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 2,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "00ef336a-fa4e-4100-a84e-b9d0140e67a4",
         "parentId": "SARDecompositions",
         "name": "inhh",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -8569,6 +8618,7 @@
         "id": "5d414f9b-152f-4b94-81fa-78a98f306082",
         "parentId": "SARDecompositions",
         "name": "invv",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -8579,6 +8629,7 @@
         "id": "bb8216dd-5a92-4ab2-af51-aa12deaa99b5",
         "parentId": "SARDecompositions",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_SARDecompositions_1.tif"
@@ -8622,7 +8673,7 @@
         "id": "inhv_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Input : one-band complex image (HV)",
         "label": "inhv",
         "notNull": true
@@ -8631,7 +8682,7 @@
         "id": "invh_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Input : one-band complex image (VH)",
         "label": "invh",
         "notNull": true
@@ -8647,14 +8698,13 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 0,
-    "targetCardinality": 2,
     "sources": [],
     "targets": [
       {
         "id": "6d349d41-d888-44e5-9370-e3aa5cb171d3",
         "parentId": "SARPolarMatrixConvert",
         "name": "outf",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_SARPolarMatrixConvert_2.tif"
@@ -8664,6 +8714,7 @@
         "id": "b938d8dc-fb67-4c68-9d42-d1f09ffb12f0",
         "parentId": "SARPolarMatrixConvert",
         "name": "outc",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_SARPolarMatrixConvert_1.tif"
@@ -8707,7 +8758,7 @@
         "id": "inc_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Input : multi-band complex image",
         "label": "inc",
         "notNull": true
@@ -8716,7 +8767,7 @@
         "id": "inf_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Input : multi-band real image",
         "label": "inf",
         "notNull": true
@@ -8725,7 +8776,7 @@
         "id": "inhh_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Input : one-band complex image (HH)",
         "label": "inhh",
         "notNull": true
@@ -8734,7 +8785,7 @@
         "id": "inhv_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Input : one-band complex image (HV)",
         "label": "inhv",
         "notNull": true
@@ -8743,7 +8794,7 @@
         "id": "invh_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Input : one-band complex image (VH)",
         "label": "invh",
         "notNull": true
@@ -8752,7 +8803,7 @@
         "id": "invv_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Input : one-band complex image (VV)",
         "label": "invv",
         "notNull": true
@@ -8768,13 +8819,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "c03d87d6-0e49-4772-9bdd-b1458b8f710c",
         "parentId": "SARPolarSynth",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -8785,6 +8835,7 @@
         "id": "d15d508a-59dd-4134-aae6-c6a28353787f",
         "parentId": "SARPolarSynth",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_SARPolarSynth_1.tif"
@@ -8879,13 +8930,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 2,
     "sources": [
       {
         "id": "675c3e29-cd1a-46cd-b9ed-f180421f0980",
         "parentId": "Segmentation",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -8896,8 +8946,9 @@
         "id": "a2cc3207-bfe7-4de5-9bdc-d77e8f8cfd6d",
         "parentId": "Segmentation",
         "name": "mode.vector.out",
+        "cardinality": 1,
         "dataDescriptor": {
-          "formatType": "RASTER",
+          "formatType": "VECTOR",
           "location": "output_otbcli_Segmentation_1.tif"
         }
       },
@@ -8905,6 +8956,7 @@
         "id": "cf101ac3-866a-4573-a57e-311f1c65fc77",
         "parentId": "Segmentation",
         "name": "mode.raster.out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_Segmentation_2.tif"
@@ -8924,7 +8976,7 @@
         "id": "filter_cc_expr_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "Condition",
         "label": "filter.cc.expr",
         "notNull": false
@@ -9069,7 +9121,7 @@
         "id": "mode_vector_inmask_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "None",
+        "defaultValue": null,
         "description": "Mask Image",
         "label": "mode.vector.inmask",
         "notNull": true
@@ -9078,7 +9130,7 @@
         "id": "mode_vector_layername_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "False",
+        "defaultValue": null,
         "description": "Layer name",
         "label": "mode.vector.layername",
         "notNull": true
@@ -9105,7 +9157,7 @@
         "id": "mode_vector_ogroptions_str",
         "type": "REGULAR",
         "dataType": "java.lang.String",
-        "defaultValue": "True",
+        "defaultValue": null,
         "description": "OGR options for layer creation",
         "label": "mode.vector.ogroptions",
         "notNull": true
@@ -9172,13 +9224,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "47aa29c7-30dd-439a-a653-89df05233d49",
         "parentId": "SFSTextureExtraction",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -9189,6 +9240,7 @@
         "id": "3c919f3f-c592-4953-8b1b-e04f06b39024",
         "parentId": "SFSTextureExtraction",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_SFSTextureExtraction_1.tif"
@@ -9269,13 +9321,12 @@
     "authors": "OTB Team",
     "copyright": "(C) CNES Apache License",
     "nodeAffinity": "Any",
-    "sourceCardinality": 1,
-    "targetCardinality": 1,
     "sources": [
       {
         "id": "31f34f54-743c-4216-9880-6963204ee6d0",
         "parentId": "Smoothing",
         "name": "in",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER"
         }
@@ -9286,6 +9337,7 @@
         "id": "235b8e1f-8341-401f-962b-d2431fee656a",
         "parentId": "Smoothing",
         "name": "out",
+        "cardinality": 1,
         "dataDescriptor": {
           "formatType": "RASTER",
           "location": "output_otbcli_Smoothing_1.tif"
