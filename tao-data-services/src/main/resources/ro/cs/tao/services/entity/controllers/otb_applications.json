@@ -8367,7 +8367,7 @@
       {
         "id": "elev_dem_file",
         "type": "REGULAR",
-        "dataType": "java.long.String",
+        "dataType": "java.lang.String",
         "defaultValue": null,
         "description": "DEM directory",
         "label": "elev.dem",
@@ -8376,7 +8376,7 @@
       {
         "id": "elev_geoid_file",
         "type": "REGULAR",
-        "dataType": "java.long.String",
+        "dataType": "java.lang.String",
         "defaultValue": null,
         "description": "Geoid File",
         "label": "elev.geoid",
