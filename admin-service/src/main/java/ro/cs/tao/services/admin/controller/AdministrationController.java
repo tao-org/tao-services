@@ -78,8 +78,8 @@ public class AdministrationController extends BaseController {
         return new ResponseEntity<>(userUnicityInfos, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/users/{status}", method = RequestMethod.GET)
-    public ResponseEntity<?> findUsersByStatus(@PathVariable("status") UserStatus activationStatus) {
+    @RequestMapping(value = "/users", method = RequestMethod.GET)
+    public ResponseEntity<?> findUsersByStatus(@RequestParam("status") UserStatus activationStatus) {
         if (activationStatus == null) {
             return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
         }
