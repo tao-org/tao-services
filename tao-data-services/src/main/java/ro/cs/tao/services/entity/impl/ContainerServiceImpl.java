@@ -220,6 +220,10 @@ public class ContainerServiceImpl
                     List<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
                     if (parameterDescriptors != null) {
                         parameterDescriptors.forEach(p -> {
+                            if (p.getName() == null) {
+                                p.setName(p.getId());
+                                p.setId(UUID.randomUUID().toString());
+                            }
                             String[] valueSet = p.getValueSet();
                             if (valueSet != null && valueSet.length > 0) {
                                 p.setDefaultValue(valueSet[0]);
@@ -312,6 +316,12 @@ public class ContainerServiceImpl
                     component.setContainerId(snapContainer.getId());
                     component.setComponentType(ProcessingComponentType.EXECUTABLE);
                     component.setOwner(SystemPrincipal.instance().getName());
+                    component.getParameterDescriptors().forEach(p -> {
+                        if (p.getName() == null) {
+                            p.setName(p.getId());
+                            p.setId(UUID.randomUUID().toString());
+                        }
+                    });
                     persistenceManager.saveProcessingComponent(component);
                 }
             } catch (Exception e) {
