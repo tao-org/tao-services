@@ -486,7 +486,7 @@ public class WorkflowServiceImpl
                     ProcessingComponent processingComponent = (ProcessingComponent) component;
                     List<ParameterDescriptor> descriptors = processingComponent.getParameterDescriptors();
                     for (ParameterDescriptor descriptor : descriptors) {
-                        componentParams.add(new Parameter(descriptor.getId(),
+                        componentParams.add(new Parameter(descriptor.getName(),
                                                           descriptor.getDataType().getName(),
                                                           descriptor.getDefaultValue()));
                     }
@@ -578,7 +578,7 @@ public class WorkflowServiceImpl
                             final List<ParameterDescriptor> descriptorList = descriptors;
                             customValues.forEach(v -> {
                                 ParameterDescriptor descriptor = descriptorList.stream()
-                                        .filter(d -> d.getId().equals(v.getParameterName()))
+                                        .filter(d -> d.getName().equals(v.getParameterName()))
                                         .findFirst().orElse(null);
                                 if (descriptor == null) {
                                     errors.add("[node.customValues.parameterName] invalid parameter name");
