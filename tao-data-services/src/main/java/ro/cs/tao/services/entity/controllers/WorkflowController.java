@@ -25,7 +25,7 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.ServiceError;
-import ro.cs.tao.services.entity.impl.ContainerInitializer;
+import ro.cs.tao.services.entity.demo.SampleWorkflows;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.GroupComponentService;
@@ -88,15 +88,15 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                         @RequestParam("otbPath") String otbPath,
                                         @RequestParam("snapContainer") String snapContainerName,
                                         @RequestParam("snapPath") String snapPath) throws PersistenceException {
-        ContainerInitializer.setComponentService(componentService);
-        ContainerInitializer.setWorkflowService(service);
+        SampleWorkflows.setComponentService(componentService);
+        SampleWorkflows.setWorkflowService(service);
         DataSourceComponent dataSourceComponent = persistenceManager.getDataSourceInstance("Sentinel2-Amazon Web Services");
-        WorkflowDescriptor descriptor1 = ContainerInitializer.initWorkflow1();
-        WorkflowDescriptor descriptor2 = ContainerInitializer.initWorkflow2();
-        WorkflowDescriptor descriptor3 = ContainerInitializer.initWorkflow3();
-        WorkflowDescriptor descriptor4 = ContainerInitializer.initWorkflow4();
-        WorkflowDescriptor descriptor5 = ContainerInitializer.initWorkflow5(dataSourceComponent);
-        WorkflowDescriptor descriptor6 = ContainerInitializer.initWorkflow6(dataSourceComponent);
+        WorkflowDescriptor descriptor1 = SampleWorkflows.initWorkflow1();
+        WorkflowDescriptor descriptor2 = SampleWorkflows.initWorkflow2();
+        WorkflowDescriptor descriptor3 = SampleWorkflows.initWorkflow3();
+        WorkflowDescriptor descriptor4 = SampleWorkflows.initWorkflow4();
+        WorkflowDescriptor descriptor5 = SampleWorkflows.initWorkflow5(dataSourceComponent);
+        WorkflowDescriptor descriptor6 = SampleWorkflows.initWorkflow6(dataSourceComponent);
         return new ResponseEntity<>(new WorkflowDescriptor[]
                 { descriptor1, descriptor2, descriptor3, descriptor4, descriptor5, descriptor6 },
                 HttpStatus.OK);

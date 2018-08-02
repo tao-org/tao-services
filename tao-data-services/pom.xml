@@ -33,6 +33,11 @@
             <artifactId>tao-snap-converter</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-orchestration</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- for testing -->
         <dependency>
