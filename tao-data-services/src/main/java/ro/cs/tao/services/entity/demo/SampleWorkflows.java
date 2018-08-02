@@ -14,19 +14,17 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-package ro.cs.tao.services.entity.impl;
+package ro.cs.tao.services.entity.demo;
 
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.remote.FetchMode;
-import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ComponentService;
-import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
@@ -37,52 +35,22 @@ import ro.cs.tao.workflow.enums.Status;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
-public class ContainerInitializer {
+public class SampleWorkflows {
     private static PersistenceManager persistenceManager;
-    private static ContainerService containerService;
     private static ComponentService componentService;
     private static WorkflowService workflowService;
 
     public static void setPersistenceManager(PersistenceManager persistenceManager) {
-        ContainerInitializer.persistenceManager = persistenceManager;
-    }
-
-    public static void setContainerService(ContainerService containerService) {
-        ContainerInitializer.containerService = containerService;
+        SampleWorkflows.persistenceManager = persistenceManager;
     }
 
     public static void setComponentService(ComponentService componentService) {
-        ContainerInitializer.componentService = componentService;
+        SampleWorkflows.componentService = componentService;
     }
 
     public static void setWorkflowService(WorkflowService workflowService) {
-        ContainerInitializer.workflowService = workflowService;
-    }
-
-    public static void initSnap(String snapContainerId, String snapContainerName, String snapPath) {
-        Container snapContainer = null;
-        try {
-            snapContainer = persistenceManager.getContainerById(snapContainerId);
-        } catch (PersistenceException ignored) {
-        }
-        if (snapContainer == null) {
-            snapContainer = containerService.initSNAP(snapContainerId, snapContainerName, snapPath);
-            Logger.getLogger(ContainerInitializer.class.getName()).info("Registered SNAP container");
-        }
-    }
-
-    public static void initOtb(String otbContainerId, String otbContainerName, String otbPath) {
-        Container otbContainer = null;
-        try {
-            otbContainer = persistenceManager.getContainerById(otbContainerId);
-        } catch (PersistenceException ignored) {
-        }
-        if (otbContainer == null) {
-            otbContainer = containerService.initOTB(otbContainerId, otbContainerName, otbPath);
-            Logger.getLogger(ContainerInitializer.class.getName()).info("Registered OTB container");
-        }
+        SampleWorkflows.workflowService = workflowService;
     }
 
     public static DataSourceComponent initDataSourceComponent(String sensor, String dataSource) throws PersistenceException {

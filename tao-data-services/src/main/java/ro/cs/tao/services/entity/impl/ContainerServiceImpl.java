@@ -19,31 +19,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import ro.cs.tao.component.ParameterDescriptor;
-import ro.cs.tao.component.ProcessingComponent;
-import ro.cs.tao.component.SourceDescriptor;
-import ro.cs.tao.component.TargetDescriptor;
-import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.data.jsonutil.JacksonUtil;
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.security.SystemPrincipal;
-import ro.cs.tao.services.entity.controllers.ContainerController;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.utils.Platform;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -187,168 +181,6 @@ public class ContainerServiceImpl
             }
         }
         return container;
-    }
-
-    @Override
-    public Container initOTB(String id, String name, String path) {
-        Container otbContainer = null;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("otb_container.json")))) {
-            String str = String.join("", reader.lines().collect(Collectors.toList()));
-            Container tmp = JacksonUtil.fromString(str, Container.class);
-            List<Application> applications = tmp.getApplications();
-            otbContainer = initializeContainer(id, name, path, applications);
-            try (InputStream in = ContainerController.class.getResourceAsStream("otb_logo.png")) {
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                int read;
-                byte[] buffer = new byte[1024];
-                while ((read = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, read);
-                }
-                out.flush();
-                otbContainer.setLogo(Base64.getEncoder().encodeToString(out.toByteArray()));
-            }
-            ProcessingComponent current = null;
-            try (BufferedReader reader2 = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("otb_applications.json")))) {
-                String str2 = String.join("", reader2.lines().collect(Collectors.toList()));
-                ProcessingComponent[] components = JacksonUtil.OBJECT_MAPPER.readValue(str2, ProcessingComponent[].class);
-                List<Application> containerApplications = otbContainer.getApplications();
-                for (ProcessingComponent component : components) {
-                    current = component;
-                    component.setContainerId(otbContainer.getId());
-                    component.setLabel(component.getId());
-                    component.setFileLocation(containerApplications.stream().filter(a -> a.getName().equals(component.getId())).findFirst().get().getPath());
-                    List<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
-                    if (parameterDescriptors != null) {
-                        parameterDescriptors.forEach(p -> {
-                            if (p.getName() == null) {
-                                p.setName(p.getId());
-                                p.setId(UUID.randomUUID().toString());
-                            }
-                            String[] valueSet = p.getValueSet();
-                            if (valueSet != null && valueSet.length > 0) {
-                                p.setDefaultValue(valueSet[0]);
-                            }
-                        });
-                    }
-                    List<SourceDescriptor> sources = component.getSources();
-                    if (sources != null) {
-                        sources.forEach(s -> s.setId(UUID.randomUUID().toString()));
-                    }
-                    List<TargetDescriptor> targets = component.getTargets();
-                    if (targets != null) {
-                        targets.forEach(t -> t.setId(UUID.randomUUID().toString()));
-                    }
-                    String template = component.getTemplateContents();
-                    int i = 0;
-                    while (i < template.length()) {
-                        Character ch = template.charAt(i);
-                        if (ch == '$' && template.charAt(i - 1) != '\n') {
-                            template = template.substring(0, i) + "\n" + template.substring(i);
-                        }
-                        i++;
-                    }
-                    String[] tokens = template.split("\n");
-                    for (int j = 0; j < tokens.length; j++) {
-                        final int idx = j;
-                        if ((targets != null && targets.stream().anyMatch(t -> t.getName().equals(tokens[idx].substring(1)))) ||
-                            (sources != null && sources.stream().anyMatch(s -> s.getName().equals(tokens[idx].substring(1))))) {
-                            tokens[j + 1] = tokens[j].replace('-', '$');
-                            j++;
-                        }
-                    }
-                    component.setTemplateContents(String.join("\n", tokens));
-                    component.setComponentType(ProcessingComponentType.EXECUTABLE);
-                    component.setOwner(SystemPrincipal.instance().getName());
-                    persistenceManager.saveProcessingComponent(component);
-                }
-            } catch (Exception e) {
-                logger.severe(String.format("Faulty component: %s. Error: %s",
-                                            current != null ? current.getId() : "n/a",
-                                            e.getMessage()));
-            }
-        } catch (Exception e) {
-            logger.severe(e.getMessage());
-        }
-        return otbContainer;
-    }
-
-    @Override
-    public Container initSNAP(String id, String name, String path) {
-        List<Container> containers = persistenceManager.getContainers();
-        boolean isWin = Platform.getCurrentPlatform().getId().equals(Platform.ID.win);
-        Container snapContainer;
-        if (containers == null || containers.stream().noneMatch(c -> c.getName().equals(name))) {
-            snapContainer = new Container();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("snap_container.json")))) {
-                String str = String.join("", reader.lines().collect(Collectors.toList()));
-                snapContainer = JacksonUtil.fromString(str, Container.class);
-                snapContainer.setId(id);
-                snapContainer.setName(name);
-                snapContainer.setTag(name);
-                snapContainer.setApplicationPath(path);
-                snapContainer.getApplications().forEach(a -> {
-                    if (a.getPath() == null) {
-                        a.setPath("gpt");
-                    }
-                    if (isWin && !a.getPath().endsWith(".exe")) {
-                        a.setPath(a.getPath() + ".exe");
-                    }
-                    a.setParallelFlagTemplate("-q <integer>");
-                });
-                try (InputStream in = ContainerController.class.getResourceAsStream("snap_logo.png")) {
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    int read;
-                    byte[] buffer = new byte[1024];
-                    while ((read = in.read(buffer)) != -1) {
-                        out.write(buffer, 0, read);
-                    }
-                    out.flush();
-                    snapContainer.setLogo(Base64.getEncoder().encodeToString(out.toByteArray()));
-                }
-                snapContainer = persistenceManager.saveContainer(snapContainer);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(ContainerController.class.getResourceAsStream("snap_operators.json")))) {
-                String str = String.join("", reader.lines().collect(Collectors.toList()));
-                ProcessingComponent[] components = JacksonUtil.OBJECT_MAPPER.readValue(str, ProcessingComponent[].class);
-                for (ProcessingComponent component : components) {
-                    component.setContainerId(snapContainer.getId());
-                    component.setComponentType(ProcessingComponentType.EXECUTABLE);
-                    component.setOwner(SystemPrincipal.instance().getName());
-                    component.getParameterDescriptors().forEach(p -> {
-                        if (p.getName() == null) {
-                            p.setName(p.getId());
-                            p.setId(UUID.randomUUID().toString());
-                        }
-                    });
-                    persistenceManager.saveProcessingComponent(component);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            snapContainer = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
-            try {
-                snapContainer.setId(id);
-                snapContainer.setName(name);
-                snapContainer.setTag(name);
-                snapContainer.setApplicationPath(path);
-                snapContainer.getApplications().forEach(a -> {
-                    if (a.getPath() == null) {
-                        a.setPath("gpt");
-                    }
-                    if (isWin && !a.getPath().endsWith(".exe")) {
-                        a.setPath(a.getPath() + ".exe");
-                    }
-                    a.setParallelFlagTemplate("-q <integer>");
-                });
-                snapContainer = persistenceManager.updateContainer(snapContainer);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return snapContainer;
     }
 
     @Override
