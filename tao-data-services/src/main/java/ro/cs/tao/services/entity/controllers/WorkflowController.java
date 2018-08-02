@@ -84,10 +84,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     }
 
     @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<?> initialize(@RequestParam("otbContainer") String otbContainerName,
-                                        @RequestParam("otbPath") String otbPath,
-                                        @RequestParam("snapContainer") String snapContainerName,
-                                        @RequestParam("snapPath") String snapPath) throws PersistenceException {
+    public ResponseEntity<?> initialize() throws PersistenceException {
         SampleWorkflows.setPersistenceManager(persistenceManager);
         SampleWorkflows.setComponentService(componentService);
         SampleWorkflows.setWorkflowService(service);

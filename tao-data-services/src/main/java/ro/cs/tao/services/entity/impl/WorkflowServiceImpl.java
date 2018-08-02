@@ -461,7 +461,8 @@ public class WorkflowServiceImpl
                         ro.cs.tao.datasource.param.ParameterDescriptor descriptor = entry.getValue();
                         componentParams.add(new Parameter(entry.getKey(),
                                                           descriptor.getType().getName(),
-                                                          String.valueOf(descriptor.getDefaultValue())));
+                                                          descriptor.getDefaultValue() != null ? String.valueOf(descriptor.getDefaultValue()) : null,
+                                                          Parameter.stringValueSet(descriptor.getValueSet())));
                     }
                     Query query = persistenceManager.getQueries(SessionStore.currentContext().getPrincipal().getName(),
                                                                 dataSourceComponent.getSensorName(),
@@ -488,7 +489,8 @@ public class WorkflowServiceImpl
                     for (ParameterDescriptor descriptor : descriptors) {
                         componentParams.add(new Parameter(descriptor.getName(),
                                                           descriptor.getDataType().getName(),
-                                                          descriptor.getDefaultValue()));
+                                                          !"null".equals(descriptor.getDefaultValue()) ? descriptor.getDefaultValue() : null,
+                                                          Parameter.stringValueSet(descriptor.getValueSet())));
                     }
                     break;
                 case GROUP:
