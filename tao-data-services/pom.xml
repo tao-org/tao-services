@@ -38,6 +38,11 @@
             <artifactId>tao-orchestration</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-products-sentinels</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- for testing -->
         <dependency>

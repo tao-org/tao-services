@@ -101,7 +101,7 @@ public class BaseController {
         return new ResponseEntity<>(new ServiceResponse<>(result), HttpStatus.OK);
     }
 
-    protected ResponseEntity<ServiceResponse> prepareResult(String message, ResponseStatus status) {
+    protected ResponseEntity<ServiceResponse<?>> prepareResult(String message, ResponseStatus status) {
         return new ResponseEntity<>(new ServiceResponse<>(message, status), HttpStatus.OK);
     }
 

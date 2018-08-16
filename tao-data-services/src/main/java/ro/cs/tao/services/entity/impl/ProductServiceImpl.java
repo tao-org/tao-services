@@ -54,7 +54,12 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
     @Override
     public EOProduct save(EOProduct object) {
-        return null;
+        try {
+            return persistenceManager.saveEOProduct(object);
+        } catch (PersistenceException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
