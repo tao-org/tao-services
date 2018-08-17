@@ -36,6 +36,8 @@ import ro.cs.tao.spi.ServiceRegistryManager;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Date;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -89,6 +91,15 @@ public class ProductController extends DataEntityController<EOProduct, ProductSe
                                     }
                                     product.setUserName(SessionStore.currentContext().getPrincipal().getName());
                                     product.setVisibility(Visibility.PUBLIC);
+                                    if (metadata.getAquisitionDate() != null) {
+                                        product.setAcquisitionDate(Date.from(metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
+                                    }
+                                    if (metadata.getSize() != null) {
+                                        product.setApproximateSize(metadata.getSize());
+                                    }
+                                    if (metadata.getProductId() != null) {
+                                        product.setId(metadata.getProductId());
+                                    }
                                     product = service.save(product);
                                     logger.fine("Imported product " + product.getName());
                                     count++;
