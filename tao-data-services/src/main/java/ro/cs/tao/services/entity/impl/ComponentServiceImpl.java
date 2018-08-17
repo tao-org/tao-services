@@ -33,6 +33,7 @@ import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.serialization.Serializer;
 import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.interfaces.ComponentService;
+import ro.cs.tao.workflow.enums.ComponentType;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
@@ -60,6 +61,23 @@ public class ComponentServiceImpl
     @Override
     public ProcessingComponent findById(String id) {
         return persistenceManager.getProcessingComponentById(id);
+    }
+
+    @Override
+    public TaoComponent findComponent(String id, ComponentType type) {
+        TaoComponent component = null;
+        switch (type) {
+            case DATASOURCE:
+                component = persistenceManager.getDataSourceInstance(id);
+                break;
+            case PROCESSING:
+                component = persistenceManager.getProcessingComponentById(id);
+                break;
+            case GROUP:
+                component = persistenceManager.getGroupComponentById(id);
+                break;
+        }
+        return component;
     }
 
     @Override

@@ -21,18 +21,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.ComponentLink;
-import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.services.base.SampleWorkflowBase;
+import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceError;
-import ro.cs.tao.services.entity.demo.SampleWorkflows;
-import ro.cs.tao.services.interfaces.ComponentService;
-import ro.cs.tao.services.interfaces.ContainerService;
-import ro.cs.tao.services.interfaces.GroupComponentService;
-import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.services.interfaces.*;
+import ro.cs.tao.spi.ServiceRegistry;
+import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.Status;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author Cosmin Cara
@@ -85,19 +88,21 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> initialize() throws PersistenceException {
-        SampleWorkflows.setPersistenceManager(persistenceManager);
-        SampleWorkflows.setComponentService(componentService);
-        SampleWorkflows.setWorkflowService(service);
-        DataSourceComponent dataSourceComponent = persistenceManager.getDataSourceInstance("Sentinel2-Amazon Web Services");
-        WorkflowDescriptor descriptor1 = SampleWorkflows.initWorkflow1();
-        WorkflowDescriptor descriptor2 = SampleWorkflows.initWorkflow2();
-        WorkflowDescriptor descriptor3 = SampleWorkflows.initWorkflow3();
-        WorkflowDescriptor descriptor4 = SampleWorkflows.initWorkflow4();
-        WorkflowDescriptor descriptor5 = SampleWorkflows.initWorkflow5(dataSourceComponent);
-        WorkflowDescriptor descriptor6 = SampleWorkflows.initWorkflow6(dataSourceComponent);
-        return new ResponseEntity<>(new WorkflowDescriptor[]
-                { descriptor1, descriptor2, descriptor3, descriptor4, descriptor5, descriptor6 },
-                HttpStatus.OK);
+
+        ServiceRegistry<SampleWorkflow> registry = ServiceRegistryManager.getInstance().getServiceRegistry(SampleWorkflow.class);
+        Set<SampleWorkflow> services = registry.getServices();
+        if (services == null || services.size() == 0) {
+            return prepareResult("No sample workflows found", ResponseStatus.FAILED);
+        } else {
+            SampleWorkflowBase.setPersistenceManager(persistenceManager);
+            SampleWorkflowBase.setComponentService(componentService);
+            SampleWorkflowBase.setWorkflowService(service);
+            List<WorkflowDescriptor> descriptors = new ArrayList<>();
+            for (SampleWorkflow sample : services) {
+                descriptors.add(sample.createWorkflowDescriptor());
+            }
+            return prepareResult(descriptors);
+        }
     }
 
     @RequestMapping(value = "/node", method = RequestMethod.POST, produces = "application/json")

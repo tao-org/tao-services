@@ -180,6 +180,8 @@ public class TaoServicesStartup implements ApplicationListener {
     }
 
     private void registerEmbeddedContainers() {
+        Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
+        logger.fine("Executing docker image plugins");
         List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
         if (installers != null) {
             for (DockerImageInstaller imageInstaller : installers) {
@@ -189,6 +191,8 @@ public class TaoServicesStartup implements ApplicationListener {
                     Logger.getLogger(TaoServicesStartup.class.getName()).severe(e.getMessage());
                 }
             }
+        } else {
+            logger.fine("No docker pluging found");
         }
     }
 
