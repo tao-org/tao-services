@@ -28,6 +28,7 @@
         <module>auth-service</module>
         <module>user-service</module>
         <module>admin-service</module>
+        <module>tao-sample-workflows</module>
     </modules>
 
     <properties>

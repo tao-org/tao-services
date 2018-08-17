@@ -232,11 +232,11 @@ public class WorkflowServiceImpl
         if (targetNode == null) {
             throw new PersistenceException("Target node does not exist");
         }
-        TaoComponent sourceComponent = findComponent(sourceNode.getComponentId(), sourceNode.getComponentType());
+        TaoComponent sourceComponent = componentService.findComponent(sourceNode.getComponentId(), sourceNode.getComponentType());
         if (sourceComponent == null) {
             throw new PersistenceException("Source component not found");
         }
-        TaoComponent targetComponent = findComponent(targetNode.getComponentId(), targetNode.getComponentType());
+        TaoComponent targetComponent = componentService.findComponent(targetNode.getComponentId(), targetNode.getComponentType());
         if (targetComponent == null) {
             throw new PersistenceException("Target component not found");
         }
@@ -298,7 +298,7 @@ public class WorkflowServiceImpl
         WorkflowNodeDescriptor nodeBefore = persistenceManager.getWorkflowNodeById(nodeBeforeId);
         TaoComponent component = null;
         if (nodeBefore != null) {
-            component = findComponent(nodeBefore.getComponentId(), nodeBefore.getComponentType());
+            component = componentService.findComponent(nodeBefore.getComponentId(), nodeBefore.getComponentType());
         }
         int cardinality = component != null ? TaskUtilities.getSourceCardinality(component) : 1;
         GroupComponent groupComponent = GroupComponent.create(firstComponent.getSources(), lastComponent.getTargets());
@@ -449,7 +449,7 @@ public class WorkflowServiceImpl
                 continue;
             }
             ComponentType componentType = node.getComponentType();
-            TaoComponent component = findComponent(node.getComponentId(), componentType);
+            TaoComponent component = componentService.findComponent(node.getComponentId(), componentType);
             List<Parameter> componentParams = new ArrayList<>();
             switch (componentType) {
                 case DATASOURCE:
@@ -508,30 +508,14 @@ public class WorkflowServiceImpl
         return parameters;
     }
 
-    private TaoComponent findComponent(String id, ComponentType type) {
-        TaoComponent component = null;
-        switch (type) {
-            case DATASOURCE:
-                component = persistenceManager.getDataSourceInstance(id);
-                break;
-            case PROCESSING:
-                component = persistenceManager.getProcessingComponentById(id);
-                break;
-            case GROUP:
-                component = persistenceManager.getGroupComponentById(id);
-                break;
-        }
-        return component;
-    }
-
     private TargetDescriptor findTarget(String id, WorkflowNodeDescriptor nodeDescriptor) throws PersistenceException {
-        TaoComponent component = findComponent(nodeDescriptor.getComponentId(), nodeDescriptor.getComponentType());
+        TaoComponent component = componentService.findComponent(nodeDescriptor.getComponentId(), nodeDescriptor.getComponentType());
         return component != null ?
                 component.getTargets().stream().filter(t -> t.getId().equals(id)).findFirst().orElse(null) : null;
     }
 
     private SourceDescriptor findSource(String id, WorkflowNodeDescriptor nodeDescriptor) throws PersistenceException {
-        TaoComponent component = findComponent(nodeDescriptor.getComponentId(), nodeDescriptor.getComponentType());
+        TaoComponent component = componentService.findComponent(nodeDescriptor.getComponentId(), nodeDescriptor.getComponentType());
         return component != null ?
                 component.getSources().stream().filter(s -> s.getId().equals(id)).findFirst().orElse(null) : null;
     }
@@ -565,7 +549,7 @@ public class WorkflowServiceImpl
             if (value == null || value.trim().isEmpty()) {
                 errors.add("[node] is not linked to a processing component");
             } else {
-                TaoComponent component = findComponent(value, node.getComponentType());
+                TaoComponent component = componentService.findComponent(value, node.getComponentType());
                 if (component == null) {
                     errors.add("[node.componentId] component does not exist");
                 } else {
@@ -608,7 +592,7 @@ public class WorkflowServiceImpl
                                     .findFirst().orElse(null);
                             if (nodeBefore != null) {
                                 try {
-                                    TaoComponent parentComponent = findComponent(parentId, nodeBefore.getComponentType());
+                                    TaoComponent parentComponent = componentService.findComponent(parentId, nodeBefore.getComponentType());
                                     if (parentComponent == null) {
                                         throw new PersistenceException();
                                     }
