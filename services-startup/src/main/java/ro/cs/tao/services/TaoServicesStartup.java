@@ -183,7 +183,7 @@ public class TaoServicesStartup implements ApplicationListener {
         Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
         logger.fine("Executing docker image plugins");
         List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
-        if (installers != null) {
+        if (installers != null && installers.size() > 0) {
             for (DockerImageInstaller imageInstaller : installers) {
                 try {
                     imageInstaller.installImage();
