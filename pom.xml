@@ -33,6 +33,7 @@
 
     <properties>
         <spring.version>4.3.11.RELEASE</spring.version>
+        <spring.boot.version>1.5.7.RELEASE</spring.boot.version>
         <geotools.version>19.1</geotools.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -87,7 +88,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>1.5.7.RELEASE</version>
+            <version>${spring.boot.version}</version>
             <exclusions>
                 <!-- Exclude the Tomcat dependency -->
                 <exclusion>
@@ -99,13 +100,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
-            <version>1.5.7.RELEASE</version>
+            <version>${spring.boot.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-undertow</artifactId>
-            <version>1.5.7.RELEASE</version>
+            <version>${spring.boot.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.session</groupId>
