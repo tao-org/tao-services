@@ -183,6 +183,7 @@ public class TaoServicesStartup implements ApplicationListener {
     private void registerEmbeddedContainers() {
         Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
         logger.fine("Executing docker image plugins");
+        logger.fine("Detected OS: " + System.getProperty("os.name"));
         List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
         if (installers != null && installers.size() > 0) {
             logger.fine(String.format("Found %s images: %s", installers.size(),
