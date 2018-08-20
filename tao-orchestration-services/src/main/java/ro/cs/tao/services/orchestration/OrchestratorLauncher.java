@@ -19,13 +19,14 @@ package ro.cs.tao.services.orchestration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ImportResource;
+import ro.cs.tao.services.commons.ServiceLauncher;
 
 /**
  * @author Cosmin Cara
  */
 @SpringBootApplication()
 @ImportResource({"classpath:tao-orchestration-services-context.xml"})
-public class OrchestratorLauncher {
+public class OrchestratorLauncher implements ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(OrchestratorLauncher.class, args);

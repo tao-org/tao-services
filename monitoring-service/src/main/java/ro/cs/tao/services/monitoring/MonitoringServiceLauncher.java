@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-package ro.cs.tao.services.user.service;
+package ro.cs.tao.services.monitoring;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Configuration;
@@ -22,14 +22,15 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.services.commons.ServiceLauncher;
 
 /**
- * @author Oana H.
+ * @author Cosmin Cara
  */
 @Configuration
-@ImportResource("classpath:user-service-context.xml")
+@ImportResource("classpath:monitoring-service-context.xml")
 @EnableWebMvc
-public class UserServiceLauncher implements ServiceLauncher {
+public class MonitoringServiceLauncher implements ServiceLauncher {
 
     public static void main(String[] args) {
-        SpringApplication.run(UserServiceLauncher.class, args);
+        SpringApplication.run(MonitoringServiceLauncher.class, args);
     }
+
 }

@@ -19,6 +19,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import ro.cs.tao.services.commons.ServiceLauncher;
 
 /**
  * @author Oana H.
@@ -26,7 +27,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @Configuration
 @ImportResource("classpath:auth-service-context.xml")
 @EnableWebMvc
-public class AuthenticationServiceLauncher {
+public class AuthenticationServiceLauncher implements ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(AuthenticationServiceLauncher.class, args);
