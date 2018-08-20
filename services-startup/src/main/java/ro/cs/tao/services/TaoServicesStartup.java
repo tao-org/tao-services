@@ -190,7 +190,7 @@ public class TaoServicesStartup implements ApplicationListener {
             for (DockerImageInstaller imageInstaller : installers) {
                 try {
                     imageInstaller.installImage();
-                } catch (IOException e) {
+                } catch (Throwable e) {
                     Logger.getLogger(TaoServicesStartup.class.getName()).severe(e.getMessage());
                 }
             }
