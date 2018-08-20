@@ -65,6 +65,7 @@ import java.util.SortedSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -184,6 +185,8 @@ public class TaoServicesStartup implements ApplicationListener {
         logger.fine("Executing docker image plugins");
         List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
         if (installers != null && installers.size() > 0) {
+            logger.fine(String.format("Found %s images: %s", installers.size(),
+                        String.join(",", installers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.toList()))));
             for (DockerImageInstaller imageInstaller : installers) {
                 try {
                     imageInstaller.installImage();
