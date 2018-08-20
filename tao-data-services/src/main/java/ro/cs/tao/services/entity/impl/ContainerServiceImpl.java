@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.entity.impl;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -26,7 +27,6 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.TopologyManager;
-import ro.cs.tao.utils.Platform;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -138,7 +138,6 @@ public class ContainerServiceImpl
     @Override
     public Container initializeContainer(String id, String name, String path, List<Application> applications) {
         List<Container> containers = persistenceManager.getContainers();
-        boolean isWin = Platform.getCurrentPlatform().getId().equals(Platform.ID.win);
         Container container = null;
         if (containers == null || containers.stream().noneMatch(c -> c.getName().equals(name))) {
             container = new Container();
@@ -149,7 +148,7 @@ public class ContainerServiceImpl
             String appPath;
             for (Application app : applications) {
                 Application application = new Application();
-                appPath = app.getPath() + (isWin && (winExtensions.stream()
+                appPath = app.getPath() + (SystemUtils.IS_OS_WINDOWS && (winExtensions.stream()
                                                                   .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
                 application.setName(app.getName());
                 application.setPath(appPath);
@@ -168,7 +167,7 @@ public class ContainerServiceImpl
             String appPath;
             for (Application app : applications) {
                 Application application = new Application();
-                appPath = app.getName() + (isWin && (winExtensions.stream()
+                appPath = app.getName() + (SystemUtils.IS_OS_WINDOWS && (winExtensions.stream()
                                                             .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
                 application.setName(app.getName());
                 application.setPath(appPath);
