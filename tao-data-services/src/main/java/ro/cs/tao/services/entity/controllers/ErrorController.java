@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author Cosmin Cara
  */
 @RestController
-public class ErrorController implements org.springframework.boot.autoconfigure.web.ErrorController {
+public class ErrorController implements org.springframework.boot.web.servlet.error.ErrorController {
     private static final String errorPath = "/error";
 
     @RequestMapping(value = errorPath)
