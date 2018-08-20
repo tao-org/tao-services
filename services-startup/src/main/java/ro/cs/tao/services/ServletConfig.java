@@ -15,7 +15,9 @@
  */
 package ro.cs.tao.services;
 
-import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
+//import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
@@ -32,7 +34,7 @@ import java.util.logging.Logger;
 @Configuration
 public class ServletConfig {
     @Bean
-    public EmbeddedServletContainerCustomizer containerCustomizer() {
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> containerCustomizer() {
         return (container -> {
             String strPort = ConfigurationManager.getInstance().getValue("server.port");
             int port = strPort != null ? Integer.parseInt(strPort) : 8080;

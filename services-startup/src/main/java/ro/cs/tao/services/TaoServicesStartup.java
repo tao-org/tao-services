@@ -16,9 +16,9 @@
 package ro.cs.tao.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ApplicationHome;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.system.ApplicationHome;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -116,12 +116,11 @@ public class TaoServicesStartup implements ApplicationListener {
         ServiceRegistry<ServiceLauncher> registry = ServiceRegistryManager.getInstance().getServiceRegistry(ServiceLauncher.class);
         Set<ServiceLauncher> launchers = registry.getServices();
         logger.info("Detected service launchers: " + String.join(",", launchers.stream().map(l -> l.getClass().getSimpleName()).sorted().collect(Collectors.toList())));
-        Object[] objects = launchers.stream().map(ServiceLauncher::getClass).toArray();
-        Object[] sources = new Object[objects.length + 1];
-        sources[0] = TaoServicesStartup.class;
-        System.arraycopy(objects, 0, sources, 1, objects.length);
+        List<Class> classes = launchers.stream().map(ServiceLauncher::getClass).collect(Collectors.toList());
+        classes.add(0, TaoServicesStartup.class);
         new SpringApplicationBuilder()
-                .sources(sources)
+                .profiles("server")
+                .sources(classes.toArray(new Class[0]))
                 .build()
                 .run(args);
     }
