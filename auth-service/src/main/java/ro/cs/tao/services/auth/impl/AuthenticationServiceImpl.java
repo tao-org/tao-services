@@ -18,11 +18,14 @@ package ro.cs.tao.services.auth.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
+import ro.cs.tao.user.Group;
 
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -36,6 +39,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Autowired
     private TokenManagementService tokenService;
 
+    @Autowired
+    private PersistenceManager persistenceManager;
+
     @Override
     public AuthInfo login(String username) {
         logger.info("Logged in (" + username + ")...");
@@ -44,8 +50,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String authenticationToken = tokenService.getUserToken(username);
         logger.info("Token " + authenticationToken);
 
-        // TODO retrieve user group and send it as profile
-        return new AuthInfo(true, authenticationToken, null);
+        // retrieve user groups and send them as profiles
+        return new AuthInfo(true, authenticationToken, persistenceManager.getUserGroups(username).stream().map(Group::getName).collect(Collectors.toList()));
     }
 
     @Override
