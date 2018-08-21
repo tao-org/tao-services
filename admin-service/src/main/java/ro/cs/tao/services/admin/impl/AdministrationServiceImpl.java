@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.AdministrationService;
+import ro.cs.tao.services.model.user.DisableUserInfo;
 import ro.cs.tao.services.model.user.UserUnicityInfo;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
@@ -75,8 +76,9 @@ public class AdministrationServiceImpl implements AdministrationService{
     }
 
     @Override
-    public void disableUser(String username) throws PersistenceException {
+    public void disableUser(String username, DisableUserInfo additionalDisableActions) throws PersistenceException {
         persistenceManager.disableUser(username);
+        // TODO delete private resources or other additional actions
     }
 
     @Override
