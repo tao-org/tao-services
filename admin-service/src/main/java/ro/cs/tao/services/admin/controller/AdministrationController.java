@@ -25,6 +25,7 @@ import ro.cs.tao.services.admin.mail.MailSenderTLS;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.AdministrationService;
+import ro.cs.tao.services.model.user.DisableUserInfo;
 import ro.cs.tao.services.model.user.UserUnicityInfo;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
@@ -128,18 +129,13 @@ public class AdministrationController extends BaseController {
     }
 
     @RequestMapping(value = "/users/{username}/disable", method = RequestMethod.POST)
-    public ResponseEntity<?> disableUser(@PathVariable("username") String username, @RequestBody Boolean deletePrivateResources) {
-        if (StringUtils.isNullOrEmpty(username) || deletePrivateResources == null) {
+    public ResponseEntity<?> disableUser(@PathVariable("username") String username, @RequestBody DisableUserInfo additionalDisableActions) {
+        if (StringUtils.isNullOrEmpty(username) || additionalDisableActions == null) {
             return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
         }
         try {
             // disable user
-            adminService.disableUser(username);
-
-            // TODO delete private resources
-            /*if (deletePrivateResources){
-
-            }*/
+            adminService.disableUser(username, additionalDisableActions);
 
             return new ResponseEntity<>(null, HttpStatus.OK);
 
