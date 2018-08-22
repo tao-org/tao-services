@@ -74,7 +74,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     @RequestMapping(value = "/clone", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> cloneWorkflow(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<?> responseEntity;
-        WorkflowDescriptor source = persistenceManager.getWorkflowDescriptor(workflowId);
+        WorkflowDescriptor source = getPersistenceManager().getWorkflowDescriptor(workflowId);
         try {
             responseEntity = new ResponseEntity<>(source != null ?
                                                           service.clone(source) :
@@ -94,7 +94,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         if (services == null || services.size() == 0) {
             return prepareResult("No sample workflows found", ResponseStatus.FAILED);
         } else {
-            SampleWorkflowBase.setPersistenceManager(persistenceManager);
+            SampleWorkflowBase.setPersistenceManager(getPersistenceManager());
             SampleWorkflowBase.setComponentService(componentService);
             SampleWorkflowBase.setWorkflowService(service);
             List<WorkflowDescriptor> descriptors = new ArrayList<>();

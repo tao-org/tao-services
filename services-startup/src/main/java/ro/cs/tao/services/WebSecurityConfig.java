@@ -37,7 +37,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import ro.cs.tao.services.auth.token.TokenManagementService;
-import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.commons.Endpoints;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.TaoAuthorityGranter;
 import ro.cs.tao.services.security.token.AuthenticationFilter;
@@ -134,7 +134,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
           .and()
           .authorizeRequests()
-                .antMatchers(BaseController.LOGIN_ENDPOINT)
+                .antMatchers(Endpoints.LOGIN_ENDPOINT)
                 .authenticated()
                 .and()
                 .httpBasic()
@@ -149,7 +149,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .authenticationProvider(tokenAuthProvider())
                 .addFilterBefore(new AuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class)
           .authorizeRequests()
-                .antMatchers(BaseController.GLOBAL_PATH_EXPRESSION)
+                .antMatchers(Endpoints.GLOBAL_PATH_EXPRESSION)
 
                 // permit all after token management
                 .permitAll()
@@ -189,16 +189,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     }
 
     private String[] apiEndpointsWithAuthToken() {
-        return new String[]{BaseController.ADMIN_SERVICE_PATH_EXPRESSION, BaseController.USER_SERVICE_PATH_EXPRESSION,
-          BaseController.DATA_QUERY_SERVICE_PATH_EXPRESSION,
+        return new String[]{Endpoints.ADMIN_SERVICE_PATH_EXPRESSION, Endpoints.USER_SERVICE_PATH_EXPRESSION,
+          Endpoints.DATA_QUERY_SERVICE_PATH_EXPRESSION,
           //BaseController.MONITORING_SERVICE_PATH_EXPRESSION,
-          BaseController.COMPONENT_SERVICE_PATH_EXPRESSION,
+          Endpoints.COMPONENT_SERVICE_PATH_EXPRESSION,
           //BaseController.CONFIGURATION_SERVICE_PATH_EXPRESSION,
-          BaseController.CONTAINER_SERVICE_PATH_EXPRESSION,
-          BaseController.DATA_SOURCE_COMPONENT_SERVICE_PATH_EXPRESSION,
-          BaseController.FILES_SERVICE_PATH_EXPRESSION, BaseController.PRODUCT_SERVICE_PATH_EXPRESSION,
-          BaseController.QUERY_SERVICE_PATH_EXPRESSION, BaseController.TOPOLOGY_SERVICE_PATH_EXPRESSION,
-          BaseController.WORKFLOW_SERVICE_PATH_EXPRESSION, BaseController.ORCHESTRATOR_SERVICE_PATH_EXPRESSION,
-          BaseController.LOGOUT_ENDPOINT};
+          Endpoints.CONTAINER_SERVICE_PATH_EXPRESSION,
+          Endpoints.DATA_SOURCE_COMPONENT_SERVICE_PATH_EXPRESSION,
+          Endpoints.FILES_SERVICE_PATH_EXPRESSION, Endpoints.PRODUCT_SERVICE_PATH_EXPRESSION,
+          Endpoints.QUERY_SERVICE_PATH_EXPRESSION, Endpoints.TOPOLOGY_SERVICE_PATH_EXPRESSION,
+          Endpoints.WORKFLOW_SERVICE_PATH_EXPRESSION, Endpoints.ORCHESTRATOR_SERVICE_PATH_EXPRESSION,
+          Endpoints.LOGOUT_ENDPOINT};
     }
 }

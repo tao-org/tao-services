@@ -17,6 +17,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,15 +49,18 @@ public class ProductController extends DataEntityController<EOProduct, ProductSe
 
     @RequestMapping(value = "/import", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> importProducts(@RequestParam("sourceDir") String sourceDir) {
-        ResponseEntity<ServiceResponse<?>> response;
-        Path sourcePath = Paths.get(sourceDir);
-        if (Files.exists(sourcePath)) {
+        if (sourceDir == null || !Files.exists(Paths.get(sourceDir))) {
+            return prepareResult("Source directory not found", ResponseStatus.FAILED);
+        }
+        asyncExecute(() -> {
+            Path sourcePath = Paths.get(sourceDir);
             Set<MetadataInspector> services = ServiceRegistryManager.getInstance()
                     .getServiceRegistry(MetadataInspector.class)
                     .getServices();
-            MetadataInspector inspector = null;
+            MetadataInspector inspector;
             if (services == null) {
-                return prepareResult("No product inspector found", ResponseStatus.FAILED);
+                warn("No product inspector found");
+                return;
             }
             try {
                 List<Path> folders = Files.walk(sourcePath, 1).collect(Collectors.toList());
@@ -75,20 +79,20 @@ public class ProductController extends DataEntityController<EOProduct, ProductSe
                                 targetPath = folder;
                             }
                             inspector = services.stream()
-                                                .filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath))
-                                                .findFirst()
-                                                .orElse(services.stream()
-                                                                .filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
-                                                                .findFirst()
-                                                                .orElse(null));
+                                    .filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath))
+                                    .findFirst()
+                                    .orElse(services.stream()
+                                                    .filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
+                                                    .findFirst()
+                                                    .orElse(null));
                             if (inspector == null) {
-                                logger.warning(String.format("No suitable metadata inspector found for product %s", targetPath));
+                                warn("No suitable metadata inspector found for product %s", targetPath);
                                 continue;
                             }
                             MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
                             if (metadata != null) {
                                 EOProduct product = metadata.toProductDescriptor(targetPath);
-                                product.setEntryPoint(metadata.getEntryPoint().toString());
+                                product.setEntryPoint(metadata.getEntryPoint());
                                 product.setUserName(SessionStore.currentContext().getPrincipal().getName());
                                 product.setVisibility(Visibility.PUBLIC);
                                 if (metadata.getAquisitionDate() != null) {
@@ -101,22 +105,19 @@ public class ProductController extends DataEntityController<EOProduct, ProductSe
                                     product.setId(metadata.getProductId());
                                 }
                                 product = service.save(product);
-                                logger.fine("Imported product " + product.getName());
+                                debug("Imported product %s", product.getName());
                                 count++;
                             }
                         }
                     } catch (Exception e1) {
-                        logger.warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
+                        warn("Import for %s failed. Reason: %s", folder, e1.getMessage());
                     }
                 }
-                response = prepareResult("Imported " + count + " products", ResponseStatus.SUCCEEDED);
+                info("Imported %s products", count);
             } catch (Exception e) {
-                response = handleException(e);
+                error(ExceptionUtils.getStackTrace(e));
             }
-        } else {
-            response = prepareResult("Source directory not found", ResponseStatus.FAILED);
-        }
-        return response;
+        }, this::onUnhandledException);
+        return prepareResult("Request submitted", ResponseStatus.SUCCEEDED);
     }
-
 }

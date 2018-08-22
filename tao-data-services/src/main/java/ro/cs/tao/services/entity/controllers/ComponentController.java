@@ -117,7 +117,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
                     });
                 }
                 this.service.validate(component);
-                this.persistenceManager.saveProcessingComponent(component);
+                getPersistenceManager().saveProcessingComponent(component);
                 responseEntity = new ResponseEntity<>(component, HttpStatus.OK);
             } catch (ValidationException vex) {
                 responseEntity = new ResponseEntity<>(new ArrayList<>(vex.getAdditionalInfo().keySet()),
