@@ -41,7 +41,6 @@ public abstract class StartupBase implements ApplicationListener {
     protected static Properties initialize() throws IOException {
         home = new ApplicationHome(StartupBase.class);
         Path configDirectory = homeDirectory().resolve("config");
-        System.out.println(configDirectory);
         if (!Files.exists(configDirectory)) {
             Files.createDirectory(configDirectory);
         }
