@@ -39,7 +39,7 @@ public abstract class StartupBase implements ApplicationListener {
     protected final ExecutorService backgroundWorker = Executors.newSingleThreadExecutor();
 
     protected static Properties initialize() throws IOException {
-        home = new ApplicationHome(StartupBase.class);
+        home = new ApplicationHome();
         Path configDirectory = homeDirectory().resolve("config");
         if (!Files.exists(configDirectory)) {
             Files.createDirectory(configDirectory);

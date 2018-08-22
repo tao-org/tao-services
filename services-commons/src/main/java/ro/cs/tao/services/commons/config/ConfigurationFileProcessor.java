@@ -33,7 +33,7 @@ public interface ConfigurationFileProcessor {
         Path configFile = configDirectory.resolve(getConfigFileName());
         if (!Files.exists(configFile)) {
             byte[] buffer = new byte[1024];
-            try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream(getConfigFileResourceLocation() + "/" + getConfigFileName()));
+            try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream(getConfigFileResourceLocation()));
                  OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile))) {
                 int read;
                 while ((read = is.read(buffer)) != -1) {
