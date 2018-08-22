@@ -248,7 +248,7 @@ public class FileController extends BaseController {
                         String message = String.format("Cannot update product %s. Reason: %s",
                                                        eoProduct.getName(), e.getMessage());
                         responseEntity = prepareResult(message, ResponseStatus.FAILED);
-                        logger.warning(message);
+                        warn(message);
                     }
                 }
                 if (responseEntity == null) {

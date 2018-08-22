@@ -18,9 +18,7 @@ package ro.cs.tao.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.system.ApplicationHome;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import ro.cs.tao.component.SystemVariable;
@@ -33,33 +31,22 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
-import ro.cs.tao.services.commons.ServiceLauncher;
+import ro.cs.tao.services.commons.StartupBase;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.model.monitoring.OSRuntimeInfo;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.services.security.TaoLocalLoginModule;
-import ro.cs.tao.spi.ServiceRegistry;
-import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Properties;
-import java.util.Set;
 import java.util.SortedSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -69,10 +56,8 @@ import java.util.stream.Collectors;
 
 @SpringBootApplication
 @EnableScheduling
-public class TaoServicesStartup implements ApplicationListener {
+public class TaoServicesStartup extends StartupBase {
     private final static Logger logger;
-    private static final ApplicationHome home;
-    private final ExecutorService backgroundWorker = Executors.newSingleThreadExecutor();
 
     @Autowired
     private PersistenceManager persistenceManager;
@@ -82,50 +67,20 @@ public class TaoServicesStartup implements ApplicationListener {
 
     static {
         logger = Logger.getLogger(TaoServicesStartup.class.getName());
-        home = new ApplicationHome(TaoServicesStartup.class);
         try {
-            Path configDirectory = homeDirectory().resolve("config");
-            if (!Files.exists(configDirectory)) {
-                Files.createDirectories(configDirectory);
-            }
-            Field field = ConfigurationManager.class.getDeclaredField("configFolder");
-            field.setAccessible(true);
-            field.set(null, configDirectory);
-            Path configFile = configDirectory.resolve("tao.properties");
-            if (!Files.exists(configFile)) {
-                byte[] buffer = new byte[1024];
-                try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream("/ro/cs/tao/configuration/tao.properties"));
-                     OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile))) {
-                    int read;
-                    while ((read = is.read(buffer)) != -1) {
-                        os.write(buffer, 0, read);
-                    }
-                    os.flush();
-                }
-            }
-            field = ConfigurationManager.class.getDeclaredField("settings");
-            field.setAccessible(true);
-            ((Properties) field.get(ConfigurationManager.getInstance())).load(Files.newInputStream(configFile));
+            initialize();
         } catch (Exception e){
             logger.severe(e.getMessage());
         }
     }
 
     public static void main(String[] args) {
-        //LifeCycleProcessor.activate();
-        ServiceRegistry<ServiceLauncher> registry = ServiceRegistryManager.getInstance().getServiceRegistry(ServiceLauncher.class);
-        Set<ServiceLauncher> launchers = registry.getServices();
-        logger.info("Detected service launchers: " + String.join(",", launchers.stream().map(l -> l.getClass().getSimpleName()).sorted().collect(Collectors.toList())));
-        List<Class> classes = launchers.stream().map(ServiceLauncher::getClass).collect(Collectors.toList());
-        classes.add(0, TaoServicesStartup.class);
         new SpringApplicationBuilder()
                 .profiles("server")
-                .sources(classes.toArray(new Class[0]))
+                .sources(detectLaunchers(TaoServicesStartup.class))
                 .build()
                 .run(args);
     }
-
-    static Path homeDirectory() { return home.getDir().getParentFile().toPath(); }
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {

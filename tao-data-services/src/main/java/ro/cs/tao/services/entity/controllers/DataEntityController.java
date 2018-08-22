@@ -97,7 +97,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
         return new ResponseEntity<>("{}", HttpStatus.OK);
     }
 
-    ResponseEntity<?> validate(T entity) {
+    private ResponseEntity<?> validate(T entity) {
         try {
             service.validate(entity);
             return new ResponseEntity<>(entity, HttpStatus.OK);

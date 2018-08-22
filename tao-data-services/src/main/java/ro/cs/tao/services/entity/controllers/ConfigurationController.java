@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 public class ConfigurationController extends DataEntityController<KeyValuePair, ConfigurationService> {
 
     @RequestMapping(value = "/enums", method = RequestMethod.GET)
-    public ResponseEntity<ServiceResponse<Map<String, List<KeyValuePair>>>> getAvailableEnumValues() {
+    public ResponseEntity<ServiceResponse<?>> getAvailableEnumValues() {
         Map<String, List<KeyValuePair>> enumValues = new HashMap<>();
         Reflections reflections = new Reflections("ro.cs.tao");
         Set<Class<? extends TaoEnum>> enums = reflections.getSubTypesOf(TaoEnum.class);
