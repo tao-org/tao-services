@@ -29,7 +29,7 @@ public class TaoConfigurationFileProcessor implements ConfigurationFileProcessor
     public String getConfigFileName() { return "tao.properties"; }
 
     @Override
-    public String getConfigFileResourceLocation() { return "/ro/cs/tao/configuration"; }
+    public String getConfigFileResourceLocation() { return "/ro/cs/tao/configuration/tao.properties"; }
 
     @Override
     public void performAdditionalConfiguration(Path configDirectory, Properties properties) {
