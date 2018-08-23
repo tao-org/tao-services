@@ -13,10 +13,10 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-
 package ro.cs.tao.services.commons;
 
-
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.system.ApplicationHome;
 import org.springframework.context.ApplicationListener;
 import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
@@ -41,6 +41,8 @@ public abstract class StartupBase implements ApplicationListener {
     protected static Properties initialize() throws IOException {
         home = new ApplicationHome();
         Path configDirectory = homeDirectory().resolve("config");
+        Logger.getLogger(StartupBase.class.getName()).info(String.format("Configuration files will be read from %s",
+                                                                         configDirectory.toString()));
         if (!Files.exists(configDirectory)) {
             Files.createDirectory(configDirectory);
         }
@@ -57,10 +59,19 @@ public abstract class StartupBase implements ApplicationListener {
     protected static Class[] detectLaunchers(Class startupClass) {
         ServiceRegistry<ServiceLauncher> registry = ServiceRegistryManager.getInstance().getServiceRegistry(ServiceLauncher.class);
         Set<ServiceLauncher> launchers = registry.getServices();
-        Logger.getLogger("").info("Detected service launchers: " + String.join(",", launchers.stream().map(l -> l.getClass().getSimpleName()).sorted().collect(Collectors.toList())));
+        Logger.getLogger(StartupBase.class.getName()).info("Detected service launchers: " + String.join(",", launchers.stream().map(l -> l.getClass().getSimpleName()).sorted().collect(Collectors.toList())));
         List<Class> classes = launchers.stream().map(ServiceLauncher::getClass).collect(Collectors.toList());
         classes.add(0, startupClass);
         return classes.toArray(new Class[0]);
+    }
+
+    public static void run(Class startupClass, String[] args) throws IOException {
+        SpringApplication app = new SpringApplicationBuilder()
+                                        .profiles("server")
+                                        .sources(detectLaunchers(startupClass))
+                                        .build();
+        app.setDefaultProperties(initialize());
+        app.run(args);
     }
 
     public static Path homeDirectory() { return home.getDir().getParentFile().toPath(); }

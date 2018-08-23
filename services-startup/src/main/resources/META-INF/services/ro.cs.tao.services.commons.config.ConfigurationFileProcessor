@@ -15,3 +15,4 @@
 #
 
 ro.cs.tao.services.config.TaoConfigurationFileProcessor
+ro.cs.tao.services.config.ApplicationConfigurationFileProcessor
