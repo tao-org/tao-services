@@ -17,7 +17,6 @@ package ro.cs.tao.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -57,7 +56,7 @@ import java.util.stream.Collectors;
 @SpringBootApplication
 @EnableScheduling
 public class TaoServicesStartup extends StartupBase {
-    private final static Logger logger;
+    private final static Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
 
     @Autowired
     private PersistenceManager persistenceManager;
@@ -65,21 +64,8 @@ public class TaoServicesStartup extends StartupBase {
     @Autowired
     private ContainerService containerService;
 
-    static {
-        logger = Logger.getLogger(TaoServicesStartup.class.getName());
-        try {
-            initialize();
-        } catch (Exception e){
-            logger.severe(e.getMessage());
-        }
-    }
-
-    public static void main(String[] args) {
-        new SpringApplicationBuilder()
-                .profiles("server")
-                .sources(detectLaunchers(TaoServicesStartup.class))
-                .build()
-                .run(args);
+    public static void main(String[] args) throws IOException {
+        run(TaoServicesStartup.class, args);
     }
 
     @Override
