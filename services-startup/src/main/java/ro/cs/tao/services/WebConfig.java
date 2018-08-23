@@ -38,8 +38,11 @@ public class WebConfig implements WebMvcConfigurer {
     public MappingJackson2HttpMessageConverter jacksonMessageConverter(){
         MappingJackson2HttpMessageConverter messageConverter = new MappingJackson2HttpMessageConverter();
         ObjectMapper mapper = new ObjectMapper();
-        //Registering Hibernate4Module to support lazy objects
-        mapper.registerModule(new Hibernate5Module());
+        //Registering Hibernate5Module to support lazy objects
+        Hibernate5Module hibernate5Module = new Hibernate5Module();
+        hibernate5Module.disable(Hibernate5Module.Feature.USE_TRANSIENT_ANNOTATION);
+        hibernate5Module.enable(Hibernate5Module.Feature.FORCE_LAZY_LOADING);
+        mapper.registerModule(hibernate5Module);
 
         messageConverter.setObjectMapper(mapper);
         return messageConverter;
