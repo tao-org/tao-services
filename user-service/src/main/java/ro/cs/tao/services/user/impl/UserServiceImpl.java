@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public User updateUserInfo(User updatedInfo) throws PersistenceException {
-        return persistenceManager.updateUser(updatedInfo);
+        return persistenceManager.updateUser(updatedInfo, false);
     }
 
     @Override
