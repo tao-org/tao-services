@@ -88,7 +88,6 @@ public class DataSourceServiceImpl implements DataSourceService {
             String path = ConfigurationManager.getInstance().getValue("product.location");
             if ((mode == FetchMode.SYMLINK || mode == FetchMode.COPY) && localPath != null) {
                 DataSource dataSource = DataSourceManager.getInstance().get(query.getSensor(), query.getDataSource());
-                String className = dataSource.getClass().getSimpleName();
                 Properties properties = new Properties();
                 properties.put("local.archive.path.format", pathFormat);
                 products = dsComponent.doFetch(products, null, path, localPath, properties);
