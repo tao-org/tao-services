@@ -72,7 +72,7 @@ public class AdministrationServiceImpl implements AdministrationService{
 
     @Override
     public User updateUserInfo(User updatedInfo) throws PersistenceException {
-        return persistenceManager.updateUser(updatedInfo);
+        return persistenceManager.updateUser(updatedInfo, true);
     }
 
     @Override
