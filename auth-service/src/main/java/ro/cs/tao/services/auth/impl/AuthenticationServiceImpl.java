@@ -23,6 +23,8 @@ import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
 import ro.cs.tao.user.Group;
+import ro.cs.tao.user.User;
+import ro.cs.tao.user.UserStatus;
 
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -50,8 +52,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String authenticationToken = tokenService.getUserToken(username);
         logger.info("Token " + authenticationToken);
 
-        // retrieve user groups and send them as profiles
-        return new AuthInfo(true, authenticationToken, persistenceManager.getUserGroups(username).stream().map(Group::getName).collect(Collectors.toList()));
+        // check if user is still active in TAO
+        final User user = persistenceManager.findUserByUsername(username);
+        if (user != null && user.getStatus().value() == UserStatus.ACTIVE.value()) {
+            // retrieve user groups and send them as profiles
+            return new AuthInfo(true, authenticationToken, persistenceManager.getUserGroups(username).stream().map(Group::getName).collect(Collectors.toList()));
+        }
+        // unauthorized
+        return new AuthInfo(false, null, null);
     }
 
     @Override
