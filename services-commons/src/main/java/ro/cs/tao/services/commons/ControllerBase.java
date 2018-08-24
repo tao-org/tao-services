@@ -53,19 +53,17 @@ public abstract class ControllerBase {
                 executorService.setCorePoolSize(Math.min(processors / 2, 2));
                 executorService.setMaxPoolSize(processors * 2);
                 executorService.setQueueCapacity(25);
+                executorService.initialize();
             }
         }
         executorService.execute(() -> {
-            Exception exception = null;
             try {
                 runnable.run();
             } catch (Exception ex) {
-                exception = ex;
-            } finally {
                 if (callback != null) {
-                    callback.accept(exception);
+                    callback.accept(ex);
                 } else {
-                    onUnhandledException(exception);
+                    onUnhandledException(ex);
                 }
             }
         });
