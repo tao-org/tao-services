@@ -26,6 +26,8 @@ import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -55,6 +57,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         // check if user is still active in TAO
         final User user = persistenceManager.findUserByUsername(username);
         if (user != null && user.getStatus().value() == UserStatus.ACTIVE.value()) {
+            // update user last login date
+            persistenceManager.updateUserLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
             // retrieve user groups and send them as profiles
             return new AuthInfo(true, authenticationToken, persistenceManager.getUserGroups(username).stream().map(Group::getName).collect(Collectors.toList()));
         }
