@@ -18,6 +18,7 @@ package ro.cs.tao.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -43,7 +44,7 @@ public class WebConfig implements WebMvcConfigurer {
         hibernate5Module.disable(Hibernate5Module.Feature.USE_TRANSIENT_ANNOTATION);
         hibernate5Module.enable(Hibernate5Module.Feature.FORCE_LAZY_LOADING);
         mapper.registerModule(hibernate5Module);
-
+        mapper.registerModule(new JavaTimeModule());
         messageConverter.setObjectMapper(mapper);
         return messageConverter;
     }
