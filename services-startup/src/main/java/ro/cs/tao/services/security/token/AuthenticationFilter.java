@@ -15,7 +15,7 @@
  */
 package ro.cs.tao.services.security.token;
 
-import com.google.common.base.Optional;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.Authentication;
@@ -33,6 +33,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,7 +55,7 @@ public class AuthenticationFilter extends GenericFilterBean {
         HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
         HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
 
-        Optional<String> token = Optional.fromNullable(httpRequest.getHeader("X-Auth-Token"));
+        Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
 
         String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
 
@@ -75,7 +76,10 @@ public class AuthenticationFilter extends GenericFilterBean {
         } catch (AuthenticationException authenticationException) {
             SecurityContextHolder.clearContext();
             httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, authenticationException.getMessage());
+        } catch (Throwable t) {
+            logger.severe(ExceptionUtils.getStackTrace(t));
         }
+
     }
 
     private void processTokenAuthentication(Optional<String> token) {

@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import ro.cs.tao.component.Identifiable;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataSourceComponent;
@@ -45,6 +46,7 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -84,7 +86,7 @@ public class TaoServicesStartup extends StartupBase {
                 Files.createDirectories(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
                 Files.createDirectories(Paths.get(SystemVariable.SHARED_FILES.value()));
             } catch (IOException e) {
-                Logger.getLogger(TaoServicesStartup.class.getName()).severe("Cannot create required folders: " + e.getMessage());
+                logger.severe("Cannot create required folders: " + e.getMessage());
                 System.exit(1);
             }
         }
@@ -122,7 +124,6 @@ public class TaoServicesStartup extends StartupBase {
     }
 
     private void registerEmbeddedContainers() {
-        Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
         logger.fine("Executing docker image plugins");
         List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
         if (installers != null && installers.size() > 0) {
@@ -132,7 +133,7 @@ public class TaoServicesStartup extends StartupBase {
                 try {
                     imageInstaller.installImage();
                 } catch (Throwable e) {
-                    Logger.getLogger(TaoServicesStartup.class.getName()).severe(e.getMessage());
+                    logger.severe(e.getMessage());
                 }
             }
         } else {
@@ -143,15 +144,17 @@ public class TaoServicesStartup extends StartupBase {
     private void registerDataSourceComponents() {
         SortedSet<String> sensors = DataSourceManager.getInstance().getSupportedSensors();
         if (sensors != null) {
+            Set<String> existing = persistenceManager.getDataSourceComponents()
+                    .stream()
+                    .map(Identifiable::getId)
+                    .collect(Collectors.toSet());
             String componentId;
             for (String sensor : sensors) {
                 List<String> dsNames = DataSourceManager.getInstance().getNames(sensor);
                 for (String dsName : dsNames) {
                     componentId = sensor + "-" + dsName;
-                    DataSourceComponent dataSourceComponent;
-                    dataSourceComponent = persistenceManager.getDataSourceInstance(componentId);
-                    if (dataSourceComponent == null) {
-                        dataSourceComponent = new DataSourceComponent(sensor, dsName);
+                    if (!existing.contains(componentId)) {
+                        DataSourceComponent dataSourceComponent = new DataSourceComponent(sensor, dsName);
                         dataSourceComponent.setFetchMode(FetchMode.OVERWRITE);
                         dataSourceComponent.setLabel(sensor + " from " + dsName);
                         dataSourceComponent.setVersion("1.0");
@@ -160,9 +163,10 @@ public class TaoServicesStartup extends StartupBase {
                         dataSourceComponent.setCopyright("(C) TAO Team");
                         dataSourceComponent.setNodeAffinity("Any");
                         try {
-                            persistenceManager.saveDataSourceComponent(dataSourceComponent);
+                            dataSourceComponent = persistenceManager.saveDataSourceComponent(dataSourceComponent);
+                            logger.fine("Registered new data source component: " + dataSourceComponent.getId());
                         } catch (PersistenceException e) {
-                            Logger.getLogger(TaoServicesStartup.class.getName()).severe(e.getMessage());
+                            logger.severe(e.getMessage());
                         }
                     }
                 }

@@ -22,9 +22,10 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
-import com.google.common.base.Optional;
 import org.springframework.stereotype.Component;
 import ro.cs.tao.services.auth.token.TokenManagementService;
+
+import java.util.Optional;
 
 /**
  *
