@@ -61,11 +61,11 @@ public class AuthenticationFilter extends GenericFilterBean {
 
         try {
             if (token.isPresent() && !postToAuthenticate(httpRequest, resourcePath)) {
-                logger.info("Trying to authenticate user by X-Auth-Token method. Token: " + token);
+                logger.fine("Trying to authenticate user by X-Auth-Token method. Token: " + token);
                 processTokenAuthentication(token);
             }
 
-            logger.info("AuthenticationFilter is passing the request through the filter chain");
+            logger.fine("AuthenticationFilter is passing the request through the filter chain");
             filterChain.doFilter(servletRequest, servletResponse);
 
         } catch (InternalAuthenticationServiceException internalAuthenticationServiceException) {

@@ -146,9 +146,18 @@ public class WorkflowServiceImpl
         if (workflow == null) {
             throw new PersistenceException("Node is not attached to an existing workflow");
         }
+        String name = nodeDescriptor.getName();
         long nameCount = workflow.getNodes().stream().filter(n -> n.getName().equals(nodeDescriptor.getName())).count();
         if (nameCount > 0) {
-            nodeDescriptor.setName(nodeDescriptor.getName() + "-" + String.valueOf(nameCount));
+            int count = (int) nameCount;
+            if (name.indexOf("(") > 0) {
+                try {
+                    count = Integer.parseInt(name.substring(name.indexOf("(") + 1, name.indexOf(")"))) + 1;
+                } catch (NumberFormatException ignored) { }
+                name = name.substring(0, name.indexOf("(")).trim();
+            }
+            nodeDescriptor.setName(String.format("%s (%s)", name, count));
+
         }
         List<String> validationErrors = new ArrayList<>();
         validateNode(workflow, nodeDescriptor, validationErrors);

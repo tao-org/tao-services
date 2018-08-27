@@ -68,13 +68,13 @@ public class SampleWorkflow6 extends SampleWorkflowBase {
         customValues.put("transform_type_id_scalex_number", "0.5");
         customValues.put("transform_type_id_scaley_number", "0.5");
         WorkflowNodeDescriptor node5 = addNode(workflow,
-                                               "OTB Resample 1", "RigidTransformResample", ComponentType.PROCESSING, customValues,
+                                               "OTB Resample", "RigidTransformResample", ComponentType.PROCESSING, customValues,
                                                node2, ComponentType.PROCESSING, Direction.RIGHT);
         WorkflowNodeDescriptor node6 = addNode(workflow,
-                                               "OTB Resample 1", "RigidTransformResample", ComponentType.PROCESSING, customValues,
+                                               "OTB Resample (2)", "RigidTransformResample", ComponentType.PROCESSING, customValues,
                                                node3, ComponentType.PROCESSING, Direction.RIGHT);
         WorkflowNodeDescriptor node7 = addNode(workflow,
-                                               "OTB Resample 1", "RigidTransformResample", ComponentType.PROCESSING, customValues,
+                                               "OTB Resample (3)", "RigidTransformResample", ComponentType.PROCESSING, customValues,
                                                node4, ComponentType.PROCESSING, Direction.RIGHT);
         WorkflowNodeDescriptor node8 = addNode(workflow,
                                                "OTB Concatenate", "ConcatenateImages", ComponentType.PROCESSING, null,
