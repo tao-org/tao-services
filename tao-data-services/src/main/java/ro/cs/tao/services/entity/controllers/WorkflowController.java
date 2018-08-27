@@ -118,6 +118,30 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
+    @RequestMapping(value = "/subworkflow", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> addSubworkflow(@RequestParam("workflowId") long workflowId,
+                                            @RequestParam("subWorkflowId") long subWorkflowId,
+                                            @RequestParam("keepDataSources") boolean keepDataSources) {
+        ResponseEntity<?> responseEntity;
+        try {
+            WorkflowDescriptor master = getPersistenceManager().getWorkflowDescriptor(workflowId);
+            if (master == null) {
+                throw new PersistenceException(String.format("Workflow with identifier %s does not exist",
+                                                             workflowId));
+            }
+            WorkflowDescriptor subGraph = getPersistenceManager().getWorkflowDescriptor(subWorkflowId);
+            if (subGraph == null) {
+                throw new PersistenceException(String.format("Workflow with identifier %s does not exist",
+                                                             subWorkflowId));
+            }
+            responseEntity = new ResponseEntity<>(service.importWorkflowNodes(master, subGraph, keepDataSources),
+                                                  HttpStatus.OK);
+        } catch (PersistenceException e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
+
     @RequestMapping(value = "/node", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<?> updateNode(@RequestParam("workflowId") long workflowId,
                                      @RequestBody WorkflowNodeDescriptor node) {

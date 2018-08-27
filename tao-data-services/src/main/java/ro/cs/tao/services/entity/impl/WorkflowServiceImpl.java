@@ -50,6 +50,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Implementation for Workflow entity service.
+ *
  * @author Cosmin Cara
  */
 @Service("workflowService")
@@ -143,6 +145,10 @@ public class WorkflowServiceImpl
         WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
         if (workflow == null) {
             throw new PersistenceException("Node is not attached to an existing workflow");
+        }
+        long nameCount = workflow.getNodes().stream().filter(n -> n.getName().equals(nodeDescriptor.getName())).count();
+        if (nameCount > 0) {
+            nodeDescriptor.setName(nodeDescriptor.getName() + "-" + String.valueOf(nameCount));
         }
         List<String> validationErrors = new ArrayList<>();
         validateNode(workflow, nodeDescriptor, validationErrors);
@@ -395,6 +401,61 @@ public class WorkflowServiceImpl
             }
         }
         return persistenceManager.getWorkflowDescriptor(clone.getId());
+    }
+
+    @Override
+    public WorkflowDescriptor importWorkflowNodes(WorkflowDescriptor master,
+                                                  WorkflowDescriptor subWorkflow,
+                                                  boolean keepDataSources) throws PersistenceException {
+        Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
+        List<WorkflowNodeDescriptor> nodesToExport = subWorkflow.getOrderedNodes();
+        Set<Long> excludedIds = new HashSet<>();
+        for (WorkflowNodeDescriptor node : nodesToExport) {
+            if (!keepDataSources && ComponentType.DATASOURCE.equals(node.getComponentType())) {
+                excludedIds.add(node.getId());
+                continue;
+            }
+            WorkflowNodeDescriptor clonedNode = new WorkflowNodeDescriptor();
+            clonedNode.setWorkflow(master);
+            clonedNode.setName(node.getName());
+            clonedNode.setxCoord(node.getxCoord());
+            clonedNode.setyCoord(node.getyCoord());
+            clonedNode.setComponentId(node.getComponentId());
+            clonedNode.setComponentType(node.getComponentType());
+            clonedNode.setCreated(LocalDateTime.now());
+            clonedNode.setPreserveOutput(node.getPreserveOutput());
+            clonedNode.setBehavior(node.getBehavior());
+            clonedNode.setLevel(node.getLevel());
+            List<ParameterValue> customValues = node.getCustomValues();
+            if (customValues != null) {
+                clonedNode.setCustomValues(new ArrayList<>(customValues));
+            }
+            clonedNode = addNode(master.getId(), clonedNode);
+            cloneMap.put(node.getId(), clonedNode);
+            clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
+        }
+        for (WorkflowNodeDescriptor node : nodesToExport) {
+            List<ComponentLink> links = node.getIncomingLinks();
+            if (links != null) {
+                WorkflowNodeDescriptor clonedTarget = cloneMap.get(node.getId());
+                for (ComponentLink link : links) {
+                    if (!excludedIds.contains(link.getSourceNodeId())) {
+                        WorkflowNodeDescriptor clonedSource = cloneMap.get(link.getSourceNodeId());
+                        TargetDescriptor input = findTarget(link.getInput().getId(), clonedSource);
+                        SourceDescriptor output = findSource(link.getOutput().getId(), clonedTarget);
+                        ComponentLink clonedLink = new ComponentLink(clonedSource.getId(), input, output);
+                        List<ComponentLink> clonedLinks = clonedTarget.getIncomingLinks();
+                        if (clonedLinks == null) {
+                            clonedLinks = new ArrayList<>();
+                        }
+                        clonedLinks.add(clonedLink);
+                        clonedTarget.setIncomingLinks(clonedLinks);
+                    }
+                }
+                clonedTarget = persistenceManager.updateWorkflowNodeDescriptor(clonedTarget);
+            }
+        }
+        return persistenceManager.getWorkflowDescriptor(master.getId());
     }
 
     @Override
