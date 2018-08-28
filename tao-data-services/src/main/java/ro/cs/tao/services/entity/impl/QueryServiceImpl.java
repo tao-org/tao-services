@@ -55,7 +55,7 @@ public class QueryServiceImpl extends EntityService<Query>
 
     @Override
     public Query getQuery(String userId, String sensor, String dataSource, long workflowNodeId) {
-        return persistenceManager.getQueries(userId, sensor, dataSource, workflowNodeId);
+        return persistenceManager.getQuery(userId, sensor, dataSource, workflowNodeId);
     }
 
     @Override

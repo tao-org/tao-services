@@ -230,8 +230,19 @@ public class WorkflowServiceImpl
                 persistenceManager.updateWorkflowNodeDescriptor(child);
             }
         }
-
         persistenceManager.updateWorkflowNodeDescriptor(nodeDescriptor);
+
+        if (ComponentType.DATASOURCE.equals(nodeDescriptor.getComponentType())) {
+            DataSourceComponent component = (DataSourceComponent) componentService.findComponent(nodeDescriptor.getComponentId(),
+                                                                                                 nodeDescriptor.getComponentType());
+            Query query = persistenceManager.getQuery(SessionStore.currentContext().getPrincipal().getName(),
+                                                      component.getSensorName(), component.getDataSourceName(),
+                                                      nodeDescriptor.getId());
+            if (query != null) {
+                persistenceManager.removeQuery(query);
+            }
+        }
+
         workflow.removeNode(nodeDescriptor);
         persistenceManager.updateWorkflowDescriptor(workflow);
     }
@@ -534,10 +545,10 @@ public class WorkflowServiceImpl
                                                           descriptor.getDefaultValue() != null ? String.valueOf(descriptor.getDefaultValue()) : null,
                                                           Parameter.stringValueSet(descriptor.getValueSet())));
                     }
-                    Query query = persistenceManager.getQueries(SessionStore.currentContext().getPrincipal().getName(),
-                                                                dataSourceComponent.getSensorName(),
-                                                                dataSourceComponent.getDataSourceName(),
-                                                                node.getId());
+                    Query query = persistenceManager.getQuery(SessionStore.currentContext().getPrincipal().getName(),
+                                                              dataSourceComponent.getSensorName(),
+                                                              dataSourceComponent.getDataSourceName(),
+                                                              node.getId());
                     if (query != null) {
                         for (Map.Entry<String, String> e : query.getValues().entrySet()) {
                             componentParams.stream()

@@ -97,6 +97,7 @@ public class TaoServicesStartup extends StartupBase {
         NodeDescription node = TopologyManager.getInstance().get("localhost");
         if (node != null) {
             try {
+                logger.finest("Overriding the default 'localhost' database entry");
                 String masterHost = InetAddress.getLocalHost().getHostName();
                 NodeDescription master = persistenceManager.getNodeByHostName(masterHost);
                 if (master == null) {
@@ -115,7 +116,7 @@ public class TaoServicesStartup extends StartupBase {
                     master.setActive(true);
                     persistenceManager.saveExecutionNode(master);
                     persistenceManager.removeExecutionNode(node.getHostName());
-                    logger.info(String.format("Node [localhost] has been renamed to [%s]", masterHost));
+                    logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                 }
             } catch (Exception ex) {
                 logger.severe("Cannot update localhost name: " + ex.getMessage());
@@ -124,7 +125,7 @@ public class TaoServicesStartup extends StartupBase {
     }
 
     private void registerEmbeddedContainers() {
-        logger.fine("Executing docker image plugins");
+        logger.finest("Executing docker image plugins");
         List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
         if (installers != null && installers.size() > 0) {
             logger.fine(String.format("Found %s images: %s", installers.size(),
