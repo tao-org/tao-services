@@ -40,7 +40,7 @@ public class TokenManagementService {
 
     @Scheduled(fixedRate = ONE_HOUR_IN_MILLISECONDS)
     public void evictExpiredTokens() {
-        logger.info("Evicting expired tokens...");
+        logger.finest("Evicting expired tokens...");
         authTokenCache.evictExpiredElements();
     }
 
