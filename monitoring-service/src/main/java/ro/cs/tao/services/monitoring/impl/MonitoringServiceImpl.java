@@ -162,9 +162,11 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
 
     @Override
     protected void onMessageReceived(Message message) {
-        if (this.messageQueue.size() == MAX_QUEUE_SIZE) {
-            this.messageQueue.poll();
+        synchronized (this.messageQueue) {
+            if (this.messageQueue.size() == MAX_QUEUE_SIZE) {
+                this.messageQueue.poll();
+            }
+            this.messageQueue.offer(message);
         }
-        this.messageQueue.offer(message);
     }
 }
