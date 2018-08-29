@@ -65,7 +65,7 @@ public class AuthenticationFilter extends GenericFilterBean {
                 processTokenAuthentication(token);
             }
 
-            logger.fine("AuthenticationFilter is passing the request through the filter chain");
+            //logger.fine("AuthenticationFilter is passing the request through the filter chain");
             filterChain.doFilter(servletRequest, servletResponse);
 
         } catch (InternalAuthenticationServiceException internalAuthenticationServiceException) {

@@ -43,7 +43,6 @@ public class LdapLoginModule implements LoginModule {
     public TaoLdapClient ldapClient;
 
     public LdapLoginModule() {
-        logger.fine("LDAP Login Module - constructor called");
         ldapClient = new TaoLdapClient();
     }
 
@@ -51,7 +50,6 @@ public class LdapLoginModule implements LoginModule {
     public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState,
                            Map<String, ?> options) {
 
-        logger.fine("LDAP Login Module - initialize called");
         this.subject = subject;
         this.callbackHandler = callbackHandler;
         this.sharedState = sharedState;
@@ -62,7 +60,6 @@ public class LdapLoginModule implements LoginModule {
 
     @Override
     public boolean login() throws LoginException {
-        logger.fine("LDAP Login Module - login called");
         if (callbackHandler == null) {
             throw new LoginException("CallbackHandler null!");
         }
@@ -111,9 +108,6 @@ public class LdapLoginModule implements LoginModule {
      */
     @Override
     public boolean commit() throws LoginException {
-        logger.fine("LDAP Login Module - commit called");
-        //return succeeded;
-
         if (succeeded == false) {
             return false;
         } else {
@@ -135,7 +129,6 @@ public class LdapLoginModule implements LoginModule {
 
     @Override
     public boolean logout() throws LoginException {
-        logger.fine("LDAP Login Module - logout called");
         subject.getPrincipals().remove(userPrincipal);
         succeeded = false;
         succeeded = commitSucceeded;
@@ -153,7 +146,6 @@ public class LdapLoginModule implements LoginModule {
      */
     @Override
     public boolean abort() throws LoginException {
-        logger.fine("LDAP Login Module - abort called");
         if (succeeded == false) {
             return false;
         } else if (commitSucceeded == false) {
