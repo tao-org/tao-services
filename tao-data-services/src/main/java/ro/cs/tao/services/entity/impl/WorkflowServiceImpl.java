@@ -98,6 +98,7 @@ public class WorkflowServiceImpl
             List<WorkflowNodeDescriptor> nodes = object.getNodes();
             if (nodes != null) {
                 nodes.forEach(node -> node.setWorkflow(object));
+                nodes.forEach(node -> ensureUniqueName(object, node));
             }
             validate(object);
             try {
@@ -146,19 +147,7 @@ public class WorkflowServiceImpl
         if (workflow == null) {
             throw new PersistenceException("Node is not attached to an existing workflow");
         }
-        String name = nodeDescriptor.getName();
-        long nameCount = workflow.getNodes().stream().filter(n -> n.getName().equals(nodeDescriptor.getName())).count();
-        if (nameCount > 0) {
-            int count = (int) nameCount;
-            if (name.indexOf("(") > 0) {
-                try {
-                    count = Integer.parseInt(name.substring(name.indexOf("(") + 1, name.indexOf(")"))) + 1;
-                } catch (NumberFormatException ignored) { }
-                name = name.substring(0, name.indexOf("(")).trim();
-            }
-            nodeDescriptor.setName(String.format("%s (%s)", name, count));
-
-        }
+        ensureUniqueName(workflow, nodeDescriptor);
         List<String> validationErrors = new ArrayList<>();
         validateNode(workflow, nodeDescriptor, validationErrors);
         if (validationErrors.size() > 0) {
@@ -182,6 +171,7 @@ public class WorkflowServiceImpl
             throw new PersistenceException("Node is not attached to an existing workflow");
         }
         nodeDescriptor.setWorkflow(workflow);
+        ensureUniqueName(workflow, nodeDescriptor);
         List<String> validationErrors = new ArrayList<>();
         validateNode(workflow, nodeDescriptor, validationErrors);
         if (validationErrors.size() > 0) {
@@ -601,13 +591,37 @@ public class WorkflowServiceImpl
                 component.getSources().stream().filter(s -> s.getId().equals(id)).findFirst().orElse(null) : null;
     }
 
+    private void ensureUniqueName(WorkflowDescriptor workflow, WorkflowNodeDescriptor nodeDescriptor) {
+        final String name = nodeDescriptor.getName();
+        long nameCount = workflow.getNodes().stream()
+                .filter(n -> {
+                    boolean match = n.getName().equals(name);
+                    if (!match) {
+                        match = n.getName().startsWith(name);
+                        if (match) {
+                            String trimmed = n.getName().replace(name, "").trim();
+                            match = trimmed.startsWith("(") && trimmed.endsWith(")");
+                        }
+                    }
+                    return match;
+                }).count();
+        if (nameCount > 0) {
+            nodeDescriptor.setName(String.format("%s (%s)", name, nameCount));
+
+        }
+    }
+
     private void validateNode(WorkflowDescriptor workflow, WorkflowNodeDescriptor node, List<String> errors) {
         // Validate simple fields
         String value = node.getName();
         if (value == null || value.trim().isEmpty()) {
             errors.add("[node.name] cannot be empty");
         }
-        List<ComponentLink> incomingLinks = node.getIncomingLinks();
+        final List<WorkflowNodeDescriptor> workflowNodes = workflow.getNodes();
+        if (workflowNodes.stream().anyMatch(n -> n.getName().equals(node.getName()) && !n.getId().equals(node.getId()))) {
+            errors.add("[node.name] there is another node with the same name");
+        }
+        final List<ComponentLink> incomingLinks = node.getIncomingLinks();
         if (incomingLinks != null && incomingLinks.size() > 0) {
             if (incomingLinks.stream()
                     .noneMatch(l -> l.getOutput().getParentId().equals(node.getComponentId()))) {
@@ -615,7 +629,7 @@ public class WorkflowServiceImpl
                                          node.getId()));
             }
             incomingLinks.forEach(n -> {
-                if (workflow.getNodes().stream()
+                if (workflowNodes.stream()
                         .noneMatch(nd -> nd.getComponentId().equals(n.getInput().getParentId()))) {
                     errors.add(String.format("[%s.incomingLinks] contains one or more invalid node identifiers",
                                              node.getId()));
@@ -665,7 +679,6 @@ public class WorkflowServiceImpl
                     if (incomingLinks != null && incomingLinks.size() > 0) {
                         List<TaoComponent> linkedComponents = new ArrayList<>();
                         WorkflowNodeDescriptor nodeBefore;
-                        List<WorkflowNodeDescriptor> workflowNodes = workflow.getNodes();
                         for (ComponentLink link : incomingLinks) {
                             String parentId = link.getInput().getParentId();
                             nodeBefore = workflowNodes.stream()
