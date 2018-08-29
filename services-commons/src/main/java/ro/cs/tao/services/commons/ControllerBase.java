@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
@@ -47,7 +48,22 @@ public abstract class ControllerBase {
     protected void asyncExecute(Runnable runnable, Consumer<Exception> callback) {
         synchronized (sharedLock) {
             if (this.executorService == null) {
-                executorService = new ThreadPoolTaskExecutor();
+                executorService = new ThreadPoolTaskExecutor() {
+                    @Override
+                    public void execute(Runnable task) {
+                        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                        super.execute(() -> {
+                            try {
+                                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                                context.setAuthentication(authentication);
+                                SecurityContextHolder.setContext(context);
+                                task.run();
+                            } finally {
+                                SecurityContextHolder.clearContext();
+                            }
+                        });
+                    }
+                };
                 executorService.setThreadGroupName("controller-async");
                 int processors = Runtime.getRuntime().availableProcessors();
                 executorService.setCorePoolSize(Math.min(processors / 2, 2));

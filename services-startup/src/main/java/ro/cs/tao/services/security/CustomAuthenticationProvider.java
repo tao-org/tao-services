@@ -18,7 +18,6 @@ package ro.cs.tao.services.security;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.jaas.JaasAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.security.token.AuthenticationWithToken;
@@ -73,7 +72,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             authenticationWithToken.setToken(newToken);
             tokenService.store(newToken, authenticationWithToken);
 
-            logger.info("Stored token: " + newToken);
+            logger.finest("Stored token: " + newToken);
 
             return jaasAuthenticationToken;
         } else {
