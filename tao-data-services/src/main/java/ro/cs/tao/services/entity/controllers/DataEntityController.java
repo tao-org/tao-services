@@ -16,7 +16,6 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,7 +24,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.BaseController;
-import ro.cs.tao.services.commons.ServiceError;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.CRUDService;
 
 import java.util.ArrayList;
@@ -45,43 +45,44 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
     protected S service;
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<?> get(@PathVariable("id") String id) throws PersistenceException {
-        T entity = service.findById(id);
-        if (entity == null) {
-            return new ResponseEntity<>(new ServiceError(String.format("Entity [%s] not found", id)),
-                                        HttpStatus.NOT_FOUND);
+    public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") String id) {
+        ResponseEntity<ServiceResponse<?>> response;
+        T entity = null;
+        try {
+            entity = service.findById(id);
+            if (entity == null) {
+                response = prepareResult(String.format("Entity [%s] not found", id), ResponseStatus.FAILED);
+            } else {
+                response = prepareResult(entity);
+            }
+        } catch (PersistenceException e) {
+            response = handleException(e);
         }
-        return new ResponseEntity<>(entity, HttpStatus.OK);
+        return response;
     }
 
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<List<T>> list() {
-        List<T> objects = service.list();
-
-        // no need to check if there are no results; plus, an empty json should be in the HTTP response body, not an empty HTTP response body!
-//        if (objects == null || objects.isEmpty()) {
-//            return new ResponseEntity<>(HttpStatus.OK);
-//        }
-        return new ResponseEntity<>(objects, HttpStatus.OK);
+    public ResponseEntity<ServiceResponse<?>> list() {
+        return prepareResult(service.list());
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> save(@RequestBody T entity) {
-        final ResponseEntity<?> validationResponse = validate(entity);
-        if (validationResponse.getStatusCode() == HttpStatus.OK) {
+    public ResponseEntity<ServiceResponse<?>> save(@RequestBody T entity) {
+        final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
+        if (validationResponse.getBody().getStatus() == ResponseStatus.SUCCEEDED) {
             service.save(entity);
-            return new ResponseEntity<>(entity, HttpStatus.OK);
+            return prepareResult(entity);
         } else {
             return validationResponse;
         }
     }
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> update(@PathVariable("id") String id, @RequestBody T entity) {
-        final ResponseEntity<?> validationResponse = validate(entity);
-        if (validationResponse.getStatusCode() == HttpStatus.OK) {
+    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody T entity) {
+        final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
+        if (validationResponse.getBody().getStatus() == ResponseStatus.SUCCEEDED) {
             try {
-                return new ResponseEntity<>(service.update(entity), HttpStatus.OK);
+                return prepareResult(service.update(entity));
             } catch (PersistenceException e) {
                 return handleException(e);
             }
@@ -92,15 +93,21 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
     }
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
-    public ResponseEntity<?> delete(@PathVariable("id") String id) throws PersistenceException {
-        service.delete(id);
-        return new ResponseEntity<>("{}", HttpStatus.OK);
+    public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") String id) {
+        ResponseEntity<ServiceResponse<?>> response;
+        try {
+            service.delete(id);
+            response = prepareResult("", ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            response = handleException(e);
+        }
+        return response;
     }
 
-    private ResponseEntity<?> validate(T entity) {
+    private ResponseEntity<ServiceResponse<?>> validate(T entity) {
         try {
             service.validate(entity);
-            return new ResponseEntity<>(entity, HttpStatus.OK);
+            return prepareResult(entity);
         } catch (ValidationException ex) {
             List<String> errors = new ArrayList<>();
             String message = ex.getMessage();
@@ -117,7 +124,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
                                           .collect(Collectors.toSet()));
                 }
             }
-            return new ResponseEntity<>(errors, HttpStatus.NOT_ACCEPTABLE);
+            return prepareResult(String.join(";", errors), ResponseStatus.FAILED);
         }
     }
 }

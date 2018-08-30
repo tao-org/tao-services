@@ -24,6 +24,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import ro.cs.tao.component.validation.ValidationException;
 
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -94,17 +95,32 @@ public abstract class ControllerBase {
                                     HttpStatus.OK);
     }
 
+    protected <T> ResponseEntity<ServiceResponse<?>> prepareResult(T result, HttpStatus httpStatus) {
+        return new ResponseEntity<>(new ServiceResponse<>(result), httpStatus);
+    }
+
     protected ResponseEntity<ServiceResponse<?>> prepareResult(String message, ResponseStatus status) {
         return new ResponseEntity<>(new ServiceResponse<>(message, status),
                                     HttpStatus.OK);
     }
 
+    protected ResponseEntity<ServiceResponse<?>> prepareResult(String message, ResponseStatus status, HttpStatus httpStatus) {
+        return new ResponseEntity<>(new ServiceResponse<>(message, status), httpStatus);
+    }
+
     protected ResponseEntity<ServiceResponse<?>> handleException(Exception ex) {
         Logger.getLogger(getClass().getName()).severe(ex.getMessage());
-        return new ResponseEntity<>(new ServiceResponse<>(String.format("Failed with error: %s",
-                                                                        ex.getMessage()),
-                                                          ResponseStatus.FAILED),
-                                    HttpStatus.OK);
+        if (ex instanceof ValidationException) {
+            ValidationException vex = (ValidationException) ex;
+            return new ResponseEntity<>(new ServiceResponse<>(vex.getAdditionalInfo(),
+                                                              ResponseStatus.FAILED),
+                                        HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(new ServiceResponse<>(String.format("Failed with error: %s",
+                                                                            ex.getMessage()),
+                                                              ResponseStatus.FAILED),
+                                        HttpStatus.OK);
+        }
     }
 
     protected void debug(String message, Object... args) {

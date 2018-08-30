@@ -17,20 +17,19 @@
 package ro.cs.tao.services.orchestration.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.OrchestratorService;
-import ro.cs.tao.services.orchestration.beans.JobResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,86 +43,91 @@ public class OrchestrationController extends BaseController {
     private OrchestratorService orchestrationService;
 
     @RequestMapping(value = "/start/{id}", method = RequestMethod.POST)
-    public ResponseEntity<JobResponse> start(@PathVariable("id") long workflowId,
-                                   @RequestBody Map<String, Map<String, String>> input) {
-        JobResponse response = new JobResponse();
+    public ResponseEntity<ServiceResponse<?>> start(@PathVariable("id") long workflowId,
+                                                    @RequestBody Map<String, Map<String, String>> input) {
+        ResponseEntity<ServiceResponse<?>> response;
         try {
-            response.setJob(orchestrationService.startWorkflow(workflowId, input));
-            response.setMessage("Execution started");
+            response = prepareResult(orchestrationService.startWorkflow(workflowId, input));
         } catch (ExecutionException ex) {
-            response.setMessage(String.format("Execution cannot be started: %s", ex.getMessage()));
+            response = handleException(ex);
         }
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return response;
     }
 
     @RequestMapping(value = "/start/parameters/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Map<String, List<Parameter>>> start(@PathVariable("id") long workflowId) {
-        return new ResponseEntity<>(orchestrationService.getWorkflowParameters(workflowId), HttpStatus.OK);
+    public ResponseEntity<ServiceResponse<?>> start(@PathVariable("id") long workflowId) {
+        return prepareResult(orchestrationService.getWorkflowParameters(workflowId));
     }
 
     @RequestMapping(value = "/stop/{id}", method = RequestMethod.GET)
-    public ResponseEntity<?> stop(@PathVariable("id") long workflowId) {
+    public ResponseEntity<ServiceResponse<?>> stop(@PathVariable("id") long workflowId) {
+        ResponseEntity<ServiceResponse<?>> response;
         try {
             orchestrationService.stopWorkflow(workflowId);
-            return new ResponseEntity<>("Execution stopped", HttpStatus.OK);
+            response = prepareResult("Execution stopped", ResponseStatus.SUCCEEDED);
         } catch (ExecutionException ex) {
-            return handleException(ex);
+            response = handleException(ex);
         }
+        return response;
     }
 
     @RequestMapping(value = "/pause/{id}", method = RequestMethod.GET)
-    public ResponseEntity<?> pause(@PathVariable("id") long workflowId) {
+    public ResponseEntity<ServiceResponse<?>> pause(@PathVariable("id") long workflowId) {
+        ResponseEntity<ServiceResponse<?>> response;
         try {
             orchestrationService.pauseWorkflow(workflowId);
-            return new ResponseEntity<>("Execution suspended", HttpStatus.OK);
+            response = prepareResult("Execution suspended", ResponseStatus.SUCCEEDED);
         } catch (ExecutionException ex) {
-            return handleException(ex);
+            response = handleException(ex);
         }
+        return response;
     }
 
     @RequestMapping(value = "/resume/{id}", method = RequestMethod.GET)
-    public ResponseEntity<?> resume(@PathVariable("id") long workflowId) {
+    public ResponseEntity<ServiceResponse<?>> resume(@PathVariable("id") long workflowId) {
+        ResponseEntity<ServiceResponse<?>> response;
         try {
             orchestrationService.resumeWorkflow(workflowId);
-            return new ResponseEntity<>("Execution resumed", HttpStatus.OK);
+            response = prepareResult("Execution resumed", ResponseStatus.SUCCEEDED);
         } catch (ExecutionException ex) {
-            return handleException(ex);
+            response = handleException(ex);
         }
+        return response;
     }
 
     @RequestMapping(value = "/running/tasks", method = RequestMethod.GET)
-    public ResponseEntity<List<ExecutionTaskSummary>> getRunningTasks() {
+    public ResponseEntity<ServiceResponse<?>> getRunningTasks() {
         List<ExecutionTaskSummary> tasks = orchestrationService.getRunningTasks();
         if (tasks == null) {
             tasks = new ArrayList<>();
         }
-        return new ResponseEntity<>(tasks,HttpStatus.OK);
+        return prepareResult(tasks);
     }
 
     @RequestMapping(value = "/running/jobs", method = RequestMethod.GET)
-    public ResponseEntity<List<ExecutionJobSummary>> getRunningJobs() {
+    public ResponseEntity<ServiceResponse<?>> getRunningJobs() {
         List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs();
         if (summaries == null) {
             summaries = new ArrayList<>();
         }
-        return new ResponseEntity<>(summaries, HttpStatus.OK);
+        return prepareResult(summaries);
     }
 
     @RequestMapping(value = "/{jobId}", method = RequestMethod.GET)
-    public ResponseEntity<List<ExecutionTaskSummary>> getJobTaskStatuses(@PathVariable("jobId") long jobId) {
+    public ResponseEntity<ServiceResponse<?>> getJobTaskStatuses(@PathVariable("jobId") long jobId) {
         List<ExecutionTaskSummary> summaries = orchestrationService.getTasksStatus(jobId);
         if (summaries == null) {
             summaries = new ArrayList<>();
         }
-        return new ResponseEntity<>(summaries, HttpStatus.OK);
+        return prepareResult(summaries);
     }
 
     @RequestMapping(value = "/history", method = RequestMethod.GET)
-    public ResponseEntity<List<ExecutionJobSummary>> getJobsHistory() {
+    public ResponseEntity<ServiceResponse<?>> getJobsHistory() {
         List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs();
         if (summaries == null) {
             summaries = new ArrayList<>();
         }
-        return new ResponseEntity<>(summaries, HttpStatus.OK);
+        return prepareResult(summaries);
     }
 }

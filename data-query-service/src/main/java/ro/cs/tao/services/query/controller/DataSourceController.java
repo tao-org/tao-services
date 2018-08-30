@@ -16,7 +16,6 @@
 package ro.cs.tao.services.query.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +28,8 @@ import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.commons.BaseController;
-import ro.cs.tao.services.commons.ServiceError;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.query.beans.FetchRequest;
@@ -53,56 +53,52 @@ public class DataSourceController extends BaseController {
     private DataSourceService dataSourceService;
 
     @RequestMapping(value = "/", method = RequestMethod.GET)
-    public ResponseEntity<List<DataSourceDescriptor>> getRegisteredSources() {
+    public ResponseEntity<ServiceResponse<?>> getRegisteredSources() {
         List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
-        if (instances == null || instances.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        if (instances == null) {
+            instances = new ArrayList<>();
         }
-        return new ResponseEntity<>(instances, HttpStatus.OK);
+        return prepareResult(instances);
     }
 
     @RequestMapping(value = "/sensor/", method = RequestMethod.GET)
-    public ResponseEntity<SortedSet<String>> getSupportedSensors() {
-        SortedSet<String> sensors = dataSourceService.getSupportedSensors();
-        if (sensors == null || sensors.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public ResponseEntity<ServiceResponse<?>> getSupportedSensors() {
+        Set<String> sensors = dataSourceService.getSupportedSensors();
+        if (sensors == null) {
+            sensors = new HashSet<>();
         }
-        return new ResponseEntity<>(sensors, HttpStatus.OK);
+        return prepareResult(sensors);
     }
 
     @RequestMapping(value = "/sensor/{name}", method = RequestMethod.GET)
-    public ResponseEntity<?> getDatasourcesForSensor(@PathVariable("name") String sensorName) {
+    public ResponseEntity<ServiceResponse<?>> getDatasourcesForSensor(@PathVariable("name") String sensorName) {
         List<String> sources = dataSourceService.getDatasourcesForSensor(sensorName);
         if (sources == null) {
-            return new ResponseEntity<>(new ServiceError(String.format("No data source available for [%s]", sensorName)),
-                                        HttpStatus.NOT_FOUND);
+            sources = new ArrayList<>();
         }
-        return new ResponseEntity<>(sources, HttpStatus.OK);
+        return prepareResult(sources);
     }
 
     @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET)
-    public ResponseEntity<?> getSupportedParameters(@PathVariable("name") String sensorName,
+    public ResponseEntity<ServiceResponse<?>> getSupportedParameters(@PathVariable("name") String sensorName,
                                                                             @PathVariable("source") String dataSourceClassName) {
         List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
         if (params == null) {
-            return new ResponseEntity<>(new ServiceError(String.format("No data source available for [%s]", sensorName)),
-                                        HttpStatus.NOT_FOUND);
+            params = new ArrayList<>();
         }
-        return new ResponseEntity<>(params, HttpStatus.OK);
+        return prepareResult(params);
     }
 
     @RequestMapping(value = "/count", method = RequestMethod.POST)
-    public ResponseEntity<?> doCount(@RequestBody Query query) {
+    public ResponseEntity<ServiceResponse<?>> doCount(@RequestBody Query query) {
         List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
-        if (params == null) {
-            return new ResponseEntity<>(new ServiceError(String.format("No data source named [%s] available for [%s]",
-                                                                       query.getDataSource(),
-                                                                       query.getSensor())),
-                                        HttpStatus.BAD_REQUEST);
+        if (params == null || params.isEmpty()) {
+            return prepareResult(String.format("No data source named [%s] available for [%s]",
+                                               query.getDataSource(),
+                                               query.getSensor()), ResponseStatus.FAILED);
         }
         ExecutorService threadPool = new NamedThreadPoolExecutor("data-query-pool", Runtime.getRuntime().availableProcessors() / 2);
-        //Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2);
         try {
             CompletionService<Variable> completionService = new ExecutorCompletionService<>(threadPool);
             if (query.getValues().containsKey("tileId")) {
@@ -135,43 +131,41 @@ public class DataSourceController extends BaseController {
                 }
                 LinkedHashMap<String, String> sorted = new LinkedHashMap<>();
                 counts.keySet().stream().sorted().forEachOrdered(s -> sorted.put(s, counts.get(s)));
-                return new ResponseEntity<>(sorted, HttpStatus.OK);
+                return prepareResult(sorted);
             } else {
-                return new ResponseEntity<>(dataSourceService.count(query), HttpStatus.OK);
+                return prepareResult(dataSourceService.count(query));
             }
         } catch (SerializationException ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         } finally {
             threadPool.shutdownNow();
         }
     }
 
     @RequestMapping(value = "/exec", method = RequestMethod.POST)
-    public ResponseEntity<?> doQuery(@RequestBody Query query) {
+    public ResponseEntity<ServiceResponse<?>> doQuery(@RequestBody Query query) {
         List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(query.getSensor(),
                 query.getDataSource());
-        if (params == null) {
-            return new ResponseEntity<>(new ServiceError(String.format("No data source named [%s] available for [%s]",
-                    query.getDataSource(),
-                    query.getSensor())),
-                    HttpStatus.BAD_REQUEST);
+        if (params == null || params.isEmpty()) {
+            return prepareResult(String.format("No data source named [%s] available for [%s]",
+                                               query.getDataSource(), query.getSensor()), ResponseStatus.FAILED);
         }
         try {
-            final List<EOProduct> results = dataSourceService.query(query);
+            List<EOProduct> results = dataSourceService.query(query);
             if (results == null) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+                results = new ArrayList<>();
             }
-            return new ResponseEntity<>(results, HttpStatus.OK);
+            return prepareResult(results);
         } catch (SerializationException ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/fetch", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<?> doFetch(@RequestBody FetchRequest request) {
+    public ResponseEntity<ServiceResponse<?>> doFetch(@RequestBody FetchRequest request) {
         try {
-            final List<EOProduct> results;
+            List<EOProduct> results;
             if (request.getLocalPath() != null && request.getPathFormat() != null) {
                 results = dataSourceService.fetch(request.getQuery(), request.getProducts(),
                                                   request.getMode(), request.getLocalPath(), request.getPathFormat());
@@ -179,11 +173,11 @@ public class DataSourceController extends BaseController {
                 results = dataSourceService.fetch(request.getQuery(), request.getProducts(), request.getMode(), null, null);
             }
             if (results == null) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+                results = new ArrayList<>();
             }
-            return new ResponseEntity<>(results, HttpStatus.OK);
+            return prepareResult(results);
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 }

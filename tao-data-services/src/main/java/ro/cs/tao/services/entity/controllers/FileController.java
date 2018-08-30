@@ -35,6 +35,7 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.FileObject;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.StorageService;
 
 import java.io.IOException;
@@ -56,8 +57,8 @@ public class FileController extends BaseController {
     private PersistenceManager persistenceManager;
 
     @GetMapping("/user/uploaded")
-    public ResponseEntity<?> listFiles() {
-        ResponseEntity<?> responseEntity;
+    public ResponseEntity<ServiceResponse<?>> listFiles() {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             List<Path> list = storageService.listFiles(true).collect(Collectors.toList());
             List<FileObject> fileObjects = new ArrayList<>(list.size());
@@ -81,8 +82,8 @@ public class FileController extends BaseController {
     }
 
     @GetMapping("/user/")
-    public ResponseEntity<?> list() {
-        ResponseEntity<?> responseEntity;
+    public ResponseEntity<ServiceResponse<?>> list() {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             List<Path> list = storageService.listWorkspace(true).collect(Collectors.toList());
             //list.removeIf(p -> p.endsWith(".png") && list.contains(Paths.get(p.toString().replace(".png", ""))));
@@ -149,7 +150,7 @@ public class FileController extends BaseController {
 
     @GetMapping("/public/uploaded")
     public ResponseEntity<?> listPublicFiles() {
-        ResponseEntity<?> responseEntity;
+        ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             List<Path> list = storageService.listWorkspace(false).collect(Collectors.toList());
             List<FileObject> fileObjects = new ArrayList<>(list.size());
@@ -173,8 +174,8 @@ public class FileController extends BaseController {
     }
 
     @GetMapping("/public/")
-    public ResponseEntity<?> listAllPublic() {
-        ResponseEntity<?> responseEntity;
+    public ResponseEntity<ServiceResponse<?>> listAllPublic() {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             List<Path> list = storageService.listWorkspace(false).collect(Collectors.toList());
             List<FileObject> fileObjects = new ArrayList<>(list.size());
@@ -233,9 +234,9 @@ public class FileController extends BaseController {
 
     @PostMapping("/")
     @ResponseBody
-    public ResponseEntity<?> toggleVisibility(@RequestParam("folder") String folder,
+    public ResponseEntity<ServiceResponse<?>> toggleVisibility(@RequestParam("folder") String folder,
                                               @RequestParam("visibility") Visibility visibility) {
-        ResponseEntity<?> responseEntity = null;
+        ResponseEntity<ServiceResponse<?>> responseEntity = null;
         try {
             Path path = Paths.get(SystemVariable.USER_WORKSPACE.value(), folder);
             if (Files.isDirectory(path)) {
@@ -279,7 +280,7 @@ public class FileController extends BaseController {
 
     @GetMapping("/preview")
     public ResponseEntity<?> downloadPreview(@RequestParam("fileName") String fileName) {
-        ResponseEntity<?> responseEntity;
+        ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             Resource file = loadAsResource(fileName + ".png");
             String result = Base64.getEncoder().encodeToString(Files.readAllBytes(file.getFile().toPath()));
@@ -293,7 +294,7 @@ public class FileController extends BaseController {
     @PostMapping("/upload")
     public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file,
                                     @RequestParam("desc") String description) {
-        ResponseEntity<?> responseEntity;
+        ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             storageService.store(file, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
@@ -304,8 +305,8 @@ public class FileController extends BaseController {
     }
 
     @DeleteMapping("/")
-    public ResponseEntity<?> delete(@RequestParam("fileName") String fileName) {
-        ResponseEntity<?> responseEntity;
+    public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("fileName") String fileName) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             storageService.remove(fileName);
             responseEntity = prepareResult("Delete succeeded", ResponseStatus.SUCCEEDED);

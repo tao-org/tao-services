@@ -21,18 +21,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.services.admin.mail.Constants;
 import ro.cs.tao.services.admin.mail.MailSenderTLS;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.model.user.DisableUserInfo;
-import ro.cs.tao.services.model.user.UserUnicityInfo;
-import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtils;
-
-import java.util.List;
 
 /**
  * @author Oana H.
@@ -48,9 +47,9 @@ public class AdministrationController extends BaseController {
     private TokenManagementService tokenService;
 
     @RequestMapping(value = "/users", method = RequestMethod.POST)
-    public ResponseEntity<?> addNewUser(@RequestBody User newUserInfo) {
+    public ResponseEntity<ServiceResponse<?>> addNewUser(@RequestBody User newUserInfo) {
         if (newUserInfo == null) {
-            return new ResponseEntity<>("The expected request body is empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
         try {
             final User userInfo = adminService.addNewUser(newUserInfo);
@@ -63,171 +62,99 @@ public class AdministrationController extends BaseController {
                 final String activationEmailContent = constructEmailContentForAccountActivation(userFullName, activationEndpointUrl);
                 mailSenderTLS.sendMail(userInfo.getEmail(), "TAO - User activation required", activationEmailContent);
 
-                return new ResponseEntity<>(userInfo, HttpStatus.OK);
+                return prepareResult(userInfo);
             } else {
-                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
-
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     @RequestMapping(value = "/users/unicity", method = RequestMethod.GET)
-    public ResponseEntity<?> getAllUsersUnicityInfo() {
-        final List<UserUnicityInfo> userUnicityInfos = adminService.getAllUsersUnicityInfo();
-        return new ResponseEntity<>(userUnicityInfos, HttpStatus.OK);
+    public ResponseEntity<ServiceResponse<?>> getAllUsersUnicityInfo() {
+        return prepareResult(adminService.getAllUsersUnicityInfo());
     }
 
     @RequestMapping(value = "/users", method = RequestMethod.GET)
-    public ResponseEntity<?> findUsersByStatus(@RequestParam("status") UserStatus activationStatus) {
+    public ResponseEntity<ServiceResponse<?>> findUsersByStatus(@RequestParam("status") UserStatus activationStatus) {
         if (activationStatus == null) {
-            return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
-        final List<User> users = adminService.findUsersByStatus(activationStatus);
-        return new ResponseEntity<>(users, HttpStatus.OK);
+        return prepareResult(adminService.findUsersByStatus(activationStatus));
     }
 
     @RequestMapping(value = "/users/groups", method = RequestMethod.GET)
-    public ResponseEntity<?> getGroups() {
-        final List<Group> groups = adminService.getGroups();
-        return new ResponseEntity<>(groups, HttpStatus.OK);
+    public ResponseEntity<ServiceResponse<?>> getGroups() {
+        return prepareResult(adminService.getGroups());
     }
 
     @RequestMapping(value = "/users/{username}", method = RequestMethod.GET)
-    public ResponseEntity<?> getUserInfo(@PathVariable("username") String username) {
+    public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("username") String username) {
         if (StringUtils.isNullOrEmpty(username)) {
-            return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
             final User userInfo = adminService.getUserInfo(username);
             if (userInfo != null) {
-                return new ResponseEntity<>(userInfo, HttpStatus.OK);
+                return prepareResult(userInfo);
             } else {
-                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     @RequestMapping(value = "/users/{username}", method = RequestMethod.POST)
-    public ResponseEntity<?> updateUserInfo(@RequestBody User updatedUserInfo) {
+    public ResponseEntity<ServiceResponse<?>> updateUserInfo(@RequestBody User updatedUserInfo) {
         if (updatedUserInfo == null) {
-            return new ResponseEntity<>("The expected request body is empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
         try {
             final User userInfo = adminService.updateUserInfo(updatedUserInfo);
             if (userInfo != null) {
-                return new ResponseEntity<>(userInfo, HttpStatus.OK);
+                return prepareResult(userInfo);
             } else {
-                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     @RequestMapping(value = "/users/{username}/disable", method = RequestMethod.POST)
-    public ResponseEntity<?> disableUser(@PathVariable("username") String username, @RequestBody DisableUserInfo additionalDisableActions) {
+    public ResponseEntity<ServiceResponse<?>> disableUser(@PathVariable("username") String username, @RequestBody DisableUserInfo additionalDisableActions) {
         if (StringUtils.isNullOrEmpty(username) || additionalDisableActions == null) {
-            return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
             // disable user
             adminService.disableUser(username, additionalDisableActions);
-
-            return new ResponseEntity<>(null, HttpStatus.OK);
-
+            return prepareResult(String.format("%s was disabled", username), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     @RequestMapping(value = "/users/{username}", method = RequestMethod.DELETE)
-    public ResponseEntity<?> deleteUser(@PathVariable("username") String username) {
+    public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("username") String username) {
         if (StringUtils.isNullOrEmpty(username)) {
-            return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
             adminService.deleteUser(username);
-
             // TODO delete private resources
             /*if (deletePrivateResources){
 
             }*/
-
-            return new ResponseEntity<>(null, HttpStatus.OK);
-
+            return prepareResult(String.format("User %s was deleted", username), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     private String constructEmailContentForAccountActivation(String userFullName, String activationLink){
-        String result = "";
-        result +="<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n" +
-          "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" +
-          "<head>\n" +
-          "    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
-          "\t<title>Account activation</title>\n" +
-          "<style type=\"text/css\">\n" +
-          "body{width:100% !important;}\n" +
-          "body{margin:0;padding:0;font-family: \"Helvetica Neue\", \"Helvetica\", Helvetica, Arial, sans-serif;font-size:12px;color:#333333;background-color: #FFFFFF;}\n" +
-          "img{border:0;line-height:100%;outline:none;text-decoration:none;}\n" +
-          "table td{border-collapse:collapse;}\n" +
-          "a:link, a:visited {color:#336699;}\n" +
-          "</style>\n" +
-          "</head>\n" +
-          "<body>\n" +
-          "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" height=\"100%\" width=\"100%\" id=\"bodyTable\" bgcolor=\"#07123a\">\n" +
-          "    <tr>\n" +
-          "        <td align=\"center\" valign=\"top\">\n" +
-          "            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"600\" id=\"emailContainer\">\n" +
-          "                <tr>\n" +
-          "                    <td align=\"center\" valign=\"top\">\n" +
-          "                        <table border=\"0\" cellpadding=\"20\" cellspacing=\"0\" width=\"100%\" id=\"emailHeader\">\n" +
-          "                            <tr>\n" +
-          "\t\t\t\t\t\t\t\t<td align=\"center\" valign=\"top\" style=\"border-collapse:collapse;color:#ffffff;font-size:14px;line-height:150%;text-align:center;\">\n" +
-          "TAO Platform - Account activation\n" +
-          "                                </td>\n" +
-          "                            </tr>\n" +
-          "                        </table>\n" +
-          "                    </td>\n" +
-          "                </tr>\n" +
-          "                <tr>\n" +
-          "                    <td align=\"center\" valign=\"top\">\n" +
-          "                        <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\" id=\"emailBody\" bgcolor=\"#ffffff\">\n" +
-          "                            <tr>\n" +
-          "                                <td align=\"left\" valign=\"top\" style=\"padding:10px;\">\n" +
-          "<p>\n" +
-          "To: " + userFullName + "\n" +
-          "<br><br>Hello! <br>You received this email as a consequence of your account creation. <br>For activating you account click on the following activation link: </br><strong><a href=\"" + activationLink + "\">Activate your account</a></strong>. \n" +
-          "</p>\n" +
-          "\n" +
-          "                                </td>\n" +
-          "                            </tr>\n" +
-          "                        </table>\n" +
-          "                    </td>\n" +
-          "                </tr>\n" +
-          "                <tr>\n" +
-          "                    <td align=\"center\" valign=\"top\">\n" +
-          "                        <table border=\"0\" cellpadding=\"20\" cellspacing=\"0\" width=\"100%\" id=\"emailFooter\">\n" +
-          "                            <tr>\n" +
-          "                                <td align=\"center\" valign=\"top\" style=\"border-collapse:collapse;color:#ffffff;font-size:12px;line-height:150%;text-align:center;\">\n" +
-          "<em>TAO Administration</em>\n" +
-          "                                </td>\n" +
-          "                            </tr>\n" +
-          "                        </table>\n" +
-          "                    </td>\n" +
-          "                </tr>\n" +
-          "            </table>\n" +
-          "        </td>\n" +
-          "    </tr>\n" +
-          "</table>\n" +
-          "</body>\n" +
-          "</html>";
-
-        return result;
+        return Constants.MAIL_CONTENTS.replace("$USERNAME", userFullName).replace("$LINK", activationLink);
     }
 }

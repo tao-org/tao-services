@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
 import ro.cs.tao.user.User;
@@ -47,9 +49,9 @@ public class UserController extends BaseController {
     private TokenManagementService tokenService;
 
     @RequestMapping(value = "/activate/{username}", method = RequestMethod.GET)
-    public ResponseEntity<?> activate(@PathVariable("username") String username) {
+    public ResponseEntity<ServiceResponse<?>> activate(@PathVariable("username") String username) {
         if (StringUtils.isNullOrEmpty(username)) {
-            return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
             userService.activateUser(username);
@@ -69,7 +71,7 @@ public class UserController extends BaseController {
                 final String passwordResetUIUrl = configManager.getValue("tao.ui.base") + configManager.getValue("tao.ui.password.reset") + "?rk=" + passwordResetKey;
                 HttpHeaders headers = new HttpHeaders();
                 headers.add("Location", passwordResetUIUrl);
-                return new ResponseEntity<String>(headers, HttpStatus.TEMPORARY_REDIRECT);
+                return prepareResult(headers, HttpStatus.TEMPORARY_REDIRECT);
             }
             else {
                 // external authenticated users have already a password in the external authentication mechanism
@@ -78,96 +80,96 @@ public class UserController extends BaseController {
                 final String loginUIUrl = configManager.getValue("tao.ui.base") + configManager.getValue("tao.ui.login");
                 HttpHeaders headers = new HttpHeaders();
                 headers.add("Location", loginUIUrl);
-                return new ResponseEntity<String>(headers, HttpStatus.TEMPORARY_REDIRECT);
+                return prepareResult(headers, HttpStatus.TEMPORARY_REDIRECT);
             }
 
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     @RequestMapping(value = "/{username}/reset", method = RequestMethod.POST)
-    public ResponseEntity<?> resetPassword(@PathVariable("username") String username, @RequestBody ResetPasswordInfo resetPasswordInfo) {
+    public ResponseEntity<ServiceResponse<?>> resetPassword(@PathVariable("username") String username, @RequestBody ResetPasswordInfo resetPasswordInfo) {
         if (StringUtils.isNullOrEmpty(username) || resetPasswordInfo == null ||
             StringUtils.isNullOrEmpty(resetPasswordInfo.getResetKey()) || StringUtils.isNullOrEmpty(resetPasswordInfo.getNewPassword())) {
-            return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
             userService.resetPassword(username, resetPasswordInfo);
-            return new ResponseEntity<>("Password reset successfully!", HttpStatus.OK);
+            return prepareResult("Password reset successfully!", ResponseStatus.SUCCEEDED);
 
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     @RequestMapping(value = "/{username}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<?> getUserInfo(@PathVariable("username") String username) {
+    public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("username") String username) {
         if (StringUtils.isNullOrEmpty(username)) {
-            return new ResponseEntity<>("The expected request params are empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
             final User userInfo = userService.getUserInfo(username);
             if (userInfo != null) {
-                return new ResponseEntity<>(userInfo, HttpStatus.OK);
+                return prepareResult(userInfo);
             } else {
-                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     @RequestMapping(value = "/{username}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> updateUserInfo(@RequestBody User updatedUserInfo) {
+    public ResponseEntity<ServiceResponse<?>> updateUserInfo(@RequestBody User updatedUserInfo) {
         if (updatedUserInfo == null) {
-            return new ResponseEntity<>("The expected request body is empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
         try {
             final User userInfo = userService.updateUserInfo(updatedUserInfo);
             if (userInfo != null) {
-                return new ResponseEntity<>(userInfo, HttpStatus.OK);
+                return prepareResult(userInfo);
             } else {
-                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     @RequestMapping(value = "/prefs", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> saveOrUpdateUserPreferences(@RequestBody List<UserPreference> userPreferences, @RequestHeader("X-Auth-Token") String authToken) {
         if (userPreferences == null || userPreferences.isEmpty() || StringUtils.isNullOrEmpty(authToken)) {
-            return new ResponseEntity<>("The expected request body is empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
         try {
             final String username = tokenService.retrieve(authToken).getPrincipal().toString();
             final List<UserPreference> userUpdatedPrefs = userService.saveOrUpdateUserPreferences(username, userPreferences);
             if (userUpdatedPrefs != null && !userUpdatedPrefs.isEmpty()) {
-                return new ResponseEntity<>(userUpdatedPrefs, HttpStatus.OK);
+                return prepareResult(userUpdatedPrefs);
             } else {
-                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     @RequestMapping(value = "/prefs", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> removeUserPreferences(@RequestBody List<String> userPrefsKeysToDelete, @RequestHeader("X-Auth-Token") String authToken) {
+    public ResponseEntity<ServiceResponse<?>> removeUserPreferences(@RequestBody List<String> userPrefsKeysToDelete, @RequestHeader("X-Auth-Token") String authToken) {
         if (userPrefsKeysToDelete == null || userPrefsKeysToDelete.isEmpty() || StringUtils.isNullOrEmpty(authToken)) {
-            return new ResponseEntity<>("The expected request body is empty!", HttpStatus.BAD_REQUEST);
+            return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
         try {
             final String username = tokenService.retrieve(authToken).getPrincipal().toString();
             final List<UserPreference> userUpdatedPrefs = userService.removeUserPreferences(username, userPrefsKeysToDelete);
             if (userUpdatedPrefs != null && !userUpdatedPrefs.isEmpty()) {
-                return new ResponseEntity<>(userUpdatedPrefs, HttpStatus.OK);
+                return prepareResult(userUpdatedPrefs);
             } else {
-                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 }

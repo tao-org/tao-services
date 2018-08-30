@@ -20,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -28,13 +27,13 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.BaseController;
-import ro.cs.tao.services.commons.ServiceError;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.QueryService;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 @Controller
 @RequestMapping("/datasource/query")
@@ -43,85 +42,73 @@ public class QueryController extends BaseController {
     @Autowired
     private QueryService queryService;
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<?> getQuery(@RequestParam(name = "userId", required = false) Optional<String> userId,
-                                      @RequestParam(name = "sensor", required = false) Optional<String> sensor,
-                                      @RequestParam(name = "dataSource", required = false) Optional<String> dataSource,
-                                      @RequestParam(name = "nodeId", required = false) Optional<Long> workflowNodeId) {
-        ResponseEntity<?> responseEntity;
+    public ResponseEntity<ServiceResponse<?>> getQuery(@RequestParam(name = "userId", required = false) Optional<String> userId,
+                                                       @RequestParam(name = "sensor", required = false) Optional<String> sensor,
+                                                       @RequestParam(name = "dataSource", required = false) Optional<String> dataSource,
+                                                       @RequestParam(name = "nodeId", required = false) Optional<Long> workflowNodeId) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (!userId.isPresent() && !sensor.isPresent() && !dataSource.isPresent() && !workflowNodeId.isPresent()) {
-                responseEntity = new ResponseEntity<>(queryService.list(), HttpStatus.OK);
+                responseEntity = prepareResult(queryService.list());
             } else {
                 if (!userId.isPresent()) {
-                    responseEntity = new ResponseEntity<>(new ServiceError("Missing userId"), HttpStatus.OK);
+                    responseEntity = prepareResult("Missing userId", ResponseStatus.FAILED);
                 } else {
                     if (sensor.isPresent() && dataSource.isPresent() && workflowNodeId.isPresent()) {
-                        responseEntity = new ResponseEntity<>(queryService.getQuery(userId.get(),
-                                                                                    sensor.get(),
-                                                                                    dataSource.get(),
-                                                                                    workflowNodeId.get()),
-                                                              HttpStatus.OK);
+                        responseEntity = prepareResult(queryService.getQuery(userId.get(), sensor.get(),
+                                                                             dataSource.get(), workflowNodeId.get()));
                     } else if (sensor.isPresent() && dataSource.isPresent()) {
-                        responseEntity = new ResponseEntity<>(queryService.getQueries(userId.get(),
-                                                                                      sensor.get(),
-                                                                                      dataSource.get()),
-                                                              HttpStatus.OK);
+                        responseEntity = prepareResult(queryService.getQueries(userId.get(), sensor.get(), dataSource.get()));
                     } else if (sensor.isPresent()) {
-                        responseEntity = new ResponseEntity<>(queryService.getQueriesBySensor(userId.get(),
-                                                                                              sensor.get()),
-                                                              HttpStatus.OK);
+                        responseEntity = prepareResult(queryService.getQueriesBySensor(userId.get(), sensor.get()));
                     } else if (dataSource.isPresent()) {
-                        responseEntity = new ResponseEntity<>(queryService.getQueriesByDataSource(userId.get(),
-                                                                                                  dataSource.get()),
-                                                              HttpStatus.OK);
+                        responseEntity = prepareResult(queryService.getQueriesByDataSource(userId.get(), dataSource.get()));
                     } else if (workflowNodeId.isPresent()) {
-                        responseEntity = new ResponseEntity<>(queryService.getQueries(userId.get(),
-                                                                                      workflowNodeId.get()),
-                                                              HttpStatus.OK);
+                        responseEntity = prepareResult(queryService.getQueries(userId.get(), workflowNodeId.get()));
                     } else {
-                        responseEntity = new ResponseEntity<>(queryService.getQueries(userId.get()), HttpStatus.OK);
+                        responseEntity = prepareResult(queryService.getQueries(userId.get()));
                     }
                 }
             }
         } catch (Exception e) {
-            Logger.getLogger(WorkflowController.class.getName()).severe(e.getMessage());
             responseEntity = handleException(e);
         }
         return responseEntity;
     }
 
     @RequestMapping(value = "/paged", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<?> getAllQueries(@RequestParam("page") int pageNumber,
-                                           @RequestParam("pageSize") int size,
-                                           @RequestParam("sort") String sortDirection) {
+    public ResponseEntity<ServiceResponse<?>> getAllQueries(@RequestParam("page") int pageNumber,
+                                                            @RequestParam("pageSize") int size,
+                                                            @RequestParam("sort") String sortDirection) {
         Sort.Direction sort = Enum.valueOf(Sort.Direction.class, sortDirection);
-        PageRequest page = new PageRequest(pageNumber, size, new Sort(sort));
+        PageRequest page = PageRequest.of(pageNumber, size, new Sort(sort));
         List<Query> queries = new ArrayList<>();
         Page<Query> queryPage = queryService.getAllQueries(page);
         if (queryPage != null) {
             queries.addAll(queryPage.getContent());
         }
-        return new ResponseEntity<>(queries, HttpStatus.OK);
+        return prepareResult(queries);
     }
 
     @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<Query> findById(@PathVariable("id") long id) throws PersistenceException {
-        return new ResponseEntity<>(queryService.getQueryById(id), HttpStatus.OK);
+    public ResponseEntity<ServiceResponse<?>> findById(@PathVariable("id") long id) {
+        return prepareResult(queryService.getQueryById(id));
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<Query> save(@RequestBody Query object) {
+    public ResponseEntity<ServiceResponse<?>> save(@RequestBody Query object) {
         object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
-        return new ResponseEntity<>(queryService.save(object), HttpStatus.OK);
+        return prepareResult(queryService.save(object));
     }
 
     @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
-    public ResponseEntity<?> update(@RequestBody Query object) {
-        ResponseEntity<?> response;
+    public ResponseEntity<ServiceResponse<?>> update(@RequestBody Query object) {
+        ResponseEntity<ServiceResponse<?>> response;
         try {
             object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
-            response = new ResponseEntity<>(queryService.update(object), HttpStatus.OK);
+            response = prepareResult(queryService.update(object));
         } catch (PersistenceException pex) {
             response = handleException(pex);
         }

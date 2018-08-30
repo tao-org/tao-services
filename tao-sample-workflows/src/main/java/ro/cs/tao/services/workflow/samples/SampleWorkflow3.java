@@ -27,7 +27,7 @@ import java.util.Map;
 
 public class SampleWorkflow3 extends SampleWorkflowBase {
     @Override
-    protected String getName() { return "OTB Resample, NDVI, TNDVI and Concatenate"; }
+    public String getName() { return "OTB Resample, NDVI, TNDVI and Concatenate"; }
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {

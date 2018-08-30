@@ -15,7 +15,6 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +26,7 @@ import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ComponentService;
 
 import java.util.ArrayList;
@@ -41,31 +41,31 @@ import java.util.UUID;
 public class ComponentController extends DataEntityController<ProcessingComponent, ComponentService> {
 
     @RequestMapping(value = "/user", method = RequestMethod.GET)
-    public ResponseEntity<?> listUserComponents(@RequestParam("type") ProcessingComponentType componentType) {
-        ResponseEntity<?> response = null;
+    public ResponseEntity<ServiceResponse<?>> listUserComponents(@RequestParam("type") ProcessingComponentType componentType) {
+        ResponseEntity<ServiceResponse<?>> response;
         String userName = SessionStore.currentContext().getPrincipal().getName();
         switch (componentType) {
             case EXECUTABLE:
-                response = new ResponseEntity<>(service.getUserProcessingComponents(userName),
-                                                HttpStatus.OK);
+                response = prepareResult(service.getUserProcessingComponents(userName));
                 break;
             case SCRIPT:
-                response = new ResponseEntity<>(service.getUserScriptComponents(userName),
-                                                HttpStatus.OK);
+                response = prepareResult(service.getUserScriptComponents(userName));
                 break;
+            default:
+                response = prepareResult("Unknown component type", ResponseStatus.FAILED);
         }
         return response;
     }
 
     @Override
-    public ResponseEntity<?> save(ProcessingComponent entity) {
+    public ResponseEntity<ServiceResponse<?>> save(ProcessingComponent entity) {
         entity.setOwner(SessionStore.currentContext().getPrincipal().getName());
         return super.save(entity);
     }
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     @Override
-    public ResponseEntity<?> update(@PathVariable("id") String id, @RequestBody ProcessingComponent entity) {
+    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody ProcessingComponent entity) {
         if (isCurrentUserAdmin()) {
             return super.update(id, entity);
         } else {
@@ -74,7 +74,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     }
 
     @Override
-    public ResponseEntity<?> delete(String id) throws PersistenceException {
+    public ResponseEntity<ServiceResponse<?>> delete(String id) {
         if (isCurrentUserAdmin()) {
             return super.delete(id);
         } else {
@@ -83,17 +83,17 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     }
 
     @RequestMapping(value = "/constraints", method = RequestMethod.GET)
-    public ResponseEntity<?> listConstraints() {
-        final List<String> objects = service.getAvailableConstraints();
-        if (objects == null || objects.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public ResponseEntity<ServiceResponse<?>> listConstraints() {
+        List<String> objects = service.getAvailableConstraints();
+        if (objects == null ) {
+            objects = new ArrayList<>();
         }
-        return new ResponseEntity<>(objects, HttpStatus.OK);
+        return prepareResult(objects);
     }
 
     @RequestMapping(value = "/import", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<?> importFrom(@RequestBody ProcessingComponent component) {
-        ResponseEntity<?> responseEntity;
+    public ResponseEntity<ServiceResponse<?>> importFrom(@RequestBody ProcessingComponent component) {
+        ResponseEntity<ServiceResponse<?>> response;
         if (component != null) {
             try {
                 List<SourceDescriptor> sources = component.getSources();
@@ -118,17 +118,14 @@ public class ComponentController extends DataEntityController<ProcessingComponen
                 }
                 this.service.validate(component);
                 getPersistenceManager().saveProcessingComponent(component);
-                responseEntity = new ResponseEntity<>(component, HttpStatus.OK);
-            } catch (ValidationException vex) {
-                responseEntity = new ResponseEntity<>(new ArrayList<>(vex.getAdditionalInfo().keySet()),
-                                                      HttpStatus.OK);
-            } catch (PersistenceException e) {
-                responseEntity = handleException(e);
+                response = prepareResult(component);
+            } catch (ValidationException | PersistenceException vex) {
+                response = handleException(vex);
             }
         } else {
-            responseEntity = new ResponseEntity<>("No body", HttpStatus.BAD_REQUEST);
+            response =prepareResult("Empty request body", ResponseStatus.FAILED);
         }
-        return responseEntity;
+        return response;
     }
 
 }
