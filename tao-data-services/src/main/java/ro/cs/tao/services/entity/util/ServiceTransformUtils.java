@@ -19,6 +19,8 @@ import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
+import ro.cs.tao.services.model.workflow.WorkflowInfo;
+import ro.cs.tao.workflow.WorkflowDescriptor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +38,7 @@ public final class ServiceTransformUtils {
         // empty constructor
     }
 
-    public static List<ExecutionJobInfo> transformExecutionJobsToLightWrappers(final List<ExecutionJob> executionJobs){
+    public static List<ExecutionJobInfo> toJobInfos(final List<ExecutionJob> executionJobs){
         final List<ExecutionJobInfo> results = new ArrayList<>();
         for(ExecutionJob executionJob : executionJobs){
             results.add(new ExecutionJobInfo(executionJob));
@@ -44,10 +46,18 @@ public final class ServiceTransformUtils {
         return results;
     }
 
-    public static List<ExecutionTaskInfo> transformExecutionTasksToLightWrappers(final List<ExecutionTask> executionTasks){
+    public static List<ExecutionTaskInfo> toTaskInfos(final List<ExecutionTask> executionTasks){
         final List<ExecutionTaskInfo> results = new ArrayList<>();
         for(ExecutionTask executionTask : executionTasks){
             results.add(new ExecutionTaskInfo(executionTask));
+        }
+        return results;
+    }
+
+    public static List<WorkflowInfo> toWorkflowInfos(final List<WorkflowDescriptor> descriptors){
+        final List<WorkflowInfo> results = new ArrayList<>();
+        for(WorkflowDescriptor workflowDescriptor : descriptors){
+            results.add(new WorkflowInfo(workflowDescriptor));
         }
         return results;
     }

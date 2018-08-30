@@ -37,6 +37,7 @@ import ro.cs.tao.services.interfaces.GroupComponentService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
+import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
@@ -73,23 +74,28 @@ public class WorkflowServiceImpl
     }
 
     @Override
+    public List<WorkflowInfo> getWorkflows() {
+        return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getAllWorkflows());
+    }
+
+    @Override
     public List<WorkflowDescriptor> list() {
         return persistenceManager.getAllWorkflows();
     }
 
     @Override
-    public List<WorkflowDescriptor> getUserWorkflowsByStatus(String user, Status status) {
-        return persistenceManager.getUserWorkflowsByStatus(user, status.value());
+    public List<WorkflowInfo> getUserWorkflowsByStatus(String user, Status status) {
+        return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getUserWorkflowsByStatus(user, status.value()));
     }
 
     @Override
-    public List<WorkflowDescriptor> getUserPublishedWorkflowsByVisibility(String user, Visibility visibility) {
-        return persistenceManager.getUserPublishedWorkflowsByVisibility(user, visibility.value());
+    public List<WorkflowInfo> getUserPublishedWorkflowsByVisibility(String user, Visibility visibility) {
+        return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getUserPublishedWorkflowsByVisibility(user, visibility.value()));
     }
 
     @Override
-    public List<WorkflowDescriptor> getOtherPublicWorkflows(String user) {
-        return persistenceManager.getOtherPublicWorkflows(user);
+    public List<WorkflowInfo> getOtherPublicWorkflows(String user) {
+        return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getOtherPublicWorkflows(user));
     }
 
     @Override
@@ -488,7 +494,7 @@ public class WorkflowServiceImpl
         if (workflow == null) {
             throw new PersistenceException("There is no workflow having the given identifier " + String.valueOf(workflowId));
         }
-        return ServiceTransformUtils.transformExecutionJobsToLightWrappers(persistenceManager.getJobs(workflowId));
+        return ServiceTransformUtils.toJobInfos(persistenceManager.getJobs(workflowId));
     }
 
     @Override
@@ -497,7 +503,7 @@ public class WorkflowServiceImpl
         if (workflowExecution == null) {
             throw new PersistenceException("There is no workflow execution having the given identifier " + String.valueOf(executionJobId));
         }
-        return ServiceTransformUtils.transformExecutionTasksToLightWrappers(workflowExecution.getTasks());
+        return ServiceTransformUtils.toTaskInfos(workflowExecution.getTasks());
     }
 
     @Override
