@@ -22,9 +22,9 @@ import java.util.Calendar;
 /**
  * @author Cosmin Cara
  */
-public class MessageConverter implements Converter<Message, ServiceMessage> {
+public class MessageConverter implements Converter<Message, Notification> {
     @Override
-    public Message from(ServiceMessage value) {
+    public Message from(Notification value) {
         if (value == null) {
             return null;
         }
@@ -35,7 +35,7 @@ public class MessageConverter implements Converter<Message, ServiceMessage> {
     }
 
     @Override
-    public ServiceMessage to(Message value) {
+    public Notification to(Message value) {
         if (value == null) {
             return null;
         }
@@ -43,8 +43,8 @@ public class MessageConverter implements Converter<Message, ServiceMessage> {
         calendar.setTimeInMillis(value.getTimestamp());
         String user = value.getUser();
         String msg = value.getData();
-        ServiceMessage serviceMessage = new ServiceMessage(calendar, user, value.getItem(Message.SOURCE_KEY), msg);
-        serviceMessage.setRead(value.isRead());
-        return serviceMessage;
+        Notification notification = new Notification(calendar, user, value.getItem(Message.SOURCE_KEY), msg);
+        notification.setRead(value.isRead());
+        return notification;
     }
 }

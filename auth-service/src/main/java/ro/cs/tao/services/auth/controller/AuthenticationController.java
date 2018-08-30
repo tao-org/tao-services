@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
 import ro.cs.tao.utils.StringUtils;
@@ -42,62 +44,55 @@ public class AuthenticationController extends BaseController {
     private AuthenticationService authenticationService;
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public ResponseEntity<?> login(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<ServiceResponse<?>> login(@RequestHeader("Authorization") String authHeader) {
         if (StringUtils.isNullOrEmpty(authHeader)) {
-            return new ResponseEntity<>("Expected request header empty!", HttpStatus.BAD_REQUEST);
-        }
-
-        final String username = getUsernameFromBasicAuthHeader(authHeader);
-        if (StringUtils.isNullOrEmpty(username)) {
-            return new ResponseEntity<>("Empty credentials in request header!", HttpStatus.BAD_REQUEST);
+            return prepareResult("Expected request header empty!", ResponseStatus.FAILED);
         }
 
         try {
+            final String username = getUsernameFromBasicAuthHeader(authHeader);
+            if (StringUtils.isNullOrEmpty(username)) {
+                return prepareResult("Empty credentials in request header!", ResponseStatus.FAILED);
+            }
             final AuthInfo authInfo = authenticationService.login(username);
             if (authInfo != null && authInfo.isAuthenticated()) {
-                return new ResponseEntity<>(authInfo, HttpStatus.OK);
+                return prepareResult(authInfo);
             } else {
-                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
     @RequestMapping(value = "/logout", method = RequestMethod.POST)
-    public ResponseEntity<?> logout(@RequestHeader("X-Auth-Token") String authToken) {
+    public ResponseEntity<ServiceResponse<?>> logout(@RequestHeader("X-Auth-Token") String authToken) {
         if (StringUtils.isNullOrEmpty(authToken)) {
-            return new ResponseEntity<>("Expected request header absent!", HttpStatus.BAD_REQUEST);
+            return prepareResult("Expected request header absent!", ResponseStatus.FAILED);
         }
 
         try {
             if (authenticationService.logout(authToken)) {
-                return new ResponseEntity<>(null, HttpStatus.OK);
+                return prepareResult("Logout successful", HttpStatus.OK);
             } else {
-                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
-
         } catch (Exception ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleException(ex);
         }
     }
 
-    private String getUsernameFromBasicAuthHeader(String authHeader) {
+    private String getUsernameFromBasicAuthHeader(String authHeader) throws UnsupportedEncodingException {
         String username = null;
         if (authHeader != null) {
             StringTokenizer st = new StringTokenizer(authHeader);
             if (st.hasMoreTokens()) {
                 String basic = st.nextToken();
                 if (basic.equalsIgnoreCase("Basic")) {
-                    String credentials = null;
-                    try {
-                        credentials = new String(Base64.decodeBase64(st.nextToken()), "UTF-8");
-                        int separatorPosition = credentials.indexOf(":");
-                        if (separatorPosition != -1) {
-                            username = credentials.substring(0, separatorPosition).trim();
-                        }
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
+                    String credentials = new String(Base64.decodeBase64(st.nextToken()), "UTF-8");
+                    int separatorPosition = credentials.indexOf(":");
+                    if (separatorPosition != -1) {
+                        username = credentials.substring(0, separatorPosition).trim();
                     }
                 }
             }

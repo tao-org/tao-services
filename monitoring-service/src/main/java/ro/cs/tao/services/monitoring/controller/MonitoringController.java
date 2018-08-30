@@ -16,18 +16,17 @@
 package ro.cs.tao.services.monitoring.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.services.commons.BaseController;
-import ro.cs.tao.services.commons.ServiceError;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.MonitoringService;
 import ro.cs.tao.services.model.monitoring.RuntimeInfo;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author Cosmin Cara
@@ -40,44 +39,42 @@ public class MonitoringController extends BaseController {
     private MonitoringService monitoringService;
 
     @RequestMapping(value = "/master", method = RequestMethod.GET)
-    public ResponseEntity<?> getMasterSnapshot() {
+    public ResponseEntity<ServiceResponse<?>> getMasterSnapshot() {
         final RuntimeInfo snapshot = monitoringService.getMasterSnapshot();
         if (snapshot == null) {
-            return new ResponseEntity<>(new ServiceError("No information available for master node"),
-                                        HttpStatus.NO_CONTENT);
+            return prepareResult("No information available for master node", ResponseStatus.FAILED);
         }
-        return new ResponseEntity<>(snapshot, HttpStatus.OK);
+        return prepareResult(snapshot);
     }
 
     @RequestMapping(value = "/{host:.+}", method = RequestMethod.GET)
-    public ResponseEntity<?> getNodeSnapshot(@PathVariable("host") String host) {
+    public ResponseEntity<ServiceResponse<?>> getNodeSnapshot(@PathVariable("host") String host) {
         final RuntimeInfo snapshot = monitoringService.getNodeSnapshot(host);
         if (snapshot == null) {
-            return new ResponseEntity<>(new ServiceError("No information available for node ['" + host + "']"),
-                                        HttpStatus.NO_CONTENT);
+            return prepareResult("No information available for node ['" + host + "']", ResponseStatus.FAILED);
         }
-        return new ResponseEntity<>(snapshot, HttpStatus.OK);
+        return prepareResult(snapshot);
     }
 
     @RequestMapping(value = "/notification/", method = RequestMethod.GET)
-    public ResponseEntity<?> getLiveNotifications() {
-        return new ResponseEntity<>(monitoringService.getLiveNotifications(), HttpStatus.OK);
+    public ResponseEntity<ServiceResponse<?>> getLiveNotifications() {
+        return prepareResult(monitoringService.getLiveNotifications());
     }
 
     @RequestMapping(value = "/notification/{page}", method = RequestMethod.GET)
-    public ResponseEntity<?> getNotifications(@RequestHeader(value = "user") String user,
+    public ResponseEntity<ServiceResponse<?>> getNotifications(@RequestHeader(value = "user") String user,
                                               @PathVariable("page") int page) {
-        return new ResponseEntity<>(monitoringService.getNotifications(user, page), HttpStatus.OK);
+        return prepareResult(monitoringService.getNotifications(user, page));
     }
 
     @RequestMapping(value = "/notification/ack", method = RequestMethod.POST)
-    public ResponseEntity<?> acknowledgeNotifications(@RequestBody List<Message> notifications) {
-        return new ResponseEntity<>(monitoringService.acknowledgeNotification(notifications), HttpStatus.OK);
+    public ResponseEntity<ServiceResponse<?>> acknowledgeNotifications(@RequestBody List<Message> notifications) {
+        return prepareResult(monitoringService.acknowledgeNotification(notifications));
     }
 
     @RequestMapping(value = "/status", method = RequestMethod.GET)
-    public ResponseEntity<Map<String, Boolean>> getNodesOnlineStatus() {
-        return new ResponseEntity<Map<String, Boolean>>(monitoringService.getNodesOnlineStatus(), HttpStatus.OK);
+    public ResponseEntity<ServiceResponse<?>> getNodesOnlineStatus() {
+        return prepareResult(monitoringService.getNodesOnlineStatus());
     }
 
 }

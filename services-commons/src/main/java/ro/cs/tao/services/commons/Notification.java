@@ -20,16 +20,16 @@ import java.util.Calendar;
 /**
  * @author Cosmin Cara
  */
-public class ServiceMessage {
+public class Notification {
     private Calendar timestamp;
     private String user;
     private boolean read;
     private String source;
     private String data;
 
-    public ServiceMessage() { }
+    public Notification() { }
 
-    public ServiceMessage(Calendar timestamp, String user, String source, String data) {
+    public Notification(Calendar timestamp, String user, String source, String data) {
         this.timestamp = timestamp;
         this.source = source;
         this.data = data;

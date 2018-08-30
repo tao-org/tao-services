@@ -30,7 +30,7 @@ import java.util.Map;
 
 public class SampleWorkflow5 extends SampleWorkflowBase {
     @Override
-    protected String getName() { return "AWS Download, { SNAP NDVI and OTB Resample }"; }
+    public String getName() { return "AWS Download, { SNAP NDVI and OTB Resample }"; }
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {

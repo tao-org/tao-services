@@ -24,7 +24,7 @@ import ro.cs.tao.messaging.Topics;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.MessageConverter;
-import ro.cs.tao.services.commons.ServiceMessage;
+import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.interfaces.MonitoringService;
 import ro.cs.tao.services.model.monitoring.OSRuntimeInfo;
 import ro.cs.tao.services.model.monitoring.RuntimeInfo;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  * @author Cosmin Cara
  */
 @Service("monitoringService")
-public class MonitoringServiceImpl extends Notifiable implements MonitoringService<ServiceMessage> {
+public class MonitoringServiceImpl extends Notifiable implements MonitoringService<Notification> {
 
     private static final int MAX_QUEUE_SIZE = 100;
     private final Queue<Message> messageQueue;
@@ -79,8 +79,8 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
     }
 
     @Override
-    public List<ServiceMessage> getLiveNotifications() {
-        List<ServiceMessage> messages;
+    public List<Notification> getLiveNotifications() {
+        List<Notification> messages;
         synchronized (this.messageQueue) {
             messages = this.messageQueue.stream()
                     .map(m -> new MessageConverter().to(m)).collect(Collectors.toList());
@@ -90,7 +90,7 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
     }
 
     @Override
-    public List<ServiceMessage> getNotifications(String user, int page) {
+    public List<Notification> getNotifications(String user, int page) {
         final Page<Message> userMessages = persistenceManager.getUserMessages(user, page);
         return userMessages != null ?
                 userMessages.getContent().stream()
@@ -99,7 +99,7 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
     }
 
     @Override
-    public List<ServiceMessage> acknowledgeNotification(List<ServiceMessage> notifications) {
+    public List<Notification> acknowledgeNotification(List<Notification> notifications) {
         if (notifications != null) {
             MessageConverter converter = new MessageConverter();
             notifications.forEach(message -> {

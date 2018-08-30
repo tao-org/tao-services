@@ -15,7 +15,6 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,9 +27,12 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topics;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.TopologyManager;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -42,18 +44,18 @@ public class ContainerController extends DataEntityController<Container, Contain
 
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET)
-    public ResponseEntity<List<Container>> list() {
+    public ResponseEntity<ServiceResponse<?>> list() {
         List<Container> objects = TopologyManager.getInstance().getAvailableDockerImages();
-        if (objects == null || objects.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        if (objects == null) {
+            objects = new ArrayList<>();
         }
-        return new ResponseEntity<>(objects, HttpStatus.OK);
+        return prepareResult(objects);
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> upload(@RequestParam("file") MultipartFile dockerFile,
-                                    @RequestParam("name") String shortName,
-                                    @RequestParam("desc") String description) {
+    public ResponseEntity<ServiceResponse<?>> upload(@RequestParam("file") MultipartFile dockerFile,
+                                                     @RequestParam("name") String shortName,
+                                                     @RequestParam("desc") String description) {
         asyncExecute(() -> {
             try {
                 service.registerContainer(dockerFile, shortName, description);
@@ -61,7 +63,7 @@ public class ContainerController extends DataEntityController<Container, Contain
                 handleException(ex);
             }
         }, this::registrationCallback);
-        return new ResponseEntity<>("Docker image registration started", HttpStatus.OK);
+        return prepareResult("Docker image registration started", ResponseStatus.SUCCEEDED);
     }
 
     private void registrationCallback(Exception ex) {
