@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import ro.cs.tao.SortDirection;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
@@ -34,6 +35,7 @@ import ro.cs.tao.topology.TopologyManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Cosmin Cara
@@ -44,7 +46,10 @@ public class ContainerController extends DataEntityController<Container, Contain
 
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET)
-    public ResponseEntity<ServiceResponse<?>> list() {
+    public ResponseEntity<ServiceResponse<?>> list(Optional<Integer> pageNumber,
+                                                   Optional<Integer> pageSize,
+                                                   Optional<String> sortByField,
+                                                   Optional<SortDirection> sortDirection) {
         List<Container> objects = TopologyManager.getInstance().getAvailableDockerImages();
         if (objects == null) {
             objects = new ArrayList<>();
