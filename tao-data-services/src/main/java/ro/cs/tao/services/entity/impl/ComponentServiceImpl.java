@@ -104,7 +104,7 @@ public class ComponentServiceImpl
     @Override
     public ProcessingComponent save(ProcessingComponent component) {
         if (component != null) {
-            if (persistenceManager.checkIfExistsComponentById(component.getId())) {
+            if (persistenceManager.existsProcessingComponent(component.getId())) {
                 return update(component);
             } else {
                 try {
@@ -170,12 +170,8 @@ public class ComponentServiceImpl
         if (value == null || value.trim().isEmpty()) {
             errors.add("[containerId] cannot be empty");
         } else {
-            try {
-                if ((container = persistenceManager.getContainerById(value)) == null) {
-                    errors.add("[containerId] points to a non-existing container");
-                }
-            } catch (PersistenceException e) {
-                logger.warning(e.getMessage());
+            if ((container = persistenceManager.getContainerById(value)) == null) {
+                errors.add("[containerId] points to a non-existing container");
             }
         }
         value = entity.getLabel();

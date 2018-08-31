@@ -17,6 +17,7 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.Sort;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
@@ -74,7 +75,7 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public List<WorkflowInfo> getWorkflows() {
+    public List<WorkflowInfo> getWorkflows(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
         return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getAllWorkflows());
     }
 
@@ -145,7 +146,7 @@ public class WorkflowServiceImpl
         if (nodeDescriptor == null) {
             throw new PersistenceException("Cannot add a null node");
         }
-        if (nodeDescriptor.getId() != null) {
+        if (nodeDescriptor.getId() != null && nodeDescriptor.getId() != 0) {
             throw new PersistenceException(String.format("Node [id:%s, name:%s] is not a new node",
                                                          nodeDescriptor.getId(), nodeDescriptor.getName()));
         }
@@ -395,7 +396,7 @@ public class WorkflowServiceImpl
             }
             clonedNode = addNode(clone.getId(), clonedNode);
             cloneMap.put(node.getId(), clonedNode);
-            clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
+            //clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
         }
         for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
             List<ComponentLink> links = node.getIncomingLinks();
@@ -448,7 +449,7 @@ public class WorkflowServiceImpl
             }
             clonedNode = addNode(master.getId(), clonedNode);
             cloneMap.put(node.getId(), clonedNode);
-            clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
+            //clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
         }
         for (WorkflowNodeDescriptor node : nodesToExport) {
             List<ComponentLink> links = node.getIncomingLinks();

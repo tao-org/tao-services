@@ -18,12 +18,14 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.Sort;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service("dataSourceComponentService")
 public class DataSourceComponentServiceImpl implements DataSourceComponentService {
@@ -39,6 +41,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     @Override
     public List<DataSourceComponent> list() {
         return persistenceManager.getDataSourceComponents();
+    }
+
+    @Override
+    public List<DataSourceComponent> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
+        return persistenceManager.getDataSourceComponents(pageNumber.orElse(0), pageSize.orElse(0), sort);
     }
 
     @Override

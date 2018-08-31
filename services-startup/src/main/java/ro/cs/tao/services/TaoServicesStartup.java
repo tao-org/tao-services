@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -102,7 +103,7 @@ public class TaoServicesStartup extends StartupBase {
                 NodeDescription master = persistenceManager.getNodeByHostName(masterHost);
                 if (master == null) {
                     master = new NodeDescription();
-                    master.setHostName(masterHost);
+                    master.setId(masterHost);
                     OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(master);
                     String user = ConfigurationManager.getInstance().getValue("topology.master.user", node.getUserName());
                     master.setUserName(user);
@@ -115,7 +116,7 @@ public class TaoServicesStartup extends StartupBase {
                     master.setMemorySizeGB((int) inspector.getTotalMemoryMB() / 1024);
                     master.setActive(true);
                     persistenceManager.saveExecutionNode(master);
-                    persistenceManager.removeExecutionNode(node.getHostName());
+                    persistenceManager.removeExecutionNode(node.getId());
                     logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                 }
             } catch (Exception ex) {
@@ -150,6 +151,7 @@ public class TaoServicesStartup extends StartupBase {
                     .map(Identifiable::getId)
                     .collect(Collectors.toSet());
             String componentId;
+            List<String> newDs = null;
             for (String sensor : sensors) {
                 List<String> dsNames = DataSourceManager.getInstance().getNames(sensor);
                 for (String dsName : dsNames) {
@@ -165,12 +167,19 @@ public class TaoServicesStartup extends StartupBase {
                         dataSourceComponent.setNodeAffinity("Any");
                         try {
                             dataSourceComponent = persistenceManager.saveDataSourceComponent(dataSourceComponent);
-                            logger.fine("Registered new data source component: " + dataSourceComponent.getId());
+                            if (newDs == null) {
+                                newDs = new ArrayList<>();
+                            }
+                            newDs.add(dataSourceComponent.getId());
                         } catch (PersistenceException e) {
                             logger.severe(e.getMessage());
                         }
                     }
                 }
+            }
+            if (newDs != null) {
+                logger.fine(String.format("Registered %s new data source components: %s",
+                                          newDs.size(), String.join(",", newDs)));
             }
         }
     }

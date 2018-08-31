@@ -36,7 +36,7 @@ public class TopologyServiceIntegrationTest extends AbstractServiceIntegrationTe
     }
     protected boolean checkItem(NodeDescription item, boolean isActive)
     {
-        if (nodeId.equals(item.getHostName()) && description.equals(item.getDescription()) &&
+        if (nodeId.equals(item.getId()) && description.equals(item.getDescription()) &&
                 item.getActive() == isActive) {
             return true;
         }

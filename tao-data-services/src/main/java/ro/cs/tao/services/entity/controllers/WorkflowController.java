@@ -101,7 +101,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                     descriptors.add(sample.createWorkflowDescriptor());
                 } catch (PersistenceException e) {
                     if (aggregated == null) {
-                        aggregated = new BaseException();
+                        aggregated = new BaseException(e.getMessage());
                     }
                     aggregated.addAdditionalInfo(sample.getName(), e.getMessage());
                 }
