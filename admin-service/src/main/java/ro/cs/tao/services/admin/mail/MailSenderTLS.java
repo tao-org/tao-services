@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 CS ROMANIA
+ * Copyright (C) 2018 CS ROMANIA
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -17,11 +17,11 @@ package ro.cs.tao.services.admin.mail;
 
 import ro.cs.tao.configuration.ConfigurationManager;
 
-import java.util.Properties;
-import java.util.logging.Logger;
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import java.util.Properties;
+import java.util.logging.Logger;
 
 public class MailSenderTLS {
 
