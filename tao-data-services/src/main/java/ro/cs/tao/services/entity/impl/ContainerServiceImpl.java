@@ -56,11 +56,7 @@ public class ContainerServiceImpl
     @Override
     public Container findById(String id) {
         Container container = null;
-        try {
-            container = persistenceManager.getContainerById(id);
-        } catch (PersistenceException e) {
-            logger.severe(e.getMessage());
-        }
+        container = persistenceManager.getContainerById(id);
         return container;
     }
 

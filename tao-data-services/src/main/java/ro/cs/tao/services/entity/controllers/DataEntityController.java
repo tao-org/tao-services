@@ -63,11 +63,9 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
                                                    @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
-        if (pageNumber.isPresent() && sortByField.isPresent() && sortDirection.isPresent()) {
-            Sort sort = new Sort().withField(sortByField.get(), sortDirection.get());
-            return prepareResult(service.list(pageNumber.get(),
-                                              pageSize.isPresent() ? pageSize.get() : 10,
-                                              sort));
+        if (pageNumber.isPresent() && sortByField.isPresent()) {
+            Sort sort = new Sort().withField(sortByField.get(), sortDirection.orElse(SortDirection.ASC));
+            return prepareResult(service.list(pageNumber, pageSize, sort));
         } else {
             return prepareResult(service.list());
         }
@@ -77,7 +75,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody T entity) {
         final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
         if (validationResponse.getBody().getStatus() == ResponseStatus.SUCCEEDED) {
-            service.save(entity);
+            entity = service.save(entity);
             return prepareResult(entity);
         } else {
             return validationResponse;

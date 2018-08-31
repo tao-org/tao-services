@@ -122,9 +122,9 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
             try {
                 String masterHost = InetAddress.getLocalHost().getHostName();
                 for (NodeDescription node : nodes) {
-                    if ("localhost".equals(node.getHostName())) {
+                    if ("localhost".equals(node.getId())) {
                         NodeDescription master = new NodeDescription();
-                        master.setHostName(masterHost);
+                        master.setId(masterHost);
                         master.setUserName(node.getUserName());
                         master.setUserPass(node.getUserPass());
                         master.setDescription(node.getDescription());
@@ -134,15 +134,16 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
                         master.setMemorySizeGB(node.getMemorySizeGB());
                         master.setActive(true);
                         master = persistenceManager.saveExecutionNode(master);
-                        persistenceManager.deleteExecutionNode(node.getHostName());
+                        persistenceManager.deleteExecutionNode(node.getId());
                         node = master;
                         logger.info(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                     }
+                    String hostName = node.getId();
                     Executor executor;
-                    if (node.getHostName().equals(masterHost)) {
-                        executor = Executor.create(ExecutorType.PROCESS, node.getHostName(), null);
+                    if (hostName.equals(masterHost)) {
+                        executor = Executor.create(ExecutorType.PROCESS, hostName, null);
                     } else {
-                        executor = Executor.create(ExecutorType.SSH2, node.getHostName(), null);
+                        executor = Executor.create(ExecutorType.SSH2, hostName, null);
                         executor.setUser(node.getUserName());
                         executor.setPassword(node.getUserPass());
                     }
@@ -151,7 +152,7 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
                         canConnect = executor.canConnect();
                     } catch (Exception ignored) {
                     }
-                    statuses.put(node.getHostName(), canConnect);
+                    statuses.put(hostName, canConnect);
                 }
             } catch (Exception ex) {
                 logger.severe(ex.getMessage());

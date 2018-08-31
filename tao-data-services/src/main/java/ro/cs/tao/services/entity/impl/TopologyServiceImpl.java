@@ -66,9 +66,9 @@ public class TopologyServiceImpl
 
     @Override
     protected void validateFields(NodeDescription object, List<String> errors) throws ValidationException {
-        String value = object.getHostName();
+        String value = object.getId();
         if (value == null || value.trim().isEmpty()) {
-            errors.add("[hostName] cannot be empty");
+            errors.add("[id] cannot be empty");
         }
         value = object.getUserName();
         if (value == null || value.trim().isEmpty()) {
