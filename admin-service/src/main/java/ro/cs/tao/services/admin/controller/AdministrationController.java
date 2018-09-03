@@ -31,7 +31,7 @@ import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.model.user.DisableUserInfo;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
-import ro.cs.tao.utils.StringUtils;
+import ro.cs.tao.utils.StringUtilities;
 
 /**
  * @author Oana H.
@@ -91,7 +91,7 @@ public class AdministrationController extends BaseController {
 
     @RequestMapping(value = "/users/{username}", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("username") String username) {
-        if (StringUtils.isNullOrEmpty(username)) {
+        if (StringUtilities.isNullOrEmpty(username)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
@@ -125,7 +125,7 @@ public class AdministrationController extends BaseController {
 
     @RequestMapping(value = "/users/{username}/disable", method = RequestMethod.POST)
     public ResponseEntity<ServiceResponse<?>> disableUser(@PathVariable("username") String username, @RequestBody DisableUserInfo additionalDisableActions) {
-        if (StringUtils.isNullOrEmpty(username) || additionalDisableActions == null) {
+        if (StringUtilities.isNullOrEmpty(username) || additionalDisableActions == null) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
@@ -139,7 +139,7 @@ public class AdministrationController extends BaseController {
 
     @RequestMapping(value = "/users/{username}", method = RequestMethod.DELETE)
     public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("username") String username) {
-        if (StringUtils.isNullOrEmpty(username)) {
+        if (StringUtilities.isNullOrEmpty(username)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {

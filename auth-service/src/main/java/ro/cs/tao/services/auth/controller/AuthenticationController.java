@@ -28,7 +28,7 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
-import ro.cs.tao.utils.StringUtils;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.io.UnsupportedEncodingException;
 import java.util.StringTokenizer;
@@ -45,13 +45,13 @@ public class AuthenticationController extends BaseController {
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ResponseEntity<ServiceResponse<?>> login(@RequestHeader("Authorization") String authHeader) {
-        if (StringUtils.isNullOrEmpty(authHeader)) {
+        if (StringUtilities.isNullOrEmpty(authHeader)) {
             return prepareResult("Expected request header empty!", ResponseStatus.FAILED);
         }
 
         try {
             final String username = getUsernameFromBasicAuthHeader(authHeader);
-            if (StringUtils.isNullOrEmpty(username)) {
+            if (StringUtilities.isNullOrEmpty(username)) {
                 return prepareResult("Empty credentials in request header!", ResponseStatus.FAILED);
             }
             final AuthInfo authInfo = authenticationService.login(username);
@@ -67,7 +67,7 @@ public class AuthenticationController extends BaseController {
 
     @RequestMapping(value = "/logout", method = RequestMethod.POST)
     public ResponseEntity<ServiceResponse<?>> logout(@RequestHeader("X-Auth-Token") String authToken) {
-        if (StringUtils.isNullOrEmpty(authToken)) {
+        if (StringUtilities.isNullOrEmpty(authToken)) {
             return prepareResult("Expected request header absent!", ResponseStatus.FAILED);
         }
 

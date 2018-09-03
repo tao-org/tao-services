@@ -30,7 +30,7 @@ import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
-import ro.cs.tao.utils.StringUtils;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.util.List;
 import java.util.UUID;
@@ -50,7 +50,7 @@ public class UserController extends BaseController {
 
     @RequestMapping(value = "/activate/{username}", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> activate(@PathVariable("username") String username) {
-        if (StringUtils.isNullOrEmpty(username)) {
+        if (StringUtilities.isNullOrEmpty(username)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
@@ -90,8 +90,8 @@ public class UserController extends BaseController {
 
     @RequestMapping(value = "/{username}/reset", method = RequestMethod.POST)
     public ResponseEntity<ServiceResponse<?>> resetPassword(@PathVariable("username") String username, @RequestBody ResetPasswordInfo resetPasswordInfo) {
-        if (StringUtils.isNullOrEmpty(username) || resetPasswordInfo == null ||
-            StringUtils.isNullOrEmpty(resetPasswordInfo.getResetKey()) || StringUtils.isNullOrEmpty(resetPasswordInfo.getNewPassword())) {
+        if (StringUtilities.isNullOrEmpty(username) || resetPasswordInfo == null ||
+                StringUtilities.isNullOrEmpty(resetPasswordInfo.getResetKey()) || StringUtilities.isNullOrEmpty(resetPasswordInfo.getNewPassword())) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
@@ -105,7 +105,7 @@ public class UserController extends BaseController {
 
     @RequestMapping(value = "/{username}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("username") String username) {
-        if (StringUtils.isNullOrEmpty(username)) {
+        if (StringUtilities.isNullOrEmpty(username)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
@@ -139,7 +139,7 @@ public class UserController extends BaseController {
 
     @RequestMapping(value = "/prefs", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> saveOrUpdateUserPreferences(@RequestBody List<UserPreference> userPreferences, @RequestHeader("X-Auth-Token") String authToken) {
-        if (userPreferences == null || userPreferences.isEmpty() || StringUtils.isNullOrEmpty(authToken)) {
+        if (userPreferences == null || userPreferences.isEmpty() || StringUtilities.isNullOrEmpty(authToken)) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
         try {
@@ -157,7 +157,7 @@ public class UserController extends BaseController {
 
     @RequestMapping(value = "/prefs", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> removeUserPreferences(@RequestBody List<String> userPrefsKeysToDelete, @RequestHeader("X-Auth-Token") String authToken) {
-        if (userPrefsKeysToDelete == null || userPrefsKeysToDelete.isEmpty() || StringUtils.isNullOrEmpty(authToken)) {
+        if (userPrefsKeysToDelete == null || userPrefsKeysToDelete.isEmpty() || StringUtilities.isNullOrEmpty(authToken)) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
         try {
