@@ -30,7 +30,7 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.StorageService;
-import ro.cs.tao.utils.FileUtils;
+import ro.cs.tao.utils.FileUtilities;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -113,7 +113,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
                     if (Visibility.PUBLIC.equals(product.getVisibility())) {
                         throw new IOException("Cannot remove a public product. Please reduce its visibility first.");
                     }
-                    FileUtils.deleteTree(filePath.toFile());
+                    FileUtilities.deleteTree(filePath);
                     try {
                         persistenceManager.remove(product);
                     } catch (PersistenceException e) {
@@ -128,7 +128,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
                 if (Visibility.PUBLIC.equals(product.getVisibility())) {
                     throw new IOException("Cannot remove a public product. Please reduce its visibility first.");
                 }
-                FileUtils.deleteTree(filePath.toFile());
+                FileUtilities.deleteTree(filePath);
                 try {
                     persistenceManager.remove(product);
                 } catch (PersistenceException e) {
