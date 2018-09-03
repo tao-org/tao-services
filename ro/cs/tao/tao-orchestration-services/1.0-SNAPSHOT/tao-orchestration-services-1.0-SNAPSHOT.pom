@@ -32,32 +32,32 @@
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>services-commons</artifactId>
-            <version>${project.version}</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-orchestration</artifactId>
-            <version>${project.version}</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-gdalinfo</artifactId>
-            <version>${project.version}</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-quicklook</artifactId>
-            <version>${project.version}</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-integration-geostorm</artifactId>
-            <version>${project.version}</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-data-services</artifactId>
-            <version>${project.version}</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
