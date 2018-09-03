@@ -16,12 +16,12 @@
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-service-api</artifactId>
-            <version>${project.version}</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-notification</artifactId>
-            <version>${project.version}</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
