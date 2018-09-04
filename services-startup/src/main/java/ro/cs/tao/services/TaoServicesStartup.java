@@ -126,10 +126,9 @@ public class TaoServicesStartup extends StartupBase {
     }
 
     private void registerEmbeddedContainers() {
-        logger.finest("Executing docker image plugins");
         List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
         if (installers != null && installers.size() > 0) {
-            logger.fine(String.format("Found %s images: %s", installers.size(),
+            logger.finest(String.format("Found %s docker image plugins: %s", installers.size(),
                         String.join(",", installers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.toList()))));
             for (DockerImageInstaller imageInstaller : installers) {
                 try {
