@@ -15,8 +15,12 @@
  */
 package ro.cs.tao.services.entity.util;
 
+import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.services.model.component.DataSourceInfo;
+import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
@@ -33,8 +37,7 @@ public final class ServiceTransformUtils {
     /**
      * Private constructor
      */
-    private ServiceTransformUtils()
-    {
+    private ServiceTransformUtils() {
         // empty constructor
     }
 
@@ -50,6 +53,22 @@ public final class ServiceTransformUtils {
         final List<ExecutionTaskInfo> results = new ArrayList<>();
         for(ExecutionTask executionTask : executionTasks){
             results.add(new ExecutionTaskInfo(executionTask));
+        }
+        return results;
+    }
+
+    public static List<ProcessingComponentInfo> toProcessingComponentInfos(final List<ProcessingComponent> components) {
+        final List<ProcessingComponentInfo> results = new ArrayList<>();
+        for (ProcessingComponent component : components) {
+            results.add(new ProcessingComponentInfo(component));
+        }
+        return results;
+    }
+
+    public static List<DataSourceInfo> toDataSourceInfos(final List<DataSourceComponent> components) {
+        final List<DataSourceInfo> results = new ArrayList<>();
+        for (DataSourceComponent component : components) {
+            results.add(new DataSourceInfo(component));
         }
         return results;
     }
