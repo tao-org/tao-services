@@ -17,7 +17,6 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.Sort;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
@@ -72,11 +71,6 @@ public class WorkflowServiceImpl
     @Override
     public WorkflowDescriptor findById(String id) throws PersistenceException {
         return persistenceManager.getWorkflowDescriptor(Long.parseLong(id));
-    }
-
-    @Override
-    public List<WorkflowInfo> getWorkflows(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
-        return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getAllWorkflows());
     }
 
     @Override

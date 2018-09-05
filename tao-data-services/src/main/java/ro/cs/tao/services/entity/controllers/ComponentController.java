@@ -64,7 +64,10 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     @Override
-    public ResponseEntity<ServiceResponse<?>> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Optional<String> sortByField, Optional<SortDirection> sortDirection) {
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
+                                                   @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
+                                                   @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
+                                                   @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
         if (pageNumber.isPresent() && sortByField.isPresent()) {
             Sort sort = new Sort().withField(sortByField.get(), sortDirection.orElse(SortDirection.ASC));
             return prepareResult(ServiceTransformUtils.toProcessingComponentInfos(service.list(pageNumber, pageSize, sort)));
