@@ -93,7 +93,17 @@ public class ComponentServiceImpl
 
     @Override
     public List<ProcessingComponent> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
-        return null;
+        if (pageNumber.isPresent() && pageSize.isPresent()) {
+            return persistenceManager.getProcessingComponents(pageNumber.get(), pageSize.get(), sort);
+        } else {
+            return persistenceManager.getProcessingComponents();
+        }
+    }
+
+    @Override
+    public List<ProcessingComponentInfo> getProcessingComponents(int pageNumber, int pageSize, Sort sort) {
+        return ServiceTransformUtils.toProcessingComponentInfos(list(Optional.of(pageNumber),
+                                                                     Optional.of(pageSize), sort));
     }
 
     @Override
