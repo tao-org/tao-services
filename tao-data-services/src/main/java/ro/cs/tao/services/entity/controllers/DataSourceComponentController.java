@@ -16,13 +16,36 @@
 
 package ro.cs.tao.services.entity.controllers;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import ro.cs.tao.Sort;
+import ro.cs.tao.SortDirection;
 import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
+
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/datasource")
 public class DataSourceComponentController extends DataEntityController<DataSourceComponent, DataSourceComponentService>{
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @Override
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
+                                                   @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
+                                                   @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
+                                                   @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
+        if (pageNumber.isPresent() && sortByField.isPresent()) {
+            Sort sort = new Sort().withField(sortByField.get(), sortDirection.orElse(SortDirection.ASC));
+            return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.list(pageNumber, pageSize, sort)));
+        } else {
+            return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.list()));
+        }
+    }
 }

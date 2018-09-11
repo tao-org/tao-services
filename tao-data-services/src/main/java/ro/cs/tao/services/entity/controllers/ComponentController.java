@@ -18,6 +18,8 @@ package ro.cs.tao.services.entity.controllers;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.Sort;
+import ro.cs.tao.SortDirection;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
@@ -27,10 +29,12 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -57,9 +61,27 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         return response;
     }
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @Override
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
+                                                   @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
+                                                   @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
+                                                   @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
+        if (pageNumber.isPresent() && sortByField.isPresent()) {
+            Sort sort = new Sort().withField(sortByField.get(), sortDirection.orElse(SortDirection.ASC));
+            return prepareResult(ServiceTransformUtils.toProcessingComponentInfos(service.list(pageNumber, pageSize, sort)));
+        } else {
+            return prepareResult(ServiceTransformUtils.toProcessingComponentInfos(service.list()));
+        }
+    }
+
+    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     @Override
     public ResponseEntity<ServiceResponse<?>> save(ProcessingComponent entity) {
-        entity.setOwner(SessionStore.currentContext().getPrincipal().getName());
+        if (entity.getOwner() == null || entity.getOwner().isEmpty()) {
+            entity.setOwner(SessionStore.currentContext().getPrincipal().getName());
+        }
         return super.save(entity);
     }
 
@@ -73,6 +95,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         }
     }
 
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
     @Override
     public ResponseEntity<ServiceResponse<?>> delete(String id) {
         if (isCurrentUserAdmin()) {
