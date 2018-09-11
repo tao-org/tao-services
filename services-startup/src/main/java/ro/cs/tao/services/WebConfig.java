@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
@@ -36,10 +37,10 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations(TaoServicesStartup.homeDirectory().resolve("static").toUri().toString());
     }
 
-    /*@Override
+    @Override
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addViewController("/").setViewName("forward:/ui/login.html");
-    }*/
+    }
 
     public MappingJackson2HttpMessageConverter jacksonMessageConverter(){
         MappingJackson2HttpMessageConverter messageConverter = new MappingJackson2HttpMessageConverter();

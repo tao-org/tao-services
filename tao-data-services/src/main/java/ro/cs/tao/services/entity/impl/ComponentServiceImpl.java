@@ -17,6 +17,7 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.Sort;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.constraints.ConstraintFactory;
 import ro.cs.tao.component.template.Template;
@@ -32,17 +33,16 @@ import ro.cs.tao.serialization.MediaType;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.serialization.Serializer;
 import ro.cs.tao.serialization.SerializerFactory;
+import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
+import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 import ro.cs.tao.workflow.enums.ComponentType;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -92,13 +92,33 @@ public class ComponentServiceImpl
     }
 
     @Override
-    public List<ProcessingComponent> getUserProcessingComponents(String userName) {
-        return persistenceManager.getUserProcessingComponents(userName);
+    public List<ProcessingComponent> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
+        if (pageNumber.isPresent() && pageSize.isPresent()) {
+            return persistenceManager.getProcessingComponents(pageNumber.get(), pageSize.get(), sort);
+        } else {
+            return persistenceManager.getProcessingComponents();
+        }
     }
 
     @Override
-    public List<ProcessingComponent> getUserScriptComponents(String userName) {
-        return persistenceManager.getUserScriptComponents(userName);
+    public List<ProcessingComponentInfo> getProcessingComponents(int pageNumber, int pageSize, Sort sort) {
+        return ServiceTransformUtils.toProcessingComponentInfos(list(Optional.of(pageNumber),
+                                                                     Optional.of(pageSize), sort));
+    }
+
+    @Override
+    public List<ProcessingComponentInfo> getProcessingComponents() {
+        return ServiceTransformUtils.toProcessingComponentInfos(list());
+    }
+
+    @Override
+    public List<ProcessingComponentInfo> getUserProcessingComponents(String userName) {
+        return ServiceTransformUtils.toProcessingComponentInfos(persistenceManager.getUserProcessingComponents(userName));
+    }
+
+    @Override
+    public List<ProcessingComponentInfo> getUserScriptComponents(String userName) {
+        return ServiceTransformUtils.toProcessingComponentInfos(persistenceManager.getUserScriptComponents(userName));
     }
 
     @Override
