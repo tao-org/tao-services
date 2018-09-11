@@ -74,6 +74,13 @@ public class TaoServicesStartup extends StartupBase {
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof ContextRefreshedEvent) {
+            try {
+                Files.createDirectories(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
+                Files.createDirectories(Paths.get(SystemVariable.SHARED_FILES.value()));
+            } catch (IOException e) {
+                logger.severe("Cannot create required folders: " + e.getMessage());
+                System.exit(1);
+            }
             BaseController.setPersistenceManager(this.persistenceManager);
             Messaging.setPersister(this.persistenceManager);
             SpringSessionProvider.setPersistenceManager(this.persistenceManager);
@@ -83,13 +90,6 @@ public class TaoServicesStartup extends StartupBase {
             updateLocalhost();
             backgroundWorker.submit(this::registerEmbeddedContainers);
             backgroundWorker.submit(this::registerDataSourceComponents);
-            try {
-                Files.createDirectories(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
-                Files.createDirectories(Paths.get(SystemVariable.SHARED_FILES.value()));
-            } catch (IOException e) {
-                logger.severe("Cannot create required folders: " + e.getMessage());
-                System.exit(1);
-            }
         }
     }
 
