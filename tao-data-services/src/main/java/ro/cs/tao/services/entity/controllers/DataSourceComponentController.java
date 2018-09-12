@@ -18,16 +18,21 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 
+import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -46,6 +51,20 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.list(pageNumber, pageSize, sort)));
         } else {
             return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.list()));
+        }
+    }
+
+    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponents() {
+        return prepareResult(service.getUserDataSourceComponents(SessionStore.currentContext().getPrincipal().getName()));
+    }
+
+    @RequestMapping(value = "/create", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody List<EOProduct> products) {
+        try {
+            return prepareResult(service.createFor(products, SessionStore.currentContext().getPrincipal()));
+        } catch (PersistenceException e) {
+            return handleException(e);
         }
     }
 }

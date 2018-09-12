@@ -164,6 +164,7 @@ public class TaoServicesStartup extends StartupBase {
                         dataSourceComponent.setAuthors("TAO Team");
                         dataSourceComponent.setCopyright("(C) TAO Team");
                         dataSourceComponent.setNodeAffinity("Any");
+                        dataSourceComponent.setSystem(true);
                         try {
                             dataSourceComponent = persistenceManager.saveDataSourceComponent(dataSourceComponent);
                             if (newDs == null) {
