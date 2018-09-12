@@ -32,10 +32,7 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * @author Cosmin Cara
@@ -74,6 +71,16 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         } else {
             return prepareResult(ServiceTransformUtils.toProcessingComponentInfos(service.list()));
         }
+    }
+
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "id") String idList) {
+        if (idList == null || idList.isEmpty()) {
+            return prepareResult("Invalid id list", ResponseStatus.FAILED);
+        }
+        String[] ids = idList.split(",");
+        return prepareResult(service.getProcessingComponents(Arrays.asList(ids)));
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")

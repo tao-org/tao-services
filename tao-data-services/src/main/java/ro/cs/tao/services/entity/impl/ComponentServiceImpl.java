@@ -92,6 +92,11 @@ public class ComponentServiceImpl
     }
 
     @Override
+    public List<ProcessingComponent> getProcessingComponents(Iterable<String> ids) {
+        return persistenceManager.getProcessingComponents(ids);
+    }
+
+    @Override
     public List<ProcessingComponent> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
         if (pageNumber.isPresent() && pageSize.isPresent()) {
             return persistenceManager.getProcessingComponents(pageNumber.get(), pageSize.get(), sort);
