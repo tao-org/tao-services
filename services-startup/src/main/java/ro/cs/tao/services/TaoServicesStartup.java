@@ -40,10 +40,10 @@ import ro.cs.tao.services.security.TaoLocalLoginModule;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
+import ro.cs.tao.utils.FileUtilities;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,8 +75,8 @@ public class TaoServicesStartup extends StartupBase {
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof ContextRefreshedEvent) {
             try {
-                Files.createDirectories(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
-                Files.createDirectories(Paths.get(SystemVariable.SHARED_FILES.value()));
+                FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
+                FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_FILES.value()));
             } catch (IOException e) {
                 logger.severe("Cannot create required folders: " + e.getMessage());
                 System.exit(1);
@@ -164,6 +164,7 @@ public class TaoServicesStartup extends StartupBase {
                         dataSourceComponent.setAuthors("TAO Team");
                         dataSourceComponent.setCopyright("(C) TAO Team");
                         dataSourceComponent.setNodeAffinity("Any");
+                        dataSourceComponent.setSystem(true);
                         try {
                             dataSourceComponent = persistenceManager.saveDataSourceComponent(dataSourceComponent);
                             if (newDs == null) {

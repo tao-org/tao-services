@@ -20,12 +20,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.Sort;
 import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.eodata.EOData;
+import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 
+import java.security.Principal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service("dataSourceComponentService")
 public class DataSourceComponentServiceImpl implements DataSourceComponentService {
@@ -49,6 +55,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
+    public List<DataSourceComponent> getUserDataSourceComponents(String userName) {
+        return persistenceManager.getUserDataSourceComponents(userName);
+    }
+
+    @Override
     public DataSourceComponent save(DataSourceComponent object) {
         try {
             return persistenceManager.saveDataSourceComponent(object);
@@ -65,5 +76,39 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     @Override
     public void delete(String id) throws PersistenceException {
         throw new UnsupportedOperationException("Data source components cannot be deleted");
+    }
+
+    public DataSourceComponent createFor(List<EOProduct> products, Principal principal) throws PersistenceException {
+        if (products == null || products.isEmpty() || principal == null) {
+            return null;
+        }
+        String productType = products.stream()
+                                     .filter(p -> p.getProductType() != null)
+                                     .map(EOProduct::getProductType)
+                                     .findFirst().orElse(null);
+        if (productType == null) {
+            return null;
+        }
+        DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(productType + "-Local Database");
+        if (systemDSC == null) {
+            return null;
+        }
+        DataSourceComponent userDSC;
+        try {
+            userDSC = systemDSC.clone();
+            LocalDateTime time = LocalDateTime.now();
+            userDSC.setId(systemDSC.getId() + "-" + principal.getName() + "-" + time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+            userDSC.setLabel(systemDSC.getLabel() + " (customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + ")");
+            List<String> nameList = products.stream().map(EOData::getName).collect(Collectors.toList());
+            userDSC.getSources().get(0).getDataDescriptor().setLocation(String.join(",", nameList));
+            userDSC.getSources().get(0).setCardinality(products.size());
+            userDSC.getTargets().get(0).setCardinality(products.size());
+            userDSC.getTargets().get(0).addConstraint("Same cardinality");
+            userDSC.setSystem(false);
+            userDSC = persistenceManager.saveDataSourceComponent(userDSC);
+        } catch (CloneNotSupportedException e) {
+            throw new PersistenceException(e);
+        }
+        return userDSC;
     }
 }
