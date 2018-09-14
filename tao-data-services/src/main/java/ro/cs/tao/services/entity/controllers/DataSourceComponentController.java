@@ -28,10 +28,12 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,6 +54,15 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         } else {
             return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.list()));
         }
+    }
+
+    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "id") String idList) {
+        if (idList == null || idList.isEmpty()) {
+            return prepareResult("Invalid id list", ResponseStatus.FAILED);
+        }
+        String[] ids = idList.split(",");
+        return prepareResult(service.getDataSourceComponents(Arrays.asList(ids)));
     }
 
     @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
