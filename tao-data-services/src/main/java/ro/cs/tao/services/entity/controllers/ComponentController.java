@@ -73,7 +73,6 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         }
     }
 
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "id") String idList) {
         if (idList == null || idList.isEmpty()) {
