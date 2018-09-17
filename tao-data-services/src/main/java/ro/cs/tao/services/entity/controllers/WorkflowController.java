@@ -15,12 +15,18 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.BaseException;
 import ro.cs.tao.component.ComponentLink;
+import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.base.SampleWorkflowBase;
@@ -33,9 +39,8 @@ import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.Status;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.io.IOException;
+import java.util.*;
 
 /**
  * @author Cosmin Cara
@@ -82,6 +87,44 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             responseEntity = handleException(e);
         }
         return responseEntity;
+    }
+
+    @RequestMapping(value = "/mock", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getMockWorkflows() throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Hibernate5Module hibernate5Module = new Hibernate5Module();
+        hibernate5Module.disable(Hibernate5Module.Feature.USE_TRANSIENT_ANNOTATION);
+        hibernate5Module.enable(Hibernate5Module.Feature.FORCE_LAZY_LOADING);
+        objectMapper.registerModule(hibernate5Module);
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        ObjectReader reader = objectMapper.reader().forType(WorkflowDescriptor.class);
+        WorkflowDescriptor descriptor1 = reader.readValue(Mock.WF1);
+        WorkflowDescriptor descriptor2 = reader.readValue(Mock.WF2);
+        List<WorkflowDescriptor> descriptors = new ArrayList<>();
+        descriptors.add(descriptor1);
+        descriptors.add(descriptor2);
+        return prepareResult(descriptors);
+    }
+
+    @RequestMapping(value = "/mock", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getMockWorkflow(@RequestParam("id") long mockId) throws IOException {
+        Map<String, List<Parameter>> params = new HashMap<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        Hibernate5Module hibernate5Module = new Hibernate5Module();
+        hibernate5Module.disable(Hibernate5Module.Feature.USE_TRANSIENT_ANNOTATION);
+        hibernate5Module.enable(Hibernate5Module.Feature.FORCE_LAZY_LOADING);
+        objectMapper.registerModule(hibernate5Module);
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        ObjectReader reader = objectMapper.reader().forType(params.getClass());
+        if (mockId == 1) {
+            params = reader.readValue(Mock.WF1_Params);
+        }
+        if (mockId == 6) {
+            params = reader.readValue(Mock.WF2_Params);
+        }
+        return prepareResult(params);
     }
 
     @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")

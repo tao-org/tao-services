@@ -16,14 +16,32 @@
 
 package ro.cs.tao.services.entity.impl;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.eodata.enums.Visibility;
+import ro.cs.tao.eodata.metadata.DecodeStatus;
+import ro.cs.tao.eodata.metadata.MetadataInspector;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ProductService;
+import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.utils.FileUtilities;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.Date;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service("productService")
 public class ProductServiceImpl extends EntityService<EOProduct> implements ProductService {
@@ -70,5 +88,91 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
     @Override
     public void delete(String id) throws PersistenceException {
 
+    }
+
+    @Override
+    public List<EOProduct> inspect(Path sourcePath) throws IOException {
+        if (sourcePath == null || !Files.exists(sourcePath)) {
+            throw new IOException("Source directory not found");
+        }
+        Set<MetadataInspector> services = ServiceRegistryManager.getInstance()
+                .getServiceRegistry(MetadataInspector.class)
+                .getServices();
+        MetadataInspector inspector;
+        if (services == null) {
+            throw new IOException("No product inspector found");
+        }
+        List<EOProduct> results = new ArrayList<>();
+        try {
+            List<Path> folders = Files.walk(sourcePath, 1).collect(Collectors.toList());
+            Path publicFolder = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
+            for (Path folder : folders) {
+                try {
+                    if (Files.isDirectory(folder) && !folder.equals(sourcePath)) {
+                        Path targetPath;
+                        if (!folder.toString().startsWith(publicFolder.toString())) {
+                            targetPath = publicFolder.resolve(folder.getFileName());
+                            if (!Files.exists(targetPath)) {
+                                Logger.getLogger(ProductService.class.getName()).fine(String.format("Copying %s to %s",
+                                                                                                    folder, publicFolder.toFile()));
+                                FileUtils.copyDirectoryToDirectory(folder.toFile(), publicFolder.toFile());
+                                FileUtilities.ensurePermissions(targetPath);
+                            }
+                        } else {
+                            targetPath = folder;
+                        }
+                        inspector = services.stream()
+                                .filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath))
+                                .findFirst()
+                                .orElse(services.stream()
+                                                .filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
+                                                .findFirst()
+                                                .orElse(null));
+                        if (inspector == null) {
+                            continue;
+                        }
+                        MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
+                        if (metadata != null) {
+                            EOProduct product = metadata.toProductDescriptor(targetPath);
+                            product.setEntryPoint(metadata.getEntryPoint());
+                            product.setUserName(SessionStore.currentContext().getPrincipal().getName());
+                            product.setVisibility(Visibility.PUBLIC);
+                            if (metadata.getAquisitionDate() != null) {
+                                product.setAcquisitionDate(Date.from(metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
+                            }
+                            if (metadata.getSize() != null) {
+                                product.setApproximateSize(metadata.getSize());
+                            }
+                            if (metadata.getProductId() != null) {
+                                product.setId(metadata.getProductId());
+                            }
+                            results.add(product);
+                        }
+                    }
+                } catch (Exception e1) {
+                    Logger.getLogger(ProductService.class.getName()).warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
+                }
+            }
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+        return results;
+    }
+
+    @Override
+    public int importProducts(List<EOProduct> products) {
+        if (products == null) {
+            return 0;
+        }
+        int count = 0;
+        for (EOProduct product : products) {
+            try {
+                persistenceManager.saveEOProduct(product);
+                count++;
+            } catch (PersistenceException e) {
+                e.printStackTrace();
+            }
+        }
+        return count;
     }
 }
