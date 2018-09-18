@@ -195,8 +195,12 @@ public class FileController extends BaseController {
             for (EOProduct product : publicProducts) {
                 String location = product.getLocation();
                 if (location != null) {
-                    Path userPath = Paths.get(Paths.get(URI.create(location)).toString().replace(root.toString(), "")).getName(0);
+                    Path productLocation = Paths.get(URI.create(location));
+                    Path userPath = Paths.get(productLocation.toString().replace(root.toString(), "")).getName(0);
                     realRoot = root.resolve(userPath).resolve(product.getName());
+                    if (!realRoot.getFileName().equals(productLocation.getFileName())) {
+                        realRoot = root.resolve(userPath).resolve(productLocation.getFileName());
+                    }
                     FileObject fileObject = new FileObject(root.relativize(realRoot).toString(), Files.isDirectory(realRoot), 0);
                     Map<String, String> attributeMap = product.toAttributeMap();
                     attributeMap.remove("formatType");
