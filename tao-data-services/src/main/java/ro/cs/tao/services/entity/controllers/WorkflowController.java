@@ -89,7 +89,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/mock", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/mock/list", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getMockWorkflows() throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         Hibernate5Module hibernate5Module = new Hibernate5Module();
