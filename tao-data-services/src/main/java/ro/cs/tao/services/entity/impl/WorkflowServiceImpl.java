@@ -508,7 +508,7 @@ public class WorkflowServiceImpl
         if (workflowExecution == null) {
             throw new PersistenceException("There is no workflow execution having the given identifier " + String.valueOf(executionJobId));
         }
-        return ServiceTransformUtils.toTaskInfos(workflowExecution.getTasks());
+        return ServiceTransformUtils.toTaskInfos(workflowExecution.orderedTasks());
     }
 
     @Override
