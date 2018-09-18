@@ -31,6 +31,7 @@ import ro.cs.tao.orchestration.util.TaskUtilities;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.GroupComponentService;
@@ -91,6 +92,15 @@ public class WorkflowServiceImpl
     @Override
     public List<WorkflowInfo> getOtherPublicWorkflows(String user) {
         return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getOtherPublicWorkflows(user));
+    }
+
+    @Override
+    public List<WorkflowInfo> getPublicWorkflows() {
+        if (!isDevModeEnabled()) {
+            return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getPublicWorkflows());
+        } else {
+            return ServiceTransformUtils.toWorkflowInfos(MockData.getMockWorkflows());
+        }
     }
 
     @Override
