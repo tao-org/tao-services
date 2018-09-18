@@ -19,6 +19,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.system.ApplicationHome;
 import org.springframework.context.ApplicationListener;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
@@ -71,6 +72,9 @@ public abstract class StartupBase implements ApplicationListener {
                                         .sources(detectLaunchers(startupClass))
                                         .build();
         app.setDefaultProperties(initialize());
+        Logger.getLogger(StartupBase.class.getName()).info(String.format("Development mode is %s",
+                                                                         Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.dev.mode", "false")) ?
+                                                                                 "ON" : "OFF"));
         app.run(args);
     }
 

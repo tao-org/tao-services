@@ -32,6 +32,7 @@ import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 
@@ -61,7 +62,11 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public Map<String, List<Parameter>> getWorkflowParameters(long workflowId) {
-        return workflowService.getWorkflowParameters(workflowId);
+        if (!isDevModeEnabled()) {
+            return workflowService.getWorkflowParameters(workflowId);
+        } else {
+            return MockData.getMockParameters().get(workflowId);
+        }
     }
 
     @Override
