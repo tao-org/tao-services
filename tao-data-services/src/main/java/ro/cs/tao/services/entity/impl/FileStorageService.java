@@ -157,7 +157,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
         if (!Files.exists(location)) {
             Files.createDirectories(location);
         }
-        return list(location, 3);
+        return list(location, 5);
     }
 
     @Override

@@ -182,21 +182,27 @@ public class FileController extends BaseController {
             long size;
             Path realRoot = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
             for (Path path : list) {
-                Path realPath = realRoot.resolve(path);
-                try {
-                    size = Files.size(realPath);
-                } catch (IOException e) {
-                    size = -1;
+                if (path.startsWith("files")) {
+                    Path realPath = realRoot.resolve(path);
+                    try {
+                        size = Files.size(realPath);
+                    } catch (IOException e) {
+                        size = -1;
+                    }
+                    fileObjects.add(new FileObject(path.toString(), Files.isDirectory(realPath), size));
                 }
-                fileObjects.add(new FileObject(path.toString(), Files.isDirectory(realPath), size));
             }
             List<EOProduct> publicProducts = persistenceManager.getPublicProducts();
             Path root = Paths.get(ConfigurationManager.getInstance().getValue("product.location"));
             for (EOProduct product : publicProducts) {
                 String location = product.getLocation();
                 if (location != null) {
-                    Path userPath = Paths.get(Paths.get(URI.create(location)).toString().replace(root.toString(), "")).getName(0);
+                    Path productLocation = Paths.get(URI.create(location));
+                    Path userPath = Paths.get(productLocation.toString().replace(root.toString(), "")).getName(0);
                     realRoot = root.resolve(userPath).resolve(product.getName());
+                    if (!realRoot.getFileName().equals(productLocation.getFileName())) {
+                        realRoot = root.resolve(userPath).resolve(productLocation.getFileName());
+                    }
                     FileObject fileObject = new FileObject(root.relativize(realRoot).toString(), Files.isDirectory(realRoot), 0);
                     Map<String, String> attributeMap = product.toAttributeMap();
                     attributeMap.remove("formatType");
