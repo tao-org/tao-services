@@ -182,13 +182,15 @@ public class FileController extends BaseController {
             long size;
             Path realRoot = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
             for (Path path : list) {
-                Path realPath = realRoot.resolve(path);
-                try {
-                    size = Files.size(realPath);
-                } catch (IOException e) {
-                    size = -1;
+                if (path.startsWith("files")) {
+                    Path realPath = realRoot.resolve(path);
+                    try {
+                        size = Files.size(realPath);
+                    } catch (IOException e) {
+                        size = -1;
+                    }
+                    fileObjects.add(new FileObject(path.toString(), Files.isDirectory(realPath), size));
                 }
-                fileObjects.add(new FileObject(path.toString(), Files.isDirectory(realPath), size));
             }
             List<EOProduct> publicProducts = persistenceManager.getPublicProducts();
             Path root = Paths.get(ConfigurationManager.getInstance().getValue("product.location"));
