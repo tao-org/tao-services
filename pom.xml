@@ -29,6 +29,7 @@
         <module>user-service</module>
         <module>admin-service</module>
         <module>tao-sample-workflows</module>
+        <module>tao-web-processing-service</module>
     </modules>
 
     <properties>
