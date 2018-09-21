@@ -175,4 +175,85 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
         }
         return count;
     }
+
+    @Override
+    public int importProducts(String sourcePath, boolean linkOnly) throws IOException {
+        Path srcPath = null;
+        if (sourcePath == null || !Files.exists((srcPath = Paths.get(sourcePath)))) {
+            throw new IOException("Source directory not found");
+        }
+        Set<MetadataInspector> services = ServiceRegistryManager.getInstance()
+                .getServiceRegistry(MetadataInspector.class)
+                .getServices();
+        MetadataInspector inspector;
+        if (services == null) {
+            throw new IOException("No product inspector found");
+        }
+        int count = 0;
+        try {
+            List<Path> folders = Files.walk(srcPath, 1).collect(Collectors.toList());
+            Path publicFolder = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
+            for (Path folder : folders) {
+                try {
+                    if (Files.isDirectory(folder) && !folder.equals(srcPath)) {
+                        Path targetPath;
+                        if (!folder.toString().startsWith(publicFolder.toString())) {
+                            targetPath = publicFolder.resolve(folder.getFileName());
+                            if (!Files.exists(targetPath)) {
+                                Logger.getLogger(ProductService.class.getName()).fine(String.format("Copying %s to %s",
+                                                                                                    folder, publicFolder.toFile()));
+                                if (linkOnly) {
+                                    FileUtilities.link(folder, targetPath);
+                                } else {
+                                    FileUtils.copyDirectoryToDirectory(folder.toFile(), publicFolder.toFile());
+                                    FileUtilities.ensurePermissions(targetPath);
+                                }
+                            }
+                        } else {
+                            targetPath = folder;
+                        }
+                        inspector = services.stream()
+                                .filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath))
+                                .findFirst()
+                                .orElse(services.stream()
+                                                .filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
+                                                .findFirst()
+                                                .orElse(null));
+                        if (inspector == null) {
+                            continue;
+                        }
+                        MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
+                        if (metadata != null) {
+                            EOProduct product = metadata.toProductDescriptor(targetPath);
+                            product.setEntryPoint(metadata.getEntryPoint());
+                            product.setUserName(SessionStore.currentContext().getPrincipal().getName());
+                            product.setVisibility(Visibility.PUBLIC);
+                            if (metadata.getAquisitionDate() != null) {
+                                product.setAcquisitionDate(Date.from(metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
+                            }
+                            if (metadata.getSize() != null) {
+                                product.setApproximateSize(metadata.getSize());
+                            }
+                            if (metadata.getProductId() != null) {
+                                product.setId(metadata.getProductId());
+                            }
+
+                            persistenceManager.saveEOProduct(product);
+                            count++;
+                        }
+                    }
+                } catch (Exception e1) {
+                    Logger.getLogger(ProductService.class.getName()).warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
+                }
+            }
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+        return count;
+    }
+
+    @Override
+    public List<String> checkExisting(String... names) {
+        return persistenceManager.getExistingProductNames(names);
+    }
 }
