@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.component.Variable;
-import ro.cs.tao.datasource.param.ParameterDescriptor;
+import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.serialization.SerializationException;
@@ -82,7 +82,7 @@ public class DataSourceController extends BaseController {
     @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> getSupportedParameters(@PathVariable("name") String sensorName,
                                                                             @PathVariable("source") String dataSourceClassName) {
-        List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
+        List<DataSourceParameter> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
         if (params == null) {
             params = new ArrayList<>();
         }
@@ -91,7 +91,7 @@ public class DataSourceController extends BaseController {
 
     @RequestMapping(value = "/count", method = RequestMethod.POST)
     public ResponseEntity<ServiceResponse<?>> doCount(@RequestBody Query query) {
-        List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(query.getSensor(),
+        List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
         if (params == null || params.isEmpty()) {
             return prepareResult(String.format("No data source named [%s] available for [%s]",
@@ -144,8 +144,8 @@ public class DataSourceController extends BaseController {
 
     @RequestMapping(value = "/exec", method = RequestMethod.POST)
     public ResponseEntity<ServiceResponse<?>> doQuery(@RequestBody Query query) {
-        List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(query.getSensor(),
-                query.getDataSource());
+        List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
+                                                                                    query.getDataSource());
         if (params == null || params.isEmpty()) {
             return prepareResult(String.format("No data source named [%s] available for [%s]",
                                                query.getDataSource(), query.getSensor()), ResponseStatus.FAILED);
