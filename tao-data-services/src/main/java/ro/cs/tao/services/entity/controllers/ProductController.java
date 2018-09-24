@@ -28,7 +28,6 @@ import ro.cs.tao.services.interfaces.ProductService;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.List;
 
 @Controller
 @RequestMapping("/product")
@@ -47,15 +46,20 @@ public class ProductController extends DataEntityController<EOProduct, ProductSe
     }
 
     @RequestMapping(value = "/import", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> importProducts(@RequestParam("sourceDir") String sourceDir) {
+    public ResponseEntity<ServiceResponse<?>> importProducts(@RequestParam("sourceDir") String sourceDir,
+                                                             @RequestParam("linkOnly") boolean linkOnly) {
         if (sourceDir == null) {
             return prepareResult("Source directory not found", ResponseStatus.FAILED);
         }
         try {
-            List<EOProduct> results = this.service.inspect(Paths.get(sourceDir));
-            return prepareResult(this.service.importProducts(results));
+            return prepareResult(this.service.importProducts(sourceDir, linkOnly));
         } catch (IOException e) {
             return handleException(e);
         }
+    }
+
+    @RequestMapping(value = "/check", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> checkExistingProducts(@RequestParam("names") String[] names) {
+        return prepareResult(this.service.checkExisting(names));
     }
 }
