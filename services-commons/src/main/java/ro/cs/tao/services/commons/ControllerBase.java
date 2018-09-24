@@ -124,18 +124,34 @@ public abstract class ControllerBase {
     }
 
     protected void debug(String message, Object... args) {
-        logger.fine(String.format(message, args));
+        if (args != null && args.length > 0) {
+            logger.fine(String.format(message, args));
+        } else {
+            logger.fine(message);
+        }
     }
 
     protected void info(String message, Object... args) {
-        logger.info(String.format(message, args));
+        if (args != null && args.length > 0) {
+            logger.info(String.format(message, args));
+        } else {
+            logger.info(message);
+        }
     }
 
     protected void warn(String message, Object... args) {
-        logger.warning(String.format(message, args));
+        if (args != null && args.length > 0) {
+            logger.warning(String.format(message, args));
+        } else {
+            logger.warning(message);
+        }
     }
 
     protected void error(String message, Object... args) {
-        logger.severe(String.format(message, args));
+        if (args != null && args.length > 0) {
+            logger.severe(String.format(message, args));
+        } else {
+            logger.severe(message);
+        }
     }
 }

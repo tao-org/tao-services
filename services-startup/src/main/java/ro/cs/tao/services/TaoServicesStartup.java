@@ -175,11 +175,16 @@ public class TaoServicesStartup extends StartupBase {
                             logger.severe(e.getMessage());
                         }
                     }
+                    existing.remove(componentId);
                 }
             }
             if (newDs != null) {
                 logger.fine(String.format("Registered %s new data source components: %s",
                                           newDs.size(), String.join(",", newDs)));
+            }
+            if (existing.size() > 0) {
+                logger.warning(String.format("There are %s data source components in the database that have not been found: %s",
+                                             existing.size(), String.join(",", existing)));
             }
         }
     }
