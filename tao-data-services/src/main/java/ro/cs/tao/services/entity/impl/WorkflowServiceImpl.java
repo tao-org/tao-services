@@ -24,6 +24,7 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.datasource.converters.ConversionException;
+import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.Query;
@@ -536,11 +537,11 @@ public class WorkflowServiceImpl
             switch (componentType) {
                 case DATASOURCE:
                     DataSourceComponent dataSourceComponent = (DataSourceComponent) component;
-                    Map<String, ro.cs.tao.datasource.param.ParameterDescriptor> params =
+                    Map<String, DataSourceParameter> params =
                             DataSourceManager.getInstance().getSupportedParameters(dataSourceComponent.getSensorName(),
                                                                                    dataSourceComponent.getDataSourceName());
-                    for (Map.Entry<String, ro.cs.tao.datasource.param.ParameterDescriptor> entry : params.entrySet()) {
-                        ro.cs.tao.datasource.param.ParameterDescriptor descriptor = entry.getValue();
+                    for (Map.Entry<String, DataSourceParameter> entry : params.entrySet()) {
+                        DataSourceParameter descriptor = entry.getValue();
                         componentParams.add(new Parameter(entry.getKey(),
                                                           descriptor.getType().getName(),
                                                           descriptor.getDefaultValue() != null ? String.valueOf(descriptor.getDefaultValue()) : null,

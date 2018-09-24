@@ -20,7 +20,7 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
-import ro.cs.tao.datasource.param.ParameterDescriptor;
+import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.execution.model.Query;
@@ -59,10 +59,10 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
-    public List<ParameterDescriptor> getSupportedParameters(String sensorName, String dataSourceName) {
-        Map<String, ParameterDescriptor> parameterDescriptorMap =
+    public List<DataSourceParameter> getSupportedParameters(String sensorName, String dataSourceName) {
+        Map<String, DataSourceParameter> parameterDescriptorMap =
                 DataSourceManager.getInstance().getSupportedParameters(sensorName, dataSourceName);
-        List<ParameterDescriptor> parameters = null;
+        List<DataSourceParameter> parameters = null;
         if (parameterDescriptorMap != null) {
             parameters = new ArrayList<>(parameterDescriptorMap.values());
         }
