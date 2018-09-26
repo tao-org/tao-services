@@ -18,8 +18,10 @@ package ro.cs.tao.services.entity.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.Sort;
+import ro.cs.tao.Tag;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.constraints.ConstraintFactory;
+import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
 import ro.cs.tao.component.template.TemplateType;
@@ -133,6 +135,7 @@ public class ComponentServiceImpl
                 return update(component);
             } else {
                 try {
+                    addTagsIfNew(component);
                     return persistenceManager.saveProcessingComponent(component);
                 } catch (PersistenceException e) {
                     logger.severe(e.getMessage());
@@ -146,6 +149,7 @@ public class ComponentServiceImpl
     @Override
     public ProcessingComponent update(ProcessingComponent component) {
         try {
+            addTagsIfNew(component);
             return persistenceManager.updateProcessingComponent(component);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
@@ -182,6 +186,11 @@ public class ComponentServiceImpl
     @Override
     public List<String> getAvailableConstraints() {
         return ConstraintFactory.getAvailableConstraints();
+    }
+
+    @Override
+    public List<Tag> getComponentTags() {
+        return persistenceManager.getComponentTags();
     }
 
     @Override
@@ -313,6 +322,18 @@ public class ComponentServiceImpl
             if (duplicates.size() > 0) {
                 errors.add(String.format("[targets] contain duplicate ids: %s", String.join(",", duplicates)));
                 uniques.clear();
+            }
+        }
+    }
+
+    private void addTagsIfNew(TaoComponent component) {
+        List<String> tags = component.getTags();
+        if (tags != null) {
+            List<Tag> componentTags = persistenceManager.getComponentTags();
+            for (String value : tags) {
+                if (componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
+                    persistenceManager.saveTag(new Tag(TagType.COMPONENT, value));
+                }
             }
         }
     }

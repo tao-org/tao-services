@@ -20,6 +20,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
+import ro.cs.tao.Tag;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
@@ -33,6 +34,7 @@ import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -118,6 +120,15 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             objects = new ArrayList<>();
         }
         return prepareResult(objects);
+    }
+
+    @RequestMapping(value = "/tags", method = RequestMethod.GET)
+    public ResponseEntity<ServiceResponse<?>> listTags() {
+        List<Tag> objects = service.getComponentTags();
+        if (objects == null ) {
+            objects = new ArrayList<>();
+        }
+        return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 
     @RequestMapping(value = "/import", method = RequestMethod.POST, produces = "application/json")

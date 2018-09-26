@@ -17,9 +17,11 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.Tag;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
+import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.beans.Parameter;
@@ -105,6 +107,11 @@ public class WorkflowServiceImpl
     }
 
     @Override
+    public List<Tag> getWorkflowTags() {
+        return persistenceManager.getWorkflowTags();
+    }
+
+    @Override
     public WorkflowDescriptor save(WorkflowDescriptor object) {
         if (object != null) {
             List<WorkflowNodeDescriptor> nodes = object.getNodes();
@@ -114,6 +121,7 @@ public class WorkflowServiceImpl
             }
             validate(object);
             try {
+                addTagsIfNew(object);
                 return persistenceManager.saveWorkflowDescriptor(object);
             } catch (PersistenceException e) {
                 logger.severe(e.getMessage());
@@ -134,6 +142,8 @@ public class WorkflowServiceImpl
         existing.setxCoord(object.getxCoord());
         existing.setyCoord(object.getyCoord());
         existing.setZoom(object.getZoom());
+        existing.setTags(object.getTags());
+        addTagsIfNew(object);
         return persistenceManager.updateWorkflowDescriptor(existing);
     }
 
@@ -516,6 +526,9 @@ public class WorkflowServiceImpl
     public Map<String, List<Parameter>> getWorkflowParameters(long workflowId) {
         Map<String, List<Parameter>> parameters = new LinkedHashMap<>();
         WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        if (workflow == null) {
+            throw new IllegalArgumentException(String.format("Non-existent workflow with id '%s'", workflowId));
+        }
         final List<WorkflowNodeDescriptor> nodes = workflow.getOrderedNodes();
         boolean prefixWithId = false;
         final int size = nodes.size();
@@ -723,6 +736,18 @@ public class WorkflowServiceImpl
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private void addTagsIfNew(WorkflowDescriptor workflow) {
+        List<String> tags = workflow.getTags();
+        if (tags != null) {
+            List<Tag> componentTags = persistenceManager.getComponentTags();
+            for (String value : tags) {
+                if (componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
+                    persistenceManager.saveTag(new Tag(TagType.COMPONENT, value));
                 }
             }
         }
