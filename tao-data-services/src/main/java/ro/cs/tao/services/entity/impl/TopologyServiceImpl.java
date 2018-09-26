@@ -15,9 +15,12 @@
  */
 package ro.cs.tao.services.entity.impl;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.Tag;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
@@ -31,6 +34,9 @@ import java.util.List;
 public class TopologyServiceImpl
     extends EntityService<NodeDescription>
         implements TopologyService {
+
+    @Autowired
+    private PersistenceManager persistenceManager;
 
     @Override
     public NodeDescription findById(String hostName) {
@@ -62,6 +68,11 @@ public class TopologyServiceImpl
     @Override
     public List<Container> getDockerImages() {
         return TopologyManager.getInstance().getAvailableDockerImages();
+    }
+
+    @Override
+    public List<Tag> getNodeTags() {
+        return persistenceManager.getNodeTags();
     }
 
     @Override

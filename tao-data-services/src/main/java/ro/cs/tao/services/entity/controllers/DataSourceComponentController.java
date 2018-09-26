@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
+import ro.cs.tao.Tag;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -33,9 +34,11 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/datasource")
@@ -77,5 +80,14 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         } catch (PersistenceException e) {
             return handleException(e);
         }
+    }
+
+    @RequestMapping(value = "/tags", method = RequestMethod.GET)
+    public ResponseEntity<ServiceResponse<?>> listTags() {
+        List<Tag> objects = service.getDatasourceTags();
+        if (objects == null ) {
+            objects = new ArrayList<>();
+        }
+        return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 }

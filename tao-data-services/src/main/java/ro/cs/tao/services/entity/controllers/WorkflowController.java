@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.BaseException;
+import ro.cs.tao.Tag;
 import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -36,6 +37,7 @@ import ro.cs.tao.workflow.enums.Status;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -87,6 +89,15 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             responseEntity = handleException(e);
         }
         return responseEntity;
+    }
+
+    @RequestMapping(value = "/tags", method = RequestMethod.GET)
+    public ResponseEntity<ServiceResponse<?>> listTags() {
+        List<Tag> objects = service.getWorkflowTags();
+        if (objects == null ) {
+            objects = new ArrayList<>();
+        }
+        return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 
     @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")

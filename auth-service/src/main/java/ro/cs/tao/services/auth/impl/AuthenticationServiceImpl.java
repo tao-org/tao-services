@@ -55,7 +55,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         // check if user is still active in TAO
         final User user = persistenceManager.findUserByUsername(username);
-        if (user != null && user.getStatus().value() == UserStatus.ACTIVE.value()) {
+        if (user != null && user.getStatus() == UserStatus.ACTIVE) {
             // update user last login date
             persistenceManager.updateUserLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
             // retrieve user groups and send them as profiles
