@@ -43,6 +43,8 @@ import ro.cs.tao.services.security.TaoAuthorityGranter;
 import ro.cs.tao.services.security.token.AuthenticationFilter;
 import ro.cs.tao.services.security.token.TokenAuthenticationProvider;
 
+import java.util.logging.Logger;
+
 /**
  * @author Cosmin Cara
  */
@@ -192,7 +194,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     }
 
     private String[] apiEndpointsWithAuthToken() {
-        return new String[]{Endpoints.ADMIN_SERVICE_PATH_EXPRESSION, Endpoints.USER_SERVICE_PATH_EXPRESSION,
+        String[] expressions = Endpoints.endpoints();
+        Logger.getLogger(WebSecurityConfig.class.getName())
+                .fine("Security active for the following endpoints: " + String.join(",", expressions));
+        return expressions;
+        /*return new String[]{Endpoints.ADMIN_SERVICE_PATH_EXPRESSION, Endpoints.USER_SERVICE_PATH_EXPRESSION,
           Endpoints.DATA_QUERY_SERVICE_PATH_EXPRESSION,
           //BaseController.MONITORING_SERVICE_PATH_EXPRESSION,
           Endpoints.COMPONENT_SERVICE_PATH_EXPRESSION,
@@ -202,6 +208,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
           Endpoints.FILES_SERVICE_PATH_EXPRESSION, Endpoints.PRODUCT_SERVICE_PATH_EXPRESSION,
           Endpoints.QUERY_SERVICE_PATH_EXPRESSION, Endpoints.TOPOLOGY_SERVICE_PATH_EXPRESSION,
           Endpoints.WORKFLOW_SERVICE_PATH_EXPRESSION, Endpoints.ORCHESTRATOR_SERVICE_PATH_EXPRESSION,
-          Endpoints.LOGOUT_ENDPOINT};
+          Endpoints.LOGOUT_ENDPOINT};*/
     }
 }
