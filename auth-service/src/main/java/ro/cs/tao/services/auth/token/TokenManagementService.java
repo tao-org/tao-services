@@ -51,7 +51,7 @@ public class TokenManagementService {
     public void store(String token, Authentication authentication) {
         // when storing a new token for a user, make sure to delete existing alive tokens for the same user, if any
         final String username = authentication.getPrincipal().toString();
-        removeUserTokens(username);
+        //removeUserTokens(username);
 
         // store the new token
         authTokenCache.put(new Element(token, authentication));

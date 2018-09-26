@@ -16,6 +16,14 @@
 
 package ro.cs.tao.services.commons;
 
+import org.reflections.Reflections;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
+
 public class Endpoints {
     public static final String LOGIN_ENDPOINT = "/auth/login";
     public static final String LOGIN_ENDPOINT_METHOD = "POST";
@@ -37,4 +45,67 @@ public class Endpoints {
     public static final String ORCHESTRATOR_SERVICE_PATH_EXPRESSION = "/orchestrator/**/*";
     public static final String API_PATH_EXPRESSION = "/api/**/*";
     public static final String GLOBAL_PATH_EXPRESSION = "/**/*";
+
+    public static String[] endpoints() {
+        Set<String> list = new HashSet<>();
+        Set<Class<?>> controllers = new Reflections("ro.cs.tao").getTypesAnnotatedWith(Controller.class);
+        for (Class<?> controller : controllers) {
+            String path;
+            RequestMapping annotation = controller.getAnnotation(RequestMapping.class);
+            if (annotation.value().length > 0) {
+                path = annotation.value()[0];
+                if (!"/user".equals(path)) {
+                    Method[] methods = controller.getDeclaredMethods();
+                    for (Method method : methods) {
+                        RequestMapping mapping = method.getAnnotation(RequestMapping.class);
+                        if (mapping != null &&  mapping.value().length > 0) {
+                            path += mapping.value()[0];
+                        } else {
+                            GetMapping getMapping = method.getAnnotation(GetMapping.class);
+                            if (getMapping != null && getMapping.value().length > 0) {
+                                path += getMapping.value()[0];
+                            } else {
+                                PostMapping postMapping = method.getAnnotation(PostMapping.class);
+                                if (postMapping != null && postMapping.value().length > 0) {
+                                    path += postMapping.value()[0];
+                                } else {
+                                    PutMapping putMapping = method.getAnnotation(PutMapping.class);
+                                    if (putMapping != null && putMapping.value().length > 0) {
+                                        path += putMapping.value()[0];
+                                    } else {
+                                        DeleteMapping deleteMapping = method.getAnnotation(DeleteMapping.class);
+                                        if (deleteMapping != null && deleteMapping.value().length > 0) {
+                                            path += deleteMapping.value()[0];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        list.add(generalizePath(path));
+                    }
+                } else {
+                    // "/user/activate/{username}", "/user/reset/{username}"  should remain free (accessed from activation email)
+                    list.add(path + "/*");
+                }
+
+            }
+        }
+        return list.toArray(new String[0]);
+    }
+
+    private static String generalizePath(String path) {
+        StringBuilder newPath = new StringBuilder();
+        int slashCount = 0;
+        for (int i = 0; i < path.length(); i++) {
+            if (path.charAt(i) == '/') {
+                slashCount++;
+            }
+        }
+        if (slashCount == 1) {
+            newPath.append(path);
+        } else if (slashCount >= 2) {
+            newPath.append(path.substring(0, path.indexOf('/', 1) + 1)).append("*");
+        }
+        return newPath.toString();
+    }
 }

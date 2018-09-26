@@ -68,11 +68,14 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
             // generate and store a new authentication token
             AuthenticationWithToken authenticationWithToken = new AuthenticationWithToken(jaasAuthenticationToken.getPrincipal(), jaasAuthenticationToken.getCredentials(), jaasAuthenticationToken.getAuthorities().stream().collect(Collectors.toList()), jaasAuthenticationToken.getLoginContext());
-            final String newToken = tokenService.generateNewToken();
-            authenticationWithToken.setToken(newToken);
-            tokenService.store(newToken, authenticationWithToken);
+            String token = tokenService.getUserToken(userName);
+            if (token == null) {
+                token = tokenService.generateNewToken();
+            }
+            authenticationWithToken.setToken(token);
+            tokenService.store(token, authenticationWithToken);
 
-            logger.finest("Stored token: " + newToken);
+            logger.finest("Stored token: " + token);
 
             return jaasAuthenticationToken;
         } else {
