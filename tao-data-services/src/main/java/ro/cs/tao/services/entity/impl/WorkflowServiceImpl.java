@@ -526,6 +526,9 @@ public class WorkflowServiceImpl
     public Map<String, List<Parameter>> getWorkflowParameters(long workflowId) {
         Map<String, List<Parameter>> parameters = new LinkedHashMap<>();
         WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        if (workflow == null) {
+            throw new IllegalArgumentException(String.format("Non-existent workflow with id '%s'", workflowId));
+        }
         final List<WorkflowNodeDescriptor> nodes = workflow.getOrderedNodes();
         boolean prefixWithId = false;
         final int size = nodes.size();
