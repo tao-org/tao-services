@@ -20,8 +20,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import ro.cs.tao.Tag;
 import ro.cs.tao.component.Identifiable;
 import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
@@ -102,6 +104,11 @@ public class TaoServicesStartup extends StartupBase {
                 String masterHost = InetAddress.getLocalHost().getHostName();
                 NodeDescription master = persistenceManager.getNodeByHostName(masterHost);
                 if (master == null) {
+                    Tag masterTag = new Tag(TagType.TOPOLOGY_NODE, "master");
+                    Tag procTag = new Tag(TagType.TOPOLOGY_NODE,
+                                          String.valueOf(Runtime.getRuntime().availableProcessors()) + " processors");
+                    persistenceManager.saveTag(masterTag);
+                    persistenceManager.saveTag(procTag);
                     master = new NodeDescription();
                     master.setId(masterHost);
                     OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(master);
@@ -115,6 +122,8 @@ public class TaoServicesStartup extends StartupBase {
                     master.setDiskSpaceSizeGB((int) inspector.getTotalDiskGB());
                     master.setMemorySizeGB((int) inspector.getTotalMemoryMB() / 1024);
                     master.setActive(true);
+                    master.addTag(masterTag.getText());
+                    master.addTag(procTag.getText());
                     persistenceManager.saveExecutionNode(master);
                     persistenceManager.removeExecutionNode(node.getId());
                     logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
@@ -149,13 +158,27 @@ public class TaoServicesStartup extends StartupBase {
                     .stream()
                     .map(Identifiable::getId)
                     .collect(Collectors.toSet());
+            List<Tag> tags = persistenceManager.getDatasourceTags();
+            if (tags == null) {
+                tags = new ArrayList<>();
+            }
             String componentId;
             List<String> newDs = null;
             for (String sensor : sensors) {
+                Tag sensorTag = tags.stream().filter(t -> t.getText().equalsIgnoreCase(sensor)).findFirst().orElse(null);
+                if (sensorTag == null) {
+                    sensorTag = persistenceManager.saveTag(new Tag(TagType.DATASOURCE, sensor));
+                    tags.add(sensorTag);
+                }
                 List<String> dsNames = DataSourceManager.getInstance().getNames(sensor);
                 for (String dsName : dsNames) {
                     componentId = sensor + "-" + dsName;
                     if (!existing.contains(componentId)) {
+                        Tag dsNameTag = tags.stream().filter(t -> t.getText().equalsIgnoreCase(dsName)).findFirst().orElse(null);
+                        if (dsNameTag == null) {
+                            dsNameTag = persistenceManager.saveTag(new Tag(TagType.DATASOURCE, dsName));
+                            tags.add(dsNameTag);
+                        }
                         DataSourceComponent dataSourceComponent = new DataSourceComponent(sensor, dsName);
                         dataSourceComponent.setFetchMode(FetchMode.OVERWRITE);
                         dataSourceComponent.setLabel(sensor + " from " + dsName);
@@ -165,6 +188,8 @@ public class TaoServicesStartup extends StartupBase {
                         dataSourceComponent.setCopyright("(C) TAO Team");
                         dataSourceComponent.setNodeAffinity("Any");
                         dataSourceComponent.setSystem(true);
+                        dataSourceComponent.addTags(sensorTag.getText());
+                        dataSourceComponent.addTags(dsNameTag.getText());
                         try {
                             dataSourceComponent = persistenceManager.saveDataSourceComponent(dataSourceComponent);
                             if (newDs == null) {

@@ -19,6 +19,9 @@ package ro.cs.tao.services.entity.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.Sort;
+import ro.cs.tao.Tag;
+import ro.cs.tao.component.TaoComponent;
+import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.eodata.EOData;
 import ro.cs.tao.eodata.EOProduct;
@@ -65,8 +68,14 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
+    public List<Tag> getDatasourceTags() {
+        return persistenceManager.getDatasourceTags();
+    }
+
+    @Override
     public DataSourceComponent save(DataSourceComponent object) {
         try {
+            addTagsIfNew(object);
             return persistenceManager.saveDataSourceComponent(object);
         } catch (PersistenceException e) {
             throw new RuntimeException(e.getMessage());
@@ -115,5 +124,17 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             throw new PersistenceException(e);
         }
         return userDSC;
+    }
+
+    private void addTagsIfNew(TaoComponent component) {
+        List<String> tags = component.getTags();
+        if (tags != null) {
+            List<Tag> componentTags = persistenceManager.getComponentTags();
+            for (String value : tags) {
+                if (componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
+                    persistenceManager.saveTag(new Tag(TagType.COMPONENT, value));
+                }
+            }
+        }
     }
 }
