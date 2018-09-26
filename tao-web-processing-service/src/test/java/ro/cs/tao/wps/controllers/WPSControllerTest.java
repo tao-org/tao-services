@@ -2,25 +2,24 @@ package ro.cs.tao.wps.controllers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
+import ro.cs.tao.services.model.workflow.WorkflowInfo;
+
+import java.util.List;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = RANDOM_PORT)
 public class WPSControllerTest {
 
     @Autowired
-    private WebTestClient webClient;
+    private TestRestTemplate restTemplate;
 
     @Before
     public void setUp() throws Exception {
@@ -33,7 +32,7 @@ public class WPSControllerTest {
     @Test
     public void getCapabilities() throws Exception {
         //execution
-        final WebTestClient.ResponseSpec mvcResult = webClient.get().uri("/wps/getCapabilities").exchange();
+        final ResponseEntity<List<WorkflowInfo>> mvcResult = restTemplate.getForObject("/wps/getCapabilities", ResponseEntity.class);
 
         //verification
         assertThat(mvcResult).isNotNull();

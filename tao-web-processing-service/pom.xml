@@ -50,6 +50,11 @@
               <version>${spring.boot.version}</version>
               <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.bc.wps</groupId>
+            <artifactId>bc-wps-impl</artifactId>
+            <version>1.4-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
