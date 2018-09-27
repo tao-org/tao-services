@@ -99,6 +99,10 @@ public abstract class ControllerBase {
         return new ResponseEntity<>(new ServiceResponse<>(result), httpStatus);
     }
 
+    protected <T> ResponseEntity<ServiceResponse<?>> prepareResult(T result, String message) {
+        return new ResponseEntity<>(new ServiceResponse<>(result, message, ResponseStatus.SUCCEEDED), HttpStatus.OK);
+    }
+
     protected ResponseEntity<ServiceResponse<?>> prepareResult(String message, ResponseStatus status) {
         return new ResponseEntity<>(new ServiceResponse<>(message, status),
                                     HttpStatus.OK);
@@ -106,6 +110,11 @@ public abstract class ControllerBase {
 
     protected ResponseEntity<ServiceResponse<?>> prepareResult(String message, ResponseStatus status, HttpStatus httpStatus) {
         return new ResponseEntity<>(new ServiceResponse<>(message, status), httpStatus);
+    }
+
+    protected <T> ResponseEntity<ServiceResponse<?>> prepareResult(T result, String message,
+                                                                   ResponseStatus status, HttpStatus httpStatus) {
+        return new ResponseEntity<>(new ServiceResponse<>(result, message, status), httpStatus);
     }
 
     protected ResponseEntity<ServiceResponse<?>> handleException(Exception ex) {
