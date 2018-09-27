@@ -27,11 +27,15 @@ public class ServiceResponse<T> {
     }
 
     public ServiceResponse(T data, ResponseStatus status) {
-        this.data = data;
-        this.status = status;
+        this(data, null, status);
     }
 
     public ServiceResponse(String message, ResponseStatus status) {
+        this(null, message, status);
+    }
+
+    public ServiceResponse(T data, String message, ResponseStatus status) {
+        this.data = data;
         this.message = message;
         this.status = status;
     }
