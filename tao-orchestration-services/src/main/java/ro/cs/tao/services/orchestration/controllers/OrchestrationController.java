@@ -47,7 +47,7 @@ public class OrchestrationController extends BaseController {
                                                     @RequestBody Map<String, Map<String, String>> input) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            response = prepareResult(orchestrationService.startWorkflow(workflowId, input));
+            response = prepareResult(orchestrationService.startWorkflow(workflowId, input), "Execution started");
         } catch (ExecutionException ex) {
             response = handleException(ex);
         }
