@@ -747,7 +747,7 @@ public class WorkflowServiceImpl
             List<Tag> componentTags = persistenceManager.getComponentTags();
             for (String value : tags) {
                 if (componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
-                    persistenceManager.saveTag(new Tag(TagType.COMPONENT, value));
+                    persistenceManager.saveTag(new Tag(TagType.WORKFLOW, value));
                 }
             }
         }
