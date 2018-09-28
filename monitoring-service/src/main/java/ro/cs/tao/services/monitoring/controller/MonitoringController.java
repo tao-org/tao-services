@@ -26,6 +26,8 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.MonitoringService;
 import ro.cs.tao.services.model.monitoring.RuntimeInfo;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -44,7 +46,7 @@ public class MonitoringController extends BaseController {
         if (snapshot == null) {
             return prepareResult("No information available for master node", ResponseStatus.FAILED);
         }
-        return prepareResult(snapshot);
+        return prepareResult(snapshot, LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm:ss")));
     }
 
     @RequestMapping(value = "/{host:.+}", method = RequestMethod.GET)
