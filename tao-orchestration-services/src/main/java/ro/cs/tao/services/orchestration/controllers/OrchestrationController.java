@@ -54,10 +54,19 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
-    @RequestMapping(value = "/start/parameters/{id}", method = RequestMethod.GET)
-    public ResponseEntity<ServiceResponse<?>> start(@PathVariable("id") long workflowId) {
+    @RequestMapping(value = "/parameters/{id}", method = RequestMethod.GET)
+    public ResponseEntity<ServiceResponse<?>> getWorkflowParameters(@PathVariable("id") long workflowId) {
         try {
             return prepareResult(orchestrationService.getWorkflowParameters(workflowId));
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    @RequestMapping(value = "/outputs/{id}", method = RequestMethod.GET)
+    public ResponseEntity<ServiceResponse<?>> getWorkflowOutputs(@PathVariable("id") long workflowId) {
+        try {
+            return prepareResult(orchestrationService.getWorkflowOutputs(workflowId));
         } catch (Exception ex) {
             return handleException(ex);
         }

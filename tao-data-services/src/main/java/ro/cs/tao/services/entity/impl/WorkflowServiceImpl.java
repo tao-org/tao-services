@@ -609,6 +609,26 @@ public class WorkflowServiceImpl
         return parameters;
     }
 
+    @Override
+    public List<TargetDescriptor> getWorkflowOutputs(long workflowId) {
+        WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        if (workflow == null) {
+            throw new IllegalArgumentException(String.format("Non-existent workflow with id '%s'", workflowId));
+        }
+        final List<TargetDescriptor> targetDescriptors = new ArrayList<>();
+        final List<WorkflowNodeDescriptor> nodes = workflow.findLeaves(workflow.getOrderedNodes());
+        if (nodes != null) {
+            for (WorkflowNodeDescriptor node : nodes) {
+                TaoComponent component = componentService.findComponent(node.getComponentId(), node.getComponentType());
+                if (component != null) {
+                    targetDescriptors.addAll(component.getTargets());
+                }
+            }
+        }
+
+        return targetDescriptors;
+    }
+
     private TargetDescriptor findTarget(String id, WorkflowNodeDescriptor nodeDescriptor) throws PersistenceException {
         TaoComponent component = componentService.findComponent(nodeDescriptor.getComponentId(), nodeDescriptor.getComponentType());
         return component != null ?
@@ -752,7 +772,7 @@ public class WorkflowServiceImpl
             List<Tag> componentTags = persistenceManager.getComponentTags();
             for (String value : tags) {
                 if (componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
-                    persistenceManager.saveTag(new Tag(TagType.COMPONENT, value));
+                    persistenceManager.saveTag(new Tag(TagType.WORKFLOW, value));
                 }
             }
         }
