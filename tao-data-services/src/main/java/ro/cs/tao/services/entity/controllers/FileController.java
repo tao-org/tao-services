@@ -351,6 +351,8 @@ public class FileController extends BaseController {
             responseEntity = ResponseEntity.ok()
                                            .header(HttpHeaders.CONTENT_DISPOSITION,
                                                    "attachment; filename=\"" + file.getFilename() + "\"")
+                                           .contentLength(file.contentLength())
+                                           .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
                                            .body(file);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
