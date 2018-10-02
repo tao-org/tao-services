@@ -22,6 +22,7 @@ import org.springframework.security.concurrent.DelegatingSecurityContextExecutor
 import org.springframework.security.concurrent.DelegatingSecurityContextRunnable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJob;
@@ -67,6 +68,11 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         } else {
             return MockData.getMockParameters().get(workflowId);
         }
+    }
+
+    @Override
+    public List<TargetDescriptor> getWorkflowOutputs(long workflowId) {
+        throw new RuntimeException("not implemented");
     }
 
     @Override

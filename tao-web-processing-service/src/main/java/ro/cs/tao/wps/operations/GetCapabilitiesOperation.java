@@ -1,38 +1,20 @@
 package ro.cs.tao.wps.operations;
 
 import com.bc.wps.api.WpsRequestContext;
-import com.bc.wps.api.schema.AddressType;
-import com.bc.wps.api.schema.Capabilities;
-import com.bc.wps.api.schema.CodeType;
-import com.bc.wps.api.schema.ContactType;
-import com.bc.wps.api.schema.DCP;
-import com.bc.wps.api.schema.HTTP;
-import com.bc.wps.api.schema.LanguageStringType;
-import com.bc.wps.api.schema.Languages;
-import com.bc.wps.api.schema.LanguagesType;
-import com.bc.wps.api.schema.OnlineResourceType;
-import com.bc.wps.api.schema.Operation;
-import com.bc.wps.api.schema.OperationsMetadata;
-import com.bc.wps.api.schema.ProcessBriefType;
-import com.bc.wps.api.schema.ProcessOfferings;
-import com.bc.wps.api.schema.RequestMethodType;
-import com.bc.wps.api.schema.ResponsiblePartySubsetType;
-import com.bc.wps.api.schema.ServiceIdentification;
-import com.bc.wps.api.schema.ServiceProvider;
-import com.bc.wps.api.schema.TelephoneType;
+import com.bc.wps.api.schema.*;
 import com.bc.wps.api.utils.CapabilitiesBuilder;
 import com.bc.wps.api.utils.WpsTypeConverter;
 import com.bc.wps.utilities.PropertiesWrapper;
-import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.services.entity.impl.WorkflowServiceImpl;
+import ro.cs.tao.services.interfaces.OrchestratorService;
+import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.services.model.workflow.WorkflowInfo;
+import ro.cs.tao.workflow.WorkflowDescriptor;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -43,12 +25,13 @@ public class GetCapabilitiesOperation {
 
     final WpsRequestContext wpsRequestContext;
     final Logger logger = Logger.getLogger(this.getClass().getName());
+    WorkflowService workflowService = new WorkflowServiceImpl();
 
     public GetCapabilitiesOperation(WpsRequestContext context) throws IOException {
         wpsRequestContext = context;
     }
 
-    public Capabilities getCapabilities() throws IOException, URISyntaxException {
+    public Capabilities getCapabilities() throws IOException, URISyntaxException, PersistenceException {
         logger.info("GetCapabilities for user " + wpsRequestContext.getUserName());
         return CapabilitiesBuilder.create()
                     .withOperationsMetadata(getOperationsMetadata())
@@ -132,14 +115,10 @@ public class GetCapabilitiesOperation {
         return serviceProvider;
     }
 
-    ProcessOfferings getProcessOfferings() throws IOException, URISyntaxException {
+    ProcessOfferings getProcessOfferings() throws IOException, URISyntaxException, PersistenceException {
         ProcessOfferings processOfferings = new ProcessOfferings();
-        List<ProcessBriefType> calvalusProcesses = getCalvalusProcesses();
-        processOfferings.getProcess().addAll(calvalusProcesses);
-        List<ProcessBriefType> localProcesses = getLocalProcesses();
-        if (!localProcesses.isEmpty()) {
-            processOfferings.getProcess().addAll(localProcesses);
-        }
+        List<ProcessBriefType> taoProcesses = getTaoProcesses();
+        processOfferings.getProcess().addAll(taoProcesses);
         return processOfferings;
     }
 
@@ -197,53 +176,19 @@ public class GetCapabilitiesOperation {
         return describeProcessDcp;
     }
 
-    private List<ProcessBriefType> getLocalProcesses() throws URISyntaxException, IOException {
-        List<ProcessBriefType> localProcessList = new ArrayList<>();
-        URL descriptorDirUrl = this.getClass().getResource("/local-process-descriptor");
-        if (descriptorDirUrl == null) {
-            return localProcessList;
-        }
-        URI descriptorDirUri = descriptorDirUrl.toURI();
-        File descriptorDirectory = Paths.get(descriptorDirUri).toFile();
-        File[] descriptorFiles = descriptorDirectory.listFiles();
-        if (descriptorFiles != null) {
-            for (File descriptorFile : descriptorFiles) {
-                FileInputStream fileInputStream = new FileInputStream(descriptorFile);
-                String bundleDescriptorXml = IOUtils.toString(fileInputStream);
-// @todo uncomment and implement
-//                ParameterBlockConverter parameterBlockConverter = new ParameterBlockConverter();
-//                BundleDescriptor bundleDescriptor = new BundleDescriptor();
-//                parameterBlockConverter.convertXmlToObject(bundleDescriptorXml, bundleDescriptor);
-//                ProcessorDescriptor[] processorDescriptors = bundleDescriptor.getProcessorDescriptors();
-//
-//                for (ProcessorDescriptor processorDescriptor : processorDescriptors) {
-//                    WpsProcess process = new CalvalusProcessor(bundleDescriptor, processorDescriptor);
-//                    ProcessBriefType localSubsetProcessor = new ProcessBriefType();
-//                    localSubsetProcessor.setIdentifier(WpsTypeConverter.str2CodeType(process.getIdentifier()));
-//                    localSubsetProcessor.setTitle(WpsTypeConverter.str2LanguageStringType(process.getTitle()));
-//                    localSubsetProcessor.setAbstract(WpsTypeConverter.str2LanguageStringType(
-//                                process.getAbstractText() == null ? process.getTitle() : process.getAbstractText()));
-//                    localSubsetProcessor.setProcessVersion(process.getVersion());
-//                    localProcessList.add(localSubsetProcessor);
-//                }
-            }
-        }
-        return localProcessList;
-    }
+    private List<ProcessBriefType> getTaoProcesses() throws PersistenceException {
+        List<WorkflowInfo> workflows = workflowService.getPublicWorkflows();
 
-    private List<ProcessBriefType> getCalvalusProcesses() {
-// @todo uncomment and implement
-//        List<WpsProcess> processList = calvalusFacade.getProcessors();
         ProcessOfferings processOfferings = new ProcessOfferings();
-// @todo uncomment and implement
-//        for (WpsProcess process : processList) {
-//            ProcessBriefType singleProcessor = new ProcessBriefType();
-//            singleProcessor.setIdentifier(WpsTypeConverter.str2CodeType(process.getIdentifier()));
-//            singleProcessor.setTitle(WpsTypeConverter.str2LanguageStringType(process.getTitle()));
-//            singleProcessor.setAbstract(WpsTypeConverter.str2LanguageStringType(process.getAbstractText()));
-//            singleProcessor.setProcessVersion(process.getVersion());
-//            processOfferings.getProcess().add(singleProcessor);
-//        }
+        for (WorkflowInfo workflow : workflows) {
+            ProcessBriefType singleProcess = new ProcessBriefType();
+            final String workflowId = workflow.getId().toString();
+            singleProcess.setIdentifier(WpsTypeConverter.str2CodeType(workflowId));
+            singleProcess.setTitle(WpsTypeConverter.str2LanguageStringType(workflow.getName()));
+//            singleProcess.setAbstract(WpsTypeConverter.str2LanguageStringType(process.getAbstractText()));
+//            singleProcess.setProcessVersion(process.getVersion());
+            processOfferings.getProcess().add(singleProcess);
+        }
         return processOfferings.getProcess();
     }
 }

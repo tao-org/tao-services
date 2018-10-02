@@ -16,7 +16,7 @@
 
 package ro.cs.tao.wps.controllers;
 
-import com.bc.wps.WpsFrontend;
+import com.bc.wps.WpsFrontendConnector;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -44,36 +44,35 @@ import java.util.logging.Logger;
 @RequestMapping("/wps")
 public class WPSController extends BaseController {
 
-    private WebProcessingServiceImpl wps = new WebProcessingServiceImpl();
-    private WpsFrontend wpsFrontend = new WpsFrontend();
+//    private WebProcessingServiceImpl wps = new WebProcessingServiceImpl();
+    private WpsFrontendConnector wpsFrontendConnector = new WpsFrontendConnector();
     private Logger logger = Logger.getLogger(this.getClass().getName());
 
     //    @GetMapping(headers = {"Accept:text/html,application/xhtml+xml,application/xml"})
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<?> getCap(@RequestParam("Service") final String service,
-                                    @RequestParam("Request") final String requestType,
-                                    @RequestParam(value = "AcceptVersions",required = false) final String acceptedVersion,
-                                    @RequestParam(value = "Language", required = false) final String language,
-                                    @RequestParam(value = "Identifier", required = false) final String processId,
-                                    @RequestParam(value = "Version", required = false) final String version,
-                                    @RequestParam(value = "JobId", required = false) final String jobId,
-                                    HttpServletRequest httpRequest, HttpServletResponse response) {
+    public ResponseEntity<?> requestGet(@RequestParam("Service") final String service,
+                                        @RequestParam("Request") final String requestType,
+                                        @RequestParam(value = "AcceptVersions",required = false) final String acceptedVersion,
+                                        @RequestParam(value = "Language", required = false) final String language,
+                                        @RequestParam(value = "Identifier", required = false) final String processId,
+                                        @RequestParam(value = "Version", required = false) final String version,
+                                        @RequestParam(value = "JobId", required = false) final String jobId,
+                                        HttpServletRequest httpRequest, HttpServletResponse response) {
         if (!isWPS(service)) {
             return serviceUnavailable(service, "No such Service: ");
         }
         final String applicationName = "TAO";
-        if ("GetCapabilities".equals(requestType)) {
+        if ("GetCapabilities".equals(requestType) || "DescribeProcess".equals(requestType)) {
             try {
-                final String wpsService = wpsFrontend.getWpsService(applicationName, service, requestType, acceptedVersion, language, processId, version, jobId, httpRequest);
+                // @todo discuss with Norman ... these parameters are not needed if httpRequest is a parameter
+                final String wpsService = wpsFrontendConnector.getWpsService(applicationName, service, requestType, acceptedVersion, language, processId, version, jobId, httpRequest);
                 writeToResponce(response, wpsService);
                 return ResponseEntity.accepted().build();
             } catch (IOException e) {
-                final String msg = "IO Exception while writing response";
+                final String msg = "IO Exception while writing response.";
                 logger.log(Level.SEVERE, msg, e);
                 return new ResponseEntity<>(msg, HttpStatus.SERVICE_UNAVAILABLE);
             }
-        } else if ("DescribeProcess".equals(requestType)) {
-            return describeProcess(Long.parseLong(jobId));
         } else {
             return serviceUnavailable(requestType, "Unknown request type: ");
         }
@@ -81,8 +80,7 @@ public class WPSController extends BaseController {
 
     private void writeToResponce(HttpServletResponse response, String wpsService) throws IOException {
             final PrintWriter writer = response.getWriter();
-            // throw new IOException("test");
-            writer.write(wpsService);
+            writer.print(wpsService);
             response.setContentType(MediaType.APPLICATION_XML_VALUE);
             response.setDateHeader("Date", new Date().getTime());
             response.setHeader(HttpHeaders.TRANSFER_ENCODING, "chunked");
@@ -95,11 +93,12 @@ public class WPSController extends BaseController {
 
     //    @RequestMapping(value = "/describeProcess", method = RequestMethod.GET)
     public ResponseEntity<?> describeProcess(@RequestParam("id") long id) {
-        return new ResponseEntity<>(wps.describeProcess(id), HttpStatus.OK);
+//        return new ResponseEntity<>(wps.describeProcess(id), HttpStatus.OK);
+        return null;
     }
 
     @PostMapping
-    public ResponseEntity<?> execute(@RequestBody ExecutionRequest executionRequest) {
+    public ResponseEntity<?> requestPost(@RequestBody ExecutionRequest executionRequest) {
         long workflowId = executionRequest.getWorkflowId();
         Map<String, Map<String, String>> parameters = executionRequest.getParameters();
         long result = 289137689175L;
@@ -108,7 +107,7 @@ public class WPSController extends BaseController {
     }
 
     private ResponseEntity<String> serviceUnavailable(String service, String prefix) {
-        return new ResponseEntity<>(prefix + service, HttpStatus.SERVICE_UNAVAILABLE);
+        return new ResponseEntity<>(prefix + "\"" + service + "\"", HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     private boolean isWPS(@RequestParam("Service") String service) {
