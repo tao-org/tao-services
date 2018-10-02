@@ -17,17 +17,18 @@
 package ro.cs.tao.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.*;
 
 import java.util.List;
 
+@EnableWebMvc
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -42,7 +43,19 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addViewController("/").setViewName("forward:/ui/login.html");
     }
 
-    public MappingJackson2HttpMessageConverter jacksonMessageConverter(){
+    @Override
+    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+        //Here we add our custom-configured HttpMessageConverter
+        converters.add(jacksonMessageConverter());
+        converters.add(new ResourceHttpMessageConverter());
+    }
+
+    @Override
+    public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+        configurer.favorPathExtension(false);
+    }
+
+    private MappingJackson2HttpMessageConverter jacksonMessageConverter(){
         MappingJackson2HttpMessageConverter messageConverter = new MappingJackson2HttpMessageConverter();
         ObjectMapper mapper = new ObjectMapper();
         //Registering Hibernate5Module to support lazy objects
@@ -51,14 +64,8 @@ public class WebConfig implements WebMvcConfigurer {
         hibernate5Module.enable(Hibernate5Module.Feature.FORCE_LAZY_LOADING);
         mapper.registerModule(hibernate5Module);
         mapper.registerModule(new JavaTimeModule());
-        //mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         messageConverter.setObjectMapper(mapper);
         return messageConverter;
-    }
-
-    @Override
-    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        //Here we add our custom-configured HttpMessageConverter
-        converters.add(jacksonMessageConverter());
     }
 }
