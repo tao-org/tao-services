@@ -20,9 +20,14 @@ import com.bc.wps.api.WpsRequestContext;
 import com.bc.wps.api.WpsServiceInstance;
 import com.bc.wps.api.exceptions.WpsServiceException;
 import com.bc.wps.api.schema.Capabilities;
+import com.bc.wps.api.schema.CodeType;
 import com.bc.wps.api.schema.Execute;
 import com.bc.wps.api.schema.ExecuteResponse;
+import com.bc.wps.api.schema.LanguageStringType;
+import com.bc.wps.api.schema.OutputDescriptionType;
 import com.bc.wps.api.schema.ProcessDescriptionType;
+import com.bc.wps.api.schema.SupportedComplexDataType;
+import com.bc.wps.api.schema.ValueType;
 import com.bc.wps.api.utils.InputDescriptionTypeBuilder;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -32,6 +37,7 @@ import ro.cs.tao.wps.operations.GetCapabilitiesOperation;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -100,13 +106,37 @@ public class WebProcessingServiceImpl implements WpsServiceInstance /*, WebProce
                         .withDataType(parameterType);
 
                 if (valueSet != null) {
-                    builder = builder.withAllowedValues(valueSet);
+                    final ArrayList<Object> strings = new ArrayList<>();
+                    for (Object s: valueSet) {
+                        final ValueType valueType = new ValueType();
+                        valueType.setValue((String) s);
+                        strings.add(valueType);
+                    }
+                    builder = builder.withAllowedValues(strings);
                 }
                 dataInputs.getInput().add(builder.build());
             }
         }
+        final CodeType identifier = new CodeType();
+        identifier.setValue(processIdentifier);
+
+        final LanguageStringType title = new LanguageStringType();
+        title.setValue("TAO Workflow ... " + processIdentifier);
+
+        final SupportedComplexDataType complexOutput = new SupportedComplexDataType();
+
+        final OutputDescriptionType outputDescription = new OutputDescriptionType();
+        outputDescription.setComplexOutput(complexOutput);
+
+        final ProcessDescriptionType.ProcessOutputs processOutputs = new ProcessDescriptionType.ProcessOutputs();
+        processOutputs.getOutput().add(outputDescription);
+
         final ProcessDescriptionType processDescription = new ProcessDescriptionType();
+        processDescription.setIdentifier(identifier);
+        processDescription.setTitle(title);
+        processDescription.setProcessVersion("na");
         processDescription.setDataInputs(dataInputs);
+        processDescription.setProcessOutputs(processOutputs);
         return Collections.singletonList(processDescription);
 
 //        final ProcessDescriptionType.ProcessOutputs outputs = new ProcessDescriptionType.ProcessOutputs();
