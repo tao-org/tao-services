@@ -46,7 +46,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 //@Service("webProcessingService")
-public class WebProcessingServiceImpl implements WpsServiceInstance /*, WebProcessingService */ {
+public class WebProcessingServiceImpl implements WpsServiceInstance /*, WebProcessingService */{
 
     private OrchestratorService orchestratorService = new OrchestrationServiceImpl();
 
@@ -146,6 +146,51 @@ public class WebProcessingServiceImpl implements WpsServiceInstance /*, WebProce
 //            throw new WpsServiceException("Unable to describe process for process identifier '"+processIdentifier+"'", e);
 //        }
     }
+
+/*
+    public List<ProcessDescriptionType> describeProcess(WpsRequestContext wpsRequestContext, String processIdentifier) throws WpsServiceException {
+        final Map<String, List<Parameter>> parameters = orchestratorService.getWorkflowParameters(Long.parseLong(processIdentifier));
+
+        final ProcessDescriptionType.DataInputs dataInputs = new ProcessDescriptionType.DataInputs();
+
+        for (Map.Entry<String, List<Parameter>> mapEntry : parameters.entrySet()) {
+            final String groupName = mapEntry.getKey();
+            final List groupParameterList = mapEntry.getValue();
+//            final List<Parameter> groupParameterList = mapEntry.getValue();
+            for (int i = 0; i < groupParameterList.size(); i++) {
+                Map groupParameter = (Map) groupParameterList.get(i);
+
+//            for (Parameter groupParameter : groupParameterList) {
+                final String parameterName = (String) groupParameter.get("name");
+                final String parameterType = (String) groupParameter.get("type");
+                final List valueSet = (List) groupParameter.get("valueSet");
+//                final String parameterName = groupParameter.getName();
+//                final String parameterType = groupParameter.getType();
+//                final String[] valueSet = groupParameter.getValueSet();
+                InputDescriptionTypeBuilder builder = InputDescriptionTypeBuilder.create()
+                        .withIdentifier(groupName + "~" + parameterName)
+                        .withTitle("Param '" + parameterName + "' of group '" + groupName + "'.")
+                        .withAbstract("The parameter '" + parameterName + "' of parametergroup '" + groupName + "'.")
+                        .withDataType(parameterType);
+
+                if (valueSet != null) {
+                    builder = builder.withAllowedValues(valueSet);
+                }
+                dataInputs.getInput().add(builder.build());
+            }
+        }
+        final ProcessDescriptionType processDescription = new ProcessDescriptionType();
+        processDescription.setDataInputs(dataInputs);
+        return Collections.singletonList(processDescription);
+
+//        final ProcessDescriptionType.ProcessOutputs outputs = new ProcessDescriptionType.ProcessOutputs();
+//        description.setProcessOutputs(outputs);
+//
+//        } catch (PersistenceException e) {
+//            throw new WpsServiceException("Unable to describe process for process identifier '"+processIdentifier+"'", e);
+//        }
+    }
+*/
 
     @Override
     public ExecuteResponse doExecute(WpsRequestContext context, Execute executeRequest) throws WpsServiceException {
