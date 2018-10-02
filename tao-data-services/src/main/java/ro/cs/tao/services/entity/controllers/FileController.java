@@ -20,9 +20,13 @@ import com.google.common.net.HttpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
@@ -56,7 +60,7 @@ public class FileController extends BaseController {
     @Autowired
     private PersistenceManager persistenceManager;
 
-    @GetMapping("/user/uploaded")
+    @RequestMapping(value = "/user/uploaded/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -81,7 +85,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @GetMapping("/user/")
+    @RequestMapping(value = "/user/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> list() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -148,7 +152,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @GetMapping("/user/output")
+    @RequestMapping(value = "/user/output", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listOutputs(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -222,7 +226,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @GetMapping("/public/uploaded")
+    @RequestMapping(value = "/public/uploaded/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> listPublicFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -247,7 +251,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @GetMapping("/public/")
+    @RequestMapping(value = "/public/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listAllPublic() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -312,7 +316,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @PostMapping("/")
+    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
     @ResponseBody
     public ResponseEntity<ServiceResponse<?>> toggleVisibility(@RequestParam("folder") String folder,
                                               @RequestParam("visibility") Visibility visibility) {
@@ -342,23 +346,23 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @GetMapping("/")
-    @ResponseBody
-    public ResponseEntity<?> download(@RequestParam("fileName") String fileName) {
+    @RequestMapping(value = "/download", method = RequestMethod.GET, produces = { "application/octet-stream", "application/json" } )
+    public @ResponseBody ResponseEntity<?> download(@RequestParam("fileName") String fileName) {
         ResponseEntity<?> responseEntity;
         try {
             Resource file = loadAsResource(fileName);
-            responseEntity = ResponseEntity.ok()
-                                           .header(HttpHeaders.CONTENT_DISPOSITION,
-                                                   "attachment; filename=\"" + file.getFilename() + "\"")
-                                           .body(file);
+            responseEntity =  ResponseEntity.ok()
+                                .contentLength(file.contentLength())
+                                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename())
+                                .body(file);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
         return responseEntity;
     }
 
-    @GetMapping("/preview")
+    @RequestMapping(value = "/preview", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> downloadPreview(@RequestParam("fileName") String fileName) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -371,7 +375,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @PostMapping("/upload")
+    @RequestMapping(value = "/upload", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file,
                                     @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -384,7 +388,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @DeleteMapping("/")
+    @RequestMapping(value = "/", method = RequestMethod.DELETE, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("fileName") String fileName) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {

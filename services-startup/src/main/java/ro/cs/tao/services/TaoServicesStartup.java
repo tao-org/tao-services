@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.Identifiable;
 import ro.cs.tao.component.SystemVariable;
@@ -60,6 +61,7 @@ import java.util.stream.Collectors;
 
 @SpringBootApplication
 @EnableScheduling
+@EnableWebMvc
 public class TaoServicesStartup extends StartupBase {
     private final static Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
 
