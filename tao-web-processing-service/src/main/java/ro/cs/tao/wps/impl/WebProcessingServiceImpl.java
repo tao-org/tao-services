@@ -20,46 +20,41 @@ import com.bc.wps.api.WpsRequestContext;
 import com.bc.wps.api.WpsServiceInstance;
 import com.bc.wps.api.exceptions.WpsServiceException;
 import com.bc.wps.api.schema.Capabilities;
-import com.bc.wps.api.schema.ContactType;
 import com.bc.wps.api.schema.Execute;
 import com.bc.wps.api.schema.ExecuteResponse;
-import com.bc.wps.api.schema.OnlineResourceType;
 import com.bc.wps.api.schema.ProcessDescriptionType;
-import com.bc.wps.api.schema.ResponsiblePartySubsetType;
-import com.bc.wps.api.schema.ServiceProvider;
+import com.bc.wps.api.utils.InputDescriptionTypeBuilder;
 import ro.cs.tao.datasource.beans.Parameter;
-import ro.cs.tao.services.entity.impl.WorkflowServiceImpl;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.OrchestratorService;
-import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.orchestration.impl.OrchestrationServiceImpl;
 import ro.cs.tao.wps.operations.GetCapabilitiesOperation;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 //@Service("webProcessingService")
-public class WebProcessingServiceImpl implements WpsServiceInstance /*, WebProcessingService */{
+public class WebProcessingServiceImpl implements WpsServiceInstance /*, WebProcessingService */ {
 
-//    @Autowired
-    private WorkflowService workflowService = new WorkflowServiceImpl();
-
-//    @Autowired
     private OrchestratorService orchestratorService = new OrchestrationServiceImpl();
 
     private Logger logger = Logger.getLogger(this.getClass().getName());
 
-//    @Override
+    //    @Override
 //    public List<WorkflowInfo> getCapabilities() {
 //        return workflowService.getPublicWorkflows();
 //    }
 //
 //    @Override
     public Map<String, List<Parameter>> describeProcess(long workflowId) {
-        return workflowService.getWorkflowParameters(workflowId);
+//        return workflowService.getWorkflowParameters(workflowId);
+        return null;
     }
 //
 //    @Override
@@ -69,40 +64,57 @@ public class WebProcessingServiceImpl implements WpsServiceInstance /*, WebProce
 
     @Override
     public Capabilities getCapabilities(WpsRequestContext context) throws WpsServiceException {
-//        final OnlineResourceType onlineResourceType = new OnlineResourceType();
-//        onlineResourceType.setHref("http://do.not.know");
-//
-//        final ContactType contactInfo = new ContactType();
-//        contactInfo.setContactInstructions("Some contakt instruction.");
-//        contactInfo.setHoursOfService("24 x 7");
-//
-//        final ResponsiblePartySubsetType responsiblePartySubsetType = new ResponsiblePartySubsetType();
-//        responsiblePartySubsetType.setContactInfo(contactInfo);
-//
-//        final ServiceProvider serviceProvider = new ServiceProvider();
-//        serviceProvider.setProviderName("Unknown");
-//        serviceProvider.setProviderSite(onlineResourceType);
-//        serviceProvider.setServiceContact(responsiblePartySubsetType);
-//
-//
-//        final Capabilities capabilities = new Capabilities();
-//        capabilities.setLang("en");
-//        capabilities.setService("WPS");
-//        capabilities.setVersion("1.0.0");
-//        capabilities.setServiceProvider(serviceProvider);
-//        return capabilities;
         try {
-            final GetCapabilitiesOperation getCapabilitiesOperation = new GetCapabilitiesOperation(context);
-            return getCapabilitiesOperation.getCapabilities();
-        } catch (IOException | URISyntaxException exception) {
+            final GetCapabilitiesOperation operation = new GetCapabilitiesOperation(context);
+            return operation.getCapabilities();
+        } catch (IOException | URISyntaxException | PersistenceException exception) {
             logger.log(Level.SEVERE, "Unable to perform GetCapabilities operation successfully", exception);
             throw new WpsServiceException(exception);
         }
     }
 
     @Override
-    public List<ProcessDescriptionType> describeProcess(WpsRequestContext context, String processId) throws WpsServiceException {
-        throw new RuntimeException("not implemented");
+    public List<ProcessDescriptionType> describeProcess(WpsRequestContext wpsRequestContext, String processIdentifier) throws WpsServiceException {
+        final Map<String, List<Parameter>> parameters = orchestratorService.getWorkflowParameters(Long.parseLong(processIdentifier));
+
+        final ProcessDescriptionType.DataInputs dataInputs = new ProcessDescriptionType.DataInputs();
+
+        for (Map.Entry<String, List<Parameter>> mapEntry : parameters.entrySet()) {
+            final String groupName = mapEntry.getKey();
+            final List groupParameterList = mapEntry.getValue();
+//            final List<Parameter> groupParameterList = mapEntry.getValue();
+            for (int i = 0; i < groupParameterList.size(); i++) {
+                Map groupParameter = (Map) groupParameterList.get(i);
+
+//            for (Parameter groupParameter : groupParameterList) {
+                final String parameterName = (String) groupParameter.get("name");
+                final String parameterType = (String) groupParameter.get("type");
+                final List valueSet = (List) groupParameter.get("valueSet");
+//                final String parameterName = groupParameter.getName();
+//                final String parameterType = groupParameter.getType();
+//                final String[] valueSet = groupParameter.getValueSet();
+                InputDescriptionTypeBuilder builder = InputDescriptionTypeBuilder.create()
+                        .withIdentifier(groupName + "~" + parameterName)
+                        .withTitle("Param '" + parameterName + "' of group '" + groupName + "'.")
+                        .withAbstract("The parameter '" + parameterName + "' of parametergroup '" + groupName + "'.")
+                        .withDataType(parameterType);
+
+                if (valueSet != null) {
+                    builder = builder.withAllowedValues(valueSet);
+                }
+                dataInputs.getInput().add(builder.build());
+            }
+        }
+        final ProcessDescriptionType processDescription = new ProcessDescriptionType();
+        processDescription.setDataInputs(dataInputs);
+        return Collections.singletonList(processDescription);
+
+//        final ProcessDescriptionType.ProcessOutputs outputs = new ProcessDescriptionType.ProcessOutputs();
+//        description.setProcessOutputs(outputs);
+//
+//        } catch (PersistenceException e) {
+//            throw new WpsServiceException("Unable to describe process for process identifier '"+processIdentifier+"'", e);
+//        }
     }
 
     @Override
