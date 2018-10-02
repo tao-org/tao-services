@@ -9,5 +9,4 @@
 
 	<context:component-scan base-package="ro.cs.tao.services.entity" />
 	<context:annotation-config />
-
 </beans>
