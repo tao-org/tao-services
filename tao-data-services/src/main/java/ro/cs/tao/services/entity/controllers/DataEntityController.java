@@ -35,13 +35,13 @@ import java.util.stream.Collectors;
  *
  * @author Cosmin Cara
  */
-public abstract class DataEntityController<T, S extends CRUDService<T>> extends BaseController {
+public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> extends BaseController {
 
     @Autowired
     protected S service;
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") String id) {
+    public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") K id) {
         ResponseEntity<ServiceResponse<?>> response;
         T entity = null;
         try {
@@ -98,7 +98,7 @@ public abstract class DataEntityController<T, S extends CRUDService<T>> extends 
     }
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") String id) {
+    public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") K id) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
             service.delete(id);

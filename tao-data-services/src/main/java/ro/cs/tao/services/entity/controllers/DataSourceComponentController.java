@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/datasource")
-public class DataSourceComponentController extends DataEntityController<DataSourceComponent, DataSourceComponentService>{
+public class DataSourceComponentController extends DataEntityController<DataSourceComponent, String, DataSourceComponentService>{
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
