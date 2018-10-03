@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/config")
-public class ConfigurationController extends DataEntityController<KeyValuePair, ConfigurationService> {
+public class ConfigurationController extends DataEntityController<KeyValuePair, String, ConfigurationService> {
 
     @RequestMapping(value = "/enums", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> getAvailableEnumValues() {

@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/component")
-public class ComponentController extends DataEntityController<ProcessingComponent, ComponentService> {
+public class ComponentController extends DataEntityController<ProcessingComponent, String, ComponentService> {
 
     @RequestMapping(value = "/user", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> listUserComponents(@RequestParam("type") ProcessingComponentType componentType) {

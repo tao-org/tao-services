@@ -31,7 +31,7 @@ import java.nio.file.Paths;
 
 @Controller
 @RequestMapping("/product")
-public class ProductController extends DataEntityController<EOProduct, ProductService> {
+public class ProductController extends DataEntityController<EOProduct, String, ProductService> {
 
     @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> inspect(@RequestParam("sourceDir") String sourceDir) {

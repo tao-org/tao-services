@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/topology")
-public class TopologyController extends DataEntityController<NodeDescription, TopologyService> {
+public class TopologyController extends DataEntityController<NodeDescription, String, TopologyService> {
 
     @RequestMapping(value = "/tags", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> listTags() {

@@ -73,8 +73,8 @@ public class WorkflowServiceImpl
     private Logger logger = Logger.getLogger(WorkflowService.class.getName());
 
     @Override
-    public WorkflowDescriptor findById(String id) throws PersistenceException {
-        return persistenceManager.getWorkflowDescriptor(Long.parseLong(id));
+    public WorkflowDescriptor findById(Long id) throws PersistenceException {
+        return persistenceManager.getWorkflowDescriptor(id);
     }
 
     @Override
@@ -148,7 +148,7 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public void delete(String id) throws PersistenceException {
+    public void delete(Long id) throws PersistenceException {
         WorkflowDescriptor descriptor = findById(id);
         if (descriptor != null) {
             descriptor.setActive(false);

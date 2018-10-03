@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/workflow")
-public class WorkflowController extends DataEntityController<WorkflowDescriptor, WorkflowService> {
+public class WorkflowController extends DataEntityController<WorkflowDescriptor, Long, WorkflowService> {
 
     @Autowired
     private ContainerService containerService;
