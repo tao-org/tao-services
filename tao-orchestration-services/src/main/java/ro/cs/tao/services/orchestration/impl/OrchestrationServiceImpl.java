@@ -55,8 +55,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     private WorkflowService workflowService;
 
     @Override
-    public long startWorkflow(long workflowId, Map<String, Map<String, String>> inputs) throws ExecutionException {
-        return Orchestrator.getInstance().startWorkflow(workflowId, inputs,
+    public long startWorkflow(long workflowId, String description, Map<String, Map<String, String>> inputs) throws ExecutionException {
+        return Orchestrator.getInstance().startWorkflow(workflowId, description, inputs,
                                                         new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
                                                                                                      SecurityContextHolder.getContext()));
     }
@@ -117,6 +117,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         for (ExecutionJob job : jobs) {
             List<ExecutionTaskSummary> tasksStatus = getTasksStatus(job.getId());
             ExecutionJobSummary summary = new ExecutionJobSummary();
+            summary.setJobName(job.getName());
             summary.setUser(job.getUserName());
             summary.setWorkflowName(tasksStatus.stream().findFirst().get().getWorkflowName());
             summary.setJobStatus(job.getExecutionStatus());
@@ -138,6 +139,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         for (ExecutionJob job : jobs) {
             List<ExecutionTaskSummary> tasksStatus = getTasksStatus(job.getId());
             ExecutionJobSummary summary = new ExecutionJobSummary();
+            summary.setJobName(job.getName());
             summary.setUser(job.getUserName());
             summary.setWorkflowName(tasksStatus.stream().findFirst().get().getWorkflowName());
             summary.setJobStatus(job.getExecutionStatus());
