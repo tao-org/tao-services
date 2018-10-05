@@ -118,14 +118,15 @@ public abstract class ControllerBase {
     }
 
     protected ResponseEntity<ServiceResponse<?>> handleException(Exception ex) {
-        Logger.getLogger(getClass().getName()).severe(ex.getMessage());
+        Logger.getLogger(getClass().getName()).severe(ExceptionUtils.getStackFrames(ex)[0]);
         if (ex instanceof ValidationException) {
             ValidationException vex = (ValidationException) ex;
             return new ResponseEntity<>(new ServiceResponse<>(vex.getAdditionalInfo(),
                                                               ResponseStatus.FAILED),
                                         HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(new ServiceResponse<>(String.format("Failed with error: %s",
+            return new ResponseEntity<>(new ServiceResponse<>(String.format("Failed with error: %s - %s",
+                                                                            ex.getClass().getSimpleName(),
                                                                             ex.getMessage()),
                                                               ResponseStatus.FAILED),
                                         HttpStatus.OK);

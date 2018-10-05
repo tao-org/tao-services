@@ -32,7 +32,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public abstract class StartupBase implements ApplicationListener {
@@ -42,8 +41,9 @@ public abstract class StartupBase implements ApplicationListener {
     protected static Properties initialize() throws IOException {
         home = new ApplicationHome();
         Path configDirectory = homeDirectory().resolve("config");
-        Logger.getLogger(StartupBase.class.getName()).info(String.format("Configuration files will be read from %s",
-                                                                         configDirectory.toString()));
+        /*Logger.getLogger(StartupBase.class.getName()).info(String.format("Configuration files will be read from %s",
+                                                                         configDirectory.toString()));*/
+        System.out.println(String.format("Configuration files will be read from %s", configDirectory.toString()));
         if (!Files.exists(configDirectory)) {
             Files.createDirectory(configDirectory);
         }
@@ -60,7 +60,8 @@ public abstract class StartupBase implements ApplicationListener {
     protected static Class[] detectLaunchers(Class startupClass) {
         ServiceRegistry<ServiceLauncher> registry = ServiceRegistryManager.getInstance().getServiceRegistry(ServiceLauncher.class);
         Set<ServiceLauncher> launchers = registry.getServices();
-        Logger.getLogger(StartupBase.class.getName()).info("Detected service launchers: " + String.join(",", launchers.stream().map(l -> l.getClass().getSimpleName()).sorted().collect(Collectors.toList())));
+        //Logger.getLogger(StartupBase.class.getName()).info("Detected service launchers: " + String.join(",", launchers.stream().map(l -> l.getClass().getSimpleName()).sorted().collect(Collectors.toList())));
+        System.out.println("Detected service launchers: " + String.join(",", launchers.stream().map(l -> l.getClass().getSimpleName()).sorted().collect(Collectors.toList())));
         List<Class> classes = launchers.stream().map(ServiceLauncher::getClass).collect(Collectors.toList());
         classes.add(0, startupClass);
         return classes.toArray(new Class[0]);
@@ -72,9 +73,12 @@ public abstract class StartupBase implements ApplicationListener {
                                         .sources(detectLaunchers(startupClass))
                                         .build();
         app.setDefaultProperties(initialize());
-        Logger.getLogger(StartupBase.class.getName()).info(String.format("Development mode is %s",
-                                                                         Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.dev.mode", "false")) ?
-                                                                                 "ON" : "OFF"));
+//        Logger.getLogger(StartupBase.class.getName()).info(String.format("Development mode is %s",
+//                                                                         Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.dev.mode", "false")) ?
+//                                                                                 "ON" : "OFF"));
+        System.out.println(String.format("Development mode is %s",
+                                         Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.dev.mode", "false")) ?
+                                                 "ON" : "OFF"));
         app.run(args);
     }
 
