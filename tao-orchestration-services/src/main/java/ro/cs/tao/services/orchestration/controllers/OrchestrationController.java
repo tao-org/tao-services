@@ -19,10 +19,7 @@ package ro.cs.tao.services.orchestration.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
@@ -44,10 +41,12 @@ public class OrchestrationController extends BaseController {
 
     @RequestMapping(value = "/start/{id}", method = RequestMethod.POST)
     public ResponseEntity<ServiceResponse<?>> start(@PathVariable("id") long workflowId,
+                                                    @RequestParam("name") String description,
                                                     @RequestBody Map<String, Map<String, String>> input) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            response = prepareResult(orchestrationService.startWorkflow(workflowId, input), "Execution started");
+            response = prepareResult(orchestrationService.startWorkflow(workflowId, description, input),
+                                     "Execution started");
         } catch (ExecutionException ex) {
             response = handleException(ex);
         }

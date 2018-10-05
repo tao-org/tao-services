@@ -39,8 +39,8 @@ public class QueryServiceImpl extends EntityService<Query>
 
 
     @Override
-    public Query findById(String id) throws PersistenceException {
-        return getQueryById(Long.parseLong(id));
+    public Query findById(Long id) throws PersistenceException {
+        return getQueryById(id);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class QueryServiceImpl extends EntityService<Query>
     }
 
     @Override
-    public void delete(String id) throws PersistenceException {
+    public void delete(Long id) throws PersistenceException {
 
     }
 
