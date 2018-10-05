@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
   <groupId>ro.cs.tao</groupId>
-  <artifactId>services-startup</artifactId>
+  <artifactId>tao-web-processing-service</artifactId>
   <versioning>
     <versions>
       <version>1.0-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20181005151405</lastUpdated>
+    <lastUpdated>20181005151421</lastUpdated>
   </versioning>
 </metadata>
