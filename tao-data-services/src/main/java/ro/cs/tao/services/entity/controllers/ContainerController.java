@@ -42,7 +42,7 @@ import java.util.Optional;
  */
 @Controller
 @RequestMapping("/docker")
-public class ContainerController extends DataEntityController<Container, ContainerService<MultipartFile>> {
+public class ContainerController extends DataEntityController<Container, String, ContainerService<MultipartFile>> {
 
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET)
