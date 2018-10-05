@@ -19,13 +19,18 @@ package ro.cs.tao.wps.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.datasource.beans.Parameter;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
+import ro.cs.tao.workflow.WorkflowDescriptor;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 @Service("webProcessingService")
 public class WebProcessingServiceImpl implements WebProcessingService {
@@ -48,6 +53,16 @@ public class WebProcessingServiceImpl implements WebProcessingService {
 
     @Override
     public long execute(long workflowId, Map<String, Map<String, String>> parameters) {
-        return orchestratorService.startWorkflow(workflowId, parameters);
+        long result = -1;
+        try {
+            WorkflowDescriptor descriptor = workflowService.findById(workflowId);
+            if (descriptor != null) {
+                String jobName = descriptor.getName() + " via WPS on " + LocalDateTime.now().format(DateTimeFormatter.ISO_TIME);
+                result = orchestratorService.startWorkflow(workflowId, jobName, parameters);
+            }
+        } catch (PersistenceException e) {
+            Logger.getLogger(WebProcessingService.class.getName()).severe(e.getMessage());
+        }
+        return result;
     }
 }
