@@ -65,6 +65,7 @@ public class WebConfig implements WebMvcConfigurer {
         mapper.registerModule(hibernate5Module);
         mapper.registerModule(new JavaTimeModule());
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         messageConverter.setObjectMapper(mapper);
         return messageConverter;
     }
