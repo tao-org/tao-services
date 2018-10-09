@@ -66,7 +66,8 @@ public class FileStorageService implements StorageService<MultipartFile> {
         try (InputStream inputStream = file.getInputStream()) {
             Path userPath = SessionStore.currentContext().getUploadPath();
             Files.createDirectories(userPath);
-            filePath = userPath.resolve(fileName);
+            // Resolve filename when coming from IE
+            filePath = userPath.resolve(Paths.get(fileName).getFileName());
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
         AuxiliaryData data = new AuxiliaryData();
