@@ -47,11 +47,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public AuthInfo login(String username) {
-        logger.info("Logged in (" + username + ")...");
+        logger.fine("Logged in (" + username + ")...");
         // if arrived here, this means that the JAAS login was successful
 
         String authenticationToken = tokenService.getUserToken(username);
-        logger.info("Token " + authenticationToken);
+        logger.finest("Token " + authenticationToken);
 
         // check if user is still active in TAO
         final User user = persistenceManager.findUserByUsername(username);
@@ -69,12 +69,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public boolean logout(String authToken) {
         if (tokenService.contains(authToken)) {
             final String username = tokenService.retrieve(authToken).getPrincipal().toString();
-            logger.info("Logging out (" + username + ")...");
+            logger.finest("Logging out (" + username + ")...");
             tokenService.removeUserTokens(username);
             return true;
         }
         else {
-            logger.info("Invalid auth token received at logout: " + authToken);
+            logger.finest("Invalid auth token received at logout: " + authToken);
             return false;
         }
     }

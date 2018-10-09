@@ -136,7 +136,7 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
                         master = persistenceManager.saveExecutionNode(master);
                         persistenceManager.deleteExecutionNode(node.getId());
                         node = master;
-                        logger.info(String.format("Node [localhost] has been renamed to [%s]", masterHost));
+                        logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                     }
                     String hostName = node.getId();
                     Executor executor;
