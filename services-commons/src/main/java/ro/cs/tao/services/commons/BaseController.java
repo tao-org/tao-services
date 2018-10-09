@@ -19,19 +19,30 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
-import ro.cs.tao.user.Group;
+import ro.cs.tao.user.User;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
  */
 public class BaseController extends ControllerBase {
-
+    private static Set<String> admins;
+    private static Timer groupRefreshTimer;
     private static PersistenceManager persistenceManager;
 
     public static void setPersistenceManager(PersistenceManager persistenceManager) {
         BaseController.persistenceManager = persistenceManager;
+        groupRefreshTimer = new Timer(true);
+        admins = Collections.synchronizedSet(new HashSet<>());
+        groupRefreshTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                admins = persistenceManager.getAdministrators()
+                                            .stream().map(User::getUsername).collect(Collectors.toSet());
+            }
+        }, 0, 10000);
     }
 
     protected PersistenceManager getPersistenceManager() {
@@ -44,7 +55,6 @@ public class BaseController extends ControllerBase {
     }
 
     protected boolean isCurrentUserAdmin() {
-        List<Group> groups = persistenceManager.getUserGroups(SessionStore.currentContext().getPrincipal().getName());
-        return (groups != null && groups.stream().anyMatch(g -> "ADMIN".equals(g.getName())));
+        return admins.contains(SessionStore.currentContext().getPrincipal().getName());
     }
 }

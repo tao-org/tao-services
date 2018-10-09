@@ -112,7 +112,8 @@ public class OrchestrationController extends BaseController {
 
     @RequestMapping(value = "/running/tasks", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> getRunningTasks() {
-        List<ExecutionTaskSummary> tasks = orchestrationService.getRunningTasks();
+        List<ExecutionTaskSummary> tasks =
+                orchestrationService.getRunningTasks(isCurrentUserAdmin() ? null : currentUser());
         if (tasks == null) {
             tasks = new ArrayList<>();
         }
@@ -121,7 +122,7 @@ public class OrchestrationController extends BaseController {
 
     @RequestMapping(value = "/running/jobs", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> getRunningJobs() {
-        List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs();
+        List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs(isCurrentUserAdmin() ? null : currentUser());
         if (summaries == null) {
             summaries = new ArrayList<>();
         }
@@ -139,7 +140,7 @@ public class OrchestrationController extends BaseController {
 
     @RequestMapping(value = "/history", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> getJobsHistory() {
-        List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs();
+        List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(isCurrentUserAdmin() ? null : currentUser());
         if (summaries == null) {
             summaries = new ArrayList<>();
         }

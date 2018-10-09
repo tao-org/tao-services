@@ -95,7 +95,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<ExecutionTaskSummary> getRunningTasks() {
+    public List<ExecutionTaskSummary> getRunningTasks(String userName) {
         List<ExecutionTaskSummary> summaries = new ArrayList<>();
         Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
@@ -113,7 +113,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<ExecutionJobSummary> getRunningJobs() {
+    public List<ExecutionJobSummary> getRunningJobs(String userName) {
         List<ExecutionJobSummary> summaries = new ArrayList<>();
         Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
@@ -134,7 +134,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<ExecutionJobSummary> getCompletedJobs() {
+    public List<ExecutionJobSummary> getCompletedJobs(String userName) {
         List<ExecutionJobSummary> summaries = new ArrayList<>();
         Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.SUSPENDED, ExecutionStatus.DONE,
