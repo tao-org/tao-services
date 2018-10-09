@@ -68,7 +68,7 @@ public class MailSenderTLS {
 
             Transport.send(message);
 
-            logger.info("Email sent to " + toAddress);
+            logger.fine("Email sent to " + toAddress);
 
         } catch (MessagingException e) {
             throw new RuntimeException(e);
