@@ -44,6 +44,7 @@ import ro.cs.tao.services.interfaces.StorageService;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -375,12 +376,28 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/upload", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file,
-                                    @RequestParam("desc") String description) {
+    @RequestMapping(value = "/user/upload", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile file,
+                                        @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.store(file, description);
+            storageService.storeUserFile(file, description);
+            responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/public/upload", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> uploadPublic(@RequestParam("file") MultipartFile file,
+                                        @RequestParam("desc") String description) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (!isCurrentUserAdmin()) {
+                throw new AccessDeniedException("The operation is permitted only for administrators");
+            }
+            storageService.storePublicFile(file, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
