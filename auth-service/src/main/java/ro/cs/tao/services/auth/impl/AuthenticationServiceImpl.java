@@ -15,8 +15,10 @@
  */
 package ro.cs.tao.services.auth.impl;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.interfaces.AuthenticationService;
@@ -24,7 +26,11 @@ import ro.cs.tao.services.model.auth.AuthInfo;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
+import ro.cs.tao.utils.FileUtilities;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.logging.Logger;
@@ -58,6 +64,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (user != null && user.getStatus() == UserStatus.ACTIVE) {
             // update user last login date
             persistenceManager.updateUserLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
+            try {
+                Path path = Paths.get(ConfigurationManager.getInstance().getValue("product.location")).resolve(username);
+                FileUtilities.ensureExists(path);
+                FileUtilities.ensureExists(path.resolve("files"));
+            } catch (IOException e) {
+                logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
+                                            username, ExceptionUtils.getStackTrace(e)));
+            }
             // retrieve user groups and send them as profiles
             return new AuthInfo(true, authenticationToken, persistenceManager.getUserGroups(username).stream().map(Group::getName).collect(Collectors.toList()));
         }
