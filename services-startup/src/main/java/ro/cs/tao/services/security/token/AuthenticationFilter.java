@@ -61,7 +61,7 @@ public class AuthenticationFilter extends GenericFilterBean {
 
         try {
             if (token.isPresent() && !postToAuthenticate(httpRequest, resourcePath)) {
-                logger.fine("Trying to authenticate user by X-Auth-Token method. Token: " + token);
+                logger.finest("Trying to authenticate user by X-Auth-Token method. Token: " + token);
                 processTokenAuthentication(token);
             }
 
@@ -97,7 +97,7 @@ public class AuthenticationFilter extends GenericFilterBean {
         if (responseAuthentication == null || !responseAuthentication.isAuthenticated()) {
             throw new InternalAuthenticationServiceException("Unable to authenticate user");
         }
-        logger.info("User successfully authenticated");
+        logger.finest("User successfully authenticated");
         return responseAuthentication;
     }
 
