@@ -55,11 +55,21 @@ import java.util.stream.Collectors;
 @RequestMapping("/files")
 public class FileController extends BaseController {
 
+    private static final String SPRING_HTTP_MULTIPART_MAX_FILE_SIZE = "spring.http.multipart.max-file-size";
+
     @Autowired
     private StorageService<MultipartFile> storageService;
 
     @Autowired
     private PersistenceManager persistenceManager;
+
+    @RequestMapping(value = "/config", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getConfiguration() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put(SPRING_HTTP_MULTIPART_MAX_FILE_SIZE,
+                       ConfigurationManager.getInstance().getValue(SPRING_HTTP_MULTIPART_MAX_FILE_SIZE));
+        return prepareResult(properties);
+    }
 
     @RequestMapping(value = "/user/uploaded/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listFiles() {
