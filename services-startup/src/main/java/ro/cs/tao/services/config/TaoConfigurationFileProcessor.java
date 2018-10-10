@@ -16,12 +16,7 @@
 
 package ro.cs.tao.services.config;
 
-import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
-
-import java.lang.reflect.Field;
-import java.nio.file.Path;
-import java.util.Properties;
 
 public class TaoConfigurationFileProcessor implements ConfigurationFileProcessor {
 
@@ -31,17 +26,4 @@ public class TaoConfigurationFileProcessor implements ConfigurationFileProcessor
     @Override
     public String getConfigFileResourceLocation() { return "/ro/cs/tao/configuration/tao.properties"; }
 
-    @Override
-    public void performAdditionalConfiguration(Path configDirectory, Properties properties) {
-        try {
-            Field field = ConfigurationManager.class.getDeclaredField("configFolder");
-            field.setAccessible(true);
-            field.set(null, configDirectory);
-            field = ConfigurationManager.class.getDeclaredField("settings");
-            field.setAccessible(true);
-            ((Properties) field.get(ConfigurationManager.getInstance())).putAll(properties);
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
-    }
 }
