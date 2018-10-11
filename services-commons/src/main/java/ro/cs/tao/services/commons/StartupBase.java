@@ -25,6 +25,7 @@ import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 
 public abstract class StartupBase implements ApplicationListener {
     private static ApplicationHome home;
+    private static final Properties allProperties = new Properties();
     protected final ExecutorService backgroundWorker = Executors.newSingleThreadExecutor();
 
     protected static Properties initialize() throws IOException {
@@ -50,11 +52,20 @@ public abstract class StartupBase implements ApplicationListener {
         ServiceRegistry<ConfigurationFileProcessor> serviceRegistry =
                 ServiceRegistryManager.getInstance().getServiceRegistry(ConfigurationFileProcessor.class);
         Set<ConfigurationFileProcessor> configurationFileProcessors = serviceRegistry.getServices();
-        Properties properties = new Properties();
         for (ConfigurationFileProcessor processor : configurationFileProcessors) {
-            properties.putAll(processor.processFile(configDirectory));
+            allProperties.putAll(processor.processFile(configDirectory));
         }
-        return properties;
+        try {
+            Field field = ConfigurationManager.class.getDeclaredField("configFolder");
+            field.setAccessible(true);
+            field.set(null, configDirectory);
+            field = ConfigurationManager.class.getDeclaredField("settings");
+            field.setAccessible(true);
+            ((Properties) field.get(ConfigurationManager.getInstance())).putAll(allProperties);
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+        return allProperties;
     }
 
     protected static Class[] detectLaunchers(Class startupClass) {
@@ -84,4 +95,5 @@ public abstract class StartupBase implements ApplicationListener {
 
     public static Path homeDirectory() { return home.getDir().getParentFile().toPath(); }
 
+    public static Properties properties() { return allProperties; }
 }
