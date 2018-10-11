@@ -71,10 +71,10 @@ public class SampleWorkflow7 extends SampleWorkflowBase {
                                                "OTB Resample", "RigidTransformResample", ComponentType.PROCESSING, customValues,
                                                node2, ComponentType.PROCESSING, Direction.RIGHT);
         WorkflowNodeDescriptor node6 = addNode(workflow,
-                                               "OTB Resample", "RigidTransformResample", ComponentType.PROCESSING, customValues,
+                                               "OTB Resample 2", "RigidTransformResample", ComponentType.PROCESSING, customValues,
                                                node3, ComponentType.PROCESSING, Direction.RIGHT);
         WorkflowNodeDescriptor node7 = addNode(workflow,
-                                               "OTB Resample", "RigidTransformResample", ComponentType.PROCESSING, customValues,
+                                               "OTB Resample 3", "RigidTransformResample", ComponentType.PROCESSING, customValues,
                                                node4, ComponentType.PROCESSING, Direction.RIGHT);
         WorkflowNodeDescriptor node8 = addNode(workflow,
                                                "OTB Concatenate", "ConcatenateImages", ComponentType.PROCESSING, null,
