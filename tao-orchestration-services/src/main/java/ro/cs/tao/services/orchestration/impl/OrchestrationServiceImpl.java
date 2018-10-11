@@ -95,11 +95,11 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<ExecutionTaskSummary> getRunningTasks() {
+    public List<ExecutionTaskSummary> getRunningTasks(String userName) {
         List<ExecutionTaskSummary> summaries = new ArrayList<>();
         Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
-        List<ExecutionJob> jobs = persistenceManager.getJobs(SecurityContextHolder.getContext().getAuthentication().getName(), statuses);
+        List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
         for (ExecutionJob job : jobs) {
             summaries.addAll(getTasksStatus(job.getId()));
         }
@@ -113,11 +113,11 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<ExecutionJobSummary> getRunningJobs() {
+    public List<ExecutionJobSummary> getRunningJobs(String userName) {
         List<ExecutionJobSummary> summaries = new ArrayList<>();
         Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
-        List<ExecutionJob> jobs = persistenceManager.getJobs(SecurityContextHolder.getContext().getAuthentication().getName(), statuses);
+        List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
         for (ExecutionJob job : jobs) {
             List<ExecutionTaskSummary> tasksStatus = getTasksStatus(job.getId());
             ExecutionJobSummary summary = new ExecutionJobSummary();
@@ -134,12 +134,12 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<ExecutionJobSummary> getCompletedJobs() {
+    public List<ExecutionJobSummary> getCompletedJobs(String userName) {
         List<ExecutionJobSummary> summaries = new ArrayList<>();
         Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.SUSPENDED, ExecutionStatus.DONE,
                                      ExecutionStatus.FAILED, ExecutionStatus.CANCELLED);
-        List<ExecutionJob> jobs = persistenceManager.getJobs(SecurityContextHolder.getContext().getAuthentication().getName(), statuses);
+        List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
         for (ExecutionJob job : jobs) {
             List<ExecutionTaskSummary> tasksStatus = getTasksStatus(job.getId());
             ExecutionJobSummary summary = new ExecutionJobSummary();

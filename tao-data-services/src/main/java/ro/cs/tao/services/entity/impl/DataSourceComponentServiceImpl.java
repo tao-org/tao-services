@@ -68,6 +68,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
+    public List<DataSourceComponent> getSystemDataSourceComponents() {
+        return persistenceManager.getSystemDataSourceComponents();
+    }
+
+    @Override
     public List<Tag> getDatasourceTags() {
         return persistenceManager.getDatasourceTags();
     }

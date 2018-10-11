@@ -173,6 +173,18 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
+    @RequestMapping(value = "/nodes", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> updateNodes(@RequestParam("workflowId") long workflowId,
+                                                          @RequestBody List<WorkflowNodeDescriptor> nodes) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            responseEntity = prepareResult(service.updateNodes(workflowId, nodes));
+        } catch (PersistenceException e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
+
     @RequestMapping(value = "/node", method = RequestMethod.DELETE, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> removeNode(@RequestParam("workflowId") long workflowId,
                                         @RequestBody WorkflowNodeDescriptor node) {
