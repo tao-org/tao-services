@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 public class DataSourceComponentController extends DataEntityController<DataSourceComponent, String, DataSourceComponentService>{
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/page", method = RequestMethod.GET, produces = "application/json")
     @Override
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
@@ -59,6 +59,11 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getSystemDatasources() {
+        return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.getSystemDataSourceComponents()));
+    }
+
     @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "id") String idList) {
         if (idList == null || idList.isEmpty()) {
@@ -70,7 +75,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
 
     @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponents() {
-        return prepareResult(service.getUserDataSourceComponents(SessionStore.currentContext().getPrincipal().getName()));
+        return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.getUserDataSourceComponents(SessionStore.currentContext().getPrincipal().getName())));
     }
 
     @RequestMapping(value = "/create", method = RequestMethod.POST, produces = "application/json")
