@@ -29,6 +29,7 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.remote.FetchMode;
+import ro.cs.tao.docker.Container;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -47,11 +48,10 @@ import ro.cs.tao.utils.FileUtilities;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -143,7 +143,15 @@ public class TaoServicesStartup extends StartupBase {
                         String.join(",", installers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.toList()))));
             for (DockerImageInstaller imageInstaller : installers) {
                 try {
-                    imageInstaller.installImage();
+                    Container container = imageInstaller.installImage();
+                    if (container != null && container.getLogo() != null) {
+                        Path imgPath = homeDirectory().resolve("static").resolve("workflow").resolve("media")
+                                                    .resolve(container.getId() + ".png");
+                        if (!Files.exists(imgPath)) {
+                            Files.createDirectories(imgPath.getParent());
+                            Files.write(imgPath, Base64.getDecoder().decode(container.getLogo()));
+                        }
+                    }
                 } catch (Throwable e) {
                     logger.severe(e.getMessage());
                 }

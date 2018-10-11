@@ -44,6 +44,7 @@ import ro.cs.tao.services.interfaces.StorageService;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,11 +55,21 @@ import java.util.stream.Collectors;
 @RequestMapping("/files")
 public class FileController extends BaseController {
 
+    private static final String SPRING_HTTP_MULTIPART_MAX_FILE_SIZE = "spring.http.multipart.max-file-size";
+
     @Autowired
     private StorageService<MultipartFile> storageService;
 
     @Autowired
     private PersistenceManager persistenceManager;
+
+    @RequestMapping(value = "/config", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getConfiguration() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put(SPRING_HTTP_MULTIPART_MAX_FILE_SIZE,
+                       ConfigurationManager.getInstance().getValue(SPRING_HTTP_MULTIPART_MAX_FILE_SIZE));
+        return prepareResult(properties);
+    }
 
     @RequestMapping(value = "/user/uploaded/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listFiles() {
@@ -375,12 +386,28 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/upload", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file,
-                                    @RequestParam("desc") String description) {
+    @RequestMapping(value = "/user/upload", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile file,
+                                        @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.store(file, description);
+            storageService.storeUserFile(file, description);
+            responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/public/upload", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> uploadPublic(@RequestParam("file") MultipartFile file,
+                                        @RequestParam("desc") String description) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (!isCurrentUserAdmin()) {
+                throw new AccessDeniedException("The operation is permitted only for administrators");
+            }
+            storageService.storePublicFile(file, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);

@@ -29,6 +29,7 @@ import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.utils.FileUtilities;
 
@@ -52,7 +53,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
     public FileStorageService() { }
 
     @Override
-    public void store(MultipartFile file, String description) throws Exception {
+    public void storeUserFile(MultipartFile file, String description) throws Exception {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         if (file.isEmpty()) {
             throw new IOException("Failed to store empty file " + fileName);
@@ -65,13 +66,40 @@ public class FileStorageService implements StorageService<MultipartFile> {
         try (InputStream inputStream = file.getInputStream()) {
             Path userPath = SessionStore.currentContext().getUploadPath();
             Files.createDirectories(userPath);
-            filePath = userPath.resolve(fileName);
+            // Resolve filename when coming from IE
+            filePath = userPath.resolve(Paths.get(fileName).getFileName());
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
         AuxiliaryData data = new AuxiliaryData();
         data.setLocation(SessionStore.currentContext().getWorkspace().relativize(filePath).toString());
         data.setDescription(description);
         data.setUserName(SessionStore.currentContext().getPrincipal().getName());
+        data.setCreated(LocalDateTime.now());
+        data.setModified(data.getCreated());
+        persistenceManager.saveAuxiliaryData(data);
+    }
+
+    @Override
+    public void storePublicFile(MultipartFile file, String description) throws Exception {
+        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+        if (file.isEmpty()) {
+            throw new IOException("Failed to store empty file " + fileName);
+        }
+        if (fileName.contains("..")) {
+            // This is a security check
+            throw new IOException( "Cannot store file with relative path outside user directory " + fileName);
+        }
+        Path filePath;
+        try (InputStream inputStream = file.getInputStream()) {
+            Path publicPath = Paths.get(SystemVariable.SHARED_FILES.value());
+            Files.createDirectories(publicPath);
+            filePath = publicPath.resolve(fileName);
+            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+        }
+        AuxiliaryData data = new AuxiliaryData();
+        data.setLocation(Paths.get(SystemVariable.SHARED_WORKSPACE.value()).relativize(filePath).toString());
+        data.setDescription(description);
+        data.setUserName(SystemSessionContext.instance().getPrincipal().getName());
         data.setCreated(LocalDateTime.now());
         data.setModified(data.getCreated());
         persistenceManager.saveAuxiliaryData(data);

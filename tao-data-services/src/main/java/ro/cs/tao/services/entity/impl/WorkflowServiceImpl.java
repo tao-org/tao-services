@@ -201,7 +201,18 @@ public class WorkflowServiceImpl
                                                          String.join(",", validationErrors)));
         }
         return persistenceManager.updateWorkflowNodeDescriptor(nodeDescriptor);
-        //return persistenceManager.getWorkflowDescriptor(workflow.getId());
+    }
+
+    @Override
+    public List<WorkflowNodeDescriptor> updateNodes(long workflowId, List<WorkflowNodeDescriptor> nodeDescriptors) throws PersistenceException {
+        if (nodeDescriptors == null || nodeDescriptors.size() == 0) {
+            throw new PersistenceException("Cannot update an empty list");
+        }
+        List<WorkflowNodeDescriptor> updatedNodes = new ArrayList<>();
+        for (WorkflowNodeDescriptor node : nodeDescriptors) {
+            updatedNodes.add(updateNode(workflowId, node));
+        }
+        return updatedNodes;
     }
 
     @Override
@@ -643,21 +654,9 @@ public class WorkflowServiceImpl
 
     private void ensureUniqueName(WorkflowDescriptor workflow, WorkflowNodeDescriptor nodeDescriptor) {
         final String name = nodeDescriptor.getName();
-        long nameCount = workflow.getNodes().stream()
-                .filter(n -> {
-                    boolean match = n.getName().equals(name);
-                    if (!match) {
-                        match = n.getName().startsWith(name);
-                        if (match) {
-                            String trimmed = n.getName().replace(name, "").trim();
-                            match = trimmed.startsWith("(") && trimmed.endsWith(")");
-                        }
-                    }
-                    return match;
-                }).count();
-        if (nameCount > 0) {
-            nodeDescriptor.setName(String.format("%s (%s)", name, nameCount));
-
+        long nameCount = workflow.getNodes().stream().filter(n -> n.getName().equals(name)).count();
+        if (nameCount > 1) {
+            nodeDescriptor.setName(String.format("%s (%s)", name, nameCount - 1));
         }
     }
 
