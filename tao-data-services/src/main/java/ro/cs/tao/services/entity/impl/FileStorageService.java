@@ -70,10 +70,18 @@ public class FileStorageService implements StorageService<MultipartFile> {
             filePath = userPath.resolve(Paths.get(fileName).getFileName());
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
-        AuxiliaryData data = new AuxiliaryData();
-        data.setLocation(SessionStore.currentContext().getWorkspace().relativize(filePath).toString());
+        String userName = SessionStore.currentContext().getPrincipal().getName();
+        String location = SessionStore.currentContext().getWorkspace().relativize(filePath).toString();
+        List<AuxiliaryData> listData = persistenceManager.getAuxiliaryData(userName, location);
+        AuxiliaryData data;
+        if (listData != null && listData.size() == 1) {
+            data = listData.get(0);
+        } else {
+            data = new AuxiliaryData();
+        }
+        data.setLocation(location);
         data.setDescription(description);
-        data.setUserName(SessionStore.currentContext().getPrincipal().getName());
+        data.setUserName(userName);
         data.setCreated(LocalDateTime.now());
         data.setModified(data.getCreated());
         persistenceManager.saveAuxiliaryData(data);
