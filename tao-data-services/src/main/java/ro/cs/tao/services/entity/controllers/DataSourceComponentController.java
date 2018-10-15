@@ -26,11 +26,11 @@ import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
 import ro.cs.tao.datasource.DataSourceComponent;
-import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.beans.CustomDataSourceRequest;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 
@@ -79,9 +79,10 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     }
 
     @RequestMapping(value = "/create", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody List<EOProduct> products) {
+    public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody CustomDataSourceRequest request) {
         try {
-            return prepareResult(service.createFor(products, SessionStore.currentContext().getPrincipal()));
+            return prepareResult(service.createFor(request.getProducts(), request.getLabel(),
+                                                   SessionStore.currentContext().getPrincipal()));
         } catch (PersistenceException e) {
             return handleException(e);
         }

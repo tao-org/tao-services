@@ -97,8 +97,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         throw new UnsupportedOperationException("Data source components cannot be deleted");
     }
 
-    public DataSourceComponent createFor(List<EOProduct> products, Principal principal) throws PersistenceException {
-        if (products == null || products.isEmpty() || principal == null) {
+    public DataSourceComponent createFor(List<EOProduct> products, String label, Principal principal) throws PersistenceException {
+        if (products == null || products.isEmpty() || label == null || label.isEmpty() || principal == null) {
             return null;
         }
         String productType = products.stream()
@@ -124,6 +124,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             userDSC.getTargets().get(0).setCardinality(products.size());
             userDSC.getTargets().get(0).addConstraint("Same cardinality");
             userDSC.setSystem(false);
+            userDSC.setLabel(label);
             userDSC = persistenceManager.saveDataSourceComponent(userDSC);
         } catch (CloneNotSupportedException e) {
             throw new PersistenceException(e);
