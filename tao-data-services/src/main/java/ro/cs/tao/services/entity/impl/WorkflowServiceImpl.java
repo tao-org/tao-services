@@ -303,7 +303,7 @@ public class WorkflowServiceImpl
             }
             links.add(link);
             targetNode.setIncomingLinks(links);
-            return persistenceManager.updateWorkflowNodeDescriptor(targetNode);
+            return updateNode(targetNode.getWorkflow().getId(), targetNode);
         } catch (Exception e) {
             throw new PersistenceException(e);
         }
