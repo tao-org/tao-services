@@ -36,6 +36,7 @@ import ro.cs.tao.eodata.VectorData;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.FileObject;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -267,7 +268,7 @@ public class FileController extends BaseController {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             List<Path> list = storageService.listWorkspace(false).collect(Collectors.toList());
-            List<AuxiliaryData> auxData = persistenceManager.getAuxiliaryData(SessionStore.currentContext().getPrincipal().getName(),
+            List<AuxiliaryData> auxData = persistenceManager.getAuxiliaryData(SystemSessionContext.instance().getPrincipal().getName(),
                                                                               list.stream().map(Path::toString).toArray(String[]::new));
             List<FileObject> fileObjects = new ArrayList<>(list.size());
             long size;
