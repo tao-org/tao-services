@@ -57,7 +57,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     @Override
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> get(Long id) {
+    public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") Long id) {
         ResponseEntity<ServiceResponse<?>> response;
         WorkflowDescriptor entity = service.getFullDescriptor(id);
         if (entity == null) {
