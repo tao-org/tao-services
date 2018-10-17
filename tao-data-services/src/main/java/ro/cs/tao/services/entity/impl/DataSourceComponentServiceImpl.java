@@ -100,7 +100,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         throw new UnsupportedOperationException("Data source components cannot be deleted");
     }
 
-    public DataSourceComponent createFor(List<EOProduct> products, String label, Principal principal) throws PersistenceException {
+    @Override
+    public DataSourceComponent createForProducts(List<EOProduct> products, String label, Principal principal) throws PersistenceException {
         if (products == null || products.isEmpty() || label == null || label.isEmpty() || principal == null) {
             return null;
         }
@@ -132,6 +133,44 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             targetDescriptor.setId(UUID.randomUUID().toString());
             targetDescriptor.setParentId(newId);
             targetDescriptor.setCardinality(products.size());
+            targetDescriptor.addConstraint("Same cardinality");
+            userDSC.setSystem(false);
+            userDSC.setLabel(label);
+            userDSC = persistenceManager.saveDataSourceComponent(userDSC);
+        } catch (CloneNotSupportedException e) {
+            throw new PersistenceException(e);
+        }
+        return userDSC;
+    }
+
+    @Override
+    public DataSourceComponent createForProductNames(List<String> productNames, String productType,
+                                                     String label, Principal principal) throws PersistenceException {
+        if (productNames == null || productNames.isEmpty() || productType == null || productType.isEmpty() ||
+                label == null || label.isEmpty() || principal == null) {
+            return null;
+        }
+
+        DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(productType + "-Local Database");
+        if (systemDSC == null) {
+            return null;
+        }
+        DataSourceComponent userDSC;
+        try {
+            userDSC = systemDSC.clone();
+            LocalDateTime time = LocalDateTime.now();
+            String newId = systemDSC.getId() + "-" + principal.getName() + "-" + time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            userDSC.setId(newId);
+            userDSC.setLabel(systemDSC.getLabel() + " (customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + ")");
+            SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
+            sourceDescriptor.setId(UUID.randomUUID().toString());
+            sourceDescriptor.setParentId(newId);
+            sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
+            sourceDescriptor.setCardinality(productNames.size());
+            TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
+            targetDescriptor.setId(UUID.randomUUID().toString());
+            targetDescriptor.setParentId(newId);
+            targetDescriptor.setCardinality(productNames.size());
             targetDescriptor.addConstraint("Same cardinality");
             userDSC.setSystem(false);
             userDSC.setLabel(label);
