@@ -91,7 +91,11 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 return prepareResult(service.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
                                                                    productType, description, currentUser));
             } else {
-                return prepareResult(service.createForProducts(products, description, currentUser));
+                if (products.stream().map(EOProduct::getProductType).distinct().count() > 1) {
+                    return prepareResult("The selected products must be of the same type", ResponseStatus.FAILED);
+                } else {
+                    return prepareResult(service.createForProducts(products, description, currentUser));
+                }
             }
         } catch (PersistenceException e) {
             return handleException(e);
