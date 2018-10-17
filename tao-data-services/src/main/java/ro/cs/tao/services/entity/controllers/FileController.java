@@ -36,6 +36,7 @@ import ro.cs.tao.eodata.VectorData;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.FileObject;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -267,6 +268,8 @@ public class FileController extends BaseController {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             List<Path> list = storageService.listWorkspace(false).collect(Collectors.toList());
+            List<AuxiliaryData> auxData = persistenceManager.getAuxiliaryData(SystemSessionContext.instance().getPrincipal().getName(),
+                                                                              list.stream().map(Path::toString).toArray(String[]::new));
             List<FileObject> fileObjects = new ArrayList<>(list.size());
             long size;
             Path realRoot = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
@@ -278,7 +281,12 @@ public class FileController extends BaseController {
                     } catch (IOException e) {
                         size = -1;
                     }
-                    fileObjects.add(new FileObject(path.toString(), Files.isDirectory(realPath), size));
+                    FileObject fileObject = new FileObject(path.toString(), Files.isDirectory(realPath), size);
+                    Optional<AuxiliaryData> aData = auxData.stream()
+                            .filter(a -> path.toString().equals(a.getLocation()))
+                            .findFirst();
+                    aData.ifPresent(auxiliaryData -> fileObject.setAttributes(auxiliaryData.toAttributeMap()));
+                    fileObjects.add(fileObject);
                 }
             }
             List<EOProduct> publicProducts = persistenceManager.getPublicProducts();
@@ -300,6 +308,7 @@ public class FileController extends BaseController {
                     attributeMap.remove("pixelType");
                     attributeMap.remove("sensorType");
                     fileObject.setAttributes(attributeMap);
+                    fileObject.setProductName(product.getName());
                     fileObjects.add(fileObject);
                     String productFolder = root.relativize(realRoot).toString();
                     list = storageService.listFiles(productFolder).collect(Collectors.toList());

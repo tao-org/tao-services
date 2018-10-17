@@ -55,6 +55,19 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     @Autowired
     private GroupComponentService groupComponentService;
 
+    @Override
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") Long id) {
+        ResponseEntity<ServiceResponse<?>> response;
+        WorkflowDescriptor entity = service.getFullDescriptor(id);
+        if (entity == null) {
+            response = prepareResult(String.format("Entity [%s] not found", id), ResponseStatus.FAILED);
+        } else {
+            response = prepareResult(entity);
+        }
+        return response;
+    }
+
     @RequestMapping(value = "/status/{status}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByStatus(@PathVariable("status") Status status) {
         return prepareResult(service.getUserWorkflowsByStatus(currentUser(), status));

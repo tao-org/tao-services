@@ -78,6 +78,11 @@ public class WorkflowServiceImpl
     }
 
     @Override
+    public WorkflowDescriptor getFullDescriptor(Long id) {
+        return persistenceManager.getFullWorkflowDescriptor(id);
+    }
+
+    @Override
     public List<WorkflowDescriptor> list() {
         return persistenceManager.getAllWorkflows();
     }
@@ -230,7 +235,7 @@ public class WorkflowServiceImpl
         }
         nodeDescriptor.setWorkflow(workflow);
         // delete any incoming links the node may have
-        List<ComponentLink> links = nodeDescriptor.getIncomingLinks();
+        Set<ComponentLink> links = nodeDescriptor.getIncomingLinks();
         if (links != null && links.size() > 0) {
             ComponentLink[] linkArray = new ComponentLink[links.size()];
             linkArray = links.toArray(linkArray);
@@ -243,10 +248,10 @@ public class WorkflowServiceImpl
         List<WorkflowNodeDescriptor> children = workflow.findChildren(allNodes, nodeDescriptor);
         if (children != null) {
             for (WorkflowNodeDescriptor child : children) {
-                List<ComponentLink> incomingLinks = child.getIncomingLinks();
+                Set<ComponentLink> incomingLinks = child.getIncomingLinks();
                 incomingLinks = incomingLinks.stream()
                                              .filter(l -> l.getSourceNodeId() == nodeDescriptor.getId())
-                                             .collect(Collectors.toList());
+                                             .collect(Collectors.toSet());
                 for (ComponentLink link : incomingLinks) {
                     child.removeLink(link);
                 }
@@ -297,13 +302,13 @@ public class WorkflowServiceImpl
                                                     .findFirst().get();
         try {
             ComponentLink link = new ComponentLink(sourceNodeId, linkInput, linkOutput);
-            List<ComponentLink> links = targetNode.getIncomingLinks();
+            Set<ComponentLink> links = targetNode.getIncomingLinks();
             if (links == null) {
-                links = new ArrayList<>();
+                links = new HashSet<>();
             }
             links.add(link);
             targetNode.setIncomingLinks(links);
-            return persistenceManager.updateWorkflowNodeDescriptor(targetNode);
+            return updateNode(targetNode.getWorkflow().getId(), targetNode);
         } catch (Exception e) {
             throw new PersistenceException(e);
         }
@@ -362,7 +367,7 @@ public class WorkflowServiceImpl
         groupDescriptor = (WorkflowNodeGroupDescriptor) persistenceManager.saveWorkflowNodeDescriptor(groupDescriptor, workflow);
 
         if (component != null) {
-            List<ComponentLink> external = new ArrayList<>();
+            Set<ComponentLink> external = new HashSet<>();
             TargetDescriptor target = component.getTargets().get(0);
             SourceDescriptor source = groupComponent.getSources().get(0);
             external.add(new ComponentLink(nodeBefore.getId(), target, source));
@@ -425,7 +430,7 @@ public class WorkflowServiceImpl
             //clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
         }
         for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
-            List<ComponentLink> links = node.getIncomingLinks();
+            Set<ComponentLink> links = node.getIncomingLinks();
             if (links != null) {
                 WorkflowNodeDescriptor clonedTarget = cloneMap.get(node.getId());
                 for (ComponentLink link : links) {
@@ -433,9 +438,9 @@ public class WorkflowServiceImpl
                     TargetDescriptor input = findTarget(link.getInput().getId(), clonedSource);
                     SourceDescriptor output = findSource(link.getOutput().getId(), clonedTarget);
                     ComponentLink clonedLink = new ComponentLink(clonedSource.getId(), input, output);
-                    List<ComponentLink> clonedLinks = clonedTarget.getIncomingLinks();
+                    Set<ComponentLink> clonedLinks = clonedTarget.getIncomingLinks();
                     if (clonedLinks == null) {
-                        clonedLinks = new ArrayList<>();
+                        clonedLinks = new HashSet<>();
                     }
                     clonedLinks.add(clonedLink);
                     clonedTarget.setIncomingLinks(clonedLinks);
@@ -478,7 +483,7 @@ public class WorkflowServiceImpl
             //clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
         }
         for (WorkflowNodeDescriptor node : nodesToExport) {
-            List<ComponentLink> links = node.getIncomingLinks();
+            Set<ComponentLink> links = node.getIncomingLinks();
             if (links != null) {
                 WorkflowNodeDescriptor clonedTarget = cloneMap.get(node.getId());
                 for (ComponentLink link : links) {
@@ -487,9 +492,9 @@ public class WorkflowServiceImpl
                         TargetDescriptor input = findTarget(link.getInput().getId(), clonedSource);
                         SourceDescriptor output = findSource(link.getOutput().getId(), clonedTarget);
                         ComponentLink clonedLink = new ComponentLink(clonedSource.getId(), input, output);
-                        List<ComponentLink> clonedLinks = clonedTarget.getIncomingLinks();
+                        Set<ComponentLink> clonedLinks = clonedTarget.getIncomingLinks();
                         if (clonedLinks == null) {
-                            clonedLinks = new ArrayList<>();
+                            clonedLinks = new HashSet<>();
                         }
                         clonedLinks.add(clonedLink);
                         clonedTarget.setIncomingLinks(clonedLinks);
@@ -665,7 +670,7 @@ public class WorkflowServiceImpl
         if (workflowNodes.stream().anyMatch(n -> n.getName().equals(node.getName()) && !n.getId().equals(node.getId()))) {
             errors.add("[node.name] there is another node with the same name");
         }
-        final List<ComponentLink> incomingLinks = node.getIncomingLinks();
+        final Set<ComponentLink> incomingLinks = node.getIncomingLinks();
         if (incomingLinks != null && incomingLinks.size() > 0) {
             if (incomingLinks.stream()
                     .noneMatch(l -> l.getOutput().getParentId().equals(node.getComponentId()))) {
