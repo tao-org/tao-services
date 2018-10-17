@@ -42,10 +42,7 @@ import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
-import ro.cs.tao.workflow.ParameterValue;
-import ro.cs.tao.workflow.WorkflowDescriptor;
-import ro.cs.tao.workflow.WorkflowNodeDescriptor;
-import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
+import ro.cs.tao.workflow.*;
 import ro.cs.tao.workflow.enums.ComponentType;
 import ro.cs.tao.workflow.enums.Status;
 
@@ -654,9 +651,15 @@ public class WorkflowServiceImpl
 
     private void ensureUniqueName(WorkflowDescriptor workflow, WorkflowNodeDescriptor nodeDescriptor) {
         final String name = nodeDescriptor.getName();
-        long nameCount = workflow.getNodes().stream().filter(n -> n.getName().equals(name)).count();
-        if (nameCount > 1) {
-            nodeDescriptor.setName(String.format("%s (%s)", name, nameCount - 1));
+        Set<String> nodeNames = workflow.getNodes().stream().filter(n -> !n.getId().equals(nodeDescriptor.getId()))
+                                                    .map(GraphObject::getName).collect(Collectors.toSet());
+        if (nodeNames.contains(name)) {
+            int count = 1;
+            String newName = name;
+            do {
+                newName = String.format("%s (%s)", name, count++);
+            } while (nodeNames.contains(newName));
+            nodeDescriptor.setName(newName);
         }
     }
 
