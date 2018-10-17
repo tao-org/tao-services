@@ -654,7 +654,9 @@ public class WorkflowServiceImpl
 
     private void ensureUniqueName(WorkflowDescriptor workflow, WorkflowNodeDescriptor nodeDescriptor) {
         final String name = nodeDescriptor.getName();
-        long nameCount = workflow.getNodes().stream().filter(n -> n.getName().equals(name)).count();
+        long nameCount = workflow.getNodes().stream()
+                                            .filter(n -> !n.getId().equals(nodeDescriptor.getId()) && n.getName().equals(name))
+                                            .count();
         if (nameCount > 1) {
             nodeDescriptor.setName(String.format("%s (%s)", name, nameCount - 1));
         }
