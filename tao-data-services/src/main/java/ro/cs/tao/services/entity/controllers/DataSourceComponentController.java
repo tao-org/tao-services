@@ -26,6 +26,7 @@ import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
 import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -34,6 +35,7 @@ import ro.cs.tao.services.entity.beans.CustomDataSourceRequest;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -81,8 +83,20 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     @RequestMapping(value = "/create", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody CustomDataSourceRequest request) {
         try {
-            return prepareResult(service.createFor(request.getProducts(), request.getLabel(),
-                                                   SessionStore.currentContext().getPrincipal()));
+            List<EOProduct> products = request.getProducts();
+            String productType = request.getProductType();
+            String description = request.getLabel();
+            Principal currentUser = SessionStore.currentContext().getPrincipal();
+            if (productType != null) {
+                return prepareResult(service.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
+                                                                   productType, description, currentUser));
+            } else {
+                if (products.stream().map(EOProduct::getProductType).distinct().count() > 1) {
+                    return prepareResult("The selected products must be of the same type", ResponseStatus.FAILED);
+                } else {
+                    return prepareResult(service.createForProducts(products, description, currentUser));
+                }
+            }
         } catch (PersistenceException e) {
             return handleException(e);
         }
