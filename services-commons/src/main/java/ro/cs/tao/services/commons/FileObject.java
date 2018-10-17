@@ -22,6 +22,7 @@ public class FileObject {
     private String relativePath;
     private boolean isFolder;
     private long size;
+    private String productName;
     private Map<String, String> attributes;
 
     public FileObject(String relativePath, boolean isFolder, long size) {
@@ -35,6 +36,10 @@ public class FileObject {
     public boolean isFolder() { return isFolder; }
 
     public long getSize() { return size; }
+
+    public String getProductName() { return productName; }
+
+    public void setProductName(String productName) { this.productName = productName; }
 
     public Map<String, String> getAttributes() { return attributes; }
 
