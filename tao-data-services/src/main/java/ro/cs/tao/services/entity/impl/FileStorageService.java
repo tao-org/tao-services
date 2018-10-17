@@ -41,6 +41,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -70,10 +71,19 @@ public class FileStorageService implements StorageService<MultipartFile> {
             filePath = userPath.resolve(Paths.get(fileName).getFileName());
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
-        AuxiliaryData data = new AuxiliaryData();
-        data.setLocation(SessionStore.currentContext().getWorkspace().relativize(filePath).toString());
+        String userName = SessionStore.currentContext().getPrincipal().getName();
+        String location = SessionStore.currentContext().getWorkspace().relativize(filePath).toString();
+        List<AuxiliaryData> listData = persistenceManager.getAuxiliaryData(userName, location);
+        AuxiliaryData data;
+        if (listData != null && listData.size() == 1) {
+            data = listData.get(0);
+        } else {
+            data = new AuxiliaryData();
+            data.setId(UUID.randomUUID().toString());
+        }
+        data.setLocation(location);
         data.setDescription(description);
-        data.setUserName(SessionStore.currentContext().getPrincipal().getName());
+        data.setUserName(userName);
         data.setCreated(LocalDateTime.now());
         data.setModified(data.getCreated());
         persistenceManager.saveAuxiliaryData(data);
@@ -96,10 +106,19 @@ public class FileStorageService implements StorageService<MultipartFile> {
             filePath = publicPath.resolve(fileName);
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
-        AuxiliaryData data = new AuxiliaryData();
-        data.setLocation(Paths.get(SystemVariable.SHARED_WORKSPACE.value()).relativize(filePath).toString());
+        String userName = SystemSessionContext.instance().getPrincipal().getName();
+        String location = Paths.get(SystemVariable.SHARED_WORKSPACE.value()).relativize(filePath).toString();
+        List<AuxiliaryData> listData = persistenceManager.getAuxiliaryData(userName, location);
+        AuxiliaryData data;
+        if (listData != null && listData.size() == 1) {
+            data = listData.get(0);
+        } else {
+            data = new AuxiliaryData();
+            data.setId(UUID.randomUUID().toString());
+        }
+        data.setLocation(location);
         data.setDescription(description);
-        data.setUserName(SystemSessionContext.instance().getPrincipal().getName());
+        data.setUserName(userName);
         data.setCreated(LocalDateTime.now());
         data.setModified(data.getCreated());
         persistenceManager.saveAuxiliaryData(data);
