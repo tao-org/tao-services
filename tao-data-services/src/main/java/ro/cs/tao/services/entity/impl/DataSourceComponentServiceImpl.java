@@ -20,7 +20,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.Sort;
 import ro.cs.tao.Tag;
+import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TaoComponent;
+import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.eodata.EOData;
@@ -34,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service("dataSourceComponentService")
@@ -97,8 +100,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         throw new UnsupportedOperationException("Data source components cannot be deleted");
     }
 
-    public DataSourceComponent createFor(List<EOProduct> products, Principal principal) throws PersistenceException {
-        if (products == null || products.isEmpty() || principal == null) {
+    public DataSourceComponent createFor(List<EOProduct> products, String label, Principal principal) throws PersistenceException {
+        if (products == null || products.isEmpty() || label == null || label.isEmpty() || principal == null) {
             return null;
         }
         String productType = products.stream()
@@ -116,14 +119,22 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         try {
             userDSC = systemDSC.clone();
             LocalDateTime time = LocalDateTime.now();
-            userDSC.setId(systemDSC.getId() + "-" + principal.getName() + "-" + time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+            String newId = systemDSC.getId() + "-" + principal.getName() + "-" + time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            userDSC.setId(newId);
             userDSC.setLabel(systemDSC.getLabel() + " (customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + ")");
             List<String> nameList = products.stream().map(EOData::getName).collect(Collectors.toList());
-            userDSC.getSources().get(0).getDataDescriptor().setLocation(String.join(",", nameList));
-            userDSC.getSources().get(0).setCardinality(products.size());
-            userDSC.getTargets().get(0).setCardinality(products.size());
-            userDSC.getTargets().get(0).addConstraint("Same cardinality");
+            SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
+            sourceDescriptor.setId(UUID.randomUUID().toString());
+            sourceDescriptor.setParentId(newId);
+            sourceDescriptor.getDataDescriptor().setLocation(String.join(",", nameList));
+            sourceDescriptor.setCardinality(products.size());
+            TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
+            targetDescriptor.setId(UUID.randomUUID().toString());
+            targetDescriptor.setParentId(newId);
+            targetDescriptor.setCardinality(products.size());
+            targetDescriptor.addConstraint("Same cardinality");
             userDSC.setSystem(false);
+            userDSC.setLabel(label);
             userDSC = persistenceManager.saveDataSourceComponent(userDSC);
         } catch (CloneNotSupportedException e) {
             throw new PersistenceException(e);
