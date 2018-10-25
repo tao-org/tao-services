@@ -44,13 +44,4 @@ public class TopologyController extends DataEntityController<NodeDescription, St
         return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 
-    @RequestMapping(value = "/tags", method = RequestMethod.GET)
-    public ResponseEntity<ServiceResponse<?>> listTags() {
-        List<Tag> objects = service.getNodeTags();
-        if (objects == null ) {
-            objects = new ArrayList<>();
-        }
-        return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
-    }
-
 }
