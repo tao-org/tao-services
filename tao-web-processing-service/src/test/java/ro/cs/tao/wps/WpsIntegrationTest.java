@@ -16,7 +16,16 @@ import org.junit.runner.*;
 import java.io.IOException;
 
 @RunWith(IntegrationTestRunner.class)
-public class WPSintegrationTest {
+@IntegrationTestRunner.NeededService("http://localhost:8080/wps")
+public class WpsIntegrationTest {
+
+    final static String serviceAdress;
+
+    static {
+        final IntegrationTestRunner.NeededService annotation
+                = WpsIntegrationTest.class.getAnnotation(IntegrationTestRunner.NeededService.class);
+        serviceAdress = annotation.value();
+    }
 
     CloseableHttpResponse closeableHttpResponse;
 
@@ -32,7 +41,7 @@ public class WPSintegrationTest {
 
     @Test
     public void testGetCapabilities_withMock() throws IOException {
-        closeableHttpResponse = getHttpGetResponse("http://localhost:8080/wps?Service=WPS&Request=GetCapabilities");
+        closeableHttpResponse = getHttpGetResponse(serviceAdress + "?Service=WPS&Request=GetCapabilities");
 
         assertThat(closeableHttpResponse, is(notNullValue()));
         final StatusLine statusLine = closeableHttpResponse.getStatusLine();
@@ -130,7 +139,7 @@ public class WPSintegrationTest {
 
     @Test
     public void testDescribeProcess_processOne_withMock() throws IOException {
-        closeableHttpResponse = getHttpGetResponse("http://localhost:8080/wps?Service=WPS&Request=DescribeProcess&Version=1.0.0&Identifier=1");
+        closeableHttpResponse = getHttpGetResponse(serviceAdress + "?Service=WPS&Request=DescribeProcess&Version=1.0.0&Identifier=1");
 
         assertThat(closeableHttpResponse, is(notNullValue()));
         final StatusLine statusLine = closeableHttpResponse.getStatusLine();
