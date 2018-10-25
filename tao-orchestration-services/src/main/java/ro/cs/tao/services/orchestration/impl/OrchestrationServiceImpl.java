@@ -73,17 +73,12 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public List<TargetDescriptor> getWorkflowOutputs(long workflowId) {
-        throw new RuntimeException("not implemented");
+        if (!isDevModeEnabled()) {
+            return workflowService.getWorkflowOutputs(workflowId);
+        } else {
+            return MockData.getMockOutputs().get(workflowId);
+        }
     }
-
-//    @Override
-//    public List<TargetDescriptor> getWorkflowOutputs(long workflowId) {
-//        if (!isDevModeEnabled()) {
-//            return workflowService.getWorkflowOutputs(workflowId);
-//        } else {
-//            return MockData.getMockOutputs().get(workflowId);
-//        }
-//    }
 
     @Override
     public void stopWorkflow(long workflowId) throws ExecutionException {

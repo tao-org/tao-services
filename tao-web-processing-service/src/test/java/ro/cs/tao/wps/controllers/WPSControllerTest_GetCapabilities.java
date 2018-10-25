@@ -4,12 +4,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import com.bc.wps.WpsFrontendConnector;
+import com.bc.wps.api.WpsRequestContext;
+import com.bc.wps.api.WpsServiceInstance;
 import org.junit.*;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
+import ro.cs.tao.wps.impl.BCWpsServiceInstanceImpl;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -17,7 +21,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public class WPSControllerTest {
+public class WPSControllerTest_GetCapabilities {
 
     final String validService = "WPS";
     final String validRequestType_GC = "GetCapabilities";
@@ -26,7 +30,7 @@ public class WPSControllerTest {
     HttpServletRequest httpRequest;
     HttpServletResponse servletResponse;
     StringWriter responseWriter;
-    WPSController classUnderTest;
+    WPSController wpsController;
 
     @Before
     public void setUp() throws Exception {
@@ -36,13 +40,9 @@ public class WPSControllerTest {
         responseWriter = new StringWriter();
         when(servletResponse.getWriter()).thenReturn(new PrintWriter(responseWriter));
 
-        // preparation for valid GetCapabilities request
-        when(frontendConnector.getWpsService("TAO", "WPS", "GetCapabilities",
-                                             null, null, null, null, null,
-                                             httpRequest)).thenReturn("ValidResponse");
-
-        classUnderTest = new WPSController();
-        ReflectionTestUtils.setField(classUnderTest, "wpsFrontendConnector", frontendConnector);
+        // class under test
+        wpsController = new WPSController();
+        ReflectionTestUtils.setField(wpsController, "wpsFrontendConnector", frontendConnector);
     }
 
     @After
@@ -55,12 +55,12 @@ public class WPSControllerTest {
     @Test
     public void testRequestGet_ValidGetCapabilitiesRequest() throws Exception {
         //preparation
-        when(frontendConnector.getWpsService(anyString(), anyString(), anyString(),
-                                             isNull(), isNull(), isNull(), isNull(), isNull(),
-                                             same(httpRequest))).thenReturn("Valid frontendConnector Response");
+        when(frontendConnector.getWpsService(anyString(), anyString(), any(),
+                                             any(), any(), any(), any(),
+                                             any(HttpServletRequest.class), any(WpsServiceInstance.class), any(WpsRequestContext.class))).thenReturn("Valid frontendConnector Response");
 
         //execution
-        final ResponseEntity<?> responseEntity = classUnderTest
+        final ResponseEntity<?> responseEntity = wpsController
                 .requestGet(validService, validRequestType_GC, null, null, null, null, null, httpRequest, servletResponse);
 
         //verification
@@ -79,7 +79,7 @@ public class WPSControllerTest {
         final String service = "AAAAAAA"; // valid value = "WPS"
 
         //execution
-        final ResponseEntity<?> responseEntity = classUnderTest.requestGet(service, validRequestType_GC, null, null, null, null, null, httpRequest, servletResponse);
+        final ResponseEntity<?> responseEntity = wpsController.requestGet(service, validRequestType_GC, null, null, null, null, null, httpRequest, servletResponse);
 
         //verification
         assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
@@ -93,7 +93,7 @@ public class WPSControllerTest {
         final String requestType = "BBBBBBBBBBBBB";  // valid values = "GetCapabilities" or "DescribeProcess"
 
         //execution
-        final ResponseEntity<?> responseEntity = classUnderTest.requestGet(validService, requestType, null, null, null, null, null, httpRequest, servletResponse);
+        final ResponseEntity<?> responseEntity = wpsController.requestGet(validService, requestType, null, null, null, null, null, httpRequest, servletResponse);
 
         //verification
         assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
@@ -107,7 +107,7 @@ public class WPSControllerTest {
         when(servletResponse.getWriter()).thenThrow(new IOException("TestException"));
 
         //execution
-        final ResponseEntity<?> responseEntity = classUnderTest
+        final ResponseEntity<?> responseEntity = wpsController
                 .requestGet(validService, validRequestType_GC, null, null, null, null, null, httpRequest, servletResponse);
 
         //verification
@@ -118,8 +118,8 @@ public class WPSControllerTest {
     }
 
     private void validGetCapabilitiesCallToFrontendConnectorExpected() {
-        verify(frontendConnector, times(1)).getWpsService("TAO", validService, validRequestType_GC,
-                                                          null, null, null, null, null,
-                                                          httpRequest);
+        verify(frontendConnector, times(1)).getWpsService(matches(validService), matches(validRequestType_GC), any(),
+                                                          any(), any(), any(), any(),
+                                                          same(httpRequest), isA(BCWpsServiceInstanceImpl.class), isA(WpsRequestContext.class));
     }
 }

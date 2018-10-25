@@ -16,194 +16,53 @@
 
 package ro.cs.tao.wps.impl;
 
-import com.bc.wps.api.WpsRequestContext;
-import com.bc.wps.api.WpsServiceInstance;
-import com.bc.wps.api.exceptions.WpsServiceException;
-import com.bc.wps.api.schema.Capabilities;
-import com.bc.wps.api.schema.CodeType;
-import com.bc.wps.api.schema.Execute;
-import com.bc.wps.api.schema.ExecuteResponse;
-import com.bc.wps.api.schema.LanguageStringType;
-import com.bc.wps.api.schema.OutputDescriptionType;
-import com.bc.wps.api.schema.ProcessDescriptionType;
-import com.bc.wps.api.schema.SupportedComplexDataType;
-import com.bc.wps.api.schema.ValueType;
-import com.bc.wps.api.utils.InputDescriptionTypeBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.OrchestratorService;
-import ro.cs.tao.services.orchestration.impl.OrchestrationServiceImpl;
-import ro.cs.tao.wps.operations.GetCapabilitiesOperation;
+import ro.cs.tao.services.interfaces.WebProcessingService;
+import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.services.model.workflow.WorkflowInfo;
+import ro.cs.tao.workflow.WorkflowDescriptor;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-//@Service("webProcessingService")
-public class WebProcessingServiceImpl implements WpsServiceInstance /*, WebProcessingService */{
+@Service("webProcessingService")
+public class WebProcessingServiceImpl implements WebProcessingService {
 
-    private OrchestratorService orchestratorService = new OrchestrationServiceImpl();
+    @Autowired
+    private WorkflowService workflowService;
 
-    private Logger logger = Logger.getLogger(this.getClass().getName());
+    @Autowired
+    private OrchestratorService orchestratorService;
 
-    //    @Override
-//    public List<WorkflowInfo> getCapabilities() {
-//        return workflowService.getPublicWorkflows();
-//    }
-//
-//    @Override
+    @Override
+    public List<WorkflowInfo> getCapabilities() {
+        return workflowService.getPublicWorkflows();
+    }
+
+    @Override
     public Map<String, List<Parameter>> describeProcess(long workflowId) {
-//        return workflowService.getWorkflowParameters(workflowId);
-        return null;
+        return workflowService.getWorkflowParameters(workflowId);
     }
-//
-//    @Override
-//    public long execute(long workflowId, Map<String, Map<String, String>> parameters) {
-//        return orchestratorService.startWorkflow(workflowId, parameters);
-//    }
 
     @Override
-    public Capabilities getCapabilities(WpsRequestContext context) throws WpsServiceException {
+    public long execute(long workflowId, Map<String, Map<String, String>> parameters) {
+        long result = -1;
         try {
-            final GetCapabilitiesOperation operation = new GetCapabilitiesOperation(context);
-            return operation.getCapabilities();
-        } catch (IOException | URISyntaxException | PersistenceException exception) {
-            logger.log(Level.SEVERE, "Unable to perform GetCapabilities operation successfully", exception);
-            throw new WpsServiceException(exception);
-        }
-    }
-
-    @Override
-    public List<ProcessDescriptionType> describeProcess(WpsRequestContext wpsRequestContext, String processIdentifier) throws WpsServiceException {
-        final Map<String, List<Parameter>> parameters = orchestratorService.getWorkflowParameters(Long.parseLong(processIdentifier));
-
-        final ProcessDescriptionType.DataInputs dataInputs = new ProcessDescriptionType.DataInputs();
-
-        for (Map.Entry<String, List<Parameter>> mapEntry : parameters.entrySet()) {
-            final String groupName = mapEntry.getKey();
-            final List groupParameterList = mapEntry.getValue();
-//            final List<Parameter> groupParameterList = mapEntry.getValue();
-            for (int i = 0; i < groupParameterList.size(); i++) {
-                Map groupParameter = (Map) groupParameterList.get(i);
-
-//            for (Parameter groupParameter : groupParameterList) {
-                final String parameterName = (String) groupParameter.get("name");
-                final String parameterType = (String) groupParameter.get("type");
-                final List valueSet = (List) groupParameter.get("valueSet");
-//                final String parameterName = groupParameter.getName();
-//                final String parameterType = groupParameter.getType();
-//                final String[] valueSet = groupParameter.getValueSet();
-                InputDescriptionTypeBuilder builder = InputDescriptionTypeBuilder.create()
-                        .withIdentifier(groupName + "~" + parameterName)
-                        .withTitle("Param '" + parameterName + "' of group '" + groupName + "'.")
-                        .withAbstract("The parameter '" + parameterName + "' of parametergroup '" + groupName + "'.")
-                        .withDataType(parameterType);
-
-                if (valueSet != null) {
-                    final ArrayList<Object> strings = new ArrayList<>();
-                    for (Object s: valueSet) {
-                        final ValueType valueType = new ValueType();
-                        valueType.setValue((String) s);
-                        strings.add(valueType);
-                    }
-                    builder = builder.withAllowedValues(strings);
-                }
-                dataInputs.getInput().add(builder.build());
+            WorkflowDescriptor descriptor = workflowService.findById(workflowId);
+            if (descriptor != null) {
+                String jobName = descriptor.getName() + " via WPS on " + LocalDateTime.now().format(DateTimeFormatter.ISO_TIME);
+                result = orchestratorService.startWorkflow(workflowId, jobName, parameters);
             }
+        } catch (PersistenceException e) {
+            Logger.getLogger(WebProcessingService.class.getName()).severe(e.getMessage());
         }
-        final CodeType identifier = new CodeType();
-        identifier.setValue(processIdentifier);
-
-        final LanguageStringType title = new LanguageStringType();
-        title.setValue("TAO Workflow ... " + processIdentifier);
-
-        final SupportedComplexDataType complexOutput = new SupportedComplexDataType();
-
-        final OutputDescriptionType outputDescription = new OutputDescriptionType();
-        outputDescription.setComplexOutput(complexOutput);
-
-        final ProcessDescriptionType.ProcessOutputs processOutputs = new ProcessDescriptionType.ProcessOutputs();
-        processOutputs.getOutput().add(outputDescription);
-
-        final ProcessDescriptionType processDescription = new ProcessDescriptionType();
-        processDescription.setIdentifier(identifier);
-        processDescription.setTitle(title);
-        processDescription.setProcessVersion("na");
-        processDescription.setDataInputs(dataInputs);
-        processDescription.setProcessOutputs(processOutputs);
-        return Collections.singletonList(processDescription);
-
-//        final ProcessDescriptionType.ProcessOutputs outputs = new ProcessDescriptionType.ProcessOutputs();
-//        description.setProcessOutputs(outputs);
-//
-//        } catch (PersistenceException e) {
-//            throw new WpsServiceException("Unable to describe process for process identifier '"+processIdentifier+"'", e);
-//        }
-    }
-
-/*
-    public List<ProcessDescriptionType> describeProcess(WpsRequestContext wpsRequestContext, String processIdentifier) throws WpsServiceException {
-        final Map<String, List<Parameter>> parameters = orchestratorService.getWorkflowParameters(Long.parseLong(processIdentifier));
-
-        final ProcessDescriptionType.DataInputs dataInputs = new ProcessDescriptionType.DataInputs();
-
-        for (Map.Entry<String, List<Parameter>> mapEntry : parameters.entrySet()) {
-            final String groupName = mapEntry.getKey();
-            final List groupParameterList = mapEntry.getValue();
-//            final List<Parameter> groupParameterList = mapEntry.getValue();
-            for (int i = 0; i < groupParameterList.size(); i++) {
-                Map groupParameter = (Map) groupParameterList.get(i);
-
-//            for (Parameter groupParameter : groupParameterList) {
-                final String parameterName = (String) groupParameter.get("name");
-                final String parameterType = (String) groupParameter.get("type");
-                final List valueSet = (List) groupParameter.get("valueSet");
-//                final String parameterName = groupParameter.getName();
-//                final String parameterType = groupParameter.getType();
-//                final String[] valueSet = groupParameter.getValueSet();
-                InputDescriptionTypeBuilder builder = InputDescriptionTypeBuilder.create()
-                        .withIdentifier(groupName + "~" + parameterName)
-                        .withTitle("Param '" + parameterName + "' of group '" + groupName + "'.")
-                        .withAbstract("The parameter '" + parameterName + "' of parametergroup '" + groupName + "'.")
-                        .withDataType(parameterType);
-
-                if (valueSet != null) {
-                    builder = builder.withAllowedValues(valueSet);
-                }
-                dataInputs.getInput().add(builder.build());
-            }
-        }
-        final ProcessDescriptionType processDescription = new ProcessDescriptionType();
-        processDescription.setDataInputs(dataInputs);
-        return Collections.singletonList(processDescription);
-
-//        final ProcessDescriptionType.ProcessOutputs outputs = new ProcessDescriptionType.ProcessOutputs();
-//        description.setProcessOutputs(outputs);
-//
-//        } catch (PersistenceException e) {
-//            throw new WpsServiceException("Unable to describe process for process identifier '"+processIdentifier+"'", e);
-//        }
-    }
-*/
-
-    @Override
-    public ExecuteResponse doExecute(WpsRequestContext context, Execute executeRequest) throws WpsServiceException {
-        throw new RuntimeException("not implemented");
-    }
-
-    @Override
-    public ExecuteResponse getStatus(WpsRequestContext context, String jobId) throws WpsServiceException {
-        throw new RuntimeException("not implemented");
-    }
-
-    @Override
-    public void dispose() {
-        throw new RuntimeException("not implemented");
+        return result;
     }
 }

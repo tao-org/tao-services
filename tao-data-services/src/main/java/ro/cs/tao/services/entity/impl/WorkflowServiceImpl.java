@@ -536,11 +536,6 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public List<TargetDescriptor> getWorkflowOutputs(long workflowId) {
-        throw new RuntimeException("not implemented");
-    }
-
-    @Override
     public Map<String, List<Parameter>> getWorkflowParameters(long workflowId) {
         Map<String, List<Parameter>> parameters = new LinkedHashMap<>();
         WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);

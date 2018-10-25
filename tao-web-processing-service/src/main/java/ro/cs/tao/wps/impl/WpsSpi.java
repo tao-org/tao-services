@@ -35,6 +35,6 @@ public class WpsSpi implements WpsServiceProvider {
         } catch (IOException exception) {
             throw new WpsRuntimeException("Unable to load tao-wps.properties file", exception);
         }
-        return new WebProcessingServiceImpl();
+        return new BCWpsServiceInstanceImpl();
     }
 }
