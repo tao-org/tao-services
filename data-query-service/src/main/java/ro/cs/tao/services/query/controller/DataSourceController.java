@@ -156,7 +156,7 @@ public class DataSourceController extends BaseController {
                 results = new ArrayList<>();
             }
             return prepareResult(results);
-        } catch (SerializationException ex) {
+        } catch (Exception ex) {
             return handleException(ex);
         }
     }
