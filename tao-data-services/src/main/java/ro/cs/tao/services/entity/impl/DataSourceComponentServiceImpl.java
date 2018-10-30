@@ -187,7 +187,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             List<Tag> componentTags = persistenceManager.getComponentTags();
             for (String value : tags) {
                 if (componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
-                    persistenceManager.saveTag(new Tag(TagType.COMPONENT, value));
+                    persistenceManager.saveTag(new Tag(TagType.DATASOURCE, value));
                 }
             }
         }
