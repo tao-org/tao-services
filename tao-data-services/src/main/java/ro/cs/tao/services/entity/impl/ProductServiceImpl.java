@@ -200,7 +200,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
                         if (!folder.toString().startsWith(publicFolder.toString())) {
                             targetPath = publicFolder.resolve(folder.getFileName());
                             if (!Files.exists(targetPath)) {
-                                Logger.getLogger(ProductService.class.getName()).fine(String.format("Copying %s to %s",
+                                Logger.getLogger(ProductService.class.getName()).fine(String.format("%s %s to %s",
+                                                                                                    linkOnly ? "Linking" : "Copying",
                                                                                                     folder, publicFolder.toFile()));
                                 if (linkOnly) {
                                     FileUtilities.link(folder, targetPath);
