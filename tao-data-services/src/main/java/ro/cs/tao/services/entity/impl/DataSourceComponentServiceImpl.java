@@ -102,27 +102,38 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
 
     @Override
     public DataSourceComponent createForProducts(List<EOProduct> products, String label, Principal principal) throws PersistenceException {
-        if (products == null || products.isEmpty() || label == null || label.isEmpty() || principal == null) {
-            return null;
+        if (products == null || products.isEmpty()) {
+            throw new PersistenceException("Product list is empty");
         }
+        if (principal == null) {
+            throw new PersistenceException("Invalid principal (null)");
+        }
+        boolean hasLabel = label != null && !label.isEmpty();
         String productType = products.stream()
                                      .filter(p -> p.getProductType() != null)
                                      .map(EOProduct::getProductType)
                                      .findFirst().orElse(null);
         if (productType == null) {
-            return null;
+            throw new PersistenceException("Invalid product type (null)");
         }
-        DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(productType + "-Local Database");
+        String systemDSCId = productType + "-Local Database";
+        DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(systemDSCId);
         if (systemDSC == null) {
-            return null;
+            throw new PersistenceException(String.format("No system datasource component with id = '%s' was found",
+                                                         systemDSCId));
+        }
+        if (persistenceManager.getDataSourceComponentByLabel(label) != null) {
+            throw new PersistenceException(String.format("A component with the label '%s' already exists", label));
         }
         DataSourceComponent userDSC;
         try {
             userDSC = systemDSC.clone();
             LocalDateTime time = LocalDateTime.now();
-            String newId = systemDSC.getId() + "-" + principal.getName() + "-" + time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            String newId = hasLabel ? label :
+                    systemDSC.getId() + "-" + principal.getName() + "-" + time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
             userDSC.setId(newId);
-            userDSC.setLabel(systemDSC.getLabel() + " (customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + ")");
+            userDSC.setLabel(hasLabel ? label :
+                                     systemDSC.getLabel() + " (customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + ")");
             List<String> nameList = products.stream().map(EOData::getName).collect(Collectors.toList());
             SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
             sourceDescriptor.setId(UUID.randomUUID().toString());
