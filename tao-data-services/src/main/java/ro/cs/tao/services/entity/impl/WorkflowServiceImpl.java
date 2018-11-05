@@ -123,7 +123,7 @@ public class WorkflowServiceImpl
             }
             validate(object);
             try {
-                addTagsIfNew(object);
+                //addTagsIfNew(object);
                 return persistenceManager.saveWorkflowDescriptor(object);
             } catch (PersistenceException e) {
                 logger.severe(e.getMessage());
@@ -145,7 +145,7 @@ public class WorkflowServiceImpl
         existing.setyCoord(object.getyCoord());
         existing.setZoom(object.getZoom());
         existing.setTags(object.getTags());
-        addTagsIfNew(object);
+        //addTagsIfNew(object);
         return persistenceManager.updateWorkflowDescriptor(existing);
     }
 
@@ -156,6 +156,45 @@ public class WorkflowServiceImpl
             descriptor.setActive(false);
             save(descriptor);
         }
+    }
+
+    @Override
+    public WorkflowDescriptor tag(Long id, List<String> tags) throws PersistenceException {
+        WorkflowDescriptor entity = findById(id);
+        if (entity == null) {
+            throw new PersistenceException(String.format("Workflow with id '%s' not found", id));
+        }
+        if (tags != null && tags.size() > 0) {
+            Set<String> existingTags = persistenceManager.getWorkflowTags().stream()
+                    .map(Tag::getText).collect(Collectors.toSet());
+            for (String value : tags) {
+                if (!existingTags.contains(value)) {
+                    persistenceManager.saveTag(new Tag(TagType.WORKFLOW, value));
+                }
+            }
+            entity.setTags(tags);
+            return update(entity);
+        }
+        return entity;
+    }
+
+    @Override
+    public WorkflowDescriptor untag(Long id, List<String> tags) throws PersistenceException {
+        WorkflowDescriptor entity = findById(id);
+        if (entity == null) {
+            throw new PersistenceException(String.format("Workflow with id '%s' not found", id));
+        }
+        if (tags != null && tags.size() > 0) {
+            List<String> entityTags = entity.getTags();
+            if (entityTags != null) {
+                for (String value : tags) {
+                    entityTags.remove(value);
+                }
+                entity.setTags(entityTags);
+                return update(entity);
+            }
+        }
+        return entity;
     }
 
     @Override
@@ -768,7 +807,7 @@ public class WorkflowServiceImpl
         }
     }
 
-    private void addTagsIfNew(WorkflowDescriptor workflow) {
+    /*private void addTagsIfNew(WorkflowDescriptor workflow) {
         List<String> tags = workflow.getTags();
         if (tags != null) {
             List<Tag> componentTags = persistenceManager.getComponentTags();
@@ -778,5 +817,5 @@ public class WorkflowServiceImpl
                 }
             }
         }
-    }
+    }*/
 }

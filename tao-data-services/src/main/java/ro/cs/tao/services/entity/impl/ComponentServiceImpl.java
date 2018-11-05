@@ -167,6 +167,45 @@ public class ComponentServiceImpl
     }
 
     @Override
+    public ProcessingComponent tag(String id, List<String> tags) throws PersistenceException {
+        ProcessingComponent entity = findById(id);
+        if (entity == null) {
+            throw new PersistenceException(String.format("Component with id '%s' not found", id));
+        }
+        if (tags != null && tags.size() > 0) {
+            Set<String> existingTags = persistenceManager.getWorkflowTags().stream()
+                    .map(Tag::getText).collect(Collectors.toSet());
+            for (String value : tags) {
+                if (!existingTags.contains(value)) {
+                    persistenceManager.saveTag(new Tag(TagType.COMPONENT, value));
+                }
+            }
+            entity.setTags(tags);
+            return update(entity);
+        }
+        return entity;
+    }
+
+    @Override
+    public ProcessingComponent untag(String id, List<String> tags) throws PersistenceException {
+        ProcessingComponent entity = findById(id);
+        if (entity == null) {
+            throw new PersistenceException(String.format("Component with id '%s' not found", id));
+        }
+        if (tags != null && tags.size() > 0) {
+            List<String> entityTags = entity.getTags();
+            if (entityTags != null) {
+                for (String value : tags) {
+                    entityTags.remove(value);
+                }
+                entity.setTags(entityTags);
+                return update(entity);
+            }
+        }
+        return entity;
+    }
+
+    @Override
     public void validate(ProcessingComponent entity) throws ValidationException {
         super.validate(entity);
     }
