@@ -18,14 +18,18 @@ package ro.cs.tao.services.entity.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.Tag;
+import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -63,6 +67,45 @@ public class TopologyServiceImpl
     @Override
     public void delete(String hostName) {
         TopologyManager.getInstance().remove(hostName);
+    }
+
+    @Override
+    public NodeDescription tag(String id, List<String> tags) throws PersistenceException {
+        NodeDescription entity = findById(id);
+        if (entity == null) {
+            throw new PersistenceException(String.format("Node with id '%s' not found", id));
+        }
+        if (tags != null && tags.size() > 0) {
+            Set<String> existingTags = persistenceManager.getNodeTags().stream()
+                    .map(Tag::getText).collect(Collectors.toSet());
+            for (String value : tags) {
+                if (!existingTags.contains(value)) {
+                    persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
+                }
+            }
+            entity.setTags(tags);
+            return update(entity);
+        }
+        return entity;
+    }
+
+    @Override
+    public NodeDescription untag(String id, List<String> tags) throws PersistenceException {
+        NodeDescription entity = findById(id);
+        if (entity == null) {
+            throw new PersistenceException(String.format("Node with id '%s' not found", id));
+        }
+        if (tags != null && tags.size() > 0) {
+            List<String> entityTags = entity.getTags();
+            if (entityTags != null) {
+                for (String value : tags) {
+                    entityTags.remove(value);
+                }
+                entity.setTags(entityTags);
+                return update(entity);
+            }
+        }
+        return entity;
     }
 
     @Override
