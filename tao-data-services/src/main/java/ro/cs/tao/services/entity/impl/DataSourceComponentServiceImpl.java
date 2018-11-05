@@ -92,7 +92,12 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
 
     @Override
     public DataSourceComponent update(DataSourceComponent object) {
-        return save(object);
+        try {
+            addTagsIfNew(object);
+            return persistenceManager.updateDataSourceComponent(object);
+        } catch (PersistenceException e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     @Override
@@ -195,7 +200,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     private void addTagsIfNew(TaoComponent component) {
         List<String> tags = component.getTags();
         if (tags != null) {
-            List<Tag> componentTags = persistenceManager.getComponentTags();
+            List<Tag> componentTags = persistenceManager.getDatasourceTags();
             for (String value : tags) {
                 if (componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
                     persistenceManager.saveTag(new Tag(TagType.DATASOURCE, value));
