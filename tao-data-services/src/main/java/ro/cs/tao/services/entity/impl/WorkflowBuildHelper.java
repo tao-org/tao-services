@@ -41,7 +41,7 @@ public class WorkflowBuildHelper {
         this.workflow.setStatus(Status.DRAFT);
         this.workflow.setCreated(LocalDateTime.now());
         this.workflow.setActive(true);
-        this.workflow.setUserName("admin");
+        this.workflow.setUserName(SessionStore.currentContext().getPrincipal().getName());
         this.workflow.setVisibility(Visibility.PRIVATE);
         this.workflow = persistenceManager.saveWorkflowDescriptor(this.workflow);
     }

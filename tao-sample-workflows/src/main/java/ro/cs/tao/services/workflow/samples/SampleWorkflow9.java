@@ -48,8 +48,8 @@ public class SampleWorkflow9 extends SampleWorkflowBase {
         WorkflowNodeDescriptor node3 = addNode(workflow,
                                                "OTB Resample", "RigidTransformResample", ComponentType.PROCESSING, customValues,
                                                node2, ComponentType.PROCESSING, Direction.RIGHT);
-        WorkflowNodeDescriptor groupNode = addGroupNode(workflow, "Group-1", node1, node2, node3);
+        WorkflowNodeDescriptor groupNode = addGroupNode(workflow, "Group-2", node1, node2, node3);
         addNode(workflow, "OTB Concatenate", "ConcatenateImages", ComponentType.PROCESSING, null,
-                groupNode, ComponentType.PROCESSING, Direction.RIGHT);
+                groupNode, ComponentType.GROUP, Direction.RIGHT);
     }
 }
