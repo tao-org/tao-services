@@ -241,6 +241,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
                             persistenceManager.saveEOProduct(product);
                             count++;
+                        } else {
+                            Logger.getLogger(ProductService.class.getName()).info(String.format("Skipping %s. Reason: unable to read metadata", targetPath));
                         }
                     }
                 } catch (Exception e1) {
