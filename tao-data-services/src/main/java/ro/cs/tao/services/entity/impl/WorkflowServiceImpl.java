@@ -409,6 +409,19 @@ public class WorkflowServiceImpl
             external.add(new ComponentLink(nodeBefore.getId(), target, source));
             groupDescriptor.setIncomingLinks(external);
             groupDescriptor = (WorkflowNodeGroupDescriptor) persistenceManager.updateWorkflowNodeDescriptor(groupDescriptor);
+            final Map<Long, ComponentLink> linksToRemove = new HashMap<>();
+            groupDescriptor.getNodes().forEach(c -> {
+                                          ComponentLink link;
+                                          if (c.getIncomingLinks() != null &&
+                                              (link = c.getIncomingLinks().stream()
+                                                                          .filter(l -> l.getSourceNodeId() == nodeBeforeId)
+                                                                          .findFirst().orElse(null)) != null) {
+                                              linksToRemove.put(c.getId(), link);
+                                          }
+                                      });
+            for (Map.Entry<Long, ComponentLink> entry : linksToRemove.entrySet()) {
+                removeLink(entry.getKey(), entry.getValue());
+            }
         }
         return groupDescriptor;
     }
