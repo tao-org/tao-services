@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.Sort;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.SourceDescriptor;
-import ro.cs.tao.component.TaoComponent;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
@@ -36,6 +35,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -83,7 +83,6 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     @Override
     public DataSourceComponent save(DataSourceComponent object) {
         try {
-            addTagsIfNew(object);
             return persistenceManager.saveDataSourceComponent(object);
         } catch (PersistenceException e) {
             throw new RuntimeException(e.getMessage());
@@ -92,7 +91,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
 
     @Override
     public DataSourceComponent update(DataSourceComponent object) {
-        return save(object);
+        try {
+            return persistenceManager.updateDataSourceComponent(object);
+        } catch (PersistenceException e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     @Override
@@ -102,27 +105,38 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
 
     @Override
     public DataSourceComponent createForProducts(List<EOProduct> products, String label, Principal principal) throws PersistenceException {
-        if (products == null || products.isEmpty() || label == null || label.isEmpty() || principal == null) {
-            return null;
+        if (products == null || products.isEmpty()) {
+            throw new PersistenceException("Product list is empty");
         }
+        if (principal == null) {
+            throw new PersistenceException("Invalid principal (null)");
+        }
+        boolean hasLabel = label != null && !label.isEmpty();
         String productType = products.stream()
                                      .filter(p -> p.getProductType() != null)
                                      .map(EOProduct::getProductType)
                                      .findFirst().orElse(null);
         if (productType == null) {
-            return null;
+            throw new PersistenceException("Invalid product type (null)");
         }
-        DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(productType + "-Local Database");
+        String systemDSCId = productType + "-Local Database";
+        DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(systemDSCId);
         if (systemDSC == null) {
-            return null;
+            throw new PersistenceException(String.format("No system datasource component with id = '%s' was found",
+                                                         systemDSCId));
+        }
+        if (persistenceManager.getDataSourceComponentByLabel(label) != null) {
+            throw new PersistenceException(String.format("A component with the label '%s' already exists", label));
         }
         DataSourceComponent userDSC;
         try {
             userDSC = systemDSC.clone();
             LocalDateTime time = LocalDateTime.now();
-            String newId = systemDSC.getId() + "-" + principal.getName() + "-" + time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            String newId = hasLabel ? label :
+                    systemDSC.getId() + "-" + principal.getName() + "-" + time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
             userDSC.setId(newId);
-            userDSC.setLabel(systemDSC.getLabel() + " (customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + ")");
+            userDSC.setLabel(hasLabel ? label :
+                                     systemDSC.getLabel() + " (customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + ")");
             List<String> nameList = products.stream().map(EOData::getName).collect(Collectors.toList());
             SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
             sourceDescriptor.setId(UUID.randomUUID().toString());
@@ -181,15 +195,42 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         return userDSC;
     }
 
-    private void addTagsIfNew(TaoComponent component) {
-        List<String> tags = component.getTags();
-        if (tags != null) {
-            List<Tag> componentTags = persistenceManager.getComponentTags();
+    @Override
+    public DataSourceComponent tag(String id, List<String> tags) throws PersistenceException {
+        DataSourceComponent entity = findById(id);
+        if (entity == null) {
+            throw new PersistenceException(String.format("Datasource with id '%s' not found", id));
+        }
+        if (tags != null && tags.size() > 0) {
+            Set<String> existingTags = persistenceManager.getDatasourceTags().stream()
+                    .map(Tag::getText).collect(Collectors.toSet());
             for (String value : tags) {
-                if (componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
+                if (!existingTags.contains(value)) {
                     persistenceManager.saveTag(new Tag(TagType.DATASOURCE, value));
                 }
             }
+            entity.setTags(tags);
+            return update(entity);
         }
+        return entity;
+    }
+
+    @Override
+    public DataSourceComponent untag(String id, List<String> tags) throws PersistenceException {
+        DataSourceComponent entity = findById(id);
+        if (entity == null) {
+            throw new PersistenceException(String.format("Datasource with id '%s' not found", id));
+        }
+        if (tags != null && tags.size() > 0) {
+            List<String> entityTags = entity.getTags();
+            if (entityTags != null) {
+                for (String value : tags) {
+                    entityTags.remove(value);
+                }
+                entity.setTags(entityTags);
+                return update(entity);
+            }
+        }
+        return entity;
     }
 }
