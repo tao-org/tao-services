@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.messaging.Message;
-import ro.cs.tao.messaging.Notifiable;
+import ro.cs.tao.messaging.NotifiableComponent;
 import ro.cs.tao.messaging.Topics;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -34,24 +34,31 @@ import ro.cs.tao.utils.executors.Executor;
 import ro.cs.tao.utils.executors.ExecutorType;
 
 import java.net.InetAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
+ * Simple monitoring service for getting information about notifications issued in the system and about
+ * topology nodes.
+ *
  * @author Cosmin Cara
  */
 @Service("monitoringService")
-public class MonitoringServiceImpl extends Notifiable implements MonitoringService<Notification> {
+public class MonitoringServiceImpl extends NotifiableComponent implements MonitoringService<Notification> {
 
-    private static final int MAX_QUEUE_SIZE = 100;
-    private final Queue<Message> messageQueue;
     @Autowired
     private PersistenceManager persistenceManager;
 
     public MonitoringServiceImpl() {
         super();
-        this.messageQueue = new LinkedList<>();
-        subscribe(Topics.INFORMATION, Topics.WARNING, Topics.ERROR, Topics.PROGRESS);
+    }
+
+    @Override
+    protected String[] topics() {
+        return new String[] { Topics.INFORMATION, Topics.WARNING, Topics.ERROR, Topics.PROGRESS };
     }
 
     @Override
@@ -80,13 +87,7 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
 
     @Override
     public List<Notification> getLiveNotifications() {
-        List<Notification> messages;
-        synchronized (this.messageQueue) {
-            messages = this.messageQueue.stream()
-                    .map(m -> new MessageConverter().to(m)).collect(Collectors.toList());
-            this.messageQueue.clear();
-        }
-        return messages;
+        return getLastMessages().stream().map(m -> new MessageConverter().to(m)).collect(Collectors.toList());
     }
 
     @Override
@@ -159,15 +160,5 @@ public class MonitoringServiceImpl extends Notifiable implements MonitoringServi
             }
         }
         return statuses;
-    }
-
-    @Override
-    protected void onMessageReceived(Message message) {
-        synchronized (this.messageQueue) {
-            if (this.messageQueue.size() == MAX_QUEUE_SIZE) {
-                this.messageQueue.poll();
-            }
-            this.messageQueue.offer(message);
-        }
     }
 }
