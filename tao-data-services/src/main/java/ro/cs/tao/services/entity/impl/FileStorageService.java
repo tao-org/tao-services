@@ -31,6 +31,7 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.interfaces.StorageService;
+import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.utils.FileUtilities;
 
 import java.io.IOException;
@@ -40,9 +41,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service("storageService")
@@ -214,6 +215,73 @@ public class FileStorageService implements StorageService<MultipartFile> {
             path = Paths.get(ConfigurationManager.getInstance().getValue("product.location"), fromPath);
         }
         return list(path, 1);
+    }
+
+    @Override
+    public List<FileObject> getWorkflowResults(long workflowId) throws IOException {
+        List<Path> list = listWorkspace(true).collect(Collectors.toList());
+        List<FileObject> fileObjects = new ArrayList<>(list.size());
+        if (list.size() > 0) {
+            long size;
+            Path realRoot = Paths.get(SystemVariable.USER_WORKSPACE.value());
+            String[] strings = list.stream().map(p -> realRoot.resolve(p).toUri().toString()).toArray(String[]::new);
+            List<String> outputKeys = persistenceManager.getJobsOutputKeys(workflowId);
+            if (outputKeys != null && outputKeys.size() > 0) {
+                Set<String> keys = new LinkedHashSet<>(outputKeys);
+                List<EOProduct> rasters = persistenceManager.getEOProducts(strings);
+                List<VectorData> vectors = persistenceManager.getVectorDataProducts(strings);
+                List<AuxiliaryData> auxData = persistenceManager.getAuxiliaryData(SessionStore.currentContext().getPrincipal().getName(),
+                                                                                  list.stream().map(Path::toString).toArray(String[]::new));
+                for (Path path : list) {
+                    String stringPath = path.toString();
+                    if (stringPath.indexOf('-') > 0 && stringPath.indexOf('-', stringPath.indexOf('-') + 1) > 0 &&
+                            keys.contains(stringPath.substring(0, stringPath.indexOf('-', stringPath.indexOf('-', 0) + 1)))) {
+                        Path realPath = realRoot.resolve(path);
+                        String realUri = realPath.toUri().toString();
+                        try {
+                            size = Files.size(realPath);
+                        } catch (IOException e) {
+                            size = -1;
+                        }
+                        FileObject fileObject = new FileObject(stringPath, Files.isDirectory(realPath), size);
+                        Optional<EOProduct> product = rasters.stream()
+                                .filter(r -> realUri.equals(r.getLocation()))
+                                .findFirst();
+                        if (product.isPresent()) {
+                            Map<String, String> attributeMap = product.get().toAttributeMap();
+                            attributeMap.remove("formatType");
+                            attributeMap.remove("width");
+                            attributeMap.remove("height");
+                            attributeMap.remove("pixelType");
+                            attributeMap.remove("sensorType");
+                            fileObject.setAttributes(attributeMap);
+                        } else {
+                            product = rasters.stream()
+                                    .filter(r -> realUri.equals(r.getLocation() + r.getEntryPoint()))
+                                    .findFirst();
+                        }
+                        if (product.isPresent() && !fileObject.isFolder()) {
+                            Map<String, String> attributeMap = product.get().toAttributeMap();
+                            fileObject.setAttributes(attributeMap);
+                        } else {
+                            Optional<VectorData> vector = vectors.stream()
+                                    .filter(v -> realUri.equals(v.getLocation() + v.getLocation()))
+                                    .findFirst();
+                            if (vector.isPresent()) {
+                                fileObject.setAttributes(vector.get().toAttributeMap());
+                            } else {
+                                Optional<AuxiliaryData> aData = auxData.stream()
+                                        .filter(a -> stringPath.equals(a.getLocation()))
+                                        .findFirst();
+                                aData.ifPresent(auxiliaryData -> fileObject.setAttributes(auxiliaryData.toAttributeMap()));
+                            }
+                        }
+                        fileObjects.add(fileObject);
+                    }
+                }
+            }
+        }
+        return fileObjects;
     }
 
     private Stream<Path> list(Path path, int depth) throws IOException {
