@@ -218,14 +218,27 @@ public class FileStorageService implements StorageService<MultipartFile> {
     }
 
     @Override
+    public List<FileObject> getJobResults(long jobId) throws IOException {
+        return getResults(null, jobId);
+    }
+
+    @Override
     public List<FileObject> getWorkflowResults(long workflowId) throws IOException {
+        return getResults(workflowId, null);
+    }
+
+    private List<FileObject> getResults(Long workflowId, Long jobId) throws IOException {
+        if ((workflowId == null) == (jobId == null)) {
+            throw new IllegalArgumentException("Exactly one of [workflowId] or [jobId] should be passed");
+        }
         List<Path> list = listWorkspace(true).collect(Collectors.toList());
         List<FileObject> fileObjects = new ArrayList<>(list.size());
         if (list.size() > 0) {
             long size;
             Path realRoot = Paths.get(SystemVariable.USER_WORKSPACE.value());
             String[] strings = list.stream().map(p -> realRoot.resolve(p).toUri().toString()).toArray(String[]::new);
-            List<String> outputKeys = persistenceManager.getJobsOutputKeys(workflowId);
+            List<String> outputKeys = workflowId != null ? persistenceManager.getJobsOutputKeys(workflowId) :
+                                                           persistenceManager.getJobOutputKeys(jobId);
             if (outputKeys != null && outputKeys.size() > 0) {
                 Set<String> keys = new LinkedHashSet<>(outputKeys);
                 List<EOProduct> rasters = persistenceManager.getEOProducts(strings);
