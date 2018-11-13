@@ -51,6 +51,9 @@ import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.services.entity.impl.WorkflowServiceImpl;
+import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.wps.operations.GetCapabilitiesOperation;
 
