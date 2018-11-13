@@ -27,6 +27,7 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.base.SampleWorkflowBase;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
 import ro.cs.tao.services.interfaces.*;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
@@ -145,6 +146,20 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.addNode(workflowId, node));
+        } catch (PersistenceException e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/group", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> addGroup(@RequestBody WorkflowGroupNodeRequest request) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            List<WorkflowNodeDescriptor> groupNodes = getPersistenceManager().getWorkflowNodesById(request.getGroupNodeIds());
+            responseEntity = prepareResult(service.addGroup(request.getWorkflowId(), request.getGroupNode(),
+                                                            request.getParentNodeId(),
+                                                            groupNodes.toArray(new WorkflowNodeDescriptor[0])));
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }

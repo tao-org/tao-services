@@ -23,6 +23,7 @@ import com.bc.wps.api.WpsServerContext;
 import com.bc.wps.api.WpsServiceInstance;
 import com.bc.wps.serviceloader.SpiLoader;
 import org.springframework.http.HttpHeaders;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.wps.beans.ExecutionRequest;
 
 import javax.servlet.http.HttpServletRequest;

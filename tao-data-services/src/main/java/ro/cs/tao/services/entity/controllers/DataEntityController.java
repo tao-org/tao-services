@@ -83,7 +83,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
     }
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody T entity) {
+    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") K id, @RequestBody T entity) {
         final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
         if (validationResponse.getBody().getStatus() == ResponseStatus.SUCCEEDED) {
             try {
@@ -95,6 +95,24 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
             return validationResponse;
         }
 
+    }
+
+    @RequestMapping(value = "/{id:.+}/tag", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> tag(@PathVariable("id") K id, @RequestBody List<String> tags) {
+        try {
+            return prepareResult(service.tag(id, tags));
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/{id:.+}/untag", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> untag(@PathVariable("id") K id, @RequestBody List<String> tags) {
+        try {
+            return prepareResult(service.untag(id, tags));
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
     }
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
