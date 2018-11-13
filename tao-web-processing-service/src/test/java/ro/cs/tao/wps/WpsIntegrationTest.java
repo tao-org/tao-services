@@ -1,7 +1,6 @@
 package ro.cs.tao.wps;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.text.IsEqualIgnoringWhiteSpace.equalToIgnoringWhiteSpace;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static ro.cs.tao.wps.IntegrationTestHelper.getHttpGetResponse;
 
@@ -14,6 +13,8 @@ import org.junit.*;
 import org.junit.runner.*;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 @RunWith(IntegrationTestRunner.class)
 @IntegrationTestRunner.NeededService("http://localhost:8080/wps")
@@ -369,4 +370,142 @@ public class WpsIntegrationTest {
                 "</wps:ProcessDescriptions>\n")));
     }
 
+    @Test
+    public void testExecute() throws IOException {
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw);
+        pw.println("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?>");
+        pw.println("<wps:Execute xsi:schemaLocation=\"http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_request.xsd\"");
+        pw.println("             service=\"WPS\"");
+        pw.println("             version=\"1.0.0\"");
+        pw.println("             xmlns:wps=\"http://www.opengis.net/wps/1.0.0\"");
+        pw.println("             xmlns:ows=\"http://www.opengis.net/ows/1.1\"");
+        pw.println("             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">");
+        pw.println("    <ows:Identifier>1</ows:Identifier>");
+        pw.println("    <wps:DataInputs>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~interpolator_bco_radius_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>5</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~interpolator_str</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>linear</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~transform_type_id_scalex_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>1.1</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~transform_type_id_scaley_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>1.2</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~transform_type_rotation_angle_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>1.3</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~transform_type_rotation_scalex_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>1.4</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~transform_type_rotation_scaley_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>1.5</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~transform_type_str</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>id</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~transform_type_translation_scalex_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>1.6</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~transform_type_translation_scaley_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>1.7</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~transform_type_translation_tx_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>1.8</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB Resample~transform_type_translation_ty_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>1.9</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB NDVI~channels_blue_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>11</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB NDVI~channels_green_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>12</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB NDVI~channels_mir_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>13</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB NDVI~channels_nir_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>14</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB NDVI~channels_red_number</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>15</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("        <wps:Input>");
+        pw.println("            <ows:Identifier>OTB NDVI~list_str</ows:Identifier>");
+        pw.println("            <wps:Data>");
+        pw.println("                <wps:LiteralData>ndvi</wps:LiteralData>");
+        pw.println("            </wps:Data>");
+        pw.println("        </wps:Input>");
+        pw.println("    </wps:DataInputs>");
+        pw.println("    <wps:ResponseForm>");
+        pw.println("        <wps:ResponseDocument storeExecuteResponse=\"true\" status=\"true\">");
+        pw.println("            <wps:Output>");
+        pw.println("                <ows:Identifier>productionResults</ows:Identifier>");
+        pw.println("            </wps:Output>");
+        pw.println("        </wps:ResponseDocument>");
+        pw.println("    </wps:ResponseForm>");
+        pw.println("</wps:Execute>");
+        pw.flush();
+        sw.flush();
+        final String xml = sw.toString();
+
+        closeableHttpResponse = IntegrationTestHelper.getWpsExecuteResponse(serviceAdress + "?Service=WPS&Request=Execute&Version=1.0.0&Identifier=1", xml);
+
+        assertThat(closeableHttpResponse, is(notNullValue()));
+    }
 }

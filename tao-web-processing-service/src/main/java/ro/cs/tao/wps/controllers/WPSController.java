@@ -27,7 +27,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -38,6 +37,9 @@ import ro.cs.tao.wps.beans.ExecutionRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Map;
@@ -48,7 +50,7 @@ import java.util.logging.Logger;
 @RequestMapping("/wps")
 public class WPSController extends BaseController {
 
-    private WpsFrontendConnector wpsFrontendConnector = new WpsFrontendConnector();
+    private WpsFrontendConnector wpsFrontendConnector = new WpsFrontendConnector(true);
     private Logger logger = Logger.getLogger(this.getClass().getName());
 
     @RequestMapping(method = RequestMethod.GET)
@@ -63,13 +65,14 @@ public class WPSController extends BaseController {
         if (!isWPS(service)) {
             return serviceUnavailable(service, "No such Service: ");
         }
-        if ("GetCapabilities".equals(requestType) || "DescribeProcess".equals(requestType)) {
+        if ("GetCapabilities".equals(requestType)
+            || "DescribeProcess".equals(requestType)
+            || "GetStatus".equals(requestType)) {
             try {
                 // @todo discuss with Norman ... these parameters are not needed if httpRequest is a parameter
 
-                final String applicationName = "TAO";
                 WpsRequestContext requestContext = new WpsRequestContextImpl(httpRequest);
-                WpsServiceInstance wpsServiceProvider = getServiceProvider(applicationName, requestContext);
+                WpsServiceInstance wpsServiceProvider = getTaoServiceProvider(requestContext);
 
                 final String wpsService = wpsFrontendConnector.getWpsService(
                         service, requestType, acceptedVersion, language,
@@ -87,12 +90,52 @@ public class WPSController extends BaseController {
     }
 
     @RequestMapping(method = RequestMethod.POST)
+    public ResponseEntity<?> requestEPost(@RequestParam("Request") final String requestType,
+                                          HttpServletRequest httpRequest,
+                                          HttpServletResponse response) {
+        if ("Execute".equals(requestType)) {
+            try {
+                final String requestXML = getXmlFrom(httpRequest);
+                WpsRequestContext requestContext = new WpsRequestContextImpl(httpRequest);
+                WpsServiceInstance wpsServiceProvider = getTaoServiceProvider(requestContext);
+                final String result = wpsFrontendConnector.postExecuteService(requestXML, httpRequest, wpsServiceProvider, requestContext);
+                writeToResponce(response, result);
+                return ResponseEntity.accepted().build();
+            } catch (IOException e) {
+                final String msg = "IO Exception while writing response.";
+                logger.log(Level.SEVERE, msg, e);
+                return new ResponseEntity<>(msg, HttpStatus.SERVICE_UNAVAILABLE);
+            }
+        } else {
+            return serviceUnavailable(requestType, "Unknown request type: ");
+        }
+    }
+
+    //    @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity<?> requestPost(@RequestBody ExecutionRequest executionRequest) {
         long workflowId = executionRequest.getWorkflowId();
         Map<String, Map<String, String>> parameters = executionRequest.getParameters();
         long result = 289137689175L;
 //        long result = webProcessingService.execute(workflowId, parameters);
         return new ResponseEntity<>(String.format("Started job with id %s", result), HttpStatus.OK);
+    }
+
+    private WpsServiceInstance getTaoServiceProvider(WpsRequestContext requestContext) {
+        final String applicationName = "TAO";
+        return getServiceProvider(applicationName, requestContext);
+    }
+
+    private String getXmlFrom(HttpServletRequest executionRequest) throws IOException {
+        try (final InputStream is = executionRequest.getInputStream();
+             final InputStreamReader isr = new InputStreamReader(is);
+             final LineNumberReader lnr = new LineNumberReader(isr)) {
+            String line;
+            final StringBuilder stringBuilder = new StringBuilder();
+            while ((line = lnr.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            return stringBuilder.toString();
+        }
     }
 
     private WpsServiceInstance getServiceProvider(String applicationName, WpsRequestContext requestContext) {
