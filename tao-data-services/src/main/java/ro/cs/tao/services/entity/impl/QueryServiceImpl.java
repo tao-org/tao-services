@@ -28,6 +28,8 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.QueryService;
 import ro.cs.tao.utils.Crypto;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service("queryService")
@@ -40,61 +42,103 @@ public class QueryServiceImpl extends EntityService<Query>
 
     @Override
     public Query findById(Long id) throws PersistenceException {
-        return getQueryById(id);
+        Query query = getQueryById(id);
+        if (query != null) {
+            ensurePasswordDecrypted(query);
+        }
+        return query;
     }
 
     @Override
     public Query getQueryById(long id) {
-        return persistenceManager.findQueryById(id);
+        Query query = persistenceManager.findQueryById(id);
+        if (query != null) {
+            ensurePasswordDecrypted(query);
+        }
+        return query;
     }
 
     @Override
     public List<Query> list() {
-        return persistenceManager.getQueries(SessionStore.currentContext().getPrincipal().getName());
+        List<Query> queries = persistenceManager.getQueries(SessionStore.currentContext().getPrincipal().getName());
+        if (queries != null) {
+            queries.forEach(this::ensurePasswordDecrypted);
+        }
+        return queries;
     }
 
     @Override
     public Query getQuery(String userId, String sensor, String dataSource, long workflowNodeId) {
-        return persistenceManager.getQuery(userId, sensor, dataSource, workflowNodeId);
+        Query query = persistenceManager.getQuery(userId, sensor, dataSource, workflowNodeId);
+        if (query != null) {
+            ensurePasswordDecrypted(query);
+        }
+        return query;
     }
 
     @Override
     public List<Query> getQueries(String userId, String sensor, String dataSource) {
-        return persistenceManager.getQueries(userId, sensor, dataSource);
+        List<Query> queries = persistenceManager.getQueries(userId, sensor, dataSource);
+        if (queries != null) {
+            queries.forEach(this::ensurePasswordDecrypted);
+        }
+        return queries;
     }
 
     @Override
     public List<Query> getQueries(String userId, long nodeid) {
-        return persistenceManager.getQueries(userId, nodeid);
+        List<Query> queries = persistenceManager.getQueries(userId, nodeid);
+        if (queries != null) {
+            queries.forEach(this::ensurePasswordDecrypted);
+        }
+        return queries;
     }
 
     @Override
     public List<Query> getQueries(String userId) {
-        return persistenceManager.getQueries(userId);
+        List<Query> queries = persistenceManager.getQueries(userId);
+        if (queries != null) {
+            queries.forEach(this::ensurePasswordDecrypted);
+        }
+        return queries;
     }
 
     @Override
     public List<Query> getQueriesBySensor(String userId, String sensor) {
-        return persistenceManager.getQueriesBySensor(userId, sensor);
+        List<Query> queries = persistenceManager.getQueriesBySensor(userId, sensor);
+        if (queries != null) {
+            queries.forEach(this::ensurePasswordDecrypted);
+        }
+        return queries;
     }
 
     @Override
     public List<Query> getQueriesByDataSource(String userId, String dataSource) {
-        return persistenceManager.getQueriesByDataSource(userId, dataSource);
+        List<Query> queries = persistenceManager.getQueriesByDataSource(userId, dataSource);
+        if (queries != null) {
+            queries.forEach(this::ensurePasswordDecrypted);
+        }
+        return queries;
     }
 
     @Override
     public Page<Query> getAllQueries(Pageable pageable) {
-        return persistenceManager.getAllQueries(pageable);
+        Page<Query> queries = persistenceManager.getAllQueries(pageable);
+        if (queries != null) {
+            queries.forEach(this::ensurePasswordDecrypted);
+        }
+        return queries;
     }
 
     @Override
     public Query save(Query object) {
         if (object.getUser() != null && object.getPassword() != null) {
-            if (Crypto.decrypt(object.getPassword(), object.getUser()) == null) {
-                // we have an unencrypted password
-                object.setPassword(Crypto.encrypt(object.getPassword(), object.getUser()));
-            }
+            ensurePasswordDecrypted(object);
+        }
+        if (object.getLabel() == null) {
+            object.setLabel(String.format("Query for %s on %s - %s",
+                                          object.getSensor(), object.getDataSource(),
+                                          LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))));
         }
         try {
             return persistenceManager.saveQuery(object);
@@ -110,7 +154,7 @@ public class QueryServiceImpl extends EntityService<Query>
 
     @Override
     public void delete(Long id) throws PersistenceException {
-
+        persistenceManager.removeQuery(id);
     }
 
     @Override
@@ -128,6 +172,20 @@ public class QueryServiceImpl extends EntityService<Query>
                     DataSourceManager.getInstance().get(entity.getSensor(), value) == null) {
                 errors.add("[dataSource] Invalid value");
             }
+        }
+    }
+
+    private void ensurePasswordEncrypted(Query object) {
+        if (Crypto.decrypt(object.getPassword(), object.getUser()) == null) {
+            // we have an unencrypted password
+            object.setPassword(Crypto.encrypt(object.getPassword(), object.getUser()));
+        }
+    }
+
+    private void ensurePasswordDecrypted(Query object) {
+        if (Crypto.decrypt(object.getPassword(), object.getUser()) != null) {
+            // we have an unencrypted password
+            object.setPassword(Crypto.decrypt(object.getPassword(), object.getUser()));
         }
     }
 }
