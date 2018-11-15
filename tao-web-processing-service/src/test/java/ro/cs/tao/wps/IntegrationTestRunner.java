@@ -3,6 +3,7 @@ package ro.cs.tao.wps;
 import static ro.cs.tao.wps.IntegrationTestHelper.getHttpGetResponse;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.junit.runner.*;
 import org.junit.runner.notification.*;
 import org.junit.runners.*;
 import org.junit.runners.model.*;

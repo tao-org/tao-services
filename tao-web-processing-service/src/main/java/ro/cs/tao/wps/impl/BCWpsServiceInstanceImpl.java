@@ -19,42 +19,38 @@ package ro.cs.tao.wps.impl;
 import com.bc.wps.api.WpsRequestContext;
 import com.bc.wps.api.WpsServerContext;
 import com.bc.wps.api.WpsServiceInstance;
+import com.bc.wps.api.exceptions.InvalidParameterValueException;
 import com.bc.wps.api.exceptions.NoApplicableCodeException;
 import com.bc.wps.api.exceptions.OptionNotSupportedException;
 import com.bc.wps.api.exceptions.WpsRuntimeException;
 import com.bc.wps.api.exceptions.WpsServiceException;
+import com.bc.wps.api.exceptions.XmlSchemaFaultException;
 import com.bc.wps.api.schema.Capabilities;
 import com.bc.wps.api.schema.CodeType;
 import com.bc.wps.api.schema.ComplexDataCombinationType;
 import com.bc.wps.api.schema.ComplexDataCombinationsType;
 import com.bc.wps.api.schema.ComplexDataDescriptionType;
-import com.bc.wps.api.schema.ExceptionType;
+import com.bc.wps.api.schema.DataInputsType;
 import com.bc.wps.api.schema.Execute;
 import com.bc.wps.api.schema.ExecuteResponse;
 import com.bc.wps.api.schema.InputType;
 import com.bc.wps.api.schema.LanguageStringType;
-import com.bc.wps.api.schema.OutputDataType;
 import com.bc.wps.api.schema.OutputDescriptionType;
-import com.bc.wps.api.schema.ProcessBriefType;
 import com.bc.wps.api.schema.ProcessDescriptionType;
-import com.bc.wps.api.schema.ProcessStartedType;
 import com.bc.wps.api.schema.ResponseDocumentType;
 import com.bc.wps.api.schema.ResponseFormType;
-import com.bc.wps.api.schema.StatusType;
 import com.bc.wps.api.schema.SupportedComplexDataType;
 import com.bc.wps.api.schema.ValueType;
 import com.bc.wps.api.utils.InputDescriptionTypeBuilder;
+import org.apache.commons.lang.StringUtils;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
-import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.security.SessionStore;
-import ro.cs.tao.services.entity.impl.WorkflowServiceImpl;
-import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WebProcessingService;
+import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.wps.operations.GetCapabilitiesOperation;
 
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -62,6 +58,9 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.GregorianCalendar;
@@ -121,36 +120,47 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
 
         final ResponseFormType responseForm = executeRequest.getResponseForm();
         if (responseForm == null) {
-            throw new OptionNotSupportedException("Execute needs a ResponseForm element" + suffix);
+            throw new OptionNotSupportedException("Execute needs a ResponseForm element" + suffix, "ResponseForm missed in element Execute");
         }
         final ResponseDocumentType responseDocument = responseForm.getResponseDocument();
         if (responseDocument == null) {
-            throw new OptionNotSupportedException("ResponseForm element needs a ResponseDocument element" + suffix);
+            throw new OptionNotSupportedException("ResponseForm element needs a ResponseDocument element" + suffix, "ResponseDocument missed in element ResponseForm");
         }
         if (!responseDocument.isStoreExecuteResponse()) {
-            throw new OptionNotSupportedException("ResponseDocument needs attribute storeExecuteResponse=\"true\"" + suffix);
+            throw new OptionNotSupportedException("ResponseDocument needs attribute storeExecuteResponse=\"true\"" + suffix, "storeExecuteResponse=\"false\" or attribute is missed");
         }
         if (!responseDocument.isStatus()) {
-            throw new OptionNotSupportedException("ResponseDocument needs attribute status=\"true\"" + suffix);
+            throw new OptionNotSupportedException("ResponseDocument needs attribute status=\"true\"" + suffix, "status=\"false\" or attribute is missed");
         }
         final CodeType identifier = executeRequest.getIdentifier();
-        final long workflowId = Long.parseLong(identifier.getValue());
+        if (identifier == null) {
+            throw new XmlSchemaFaultException("Identifier", "Execute");
+        }
+        final String identifierValue = identifier.getValue();
+        if (StringUtils.isBlank(identifierValue)) {
+            throw new InvalidParameterValueException("Invalid value", null, "Identifier");
+        }
+        final long workflowId = Long.parseLong(identifierValue);
 
         final Map<String, Map<String, String>> parameters = new HashMap<>();
-        final List<InputType> inputParams = executeRequest.getDataInputs().getInput();
-        for (InputType input : inputParams) {
-            final String iIdentifier = input.getIdentifier().getValue();
-            final String[] strings = iIdentifier.split("~");
-            final String parameterGroupName = strings[0];
-            final Map<String, String> parameterGroup;
-            if (parameters.containsKey(parameterGroupName)) {
-                parameterGroup = parameters.get(parameterGroupName);
-            } else {
-                parameterGroup = parameters.put(parameterGroupName, new HashMap<>());
+        final DataInputsType dataInputs = executeRequest.getDataInputs();
+        if (dataInputs != null) {
+            final List<InputType> inputParams = dataInputs.getInput();
+
+            for (InputType input : inputParams) {
+                final String iIdentifier = input.getIdentifier().getValue();
+                final String[] strings = iIdentifier.split("~");
+                final String parameterGroupName = strings[0];
+                final Map<String, String> parameterGroup;
+                if (parameters.containsKey(parameterGroupName)) {
+                    parameterGroup = parameters.get(parameterGroupName);
+                } else {
+                    parameterGroup = parameters.put(parameterGroupName, new HashMap<>());
+                }
+                final String parameterName = strings[1];
+                final String value = input.getData().getLiteralData().getValue();
+                parameterGroup.put(parameterName, value);
             }
-            final String parameterName = strings[1];
-            final String value = input.getData().getLiteralData().getValue();
-            parameterGroup.put(parameterName, value);
         }
 
         final long executionJobId;
@@ -165,63 +175,48 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
 
     @Override
     public ExecuteResponse getStatus(WpsRequestContext context, String jobId) throws WpsServiceException {
-        final ExecutionJob jobById = taoWpsImpl.getStatus(Long.parseLong(jobId));
+        final long jobIdL = Long.parseLong(jobId);
+        final ExecutionJob jobById = taoWpsImpl.getStatus(jobIdL);
         if (jobById == null) {
             return null;
         }
-        final ExecuteResponse executeResponse = new ExecuteResponse();
-        executeResponse.setService("WPS");
-        executeResponse.setVersion("1.0.0");
-        executeResponse.setLang("en");
-        final WpsServerContext serverContext = context.getServerContext();
-        executeResponse.setServiceInstance(serverContext.getRequestUrl());
-        executeResponse.setStatusLocation(getStatusUrl(jobId, serverContext));
 
-        final CodeType processId = new CodeType();
+        final WpsServerContext serverContext = context.getServerContext();
+
         final long workflowId = jobById.getWorkflowId();
         final WebProcessingService.ProcessInfo processInfo = taoWpsImpl.describeProcess(workflowId);
-        processId.setValue(String.valueOf(workflowId));
-        final LanguageStringType processTitle = new LanguageStringType();
-        processTitle.setValue(processInfo.getWorkflowInfo().getName());
 
-        final ProcessBriefType process = new ProcessBriefType();
-        process.setIdentifier(processId);
-        process.setTitle(processTitle);
-        executeResponse.setProcess(process);
-
-        final StatusType statusType = new StatusType();
-        statusType.setCreationTime(getXmlNow());
-        executeResponse.setStatus(statusType);
+        ExecuteResponseBuilder responseBuilder = new ExecuteResponseBuilder(serverContext)
+                .withStatusLocation(jobId)
+                .withProcessBriefType(processInfo.getWorkflowInfo())
+                .withStatusCreationTime(getXmlNow());
 
         final ExecutionStatus status = jobById.getExecutionStatus();
-        if (ExecutionStatus.UNDETERMINED.equals(status) || ExecutionStatus.QUEUED_ACTIVE.equals(status)) {
-            statusType.setProcessAccepted("TAO status " + status.friendlyName());
+        if (ExecutionStatus.UNDETERMINED.equals(status)
+            || ExecutionStatus.QUEUED_ACTIVE.equals(status)) {
+            responseBuilder.withProcessAccepted("TAO status " + status.friendlyName());
         } else if (ExecutionStatus.RUNNING.equals(status)) {
-            final ProcessStartedType processStarted = new ProcessStartedType();
-            processStarted.setValue("TAO status " +status.friendlyName());
-            statusType.setProcessStarted(processStarted);
+            responseBuilder.withProcessStarted("TAO status " + status.friendlyName());
         } else if (ExecutionStatus.SUSPENDED.equals(status)) {
-            final ProcessStartedType processPaused = new ProcessStartedType();
-            processPaused.setValue("TAO status " +status.friendlyName());
-            statusType.setProcessPaused(processPaused);
+            responseBuilder.withProcessPaused("TAO status " + status.friendlyName());
         } else if (ExecutionStatus.DONE.equals(status)) {
-            statusType.setProcessSucceeded("TAO status " + status.friendlyName());
+            responseBuilder.withProcessSucceeded("TAO status " + status.friendlyName());
+            responseBuilder.withStatusCreationTime(getXmlWithTime(jobById.getEndTime()));
 
-            jobById.getTasks()
-
-            final ExecuteResponse.ProcessOutputs processOutputs = new ExecuteResponse.ProcessOutputs();
-            final OutputDataType outputDataType = new OutputDataType();
-            outputDataType.setIdentifier();
-            outputDataType.setTitle();
-            outputDataType.setReference();
-            processOutputs.getOutput().add(outputDataType);
-            executeResponse.setProcessOutputs(processOutputs);
-        } else if (ExecutionStatus.FAILED.equals(status)) {
-        } else if (ExecutionStatus.CANCELLED.equals(status)) {
+            try {
+                final List<FileObject> jobResult = taoWpsImpl.getJobResult(jobIdL);
+                for (FileObject fileObject : jobResult) {
+                    responseBuilder.addProcessOutput(fileObject.getRelativePath());
+                }
+            } catch (IOException e) {
+                throw new NoApplicableCodeException("Unable to collect processing outputs: " + e.getMessage(), e);
+            }
+        } else if (ExecutionStatus.FAILED.equals(status)
+                   || ExecutionStatus.CANCELLED.equals(status)) {
+            responseBuilder.withProcessFailed("TAO status " + status.friendlyName());
         }
-        executeResponse.
 
-        return executeResponse;
+        return responseBuilder.build();
     }
 
     @Override
@@ -296,8 +291,16 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
         return dataInputs;
     }
 
+    // package local for test purposes only
     void setTaoWpsImpl(WebProcessingService taoWpsImpl) {
         this.taoWpsImpl = taoWpsImpl;
+    }
+
+    // package local for test purposes only
+    XMLGregorianCalendar getXmlWithTime(LocalDateTime time) {
+        final ZonedDateTime zdt = time.atZone(ZoneOffset.UTC);
+        final GregorianCalendar gregorianCalendar = GregorianCalendar.from(zdt);
+        return getXmlGregorianCalendar(gregorianCalendar);
     }
 
     private XMLGregorianCalendar getXmlNow() {
@@ -310,9 +313,5 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
         } catch (DatatypeConfigurationException exception) {
             throw new WpsRuntimeException("Unable to create new Gregorian Calendar.", exception);
         }
-    }
-
-    private String getStatusUrl(String jobId, WpsServerContext context) {
-        return context.getRequestUrl() + "?Service=WPS&Request=GetStatus&JobId=" + jobId;
     }
 }
