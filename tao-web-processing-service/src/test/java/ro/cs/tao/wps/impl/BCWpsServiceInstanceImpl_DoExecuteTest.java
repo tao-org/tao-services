@@ -1,20 +1,11 @@
 package ro.cs.tao.wps.impl;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
 import com.bc.wps.WpsRequestContextImpl;
 import com.bc.wps.api.exceptions.OptionNotSupportedException;
 import com.bc.wps.api.exceptions.WpsServiceException;
-import com.bc.wps.api.schema.CodeType;
-import com.bc.wps.api.schema.Execute;
-import com.bc.wps.api.schema.ExecuteResponse;
-import com.bc.wps.api.schema.ResponseDocumentType;
-import com.bc.wps.api.schema.ResponseFormType;
-import com.bc.wps.api.schema.StatusType;
-import org.hamcrest.Matchers;
-import org.junit.*;
+import com.bc.wps.api.schema.*;
+import org.junit.Before;
+import org.junit.Test;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.services.interfaces.WebProcessingService;
@@ -23,9 +14,12 @@ import ro.cs.tao.workflow.WorkflowDescriptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.datatype.XMLGregorianCalendar;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class BCWpsServiceInstanceImpl_DoExecuteTest {
 
