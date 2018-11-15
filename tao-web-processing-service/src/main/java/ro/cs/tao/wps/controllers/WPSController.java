@@ -71,11 +71,11 @@ public class WPSController extends BaseController {
             || "DescribeProcess".equals(requestType)
             || "GetStatus".equals(requestType)) {
             try {
-                // @todo discuss with Norman ... these parameters are not needed if httpRequest is a parameter
 
                 WpsRequestContext requestContext = new WpsRequestContextImpl(httpRequest);
                 WpsServiceInstance wpsServiceProvider = getTaoServiceProvider(requestContext);
 
+                // @todo discuss with Norman ... these parameters are not needed if httpRequest is a parameter
                 final String wpsService = wpsFrontendConnector.getWpsService(
                         service, requestType, acceptedVersion, language,
                         processId, version, jobId, httpRequest, wpsServiceProvider, requestContext);
