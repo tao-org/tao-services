@@ -9,9 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.entity.impl.WorkflowServiceImpl;
 import ro.cs.tao.services.interfaces.OrchestratorService;
+import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.workflow.WorkflowDescriptor;
+import ro.cs.tao.wps.impl.WebProcessingServiceImpl;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -25,7 +27,7 @@ public class GetCapabilitiesOperation {
 
     final WpsRequestContext wpsRequestContext;
     final Logger logger = Logger.getLogger(this.getClass().getName());
-    WorkflowService workflowService = new WorkflowServiceImpl();
+    final WebProcessingService taoWpsImpl = new WebProcessingServiceImpl();
 
     public GetCapabilitiesOperation(WpsRequestContext context) throws IOException {
         wpsRequestContext = context;
@@ -177,7 +179,7 @@ public class GetCapabilitiesOperation {
     }
 
     private List<ProcessBriefType> getTaoProcesses() throws PersistenceException {
-        List<WorkflowInfo> workflows = workflowService.getPublicWorkflows();
+        List<WorkflowInfo> workflows = taoWpsImpl.getCapabilities();
 
         ProcessOfferings processOfferings = new ProcessOfferings();
         for (WorkflowInfo workflow : workflows) {
