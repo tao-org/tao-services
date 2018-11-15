@@ -57,12 +57,6 @@
         </dependency>
         <dependency>
             <groupId>com.bc.wps</groupId>
-            <artifactId>bc-wps</artifactId>
-            <version>1.4-SNAPSHOT</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>com.bc.wps</groupId>
             <artifactId>bc-wps-commons</artifactId>
             <version>1.4-SNAPSHOT</version>
         </dependency>
