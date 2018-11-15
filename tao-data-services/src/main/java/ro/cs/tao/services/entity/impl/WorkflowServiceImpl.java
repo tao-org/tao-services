@@ -109,6 +109,11 @@ public class WorkflowServiceImpl
     }
 
     @Override
+    public WorkflowInfo getWorkflowInfo(long workflowId) {
+        return ServiceTransformUtils.toWorkflowInfo(persistenceManager.getWorkflowDescriptor(workflowId));
+    }
+
+    @Override
     public List<Tag> getWorkflowTags() {
         return persistenceManager.getWorkflowTags();
     }
@@ -529,7 +534,6 @@ public class WorkflowServiceImpl
             }
             clonedNode = addNode(master.getId(), clonedNode);
             cloneMap.put(node.getId(), clonedNode);
-            //clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
         }
         for (WorkflowNodeDescriptor node : nodesToExport) {
             Set<ComponentLink> links = node.getIncomingLinks();
@@ -549,7 +553,7 @@ public class WorkflowServiceImpl
                         clonedTarget.setIncomingLinks(clonedLinks);
                     }
                 }
-                clonedTarget = persistenceManager.updateWorkflowNodeDescriptor(clonedTarget);
+                persistenceManager.updateWorkflowNodeDescriptor(clonedTarget);
             }
         }
         return persistenceManager.getWorkflowDescriptor(master.getId());
@@ -612,6 +616,7 @@ public class WorkflowServiceImpl
             ComponentType componentType = node.getComponentType();
             TaoComponent component = componentService.findComponent(node.getComponentId(), componentType);
             List<Parameter> componentParams = new ArrayList<>();
+            Class paramType;
             switch (componentType) {
                 case DATASOURCE:
                     DataSourceComponent dataSourceComponent = (DataSourceComponent) component;
@@ -620,10 +625,13 @@ public class WorkflowServiceImpl
                                                                                    dataSourceComponent.getDataSourceName());
                     for (Map.Entry<String, DataSourceParameter> entry : params.entrySet()) {
                         DataSourceParameter descriptor = entry.getValue();
+                        paramType = descriptor.getType();
                         componentParams.add(new Parameter(entry.getKey(),
-                                                          descriptor.getType().getName(),
+                                                          paramType.getName(),
                                                           descriptor.getDefaultValue() != null ? String.valueOf(descriptor.getDefaultValue()) : null,
-                                                          Parameter.stringValueSet(descriptor.getValueSet())));
+                                                          paramType.isEnum() ?
+                                                                  Parameter.stringValueSet(paramType.getEnumConstants()) :
+                                                                  Parameter.stringValueSet(descriptor.getValueSet())));
                     }
                     Query query = persistenceManager.getQuery(SessionStore.currentContext().getPrincipal().getName(),
                                                               dataSourceComponent.getSensorName(),
@@ -648,10 +656,13 @@ public class WorkflowServiceImpl
                     ProcessingComponent processingComponent = (ProcessingComponent) component;
                     List<ParameterDescriptor> descriptors = processingComponent.getParameterDescriptors();
                     for (ParameterDescriptor descriptor : descriptors) {
+                        paramType = descriptor.getDataType();
                         componentParams.add(new Parameter(descriptor.getName(),
-                                                          descriptor.getDataType().getName(),
+                                                          paramType.getName(),
                                                           !"null".equals(descriptor.getDefaultValue()) ? descriptor.getDefaultValue() : null,
-                                                          Parameter.stringValueSet(descriptor.getValueSet())));
+                                                          paramType.isEnum() ?
+                                                                  Parameter.stringValueSet(paramType.getEnumConstants()) :
+                                                                  Parameter.stringValueSet(descriptor.getValueSet())));
                     }
                     break;
                 case GROUP:

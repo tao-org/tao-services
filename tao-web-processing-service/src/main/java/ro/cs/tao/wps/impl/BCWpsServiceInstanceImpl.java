@@ -23,6 +23,8 @@ import com.bc.wps.api.exceptions.*;
 import com.bc.wps.api.schema.*;
 import com.bc.wps.api.utils.InputDescriptionTypeBuilder;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.ExecutionException;
@@ -31,7 +33,7 @@ import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.services.model.FileObject;
-import ro.cs.tao.wps.operations.GetCapabilitiesOperation;
+import ro.cs.tao.wps.operations.Operations;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -45,16 +47,18 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+@Service("wpsServiceInstance")
 public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
 
-    private WebProcessingService taoWpsImpl = new WebProcessingServiceImpl();
+    @Autowired
+    private WebProcessingService webProcessingService;
 
     private Logger logger = Logger.getLogger(this.getClass().getName());
 
     @Override
     public Capabilities getCapabilities(WpsRequestContext context) throws WpsServiceException {
         try {
-            final GetCapabilitiesOperation operation = new GetCapabilitiesOperation(context);
+            final Operations operation = new Operations(context, webProcessingService);
             return operation.getCapabilities();
         } catch (IOException | URISyntaxException | PersistenceException exception) {
             logger.log(Level.SEVERE, "Unable to perform GetCapabilities operation successfully", exception);
@@ -73,7 +77,7 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
         identifier.setValue(processIdentifier);
         processDescription.setIdentifier(identifier);
 
-        final WebProcessingService.ProcessInfo processInfo = taoWpsImpl.describeProcess(Long.parseLong(processIdentifier));
+        final WebProcessingService.ProcessInfo processInfo = webProcessingService.describeProcess(Long.parseLong(processIdentifier));
 
         final LanguageStringType title = new LanguageStringType();
         title.setValue(processInfo.getWorkflowInfo().getName());
@@ -140,7 +144,7 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
 
         final long executionJobId;
         try {
-            executionJobId = taoWpsImpl.execute(workflowId, parameters);
+            executionJobId = webProcessingService.execute(workflowId, parameters);
         } catch (ExecutionException e) {
             throw new NoApplicableCodeException("Unable to start workflow execution: " + e.getMessage(), e);
         }
@@ -151,7 +155,7 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
     @Override
     public ExecuteResponse getStatus(WpsRequestContext context, String jobId) throws WpsServiceException {
         final long jobIdL = Long.parseLong(jobId);
-        final ExecutionJob jobById = taoWpsImpl.getStatus(jobIdL);
+        final ExecutionJob jobById = webProcessingService.getStatus(jobIdL);
         if (jobById == null) {
             return null;
         }
@@ -159,7 +163,7 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
         final WpsServerContext serverContext = context.getServerContext();
 
         final long workflowId = jobById.getWorkflowId();
-        final WebProcessingService.ProcessInfo processInfo = taoWpsImpl.describeProcess(workflowId);
+        final WebProcessingService.ProcessInfo processInfo = webProcessingService.describeProcess(workflowId);
 
         ExecuteResponseBuilder responseBuilder = new ExecuteResponseBuilder(serverContext)
                 .withStatusLocation(jobId)
@@ -179,7 +183,7 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
             responseBuilder.withStatusCreationTime(getXmlWithTime(jobById.getEndTime()));
 
             try {
-                final List<FileObject> jobResult = taoWpsImpl.getJobResult(jobIdL);
+                final List<FileObject> jobResult = webProcessingService.getJobResult(jobIdL);
                 for (FileObject fileObject : jobResult) {
                     responseBuilder.addProcessOutput(fileObject.getRelativePath());
                 }
@@ -199,7 +203,7 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
         throw new RuntimeException("not implemented");
     }
 
-    protected ProcessDescriptionType.ProcessOutputs getProcessOutputs(List<TargetDescriptor> workflowOutputs) {
+    private ProcessDescriptionType.ProcessOutputs getProcessOutputs(List<TargetDescriptor> workflowOutputs) {
         final ProcessDescriptionType.ProcessOutputs processOutputs = new ProcessDescriptionType.ProcessOutputs();
         for (TargetDescriptor workflowOutput : workflowOutputs) {
 
@@ -234,7 +238,7 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
         return processOutputs;
     }
 
-    protected ProcessDescriptionType.DataInputs getDataInputs(final Map<String, List<Parameter>> parameters) {
+    private ProcessDescriptionType.DataInputs getDataInputs(final Map<String, List<Parameter>> parameters) {
 
         final ProcessDescriptionType.DataInputs dataInputs = new ProcessDescriptionType.DataInputs();
 
@@ -268,7 +272,7 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
 
     // package local for test purposes only
     void setTaoWpsImpl(WebProcessingService taoWpsImpl) {
-        this.taoWpsImpl = taoWpsImpl;
+        this.webProcessingService = taoWpsImpl;
     }
 
     // package local for test purposes only

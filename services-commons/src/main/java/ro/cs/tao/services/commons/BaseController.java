@@ -17,6 +17,7 @@ package ro.cs.tao.services.commons;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.user.User;
@@ -43,6 +44,10 @@ public class BaseController extends ControllerBase {
                                             .stream().map(User::getUsername).collect(Collectors.toSet());
             }
         }, 0, 10000);
+    }
+
+    public static ServletUriComponentsBuilder currentURL() {
+        return ServletUriComponentsBuilder.fromCurrentRequestUri();
     }
 
     protected PersistenceManager getPersistenceManager() {
