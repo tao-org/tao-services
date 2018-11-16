@@ -80,4 +80,9 @@ public final class ServiceTransformUtils {
         }
         return results;
     }
+
+    public static WorkflowInfo toWorkflowInfo(WorkflowDescriptor descriptor){
+        return new WorkflowInfo(descriptor);
+    }
+
 }

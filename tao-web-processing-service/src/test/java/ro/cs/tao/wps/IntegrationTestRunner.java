@@ -1,12 +1,10 @@
 package ro.cs.tao.wps;
 
-import static ro.cs.tao.wps.IntegrationTestHelper.getHttpGetResponse;
-
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.junit.runner.*;
-import org.junit.runner.notification.*;
-import org.junit.runners.*;
-import org.junit.runners.model.*;
+import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.BlockJUnit4ClassRunner;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.InitializationError;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.io.IOException;
@@ -14,6 +12,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import static ro.cs.tao.wps.IntegrationTestHelper.getHttpGetResponse;
 
 /**
  * This IntegrationTestRunner checks the availability of a web service
