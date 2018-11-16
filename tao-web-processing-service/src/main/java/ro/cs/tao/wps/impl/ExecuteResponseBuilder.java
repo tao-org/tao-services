@@ -17,26 +17,19 @@
 package ro.cs.tao.wps.impl;
 
 import com.bc.wps.api.WpsServerContext;
-import com.bc.wps.api.schema.ExceptionReport;
-import com.bc.wps.api.schema.ExceptionType;
-import com.bc.wps.api.schema.ExecuteResponse;
-import com.bc.wps.api.schema.OutputDataType;
-import com.bc.wps.api.schema.ProcessBriefType;
-import com.bc.wps.api.schema.ProcessFailedType;
-import com.bc.wps.api.schema.ProcessStartedType;
-import com.bc.wps.api.schema.StatusType;
+import com.bc.wps.api.schema.*;
 import com.bc.wps.api.utils.WpsTypeConverter;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.List;
 
-public class ExecuteResponseBuilder {
+class ExecuteResponseBuilder {
 
-    final ExecuteResponse executeResponse;
-    final WpsServerContext serverContext;
+    private final ExecuteResponse executeResponse;
+    private final WpsServerContext serverContext;
 
-    public ExecuteResponseBuilder(WpsServerContext serverContext) {
+    ExecuteResponseBuilder(WpsServerContext serverContext) {
         this.serverContext = serverContext;
         executeResponse = new ExecuteResponse();
         executeResponse.setService("WPS");
@@ -45,11 +38,11 @@ public class ExecuteResponseBuilder {
         withServiceInstance(serverContext.getRequestUrl());
     }
 
-    public ExecuteResponse build() {
+    ExecuteResponse build() {
         return executeResponse;
     }
 
-    public ExecuteResponseBuilder addProcessOutput(final String relativePath) {
+    ExecuteResponseBuilder addProcessOutput(final String relativePath) {
         final String host = serverContext.getHostAddress();
         final int port = serverContext.getPort();
         final String hostPort = port != 80 ? host + ":" + port : host;
@@ -63,7 +56,7 @@ public class ExecuteResponseBuilder {
         return this;
     }
 
-    public ExecuteResponseBuilder withProcessFailed(String failedMessage) {
+    ExecuteResponseBuilder withProcessFailed(String failedMessage) {
         final ExceptionType e = new ExceptionType();
         e.setExceptionCode("NoApplicableCode");
         e.getExceptionText().add(failedMessage);
@@ -83,12 +76,12 @@ public class ExecuteResponseBuilder {
         return this;
     }
 
-    public ExecuteResponseBuilder withStatusLocation(String jobId) {
+    ExecuteResponseBuilder withStatusLocation(String jobId) {
         executeResponse.setStatusLocation(getStatusUrl(jobId));
         return this;
     }
 
-    public ExecuteResponseBuilder withProcessBriefType(WorkflowInfo workflowInfo) {
+    ExecuteResponseBuilder withProcessBriefType(WorkflowInfo workflowInfo) {
         final ProcessBriefType process = new ProcessBriefType();
         process.setIdentifier(WpsTypeConverter.str2CodeType("" + workflowInfo.getId()));
         process.setTitle(WpsTypeConverter.str2LanguageStringType(workflowInfo.getName()));
@@ -96,31 +89,31 @@ public class ExecuteResponseBuilder {
         return this;
     }
 
-    public ExecuteResponseBuilder withStatusCreationTime(XMLGregorianCalendar xmlNow) {
+    ExecuteResponseBuilder withStatusCreationTime(XMLGregorianCalendar xmlNow) {
         ensureStatus().setCreationTime(xmlNow);
         return this;
     }
 
-    public ExecuteResponseBuilder withProcessAccepted(String acceptedMessage) {
+    ExecuteResponseBuilder withProcessAccepted(String acceptedMessage) {
         ensureStatus().setProcessAccepted(acceptedMessage);
         return this;
     }
 
-    public ExecuteResponseBuilder withProcessStarted(String startedMessage) {
+    ExecuteResponseBuilder withProcessStarted(String startedMessage) {
         final ProcessStartedType processStarted = new ProcessStartedType();
         processStarted.setValue(startedMessage);
         ensureStatus().setProcessStarted(processStarted);
         return this;
     }
 
-    public ExecuteResponseBuilder withProcessPaused(String pausedMessage) {
+    ExecuteResponseBuilder withProcessPaused(String pausedMessage) {
         final ProcessStartedType processPaused = new ProcessStartedType();
         processPaused.setValue(pausedMessage);
         ensureStatus().setProcessPaused(processPaused);
         return this;
     }
 
-    public ExecuteResponseBuilder withProcessSucceeded(String succeededMessage) {
+    ExecuteResponseBuilder withProcessSucceeded(String succeededMessage) {
         ensureStatus().setProcessSucceeded(succeededMessage);
         return this;
     }

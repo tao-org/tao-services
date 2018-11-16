@@ -1,16 +1,12 @@
 package ro.cs.tao.wps.impl;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
 import com.bc.wps.WpsRequestContextImpl;
 import com.bc.wps.api.exceptions.WpsServiceException;
-import com.bc.wps.api.schema.Execute;
 import com.bc.wps.api.schema.ExecuteResponse;
-import com.bc.wps.api.utils.WpsTypeConverter;
 import com.bc.wps.utilities.JaxbHelper;
 import org.hamcrest.Matchers;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mockito;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
@@ -25,8 +21,10 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Map;
+
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BCWpsServiceInstanceImpl_GetStatusTest {
 

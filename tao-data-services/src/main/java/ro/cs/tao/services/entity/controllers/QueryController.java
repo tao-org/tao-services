@@ -25,7 +25,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.model.Query;
-import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -99,19 +98,21 @@ public class QueryController extends BaseController {
 
     @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Query object) {
-        object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
-        return prepareResult(queryService.save(object));
+        try {
+            object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
+            return prepareResult(queryService.save(object));
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
     }
 
     @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody Query object) {
-        ResponseEntity<ServiceResponse<?>> response;
         try {
             object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
-            response = prepareResult(queryService.update(object));
-        } catch (PersistenceException pex) {
-            response = handleException(pex);
+            return prepareResult(queryService.update(object));
+        } catch (Exception pex) {
+            return handleException(pex);
         }
-        return response;
     }
 }

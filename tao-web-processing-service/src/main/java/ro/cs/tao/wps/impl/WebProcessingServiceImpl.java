@@ -24,15 +24,12 @@ import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.services.entity.impl.FileStorageService;
-import ro.cs.tao.services.entity.impl.WorkflowServiceImpl;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
-import ro.cs.tao.services.orchestration.impl.OrchestrationServiceImpl;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 
 import java.io.IOException;
@@ -45,22 +42,17 @@ import java.util.logging.Logger;
 @Service("webProcessingService")
 public class WebProcessingServiceImpl implements WebProcessingService {
 
-//    @Autowired
-//    private WorkflowService workflowService;
-//
-//    @Autowired
-//    private OrchestratorService orchestratorService;
-//
-//    @Autowired
-//    private PersistenceManager persistenceManager;
-//
-//    @Autowired
-//    private StorageService<MultipartFile> storageService;
+    @Autowired
+    private WorkflowService workflowService;
 
-    private WorkflowService workflowService = new WorkflowServiceImpl();
-    private OrchestratorService orchestratorService = new OrchestrationServiceImpl();
-    private PersistenceManager persistenceManager = new PersistenceManager();
-    private StorageService<MultipartFile> storageService = new FileStorageService();
+    @Autowired
+    private OrchestratorService orchestratorService;
+
+    @Autowired
+    private PersistenceManager persistenceManager;
+
+    @Autowired
+    private StorageService<MultipartFile> storageService;
 
     @Override
     public List<WorkflowInfo> getCapabilities() {
@@ -75,14 +67,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
         final ProcessInfoImpl processInfo = new ProcessInfoImpl();
         processInfo.setParameters(workflowParameters);
         processInfo.setOutputs(workflowOutputs);
-
-        final List<WorkflowInfo> workflowInfos = getCapabilities();
-        for (WorkflowInfo info : workflowInfos) {
-            if (info.getId() == workflowId) {
-                processInfo.setWorkflowInfo(info);
-                break;
-            }
-        }
+        processInfo.setWorkflowInfo(workflowService.getWorkflowInfo(workflowId));
 
         return processInfo;
     }
@@ -104,9 +89,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
 
     @Override
     public ExecutionJob getStatus(long jobId) {
-        final ExecutionJob jobById = persistenceManager.getJobById(jobId);
-        return jobById;
-//        return orchestratorService.getTasksStatus(jobId);
+        return persistenceManager.getJobById(jobId);
     }
 
     @Override
@@ -125,7 +108,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
             return parameters;
         }
 
-        public void setParameters(Map<String, List<Parameter>> parameters) {
+        void setParameters(Map<String, List<Parameter>> parameters) {
             this.parameters = parameters;
         }
 
@@ -134,7 +117,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
             return outputs;
         }
 
-        public void setOutputs(List<TargetDescriptor> outputs) {
+        void setOutputs(List<TargetDescriptor> outputs) {
             this.outputs = outputs;
         }
 
@@ -143,7 +126,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
             return workflowInfo;
         }
 
-        public void setWorkflowInfo(WorkflowInfo workflowInfo) {
+        void setWorkflowInfo(WorkflowInfo workflowInfo) {
             this.workflowInfo = workflowInfo;
         }
     }

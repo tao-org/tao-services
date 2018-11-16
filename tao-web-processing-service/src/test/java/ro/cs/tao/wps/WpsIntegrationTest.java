@@ -1,20 +1,22 @@
 package ro.cs.tao.wps;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static ro.cs.tao.wps.IntegrationTestHelper.getHttpGetResponse;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.util.EntityUtils;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
+import static ro.cs.tao.wps.IntegrationTestHelper.getHttpGetResponse;
 
 @RunWith(IntegrationTestRunner.class)
 @IntegrationTestRunner.NeededService("http://localhost:8080/wps")

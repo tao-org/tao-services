@@ -5,15 +5,11 @@ import com.bc.wps.api.schema.*;
 import com.bc.wps.api.utils.CapabilitiesBuilder;
 import com.bc.wps.api.utils.WpsTypeConverter;
 import com.bc.wps.utilities.PropertiesWrapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.util.UriComponentsBuilder;
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.services.entity.impl.WorkflowServiceImpl;
-import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WebProcessingService;
-import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
-import ro.cs.tao.workflow.WorkflowDescriptor;
-import ro.cs.tao.wps.impl.WebProcessingServiceImpl;
+import ro.cs.tao.wps.controllers.WPSController;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -23,18 +19,19 @@ import java.util.logging.Logger;
 /**
  * @author Sabine
  */
-public class GetCapabilitiesOperation {
+public class Operations {
 
-    final WpsRequestContext wpsRequestContext;
-    final Logger logger = Logger.getLogger(this.getClass().getName());
-    final WebProcessingService taoWpsImpl = new WebProcessingServiceImpl();
+    private final WpsRequestContext wpsRequestContext;
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private final WebProcessingService webProcessingService;
 
-    public GetCapabilitiesOperation(WpsRequestContext context) throws IOException {
-        wpsRequestContext = context;
+    public Operations(WpsRequestContext context, WebProcessingService webProcessingService) throws IOException {
+        this.wpsRequestContext = context;
+        this.webProcessingService = webProcessingService;
     }
 
     public Capabilities getCapabilities() throws IOException, URISyntaxException, PersistenceException {
-        logger.info("GetCapabilities for user " + wpsRequestContext.getUserName());
+        logger.finest("GetCapabilities for user " + wpsRequestContext.getUserName());
         return CapabilitiesBuilder.create()
                     .withOperationsMetadata(getOperationsMetadata())
                     .withServiceIdentification(getServiceIdentification())
@@ -44,30 +41,34 @@ public class GetCapabilitiesOperation {
                     .build();
     }
 
-    OperationsMetadata getOperationsMetadata() {
+    private OperationsMetadata getOperationsMetadata() {
         final OperationsMetadata operationsMetadata = new OperationsMetadata();
 
         Operation getCapabilitiesOperation = new Operation();
         getCapabilitiesOperation.setName("GetCapabilities");
-        DCP getCapabilitiesDcp = getGetDcp(PropertiesWrapper.get("wps.get.request.url"));
+        //DCP getCapabilitiesDcp = getGetDcp(PropertiesWrapper.get("wps.get.request.url"));
+        DCP getCapabilitiesDcp = getGetDcp(componentsBuilder().queryParam("Request", "GetCapabilities").build().toString());
         getCapabilitiesOperation.getDCP().add(getCapabilitiesDcp);
         operationsMetadata.getOperation().add(getCapabilitiesOperation);
 
         Operation describeProcessOperation = new Operation();
         describeProcessOperation.setName("DescribeProcess");
-        DCP describeProcessDcp = getGetDcp(PropertiesWrapper.get("wps.get.request.url"));
+        //DCP describeProcessDcp = getGetDcp(PropertiesWrapper.get("wps.get.request.url"));
+        DCP describeProcessDcp = getGetDcp(componentsBuilder().queryParam("Request", "DescribeProcess").build().toString());
         describeProcessOperation.getDCP().add(describeProcessDcp);
         operationsMetadata.getOperation().add(describeProcessOperation);
 
         Operation executeOperation = new Operation();
         executeOperation.setName("Execute");
-        DCP executeDcp = getPostDcp(PropertiesWrapper.get("wps.post.request.url"));
+        //DCP executeDcp = getPostDcp(PropertiesWrapper.get("wps.post.request.url"));
+        DCP executeDcp = getPostDcp(componentsBuilder().queryParam("Request", "Execute").build().toString());
         executeOperation.getDCP().add(executeDcp);
         operationsMetadata.getOperation().add(executeOperation);
 
         Operation getStatusOperation = new Operation();
         getStatusOperation.setName("GetStatus");
-        DCP getStatusDcp = getGetDcp(PropertiesWrapper.get("wps.get.request.url"));
+        //DCP getStatusDcp = getGetDcp(PropertiesWrapper.get("wps.get.request.url"));
+        DCP getStatusDcp = getGetDcp(componentsBuilder().queryParam("Request", "GetStatus").build().toString());
         getStatusOperation.getDCP().add(getStatusDcp);
         operationsMetadata.getOperation().add(getStatusOperation);
 
@@ -75,7 +76,7 @@ public class GetCapabilitiesOperation {
         return operationsMetadata;
     }
 
-    ServiceProvider getServiceProvider() {
+    private ServiceProvider getServiceProvider() {
         ServiceProvider serviceProvider = new ServiceProvider();
         serviceProvider.setProviderName(PropertiesWrapper.get("company.name"));
 
@@ -117,14 +118,14 @@ public class GetCapabilitiesOperation {
         return serviceProvider;
     }
 
-    ProcessOfferings getProcessOfferings() throws IOException, URISyntaxException, PersistenceException {
+    private ProcessOfferings getProcessOfferings() throws PersistenceException {
         ProcessOfferings processOfferings = new ProcessOfferings();
         List<ProcessBriefType> taoProcesses = getTaoProcesses();
         processOfferings.getProcess().addAll(taoProcesses);
         return processOfferings;
     }
 
-    ServiceIdentification getServiceIdentification() {
+    private ServiceIdentification getServiceIdentification() {
         ServiceIdentification serviceIdentification = new ServiceIdentification();
         LanguageStringType title = new LanguageStringType();
         title.setValue(PropertiesWrapper.get("wps.service.id"));
@@ -142,7 +143,7 @@ public class GetCapabilitiesOperation {
         return serviceIdentification;
     }
 
-    Languages getLanguages() {
+    private Languages getLanguages() {
         Languages languages = new Languages();
 
         Languages.Default defaultLanguage = new Languages.Default();
@@ -179,7 +180,7 @@ public class GetCapabilitiesOperation {
     }
 
     private List<ProcessBriefType> getTaoProcesses() throws PersistenceException {
-        List<WorkflowInfo> workflows = taoWpsImpl.getCapabilities();
+        List<WorkflowInfo> workflows = webProcessingService.getCapabilities();
 
         ProcessOfferings processOfferings = new ProcessOfferings();
         for (WorkflowInfo workflow : workflows) {
@@ -192,5 +193,9 @@ public class GetCapabilitiesOperation {
             processOfferings.getProcess().add(singleProcess);
         }
         return processOfferings.getProcess();
+    }
+
+    private UriComponentsBuilder componentsBuilder() {
+        return WPSController.currentURL().queryParam("Service", "WPS");
     }
 }
