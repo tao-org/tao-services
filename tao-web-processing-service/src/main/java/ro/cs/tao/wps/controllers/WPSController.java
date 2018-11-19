@@ -17,8 +17,6 @@
 package ro.cs.tao.wps.controllers;
 
 import com.bc.wps.WpsFrontendConnector;
-import com.bc.wps.WpsRequestContextImpl;
-import com.bc.wps.api.WpsRequestContext;
 import com.bc.wps.api.WpsServiceInstance;
 import com.bc.wps.api.exceptions.WpsRuntimeException;
 import com.bc.wps.utilities.PropertiesWrapper;
@@ -28,24 +26,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.services.commons.BaseController;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.util.Date;
 
 @Controller
 @RequestMapping("/wps")
 public class WPSController extends BaseController {
-
-    @Autowired
-    private WpsServiceInstance wpsServiceInstance;
-
-    private WpsFrontendConnector wpsFrontendConnector = new WpsFrontendConnector(true);
 
     static {
         try {
@@ -55,6 +44,10 @@ public class WPSController extends BaseController {
         }
     }
 
+    @Autowired
+    private WpsServiceInstance wpsServiceInstance;
+    private WpsFrontendConnector wpsFrontendConnector = new WpsFrontendConnector(true);
+
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<?> requestGet(@RequestParam("Service") final String service,
                                         @RequestParam("Request") final String requestType,
@@ -63,7 +56,7 @@ public class WPSController extends BaseController {
                                         @RequestParam(name = "Identifier", required = false) final String processId,
                                         @RequestParam(name = "Version", required = false) final String version,
                                         @RequestParam(name = "JobId", required = false) final String jobId,
-                                        HttpServletRequest httpRequest, HttpServletResponse response) {
+                                        HttpServletRequest httpRequest) {
         ResponseEntity<?> result;
         if (!isWPS(service)) {
             result = serviceUnavailable(service, "No such Service: ");
@@ -72,19 +65,11 @@ public class WPSController extends BaseController {
                 case "GetCapabilities":
                 case "DescribeProcess":
                 case "GetStatus":
-                    try {
-                        WpsRequestContext requestContext = new WpsRequestContextImpl(httpRequest);
-                        // @todo discuss with Norman ... these parameters are not needed if httpRequest is a parameter
-                        final String wpsService = wpsFrontendConnector.getWpsService(
-                                service, requestType, acceptedVersion, language,
-                                processId, version, jobId, httpRequest, wpsServiceInstance, requestContext);
-                        writeToResponce(response, wpsService);
-                        result = ResponseEntity.accepted().build();
-                    } catch (IOException e) {
-                        final String msg = "IO Exception while writing response. Details: %s";
-                        error(msg, e);
-                        result = new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
-                    }
+                    // @todo discuss with Norman ... these parameters are not needed if httpRequest is a parameter
+                    final String wpsService = wpsFrontendConnector.getWpsService(
+                            service, requestType, acceptedVersion, language,
+                            processId, version, jobId, httpRequest, wpsServiceInstance);
+                    result = createResponseOk(wpsService);
                     break;
                 default:
                     result = serviceUnavailable(requestType, "Unknown request type: ");
@@ -94,45 +79,40 @@ public class WPSController extends BaseController {
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<?> requestEPost(@RequestParam("Request") final String requestType,
-                                          HttpServletRequest httpRequest,
-                                          HttpServletResponse response) {
-        if ("Execute".equals(requestType)) {
-            try {
-                final String requestXML = getXmlFrom(httpRequest);
-                WpsRequestContext requestContext = new WpsRequestContextImpl(httpRequest);
-                final String result = wpsFrontendConnector.postExecuteService(requestXML, httpRequest, wpsServiceInstance, requestContext);
-                writeToResponce(response, result);
-                return ResponseEntity.accepted().build();
-            } catch (IOException e) {
-                final String msg = "IO Exception while writing response. Details: %s";
-                error(msg, e);
-                return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<?> requestPost(HttpServletRequest httpRequest) {
+        try {
+            final String body = getXmlFrom(httpRequest).trim();
+            if (!isExecuteRequest(body)) {
+                return serviceUnavailable(body, "Unknown request type: \n");
             }
-        } else {
-            return serviceUnavailable(requestType, "Unknown request type: ");
+            final String result = wpsFrontendConnector.postExecuteService(body, httpRequest, wpsServiceInstance);
+            return createResponseOk(result);
+        } catch (Exception e) {
+            return serviceUnavailable(e.getMessage(), "");
         }
+    }
+
+    private ResponseEntity<String> createResponseOk(String respBody) {
+        respBody = removeBcNamespace(respBody);
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_XML);
+        return new ResponseEntity<>(respBody, headers, HttpStatus.OK);
     }
 
     private String getXmlFrom(HttpServletRequest executionRequest) throws IOException {
         try (final InputStream is = executionRequest.getInputStream();
              final InputStreamReader isr = new InputStreamReader(is);
              final LineNumberReader lnr = new LineNumberReader(isr)) {
-            String line;
-            final StringBuilder stringBuilder = new StringBuilder();
-            while ((line = lnr.readLine()) != null) {
-                stringBuilder.append(line);
-            }
-            return stringBuilder.toString();
-        }
-    }
 
-    private void writeToResponce(HttpServletResponse response, String wpsService) throws IOException {
-        final PrintWriter writer = response.getWriter();
-        writer.print(wpsService);
-        response.setContentType(MediaType.APPLICATION_XML_VALUE);
-        response.setDateHeader("Date", new Date().getTime());
-        response.setHeader(HttpHeaders.TRANSFER_ENCODING, "chunked");
+            final StringWriter stringWriter = new StringWriter();
+            final PrintWriter pw = new PrintWriter(stringWriter);
+            String line;
+            while ((line = lnr.readLine()) != null) {
+                pw.println(line);
+            }
+            pw.flush();
+            return stringWriter.toString();
+        }
     }
 
     private ResponseEntity<String> serviceUnavailable(String service, String prefix) {
@@ -141,5 +121,13 @@ public class WPSController extends BaseController {
 
     private boolean isWPS(@RequestParam("Service") String service) {
         return "WPS".equals(service);
+    }
+
+    private boolean isExecuteRequest(String body) {
+        return body != null && body.endsWith("Execute>");
+    }
+
+    private String removeBcNamespace(String xml) {
+        return xml.replace("xmlns:bc=\"http://www.brockmann-consult.de/bc-wps/calwpsL3Parameters-schema.xsd\"", "");
     }
 }

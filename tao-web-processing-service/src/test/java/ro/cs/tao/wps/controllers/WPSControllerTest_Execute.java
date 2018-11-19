@@ -1,126 +1,272 @@
 package ro.cs.tao.wps.controllers;
 
-import com.bc.wps.WpsFrontendConnector;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.*;
+
 import com.bc.wps.api.WpsRequestContext;
 import com.bc.wps.api.WpsServiceInstance;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import com.bc.wps.api.schema.Execute;
+import com.bc.wps.api.schema.ExecuteResponse;
+import com.bc.wps.api.schema.StatusType;
+import org.junit.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
-import ro.cs.tao.wps.impl.BCWpsServiceInstanceImpl;
 
+import javax.servlet.ReadListener;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import java.util.Locale;
 
 public class WPSControllerTest_Execute {
 
-    final String validService = "WPS";
-    final String validRequestType_GC = "GetCapabilities";
-
-    WpsFrontendConnector frontendConnector;
-    HttpServletRequest httpRequest;
-    HttpServletResponse servletResponse;
-    StringWriter responseWriter;
-    WPSController wpsController;
+    private HttpServletRequest httpRequest;
+    private WPSController wpsController;
+    private WpsServiceInstance wpsServiceInstance;
 
     @Before
     public void setUp() throws Exception {
         httpRequest = mock(HttpServletRequest.class);
-        servletResponse = mock(HttpServletResponse.class);
-        frontendConnector = mock(WpsFrontendConnector.class);
-        responseWriter = new StringWriter();
-        when(servletResponse.getWriter()).thenReturn(new PrintWriter(responseWriter));
+        wpsServiceInstance = mock(WpsServiceInstance.class);
 
         // class under test
         wpsController = new WPSController();
-        ReflectionTestUtils.setField(wpsController, "wpsFrontendConnector", frontendConnector);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        verifyNoMoreInteractions(frontendConnector);
-        verifyNoMoreInteractions(servletResponse);
-        verifyNoMoreInteractions(httpRequest);
+        ReflectionTestUtils.setField(wpsController, "wpsServiceInstance", wpsServiceInstance);
     }
 
     @Test
-    public void testRequestGet_ValidGetCapabilitiesRequest() throws Exception {
+    public void testExecute_ValidRequest() throws Exception {
         //preparation
-        when(frontendConnector.getWpsService(anyString(), anyString(), any(),
-                                             any(), any(), any(), any(),
-                                             any(HttpServletRequest.class), any(WpsServiceInstance.class), any(WpsRequestContext.class))).thenReturn("Valid frontendConnector Response");
+        when(httpRequest.getInputStream()).thenReturn(new TestStream(validExecute()));
+
+        final StatusType statusType = new StatusType();
+        statusType.setProcessAccepted("AAAAAAAAAAAA");
+        final ExecuteResponse executeResponse = new ExecuteResponse();
+        executeResponse.setStatus(statusType);
+        when(wpsServiceInstance.doExecute(any(WpsRequestContext.class), any(Execute.class)))
+                .thenReturn(executeResponse);
 
         //execution
-        final ResponseEntity<?> responseEntity = wpsController
-                .requestGet(validService, validRequestType_GC, null, null, null, null, null, httpRequest, servletResponse);
+        final ResponseEntity<?> responseEntity = wpsController.requestPost(httpRequest);
 
         //verification
-        assertThat(responseEntity).isEqualTo(ResponseEntity.accepted().build());
-        assertThat(responseWriter.toString()).isEqualTo("Valid frontendConnector Response");
-        validGetCapabilitiesCallToFrontendConnectorExpected();
-        verify(servletResponse, times(1)).getWriter();
-        verify(servletResponse, times(1)).setContentType(MediaType.APPLICATION_XML_VALUE);
-        verify(servletResponse, times(1)).setDateHeader(eq("Date"), anyLong());
-        verify(servletResponse, times(1)).setHeader(HttpHeaders.TRANSFER_ENCODING, "chunked");
+        assertThat(responseEntity.getStatusCode(), is(equalTo(HttpStatus.OK)));
+        final HttpHeaders headers = responseEntity.getHeaders();
+        assertThat(headers.size(), is(1));
+        assertThat(headers.getContentType(), is(equalTo(MediaType.APPLICATION_XML)));
+        assertThat((String) responseEntity.getBody(), is(equalToIgnoringWhiteSpace(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?> " +
+                "<wps:ExecuteResponse xsi:schemaLocation=\"http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_response.xsd\" xmlns:ows=\"http://www.opengis.net/ows/1.1\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:wps=\"http://www.opengis.net/wps/1.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">" +
+                "    <wps:Status>" +
+                "        <wps:ProcessAccepted>AAAAAAAAAAAA</wps:ProcessAccepted>" +
+                "    </wps:Status> " +
+                "</wps:ExecuteResponse>")));
     }
 
     @Test
-    public void testRequestGet_invalidService_serviceIsNotWPS() throws Exception {
+    public void testExecute_NotAnExecuteRequest() throws Exception {
         //preparation
-        final String service = "AAAAAAA"; // valid value = "WPS"
+        when(httpRequest.getInputStream()).thenReturn(new TestStream("<any><other>xml</other></any>   "));
+
+        final StatusType statusType = new StatusType();
+        statusType.setProcessAccepted("AAAAAAAAAAAA");
+        final ExecuteResponse executeResponse = new ExecuteResponse();
+        executeResponse.setStatus(statusType);
+        when(wpsServiceInstance.doExecute(any(WpsRequestContext.class), any(Execute.class)))
+                .thenReturn(executeResponse);
 
         //execution
-        final ResponseEntity<?> responseEntity = wpsController.requestGet(service, validRequestType_GC, null, null, null, null, null, httpRequest, servletResponse);
+        final ResponseEntity<?> responseEntity = wpsController.requestPost(httpRequest);
 
         //verification
-        assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
-        assertThat(responseEntity.getBody()).isInstanceOf(String.class);
-        assertThat(responseEntity.getBody()).matches(o -> ((String) o).contains(service));
+        assertThat(responseEntity.getStatusCode(), is(equalTo(HttpStatus.SERVICE_UNAVAILABLE)));
+        assertThat(responseEntity.getHeaders().size(), is(0));
+        assertThat((String) responseEntity.getBody(), is(equalToIgnoringWhiteSpace("Unknown request type: \"<any><other>xml</other></any>\"")));
     }
 
     @Test
-    public void testRequestGet_invalidRequest_requestIsNotValid() throws Exception {
+    public void testExecute_AnUnmashableExecuteRequest() throws Exception {
         //preparation
-        final String requestType = "BBBBBBBBBBBBB";  // valid values = "GetCapabilities" or "DescribeProcess"
+        when(httpRequest.getInputStream()).thenReturn(new TestStream("<Execute><other>xml</other></Execute>   "));
+
+        final StatusType statusType = new StatusType();
+        statusType.setProcessAccepted("AAAAAAAAAAAA");
+        final ExecuteResponse executeResponse = new ExecuteResponse();
+        executeResponse.setStatus(statusType);
+        when(wpsServiceInstance.doExecute(any(WpsRequestContext.class), any(Execute.class)))
+                .thenReturn(executeResponse);
 
         //execution
-        final ResponseEntity<?> responseEntity = wpsController.requestGet(validService, requestType, null, null, null, null, null, httpRequest, servletResponse);
+        final Locale locale = Locale.getDefault();
+        Locale.setDefault(Locale.ENGLISH);
+        final ResponseEntity<?> responseEntity = wpsController.requestPost(httpRequest);
+        Locale.setDefault(locale);
 
         //verification
-        assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
-        assertThat(responseEntity.getBody()).isInstanceOf(String.class);
-        assertThat(responseEntity.getBody()).matches(o -> ((String) o).contains(requestType));
+        assertThat(responseEntity.getStatusCode(), is(equalTo(HttpStatus.SERVICE_UNAVAILABLE)));
+        assertThat(responseEntity.getHeaders().size(), is(0));
+        final String body = (String) responseEntity.getBody();
+        assertThat(body, containsString("Invalid Execute request"));
+        assertThat(body, containsString("unexpected element (uri:\"\", local:\"Execute\")"));
+        assertThat(body, containsString("Expected elements are <{http://www.opengis.net/wps/1.0.0}AllowedValues>"));
+        assertThat(body, containsString("<{http://www.opengis.net/wps/1.0.0}Execute>"));
     }
 
-    @Test
-    public void testRequestGet_IOExceptionWhileWritingToResponceWriter() throws Exception {
-        //preparation
-        when(servletResponse.getWriter()).thenThrow(new IOException("TestException"));
-
-        //execution
-        final ResponseEntity<?> responseEntity = wpsController
-                .requestGet(validService, validRequestType_GC, null, null, null, null, null, httpRequest, servletResponse);
-
-        //verification
-        assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
-        assertThat(responseEntity.getBody()).isEqualTo("IO Exception while writing response.");
-        validGetCapabilitiesCallToFrontendConnectorExpected();
-        verify(servletResponse, times(1)).getWriter();
+    private String validExecute() {
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?>\n" +
+               "\n" +
+               "<wps:Execute xsi:schemaLocation=\"http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_request.xsd\"\n" +
+               "             service=\"WPS\"\n" +
+               "             version=\"1.0.0\"\n" +
+               "             xmlns:wps=\"http://www.opengis.net/wps/1.0.0\"\n" +
+               "             xmlns:ows=\"http://www.opengis.net/ows/1.1\"\n" +
+               "             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+               "\n" +
+               "    <ows:Identifier>urbantep-fmask~3.2~Fmask8</ows:Identifier>\n" +
+               "\n" +
+               "    <wps:DataInputs>\n" +
+               "        <wps:Input>\n" +
+               "            <ows:Identifier>productionType</ows:Identifier>\n" +
+               "            <wps:Data>\n" +
+               "                <wps:LiteralData>L2</wps:LiteralData>\n" +
+               "            </wps:Data>\n" +
+               "        </wps:Input>\n" +
+               "        <wps:Input>\n" +
+               "            <ows:Identifier>productionName</ows:Identifier>\n" +
+               "            <wps:Data>\n" +
+               "                <wps:LiteralData>TEP Fmask8 test</wps:LiteralData>\n" +
+               "            </wps:Data>\n" +
+               "        </wps:Input>\n" +
+               "        <wps:Input>\n" +
+               "            <ows:Identifier>inputDataSetName</ows:Identifier>\n" +
+               "            <wps:Data>\n" +
+               "                <wps:LiteralData>Landsat 8 OLI and TIRS of Finland 2013</wps:LiteralData>\n" +
+               "            </wps:Data>\n" +
+               "        </wps:Input>\n" +
+               "        <wps:Input>\n" +
+               "            <ows:Identifier>minDate</ows:Identifier>\n" +
+               "            <wps:Data>\n" +
+               "                <wps:LiteralData>2013-04-23</wps:LiteralData>\n" +
+               "            </wps:Data>\n" +
+               "        </wps:Input>\n" +
+               "        <wps:Input>\n" +
+               "            <ows:Identifier>maxDate</ows:Identifier>\n" +
+               "            <wps:Data>\n" +
+               "                <wps:LiteralData>2013-04-23</wps:LiteralData>\n" +
+               "            </wps:Data>\n" +
+               "        </wps:Input>\n" +
+               "        <wps:Input>\n" +
+               "            <ows:Identifier>periodLength</ows:Identifier>\n" +
+               "            <wps:Data>\n" +
+               "                <wps:LiteralData>1</wps:LiteralData>\n" +
+               "            </wps:Data>\n" +
+               "        </wps:Input>\n" +
+               "        <wps:Input>\n" +
+               "            <ows:Identifier>regionWKT</ows:Identifier>\n" +
+               "            <wps:Data>\n" +
+               "                <wps:LiteralData>POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))</wps:LiteralData>\n" +
+               "            </wps:Data>\n" +
+               "        </wps:Input>\n" +
+               "        <wps:Input>\n" +
+               "            <ows:Identifier>regionWKT</ows:Identifier>\n" +
+               "            <wps:Data>\n" +
+               "                <wps:BoundingBoxData dimensions=\"2\">\n" +
+               "                    <ows:LowerCorner>-54.58 35.532</ows:LowerCorner>\n" +
+               "                    <ows:UpperCorner>-16.875 59.356</ows:UpperCorner>\n" +
+               "                </wps:BoundingBoxData>\n" +
+               "            </wps:Data>\n" +
+               "        </wps:Input>\n" +
+               "        <wps:Input>\n" +
+               "            <ows:Identifier>calvalus.output.format</ows:Identifier>\n" +
+               "            <wps:Data>\n" +
+               "                <wps:LiteralData>NetCDF4</wps:LiteralData>\n" +
+               "            </wps:Data>\n" +
+               "        </wps:Input>\n" +
+               "\n" +
+               "\n" +
+               "    </wps:DataInputs>\n" +
+               "    <wps:ResponseForm>\n" +
+               "        <wps:ResponseDocument storeExecuteResponse=\"true\" status=\"true\">\n" +
+               "            <wps:Output>\n" +
+               "                <ows:Identifier>productionResults</ows:Identifier>\n" +
+               "            </wps:Output>\n" +
+               "        </wps:ResponseDocument>\n" +
+               "    </wps:ResponseForm>\n" +
+               "</wps:Execute>";
     }
 
-    private void validGetCapabilitiesCallToFrontendConnectorExpected() {
-        verify(frontendConnector, times(1)).getWpsService(matches(validService), matches(validRequestType_GC), any(),
-                                                          any(), any(), any(), any(),
-                                                          same(httpRequest), isA(BCWpsServiceInstanceImpl.class), isA(WpsRequestContext.class));
+    private class TestStream extends ServletInputStream {
+
+        final ByteArrayInputStream is;
+
+        public TestStream(final String xml) {
+            is = new ByteArrayInputStream(xml.getBytes());
+        }
+
+        @Override
+        public boolean isFinished() {
+            throw new RuntimeException("not implemented");
+        }
+
+        @Override
+        public boolean isReady() {
+            throw new RuntimeException("not implemented");
+        }
+
+        @Override
+        public void setReadListener(ReadListener readListener) {
+            throw new RuntimeException("not implemented");
+        }
+
+        @Override
+        public int read() throws IOException {
+            return is.read();
+        }
+
+        @Override
+        public int read(byte[] b) throws IOException {
+            return is.read(b);
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            return is.read(b, off, len);  //Todo change body of created method. Use File | Settings | File Templates to change
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            return is.skip(n);  //Todo change body of created method. Use File | Settings | File Templates to change
+        }
+
+        @Override
+        public int available() throws IOException {
+            return is.available();  //Todo change body of created method. Use File | Settings | File Templates to change
+        }
+
+        @Override
+        public void close() throws IOException {
+            is.close();  //Todo change body of created method. Use File | Settings | File Templates to change
+        }
+
+        @Override
+        public synchronized void mark(int readlimit) {
+            is.mark(readlimit);  //Todo change body of created method. Use File | Settings | File Templates to change
+        }
+
+        @Override
+        public synchronized void reset() throws IOException {
+            is.reset();  //Todo change body of created method. Use File | Settings | File Templates to change
+        }
+
+        @Override
+        public boolean markSupported() {
+            return is.markSupported();  //Todo change body of created method. Use File | Settings | File Templates to change
+        }
     }
 }
