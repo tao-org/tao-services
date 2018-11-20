@@ -487,18 +487,18 @@ public class WorkflowServiceImpl
             throw new PersistenceException("Empty node group");
         }
         final List<ProcessingComponent> firstComponents = new ArrayList<>();
-        final List<ProcessingComponent> lastComponents = new ArrayList<>();
+        final Map<Long, ProcessingComponent> lastComponents = new LinkedHashMap<>();
         Map<Long, TaoComponent> componentsBefore = new LinkedHashMap<>();
-
+        final List<WorkflowNodeDescriptor> terminals;
         // Step 1: find first nodes and terminal nodes
         if (nodesBeforeIds != null && nodesBeforeIds.length > 0) {
             final List<WorkflowNodeDescriptor> referrers = findReferrers(new LinkedHashSet<>(Arrays.asList(nodesBeforeIds)), nodes);
-            final List<WorkflowNodeDescriptor> terminals = findTerminals(nodes);
+            terminals = findTerminals(nodes);
             for (WorkflowNodeDescriptor node : referrers) {
                 firstComponents.add(componentService.findById(node.getComponentId()));
             }
             for (WorkflowNodeDescriptor node : terminals) {
-                lastComponents.add(componentService.findById(node.getComponentId()));
+                lastComponents.put(node.getId(), componentService.findById(node.getComponentId()));
             }
             List<WorkflowNodeDescriptor> nodesBefore = persistenceManager.getWorkflowNodesById(nodesBeforeIds);
             nodesBefore.forEach(n -> componentsBefore.put(n.getId(),
@@ -506,12 +506,14 @@ public class WorkflowServiceImpl
                                                                                          n.getComponentType())));
         } else {
             firstComponents.add(componentService.findById(nodes.get(0).getComponentId()));
-            lastComponents.add(componentService.findById(nodes.get(nodes.size() - 1).getComponentId()));
+            WorkflowNodeDescriptor lastNode = nodes.get(nodes.size() - 1);
+            lastComponents.put(lastNode.getId(), componentService.findById(lastNode.getComponentId()));
+            terminals = new ArrayList<>();
         }
         final List<SourceDescriptor> sources = new ArrayList<>();
         firstComponents.forEach(c -> sources.addAll(c.getSources()));
         final List<TargetDescriptor> targets = new ArrayList<>();
-        lastComponents.forEach(c -> targets.addAll(c.getTargets()));
+        lastComponents.values().forEach(c -> targets.addAll(c.getTargets()));
 
         // Step 2: create the group component with the found sources and targets
         GroupComponent groupComponent = GroupComponent.create(sources, targets);
@@ -525,17 +527,17 @@ public class WorkflowServiceImpl
             groupDescriptor.addNode(node);
         }
         groupDescriptor = (WorkflowNodeGroupDescriptor) persistenceManager.saveWorkflowNodeDescriptor(groupDescriptor, workflow);
+        Set<ComponentLink> external = new HashSet<>();
+        final Map<Long, ComponentLink> linksToRemove = new HashMap<>();
 
-        // Step 4: re-assing the links of the first components
+        // Step 4: re-assign the links of the first components
         for (Map.Entry<Long, TaoComponent> entry : componentsBefore.entrySet()) {
             final Long nodeBeforeId = entry.getKey();
-            Set<ComponentLink> external = new HashSet<>();
             TargetDescriptor target = entry.getValue().getTargets().get(0);
             SourceDescriptor source = groupComponent.getSources().get(0);
             external.add(new ComponentLink(nodeBeforeId, target, source));
             groupDescriptor.setIncomingLinks(external);
             groupDescriptor = (WorkflowNodeGroupDescriptor) persistenceManager.updateWorkflowNodeDescriptor(groupDescriptor);
-            final Map<Long, ComponentLink> linksToRemove = new HashMap<>();
             groupDescriptor.getNodes().forEach(c -> {
                 ComponentLink link;
                 if (c.getIncomingLinks() != null &&
@@ -549,6 +551,27 @@ public class WorkflowServiceImpl
                 removeLink(e.getKey(), e.getValue());
             }
         }
+        linksToRemove.clear();
+        // Step 5: re-assign the links of the terminal nodes
+        List<WorkflowNodeDescriptor> terminalReferrers = findReferrers(terminals.stream()
+                                                                                .map(WorkflowNodeDescriptor::getId)
+                                                                                .collect(Collectors.toSet()),
+                                                                       workflow.getNodes());
+        final long groupId = groupDescriptor.getId();
+        for (Map.Entry<Long, ProcessingComponent> entry : lastComponents.entrySet()) {
+            final Long sourceNodeId = entry.getKey();
+            for (WorkflowNodeDescriptor node : terminalReferrers) {
+                Set<ComponentLink> links = node.getIncomingLinks();
+                for (ComponentLink link : links) {
+                    if (sourceNodeId.equals(link.getSourceNodeId())) {
+                        node.addLink(new ComponentLink(groupId, link.getInput(), link.getOutput()));
+                        node.removeLink(link);
+                    }
+                }
+                persistenceManager.updateWorkflowNodeDescriptor(node);
+            }
+        }
+
         return groupDescriptor;
     }
 
