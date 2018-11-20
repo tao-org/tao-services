@@ -4,8 +4,8 @@ import com.bc.wps.api.WpsRequestContext;
 import com.bc.wps.api.schema.*;
 import com.bc.wps.api.utils.CapabilitiesBuilder;
 import com.bc.wps.api.utils.WpsTypeConverter;
-import com.bc.wps.utilities.PropertiesWrapper;
 import org.springframework.web.util.UriComponentsBuilder;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
@@ -46,28 +46,28 @@ public class Operations {
 
         Operation getCapabilitiesOperation = new Operation();
         getCapabilitiesOperation.setName("GetCapabilities");
-        //DCP getCapabilitiesDcp = getGetDcp(PropertiesWrapper.get("wps.get.request.url"));
+        //DCP getCapabilitiesDcp = getGetDcp(ConfigurationManager.getInstance().getValue("wps.get.request.url"));
         DCP getCapabilitiesDcp = getGetDcp(componentsBuilder().queryParam("Request", "GetCapabilities").build().toString());
         getCapabilitiesOperation.getDCP().add(getCapabilitiesDcp);
         operationsMetadata.getOperation().add(getCapabilitiesOperation);
 
         Operation describeProcessOperation = new Operation();
         describeProcessOperation.setName("DescribeProcess");
-        //DCP describeProcessDcp = getGetDcp(PropertiesWrapper.get("wps.get.request.url"));
+        //DCP describeProcessDcp = getGetDcp(ConfigurationManager.getInstance().getValue("wps.get.request.url"));
         DCP describeProcessDcp = getGetDcp(componentsBuilder().queryParam("Request", "DescribeProcess").build().toString());
         describeProcessOperation.getDCP().add(describeProcessDcp);
         operationsMetadata.getOperation().add(describeProcessOperation);
 
         Operation executeOperation = new Operation();
         executeOperation.setName("Execute");
-        //DCP executeDcp = getPostDcp(PropertiesWrapper.get("wps.post.request.url"));
+        //DCP executeDcp = getPostDcp(ConfigurationManager.getInstance().getValue("wps.post.request.url"));
         DCP executeDcp = getPostDcp(componentsBuilder().queryParam("Request", "Execute").build().toString());
         executeOperation.getDCP().add(executeDcp);
         operationsMetadata.getOperation().add(executeOperation);
 
         Operation getStatusOperation = new Operation();
         getStatusOperation.setName("GetStatus");
-        //DCP getStatusDcp = getGetDcp(PropertiesWrapper.get("wps.get.request.url"));
+        //DCP getStatusDcp = getGetDcp(ConfigurationManager.getInstance().getValue("wps.get.request.url"));
         DCP getStatusDcp = getGetDcp(componentsBuilder().queryParam("Request", "GetStatus").build().toString());
         getStatusOperation.getDCP().add(getStatusDcp);
         operationsMetadata.getOperation().add(getStatusOperation);
@@ -78,35 +78,35 @@ public class Operations {
 
     private ServiceProvider getServiceProvider() {
         ServiceProvider serviceProvider = new ServiceProvider();
-        serviceProvider.setProviderName(PropertiesWrapper.get("company.name"));
+        serviceProvider.setProviderName(ConfigurationManager.getInstance().getValue("company.name"));
 
         OnlineResourceType siteUrl = new OnlineResourceType();
-        siteUrl.setHref(PropertiesWrapper.get("company.website"));
+        siteUrl.setHref(ConfigurationManager.getInstance().getValue("company.website"));
         serviceProvider.setProviderSite(siteUrl);
 
         ResponsiblePartySubsetType contact = new ResponsiblePartySubsetType();
-        contact.setIndividualName(PropertiesWrapper.get("project.manager.name"));
-        contact.setPositionName(PropertiesWrapper.get("project.manager.position.name"));
+        contact.setIndividualName(ConfigurationManager.getInstance().getValue("project.manager.name"));
+        contact.setPositionName(ConfigurationManager.getInstance().getValue("project.manager.position.name"));
 
         ContactType contactInfo = new ContactType();
 
         TelephoneType phones = new TelephoneType();
-        phones.getVoice().add(PropertiesWrapper.get("company.phone.number"));
-        phones.getFacsimile().add(PropertiesWrapper.get("company.fax.number"));
+        phones.getVoice().add(ConfigurationManager.getInstance().getValue("company.phone.number"));
+        phones.getFacsimile().add(ConfigurationManager.getInstance().getValue("company.fax.number"));
         contactInfo.setPhone(phones);
 
         AddressType address = new AddressType();
-        address.getDeliveryPoint().add(PropertiesWrapper.get("company.address"));
-        address.setCity(PropertiesWrapper.get("company.city"));
-        address.setAdministrativeArea(PropertiesWrapper.get("company.administrative.area"));
-        address.setPostalCode(PropertiesWrapper.get("company.post.code"));
-        address.setCountry(PropertiesWrapper.get("company.country"));
-        address.getElectronicMailAddress().add(PropertiesWrapper.get("company.email.address"));
+        address.getDeliveryPoint().add(ConfigurationManager.getInstance().getValue("company.address"));
+        address.setCity(ConfigurationManager.getInstance().getValue("company.city"));
+        address.setAdministrativeArea(ConfigurationManager.getInstance().getValue("company.administrative.area"));
+        address.setPostalCode(ConfigurationManager.getInstance().getValue("company.post.code"));
+        address.setCountry(ConfigurationManager.getInstance().getValue("company.country"));
+        address.getElectronicMailAddress().add(ConfigurationManager.getInstance().getValue("company.email.address"));
         contactInfo.setAddress(address);
 
         contactInfo.setOnlineResource(siteUrl);
-        contactInfo.setHoursOfService(PropertiesWrapper.get("company.service.hours"));
-        contactInfo.setContactInstructions(PropertiesWrapper.get("company.contact.instruction"));
+        contactInfo.setHoursOfService(ConfigurationManager.getInstance().getValue("company.service.hours"));
+        contactInfo.setContactInstructions(ConfigurationManager.getInstance().getValue("company.contact.instruction"));
 
         contact.setContactInfo(contactInfo);
 
@@ -128,18 +128,18 @@ public class Operations {
     private ServiceIdentification getServiceIdentification() {
         ServiceIdentification serviceIdentification = new ServiceIdentification();
         LanguageStringType title = new LanguageStringType();
-        title.setValue(PropertiesWrapper.get("wps.service.id"));
+        title.setValue(ConfigurationManager.getInstance().getValue("wps.service.id"));
         serviceIdentification.setTitle(title);
 
         LanguageStringType abstractText = new LanguageStringType();
-        abstractText.setValue(PropertiesWrapper.get("wps.service.abstract"));
+        abstractText.setValue(ConfigurationManager.getInstance().getValue("wps.service.abstract"));
         serviceIdentification.setAbstract(abstractText);
 
         CodeType serviceType = new CodeType();
-        serviceType.setValue(PropertiesWrapper.get("wps.service.type"));
+        serviceType.setValue(ConfigurationManager.getInstance().getValue("wps.service.type"));
         serviceIdentification.setServiceType(serviceType);
 
-        serviceIdentification.getServiceTypeVersion().add(0, PropertiesWrapper.get("wps.version"));
+        serviceIdentification.getServiceTypeVersion().add(0, ConfigurationManager.getInstance().getValue("wps.version"));
         return serviceIdentification;
     }
 
@@ -147,11 +147,11 @@ public class Operations {
         Languages languages = new Languages();
 
         Languages.Default defaultLanguage = new Languages.Default();
-        defaultLanguage.setLanguage(PropertiesWrapper.get("wps.default.lang"));
+        defaultLanguage.setLanguage(ConfigurationManager.getInstance().getValue("wps.default.lang"));
         languages.setDefault(defaultLanguage);
 
         LanguagesType languageType = new LanguagesType();
-        languageType.getLanguage().add(0, PropertiesWrapper.get("wps.supported.lang"));
+        languageType.getLanguage().add(0, ConfigurationManager.getInstance().getValue("wps.supported.lang"));
         languages.setSupported(languageType);
 
         return languages;

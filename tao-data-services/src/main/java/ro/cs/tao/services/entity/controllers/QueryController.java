@@ -25,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.model.Query;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -103,6 +104,16 @@ public class QueryController extends BaseController {
             return prepareResult(queryService.save(object));
         } catch (Exception ex) {
             return handleException(ex);
+        }
+    }
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> deleteById(@PathVariable("id") long id) {
+        try {
+            queryService.delete(id);
+            return prepareResult(String.format("Query with id %s deleted", id), ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            return handleException(e);
         }
     }
 
