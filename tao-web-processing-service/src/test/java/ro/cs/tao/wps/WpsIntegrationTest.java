@@ -44,7 +44,7 @@ public class WpsIntegrationTest {
 
     @Test
     public void testGetCapabilities_withMock() throws IOException {
-        closeableHttpResponse = getHttpGetResponse(serviceAdress + "?Service=WPS&Request=GetCapabilities");
+        closeableHttpResponse = getHttpGetResponse(serviceAdress + "?service=WPS&request=GetCapabilities");
 
         assertThat(closeableHttpResponse, is(notNullValue()));
         final StatusLine statusLine = closeableHttpResponse.getStatusLine();
@@ -76,7 +76,7 @@ public class WpsIntegrationTest {
                 "            </ows:Phone>\n" +
                 "            <ows:Address>\n" +
                 "               <ows:DeliveryPoint>29 Pacii street</ows:DeliveryPoint>\n" +
-                "               <ows:City>Craiovay</ows:City>\n" +
+                "               <ows:City>Craiova</ows:City>\n" +
                 "               <ows:AdministrativeArea>DOLJ</ows:AdministrativeArea>\n" +
                 "               <ows:PostalCode>200692</ows:PostalCode>\n" +
                 "               <ows:Country>Romania</ows:Country>\n" +
@@ -142,7 +142,7 @@ public class WpsIntegrationTest {
 
     @Test
     public void testDescribeProcess_processOne_withMock() throws IOException {
-        closeableHttpResponse = getHttpGetResponse(serviceAdress + "?Service=WPS&Request=DescribeProcess&Version=1.0.0&Identifier=1");
+        closeableHttpResponse = getHttpGetResponse(serviceAdress + "?service=WPS&request=DescribeProcess&version=1.0.0&identifier=1");
 
         assertThat(closeableHttpResponse, is(notNullValue()));
         final StatusLine statusLine = closeableHttpResponse.getStatusLine();
@@ -506,7 +506,7 @@ public class WpsIntegrationTest {
         sw.flush();
         final String xml = sw.toString();
 
-        closeableHttpResponse = IntegrationTestHelper.getWpsExecuteResponse(serviceAdress + "?Service=WPS&Request=Execute&Version=1.0.0&Identifier=1", xml);
+        closeableHttpResponse = IntegrationTestHelper.getWpsExecuteResponse(serviceAdress + "?service=WPS&request=Execute&version=1.0.0&identifier=1", xml);
 
         assertThat(closeableHttpResponse, is(notNullValue()));
     }
