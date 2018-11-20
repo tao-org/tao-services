@@ -46,13 +46,13 @@ public class WPSController extends BaseController {
     private WpsFrontendConnector wpsFrontendConnector = new WpsFrontendConnector(true);
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<?> requestGet(@RequestParam("Service") final String service,
-                                        @RequestParam("Request") final String requestType,
-                                        @RequestParam(name = "AcceptVersions", required = false) final String acceptedVersion,
-                                        @RequestParam(name = "Language", required = false) final String language,
-                                        @RequestParam(name = "Identifier", required = false) final String processId,
-                                        @RequestParam(name = "Version", required = false) final String version,
-                                        @RequestParam(name = "JobId", required = false) final String jobId,
+    public ResponseEntity<?> requestGet(@RequestParam("service") final String service,
+                                        @RequestParam("request") final String requestType,
+                                        @RequestParam(name = "acceptVersions", required = false) final String acceptedVersion,
+                                        @RequestParam(name = "language", required = false) final String language,
+                                        @RequestParam(name = "identifier", required = false) final String processId,
+                                        @RequestParam(name = "version", required = false) final String version,
+                                        @RequestParam(name = "jobId", required = false) final String jobId,
                                         HttpServletRequest httpRequest, HttpServletResponse response) {
         ResponseEntity<?> result;
         if (!isWPS(service)) {
