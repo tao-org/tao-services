@@ -46,6 +46,7 @@ import ro.cs.tao.workflow.*;
 import ro.cs.tao.workflow.enums.ComponentType;
 import ro.cs.tao.workflow.enums.Status;
 
+import java.awt.geom.Rectangle2D;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Logger;
@@ -381,14 +382,41 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public WorkflowNodeDescriptor addGroup(long workflowId, WorkflowNodeGroupDescriptor groupDescriptor,
-                                       long nodeBeforeId,
-                                       WorkflowNodeDescriptor[] nodes) throws PersistenceException {
-        if (nodes == null || nodes.length == 0) {
+    public WorkflowNodeDescriptor addGroup(long workflowId, long nodeBeforeId, String groupName, Long[] nodeIds) throws PersistenceException {
+        if (nodeIds == null || nodeIds.length == 0) {
             throw new PersistenceException("Empty node group");
         }
-        ProcessingComponent firstComponent = componentService.findById(nodes[0].getComponentId());
-        ProcessingComponent lastComponent = componentService.findById(nodes[nodes.length - 1].getComponentId());
+        List<WorkflowNodeDescriptor> nodes = persistenceManager.getWorkflowNodesById(nodeIds);
+        WorkflowNodeGroupDescriptor grpNode = new WorkflowNodeGroupDescriptor();
+        Rectangle2D.Float envelope = computeEnvelope(nodes);
+        grpNode.setxCoord(envelope.x);
+        grpNode.setyCoord(envelope.y);
+        if (groupName != null) {
+            grpNode.setName(groupName);
+        } else {
+            grpNode.setName("Group " + UUID.randomUUID().toString());
+        }
+        grpNode.setCreated(LocalDateTime.now());
+        grpNode.setPreserveOutput(true);
+        return addGroup(workflowId, grpNode, nodeBeforeId, nodes);
+    }
+
+    @Override
+    public WorkflowNodeDescriptor addGroup(long workflowId, WorkflowNodeGroupDescriptor groupDescriptor,
+                                           long nodeBeforeId,
+                                           WorkflowNodeDescriptor[] nodes) throws PersistenceException {
+        return addGroup(workflowId, groupDescriptor, nodeBeforeId, Arrays.asList(nodes));
+    }
+
+    @Override
+    public WorkflowNodeDescriptor addGroup(long workflowId, WorkflowNodeGroupDescriptor groupDescriptor,
+                                           long nodeBeforeId,
+                                           List<WorkflowNodeDescriptor> nodes) throws PersistenceException {
+        if (nodes == null || nodes.size() == 0) {
+            throw new PersistenceException("Empty node group");
+        }
+        ProcessingComponent firstComponent = componentService.findById(nodes.get(0).getComponentId());
+        ProcessingComponent lastComponent = componentService.findById(nodes.get(nodes.size() - 1).getComponentId());
 
         WorkflowNodeDescriptor nodeBefore = persistenceManager.getWorkflowNodeById(nodeBeforeId);
         TaoComponent component = null;
@@ -416,14 +444,14 @@ public class WorkflowServiceImpl
             groupDescriptor = (WorkflowNodeGroupDescriptor) persistenceManager.updateWorkflowNodeDescriptor(groupDescriptor);
             final Map<Long, ComponentLink> linksToRemove = new HashMap<>();
             groupDescriptor.getNodes().forEach(c -> {
-                                          ComponentLink link;
-                                          if (c.getIncomingLinks() != null &&
-                                              (link = c.getIncomingLinks().stream()
-                                                                          .filter(l -> l.getSourceNodeId() == nodeBeforeId)
-                                                                          .findFirst().orElse(null)) != null) {
-                                              linksToRemove.put(c.getId(), link);
-                                          }
-                                      });
+                ComponentLink link;
+                if (c.getIncomingLinks() != null &&
+                        (link = c.getIncomingLinks().stream()
+                                .filter(l -> l.getSourceNodeId() == nodeBeforeId)
+                                .findFirst().orElse(null)) != null) {
+                    linksToRemove.put(c.getId(), link);
+                }
+            });
             for (Map.Entry<Long, ComponentLink> entry : linksToRemove.entrySet()) {
                 removeLink(entry.getKey(), entry.getValue());
             }
@@ -710,6 +738,31 @@ public class WorkflowServiceImpl
         TaoComponent component = componentService.findComponent(nodeDescriptor.getComponentId(), nodeDescriptor.getComponentType());
         return component != null ?
                 component.getSources().stream().filter(s -> s.getId().equals(id)).findFirst().orElse(null) : null;
+    }
+
+    private Rectangle2D.Float computeEnvelope(List<WorkflowNodeDescriptor> nodes) {
+        Rectangle2D.Float envelope = new Rectangle2D.Float();
+        envelope.x = Float.MAX_VALUE;
+        envelope.y = Float.MAX_VALUE;
+        float maxX = Float.MIN_VALUE;
+        float maxY = Float.MIN_VALUE;
+        for (WorkflowNodeDescriptor node : nodes) {
+            if (envelope.x > node.getxCoord()) {
+                envelope.x = node.getxCoord() - 20;
+            }
+            if (envelope.y > node.getyCoord()) {
+                envelope.y = node.getyCoord() - 20;
+            }
+            if (maxX < node.getxCoord() + 300) {
+                maxX = node.getxCoord() + 300;
+            }
+            if (maxY < node.getyCoord() + 150) {
+                maxY = node.getyCoord() + 150;
+            }
+        }
+        envelope.width = maxX - envelope.x;
+        envelope.height = maxY - envelope.y;
+        return envelope;
     }
 
     private void ensureUniqueName(WorkflowDescriptor workflow, WorkflowNodeDescriptor nodeDescriptor) {
