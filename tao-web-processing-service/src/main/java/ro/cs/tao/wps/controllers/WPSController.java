@@ -18,15 +18,15 @@ package ro.cs.tao.wps.controllers;
 
 import com.bc.wps.WpsFrontendConnector;
 import com.bc.wps.api.WpsServiceInstance;
-import com.bc.wps.api.exceptions.WpsRuntimeException;
-import com.bc.wps.utilities.PropertiesWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.services.commons.BaseController;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,14 +35,6 @@ import java.io.*;
 @Controller
 @RequestMapping("/wps")
 public class WPSController extends BaseController {
-
-    static {
-        try {
-            PropertiesWrapper.loadConfigFile("tao-wps.properties");
-        } catch (IOException exception) {
-            throw new WpsRuntimeException("Unable to load tao-wps.properties file", exception);
-        }
-    }
 
     @Autowired
     private WpsServiceInstance wpsServiceInstance;

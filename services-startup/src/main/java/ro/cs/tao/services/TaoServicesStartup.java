@@ -78,6 +78,7 @@ public class TaoServicesStartup extends StartupBase {
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof ContextRefreshedEvent) {
+            logger.fine("Spring initialization completed");
             try {
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_FILES.value()));
@@ -86,11 +87,14 @@ public class TaoServicesStartup extends StartupBase {
                 System.exit(1);
             }
             BaseController.setPersistenceManager(this.persistenceManager);
+            logger.fine("Initialized persistence manager");
             Messaging.setPersister(this.persistenceManager);
+            logger.fine("Initialized messaging subsystem");
             SpringSessionProvider.setPersistenceManager(this.persistenceManager);
             SessionStore.setSessionContextProvider(new SpringSessionProvider());
             TaoLocalLoginModule.setPersistenceManager(this.persistenceManager);
             CustomAuthenticationProvider.setPersistenceManager(this.persistenceManager);
+            logger.fine("Initialized authentication provider");
             updateLocalhost();
             backgroundWorker.submit(this::registerEmbeddedContainers);
             backgroundWorker.submit(this::registerDataSourceComponents);
