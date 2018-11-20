@@ -415,6 +415,7 @@ public class WorkflowServiceImpl
         if (nodes == null || nodes.size() == 0) {
             throw new PersistenceException("Empty node group");
         }
+
         ProcessingComponent firstComponent = componentService.findById(nodes.get(0).getComponentId());
         ProcessingComponent lastComponent = componentService.findById(nodes.get(nodes.size() - 1).getComponentId());
 
@@ -454,6 +455,98 @@ public class WorkflowServiceImpl
             });
             for (Map.Entry<Long, ComponentLink> entry : linksToRemove.entrySet()) {
                 removeLink(entry.getKey(), entry.getValue());
+            }
+        }
+        return groupDescriptor;
+    }
+
+    @Override
+    public WorkflowNodeDescriptor addGroup(long workflowId, Long[] nodesBeforeIds, String groupName, Long[] nodeIds) throws PersistenceException {
+        if (nodeIds == null || nodeIds.length == 0) {
+            throw new PersistenceException("Empty node group");
+        }
+        List<WorkflowNodeDescriptor> nodes = persistenceManager.getWorkflowNodesById(nodeIds);
+        WorkflowNodeGroupDescriptor grpNode = new WorkflowNodeGroupDescriptor();
+        Rectangle2D.Float envelope = computeEnvelope(nodes);
+        grpNode.setxCoord(envelope.x);
+        grpNode.setyCoord(envelope.y);
+        if (groupName != null) {
+            grpNode.setName(groupName);
+        } else {
+            grpNode.setName("Group " + UUID.randomUUID().toString());
+        }
+        grpNode.setCreated(LocalDateTime.now());
+        grpNode.setPreserveOutput(true);
+        return addGroup(workflowId, grpNode, nodesBeforeIds, nodes);
+    }
+
+    @Override
+    public WorkflowNodeDescriptor addGroup(long workflowId, WorkflowNodeGroupDescriptor groupDescriptor,
+                                           Long[] nodesBeforeIds, List<WorkflowNodeDescriptor> nodes) throws PersistenceException {
+        if (nodes == null || nodes.size() == 0) {
+            throw new PersistenceException("Empty node group");
+        }
+        final List<ProcessingComponent> firstComponents = new ArrayList<>();
+        final List<ProcessingComponent> lastComponents = new ArrayList<>();
+        Map<Long, TaoComponent> componentsBefore = new LinkedHashMap<>();
+
+        // Step 1: find first nodes and terminal nodes
+        if (nodesBeforeIds != null && nodesBeforeIds.length > 0) {
+            final List<WorkflowNodeDescriptor> referrers = findReferrers(new LinkedHashSet<>(Arrays.asList(nodesBeforeIds)), nodes);
+            final List<WorkflowNodeDescriptor> terminals = findTerminals(nodes);
+            for (WorkflowNodeDescriptor node : referrers) {
+                firstComponents.add(componentService.findById(node.getComponentId()));
+            }
+            for (WorkflowNodeDescriptor node : terminals) {
+                lastComponents.add(componentService.findById(node.getComponentId()));
+            }
+            List<WorkflowNodeDescriptor> nodesBefore = persistenceManager.getWorkflowNodesById(nodesBeforeIds);
+            nodesBefore.forEach(n -> componentsBefore.put(n.getId(),
+                                                          componentService.findComponent(n.getComponentId(),
+                                                                                         n.getComponentType())));
+        } else {
+            firstComponents.add(componentService.findById(nodes.get(0).getComponentId()));
+            lastComponents.add(componentService.findById(nodes.get(nodes.size() - 1).getComponentId()));
+        }
+        final List<SourceDescriptor> sources = new ArrayList<>();
+        firstComponents.forEach(c -> sources.addAll(c.getSources()));
+        final List<TargetDescriptor> targets = new ArrayList<>();
+        lastComponents.forEach(c -> targets.addAll(c.getTargets()));
+
+        // Step 2: create the group component with the found sources and targets
+        GroupComponent groupComponent = GroupComponent.create(sources, targets);
+        groupComponent = groupComponentService.save(groupComponent);
+        groupDescriptor.setComponentId(groupComponent.getId());
+        groupDescriptor.setComponentType(ComponentType.GROUP);
+
+        // Step 3: add the nodes to the group
+        WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        for (WorkflowNodeDescriptor node : nodes) {
+            groupDescriptor.addNode(node);
+        }
+        groupDescriptor = (WorkflowNodeGroupDescriptor) persistenceManager.saveWorkflowNodeDescriptor(groupDescriptor, workflow);
+
+        // Step 4: re-assing the links of the first components
+        for (Map.Entry<Long, TaoComponent> entry : componentsBefore.entrySet()) {
+            final Long nodeBeforeId = entry.getKey();
+            Set<ComponentLink> external = new HashSet<>();
+            TargetDescriptor target = entry.getValue().getTargets().get(0);
+            SourceDescriptor source = groupComponent.getSources().get(0);
+            external.add(new ComponentLink(nodeBeforeId, target, source));
+            groupDescriptor.setIncomingLinks(external);
+            groupDescriptor = (WorkflowNodeGroupDescriptor) persistenceManager.updateWorkflowNodeDescriptor(groupDescriptor);
+            final Map<Long, ComponentLink> linksToRemove = new HashMap<>();
+            groupDescriptor.getNodes().forEach(c -> {
+                ComponentLink link;
+                if (c.getIncomingLinks() != null &&
+                        (link = c.getIncomingLinks().stream()
+                                .filter(l -> l.getSourceNodeId() == nodeBeforeId)
+                                .findFirst().orElse(null)) != null) {
+                    linksToRemove.put(c.getId(), link);
+                }
+            });
+            for (Map.Entry<Long, ComponentLink> e : linksToRemove.entrySet()) {
+                removeLink(e.getKey(), e.getValue());
             }
         }
         return groupDescriptor;
@@ -740,6 +833,42 @@ public class WorkflowServiceImpl
                 component.getSources().stream().filter(s -> s.getId().equals(id)).findFirst().orElse(null) : null;
     }
 
+    private List<WorkflowNodeDescriptor> findReferrers(Set<Long> parentNodes, List<WorkflowNodeDescriptor> nodes) {
+        Set<WorkflowNodeDescriptor> referrers = new LinkedHashSet<>();
+        if (parentNodes != null && nodes != null) {
+            nodes.forEach(n -> {
+                Set<ComponentLink> links = n.getIncomingLinks();
+                if (links != null) {
+                    links.forEach(l -> {
+                        if (parentNodes.contains(l.getSourceNodeId())) {
+                            referrers.add(n);
+                        }
+                    });
+                }
+            });
+        }
+        return new ArrayList<>(referrers);
+    }
+
+    private List<WorkflowNodeDescriptor> findTerminals(List<WorkflowNodeDescriptor> nodes) {
+        Set<WorkflowNodeDescriptor> terminals = new LinkedHashSet<>();
+        if (nodes != null) {
+            if (nodes.size() == 1) {
+                return nodes;
+            } else {
+                nodes.forEach(n -> {
+                    if (nodes.stream()
+                            .noneMatch(n1 -> !n1.getId().equals(n.getId()) &&
+                                    n1.getIncomingLinks().stream()
+                                            .anyMatch(l -> n.getId().equals(l.getSourceNodeId())))) {
+                        terminals.add(n);
+                    }
+                });
+            }
+        }
+        return new ArrayList<>(terminals);
+    }
+
     private Rectangle2D.Float computeEnvelope(List<WorkflowNodeDescriptor> nodes) {
         Rectangle2D.Float envelope = new Rectangle2D.Float();
         envelope.x = Float.MAX_VALUE;
@@ -883,16 +1012,4 @@ public class WorkflowServiceImpl
             }
         }
     }
-
-    /*private void addTagsIfNew(WorkflowDescriptor workflow) {
-        List<String> tags = workflow.getTags();
-        if (tags != null) {
-            List<Tag> componentTags = persistenceManager.getComponentTags();
-            for (String value : tags) {
-                if (componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
-                    persistenceManager.saveTag(new Tag(TagType.WORKFLOW, value));
-                }
-            }
-        }
-    }*/
 }
