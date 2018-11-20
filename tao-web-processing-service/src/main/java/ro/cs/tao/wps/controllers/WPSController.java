@@ -20,8 +20,6 @@ import com.bc.wps.WpsFrontendConnector;
 import com.bc.wps.WpsRequestContextImpl;
 import com.bc.wps.api.WpsRequestContext;
 import com.bc.wps.api.WpsServiceInstance;
-import com.bc.wps.api.exceptions.WpsRuntimeException;
-import com.bc.wps.utilities.PropertiesWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -47,14 +45,6 @@ public class WPSController extends BaseController {
 
     private WpsFrontendConnector wpsFrontendConnector = new WpsFrontendConnector(true);
 
-    static {
-        try {
-            PropertiesWrapper.loadConfigFile("tao-wps.properties");
-        } catch (IOException exception) {
-            throw new WpsRuntimeException("Unable to load tao-wps.properties file", exception);
-        }
-    }
-
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<?> requestGet(@RequestParam("Service") final String service,
                                         @RequestParam("Request") final String requestType,
@@ -77,7 +67,7 @@ public class WPSController extends BaseController {
                         // @todo discuss with Norman ... these parameters are not needed if httpRequest is a parameter
                         final String wpsService = wpsFrontendConnector.getWpsService(
                                 service, requestType, acceptedVersion, language,
-                                processId, version, jobId, httpRequest, wpsServiceInstance, requestContext);
+                                processId, version, jobId, httpRequest, wpsServiceInstance);
                         writeToResponce(response, wpsService);
                         result = ResponseEntity.accepted().build();
                     } catch (IOException e) {
@@ -101,7 +91,7 @@ public class WPSController extends BaseController {
             try {
                 final String requestXML = getXmlFrom(httpRequest);
                 WpsRequestContext requestContext = new WpsRequestContextImpl(httpRequest);
-                final String result = wpsFrontendConnector.postExecuteService(requestXML, httpRequest, wpsServiceInstance, requestContext);
+                final String result = wpsFrontendConnector.postExecuteService(requestXML, httpRequest, wpsServiceInstance);
                 writeToResponce(response, result);
                 return ResponseEntity.accepted().build();
             } catch (IOException e) {

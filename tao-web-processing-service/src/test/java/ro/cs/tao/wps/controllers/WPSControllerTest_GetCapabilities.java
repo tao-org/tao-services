@@ -1,7 +1,6 @@
 package ro.cs.tao.wps.controllers;
 
 import com.bc.wps.WpsFrontendConnector;
-import com.bc.wps.api.WpsRequestContext;
 import com.bc.wps.api.WpsServiceInstance;
 import org.junit.After;
 import org.junit.Before;
@@ -58,7 +57,7 @@ public class WPSControllerTest_GetCapabilities {
         //preparation
         when(frontendConnector.getWpsService(anyString(), anyString(), any(),
                                              any(), any(), any(), any(),
-                                             any(HttpServletRequest.class), any(WpsServiceInstance.class), any(WpsRequestContext.class))).thenReturn("Valid frontendConnector Response");
+                                             any(HttpServletRequest.class), any(WpsServiceInstance.class))).thenReturn("Valid frontendConnector Response");
 
         //execution
         final ResponseEntity<?> responseEntity = wpsController
@@ -121,6 +120,6 @@ public class WPSControllerTest_GetCapabilities {
     private void validGetCapabilitiesCallToFrontendConnectorExpected() {
         verify(frontendConnector, times(1)).getWpsService(matches(validService), matches(validRequestType_GC), any(),
                                                           any(), any(), any(), any(),
-                                                          same(httpRequest), isA(BCWpsServiceInstanceImpl.class), isA(WpsRequestContext.class));
+                                                          same(httpRequest), isA(BCWpsServiceInstanceImpl.class));
     }
 }
