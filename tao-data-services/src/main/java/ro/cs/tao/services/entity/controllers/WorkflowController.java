@@ -37,6 +37,7 @@ import ro.cs.tao.workflow.enums.Status;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -205,6 +206,19 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.updateNodes(workflowId, nodes));
+        } catch (PersistenceException e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/positions", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> updateNodesPositions(@RequestParam("workflowId") long workflowId,
+                                                                   @RequestBody Map<Long, float[]> positions) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            service.updateNodesPositions(workflowId, positions);
+            responseEntity = prepareResult("Positions updated", ResponseStatus.SUCCEEDED);
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }

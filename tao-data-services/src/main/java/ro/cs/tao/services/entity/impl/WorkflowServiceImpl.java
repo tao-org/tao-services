@@ -263,6 +263,27 @@ public class WorkflowServiceImpl
     }
 
     @Override
+    public void updateNodesPositions(long workflowId, Map<Long, float[]> positions) throws PersistenceException {
+        if (positions != null && positions.size() > 0) {
+            List<WorkflowNodeDescriptor> nodes = persistenceManager.getWorkflowNodesById(positions.keySet().toArray(new Long[0]));
+            for (WorkflowNodeDescriptor node : nodes) {
+                if (!node.getWorkflow().getId().equals(workflowId)) {
+                    throw new PersistenceException(String.format("Node with id '%s' doesn't belong to workflow with id '%s'",
+                                                                 node.getId(), workflowId));
+                }
+                float[] coordinates = positions.get(node.getId());
+                if (coordinates == null || coordinates.length != 2) {
+                    throw new PersistenceException(String.format("Invalid coordinates for node with id '%s'. Expected 2, found %s",
+                                                                 node.getId(), coordinates == null ? "[null]" : Arrays.toString(coordinates)));
+                }
+                node.setxCoord(coordinates[0]);
+                node.setyCoord(coordinates[1]);
+                persistenceManager.updateWorkflowNodeDescriptor(node);
+            }
+        }
+    }
+
+    @Override
     public void removeNode(long workflowId, WorkflowNodeDescriptor nodeDescriptor) throws PersistenceException {
         if (nodeDescriptor == null) {
             throw new PersistenceException("Cannot remove a null node");
