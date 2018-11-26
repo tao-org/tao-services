@@ -877,6 +877,74 @@ public class WorkflowServiceImpl
                 component.getSources().stream().filter(s -> s.getId().equals(id)).findFirst().orElse(null) : null;
     }
 
+    private WorkflowNodeDescriptor addLinkFromOutsideNode(long outsideNodeId, TargetDescriptor linkInput, SourceDescriptor linkOutput,
+                                     WorkflowNodeGroupDescriptor groupNode,
+                                     WorkflowNodeDescriptor node) throws PersistenceException {
+        if (outsideNodeId <= 0) {
+            throw new IllegalArgumentException("Invalid source node");
+        }
+        if (linkInput == null || linkOutput == null) {
+            throw new IllegalArgumentException("Invalid descriptors for creating a link");
+        }
+        if (groupNode == null || node == null) {
+            throw new IllegalArgumentException("Invalid target node or node not part of a group");
+        }
+        WorkflowNodeDescriptor outsideNode = persistenceManager.getWorkflowNodeById(outsideNodeId);
+        TaoComponent component = componentService.findComponent(outsideNode.getComponentId(),
+                                                                outsideNode.getComponentType());
+        if (component.getTargets().stream().noneMatch(t -> t.getId().equals(linkInput.getId()))) {
+            throw new IllegalArgumentException(String.format("Target descriptor %s not found in node %d",
+                                                             linkInput.getId(), outsideNodeId));
+        }
+        component = componentService.findComponent(node.getComponentId(), node.getComponentType());
+        if (component.getSources().stream().noneMatch(t -> t.getId().equals(linkOutput.getId()))) {
+            throw new IllegalArgumentException(String.format("Source descriptor %s not found in node %d",
+                                                             linkOutput.getId(), node.getId()));
+        }
+        component = componentService.findComponent(groupNode.getComponentId(), groupNode.getComponentType());
+        List<SourceDescriptor> sources = component.getSources();
+        if (sources == null || sources.stream().noneMatch(s -> s.getId().equals(linkOutput.getId()))) {
+            component.addSource(linkOutput);
+        }
+        groupComponentService.save((GroupComponent) component);
+        groupNode.addLink(new ComponentLink(outsideNodeId, linkInput, linkOutput));
+        return persistenceManager.updateWorkflowNodeDescriptor(groupNode);
+    }
+
+    private WorkflowNodeDescriptor addLinkToOutsideNode(long outsideNodeId, TargetDescriptor linkInput, SourceDescriptor linkOutput,
+                                      WorkflowNodeGroupDescriptor groupNode,
+                                      WorkflowNodeDescriptor node) throws PersistenceException {
+        if (outsideNodeId <= 0) {
+            throw new IllegalArgumentException("Invalid target node");
+        }
+        if (linkInput == null || linkOutput == null) {
+            throw new IllegalArgumentException("Invalid descriptors for creating a link");
+        }
+        if (groupNode == null || node == null) {
+            throw new IllegalArgumentException("Invalid source node or node not part of a group");
+        }
+        WorkflowNodeDescriptor outsideNode = persistenceManager.getWorkflowNodeById(outsideNodeId);
+        TaoComponent component = componentService.findComponent(outsideNode.getComponentId(),
+                                                                outsideNode.getComponentType());
+        if (component.getSources().stream().noneMatch(s -> s.getId().equals(linkOutput.getId()))) {
+            throw new IllegalArgumentException(String.format("Source descriptor %s not found in node %d",
+                                                             linkOutput.getId(), outsideNodeId));
+        }
+        component = componentService.findComponent(node.getComponentId(), node.getComponentType());
+        if (component.getTargets().stream().noneMatch(t -> t.getId().equals(linkInput.getId()))) {
+            throw new IllegalArgumentException(String.format("Target descriptor %s not found in node %d",
+                                                             linkInput.getId(), node.getId()));
+        }
+        component = componentService.findComponent(groupNode.getComponentId(), groupNode.getComponentType());
+        List<TargetDescriptor> targets = component.getTargets();
+        if (targets == null || targets.stream().noneMatch(t -> t.getId().equals(linkInput.getId()))) {
+            component.addTarget(linkInput);
+        }
+        groupComponentService.save((GroupComponent) component);
+        groupNode.addLink(new ComponentLink(outsideNodeId, linkInput, linkOutput));
+        return persistenceManager.updateWorkflowNodeDescriptor(groupNode);
+    }
+
     private List<WorkflowNodeDescriptor> findReferrers(Set<Long> parentNodes, List<WorkflowNodeDescriptor> nodes) {
         Set<WorkflowNodeDescriptor> referrers = new LinkedHashSet<>();
         if (parentNodes != null && nodes != null) {
