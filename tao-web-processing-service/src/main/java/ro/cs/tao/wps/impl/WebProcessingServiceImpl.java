@@ -35,6 +35,8 @@ import ro.cs.tao.workflow.WorkflowDescriptor;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -61,14 +63,10 @@ public class WebProcessingServiceImpl implements WebProcessingService {
 
     @Override
     public ProcessInfo describeProcess(long workflowId) {
-        final Map<String, List<Parameter>> workflowParameters = orchestratorService.getWorkflowParameters(workflowId);
-        final List<TargetDescriptor> workflowOutputs = orchestratorService.getWorkflowOutputs(workflowId);
-
         final ProcessInfoImpl processInfo = new ProcessInfoImpl();
-        processInfo.setParameters(workflowParameters);
-        processInfo.setOutputs(workflowOutputs);
-        processInfo.setWorkflowInfo(workflowService.getWorkflowInfo(workflowId));
-
+        processInfo.setParameters(getWorkflowParametersSave(workflowId));
+        processInfo.setOutputs(getWorkflowOutputsSave(workflowId));
+        processInfo.setWorkflowInfo(getWorkflowInfoSafe(workflowId));
         return processInfo;
     }
 
@@ -95,6 +93,36 @@ public class WebProcessingServiceImpl implements WebProcessingService {
     @Override
     public List<FileObject> getJobResult(long jobId) throws IOException {
         return storageService.getJobResults(jobId);
+    }
+
+    private WorkflowInfo getWorkflowInfoSafe(long workflowId) {
+        if (isDevModeEnabled()) {
+            final WorkflowDescriptor descriptor = new WorkflowDescriptor();
+            descriptor.setId(workflowId);
+            descriptor.setName("MockWorkflowName");
+            return new WorkflowInfo(descriptor);
+        }
+        try {
+            return workflowService.getWorkflowInfo(workflowId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private List<TargetDescriptor> getWorkflowOutputsSave(long workflowId) {
+        try {
+            return orchestratorService.getWorkflowOutputs(workflowId);
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private Map<String, List<Parameter>> getWorkflowParametersSave(long workflowId) {
+        try {
+            return orchestratorService.getWorkflowParameters(workflowId);
+        } catch (Exception e) {
+            return new HashMap<>();
+        }
     }
 
     public static class ProcessInfoImpl implements ProcessInfo {

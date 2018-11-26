@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<wps:ProcessDescriptions service="WPS"
+                         version="1.0.0"
+                         xml:lang="en"
+                         xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsDescribeProcess_response.xsd"
+                         xmlns:ows="http://www.opengis.net/ows/1.1"
+                         xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                         xmlns:wps="http://www.opengis.net/wps/1.0.0"
+                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                         xmlns:xlink="http://www.w3.org/1999/xlink">
+    <ProcessDescription storeSupported="true" statusSupported="true" wps:processVersion="na">
+        <ows:Identifier>24</ows:Identifier>
+        <ows:Title>WorkflowName</ows:Title>
+        <DataInputs>
+            <Input minOccurs="1" maxOccurs="1">
+                <ows:Identifier>PGroup~PNameA</ows:Identifier>
+                <ows:Title>Param 'PNameA' of group 'PGroup'.</ows:Title>
+                <ows:Abstract>The parameter 'PNameA' of parametergroup 'PGroup'.</ows:Abstract>
+                <LiteralData>
+                    <ows:DataType>java.lang.Integer</ows:DataType>
+                    <ows:AnyValue/>
+                </LiteralData>
+            </Input>
+            <Input minOccurs="1" maxOccurs="1">
+                <ows:Identifier>PGroup~PNameB</ows:Identifier>
+                <ows:Title>Param 'PNameB' of group 'PGroup'.</ows:Title>
+                <ows:Abstract>The parameter 'PNameB' of parametergroup 'PGroup'.</ows:Abstract>
+                <LiteralData>
+                    <ows:DataType>java.lang.String</ows:DataType>
+                    <ows:AllowedValues>
+                        <ows:Value>c</ows:Value>
+                        <ows:Value>d</ows:Value>
+                        <ows:Value>e</ows:Value>
+                    </ows:AllowedValues>
+                </LiteralData>
+            </Input>
+            <Input minOccurs="0" maxOccurs="1">
+                <ows:Identifier>PGroup~PNameC</ows:Identifier>
+                <ows:Title>Param 'PNameC' of group 'PGroup'.</ows:Title>
+                <ows:Abstract>The parameter 'PNameC' of parametergroup 'PGroup'.</ows:Abstract>
+                <LiteralData>
+                    <ows:DataType>java.lang.Integer</ows:DataType>
+                    <ows:AnyValue/>
+                    <DefaultValue>4</DefaultValue>
+                </LiteralData>
+            </Input>
+        </DataInputs>
+        <ProcessOutputs>
+            <Output>
+                <ows:Identifier>9108h1f0nqndq</ows:Identifier>
+                <ows:Title>dataLocation</ows:Title>
+                <ComplexOutput>
+                    <Default>
+                        <Format>
+                            <MimeType>application/octet-stream</MimeType>
+                        </Format>
+                    </Default>
+                    <Supported>
+                        <Format>
+                            <MimeType>application/octet-stream</MimeType>
+                        </Format>
+                    </Supported>
+                </ComplexOutput>
+            </Output>
+        </ProcessOutputs>
+    </ProcessDescription>
+</wps:ProcessDescriptions>

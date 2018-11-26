@@ -33,12 +33,14 @@ import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.services.model.FileObject;
+import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.wps.operations.Operations;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -58,39 +60,55 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
     @Override
     public Capabilities getCapabilities(WpsRequestContext context) throws WpsServiceException {
         try {
-            final Operations operation = new Operations(context, webProcessingService);
-            return operation.getCapabilities();
+            final Operations operations = new Operations(context, webProcessingService);
+            return operations.getCapabilities();
         } catch (IOException | URISyntaxException | PersistenceException exception) {
-            logger.log(Level.SEVERE, "Unable to perform GetCapabilities operation successfully", exception);
-            throw new WpsServiceException(exception);
+            final String msg = "Unable to perform GetCapabilities operation";
+            logger.log(Level.SEVERE, msg, exception);
+            throw new NoApplicableCodeException(msg, exception);
         }
     }
 
     @Override
-    public List<ProcessDescriptionType> describeProcess(WpsRequestContext wpsRequestContext, String processIdentifier) throws WpsServiceException {
-        final ProcessDescriptionType processDescription = new ProcessDescriptionType();
-        processDescription.setProcessVersion("na");
-        processDescription.setStatusSupported(true);
-        processDescription.setStoreSupported(true);
+    public List<ProcessDescriptionType> describeProcess(WpsRequestContext wpsRequestContext, String processIdentifiers) throws WpsServiceException {
+        final ArrayList<ProcessDescriptionType> descriptions = new ArrayList<>();
+        final String[] strings = processIdentifiers.split(",");
+        for (String processIdentifier : strings) {
+            processIdentifier = processIdentifier.trim();
+            if(StringUtils.isBlank(processIdentifier)) {continue;}
+            final ProcessDescriptionType processDescription = new ProcessDescriptionType();
+            processDescription.setProcessVersion("na");
+            processDescription.setStatusSupported(true);
+            processDescription.setStoreSupported(true);
 
-        final CodeType identifier = new CodeType();
-        identifier.setValue(processIdentifier);
-        processDescription.setIdentifier(identifier);
+            final CodeType identifier = new CodeType();
+            identifier.setValue(processIdentifier);
+            processDescription.setIdentifier(identifier);
 
-        final WebProcessingService.ProcessInfo processInfo = webProcessingService.describeProcess(Long.parseLong(processIdentifier));
+            final WebProcessingService.ProcessInfo processInfo = webProcessingService.describeProcess(Long.parseLong(processIdentifier));
 
-        final LanguageStringType title = new LanguageStringType();
-        title.setValue(processInfo.getWorkflowInfo().getName());
-        processDescription.setTitle(title);
+            final WorkflowInfo workflowInfo = processInfo.getWorkflowInfo();
+            if (workflowInfo == null) {
+                final WpsServiceException wpsServiceException = new InvalidParameterValueException(
+                        "Unable to describe process. Unknown process identifier '" + processIdentifier + "'"
+                        , null
+                        , "Identifier");
+                throw wpsServiceException;
+            }
 
+            final LanguageStringType title = new LanguageStringType();
+            title.setValue(workflowInfo.getName());
+            processDescription.setTitle(title);
 
-        final ProcessDescriptionType.DataInputs dataInputs = getDataInputs(processInfo.getParameters());
-        processDescription.setDataInputs(dataInputs);
+            final ProcessDescriptionType.DataInputs dataInputs = getDataInputs(processInfo.getParameters());
+            processDescription.setDataInputs(dataInputs);
 
-        final ProcessDescriptionType.ProcessOutputs processOutputs = getProcessOutputs(processInfo.getOutputs());
-        processDescription.setProcessOutputs(processOutputs);
+            final ProcessDescriptionType.ProcessOutputs processOutputs = getProcessOutputs(processInfo.getOutputs());
+            processDescription.setProcessOutputs(processOutputs);
 
-        return Collections.singletonList(processDescription);
+            descriptions.add(processDescription);
+        }
+        return descriptions;
     }
 
     @Override
@@ -203,6 +221,18 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
         throw new RuntimeException("not implemented");
     }
 
+    // package local for test purposes only
+    void setTaoWpsImpl(WebProcessingService taoWpsImpl) {
+        this.webProcessingService = taoWpsImpl;
+    }
+
+    // package local for test purposes only
+    XMLGregorianCalendar getXmlWithTime(LocalDateTime time) {
+        final ZonedDateTime zdt = time.atZone(ZoneOffset.UTC);
+        final GregorianCalendar gregorianCalendar = GregorianCalendar.from(zdt);
+        return getXmlGregorianCalendar(gregorianCalendar);
+    }
+
     private ProcessDescriptionType.ProcessOutputs getProcessOutputs(List<TargetDescriptor> workflowOutputs) {
         final ProcessDescriptionType.ProcessOutputs processOutputs = new ProcessDescriptionType.ProcessOutputs();
         for (TargetDescriptor workflowOutput : workflowOutputs) {
@@ -248,12 +278,18 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
             for (Parameter groupParameter : groupParameterList) {
                 final String parameterName = groupParameter.getName();
                 final String parameterType = groupParameter.getType();
+                final String value = groupParameter.getValue();
                 final String[] valueSet = groupParameter.getValueSet();
                 InputDescriptionTypeBuilder builder = InputDescriptionTypeBuilder.create()
                         .withIdentifier(groupName + "~" + parameterName)
                         .withTitle("Param '" + parameterName + "' of group '" + groupName + "'.")
                         .withAbstract("The parameter '" + parameterName + "' of parametergroup '" + groupName + "'.")
                         .withDataType(parameterType);
+                if (StringUtils.isBlank(value)) {
+                    builder.setMinOccurs(BigInteger.ONE);
+                } else {
+                    builder.withDefaultValue(value);
+                }
 
                 if (valueSet != null) {
                     final ArrayList<Object> strings = new ArrayList<>();
@@ -268,18 +304,6 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
             }
         }
         return dataInputs;
-    }
-
-    // package local for test purposes only
-    void setTaoWpsImpl(WebProcessingService taoWpsImpl) {
-        this.webProcessingService = taoWpsImpl;
-    }
-
-    // package local for test purposes only
-    XMLGregorianCalendar getXmlWithTime(LocalDateTime time) {
-        final ZonedDateTime zdt = time.atZone(ZoneOffset.UTC);
-        final GregorianCalendar gregorianCalendar = GregorianCalendar.from(zdt);
-        return getXmlGregorianCalendar(gregorianCalendar);
     }
 
     private XMLGregorianCalendar getXmlNow() {

@@ -16,11 +16,22 @@
 
 package ro.cs.tao.wps.controllers;
 
-import com.bc.wps.WpsFrontendConnector;
+import com.bc.wps.WpsRequestContextImpl;
 import com.bc.wps.api.WpsServiceInstance;
+import com.bc.wps.api.exceptions.MissingParameterValueException;
+import com.bc.wps.api.exceptions.NoApplicableCodeException;
+import com.bc.wps.api.exceptions.WpsServiceException;
+import com.bc.wps.api.schema.ExceptionReport;
+import com.bc.wps.api.schema.Execute;
+import com.bc.wps.api.schema.ExecuteResponse;
+import com.bc.wps.api.schema.ProcessDescriptionType;
+import com.bc.wps.api.schema.ProcessDescriptions;
+import com.bc.wps.exceptions.InvalidRequestException;
+import com.bc.wps.responses.ExceptionResponse;
+import com.bc.wps.utilities.JaxbHelper;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -30,76 +41,137 @@ import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.services.commons.BaseController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.*;
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.JAXBException;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Controller
 @RequestMapping("/wps")
 public class WPSController extends BaseController {
 
+    private final Logger logger = Logger.getLogger(getClass().getName());
     @Autowired
     private WpsServiceInstance wpsServiceInstance;
-    private WpsFrontendConnector wpsFrontendConnector = new WpsFrontendConnector(true);
 
-    @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<?> requestGet(@RequestParam("Service") final String service,
-                                        @RequestParam("Request") final String requestType,
-                                        @RequestParam(name = "AcceptVersions", required = false) final String acceptedVersion,
-                                        @RequestParam(name = "Language", required = false) final String language,
-                                        @RequestParam(name = "Identifier", required = false) final String processId,
-                                        @RequestParam(name = "Version", required = false) final String version,
-                                        @RequestParam(name = "JobId", required = false) final String jobId,
-                                        HttpServletRequest httpRequest) {
-        ResponseEntity<?> result;
-        if (!isWPS(service)) {
-            result = serviceUnavailable(service, "No such Service: ");
-        } else {
-            switch (requestType) {
-                case "GetCapabilities":
-                case "DescribeProcess":
-                case "GetStatus":
-                    // @todo discuss with Norman ... these parameters are not needed if httpRequest is a parameter
-                    final String wpsService = wpsFrontendConnector.getWpsService(
-                            service, requestType, acceptedVersion, language,
-                            processId, version, jobId, httpRequest, wpsServiceInstance);
-                    result = createResponseOk(wpsService);
-                    break;
-                default:
-                    result = serviceUnavailable(requestType, "Unknown request type: ");
-            }
+    @RequestMapping(params = {"Service=WPS", "Request=GetCapabilities"}, method = RequestMethod.GET)
+    public ResponseEntity<?> capabilities(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            final Object wpsObject = wpsServiceInstance.getCapabilities(new WpsRequestContextImpl(request));
+            final String schemaLocation = "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsGetCapabilities_response.xsd";
+            final String resultAsString = marshalWithSchemaLocation(wpsObject, schemaLocation);
+            writeToResponce(response, resultAsString);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return handleWpsException(e, response);
         }
-        return result;
+    }
+
+    @RequestMapping(params = {"Service=WPS", "Request=DescribeProcess", "Version=1.0.0"}, method = RequestMethod.GET)
+    public ResponseEntity<?> describeProcess(@RequestParam(name = "Identifier") final String processId,
+                                             HttpServletRequest request, HttpServletResponse response) {
+        try {
+            if (StringUtils.isBlank(processId)) {
+                throw new MissingParameterValueException("Identifier");
+            }
+            final List<ProcessDescriptionType> processDescriptionTypes = wpsServiceInstance.describeProcess(new WpsRequestContextImpl(request), processId);
+            final Object wpsObject = createProcessDescription(processDescriptionTypes);
+            final String schemaLocation = "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsDescribeProcess_response.xsd";
+            final String resultAsString = marshalWithSchemaLocation(wpsObject, schemaLocation);
+            writeToResponce(response, resultAsString);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return handleWpsException(e, response);
+        }
+    }
+
+    @RequestMapping(params = {"Service=WPS", "Request=GetStatus"}, method = RequestMethod.GET)
+    public ResponseEntity<?> status(@RequestParam(name = "JobId", required = false) final String jobId,
+                                    HttpServletRequest request, HttpServletResponse response) {
+        try {
+            if (StringUtils.isBlank(jobId)) {
+                throw new MissingParameterValueException("JobId");
+            }
+            final Object wpsObject = wpsServiceInstance.getStatus(new WpsRequestContextImpl(request), jobId);
+            final String schemaLocation = "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_response.xsd";
+            final String resultAsString = marshalWithSchemaLocation(wpsObject, schemaLocation);
+            writeToResponce(response, resultAsString);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return handleWpsException(e, response);
+        }
+    }
+
+    // handles all undefined get requests
+    @RequestMapping(method = RequestMethod.GET)
+    public ResponseEntity<?> requestGet(HttpServletRequest httpRequest, HttpServletResponse response) {
+        final String line = getRequestLine(httpRequest);
+        final String message = "No such Service: " + line;
+        WpsServiceException e = new NoApplicableCodeException(message, null);
+        return handleWpsException(e, response);
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<?> requestPost(HttpServletRequest httpRequest) {
+    public ResponseEntity<?> requestPost(HttpServletRequest httpRequest, HttpServletResponse response) {
         try {
-            final String body = getXmlFrom(httpRequest).trim();
+            final String body = getRequestBody(httpRequest).trim();
             if (!isExecuteRequest(body)) {
-                return serviceUnavailable(body, "Unknown request type: \n");
+                throw new NoApplicableCodeException("Unknown request type: \n" + body, null);
             }
-            final String result = wpsFrontendConnector.postExecuteService(body, httpRequest, wpsServiceInstance);
-            return createResponseOk(result);
+            final Execute execute = unmarshalExecute(body);
+            final ExecuteResponse executeResponse = wpsServiceInstance.doExecute(new WpsRequestContextImpl(httpRequest), execute);
+            final String schemaLocation = "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_response.xsd";
+            final String resultAsString = marshalWithSchemaLocation(executeResponse, schemaLocation);
+            writeToResponce(response, resultAsString);
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return serviceUnavailable(e.getMessage(), "");
+            return handleWpsException(e, response);
         }
     }
 
-    private ResponseEntity<String> createResponseOk(String respBody) {
-        respBody = removeBcNamespace(respBody);
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_XML);
-        return new ResponseEntity<>(respBody, headers, HttpStatus.OK);
+    private Execute unmarshalExecute(String request) {
+        InputStream requestInputStream = new ByteArrayInputStream(request.getBytes());
+        try {
+            return (Execute) JaxbHelper.unmarshal(requestInputStream, new Execute());
+        } catch (ClassCastException exception) {
+            throw new InvalidRequestException("Invalid Execute request. Please see the WPS 1.0.0 guideline " +
+                                              "for the right Execute request structure.",
+                                              exception);
+        } catch (JAXBException exception) {
+            throw new InvalidRequestException(
+                    "Invalid Execute request. "
+                    + (exception.getMessage() != null ? exception.getMessage() : exception.getCause().getMessage()),
+                    exception);
+        }
     }
 
-    private String getXmlFrom(HttpServletRequest executionRequest) throws IOException {
-        try (final InputStream is = executionRequest.getInputStream();
-             final InputStreamReader isr = new InputStreamReader(is);
-             final LineNumberReader lnr = new LineNumberReader(isr)) {
+    private ProcessDescriptions createProcessDescription(List<ProcessDescriptionType> processDescriptionTypes) throws WpsServiceException {
+        ProcessDescriptions processDescriptions = new ProcessDescriptions();
+        processDescriptions.setService("WPS");
+        processDescriptions.setVersion("1.0.0");
+        processDescriptions.setLang("en");
 
+        for (ProcessDescriptionType process : processDescriptionTypes) {
+            processDescriptions.getProcessDescription().add(process);
+        }
+        return processDescriptions;
+    }
+
+    private String getRequestBody(HttpServletRequest request) throws IOException {
+        try (final BufferedReader reader = request.getReader()) {
             final StringWriter stringWriter = new StringWriter();
             final PrintWriter pw = new PrintWriter(stringWriter);
             String line;
-            while ((line = lnr.readLine()) != null) {
+            while ((line = reader.readLine()) != null) {
                 pw.println(line);
             }
             pw.flush();
@@ -107,16 +179,78 @@ public class WPSController extends BaseController {
         }
     }
 
-    private ResponseEntity<String> serviceUnavailable(String service, String prefix) {
-        return new ResponseEntity<>(prefix + "\"" + service + "\"", HttpStatus.SERVICE_UNAVAILABLE);
-    }
-
-    private boolean isWPS(@RequestParam("Service") String service) {
-        return "WPS".equals(service);
+    private String getRequestLine(HttpServletRequest httpRequest) {
+        StringBuffer request = httpRequest.getRequestURL();
+        final Map<String, String[]> parameterMap = httpRequest.getParameterMap();
+        int numKey = -1;
+        for (Map.Entry<String, String[]> stringEntry : parameterMap.entrySet()) {
+            numKey++;
+            request.append(numKey == 0 ? "?" : "&")
+                    .append(stringEntry.getKey())
+                    .append("=");
+            int numVal = -1;
+            final String[] values = stringEntry.getValue();
+            for (String value : values) {
+                numVal++;
+                request.append(numVal > 0 ? "," : "")
+                        .append(value);
+            }
+        }
+        return request.toString();
     }
 
     private boolean isExecuteRequest(String body) {
         return body != null && body.endsWith("Execute>");
+    }
+
+    private ResponseEntity<?> handleWpsException(Exception e, HttpServletResponse response) {
+        if (e instanceof JAXBException) {
+            return handleJaxbException((JAXBException) e, response);
+        }
+        logger.log(Level.SEVERE, "Unable to process the WPS request", e);
+        ExceptionResponse exceptionResponse = new ExceptionResponse();
+        ExceptionReport exceptionReport = exceptionResponse.getExceptionResponse(e);
+        final String exceptionString = getExceptionString(exceptionReport);
+        writeToResponce(response, exceptionString);
+        return ResponseEntity.ok().build();
+    }
+
+    private ResponseEntity<?> handleJaxbException(JAXBException e, HttpServletResponse response) {
+        logger.log(Level.SEVERE, "Unable to marshall the WPS response", e);
+        ExceptionResponse exceptionResponse = new ExceptionResponse();
+        final String jaxbExceptionResponse = exceptionResponse.getJaxbExceptionResponse();
+        writeToResponce(response, jaxbExceptionResponse);
+        return ResponseEntity.ok().build();
+    }
+
+    private void writeToResponce(HttpServletResponse response, String body) {
+        final PrintWriter writer;
+        try {
+            writer = response.getWriter();
+            writer.print(body);
+        } catch (IOException ignore) {
+        }
+        response.setContentType(MediaType.APPLICATION_XML_VALUE);
+        response.setDateHeader("Date", new Date().getTime());
+        response.setHeader(HttpHeaders.TRANSFER_ENCODING, "chunked");
+    }
+
+    private String getExceptionString(ExceptionReport exceptionReport) {
+        String retVal;
+        try {
+            retVal = JaxbHelper.marshalWithSchemaLocation(exceptionReport, "http://www.opengis.net/ows/1.1 " +
+                                                                           "http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd");
+        } catch (JAXBException exception) {
+            logger.log(Level.SEVERE, "Unable to marshal the WPS exception.", exception);
+            ExceptionResponse exceptionResponse = new ExceptionResponse();
+            retVal = exceptionResponse.getJaxbExceptionResponse();
+        }
+        return removeBcNamespace(retVal);
+    }
+
+    private String marshalWithSchemaLocation(Object object, String schemaLocation) throws JAXBException {
+        final String xml = JaxbHelper.marshalWithSchemaLocation(object, schemaLocation);
+        return removeBcNamespace(xml);
     }
 
     private String removeBcNamespace(String xml) {
