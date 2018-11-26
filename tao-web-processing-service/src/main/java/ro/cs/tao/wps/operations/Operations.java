@@ -43,70 +43,66 @@ public class Operations {
 
     private OperationsMetadata getOperationsMetadata() {
         final OperationsMetadata operationsMetadata = new OperationsMetadata();
+        final String requestUrl = wpsRequestContext.getServerContext().getRequestUrl();
 
         Operation getCapabilitiesOperation = new Operation();
         getCapabilitiesOperation.setName("GetCapabilities");
-        //DCP getCapabilitiesDcp = getGetDcp(ConfigurationManager.getInstance().getValue("wps.get.request.url"));
-        DCP getCapabilitiesDcp = getGetDcp(componentsBuilder().queryParam("Request", "GetCapabilities").build().toString());
+        DCP getCapabilitiesDcp = getGetDcp(requestUrl+"?");
         getCapabilitiesOperation.getDCP().add(getCapabilitiesDcp);
         operationsMetadata.getOperation().add(getCapabilitiesOperation);
 
         Operation describeProcessOperation = new Operation();
         describeProcessOperation.setName("DescribeProcess");
-        //DCP describeProcessDcp = getGetDcp(ConfigurationManager.getInstance().getValue("wps.get.request.url"));
-        DCP describeProcessDcp = getGetDcp(componentsBuilder().queryParam("Request", "DescribeProcess").build().toString());
+        DCP describeProcessDcp = getGetDcp(requestUrl +"?");
         describeProcessOperation.getDCP().add(describeProcessDcp);
         operationsMetadata.getOperation().add(describeProcessOperation);
 
         Operation executeOperation = new Operation();
         executeOperation.setName("Execute");
-        //DCP executeDcp = getPostDcp(ConfigurationManager.getInstance().getValue("wps.post.request.url"));
-        DCP executeDcp = getPostDcp(componentsBuilder().queryParam("Request", "Execute").build().toString());
+        DCP executeDcp = getPostDcp(requestUrl);
         executeOperation.getDCP().add(executeDcp);
         operationsMetadata.getOperation().add(executeOperation);
 
         Operation getStatusOperation = new Operation();
         getStatusOperation.setName("GetStatus");
-        //DCP getStatusDcp = getGetDcp(ConfigurationManager.getInstance().getValue("wps.get.request.url"));
-        DCP getStatusDcp = getGetDcp(componentsBuilder().queryParam("Request", "GetStatus").build().toString());
+        DCP getStatusDcp = getGetDcp(requestUrl+"?");
         getStatusOperation.getDCP().add(getStatusDcp);
         operationsMetadata.getOperation().add(getStatusOperation);
-
 
         return operationsMetadata;
     }
 
     private ServiceProvider getServiceProvider() {
         ServiceProvider serviceProvider = new ServiceProvider();
-        serviceProvider.setProviderName(ConfigurationManager.getInstance().getValue("company.name"));
+        serviceProvider.setProviderName(getPropertyValue("company.name"));
 
         OnlineResourceType siteUrl = new OnlineResourceType();
-        siteUrl.setHref(ConfigurationManager.getInstance().getValue("company.website"));
+        siteUrl.setHref(getPropertyValue("company.website"));
         serviceProvider.setProviderSite(siteUrl);
 
         ResponsiblePartySubsetType contact = new ResponsiblePartySubsetType();
-        contact.setIndividualName(ConfigurationManager.getInstance().getValue("project.manager.name"));
-        contact.setPositionName(ConfigurationManager.getInstance().getValue("project.manager.position.name"));
+        contact.setIndividualName(getPropertyValue("project.manager.name"));
+        contact.setPositionName(getPropertyValue("project.manager.position.name"));
 
         ContactType contactInfo = new ContactType();
 
         TelephoneType phones = new TelephoneType();
-        phones.getVoice().add(ConfigurationManager.getInstance().getValue("company.phone.number"));
-        phones.getFacsimile().add(ConfigurationManager.getInstance().getValue("company.fax.number"));
+        phones.getVoice().add(getPropertyValue("company.phone.number"));
+        phones.getFacsimile().add(getPropertyValue("company.fax.number"));
         contactInfo.setPhone(phones);
 
         AddressType address = new AddressType();
-        address.getDeliveryPoint().add(ConfigurationManager.getInstance().getValue("company.address"));
-        address.setCity(ConfigurationManager.getInstance().getValue("company.city"));
-        address.setAdministrativeArea(ConfigurationManager.getInstance().getValue("company.administrative.area"));
-        address.setPostalCode(ConfigurationManager.getInstance().getValue("company.post.code"));
-        address.setCountry(ConfigurationManager.getInstance().getValue("company.country"));
-        address.getElectronicMailAddress().add(ConfigurationManager.getInstance().getValue("company.email.address"));
+        address.getDeliveryPoint().add(getPropertyValue("company.address"));
+        address.setCity(getPropertyValue("company.city"));
+        address.setAdministrativeArea(getPropertyValue("company.administrative.area"));
+        address.setPostalCode(getPropertyValue("company.post.code"));
+        address.setCountry(getPropertyValue("company.country"));
+        address.getElectronicMailAddress().add(getPropertyValue("company.email.address"));
         contactInfo.setAddress(address);
 
         contactInfo.setOnlineResource(siteUrl);
-        contactInfo.setHoursOfService(ConfigurationManager.getInstance().getValue("company.service.hours"));
-        contactInfo.setContactInstructions(ConfigurationManager.getInstance().getValue("company.contact.instruction"));
+        contactInfo.setHoursOfService(getPropertyValue("company.service.hours"));
+        contactInfo.setContactInstructions(getPropertyValue("company.contact.instruction"));
 
         contact.setContactInfo(contactInfo);
 
@@ -128,18 +124,18 @@ public class Operations {
     private ServiceIdentification getServiceIdentification() {
         ServiceIdentification serviceIdentification = new ServiceIdentification();
         LanguageStringType title = new LanguageStringType();
-        title.setValue(ConfigurationManager.getInstance().getValue("wps.service.id"));
+        title.setValue(getPropertyValue("wps.service.id"));
         serviceIdentification.setTitle(title);
 
         LanguageStringType abstractText = new LanguageStringType();
-        abstractText.setValue(ConfigurationManager.getInstance().getValue("wps.service.abstract"));
+        abstractText.setValue(getPropertyValue("wps.service.abstract"));
         serviceIdentification.setAbstract(abstractText);
 
         CodeType serviceType = new CodeType();
-        serviceType.setValue(ConfigurationManager.getInstance().getValue("wps.service.type"));
+        serviceType.setValue(getPropertyValue("wps.service.type"));
         serviceIdentification.setServiceType(serviceType);
 
-        serviceIdentification.getServiceTypeVersion().add(0, ConfigurationManager.getInstance().getValue("wps.version"));
+        serviceIdentification.getServiceTypeVersion().add(0, getPropertyValue("wps.version"));
         return serviceIdentification;
     }
 
@@ -147,14 +143,18 @@ public class Operations {
         Languages languages = new Languages();
 
         Languages.Default defaultLanguage = new Languages.Default();
-        defaultLanguage.setLanguage(ConfigurationManager.getInstance().getValue("wps.default.lang"));
+        defaultLanguage.setLanguage(getPropertyValue("wps.default.lang"));
         languages.setDefault(defaultLanguage);
 
         LanguagesType languageType = new LanguagesType();
-        languageType.getLanguage().add(0, ConfigurationManager.getInstance().getValue("wps.supported.lang"));
+        languageType.getLanguage().add(0, getPropertyValue("wps.supported.lang"));
         languages.setSupported(languageType);
 
         return languages;
+    }
+
+    private String getPropertyValue(String name) {
+        return ConfigurationManager.getInstance().getValue(name);
     }
 
     private DCP getPostDcp(String serviceUrl) {
@@ -189,7 +189,7 @@ public class Operations {
             singleProcess.setIdentifier(WpsTypeConverter.str2CodeType(workflowId));
             singleProcess.setTitle(WpsTypeConverter.str2LanguageStringType(workflow.getName()));
 //            singleProcess.setAbstract(WpsTypeConverter.str2LanguageStringType(process.getAbstractText()));
-//            singleProcess.setProcessVersion(process.getVersion());
+            singleProcess.setProcessVersion("na");
             processOfferings.getProcess().add(singleProcess);
         }
         return processOfferings.getProcess();
