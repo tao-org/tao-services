@@ -212,7 +212,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/positions", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/positions", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateNodesPositions(@RequestParam("workflowId") long workflowId,
                                                                    @RequestBody Map<Long, float[]> positions) {
         ResponseEntity<ServiceResponse<?>> responseEntity;

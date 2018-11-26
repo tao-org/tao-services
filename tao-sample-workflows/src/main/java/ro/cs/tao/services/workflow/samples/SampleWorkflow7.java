@@ -53,6 +53,7 @@ public class SampleWorkflow7 extends SampleWorkflowBase {
                 "44.22597512802537 23.50357106719914,44.22597512802537 23.50357106719914))");
         dsQuery.setValues(values);
         dsQuery.setWorkflowNodeId(node1.getId());
+        dsQuery.setLabel("Local DB Query for Sentinel-2 [2017-04-08,2017-04-10]");
         persistenceManager.saveQuery(dsQuery);
 
         WorkflowNodeDescriptor node2 = addNode(workflow,
