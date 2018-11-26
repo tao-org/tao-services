@@ -85,7 +85,8 @@ public class WPSControllerTest_Execute {
     @Test
     public void testExecute_NotAnExecuteRequest() throws Exception {
         //preparation
-        when(httpRequest.getReader()).thenReturn(new BufferedReader(new StringReader( "<any><other>xml</other></any>   ")));
+        final String notExecute = "<any><other>xml</other></any>   ";
+        when(httpRequest.getReader()).thenReturn(new BufferedReader(new StringReader(notExecute)));
 
         final StatusType statusType = new StatusType();
         statusType.setProcessAccepted("AAAAAAAAAAAA");
@@ -111,7 +112,8 @@ public class WPSControllerTest_Execute {
     @Test
     public void testExecute_AnUnmashableExecuteRequest() throws Exception {
         //preparation
-        when(httpRequest.getReader()).thenReturn(new BufferedReader(new StringReader("<Execute><other>xml</other></Execute>   ")));
+        final String invalidExecute = "<Execute><other>xml</other></Execute>   ";
+        when(httpRequest.getReader()).thenReturn(new BufferedReader(new StringReader(invalidExecute)));
 
         final StatusType statusType = new StatusType();
         statusType.setProcessAccepted("AAAAAAAAAAAA");
