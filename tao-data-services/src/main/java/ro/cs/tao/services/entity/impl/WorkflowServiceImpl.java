@@ -648,8 +648,8 @@ public class WorkflowServiceImpl
         clone.setVisibility(Visibility.PRIVATE);
         clone = persistenceManager.saveWorkflowDescriptor(clone);
         // key: old id, value: new node
-        Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
-        List<WorkflowNodeDescriptor> workflowNodeDescriptors = workflow.orderNodes(workflow.getNodes());
+        final Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
+        final List<WorkflowNodeDescriptor> workflowNodeDescriptors = workflow.orderNodes(workflow.getNodes());
         for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
             WorkflowNodeDescriptor clonedNode = node instanceof WorkflowNodeGroupDescriptor ?
                     new WorkflowNodeGroupDescriptor() : new WorkflowNodeDescriptor();
@@ -680,7 +680,7 @@ public class WorkflowServiceImpl
             }
         }
         for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
-            Set<ComponentLink> links = node.getIncomingLinks();
+            final Set<ComponentLink> links = node.getIncomingLinks();
             if (links != null) {
                 WorkflowNodeDescriptor clonedTarget = cloneMap.get(node.getId());
                 for (ComponentLink link : links) {
@@ -705,15 +705,16 @@ public class WorkflowServiceImpl
     public WorkflowDescriptor importWorkflowNodes(WorkflowDescriptor master,
                                                   WorkflowDescriptor subWorkflow,
                                                   boolean keepDataSources) throws PersistenceException {
-        Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
-        List<WorkflowNodeDescriptor> nodesToExport = subWorkflow.getOrderedNodes();
-        Set<Long> excludedIds = new HashSet<>();
+        final Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
+        final List<WorkflowNodeDescriptor> nodesToExport = subWorkflow.getOrderedNodes();
+        final Set<Long> excludedIds = new HashSet<>();
         for (WorkflowNodeDescriptor node : nodesToExport) {
             if (!keepDataSources && ComponentType.DATASOURCE.equals(node.getComponentType())) {
                 excludedIds.add(node.getId());
                 continue;
             }
-            WorkflowNodeDescriptor clonedNode = new WorkflowNodeDescriptor();
+            WorkflowNodeDescriptor clonedNode = node instanceof WorkflowNodeGroupDescriptor ?
+                    new WorkflowNodeGroupDescriptor() : new WorkflowNodeDescriptor();
             clonedNode.setWorkflow(master);
             clonedNode.setName(node.getName());
             clonedNode.setxCoord(node.getxCoord());
@@ -732,7 +733,15 @@ public class WorkflowServiceImpl
             cloneMap.put(node.getId(), clonedNode);
         }
         for (WorkflowNodeDescriptor node : nodesToExport) {
-            Set<ComponentLink> links = node.getIncomingLinks();
+            if (node instanceof WorkflowNodeGroupDescriptor) {
+                WorkflowNodeGroupDescriptor clonedNode = (WorkflowNodeGroupDescriptor) cloneMap.get(node.getId());
+                ((WorkflowNodeGroupDescriptor) node).getOrderedNodes()
+                        .forEach(n -> clonedNode.addNode(cloneMap.get(n.getId())));
+                persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
+            }
+        }
+        for (WorkflowNodeDescriptor node : nodesToExport) {
+            final Set<ComponentLink> links = node.getIncomingLinks();
             if (links != null) {
                 WorkflowNodeDescriptor clonedTarget = cloneMap.get(node.getId());
                 for (ComponentLink link : links) {
