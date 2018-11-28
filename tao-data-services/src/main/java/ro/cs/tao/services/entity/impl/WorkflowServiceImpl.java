@@ -651,7 +651,8 @@ public class WorkflowServiceImpl
         Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
         List<WorkflowNodeDescriptor> workflowNodeDescriptors = workflow.orderNodes(workflow.getNodes());
         for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
-            WorkflowNodeDescriptor clonedNode = new WorkflowNodeDescriptor();
+            WorkflowNodeDescriptor clonedNode = node instanceof WorkflowNodeGroupDescriptor ?
+                    new WorkflowNodeGroupDescriptor() : new WorkflowNodeDescriptor();
             clonedNode.setWorkflow(clone);
             clonedNode.setName(node.getName());
             clonedNode.setxCoord(node.getxCoord());
@@ -669,6 +670,14 @@ public class WorkflowServiceImpl
             clonedNode = addNode(clone.getId(), clonedNode);
             cloneMap.put(node.getId(), clonedNode);
             //clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
+        }
+        for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
+            if (node instanceof WorkflowNodeGroupDescriptor) {
+                WorkflowNodeGroupDescriptor clonedNode = (WorkflowNodeGroupDescriptor) cloneMap.get(node.getId());
+                ((WorkflowNodeGroupDescriptor) node).getOrderedNodes()
+                                                    .forEach(n -> clonedNode.addNode(cloneMap.get(n.getId())));
+                persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
+            }
         }
         for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
             Set<ComponentLink> links = node.getIncomingLinks();
