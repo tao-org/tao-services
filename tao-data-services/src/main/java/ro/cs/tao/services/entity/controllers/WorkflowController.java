@@ -292,4 +292,15 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
+    @RequestMapping(value = "/import/snap", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> importSnapGraph(@RequestParam("graph") String graphXml) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            responseEntity = prepareResult(service.snapGraphToWorkflow(graphXml));
+        } catch (Exception e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
+
 }

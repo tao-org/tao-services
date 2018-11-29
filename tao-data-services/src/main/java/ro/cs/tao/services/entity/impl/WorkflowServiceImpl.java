@@ -17,6 +17,7 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.xml.sax.SAXException;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
@@ -43,6 +44,7 @@ import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.services.utils.WorkflowUtilities;
+import ro.cs.tao.snap.xml.GraphParser;
 import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
@@ -904,6 +906,24 @@ public class WorkflowServiceImpl
 
         return targetDescriptors;
     }
+
+    @Override
+    public WorkflowDescriptor snapGraphToWorkflow(String graphXml) throws SAXException {
+        if (graphXml == null || graphXml.isEmpty()) {
+            return null;
+        }
+        try {
+            return GraphParser.parse(persistenceManager, this, graphXml);
+        } catch (Exception e) {
+            throw new SAXException(e);
+        }
+    }
+
+    @Override
+    public String workflowToSnapGraph(WorkflowDescriptor workflowDescriptor) throws Exception {
+        return null;
+    }
+
     /**
      * Returns the TargetDescriptor entity of a workflow node by its id.
      * @param id                The descriptor identifier
