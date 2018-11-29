@@ -12,7 +12,7 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleWorkflow9 extends SampleWorkflowBase {
+public class SampleDBGroupSnapOtbWorkflow extends SampleWorkflowBase {
     @Override
     public String getName() { return "Local DB, { SNAP NDVI, OTB Resample}, OTB Concatenate "; }
 

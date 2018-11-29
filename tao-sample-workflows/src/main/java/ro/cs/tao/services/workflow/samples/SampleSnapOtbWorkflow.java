@@ -25,7 +25,7 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleWorkflow1 extends SampleWorkflowBase {
+public class SampleSnapOtbWorkflow extends SampleWorkflowBase {
 
     @Override
     public String getName() { return "SNAP NDVI + OTB RESAMPLE workflow"; }

@@ -28,7 +28,7 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleWorkflow5 extends SampleWorkflowBase {
+public class SampleAWSWithGroupWorkflow extends SampleWorkflowBase {
     @Override
     public String getName() { return "AWS Download, { SNAP NDVI and OTB Resample }"; }
 
