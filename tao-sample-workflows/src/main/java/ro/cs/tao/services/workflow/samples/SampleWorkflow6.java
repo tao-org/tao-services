@@ -40,6 +40,7 @@ public class SampleWorkflow6 extends SampleWorkflowBase {
                                                "AWS Download", dataSourceComponent.getId(), ComponentType.DATASOURCE, null,
                                                null, null, null);
         Query dsQuery = new Query();
+        dsQuery.setLabel(String.format("Query for sample workflow %d", workflow.getId()));
         dsQuery.setUserId(SessionStore.currentContext().getPrincipal().getName());
         dsQuery.setSensor(dataSourceComponent.getSensorName());
         dsQuery.setDataSource(dataSourceComponent.getDataSourceName());
