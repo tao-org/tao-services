@@ -25,22 +25,27 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleWorkflow2 extends SampleWorkflowBase {
+public class SampleThreeSnapOtbWorkflow extends SampleWorkflowBase {
     @Override
-    public String getName() { return "OTB Radiometric Indices + OTB RESAMPLE workflow"; }
+    public String getName() { return "SNAP Resample, NDVI, MSAVI and OTB Concatenate"; }
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
         Map<String, String> customValues = new HashMap<>();
-        customValues.put("list_str", "Vegetation:RVI");
+        customValues.put("targetResolution", "60");
         WorkflowNodeDescriptor node1 = addNode(workflow,
-                                               "OTB RI", "RadiometricIndices", ComponentType.PROCESSING, customValues,
+                                               "SNAP Resample", "snap-resample", ComponentType.PROCESSING, customValues,
                                                null, null, null);
         customValues.clear();
-        customValues.put("transform_type_id_scalex_number", "0.5");
-        customValues.put("transform_type_id_scaley_number", "0.5");
-        addNode(workflow,
-                "OTB Resample", "RigidTransformResample", ComponentType.PROCESSING, customValues,
-                node1, ComponentType.PROCESSING, Direction.RIGHT);
+        WorkflowNodeDescriptor node2 = addNode(workflow,
+                                               "SNAP NDVI", "snap-ndvi", ComponentType.PROCESSING, null,
+                                               node1, ComponentType.PROCESSING, Direction.TOP_RIGHT);
+        WorkflowNodeDescriptor node3 = addNode(workflow,
+                                               "SNAP MSAVI", "snap-msavi", ComponentType.PROCESSING, null,
+                                               node1, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+        WorkflowNodeDescriptor node4 = addNode(workflow,
+                                               "OTB Combine", "ConcatenateImages", ComponentType.PROCESSING, null,
+                                               node2, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+        addLink(workflow, node3, node4);
     }
 }

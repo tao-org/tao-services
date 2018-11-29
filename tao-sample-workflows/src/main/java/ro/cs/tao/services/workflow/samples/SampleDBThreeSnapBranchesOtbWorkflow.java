@@ -28,9 +28,9 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleWorkflow7 extends SampleWorkflowBase {
+public class SampleDBThreeSnapBranchesOtbWorkflow extends SampleWorkflowBase {
     @Override
-    public String getName() { return "Local DB, SNAP NDVI, SNAP RVI, SNAP SAVI and OTB Resample (no group)"; }
+    public String getName() { return "Local DB, SNAP NDVI, SNAP RVI, SNAP SAVI, OTB Resample and OTB Concatenate"; }
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
