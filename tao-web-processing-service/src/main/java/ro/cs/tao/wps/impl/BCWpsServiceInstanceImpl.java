@@ -75,7 +75,9 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
         final String[] strings = processIdentifiers.split(",");
         for (String processIdentifier : strings) {
             processIdentifier = processIdentifier.trim();
-            if(StringUtils.isBlank(processIdentifier)) {continue;}
+            if (StringUtils.isBlank(processIdentifier)) {
+                continue;
+            }
             final ProcessDescriptionType processDescription = new ProcessDescriptionType();
             processDescription.setProcessVersion("na");
             processDescription.setStatusSupported(true);
@@ -135,9 +137,15 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
         }
         final String identifierValue = identifier.getValue();
         if (StringUtils.isBlank(identifierValue)) {
-            throw new InvalidParameterValueException("Invalid value", null, "Identifier");
+            throw new InvalidParameterValueException("Invalid value: " + identifierValue, null, "Identifier");
         }
-        final long workflowId = Long.parseLong(identifierValue);
+
+        final long workflowId;
+        try {
+            workflowId = Long.parseLong(identifierValue);
+        } catch (NumberFormatException e) {
+            throw new InvalidParameterValueException("Invalid value: TAO workflow identifier must be long type, but was: '" + identifierValue + "'", null, "Identifier");
+        }
 
         final Map<String, Map<String, String>> parameters = new HashMap<>();
         final DataInputsType dataInputs = executeRequest.getDataInputs();
@@ -149,10 +157,12 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
                 final String[] strings = iIdentifier.split("~");
                 final String parameterGroupName = strings[0];
                 final Map<String, String> parameterGroup;
-                if (!parameters.containsKey(parameterGroupName)) {
-                    parameters.put(parameterGroupName, new HashMap<>());
+                if (parameters.containsKey(parameterGroupName)) {
+                    parameterGroup = parameters.get(parameterGroupName);
+                } else {
+                    parameterGroup = new HashMap<>();
+                    parameters.put(parameterGroupName, parameterGroup);
                 }
-                parameterGroup = parameters.get(parameterGroupName);
                 final String parameterName = strings[1];
                 final String value = input.getData().getLiteralData().getValue();
                 parameterGroup.put(parameterName, value);
