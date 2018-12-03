@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.OrchestratorService;
@@ -55,6 +56,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
 
     @Autowired
     private StorageService<MultipartFile> storageService;
+    long justStartedJobId;
 
     @Override
     public List<WorkflowInfo> getCapabilities() {
@@ -72,6 +74,10 @@ public class WebProcessingServiceImpl implements WebProcessingService {
 
     @Override
     public long execute(long workflowId, Map<String, Map<String, String>> parameters) {
+        if (isDevModeEnabled()){
+            justStartedJobId = 1769187931756938475L;
+            return justStartedJobId;
+        }
         long result = -1;
         try {
             WorkflowDescriptor descriptor = workflowService.findById(workflowId);
@@ -87,11 +93,22 @@ public class WebProcessingServiceImpl implements WebProcessingService {
 
     @Override
     public ExecutionJob getStatus(long jobId) {
+        if (isDevModeEnabled()) {
+            if(jobId == justStartedJobId) {
+                final ExecutionJob executionJob = new ExecutionJob();
+                executionJob.setWorkflowId(24L);
+                executionJob.setExecutionStatus(ExecutionStatus.RUNNING);
+                return executionJob;
+            }
+        }
         return persistenceManager.getJobById(jobId);
     }
 
     @Override
     public List<FileObject> getJobResult(long jobId) throws IOException {
+        if (isDevModeEnabled()) {
+            return new ArrayList<>();
+        }
         return storageService.getJobResults(jobId);
     }
 
