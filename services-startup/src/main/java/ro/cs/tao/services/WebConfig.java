@@ -40,7 +40,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/").setViewName("forward:/ui/login.html");
+        registry.addRedirectViewController("/", "/ui/login.html");
+        WebMvcConfigurer.super.addViewControllers(registry);
     }
 
     @Override
@@ -66,6 +67,7 @@ public class WebConfig implements WebMvcConfigurer {
         mapper.registerModule(new JavaTimeModule());
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
         messageConverter.setObjectMapper(mapper);
         return messageConverter;
     }

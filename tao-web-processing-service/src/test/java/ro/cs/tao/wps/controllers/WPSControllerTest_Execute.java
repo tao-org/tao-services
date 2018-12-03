@@ -1,16 +1,13 @@
 package ro.cs.tao.wps.controllers;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.*;
-
 import com.bc.wps.api.WpsRequestContext;
 import com.bc.wps.api.WpsServiceInstance;
 import com.bc.wps.api.schema.Execute;
 import com.bc.wps.api.schema.ExecuteResponse;
 import com.bc.wps.api.schema.StatusType;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +21,11 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Locale;
+
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.*;
 
 public class WPSControllerTest_Execute {
 
@@ -85,8 +87,7 @@ public class WPSControllerTest_Execute {
     @Test
     public void testExecute_NotAnExecuteRequest() throws Exception {
         //preparation
-        final String notExecute = "<any><other>xml</other></any>   ";
-        when(httpRequest.getReader()).thenReturn(new BufferedReader(new StringReader(notExecute)));
+        when(httpRequest.getReader()).thenReturn(new BufferedReader(new StringReader( "<any><other>xml</other></any>   ")));
 
         final StatusType statusType = new StatusType();
         statusType.setProcessAccepted("AAAAAAAAAAAA");
@@ -112,8 +113,7 @@ public class WPSControllerTest_Execute {
     @Test
     public void testExecute_AnUnmashableExecuteRequest() throws Exception {
         //preparation
-        final String invalidExecute = "<Execute><other>xml</other></Execute>   ";
-        when(httpRequest.getReader()).thenReturn(new BufferedReader(new StringReader(invalidExecute)));
+        when(httpRequest.getReader()).thenReturn(new BufferedReader(new StringReader("<Execute><other>xml</other></Execute>   ")));
 
         final StatusType statusType = new StatusType();
         statusType.setProcessAccepted("AAAAAAAAAAAA");

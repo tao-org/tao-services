@@ -126,6 +126,9 @@ class ExecuteResponseBuilder {
     }
 
     private List<OutputDataType> ensureProcessOutputs() {
+        if (executeResponse.getProcessOutputs() == null) {
+            executeResponse.setProcessOutputs(new ExecuteResponse.ProcessOutputs());
+        }
         return executeResponse.getProcessOutputs().getOutput();
     }
 

@@ -19,8 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import ro.cs.tao.messaging.Message;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.MonitoringService;
@@ -38,7 +39,7 @@ import java.util.List;
 public class MonitoringController extends BaseController {
 
     @Autowired
-    private MonitoringService monitoringService;
+    private MonitoringService<Notification> monitoringService;
 
     @RequestMapping(value = "/master", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> getMasterSnapshot() {
@@ -63,6 +64,11 @@ public class MonitoringController extends BaseController {
         return prepareResult(monitoringService.getLiveNotifications());
     }
 
+    @RequestMapping(value = "/notification/unread", method = RequestMethod.GET)
+    public ResponseEntity<ServiceResponse<?>> getUnreadNotifications() {
+        return prepareResult(monitoringService.getUnreadNotifications(SessionStore.currentContext().getPrincipal().getName()));
+    }
+
     @RequestMapping(value = "/notification/{page}", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> getNotifications(@RequestHeader(value = "user") String user,
                                               @PathVariable("page") int page) {
@@ -70,7 +76,7 @@ public class MonitoringController extends BaseController {
     }
 
     @RequestMapping(value = "/notification/ack", method = RequestMethod.POST)
-    public ResponseEntity<ServiceResponse<?>> acknowledgeNotifications(@RequestBody List<Message> notifications) {
+    public ResponseEntity<ServiceResponse<?>> acknowledgeNotifications(@RequestBody List<Notification> notifications) {
         return prepareResult(monitoringService.acknowledgeNotification(notifications));
     }
 

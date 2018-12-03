@@ -34,10 +34,7 @@ import ro.cs.tao.utils.executors.Executor;
 import ro.cs.tao.utils.executors.ExecutorType;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -87,7 +84,24 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
 
     @Override
     public List<Notification> getLiveNotifications() {
-        return getLastMessages().stream().map(m -> new MessageConverter().to(m)).collect(Collectors.toList());
+        final MessageConverter converter = new MessageConverter();
+        return getLastMessages().stream().map(converter::to).collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, List<Notification>> getUnreadNotifications(String userName) {
+        Map<String, List<Notification>>  messages = new LinkedHashMap<>();
+        List<Message> unread = persistenceManager.getUnreadMessages(userName);
+        final MessageConverter converter = new MessageConverter();
+        if (unread != null) {
+            unread.stream().map(converter::to).forEach(n -> {
+                if (!messages.containsKey(n.getTopic())) {
+                    messages.put(n.getTopic(), new ArrayList<>());
+                }
+                messages.get(n.getTopic()).add(n);
+            });
+        }
+        return messages;
     }
 
     @Override
