@@ -67,6 +67,7 @@ public class WebConfig implements WebMvcConfigurer {
         mapper.registerModule(new JavaTimeModule());
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
         messageConverter.setObjectMapper(mapper);
         return messageConverter;
     }
