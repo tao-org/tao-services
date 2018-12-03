@@ -149,11 +149,10 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
                 final String[] strings = iIdentifier.split("~");
                 final String parameterGroupName = strings[0];
                 final Map<String, String> parameterGroup;
-                if (parameters.containsKey(parameterGroupName)) {
-                    parameterGroup = parameters.get(parameterGroupName);
-                } else {
-                    parameterGroup = parameters.put(parameterGroupName, new HashMap<>());
+                if (!parameters.containsKey(parameterGroupName)) {
+                    parameters.put(parameterGroupName, new HashMap<>());
                 }
+                parameterGroup = parameters.get(parameterGroupName);
                 final String parameterName = strings[1];
                 final String value = input.getData().getLiteralData().getValue();
                 parameterGroup.put(parameterName, value);
