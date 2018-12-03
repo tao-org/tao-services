@@ -52,6 +52,7 @@ class ExecuteResponseBuilder {
         outputDataType.setIdentifier(WpsTypeConverter.str2CodeType(relativePath));
         outputDataType.setTitle(WpsTypeConverter.str2LanguageStringType(relativePath));
         outputDataType.setReference(WpsTypeConverter.str2OutputReferenceType(url));
+
         ensureProcessOutputs().add(outputDataType);
         return this;
     }
@@ -126,6 +127,9 @@ class ExecuteResponseBuilder {
     }
 
     private List<OutputDataType> ensureProcessOutputs() {
+        if (executeResponse.getProcessOutputs() == null) {
+            executeResponse.setProcessOutputs(new ExecuteResponse.ProcessOutputs());
+        }
         return executeResponse.getProcessOutputs().getOutput();
     }
 
