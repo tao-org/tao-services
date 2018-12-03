@@ -25,15 +25,17 @@ public class Notification {
     private String user;
     private boolean read;
     private String source;
+    private String topic;
     private String data;
 
     public Notification() { }
 
-    public Notification(Calendar timestamp, String user, String source, String data) {
+    public Notification(Calendar timestamp, String user, String source, String topic, String data) {
         this.timestamp = timestamp;
         this.source = source;
         this.data = data;
         this.user = user;
+        this.topic = topic;
         this.read = false;
     }
 
@@ -48,6 +50,9 @@ public class Notification {
 
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
+
+    public String getTopic() { return topic; }
+    public void setTopic(String topic) { this.topic = topic; }
 
     public String getData() { return data; }
     public void setData(String data) { this.data = data; }

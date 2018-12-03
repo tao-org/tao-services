@@ -37,6 +37,7 @@ import ro.cs.tao.workflow.enums.Status;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -156,10 +157,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     public ResponseEntity<ServiceResponse<?>> addGroup(@RequestBody WorkflowGroupNodeRequest request) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            List<WorkflowNodeDescriptor> groupNodes = getPersistenceManager().getWorkflowNodesById(request.getGroupNodeIds());
-            responseEntity = prepareResult(service.addGroup(request.getWorkflowId(), request.getGroupNode(),
-                                                            request.getParentNodeId(),
-                                                            groupNodes.toArray(new WorkflowNodeDescriptor[0])));
+            responseEntity = prepareResult(service.addGroup(request.getWorkflowId(), request.getParentNodeId(),
+                                                            request.getGroupNodeName(), request.getGroupNodeIds()));
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
@@ -207,6 +206,19 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.updateNodes(workflowId, nodes));
+        } catch (PersistenceException e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/positions", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> updateNodesPositions(@RequestParam("workflowId") long workflowId,
+                                                                   @RequestBody Map<Long, float[]> positions) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            service.updateNodesPositions(workflowId, positions);
+            responseEntity = prepareResult("Positions updated", ResponseStatus.SUCCEEDED);
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
@@ -275,6 +287,17 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         try {
             responseEntity = prepareResult(service.getWorkflowExecutionTasks(executionId));
         } catch (PersistenceException e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/import/snap", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> importSnapGraph(@RequestParam("graph") String graphXml) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            responseEntity = prepareResult(service.snapGraphToWorkflow(graphXml));
+        } catch (Exception e) {
             responseEntity = handleException(e);
         }
         return responseEntity;

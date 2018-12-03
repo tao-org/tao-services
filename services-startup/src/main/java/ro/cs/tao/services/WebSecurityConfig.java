@@ -131,7 +131,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
 
         http
           .sessionManagement()
-                .maximumSessions(1)
+                .maximumSessions(2)
                 .and()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
           .and()

@@ -23,7 +23,6 @@ import com.bc.wps.api.exceptions.*;
 import com.bc.wps.api.schema.*;
 import com.bc.wps.api.utils.InputDescriptionTypeBuilder;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.TargetDescriptor;

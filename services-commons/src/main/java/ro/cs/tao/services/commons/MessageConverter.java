@@ -31,6 +31,7 @@ public class MessageConverter implements Converter<Message, Notification> {
         Message message = Message.create(value.getUser(), value.getSource(), value.getData());
         message.setTimestamp(value.getTimestamp().getTimeInMillis());
         message.setRead(value.isRead());
+        message.setTopic(value.getTopic());
         return message;
     }
 
@@ -43,7 +44,8 @@ public class MessageConverter implements Converter<Message, Notification> {
         calendar.setTimeInMillis(value.getTimestamp());
         String user = value.getUser();
         String msg = value.getData();
-        Notification notification = new Notification(calendar, user, value.getItem(Message.SOURCE_KEY), msg);
+        String topic = value.getTopic();
+        Notification notification = new Notification(calendar, user, value.getItem(Message.SOURCE_KEY), topic, msg);
         notification.setRead(value.isRead());
         return notification;
     }

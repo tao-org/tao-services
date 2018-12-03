@@ -506,8 +506,7 @@ public class WpsIntegrationTest {
         sw.flush();
         final String xml = sw.toString();
 
-        closeableHttpResponse = IntegrationTestHelper.getWpsExecuteResponse(serviceAdress, xml);
-//        closeableHttpResponse = IntegrationTestHelper.getWpsExecuteResponse(serviceAdress + "?Service=WPS&Request=Execute&Version=1.0.0&Identifier=1", xml);
+        closeableHttpResponse = IntegrationTestHelper.getWpsExecuteResponse(serviceAdress + "?Service=WPS&Request=Execute&Version=1.0.0&Identifier=1", xml);
 
         assertThat(closeableHttpResponse, is(notNullValue()));
     }

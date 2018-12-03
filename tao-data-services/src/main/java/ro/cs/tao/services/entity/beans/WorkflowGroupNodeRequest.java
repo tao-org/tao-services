@@ -1,12 +1,10 @@
 package ro.cs.tao.services.entity.beans;
 
-import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
-
 public class WorkflowGroupNodeRequest {
     private long workflowId;
     private long parentNodeId;
     private Long[] groupNodeIds;
-    private WorkflowNodeGroupDescriptor groupNode;
+    private String groupNodeName;
 
     public long getWorkflowId() {
         return workflowId;
@@ -32,11 +30,9 @@ public class WorkflowGroupNodeRequest {
         this.groupNodeIds = groupNodeIds;
     }
 
-    public WorkflowNodeGroupDescriptor getGroupNode() {
-        return groupNode;
-    }
+    public String getGroupNodeName() { return groupNodeName; }
 
-    public void setGroupNode(WorkflowNodeGroupDescriptor groupNode) {
-        this.groupNode = groupNode;
+    public void setGroupNodeName(String name) {
+        this.groupNodeName = name;
     }
 }

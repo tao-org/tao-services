@@ -14,12 +14,12 @@
 # with this program; if not, see http://www.gnu.org/licenses/
 #
 
-ro.cs.tao.services.workflow.samples.SampleWorkflow1
-ro.cs.tao.services.workflow.samples.SampleWorkflow2
-ro.cs.tao.services.workflow.samples.SampleWorkflow3
-ro.cs.tao.services.workflow.samples.SampleWorkflow4
-ro.cs.tao.services.workflow.samples.SampleWorkflow5
-ro.cs.tao.services.workflow.samples.SampleWorkflow6
-ro.cs.tao.services.workflow.samples.SampleWorkflow7
-ro.cs.tao.services.workflow.samples.SampleWorkflow8
-ro.cs.tao.services.workflow.samples.SampleWorkflow9
+ro.cs.tao.services.workflow.samples.SampleSnapOtbWorkflow
+ro.cs.tao.services.workflow.samples.SampleTwoOtbWorkflow
+ro.cs.tao.services.workflow.samples.SampleOtbTwoSnapOtbWorkflow
+ro.cs.tao.services.workflow.samples.SampleThreeSnapOtbWorkflow
+ro.cs.tao.services.workflow.samples.SampleAWSWithGroupWorkflow
+ro.cs.tao.services.workflow.samples.SampleAWSSnapOtbWorkflow
+ro.cs.tao.services.workflow.samples.SampleDBThreeSnapBranchesOtbWorkflow
+ro.cs.tao.services.workflow.samples.SampleDBSnapOtbWorkflow
+ro.cs.tao.services.workflow.samples.SampleDBGroupSnapOtbWorkflow
