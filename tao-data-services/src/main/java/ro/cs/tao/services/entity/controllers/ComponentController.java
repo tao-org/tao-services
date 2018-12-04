@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +33,7 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
+import ro.cs.tao.services.interfaces.GroupComponentService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -42,6 +44,9 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/component")
 public class ComponentController extends DataEntityController<ProcessingComponent, String, ComponentService> {
+
+    @Autowired
+    private GroupComponentService groupComponentService;
 
     @RequestMapping(value = "/user", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> listUserComponents(@RequestParam("type") ProcessingComponentType componentType) {
@@ -82,6 +87,21 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         }
         String[] ids = idList.split(",");
         return prepareResult(service.getProcessingComponents(Arrays.asList(ids)));
+    }
+
+    @RequestMapping(value = "/group", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getGroupComponent(@RequestParam(name = "id") String groupId) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        if (groupId == null || groupId.isEmpty()) {
+            responseEntity = prepareResult("Invalid group id", ResponseStatus.FAILED);
+        } else {
+            try {
+                responseEntity = prepareResult(groupComponentService.findById(groupId));
+            } catch (PersistenceException e) {
+                responseEntity = handleException(e);
+            }
+        }
+        return responseEntity;
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
