@@ -54,7 +54,7 @@ public class WPSController extends BaseController {
     @Autowired
     private WpsServiceInstance wpsServiceInstance;
 
-    @RequestMapping(params = {"Service=WPS", "Request=GetCapabilities"}, method = RequestMethod.GET)
+    @RequestMapping(params = {"service=WPS", "request=GetCapabilities"}, method = RequestMethod.GET)
     public ResponseEntity<?> capabilities(HttpServletRequest request, HttpServletResponse response) {
         try {
             final Object wpsObject = wpsServiceInstance.getCapabilities(new WpsRequestContextImpl(request));
@@ -67,12 +67,12 @@ public class WPSController extends BaseController {
         }
     }
 
-    @RequestMapping(params = {"Service=WPS", "Request=DescribeProcess", "Version=1.0.0"}, method = RequestMethod.GET)
-    public ResponseEntity<?> describeProcess(@RequestParam(name = "Identifier") final String processId,
+    @RequestMapping(params = {"service=WPS", "request=DescribeProcess", "version=1.0.0"}, method = RequestMethod.GET)
+    public ResponseEntity<?> describeProcess(@RequestParam(name = "identifier") final String processId,
                                              HttpServletRequest request, HttpServletResponse response) {
         try {
             if (StringUtils.isBlank(processId)) {
-                throw new MissingParameterValueException("Identifier");
+                throw new MissingParameterValueException("identifier");
             }
             final List<ProcessDescriptionType> processDescriptionTypes = wpsServiceInstance.describeProcess(new WpsRequestContextImpl(request), processId);
             final Object wpsObject = createProcessDescription(processDescriptionTypes);
@@ -85,12 +85,12 @@ public class WPSController extends BaseController {
         }
     }
 
-    @RequestMapping(params = {"Service=WPS", "Request=GetStatus"}, method = RequestMethod.GET)
-    public ResponseEntity<?> status(@RequestParam(name = "JobId", required = false) final String jobId,
+    @RequestMapping(params = {"service=WPS", "request=GetStatus"}, method = RequestMethod.GET)
+    public ResponseEntity<?> status(@RequestParam(name = "jobId", required = false) final String jobId,
                                     HttpServletRequest request, HttpServletResponse response) {
         try {
             if (StringUtils.isBlank(jobId)) {
-                throw new MissingParameterValueException("JobId");
+                throw new MissingParameterValueException("jobId");
             }
             final Object wpsObject = wpsServiceInstance.getStatus(new WpsRequestContextImpl(request), jobId);
             final String schemaLocation = "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_response.xsd";
