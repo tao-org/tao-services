@@ -28,7 +28,9 @@ import ro.cs.tao.services.base.SampleWorkflowBase;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
-import ro.cs.tao.services.interfaces.*;
+import ro.cs.tao.services.interfaces.ComponentService;
+import ro.cs.tao.services.interfaces.SampleWorkflow;
+import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.workflow.WorkflowDescriptor;
@@ -49,13 +51,7 @@ import java.util.stream.Collectors;
 public class WorkflowController extends DataEntityController<WorkflowDescriptor, Long, WorkflowService> {
 
     @Autowired
-    private ContainerService containerService;
-
-    @Autowired
     private ComponentService componentService;
-
-    @Autowired
-    private GroupComponentService groupComponentService;
 
     @Override
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
