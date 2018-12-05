@@ -72,7 +72,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             return prepareResult("Invalid id list", ResponseStatus.FAILED);
         }
         String[] ids = idList.split(",");
-        return prepareResult(service.getDataSourceComponents(Arrays.asList(ids)));
+        return prepareResult(service.list(Arrays.asList(ids)));
     }
 
     @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")

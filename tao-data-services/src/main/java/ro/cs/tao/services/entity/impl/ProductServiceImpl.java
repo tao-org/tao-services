@@ -71,6 +71,11 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
     }
 
     @Override
+    public List<EOProduct> list(Iterable<String> ids) {
+        return persistenceManager.getEOProducts(ids);
+    }
+
+    @Override
     public EOProduct save(EOProduct object) {
         try {
             return persistenceManager.saveEOProduct(object);
