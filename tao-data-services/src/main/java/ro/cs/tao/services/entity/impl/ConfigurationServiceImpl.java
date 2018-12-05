@@ -22,7 +22,9 @@ import ro.cs.tao.services.model.KeyValuePair;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * @author Cosmin Cara
@@ -44,6 +46,20 @@ public class ConfigurationServiceImpl
         List<KeyValuePair> result = null;
         if (properties != null) {
             result = properties.entrySet().stream()
+                    .map(e -> new KeyValuePair(e.getKey(), e.getValue()))
+                    .collect(Collectors.toList());
+        }
+        return result;
+    }
+
+    @Override
+    public List<KeyValuePair> list(Iterable<String> ids) {
+        final Map<String, String> properties = ConfigurationManager.getInstance().getAll();
+        List<KeyValuePair> result = null;
+        if (properties != null) {
+            Set<String> identifiers = StreamSupport.stream(ids.spliterator(), false).collect(Collectors.toSet());
+            result = properties.entrySet().stream()
+                    .filter(p -> identifiers.contains(p.getKey()))
                     .map(e -> new KeyValuePair(e.getKey(), e.getValue()))
                     .collect(Collectors.toList());
         }

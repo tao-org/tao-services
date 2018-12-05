@@ -27,9 +27,11 @@ import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * @author Cosmin Cara
@@ -50,6 +52,15 @@ public class TopologyServiceImpl
     @Override
     public List<NodeDescription> list() {
        return TopologyManager.getInstance().list();
+    }
+
+    @Override
+    public List<NodeDescription> list(Iterable<String> ids) {
+        if (ids == null) {
+            return new ArrayList<>();
+        }
+        Set<String> identifiers = StreamSupport.stream(ids.spliterator(), false).collect(Collectors.toSet());
+        return list().stream().filter(n -> identifiers.contains(n.getId())).collect(Collectors.toList());
     }
 
     @Override

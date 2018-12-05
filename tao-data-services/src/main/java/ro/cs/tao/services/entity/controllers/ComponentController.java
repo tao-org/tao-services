@@ -86,20 +86,17 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             return prepareResult("Invalid id list", ResponseStatus.FAILED);
         }
         String[] ids = idList.split(",");
-        return prepareResult(service.getProcessingComponents(Arrays.asList(ids)));
+        return prepareResult(service.list(Arrays.asList(ids)));
     }
 
     @RequestMapping(value = "/group", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getGroupComponent(@RequestParam(name = "id") String groupId) {
+    public ResponseEntity<ServiceResponse<?>> getGroupComponent(@RequestParam(name = "id") String groupIdList) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
-        if (groupId == null || groupId.isEmpty()) {
-            responseEntity = prepareResult("Invalid group id", ResponseStatus.FAILED);
+        if (groupIdList == null || groupIdList.isEmpty()) {
+            responseEntity = prepareResult("Invalid group ids", ResponseStatus.FAILED);
         } else {
-            try {
-                responseEntity = prepareResult(groupComponentService.findById(groupId));
-            } catch (PersistenceException e) {
-                responseEntity = handleException(e);
-            }
+            String[] ids = groupIdList.split(",");
+            responseEntity = prepareResult(groupComponentService.list(Arrays.asList(ids)));
         }
         return responseEntity;
     }

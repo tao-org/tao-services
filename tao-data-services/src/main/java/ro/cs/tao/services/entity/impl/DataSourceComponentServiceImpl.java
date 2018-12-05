@@ -61,7 +61,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
-    public List<DataSourceComponent> getDataSourceComponents(Iterable<String> ids) {
+    public List<DataSourceComponent> list(Iterable<String> ids) {
         return persistenceManager.getDataSourceComponents(ids);
     }
 

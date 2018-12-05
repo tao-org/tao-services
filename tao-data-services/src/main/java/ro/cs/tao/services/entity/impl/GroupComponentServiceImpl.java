@@ -59,6 +59,17 @@ public class GroupComponentServiceImpl
     }
 
     @Override
+    public List<GroupComponent> list(Iterable<String> ids) {
+        List<GroupComponent> components = null;
+        try {
+            components = persistenceManager.getGroupComponents(ids);
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+        }
+        return components;
+    }
+
+    @Override
     public GroupComponent save(GroupComponent component) {
         try {
             return persistenceManager.saveGroupComponent(component);
