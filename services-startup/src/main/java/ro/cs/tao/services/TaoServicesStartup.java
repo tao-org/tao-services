@@ -170,6 +170,7 @@ public class TaoServicesStartup extends StartupBase {
         if (sensors != null) {
             Set<String> existing = persistenceManager.getDataSourceComponents()
                     .stream()
+                    .filter(DataSourceComponent::getSystem)
                     .map(Identifiable::getId)
                     .collect(Collectors.toSet());
             List<Tag> tags = persistenceManager.getDatasourceTags();

@@ -25,7 +25,11 @@ import ro.cs.tao.services.commons.ServiceLauncher;
 @ImportResource("classpath:progress-report-service-context.xml")
 @EnableWebMvc
 public class ProgressReportLauncher implements ServiceLauncher {
+
     public static void main(String[] args) {
         SpringApplication.run(ProgressReportLauncher.class, args);
     }
+
+    @Override
+    public String serviceName() { return "Progress Reporting Service"; }
 }

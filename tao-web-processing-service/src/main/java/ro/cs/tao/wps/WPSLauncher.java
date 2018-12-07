@@ -32,4 +32,6 @@ public class WPSLauncher implements ServiceLauncher {
         SpringApplication.run(WPSLauncher.class, args);
     }
 
+    @Override
+    public String serviceName() { return "Web Processing Service"; }
 }

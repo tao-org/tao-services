@@ -17,4 +17,5 @@
 package ro.cs.tao.services.commons;
 
 public interface ServiceLauncher {
+    String serviceName();
 }

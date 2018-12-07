@@ -32,4 +32,7 @@ public class AdministrationServiceLauncher implements ServiceLauncher {
     public static void main(String[] args) {
         SpringApplication.run(AdministrationServiceLauncher.class, args);
     }
+
+    @Override
+    public String serviceName() { return "User Administration Service"; }
 }
