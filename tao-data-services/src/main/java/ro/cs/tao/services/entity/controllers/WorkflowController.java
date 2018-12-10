@@ -288,8 +288,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/import/snap", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> importSnapGraph(@RequestParam("graph") String graphXml) {
+    @RequestMapping(value = "/import/snap", method = RequestMethod.POST, consumes = "text/xml", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> importSnapGraph(@RequestBody String graphXml) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.snapGraphToWorkflow(graphXml));
