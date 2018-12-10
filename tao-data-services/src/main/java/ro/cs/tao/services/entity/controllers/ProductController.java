@@ -33,7 +33,7 @@ import java.nio.file.Paths;
 @RequestMapping("/product")
 public class ProductController extends DataEntityController<EOProduct, String, ProductService> {
 
-    @RequestMapping(value = "/inspect", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> inspect(@RequestParam("sourceDir") String sourceDir) {
         if (sourceDir == null) {
             return prepareResult("Source directory not found", ResponseStatus.FAILED);
@@ -45,7 +45,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
         }
     }
 
-    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/import", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> importProducts(@RequestParam("sourceDir") String sourceDir,
                                                              @RequestParam("linkOnly") boolean linkOnly) {
         if (sourceDir == null) {

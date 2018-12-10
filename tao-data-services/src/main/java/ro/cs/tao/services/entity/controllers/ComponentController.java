@@ -103,7 +103,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
 
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     @Override
-    public ResponseEntity<ServiceResponse<?>> save(ProcessingComponent entity) {
+    public ResponseEntity<ServiceResponse<?>> save(@RequestBody ProcessingComponent entity) {
         if (entity.getOwner() == null || entity.getOwner().isEmpty()) {
             entity.setOwner(SessionStore.currentContext().getPrincipal().getName());
         }

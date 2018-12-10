@@ -86,7 +86,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return prepareResult(service.getPublicWorkflows());
     }
 
-    @RequestMapping(value = "/clone", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/clone", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> cloneWorkflow(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         WorkflowDescriptor source = getPersistenceManager().getWorkflowDescriptor(workflowId);
@@ -161,7 +161,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/subworkflow", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/subworkflow", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addSubworkflow(@RequestParam("workflowId") long workflowId,
                                                              @RequestParam("subWorkflowId") long subWorkflowId,
                                                              @RequestParam("keepDataSources") boolean keepDataSources) {
@@ -235,7 +235,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/link", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/link", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addLink(@RequestParam("sourceNodeId") long sourceNodeId,
                                                       @RequestParam("sourceTargetId") String sourceTargetId,
                                                       @RequestParam("targetNodeId") long targetNodeId,
