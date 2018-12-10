@@ -80,7 +80,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.getUserDataSourceComponents(SessionStore.currentContext().getPrincipal().getName())));
     }
 
-    @RequestMapping(value = "/create", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody CustomDataSourceRequest request) {
         try {
             List<EOProduct> products = request.getProducts();
@@ -102,7 +102,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/tags", method = RequestMethod.GET)
+    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getDatasourceTags();
         if (objects == null ) {

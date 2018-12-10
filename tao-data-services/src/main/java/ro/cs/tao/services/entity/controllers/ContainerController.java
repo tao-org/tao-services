@@ -45,11 +45,11 @@ import java.util.Optional;
 public class ContainerController extends DataEntityController<Container, String, ContainerService<MultipartFile>> {
 
     @Override
-    @RequestMapping(value = "/", method = RequestMethod.GET)
-    public ResponseEntity<ServiceResponse<?>> list(Optional<Integer> pageNumber,
-                                                   Optional<Integer> pageSize,
-                                                   Optional<String> sortByField,
-                                                   Optional<SortDirection> sortDirection) {
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(value = "pageNumber", required = false) Optional<Integer> pageNumber,
+                                                   @RequestParam(value = "pageSize", required = false) Optional<Integer> pageSize,
+                                                   @RequestParam(value = "sortBy", required = false) Optional<String> sortByField,
+                                                   @RequestParam(value = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
         List<Container> objects = TopologyManager.getInstance().getAvailableDockerImages();
         if (objects == null) {
             objects = new ArrayList<>();
@@ -57,7 +57,7 @@ public class ContainerController extends DataEntityController<Container, String,
         return prepareResult(objects);
     }
 
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> upload(@RequestParam("file") MultipartFile dockerFile,
                                                      @RequestParam("name") String shortName,
                                                      @RequestParam("desc") String description) {

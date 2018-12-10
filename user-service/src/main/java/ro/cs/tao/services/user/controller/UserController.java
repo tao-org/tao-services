@@ -48,7 +48,7 @@ public class UserController extends BaseController {
     @Autowired
     private TokenManagementService tokenService;
 
-    @RequestMapping(value = "/activate/{username}", method = RequestMethod.GET)
+    @RequestMapping(value = "/activate/{username}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> activate(@PathVariable("username") String username) {
         if (StringUtilities.isNullOrEmpty(username)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
@@ -88,7 +88,7 @@ public class UserController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{username}/reset", method = RequestMethod.POST)
+    @RequestMapping(value = "/{username}/reset", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> resetPassword(@PathVariable("username") String username, @RequestBody ResetPasswordInfo resetPasswordInfo) {
         if (StringUtilities.isNullOrEmpty(username) || resetPasswordInfo == null ||
                 StringUtilities.isNullOrEmpty(resetPasswordInfo.getResetKey()) || StringUtilities.isNullOrEmpty(resetPasswordInfo.getNewPassword())) {
