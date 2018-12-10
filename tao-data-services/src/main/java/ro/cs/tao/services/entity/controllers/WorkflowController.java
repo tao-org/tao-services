@@ -184,9 +184,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/node", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/node", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateNode(@RequestParam("workflowId") long workflowId,
-                                     @RequestBody WorkflowNodeDescriptor node) {
+                                                         @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.updateNode(workflowId, node));
@@ -196,7 +196,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/nodes", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/nodes", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateNodes(@RequestParam("workflowId") long workflowId,
                                                           @RequestBody List<WorkflowNodeDescriptor> nodes) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
