@@ -16,7 +16,7 @@
 package ro.cs.tao.services.query.service;
 
 import org.springframework.stereotype.Service;
-import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
@@ -85,7 +85,8 @@ public class DataSourceServiceImpl implements DataSourceService {
             DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
             dsComponent.setUserCredentials(query.getUser(), query.getPassword());
             dsComponent.setFetchMode(mode);
-            String path = ConfigurationManager.getInstance().getValue("product.location");
+            //String path = ConfigurationManager.getInstance().getValue("product.location");
+            String path = SystemVariable.SHARED_WORKSPACE.value();
             if ((mode == FetchMode.SYMLINK || mode == FetchMode.COPY) && localPath != null) {
                 DataSource dataSource = DataSourceManager.getInstance().get(query.getSensor(), query.getDataSource());
                 Properties properties = new Properties();
