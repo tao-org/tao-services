@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/topology")
 public class TopologyController extends DataEntityController<NodeDescription, String, TopologyService> {
 
-    @RequestMapping(value = "/tags", method = RequestMethod.GET)
+    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getNodeTags();
         if (objects == null ) {

@@ -274,7 +274,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     @ResponseBody
     public ResponseEntity<ServiceResponse<?>> toggleVisibility(@RequestParam("folder") String folder,
                                               @RequestParam("visibility") Visibility visibility) {
@@ -333,7 +333,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/user/upload", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/user/upload", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile file,
                                         @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -346,7 +346,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/public/upload", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/public/upload", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> uploadPublic(@RequestParam("file") MultipartFile file,
                                         @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;

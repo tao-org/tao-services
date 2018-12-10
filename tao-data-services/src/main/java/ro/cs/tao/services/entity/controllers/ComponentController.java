@@ -48,7 +48,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     @Autowired
     private GroupComponentService groupComponentService;
 
-    @RequestMapping(value = "/user", method = RequestMethod.GET)
+    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listUserComponents(@RequestParam("type") ProcessingComponentType componentType) {
         ResponseEntity<ServiceResponse<?>> response;
         String userName = SessionStore.currentContext().getPrincipal().getName();
@@ -122,7 +122,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
     @Override
-    public ResponseEntity<ServiceResponse<?>> delete(String id) {
+    public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") String id) {
         if (isCurrentUserAdmin()) {
             return super.delete(id);
         } else {
@@ -130,7 +130,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         }
     }
 
-    @RequestMapping(value = "/constraints", method = RequestMethod.GET)
+    @RequestMapping(value = "/constraints", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listConstraints() {
         List<String> objects = service.getAvailableConstraints();
         if (objects == null ) {
@@ -139,7 +139,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         return prepareResult(objects);
     }
 
-    @RequestMapping(value = "/tags", method = RequestMethod.GET)
+    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getComponentTags();
         if (objects == null ) {
@@ -148,7 +148,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 
-    @RequestMapping(value = "/import", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> importFrom(@RequestBody ProcessingComponent component) {
         ResponseEntity<ServiceResponse<?>> response;
         if (component != null) {

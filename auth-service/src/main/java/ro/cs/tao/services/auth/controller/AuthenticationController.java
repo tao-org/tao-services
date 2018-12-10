@@ -43,7 +43,7 @@ public class AuthenticationController extends BaseController {
     @Autowired
     private AuthenticationService authenticationService;
 
-    @RequestMapping(value = "/login", method = RequestMethod.POST)
+    @RequestMapping(value = "/login", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> login(@RequestHeader("Authorization") String authHeader) {
         if (StringUtilities.isNullOrEmpty(authHeader)) {
             return prepareResult("Expected request header empty!", ResponseStatus.FAILED);
@@ -65,7 +65,7 @@ public class AuthenticationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/logout", method = RequestMethod.POST)
+    @RequestMapping(value = "/logout", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> logout(@RequestHeader("X-Auth-Token") String authToken) {
         if (StringUtilities.isNullOrEmpty(authToken)) {
             return prepareResult("Expected request header absent!", ResponseStatus.FAILED);

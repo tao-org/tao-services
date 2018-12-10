@@ -86,7 +86,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return prepareResult(service.getPublicWorkflows());
     }
 
-    @RequestMapping(value = "/clone", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/clone", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> cloneWorkflow(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         WorkflowDescriptor source = getPersistenceManager().getWorkflowDescriptor(workflowId);
@@ -137,7 +137,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
     }
 
-    @RequestMapping(value = "/node", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/node", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addNode(@RequestParam("workflowId") long workflowId,
                                                       @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -149,7 +149,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/group", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/group", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addGroup(@RequestBody WorkflowGroupNodeRequest request) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -161,7 +161,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/subworkflow", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/subworkflow", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addSubworkflow(@RequestParam("workflowId") long workflowId,
                                                              @RequestParam("subWorkflowId") long subWorkflowId,
                                                              @RequestParam("keepDataSources") boolean keepDataSources) {
@@ -184,7 +184,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/node", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/node", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateNode(@RequestParam("workflowId") long workflowId,
                                      @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -196,7 +196,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/nodes", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/nodes", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateNodes(@RequestParam("workflowId") long workflowId,
                                                           @RequestBody List<WorkflowNodeDescriptor> nodes) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -208,7 +208,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/positions", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/positions", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateNodesPositions(@RequestParam("workflowId") long workflowId,
                                                                    @RequestBody Map<Long, float[]> positions) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -221,9 +221,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/node", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/node", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> removeNode(@RequestParam("workflowId") long workflowId,
-                                        @RequestBody WorkflowNodeDescriptor node) {
+                                                         @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             service.removeNode(workflowId, node);
@@ -235,7 +235,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/link", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/link", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addLink(@RequestParam("sourceNodeId") long sourceNodeId,
                                                       @RequestParam("sourceTargetId") String sourceTargetId,
                                                       @RequestParam("targetNodeId") long targetNodeId,
@@ -254,7 +254,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/link", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/link", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> removeLink(@RequestParam("nodeId") long nodeId,
                                                          @RequestBody ComponentLink link) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
