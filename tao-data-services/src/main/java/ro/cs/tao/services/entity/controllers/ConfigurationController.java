@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/config")
 public class ConfigurationController extends DataEntityController<KeyValuePair, String, ConfigurationService> {
 
-    @RequestMapping(value = "/enums", method = RequestMethod.GET)
+    @RequestMapping(value = "/enums", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getAvailableEnumValues() {
         Map<String, List<KeyValuePair>> enumValues = new HashMap<>();
         Reflections reflections = new Reflections("ro.cs.tao");

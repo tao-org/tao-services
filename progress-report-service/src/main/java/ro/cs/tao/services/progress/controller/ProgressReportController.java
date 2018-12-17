@@ -31,7 +31,7 @@ public class ProgressReportController extends BaseController {
     @Autowired
     private ProgressReportService progressReportService;
 
-    @RequestMapping(value = "/", method = RequestMethod.GET)
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getTasksInProgress() {
         return prepareResult(progressReportService.getRunningTasks());
     }

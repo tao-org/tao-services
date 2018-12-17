@@ -45,7 +45,7 @@ import java.util.Optional;
 public class ContainerController extends DataEntityController<Container, String, ContainerService<MultipartFile>> {
 
     @Override
-    @RequestMapping(value = "/", method = RequestMethod.GET)
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> list(Optional<Integer> pageNumber,
                                                    Optional<Integer> pageSize,
                                                    Optional<String> sortByField,
@@ -57,7 +57,7 @@ public class ContainerController extends DataEntityController<Container, String,
         return prepareResult(objects);
     }
 
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> upload(@RequestParam("file") MultipartFile dockerFile,
                                                      @RequestParam("name") String shortName,
                                                      @RequestParam("desc") String description) {

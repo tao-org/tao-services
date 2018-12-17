@@ -41,7 +41,7 @@ public class MonitoringController extends BaseController {
     @Autowired
     private MonitoringService<Notification> monitoringService;
 
-    @RequestMapping(value = "/master", method = RequestMethod.GET)
+    @RequestMapping(value = "/master", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getMasterSnapshot() {
         final RuntimeInfo snapshot = monitoringService.getMasterSnapshot();
         if (snapshot == null) {
@@ -50,7 +50,7 @@ public class MonitoringController extends BaseController {
         return prepareResult(snapshot, LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm:ss")));
     }
 
-    @RequestMapping(value = "/{host:.+}", method = RequestMethod.GET)
+    @RequestMapping(value = "/{host:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNodeSnapshot(@PathVariable("host") String host) {
         final RuntimeInfo snapshot = monitoringService.getNodeSnapshot(host);
         if (snapshot == null) {
@@ -59,28 +59,28 @@ public class MonitoringController extends BaseController {
         return prepareResult(snapshot);
     }
 
-    @RequestMapping(value = "/notification/", method = RequestMethod.GET)
+    @RequestMapping(value = "/notification/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getLiveNotifications() {
         return prepareResult(monitoringService.getLiveNotifications());
     }
 
-    @RequestMapping(value = "/notification/unread", method = RequestMethod.GET)
+    @RequestMapping(value = "/notification/unread", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUnreadNotifications() {
         return prepareResult(monitoringService.getUnreadNotifications(SessionStore.currentContext().getPrincipal().getName()));
     }
 
-    @RequestMapping(value = "/notification/{page}", method = RequestMethod.GET)
+    @RequestMapping(value = "/notification/{page}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNotifications(@RequestHeader(value = "user") String user,
                                               @PathVariable("page") int page) {
         return prepareResult(monitoringService.getNotifications(user, page));
     }
 
-    @RequestMapping(value = "/notification/ack", method = RequestMethod.POST)
+    @RequestMapping(value = "/notification/ack", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> acknowledgeNotifications(@RequestBody List<Notification> notifications) {
         return prepareResult(monitoringService.acknowledgeNotification(notifications));
     }
 
-    @RequestMapping(value = "/status", method = RequestMethod.GET)
+    @RequestMapping(value = "/status", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNodesOnlineStatus() {
         return prepareResult(monitoringService.getNodesOnlineStatus());
     }

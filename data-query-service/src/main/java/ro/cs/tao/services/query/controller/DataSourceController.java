@@ -52,7 +52,7 @@ public class DataSourceController extends BaseController {
     @Autowired
     private DataSourceService dataSourceService;
 
-    @RequestMapping(value = "/", method = RequestMethod.GET)
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getRegisteredSources() {
         List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
         if (instances == null) {
@@ -61,7 +61,7 @@ public class DataSourceController extends BaseController {
         return prepareResult(instances);
     }
 
-    @RequestMapping(value = "/sensor/", method = RequestMethod.GET)
+    @RequestMapping(value = "/sensor/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getSupportedSensors() {
         Set<String> sensors = dataSourceService.getSupportedSensors();
         if (sensors == null) {
@@ -70,7 +70,7 @@ public class DataSourceController extends BaseController {
         return prepareResult(sensors);
     }
 
-    @RequestMapping(value = "/sensor/{name}", method = RequestMethod.GET)
+    @RequestMapping(value = "/sensor/{name}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getDatasourcesForSensor(@PathVariable("name") String sensorName) {
         List<String> sources = dataSourceService.getDatasourcesForSensor(sensorName);
         if (sources == null) {
@@ -79,7 +79,7 @@ public class DataSourceController extends BaseController {
         return prepareResult(sources);
     }
 
-    @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET)
+    @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getSupportedParameters(@PathVariable("name") String sensorName,
                                                                             @PathVariable("source") String dataSourceClassName) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
@@ -89,7 +89,7 @@ public class DataSourceController extends BaseController {
         return prepareResult(params);
     }
 
-    @RequestMapping(value = "/count", method = RequestMethod.POST)
+    @RequestMapping(value = "/count", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doCount(@RequestBody Query query) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
@@ -142,7 +142,7 @@ public class DataSourceController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/exec", method = RequestMethod.POST)
+    @RequestMapping(value = "/exec", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doQuery(@RequestBody Query query) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
@@ -162,7 +162,7 @@ public class DataSourceController extends BaseController {
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    @RequestMapping(value = "/fetch", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/fetch", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doFetch(@RequestBody FetchRequest request) {
         try {
             List<EOProduct> results;

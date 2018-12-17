@@ -71,8 +71,7 @@ public abstract class StartupBase implements ApplicationListener {
     protected static Class[] detectLaunchers(Class startupClass) {
         ServiceRegistry<ServiceLauncher> registry = ServiceRegistryManager.getInstance().getServiceRegistry(ServiceLauncher.class);
         Set<ServiceLauncher> launchers = registry.getServices();
-        //Logger.getLogger(StartupBase.class.getName()).info("Detected service launchers: " + String.join(",", launchers.stream().map(l -> l.getClass().getSimpleName()).sorted().collect(Collectors.toList())));
-        System.out.println("Detected service launchers: " + String.join(",", launchers.stream().map(l -> l.getClass().getSimpleName()).sorted().collect(Collectors.toList())));
+        System.out.println("Detected services: " + String.join(",", launchers.stream().map(ServiceLauncher::serviceName).sorted().collect(Collectors.toList())));
         List<Class> classes = launchers.stream().map(ServiceLauncher::getClass).collect(Collectors.toList());
         classes.add(0, startupClass);
         return classes.toArray(new Class[0]);
@@ -84,12 +83,9 @@ public abstract class StartupBase implements ApplicationListener {
                                         .sources(detectLaunchers(startupClass))
                                         .build();
         app.setDefaultProperties(initialize());
-//        Logger.getLogger(StartupBase.class.getName()).info(String.format("Development mode is %s",
-//                                                                         Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.dev.mode", "false")) ?
-//                                                                                 "ON" : "OFF"));
-        System.out.println(String.format("Development mode is %s",
-                                         Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.dev.mode", "false")) ?
-                                                 "ON" : "OFF"));
+        if (Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.dev.mode", "false"))) {
+            System.out.println("Development mode is ON");
+        }
         app.run(args);
     }
 

@@ -42,7 +42,7 @@ public class OrchestrationController extends BaseController {
     @Autowired
     private OrchestratorService orchestrationService;
 
-    @RequestMapping(value = "/start", method = RequestMethod.POST, consumes = "application/json")
+    @RequestMapping(value = "/start", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> start(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -56,7 +56,7 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
-    @RequestMapping(value = "/parameters/{id}", method = RequestMethod.GET)
+    @RequestMapping(value = "/parameters/{id}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getWorkflowParameters(@PathVariable("id") long workflowId) {
         try {
             return prepareResult(orchestrationService.getWorkflowParameters(workflowId));
@@ -65,7 +65,7 @@ public class OrchestrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/outputs/{id}", method = RequestMethod.GET)
+    @RequestMapping(value = "/outputs/{id}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getWorkflowOutputs(@PathVariable("id") long workflowId) {
         try {
             return prepareResult(orchestrationService.getWorkflowOutputs(workflowId));
@@ -74,7 +74,7 @@ public class OrchestrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/stop/{id}", method = RequestMethod.GET)
+    @RequestMapping(value = "/stop/{id}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> stop(@PathVariable("id") long workflowId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -86,7 +86,7 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
-    @RequestMapping(value = "/pause/{id}", method = RequestMethod.GET)
+    @RequestMapping(value = "/pause/{id}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> pause(@PathVariable("id") long workflowId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -98,7 +98,7 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
-    @RequestMapping(value = "/resume/{id}", method = RequestMethod.GET)
+    @RequestMapping(value = "/resume/{id}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> resume(@PathVariable("id") long workflowId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -110,7 +110,7 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
-    @RequestMapping(value = "/running/tasks", method = RequestMethod.GET)
+    @RequestMapping(value = "/running/tasks", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getRunningTasks() {
         List<ExecutionTaskSummary> tasks =
                 orchestrationService.getRunningTasks(isCurrentUserAdmin() ? null : currentUser());
@@ -120,7 +120,7 @@ public class OrchestrationController extends BaseController {
         return prepareResult(tasks);
     }
 
-    @RequestMapping(value = "/running/jobs", method = RequestMethod.GET)
+    @RequestMapping(value = "/running/jobs", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getRunningJobs() {
         List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs(isCurrentUserAdmin() ? null : currentUser());
         if (summaries == null) {
@@ -129,7 +129,7 @@ public class OrchestrationController extends BaseController {
         return prepareResult(summaries);
     }
 
-    @RequestMapping(value = "/{jobId}", method = RequestMethod.GET)
+    @RequestMapping(value = "/{jobId}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getJobTaskStatuses(@PathVariable("jobId") long jobId) {
         List<ExecutionTaskSummary> summaries = orchestrationService.getTasksStatus(jobId);
         if (summaries == null) {
@@ -138,7 +138,7 @@ public class OrchestrationController extends BaseController {
         return prepareResult(summaries);
     }
 
-    @RequestMapping(value = "/history", method = RequestMethod.GET)
+    @RequestMapping(value = "/history", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getJobsHistory() {
         List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(isCurrentUserAdmin() ? null : currentUser());
         if (summaries == null) {

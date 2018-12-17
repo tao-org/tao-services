@@ -119,19 +119,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        /*http
-                .csrf().disable()
-                .authorizeRequests()
-                .antMatchers("/**").authenticated()
-                .and()
-                .httpBasic()
-                .authenticationEntryPoint(entryPoint);
-        http.sessionManagement().maximumSessions(1);
-        http.cors();*/
-
         http
           .sessionManagement()
-                .maximumSessions(2)
+                .maximumSessions(5)
                 .and()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
           .and()
@@ -160,7 +150,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .permitAll()
                 .and()
 
-                // replace code above to depass token management
+                // replace code above to bypass token management
                 /*.authenticated()
                 .and()
                 .httpBasic()
@@ -198,16 +188,5 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
         Logger.getLogger(WebSecurityConfig.class.getName())
                 .fine("Security active for the following endpoints: " + String.join(",", expressions));
         return expressions;
-        /*return new String[]{Endpoints.ADMIN_SERVICE_PATH_EXPRESSION, Endpoints.USER_SERVICE_PATH_EXPRESSION,
-          Endpoints.DATA_QUERY_SERVICE_PATH_EXPRESSION,
-          //BaseController.MONITORING_SERVICE_PATH_EXPRESSION,
-          Endpoints.COMPONENT_SERVICE_PATH_EXPRESSION,
-          //BaseController.CONFIGURATION_SERVICE_PATH_EXPRESSION,
-          Endpoints.CONTAINER_SERVICE_PATH_EXPRESSION,
-          Endpoints.DATA_SOURCE_COMPONENT_SERVICE_PATH_EXPRESSION,
-          Endpoints.FILES_SERVICE_PATH_EXPRESSION, Endpoints.PRODUCT_SERVICE_PATH_EXPRESSION,
-          Endpoints.QUERY_SERVICE_PATH_EXPRESSION, Endpoints.TOPOLOGY_SERVICE_PATH_EXPRESSION,
-          Endpoints.WORKFLOW_SERVICE_PATH_EXPRESSION, Endpoints.ORCHESTRATOR_SERVICE_PATH_EXPRESSION,
-          Endpoints.LOGOUT_ENDPOINT};*/
     }
 }

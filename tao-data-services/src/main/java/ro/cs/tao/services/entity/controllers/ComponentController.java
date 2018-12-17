@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +33,7 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
+import ro.cs.tao.services.interfaces.GroupComponentService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,7 +45,10 @@ import java.util.stream.Collectors;
 @RequestMapping("/component")
 public class ComponentController extends DataEntityController<ProcessingComponent, String, ComponentService> {
 
-    @RequestMapping(value = "/user", method = RequestMethod.GET)
+    @Autowired
+    private GroupComponentService groupComponentService;
+
+    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listUserComponents(@RequestParam("type") ProcessingComponentType componentType) {
         ResponseEntity<ServiceResponse<?>> response;
         String userName = SessionStore.currentContext().getPrincipal().getName();
@@ -81,12 +86,24 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             return prepareResult("Invalid id list", ResponseStatus.FAILED);
         }
         String[] ids = idList.split(",");
-        return prepareResult(service.getProcessingComponents(Arrays.asList(ids)));
+        return prepareResult(service.list(Arrays.asList(ids)));
+    }
+
+    @RequestMapping(value = "/group", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getGroupComponent(@RequestParam(name = "id") String groupIdList) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        if (groupIdList == null || groupIdList.isEmpty()) {
+            responseEntity = prepareResult("Invalid group ids", ResponseStatus.FAILED);
+        } else {
+            String[] ids = groupIdList.split(",");
+            responseEntity = prepareResult(groupComponentService.list(Arrays.asList(ids)));
+        }
+        return responseEntity;
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     @Override
-    public ResponseEntity<ServiceResponse<?>> save(ProcessingComponent entity) {
+    public ResponseEntity<ServiceResponse<?>> save(@RequestBody ProcessingComponent entity) {
         if (entity.getOwner() == null || entity.getOwner().isEmpty()) {
             entity.setOwner(SessionStore.currentContext().getPrincipal().getName());
         }
@@ -105,7 +122,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
 
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
     @Override
-    public ResponseEntity<ServiceResponse<?>> delete(String id) {
+    public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") String id) {
         if (isCurrentUserAdmin()) {
             return super.delete(id);
         } else {
@@ -113,7 +130,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         }
     }
 
-    @RequestMapping(value = "/constraints", method = RequestMethod.GET)
+    @RequestMapping(value = "/constraints", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listConstraints() {
         List<String> objects = service.getAvailableConstraints();
         if (objects == null ) {
@@ -122,7 +139,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         return prepareResult(objects);
     }
 
-    @RequestMapping(value = "/tags", method = RequestMethod.GET)
+    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getComponentTags();
         if (objects == null ) {
@@ -131,7 +148,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 
-    @RequestMapping(value = "/import", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> importFrom(@RequestBody ProcessingComponent component) {
         ResponseEntity<ServiceResponse<?>> response;
         if (component != null) {

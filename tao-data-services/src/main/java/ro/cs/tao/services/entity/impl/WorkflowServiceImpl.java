@@ -92,6 +92,11 @@ public class WorkflowServiceImpl
     }
 
     @Override
+    public List<WorkflowDescriptor> list(Iterable<Long> ids) {
+        return persistenceManager.getWorkflows(ids);
+    }
+
+    @Override
     public List<WorkflowInfo> getUserWorkflowsByStatus(String user, Status status) {
         return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getUserWorkflowsByStatus(user, status.value()));
     }

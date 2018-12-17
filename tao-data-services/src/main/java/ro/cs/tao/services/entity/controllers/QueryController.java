@@ -97,7 +97,7 @@ public class QueryController extends BaseController {
         return prepareResult(queryService.getQueryById(id));
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Query object) {
         try {
             object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
@@ -117,7 +117,7 @@ public class QueryController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody Query object) {
         try {
             object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());

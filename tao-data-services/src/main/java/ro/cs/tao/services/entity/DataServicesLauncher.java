@@ -31,4 +31,6 @@ public class DataServicesLauncher implements ServiceLauncher {
         SpringApplication.run(DataServicesLauncher.class, args);
     }
 
+    @Override
+    public String serviceName() { return "Data Entities Service"; }
 }

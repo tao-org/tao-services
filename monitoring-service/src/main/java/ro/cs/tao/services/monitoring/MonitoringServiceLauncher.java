@@ -33,4 +33,6 @@ public class MonitoringServiceLauncher implements ServiceLauncher {
         SpringApplication.run(MonitoringServiceLauncher.class, args);
     }
 
+    @Override
+    public String serviceName() { return "Notification Service"; }
 }

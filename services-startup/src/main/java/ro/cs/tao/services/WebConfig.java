@@ -22,7 +22,6 @@ import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.*;
 
@@ -45,11 +44,23 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        //Here we add our custom-configured HttpMessageConverter
+        for (int i = 0; i < converters.size(); i++) {
+            if (converters.get(i) instanceof MappingJackson2HttpMessageConverter) {
+                converters.set(i, jacksonMessageConverter());
+            }
+        }
+        //converters.add(jacksonMessageConverter());
+    }
+
+    /*@Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         //Here we add our custom-configured HttpMessageConverter
         converters.add(jacksonMessageConverter());
         converters.add(new ResourceHttpMessageConverter());
-    }
+        converters.add(new MappingJackson2XmlHttpMessageConverter());
+    }*/
 
     @Override
     public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {

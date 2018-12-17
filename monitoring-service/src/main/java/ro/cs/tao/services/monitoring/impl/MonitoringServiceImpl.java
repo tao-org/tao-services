@@ -94,11 +94,24 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
         List<Message> unread = persistenceManager.getUnreadMessages(userName);
         final MessageConverter converter = new MessageConverter();
         if (unread != null) {
+            messages.put(Topics.INFORMATION, new ArrayList<>());
+            messages.put(Topics.ERROR, new ArrayList<>());
+            messages.put(Topics.EXECUTION, new ArrayList<>());
             unread.stream().map(converter::to).forEach(n -> {
-                if (!messages.containsKey(n.getTopic())) {
-                    messages.put(n.getTopic(), new ArrayList<>());
+                switch (n.getTopic()) {
+                    case Topics.WARNING:
+                    case Topics.ERROR:
+                        messages.get(Topics.ERROR).add(n);
+                        break;
+                    case Topics.EXECUTION:
+                        messages.get(Topics.EXECUTION).add(n);
+                        break;
+                    case Topics.INFORMATION:
+                    case Topics.PROGRESS:
+                    default:
+                        messages.get(Topics.INFORMATION).add(n);
+                        break;
                 }
-                messages.get(n.getTopic()).add(n);
             });
         }
         return messages;

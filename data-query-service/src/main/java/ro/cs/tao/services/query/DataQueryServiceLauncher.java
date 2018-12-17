@@ -33,4 +33,6 @@ public class DataQueryServiceLauncher implements ServiceLauncher {
         SpringApplication.run(DataQueryServiceLauncher.class, args);
     }
 
+    @Override
+    public String serviceName() { return "Query Service"; }
 }
