@@ -72,6 +72,11 @@ public class ContainerServiceImpl
     }
 
     @Override
+    public List<Container> list(Iterable<String> ids) {
+        return persistenceManager.getContainers(ids);
+    }
+
+    @Override
     public Container save(Container object) {
         if (object != null) {
             try {

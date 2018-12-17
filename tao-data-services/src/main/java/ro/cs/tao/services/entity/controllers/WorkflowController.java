@@ -28,7 +28,9 @@ import ro.cs.tao.services.base.SampleWorkflowBase;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
-import ro.cs.tao.services.interfaces.*;
+import ro.cs.tao.services.interfaces.ComponentService;
+import ro.cs.tao.services.interfaces.SampleWorkflow;
+import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.workflow.WorkflowDescriptor;
@@ -49,13 +51,7 @@ import java.util.stream.Collectors;
 public class WorkflowController extends DataEntityController<WorkflowDescriptor, Long, WorkflowService> {
 
     @Autowired
-    private ContainerService containerService;
-
-    @Autowired
     private ComponentService componentService;
-
-    @Autowired
-    private GroupComponentService groupComponentService;
 
     @Override
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
@@ -141,7 +137,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
     }
 
-    @RequestMapping(value = "/node", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/node", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addNode(@RequestParam("workflowId") long workflowId,
                                                       @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -153,7 +149,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/group", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/group", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addGroup(@RequestBody WorkflowGroupNodeRequest request) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -190,7 +186,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     @RequestMapping(value = "/node", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateNode(@RequestParam("workflowId") long workflowId,
-                                     @RequestBody WorkflowNodeDescriptor node) {
+                                                         @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.updateNode(workflowId, node));
@@ -212,7 +208,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/positions", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/positions", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateNodesPositions(@RequestParam("workflowId") long workflowId,
                                                                    @RequestBody Map<Long, float[]> positions) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -225,9 +221,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/node", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/node", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> removeNode(@RequestParam("workflowId") long workflowId,
-                                        @RequestBody WorkflowNodeDescriptor node) {
+                                                         @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             service.removeNode(workflowId, node);
@@ -258,7 +254,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/link", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/link", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> removeLink(@RequestParam("nodeId") long nodeId,
                                                          @RequestBody ComponentLink link) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -292,8 +288,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/import/snap", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> importSnapGraph(@RequestParam("graph") String graphXml) {
+    @RequestMapping(value = "/import/snap", method = RequestMethod.POST, consumes = "text/xml", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> importSnapGraph(@RequestBody String graphXml) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.snapGraphToWorkflow(graphXml));

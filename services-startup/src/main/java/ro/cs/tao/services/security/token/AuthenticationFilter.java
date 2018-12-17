@@ -15,7 +15,6 @@
  */
 package ro.cs.tao.services.security.token;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.Authentication;
@@ -76,7 +75,9 @@ public class AuthenticationFilter extends GenericFilterBean {
             SecurityContextHolder.clearContext();
             httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, authenticationException.getMessage());
         } catch (Throwable t) {
-            logger.severe(ExceptionUtils.getStackTrace(t));
+            if (t.getMessage() != null) {
+                logger.severe(t.getMessage());//ExceptionUtils.getStackTrace(t));
+            }
         }
 
     }

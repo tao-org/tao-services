@@ -46,7 +46,7 @@ public class AdministrationController extends BaseController {
     @Autowired
     private TokenManagementService tokenService;
 
-    @RequestMapping(value = "/users", method = RequestMethod.POST)
+    @RequestMapping(value = "/users", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addNewUser(@RequestBody User newUserInfo) {
         if (newUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
@@ -71,12 +71,12 @@ public class AdministrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/users/unicity", method = RequestMethod.GET)
+    @RequestMapping(value = "/users/unicity", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getAllUsersUnicityInfo() {
         return prepareResult(adminService.getAllUsersUnicityInfo());
     }
 
-    @RequestMapping(value = "/users", method = RequestMethod.GET)
+    @RequestMapping(value = "/users", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> findUsersByStatus(@RequestParam("status") UserStatus activationStatus) {
         if (activationStatus == null) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
@@ -84,12 +84,12 @@ public class AdministrationController extends BaseController {
         return prepareResult(adminService.findUsersByStatus(activationStatus));
     }
 
-    @RequestMapping(value = "/users/groups", method = RequestMethod.GET)
+    @RequestMapping(value = "/users/groups", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getGroups() {
         return prepareResult(adminService.getGroups());
     }
 
-    @RequestMapping(value = "/users/{username}", method = RequestMethod.GET)
+    @RequestMapping(value = "/users/{username}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("username") String username) {
         if (StringUtilities.isNullOrEmpty(username)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
@@ -106,7 +106,7 @@ public class AdministrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/users/{username}", method = RequestMethod.POST)
+    @RequestMapping(value = "/users/{username}", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateUserInfo(@RequestBody User updatedUserInfo) {
         if (updatedUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
@@ -123,7 +123,7 @@ public class AdministrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/users/{username}/disable", method = RequestMethod.POST)
+    @RequestMapping(value = "/users/{username}/disable", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> disableUser(@PathVariable("username") String username, @RequestBody DisableUserInfo additionalDisableActions) {
         if (StringUtilities.isNullOrEmpty(username) || additionalDisableActions == null) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
@@ -137,7 +137,7 @@ public class AdministrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/users/{username}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/users/{username}", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("username") String username) {
         if (StringUtilities.isNullOrEmpty(username)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);

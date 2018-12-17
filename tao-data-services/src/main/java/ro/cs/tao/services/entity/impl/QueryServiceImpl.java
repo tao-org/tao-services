@@ -53,6 +53,11 @@ public class QueryServiceImpl extends EntityService<Query>
     }
 
     @Override
+    public List<Query> list(Iterable<Long> ids) {
+        return persistenceManager.getQueries(ids);
+    }
+
+    @Override
     public Query getQuery(String userId, String sensor, String dataSource, long workflowNodeId) {
         return persistenceManager.getQuery(userId, sensor, dataSource, workflowNodeId);
     }

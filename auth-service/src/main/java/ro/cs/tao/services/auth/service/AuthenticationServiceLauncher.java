@@ -32,4 +32,7 @@ public class AuthenticationServiceLauncher implements ServiceLauncher {
     public static void main(String[] args) {
         SpringApplication.run(AuthenticationServiceLauncher.class, args);
     }
+
+    @Override
+    public String serviceName() { return "Authentication Service"; }
 }

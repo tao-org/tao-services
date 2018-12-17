@@ -32,4 +32,7 @@ public class UserServiceLauncher implements ServiceLauncher {
     public static void main(String[] args) {
         SpringApplication.run(UserServiceLauncher.class, args);
     }
+
+    @Override
+    public String serviceName() { return "User Service"; }
 }

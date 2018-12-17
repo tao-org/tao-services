@@ -32,4 +32,6 @@ public class OrchestratorLauncher implements ServiceLauncher {
         SpringApplication.run(OrchestratorLauncher.class, args);
     }
 
+    @Override
+    public String serviceName() { return "Orchestration Service"; }
 }

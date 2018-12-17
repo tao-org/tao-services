@@ -94,7 +94,7 @@ public class ComponentServiceImpl
     }
 
     @Override
-    public List<ProcessingComponent> getProcessingComponents(Iterable<String> ids) {
+    public List<ProcessingComponent> list(Iterable<String> ids) {
         return persistenceManager.getProcessingComponents(ids);
     }
 
