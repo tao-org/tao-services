@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.component.Variable;
-import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.serialization.SerializationException;
@@ -32,6 +31,7 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
+import ro.cs.tao.services.model.datasource.ParameterDescriptor;
 import ro.cs.tao.services.query.beans.FetchRequest;
 import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
@@ -82,7 +82,7 @@ public class DataSourceController extends BaseController {
     @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getSupportedParameters(@PathVariable("name") String sensorName,
                                                                             @PathVariable("source") String dataSourceClassName) {
-        List<DataSourceParameter> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
+        List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
         if (params == null) {
             params = new ArrayList<>();
         }
@@ -91,7 +91,7 @@ public class DataSourceController extends BaseController {
 
     @RequestMapping(value = "/count", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doCount(@RequestBody Query query) {
-        List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
+        List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
         if (params == null || params.isEmpty()) {
             return prepareResult(String.format("No data source named [%s] available for [%s]",
@@ -144,7 +144,7 @@ public class DataSourceController extends BaseController {
 
     @RequestMapping(value = "/exec", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doQuery(@RequestBody Query query) {
-        List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
+        List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
         if (params == null || params.isEmpty()) {
             return prepareResult(String.format("No data source named [%s] available for [%s]",

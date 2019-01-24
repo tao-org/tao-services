@@ -20,15 +20,17 @@ import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
-import ro.cs.tao.datasource.param.DataSourceParameter;
+import ro.cs.tao.datasource.param.ParameterName;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
+import ro.cs.tao.services.model.datasource.ParameterDescriptor;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -59,12 +61,22 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
-    public List<DataSourceParameter> getSupportedParameters(String sensorName, String dataSourceName) {
-        Map<String, DataSourceParameter> parameterDescriptorMap =
-                DataSourceManager.getInstance().getSupportedParameters(sensorName, dataSourceName);
-        List<DataSourceParameter> parameters = null;
-        if (parameterDescriptorMap != null) {
-            parameters = new ArrayList<>(parameterDescriptorMap.values());
+    public List<ParameterDescriptor> getSupportedParameters(String sensorName, String dataSourceName) {
+        List<ParameterDescriptor> parameters = null;
+        DataSource dataSource = DataSourceManager.getInstance().get(sensorName, dataSourceName);
+        if (dataSource != null) {
+            Map<String, Map<ParameterName, ro.cs.tao.datasource.param.DataSourceParameter>> map = dataSource.getSupportedParameters();
+            Map<ParameterName, ro.cs.tao.datasource.param.DataSourceParameter> parameterDescriptorMap = map.get(sensorName);
+            if (parameterDescriptorMap != null) {
+                //parameters = new ArrayList<>(parameterDescriptorMap.values());
+                parameters = parameterDescriptorMap.entrySet().stream()
+                        .map(e -> new ParameterDescriptor(e.getKey().getSystemName(), e.getKey().getLabel(),
+                                                          e.getKey().getDescription(),
+                                                          e.getValue().getType(),
+                                                          e.getValue().getDefaultValue(), e.getValue().isRequired(),
+                                                          e.getValue().getValueSet()))
+                        .collect(Collectors.toList());
+            }
         }
         return parameters;
     }
