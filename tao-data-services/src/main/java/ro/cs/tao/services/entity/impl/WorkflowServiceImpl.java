@@ -716,10 +716,12 @@ public class WorkflowServiceImpl
         final List<WorkflowNodeDescriptor> nodesToExport = subWorkflow.getOrderedNodes();
         final Set<Long> excludedIds = new HashSet<>();
         for (WorkflowNodeDescriptor node : nodesToExport) {
+            // Data sources are not imported
             if (!keepDataSources && ComponentType.DATASOURCE.equals(node.getComponentType())) {
                 excludedIds.add(node.getId());
                 continue;
             }
+            // create a clone of each source node
             WorkflowNodeDescriptor clonedNode = node instanceof WorkflowNodeGroupDescriptor ?
                     new WorkflowNodeGroupDescriptor() : new WorkflowNodeDescriptor();
             clonedNode.setWorkflow(master);
@@ -739,6 +741,7 @@ public class WorkflowServiceImpl
             clonedNode = addNode(master.getId(), clonedNode);
             cloneMap.put(node.getId(), clonedNode);
         }
+        // regroup target nodes according to source groups, if any
         for (WorkflowNodeDescriptor node : nodesToExport) {
             if (node instanceof WorkflowNodeGroupDescriptor) {
                 WorkflowNodeGroupDescriptor clonedNode = (WorkflowNodeGroupDescriptor) cloneMap.get(node.getId());
@@ -747,6 +750,7 @@ public class WorkflowServiceImpl
                 persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
             }
         }
+        // re-create links for target nodes based on source node links
         for (WorkflowNodeDescriptor node : nodesToExport) {
             final Set<ComponentLink> links = node.getIncomingLinks();
             if (links != null) {
@@ -768,6 +772,9 @@ public class WorkflowServiceImpl
                 persistenceManager.updateWorkflowNodeDescriptor(clonedTarget);
             }
         }
+        // finally, create a group to hold the cloned sub-workflow
+        addGroup(master.getId(), 0, subWorkflow.getName(),
+                 cloneMap.values().stream().map(WorkflowNodeDescriptor::getId).toArray(Long[]::new));
         return persistenceManager.getWorkflowDescriptor(master.getId());
     }
 
