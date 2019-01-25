@@ -30,6 +30,9 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.execution.ExecutionsManager;
+import ro.cs.tao.execution.Executor;
+import ro.cs.tao.execution.drmaa.DrmaaTaoExecutor;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -41,9 +44,9 @@ import ro.cs.tao.services.model.monitoring.OSRuntimeInfo;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.services.security.TaoLocalLoginModule;
-import ro.cs.tao.topology.NodeDescription;
-import ro.cs.tao.topology.TopologyManager;
+import ro.cs.tao.topology.*;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
+import ro.cs.tao.utils.DockerHelper;
 import ro.cs.tao.utils.FileUtilities;
 
 import java.io.IOException;
@@ -130,6 +133,33 @@ public class TaoServicesStartup extends StartupBase {
                     master.setActive(true);
                     master.addTag(masterTag.getText());
                     master.addTag(procTag.getText());
+                    if (master.getServicesStatus() == null || master.getServicesStatus().size() == 0) {
+                        // check docker service on master
+                        NodeServiceStatus nodeService = new NodeServiceStatus();
+                        ServiceDescription description = new ServiceDescription();
+                        description.setName("Docker");
+                        description.setDescription("Application container manager");
+                        description.setVersion(DockerHelper.getDockerVersion());
+                        nodeService.setServiceDescription(persistenceManager.saveServiceDescription(description));
+                        nodeService.setStatus(DockerHelper.isDockerFound() ? ServiceStatus.INSTALLED : ServiceStatus.NOT_FOUND);
+                        master.addServiceStatus(nodeService);
+                        // check CRM on master
+                        Set<Executor> executors = ExecutionsManager.getInstance().getRegisteredExecutors();
+                        Executor executor = executors.stream().filter(e -> e instanceof DrmaaTaoExecutor).findFirst().orElse(null);
+                        if (executor != null) {
+                            DrmaaTaoExecutor taoExecutor = (DrmaaTaoExecutor) executor;
+                            nodeService = new NodeServiceStatus();
+                            description = new ServiceDescription();
+                            String drmName = taoExecutor.getDRMName();
+                            description.setName(drmName);
+                            description.setDescription("NoCRM".equals(drmName) ? "Local execution" : drmName);
+                            description.setVersion(taoExecutor.getDRMVersion());
+                            nodeService.setServiceDescription(persistenceManager.saveServiceDescription(description));
+                            nodeService.setStatus("n/a".equals(description.getVersion()) ? ServiceStatus.NOT_FOUND : ServiceStatus.INSTALLED);
+                            master.addServiceStatus(nodeService);
+                        }
+
+                    }
                     persistenceManager.saveExecutionNode(master);
                     persistenceManager.removeExecutionNode(node.getId());
                     logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
