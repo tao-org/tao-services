@@ -1,6 +1,7 @@
 package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import ro.cs.tao.Tag;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -9,6 +10,7 @@ import ro.cs.tao.services.interfaces.DataSourceGroupService;
 
 import java.util.List;
 
+@Service("dataSourceGroupService")
 public class DataSourceGroupServiceImpl implements DataSourceGroupService {
 
     @Autowired
