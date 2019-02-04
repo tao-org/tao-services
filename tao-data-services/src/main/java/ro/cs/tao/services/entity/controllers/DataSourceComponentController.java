@@ -16,6 +16,7 @@
 
 package ro.cs.tao.services.entity.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,6 +27,7 @@ import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
 import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
@@ -34,6 +36,7 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.CustomDataSourceRequest;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
+import ro.cs.tao.services.interfaces.DataSourceGroupService;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -45,6 +48,9 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/datasource")
 public class DataSourceComponentController extends DataEntityController<DataSourceComponent, String, DataSourceComponentService>{
+
+    @Autowired
+    private DataSourceGroupService dataSourceGroupService;
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/page", method = RequestMethod.GET, produces = "application/json")
@@ -78,6 +84,70 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponents() {
         return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.getUserDataSourceComponents(SessionStore.currentContext().getPrincipal().getName())));
+    }
+
+    @RequestMapping(value = "/user/group/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponentGroups() {
+        return prepareResult(ServiceTransformUtils.toDataSourceGroupInfos(
+                dataSourceGroupService.getUserDataSourceComponentGroups(SessionStore.currentContext().getPrincipal().getName())));
+    }
+
+    @RequestMapping(value = "/user/group", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> createDataSourceGroup(@RequestBody DataSourceComponentGroup group) {
+        return prepareResult(dataSourceGroupService.save(group));
+    }
+
+    @RequestMapping(value = "/user/group", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> updateDataSourceGroup(@RequestBody DataSourceComponentGroup group) {
+        try {
+            return prepareResult(dataSourceGroupService.update(group));
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/user/group/add", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> addDataSourceComponentToGroup(@RequestParam("groupId") String groupId,
+                                                                            @RequestBody DataSourceComponent component) {
+        ResponseEntity<ServiceResponse<?>> result;
+        try {
+            if (groupId == null || groupId.isEmpty()) {
+                throw new IllegalArgumentException("Invalid parameter [groupId]");
+            }
+            DataSourceComponentGroup group = dataSourceGroupService.findById(groupId);
+            if (group == null) {
+                throw new PersistenceException(String.format("The group [%s] does not exist", groupId));
+            }
+            // make sure the DSC is up-to-date
+            component = service.update(component);
+            group.addDataSourceComponent(component);
+            return prepareResult(dataSourceGroupService.update(group));
+        } catch (PersistenceException e) {
+            result = handleException(e);
+        }
+        return result;
+    }
+
+    @RequestMapping(value = "/user/group/remove", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> removeDataSourceComponentFromGroup(@RequestParam("groupId") String groupId,
+                                                                                 @RequestBody DataSourceComponent component) {
+        ResponseEntity<ServiceResponse<?>> result;
+        try {
+            if (groupId == null || groupId.isEmpty()) {
+                throw new IllegalArgumentException("Invalid parameter [groupId]");
+            }
+            DataSourceComponentGroup group = dataSourceGroupService.findById(groupId);
+            if (group == null) {
+                throw new PersistenceException(String.format("The group [%s] does not exist", groupId));
+            }
+            // make sure the DSC is up-to-date
+            component = service.update(component);
+            group.addDataSourceComponent(component);
+            return prepareResult(dataSourceGroupService.update(group));
+        } catch (PersistenceException e) {
+            result = handleException(e);
+        }
+        return result;
     }
 
     @RequestMapping(value = "/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")

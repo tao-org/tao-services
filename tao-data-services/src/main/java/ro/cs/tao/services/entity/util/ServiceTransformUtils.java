@@ -17,8 +17,10 @@ package ro.cs.tao.services.entity.util;
 
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.services.model.component.DataSourceGroupInfo;
 import ro.cs.tao.services.model.component.DataSourceInfo;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
@@ -69,6 +71,14 @@ public final class ServiceTransformUtils {
         final List<DataSourceInfo> results = new ArrayList<>();
         for (DataSourceComponent component : components) {
             results.add(new DataSourceInfo(component));
+        }
+        return results;
+    }
+
+    public static List<DataSourceGroupInfo> toDataSourceGroupInfos(final List<DataSourceComponentGroup> components) {
+        final List<DataSourceGroupInfo> results = new ArrayList<>();
+        for (DataSourceComponentGroup component : components) {
+            results.add(new DataSourceGroupInfo(component));
         }
         return results;
     }
