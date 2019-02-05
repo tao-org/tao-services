@@ -22,7 +22,9 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.param.ParameterName;
 import ro.cs.tao.datasource.remote.FetchMode;
+import ro.cs.tao.eodata.DataHandlingException;
 import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.execution.OutputDataHandlerManager;
 import ro.cs.tao.execution.model.Query;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
@@ -30,6 +32,7 @@ import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.model.datasource.ParameterDescriptor;
 
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -106,6 +109,12 @@ public class DataSourceServiceImpl implements DataSourceService {
                 products = dsComponent.doFetch(products, null, path, localPath, properties);
             } else {
                 products = dsComponent.doFetch(products, null, path);
+            }
+            try {
+                OutputDataHandlerManager.getInstance().applyHandlers(products);
+            } catch (DataHandlingException ex) {
+                Logger.getLogger(DataSourceService.class.getName()).severe(String.format("Error persisting products: %s",
+                                                                                         ex.getMessage()));
             }
         }
         return products;
