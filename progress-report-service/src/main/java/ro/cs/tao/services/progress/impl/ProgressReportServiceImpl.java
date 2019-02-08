@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 public class ProgressReportServiceImpl extends Notifiable implements ProgressReportService {
     private static final Pattern TOPIC_PATTERN = Pattern.compile("(.+)progress");
     private static final Map<String, TaskProgress> tasksInProgress = Collections.synchronizedMap(new LinkedHashMap<>());
+    // buffer to prevent duplicate messages
+    private String buffer;
 
     public ProgressReportServiceImpl() {
         Messaging.subscribe(this, TOPIC_PATTERN);
@@ -33,8 +35,11 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
 
     @Override
     protected void onMessageReceived(Message message) {
-        logger.fine(message.getItem(Message.PAYLOAD_KEY));
-        String contents = message.getItem(Message.PAYLOAD_KEY);
+        final String contents = message.getItem(Message.PAYLOAD_KEY);
+        if (!contents.equals(this.buffer)) {
+            logger.fine(contents);
+            this.buffer = contents;
+        }
         String taskName;
         if (contents.startsWith("Started") && !contents.contains(":")) {
             taskName = contents.substring(8);

@@ -163,6 +163,7 @@ public class TaoServicesStartup extends StartupBase {
                     persistenceManager.saveExecutionNode(master);
                     persistenceManager.removeExecutionNode(node.getId());
                     logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
+                    createMasterShare(master);
                 }
             } catch (Exception ex) {
                 logger.severe("Cannot update localhost name: " + ex.getMessage());
@@ -170,11 +171,16 @@ public class TaoServicesStartup extends StartupBase {
         }
     }
 
+    private void createMasterShare(NodeDescription master) {
+        TopologyManager manager = TopologyManager.getInstance();
+        manager.onCompleted(master, manager.checkShare(master));
+    }
+
     private void registerEmbeddedContainers() {
         List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
         if (installers != null && installers.size() > 0) {
             logger.finest(String.format("Found %s docker image plugins: %s", installers.size(),
-                        String.join(",", installers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.toList()))));
+                                        installers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.joining(","))));
             for (DockerImageInstaller imageInstaller : installers) {
                 try {
                     Container container = imageInstaller.installImage();
