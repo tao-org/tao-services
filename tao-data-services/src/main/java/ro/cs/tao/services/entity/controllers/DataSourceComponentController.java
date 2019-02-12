@@ -28,15 +28,18 @@ import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
+import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.CustomDataSourceRequest;
+import ro.cs.tao.services.entity.beans.DataSourceGroupRequest;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceGroupService;
+import ro.cs.tao.services.interfaces.QueryService;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -51,6 +54,8 @@ public class DataSourceComponentController extends DataEntityController<DataSour
 
     @Autowired
     private DataSourceGroupService dataSourceGroupService;
+    @Autowired
+    private QueryService queryService;
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/page", method = RequestMethod.GET, produces = "application/json")
@@ -107,20 +112,30 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     }
 
     @RequestMapping(value = "/user/group/add", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> addDataSourceComponentToGroup(@RequestParam("groupId") String groupId,
-                                                                            @RequestBody DataSourceComponent component) {
+    public ResponseEntity<ServiceResponse<?>> addDataSourceComponentToGroup(@RequestBody DataSourceGroupRequest request) {
         ResponseEntity<ServiceResponse<?>> result;
         try {
+            if (request == null) {
+                throw new IllegalArgumentException("Invalid request body [null]");
+            }
+            String groupId = request.getGroupId();
+            DataSourceComponent component = request.getComponent();
+            Query query = request.getQuery();
             if (groupId == null || groupId.isEmpty()) {
                 throw new IllegalArgumentException("Invalid parameter [groupId]");
             }
+            if (component == null) {
+                throw new IllegalArgumentException("Invalid parameter [component]");
+            }
+            if (query == null) {
+                throw new IllegalArgumentException("Invalid parameter [query]");
+            }
             DataSourceComponentGroup group = dataSourceGroupService.findById(groupId);
             if (group == null) {
-                throw new PersistenceException(String.format("The group [%s] does not exist", groupId));
+                throw new PersistenceException(String.format("The group [%s] does not exist. Create it first.", groupId));
             }
-            // make sure the DSC is up-to-date
-            component = service.update(component);
             group.addDataSourceComponent(component);
+            group.addQuery(query);
             return prepareResult(dataSourceGroupService.update(group));
         } catch (PersistenceException e) {
             result = handleException(e);
@@ -128,22 +143,61 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return result;
     }
 
-    @RequestMapping(value = "/user/group/remove", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> removeDataSourceComponentFromGroup(@RequestParam("groupId") String groupId,
-                                                                                 @RequestBody DataSourceComponent component) {
+    @RequestMapping(value = "/user/group/update", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> updateDataSourceComponentInGroup(@RequestBody DataSourceGroupRequest request) {
         ResponseEntity<ServiceResponse<?>> result;
         try {
+            if (request == null) {
+                throw new IllegalArgumentException("Invalid request body [null]");
+            }
+            String groupId = request.getGroupId();
+            DataSourceComponent component = request.getComponent();
+            Query query = request.getQuery();
             if (groupId == null || groupId.isEmpty()) {
                 throw new IllegalArgumentException("Invalid parameter [groupId]");
+            }
+            if (component == null) {
+                throw new IllegalArgumentException("Invalid parameter [component]");
+            }
+            if (query == null) {
+                throw new IllegalArgumentException("Invalid parameter [query]");
+            }
+            service.update(component);
+            queryService.save(query);
+            return prepareResult(dataSourceGroupService.findById(groupId));
+        } catch (PersistenceException e) {
+            result = handleException(e);
+        }
+        return result;
+    }
+
+    @RequestMapping(value = "/user/group/remove", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> removeDataSourceComponentFromGroup(@RequestBody DataSourceGroupRequest request) {
+        ResponseEntity<ServiceResponse<?>> result;
+        try {
+            if (request == null) {
+                throw new IllegalArgumentException("Invalid request body [null]");
+            }
+            String groupId = request.getGroupId();
+            DataSourceComponent component = request.getComponent();
+            Query query = request.getQuery();
+            if (groupId == null || groupId.isEmpty()) {
+                throw new IllegalArgumentException("Invalid parameter [groupId]");
+            }
+            if (component == null) {
+                throw new IllegalArgumentException("Invalid parameter [component]");
+            }
+            if (query == null) {
+                throw new IllegalArgumentException("Invalid parameter [query]");
             }
             DataSourceComponentGroup group = dataSourceGroupService.findById(groupId);
             if (group == null) {
                 throw new PersistenceException(String.format("The group [%s] does not exist", groupId));
             }
-            // make sure the DSC is up-to-date
-            component = service.update(component);
-            group.addDataSourceComponent(component);
-            return prepareResult(dataSourceGroupService.update(group));
+            group.removeDataSourceComponent(component);
+            group.removeQuery(query.getId());
+            result = prepareResult(dataSourceGroupService.update(group));
+            service.delete(component.getId());
         } catch (PersistenceException e) {
             result = handleException(e);
         }
@@ -155,17 +209,18 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         try {
             List<EOProduct> products = request.getProducts();
             String productType = request.getProductType();
+            String dataSource = request.getDataSource();
             String description = request.getLabel();
             Principal currentUser = SessionStore.currentContext().getPrincipal();
-            if (productType != null) {
-                return prepareResult(service.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
-                                                                   productType, description, currentUser));
-            } else {
-                if (products.stream().map(EOProduct::getProductType).distinct().count() > 1) {
-                    return prepareResult("The selected products must be of the same type", ResponseStatus.FAILED);
+            if (products != null && products.size() > 0) {
+                if (productType != null) {
+                    return prepareResult(service.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
+                                                                       productType, dataSource, description, currentUser));
                 } else {
-                    return prepareResult(service.createForProducts(products, description, currentUser));
+                    return prepareResult(service.createForProducts(products, dataSource, description, currentUser));
                 }
+            } else {
+                return prepareResult("Product list not provided", ResponseStatus.FAILED);
             }
         } catch (PersistenceException e) {
             return handleException(e);
