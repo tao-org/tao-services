@@ -78,6 +78,9 @@ public class ComponentServiceImpl
             case GROUP:
                 component = persistenceManager.getGroupComponentById(id);
                 break;
+            case DATASOURCE_GROUP:
+                component = persistenceManager.getDataSourceComponentGroup(id);
+                break;
         }
         return component;
     }
