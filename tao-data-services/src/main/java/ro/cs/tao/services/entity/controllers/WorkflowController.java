@@ -29,6 +29,7 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
 import ro.cs.tao.services.interfaces.ComponentService;
+import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.SampleWorkflow;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.spi.ServiceRegistry;
@@ -52,6 +53,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     @Autowired
     private ComponentService componentService;
+
+    @Autowired
+    private DataSourceComponentService dataSourceComponentService;
 
     @Override
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
@@ -120,6 +124,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         } else {
             SampleWorkflowBase.setPersistenceManager(getPersistenceManager());
             SampleWorkflowBase.setComponentService(componentService);
+            SampleWorkflowBase.setDataSourceComponentService(dataSourceComponentService);
             SampleWorkflowBase.setWorkflowService(service);
             List<WorkflowDescriptor> descriptors = new ArrayList<>();
             BaseException aggregated = null;

@@ -23,3 +23,4 @@ ro.cs.tao.services.workflow.samples.SampleAWSSnapOtbWorkflow
 ro.cs.tao.services.workflow.samples.SampleDBThreeSnapBranchesOtbWorkflow
 ro.cs.tao.services.workflow.samples.SampleDBSnapOtbWorkflow
 ro.cs.tao.services.workflow.samples.SampleDBGroupSnapOtbWorkflow
+ro.cs.tao.services.workflow.samples.SampleDSGroupSnapWorkflow

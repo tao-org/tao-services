@@ -135,7 +135,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 throw new PersistenceException(String.format("The group [%s] does not exist. Create it first.", groupId));
             }
             group.addDataSourceComponent(component);
-            group.addQuery(query);
+            group.addQuery(query, component.getSources().get(0).getId());
             return prepareResult(dataSourceGroupService.update(group));
         } catch (PersistenceException e) {
             result = handleException(e);
