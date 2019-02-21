@@ -22,7 +22,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.admin.mail.Constants;
-import ro.cs.tao.services.admin.mail.MailSenderTLS;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -32,6 +31,7 @@ import ro.cs.tao.services.model.user.DisableUserInfo;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.utils.mail.MailSender;
 
 /**
  * @author Oana H.
@@ -55,12 +55,12 @@ public class AdministrationController extends BaseController {
             final User userInfo = adminService.addNewUser(newUserInfo);
             if (userInfo != null) {
                 //send email with activation link
-                final MailSenderTLS mailSenderTLS = new MailSenderTLS();
+                final MailSender mailSender = new MailSender();
                 final ConfigurationManager configManager = ConfigurationManager.getInstance();
                 final String activationEndpointUrl = configManager.getValue("tao.services.base") + "/user/activate/" + userInfo.getUsername();
                 final String userFullName = userInfo.getFirstName() + " " + userInfo.getLastName();
                 final String activationEmailContent = constructEmailContentForAccountActivation(userFullName, activationEndpointUrl);
-                mailSenderTLS.sendMail(userInfo.getEmail(), "TAO - User activation required", activationEmailContent);
+                mailSender.sendMail(userInfo.getEmail(), "TAO - User activation required", activationEmailContent, null);
 
                 return prepareResult(userInfo);
             } else {

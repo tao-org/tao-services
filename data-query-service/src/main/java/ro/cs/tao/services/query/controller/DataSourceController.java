@@ -18,13 +18,13 @@ package ro.cs.tao.services.query.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.Variable;
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.eodata.EOProduct;
-import ro.cs.tao.execution.model.Query;
+import ro.cs.tao.eodata.metadata.DecodeStatus;
+import ro.cs.tao.eodata.metadata.MetadataInspector;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -33,8 +33,11 @@ import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.model.datasource.ParameterDescriptor;
 import ro.cs.tao.services.query.beans.FetchRequest;
+import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
@@ -178,6 +181,29 @@ public class DataSourceController extends BaseController {
             return prepareResult(results);
         } catch (Exception ex) {
             return handleException(ex);
+        }
+    }
+
+    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> inspect(@RequestParam("path") String productPath) {
+        Set<MetadataInspector> services = ServiceRegistryManager.getInstance()
+                .getServiceRegistry(MetadataInspector.class)
+                .getServices();
+        MetadataInspector metadataInspector = null;
+        if (services != null) {
+            metadataInspector = services.stream()
+                    .filter(s -> s.decodeQualification(Paths.get(ConfigurationManager.getInstance().getValue("product.location"))) == DecodeStatus.SUITABLE)
+                    .findFirst().orElse(null);
+        }
+        if (metadataInspector != null) {
+            try {
+                MetadataInspector.Metadata metadata = metadataInspector.getMetadata(Paths.get(productPath));
+                return prepareResult(metadata.toString());
+            } catch (IOException e) {
+                return handleException(e);
+            }
+        } else {
+            return prepareResult("No metadata inspector found", ResponseStatus.FAILED);
         }
     }
 }
