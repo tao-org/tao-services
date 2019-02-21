@@ -1,19 +1,16 @@
 package ro.cs.tao.services.entity.beans;
 
-import ro.cs.tao.datasource.DataSourceComponent;
-import ro.cs.tao.datasource.beans.Query;
-
 public class DataSourceGroupRequest {
     private String groupId;
-    private DataSourceComponent component;
-    private Query query;
+    private String groupLabel;
+    private GroupQuery[] queries;
 
     public String getGroupId() { return groupId; }
     public void setGroupId(String groupId) { this.groupId = groupId; }
 
-    public DataSourceComponent getComponent() { return component; }
-    public void setComponent(DataSourceComponent component) { this.component = component; }
+    public String getGroupLabel() { return groupLabel; }
+    public void setGroupLabel(String groupLabel) { this.groupLabel = groupLabel; }
 
-    public Query getQuery() { return query; }
-    public void setQuery(Query query) { this.query = query; }
+    public GroupQuery[] getQueries() { return queries; }
+    public void setQueries(GroupQuery[] queries) { this.queries = queries; }
 }
