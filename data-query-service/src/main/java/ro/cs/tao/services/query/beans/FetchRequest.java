@@ -16,9 +16,9 @@
 
 package ro.cs.tao.services.query.beans;
 
+import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
-import ro.cs.tao.execution.model.Query;
 
 import java.util.List;
 

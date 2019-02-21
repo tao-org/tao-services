@@ -33,10 +33,7 @@ import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service("dataSourceComponentService")
@@ -104,68 +101,36 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
-    public DataSourceComponent createForProducts(List<EOProduct> products, String label, Principal principal) throws PersistenceException {
+    public DataSourceComponent createForProducts(List<EOProduct> products, String dataSource,
+                                                 String label, Principal principal) throws PersistenceException {
         if (products == null || products.isEmpty()) {
-            throw new PersistenceException("Product list is empty");
+            throw new IllegalArgumentException("Product list is empty");
         }
-        if (principal == null) {
-            throw new PersistenceException("Invalid principal (null)");
+        Set<String> types = products.stream().map(EOProduct::getProductType).collect(Collectors.toSet());
+        if (types.size() != 1) {
+            throw new IllegalArgumentException("Products must be of the same type");
         }
-        boolean hasLabel = label != null && !label.isEmpty();
-        String productType = products.stream()
-                                     .filter(p -> p.getProductType() != null)
-                                     .map(EOProduct::getProductType)
-                                     .findFirst().orElse(null);
-        if (productType == null) {
-            throw new PersistenceException("Invalid product type (null)");
-        }
-        String systemDSCId = productType + "-Local Database";
-        DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(systemDSCId);
-        if (systemDSC == null) {
-            throw new PersistenceException(String.format("No system datasource component with id = '%s' was found",
-                                                         systemDSCId));
-        }
-        if (persistenceManager.getDataSourceComponentByLabel(label) != null) {
-            throw new PersistenceException(String.format("A component with the label '%s' already exists", label));
-        }
-        DataSourceComponent userDSC;
-        try {
-            userDSC = systemDSC.clone();
-            LocalDateTime time = LocalDateTime.now();
-            String newId = hasLabel ? label :
-                    systemDSC.getId() + "-" + principal.getName() + "-" + time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            userDSC.setId(newId);
-            userDSC.setLabel(hasLabel ? label :
-                                     systemDSC.getLabel() + " (customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + ")");
-            List<String> nameList = products.stream().map(EOData::getName).collect(Collectors.toList());
-            SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
-            sourceDescriptor.setId(UUID.randomUUID().toString());
-            sourceDescriptor.setParentId(newId);
-            sourceDescriptor.getDataDescriptor().setLocation(String.join(",", nameList));
-            sourceDescriptor.setCardinality(products.size());
-            TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
-            targetDescriptor.setId(UUID.randomUUID().toString());
-            targetDescriptor.setParentId(newId);
-            targetDescriptor.setCardinality(products.size());
-            targetDescriptor.addConstraint("Same cardinality");
-            userDSC.setSystem(false);
-            userDSC.setLabel(label);
-            userDSC = persistenceManager.saveDataSourceComponent(userDSC);
-        } catch (CloneNotSupportedException e) {
-            throw new PersistenceException(e);
-        }
-        return userDSC;
+        String productType = types.iterator().next();
+        List<String> nameList = products.stream().map(EOData::getName).collect(Collectors.toList());
+        return createForProductNames(nameList, productType, dataSource, label, principal);
     }
 
     @Override
-    public DataSourceComponent createForProductNames(List<String> productNames, String productType,
+    public DataSourceComponent createForProductNames(List<String> productNames, String sensor, String dataSource,
                                                      String label, Principal principal) throws PersistenceException {
-        if (productNames == null || productNames.isEmpty() || productType == null || productType.isEmpty() ||
-                label == null || label.isEmpty() || principal == null) {
-            return null;
+        if (productNames == null || productNames.isEmpty()) {
+            throw new IllegalArgumentException("Product list is empty");
         }
-
-        DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(productType + "-Local Database");
+        if (sensor == null || sensor.isEmpty()) {
+            throw new IllegalArgumentException("[sensor] is null or empty");
+        }
+        if (dataSource == null || dataSource.isEmpty()) {
+            throw new IllegalArgumentException("[sensor] is null or empty");
+        }
+        if (principal == null) {
+            throw new IllegalArgumentException("Invalid principal (null)");
+        }
+        DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(sensor + "-Local Database");
         if (systemDSC == null) {
             return null;
         }
@@ -173,9 +138,12 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         try {
             userDSC = systemDSC.clone();
             LocalDateTime time = LocalDateTime.now();
-            String newId = systemDSC.getId() + "-" + principal.getName() + "-" + time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            String newId = String.join("-", sensor, dataSource, principal.getName(),
+                                       time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
             userDSC.setId(newId);
-            userDSC.setLabel(systemDSC.getLabel() + " (customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + ")");
+            userDSC.setLabel(label != null && !label.isEmpty() ?
+                                     label : String.join("-", sensor, dataSource, principal.getName()) +
+                                     " [customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "]");
             SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
             sourceDescriptor.setId(UUID.randomUUID().toString());
             sourceDescriptor.setParentId(newId);
@@ -187,8 +155,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             targetDescriptor.setCardinality(productNames.size());
             targetDescriptor.addConstraint("Same cardinality");
             userDSC.setSystem(false);
-            userDSC.setLabel(label);
             userDSC = persistenceManager.saveDataSourceComponent(userDSC);
+            tag(userDSC.getId(), new ArrayList<String>() {{ add(sensor); add(dataSource); add(label); }});
         } catch (CloneNotSupportedException e) {
             throw new PersistenceException(e);
         }

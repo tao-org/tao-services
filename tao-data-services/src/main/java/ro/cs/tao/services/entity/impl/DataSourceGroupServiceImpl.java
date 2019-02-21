@@ -6,6 +6,7 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceGroupService;
 
 import java.util.List;
@@ -15,6 +16,8 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
 
     @Autowired
     private PersistenceManager persistenceManager;
+    @Autowired
+    private DataSourceComponentService dataSourceComponentService;
 
     @Override
     public DataSourceComponentGroup findById(String id) throws PersistenceException {
@@ -32,17 +35,23 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     }
 
     @Override
-    public DataSourceComponentGroup save(DataSourceComponentGroup object) {
+    public DataSourceComponentGroup save(DataSourceComponentGroup dataSourceGroup) {
+        if (dataSourceGroup == null) {
+            throw new NullPointerException("[dataSourceGroup]");
+        }
         try {
-            return persistenceManager.saveDataSourceComponentGroup(object);
+            return persistenceManager.saveDataSourceComponentGroup(dataSourceGroup);
         } catch (PersistenceException e) {
             throw new RuntimeException(e.getMessage());
         }
     }
 
     @Override
-    public DataSourceComponentGroup update(DataSourceComponentGroup object) throws PersistenceException {
-        return persistenceManager.updateDataSourceComponentGroup(object);
+    public DataSourceComponentGroup update(DataSourceComponentGroup dataSourceGroup) throws PersistenceException {
+        if (dataSourceGroup == null) {
+            throw new NullPointerException("[dataSourceGroup]");
+        }
+        return persistenceManager.updateDataSourceComponentGroup(dataSourceGroup);
     }
 
     @Override
