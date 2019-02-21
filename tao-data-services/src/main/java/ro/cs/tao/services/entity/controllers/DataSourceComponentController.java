@@ -90,6 +90,15 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.getUserDataSourceComponents(SessionStore.currentContext().getPrincipal().getName())));
     }
 
+    @RequestMapping(value = "/user/group", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponentGroup(@RequestParam("id") String groupId) {
+        try {
+            return prepareResult(dataSourceGroupService.findById(groupId));
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
     @RequestMapping(value = "/user/group/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponentGroups() {
         return prepareResult(ServiceTransformUtils.toDataSourceGroupInfos(
