@@ -210,7 +210,8 @@ public class DataSourceComponentController extends DataEntityController<DataSour
 
     @RequestMapping(value = "/user/group/remove", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> removeDataSourceComponentFromGroup(@RequestParam("groupId") String groupId,
-                                                                                 @RequestParam("componentId") String componentId) {
+                                                                                 @RequestParam("componentId") String componentId,
+                                                                                 @RequestParam("queryId") long queryId) {
         ResponseEntity<ServiceResponse<?>> result;
         try {
             if (groupId == null || groupId.isEmpty()) {
@@ -228,6 +229,11 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 throw new PersistenceException(String.format("Data source with id '%s' does not exist", component));
             }
             group.removeDataSourceComponent(component);
+            group.removeQuery(queryId);
+            Query query = queryService.findById(queryId);
+            if (query != null) {
+                queryService.delete(queryId);
+            }
             result = prepareResult(dataSourceGroupService.update(group));
             service.delete(component.getId());
         } catch (PersistenceException e) {
