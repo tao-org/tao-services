@@ -4,7 +4,7 @@ import ro.cs.tao.eodata.EOProduct;
 
 import java.util.List;
 
-public class CustomDataSourceRequest {
+public class DataSourceRequest {
     private List<EOProduct> products;
     private String productType;
     private String dataSource;
