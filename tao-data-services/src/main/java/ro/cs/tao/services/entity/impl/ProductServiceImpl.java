@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
@@ -73,6 +74,11 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
     @Override
     public List<EOProduct> list(Iterable<String> ids) {
         return persistenceManager.getEOProducts(ids);
+    }
+
+    @Override
+    public List<EOProduct> getByNames(String... names) {
+        return persistenceManager.getProductsByNames(names);
     }
 
     @Override
@@ -172,6 +178,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
         int count = 0;
         for (EOProduct product : products) {
             try {
+                product.setProductStatus(ProductStatus.DOWNLOADED);
                 persistenceManager.saveEOProduct(product);
                 count++;
             } catch (PersistenceException e) {
@@ -243,7 +250,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
                             if (metadata.getProductId() != null) {
                                 product.setId(metadata.getProductId());
                             }
-
+                            product.setProductStatus(ProductStatus.DOWNLOADED);
                             persistenceManager.saveEOProduct(product);
                             count++;
                         } else {

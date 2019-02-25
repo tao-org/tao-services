@@ -144,10 +144,11 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 group = getPersistenceManager().saveDataSourceComponentGroup(group);
                 for (GroupQuery query : request.getQueries()) {
                     Query q = query.getQuery();
-                    q = getPersistenceManager().saveQuery(q);
                     DataSourceComponent component = service.createForProductNames(query.getProductNames(), q.getSensor(),
                                                                                   q.getDataSource(), q.getLabel(),
                                                                                   SessionStore.currentContext().getPrincipal());
+                    q.setComponentId(component.getId());
+                    q = getPersistenceManager().saveQuery(q);
                     group.addDataSourceComponent(component);
                     group.addQuery(q, component.getSources().get(0).getId());
                 }
@@ -165,17 +166,20 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                                                                                       incomingQuery.getDataSource(), incomingQuery.getLabel(),
                                                                                       SessionStore.currentContext().getPrincipal());
                         group.addDataSourceComponent(component);
+                        dbQuery.setComponentId(component.getId());
                         group.addQuery(dbQuery, component.getSources().get(0).getId());
                     }
+                    getPersistenceManager().saveQuery(dbQuery);
                 }
                 List<GroupQuery> notExisting = Arrays.stream(incomingQueries).filter(i -> !querySet.contains(i.getQuery()))
                         .collect(Collectors.toList());
                 for (GroupQuery query : notExisting) {
                     Query q = query.getQuery();
-                    q = getPersistenceManager().saveQuery(q);
                     DataSourceComponent component = service.createForProductNames(query.getProductNames(), q.getSensor(),
                                                                                   q.getDataSource(), q.getLabel(),
                                                                                   SessionStore.currentContext().getPrincipal());
+                    q.setComponentId(component.getId());
+                    q = getPersistenceManager().saveQuery(q);
                     group.addDataSourceComponent(component);
                     group.addQuery(q, component.getSources().get(0).getId());
                 }
@@ -205,7 +209,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         } else {
             dbQuery = incomingQuery;
         }
-        return getPersistenceManager().saveQuery(dbQuery);
+        return dbQuery;
     }
 
     @RequestMapping(value = "/user/group/remove", method = RequestMethod.POST, produces = "application/json")
