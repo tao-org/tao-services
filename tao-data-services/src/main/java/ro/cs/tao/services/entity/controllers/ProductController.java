@@ -39,7 +39,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
             return prepareResult("[name] parameter is empty");
         }
         return prepareResult(service.getByNames(nameList.split(",")));
-}
+    }
 
     @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> inspect(@RequestParam("sourceDir") String sourceDir) {

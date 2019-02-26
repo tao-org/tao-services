@@ -31,6 +31,9 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.eodata.enums.ProductStatus;
+import ro.cs.tao.execution.local.ProductPersister;
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -46,6 +49,7 @@ import ro.cs.tao.services.interfaces.QueryService;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Controller
@@ -110,6 +114,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     public ResponseEntity<ServiceResponse<?>> createOrUpdateDataSourceGroup(@RequestBody DataSourceGroupRequest request) throws PersistenceException {
         ResponseEntity<ServiceResponse<?>> result;
         Stack<Object> entities = new Stack<>();
+        PersistenceManager persistenceManager = getPersistenceManager();
         try {
             List<String> errors = new ArrayList<>();
             if (request == null) {
@@ -124,7 +129,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                     if (queries[i].getQuery() == null) {
                         errors.add(String.format("Empty query on position %d", i + 1));
                     }
-                    if (queries[i].getProductNames() == null && queries[i].getProductNames().size() == 0) {
+                    if (queries[i].getProducts() == null && queries[i].getProducts().size() == 0) {
                         errors.add(String.format("Empty product names list on position %d", i + 1));
                     }
                 }
@@ -134,6 +139,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             } else {
                 DataSourceComponentGroup group;
                 String groupId = request.getGroupId();
+                ProductPersister persister = new ProductPersister();
                 if (groupId == null) {
                     group = new DataSourceComponentGroup();
                     group.setId(UUID.randomUUID().toString());
@@ -144,22 +150,26 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                     group.setAuthors(currentUser());
                     group.setCopyright("(C) " + currentUser());
                     group.setNodeAffinity("Any");
-                    group = getPersistenceManager().saveDataSourceComponentGroup(group);
+                    group = persistenceManager.saveDataSourceComponentGroup(group);
                     entities.push(group);
                     for (GroupQuery query : request.getQueries()) {
                         Query q = query.getQuery();
-                        DataSourceComponent component = service.createForProductNames(query.getProductNames(), q.getSensor(),
+                        List<EOProduct> products = query.getProducts();
+                        DataSourceComponent component = service.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
+                                                                                      q.getSensor(),
                                                                                       q.getDataSource(), q.getLabel(),
                                                                                       SessionStore.currentContext().getPrincipal());
+                        products = filterProducts(component.getId(), query.getProducts());
+                        persister.handle(products);
                         entities.push(component);
                         q.setUserId(currentUser());
                         q.setComponentId(component.getId());
-                        q = getPersistenceManager().saveQuery(q);
+                        q = persistenceManager.saveQuery(q);
                         entities.push(q);
                         group.addDataSourceComponent(component);
                         group.addQuery(q, component.getSources().get(0).getId());
                     }
-                    result = prepareResult(getPersistenceManager().updateDataSourceComponentGroup(group));
+                    result = prepareResult(persistenceManager.updateDataSourceComponentGroup(group));
                 } else {
                     group = dataSourceGroupService.findById(groupId);
                     Set<Query> querySet = group.getDataSourceQueries();
@@ -169,33 +179,64 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                         Query dbQuery = querySet.stream().filter(q -> Objects.equals(q.getId(), incomingQuery.getId())).findFirst().orElse(null);
                         dbQuery = updateQuery(incomingQuery, dbQuery);
                         if (query.getComponentId() == null) {
-                            DataSourceComponent component = service.createForProductNames(query.getProductNames(), incomingQuery.getSensor(),
+                            List<EOProduct> products = query.getProducts();
+                            DataSourceComponent component = service.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
+                                                                                          incomingQuery.getSensor(),
                                                                                           incomingQuery.getDataSource(), incomingQuery.getLabel(),
                                                                                           SessionStore.currentContext().getPrincipal());
+                            products = filterProducts(component.getId(), products);
+                            persister.handle(products);
                             entities.push(component);
                             group.addDataSourceComponent(component);
                             dbQuery.setComponentId(component.getId());
                             group.addQuery(dbQuery, component.getSources().get(0).getId());
                         }
-                        getPersistenceManager().saveQuery(dbQuery);
+                        persistenceManager.saveQuery(dbQuery);
                         entities.push(dbQuery);
                     }
                     List<GroupQuery> notExisting = Arrays.stream(incomingQueries).filter(i -> !querySet.contains(i.getQuery()))
                             .collect(Collectors.toList());
                     for (GroupQuery query : notExisting) {
                         Query q = query.getQuery();
-                        DataSourceComponent component = service.createForProductNames(query.getProductNames(), q.getSensor(),
+                        List<EOProduct> products = query.getProducts();
+                        DataSourceComponent component = service.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
+                                                                                      q.getSensor(),
                                                                                       q.getDataSource(), q.getLabel(),
                                                                                       SessionStore.currentContext().getPrincipal());
+                        products = filterProducts(component.getId(), products);
+                        persister.handle(products);
                         entities.push(component);
                         q.setComponentId(component.getId());
                         q.setUserId(currentUser());
-                        q = getPersistenceManager().saveQuery(q);
+                        q = persistenceManager.saveQuery(q);
                         entities.push(q);
                         group.addDataSourceComponent(component);
                         group.addQuery(q, component.getSources().get(0).getId());
                     }
-                    result = prepareResult(getPersistenceManager().updateDataSourceComponentGroup(group));
+                    final DataSourceComponentGroup finalGroup = group;
+                    querySet.stream().filter(q -> Arrays.stream(incomingQueries).noneMatch(i -> i.getQuery().equals(q)))
+                            .forEach(q -> {
+                                DataSourceComponent component = finalGroup.getDataSourceComponents().stream()
+                                        .filter(c -> c.getId().equals(q.getComponentId())).findFirst().orElse(null);
+                                if (component != null) {
+                                    try {
+                                        String nameList = component.getSources().get(0).getDataDescriptor().getLocation();
+                                        if (nameList != null) {
+                                            String[] names = nameList.split(",");
+                                            for (String name : names) {
+                                                if (persistenceManager.getOtherProductReferences(component.getId(), name) == 0) {
+                                                    persistenceManager.removeProduct(name);
+                                                }
+                                            }
+                                        }
+                                        persistenceManager.deleteDataSourceComponent(component.getId());
+                                    } catch (PersistenceException e) {
+                                        error("Cannot remove data source component %s. Reason: %s", component.getId(), e.getMessage());
+                                    }
+                                }
+                                persistenceManager.removeQuery(q.getId());
+                            });
+                    result = prepareResult(persistenceManager.updateDataSourceComponentGroup(group));
                 }
             }
         } catch (Exception ex) {
@@ -205,11 +246,11 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 Object item = entities.pop();
                 try {
                     if (item instanceof Query) {
-                        getPersistenceManager().removeQuery((Query) item);
+                        persistenceManager.removeQuery((Query) item);
                     } else if (item instanceof DataSourceComponent) {
-                        getPersistenceManager().deleteDataSourceComponent(((DataSourceComponent) item).getId());
+                        persistenceManager.deleteDataSourceComponent(((DataSourceComponent) item).getId());
                     } else if (item instanceof DataSourceComponentGroup) {
-                        getPersistenceManager().deleteDataSourceComponentGroup(((DataSourceComponentGroup) item).getId());
+                        persistenceManager.deleteDataSourceComponentGroup(((DataSourceComponentGroup) item).getId());
                     }
                 } catch (Exception e) {
                     rollbackErrors.add(e.getMessage());
@@ -224,6 +265,33 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             }
         }
         return result;
+    }
+
+    private List<EOProduct> filterProducts(String componentId, List<EOProduct> products) {
+        String[] names = products.stream().map(EOProduct::getName).toArray(String[]::new);
+        Map<String, EOProduct> existing = getPersistenceManager().getProductsByNames(names).stream()
+                .collect(Collectors.toMap(EOProduct::getName, Function.identity()));
+        List<EOProduct> results = new ArrayList<>(products);
+        EOProduct existingProduct;
+        for (EOProduct product : products) {
+            if (getPersistenceManager().getOtherProductReferences(componentId, product.getName()) > 0) {
+                results.remove(product);
+            } else if ((existingProduct = existing.get(product.getName())) != null &&
+                    existingProduct.getProductStatus() != ProductStatus.QUERIED) {
+                    results.remove(product);
+            }
+        }
+        products.removeAll(results);
+        for (EOProduct product : products) {
+            if (getPersistenceManager().getOtherProductReferences(componentId, product.getName()) > 0) {
+                try {
+                    getPersistenceManager().remove(product);
+                } catch (PersistenceException ex) {
+                    error("Cannot remove product %s. Reason: %s", product.getName(), ex.getMessage());
+                }
+            }
+        }
+        return results;
     }
 
     private Query updateQuery(Query incomingQuery, Query dbQuery) throws PersistenceException {
@@ -249,34 +317,31 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return dbQuery;
     }
 
-    @RequestMapping(value = "/user/group/remove", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> removeDataSourceComponentFromGroup(@RequestParam("groupId") String groupId,
-                                                                                 @RequestParam("componentId") String componentId,
-                                                                                 @RequestParam("queryId") long queryId) {
+    @RequestMapping(value = "/user/group/remove", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> removeDataSourceComponentFromGroup(@RequestParam("groupId") String groupId) {
         ResponseEntity<ServiceResponse<?>> result;
         try {
             if (groupId == null || groupId.isEmpty()) {
                 throw new IllegalArgumentException("Invalid group id");
             }
-            if (componentId == null || componentId.isEmpty()) {
-                throw new IllegalArgumentException("Invalid component id");
-            }
             DataSourceComponentGroup group = dataSourceGroupService.findById(groupId);
             if (group == null) {
                 throw new PersistenceException(String.format("Group with id '%s' does not exist", groupId));
             }
-            DataSourceComponent component = service.findById(componentId);
-            if (component == null) {
-                throw new PersistenceException(String.format("Data source with id '%s' does not exist", component));
+            List<DataSourceComponent> components = group.getDataSourceComponents();
+            for (DataSourceComponent component : components) {
+                String nameList = component.getSources().get(0).getDataDescriptor().getLocation();
+                if (nameList != null) {
+                    String[] names = nameList.split(",");
+                    for (String name : names) {
+                        if (getPersistenceManager().getOtherProductReferences(component.getId(), name) == 0) {
+                            getPersistenceManager().removeProduct(name);
+                        }
+                    }
+                }
             }
-            group.removeDataSourceComponent(component);
-            group.removeQuery(queryId);
-            Query query = queryService.findById(queryId);
-            if (query != null) {
-                queryService.delete(queryId);
-            }
-            result = prepareResult(dataSourceGroupService.update(group));
-            service.delete(component.getId());
+            dataSourceGroupService.delete(groupId);
+            result = prepareResult("Group " + groupId + " deleted", ResponseStatus.SUCCEEDED);
         } catch (PersistenceException e) {
             result = handleException(e);
         }
