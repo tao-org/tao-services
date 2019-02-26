@@ -17,6 +17,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -108,82 +109,118 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     @RequestMapping(value = "/user/group/save", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> createOrUpdateDataSourceGroup(@RequestBody DataSourceGroupRequest request) throws PersistenceException {
         ResponseEntity<ServiceResponse<?>> result;
-        List<String> errors = new ArrayList<>();
-        if (request == null) {
-            errors.add("Empty body");
-        } else if (request.getGroupLabel() == null) {
-            errors.add("Empty label");
-        } else if (request.getQueries() == null || request.getQueries().length == 0) {
-            errors.add("Query list is null or empty");
-        } else {
-            GroupQuery[] queries = request.getQueries();
-            for (int i = 0; i < queries.length; i++) {
-                if (queries[i].getQuery() == null) {
-                    errors.add(String.format("Empty query on position %d", i + 1));
-                }
-                if (queries[i].getProductNames() == null && queries[i].getProductNames().size() == 0) {
-                    errors.add(String.format("Empty product names list on position %d", i + 1));
+        Stack<Object> entities = new Stack<>();
+        try {
+            List<String> errors = new ArrayList<>();
+            if (request == null) {
+                errors.add("Empty body");
+            } else if (request.getGroupLabel() == null) {
+                errors.add("Empty label");
+            } else if (request.getQueries() == null || request.getQueries().length == 0) {
+                errors.add("Query list is null or empty");
+            } else {
+                GroupQuery[] queries = request.getQueries();
+                for (int i = 0; i < queries.length; i++) {
+                    if (queries[i].getQuery() == null) {
+                        errors.add(String.format("Empty query on position %d", i + 1));
+                    }
+                    if (queries[i].getProductNames() == null && queries[i].getProductNames().size() == 0) {
+                        errors.add(String.format("Empty product names list on position %d", i + 1));
+                    }
                 }
             }
-        }
-        if (errors.size() > 0) {
-            result = prepareResult(String.join(";", errors), ResponseStatus.FAILED);
-        } else {
-            DataSourceComponentGroup group;
-            String groupId = request.getGroupId();
-            if (groupId == null) {
-                group = new DataSourceComponentGroup();
-                group.setId(UUID.randomUUID().toString());
-                group.setUserName(currentUser());
-                group.setLabel(request.getGroupLabel());
-                group.setVersion("1.0");
-                group.setDescription(group.getLabel());
-                group.setAuthors(currentUser());
-                group.setCopyright("(C) " + currentUser());
-                group.setNodeAffinity("Any");
-                group = getPersistenceManager().saveDataSourceComponentGroup(group);
-                for (GroupQuery query : request.getQueries()) {
-                    Query q = query.getQuery();
-                    DataSourceComponent component = service.createForProductNames(query.getProductNames(), q.getSensor(),
-                                                                                  q.getDataSource(), q.getLabel(),
-                                                                                  SessionStore.currentContext().getPrincipal());
-                    q.setComponentId(component.getId());
-                    q = getPersistenceManager().saveQuery(q);
-                    group.addDataSourceComponent(component);
-                    group.addQuery(q, component.getSources().get(0).getId());
-                }
-                result = prepareResult(getPersistenceManager().updateDataSourceComponentGroup(group));
+            if (errors.size() > 0) {
+                result = prepareResult(String.join(";", errors), ResponseStatus.FAILED);
             } else {
-                group = dataSourceGroupService.findById(groupId);
-                Set<Query> querySet = group.getDataSourceQueries();
-                GroupQuery[] incomingQueries = request.getQueries();
-                for (GroupQuery query : incomingQueries) {
-                    Query incomingQuery = query.getQuery();
-                    Query dbQuery = querySet.stream().filter(q -> Objects.equals(q.getId(), incomingQuery.getId())).findFirst().orElse(null);
-                    dbQuery = updateQuery(incomingQuery, dbQuery);
-                    if (query.getComponentId() == null) {
-                        DataSourceComponent component = service.createForProductNames(query.getProductNames(), incomingQuery.getSensor(),
-                                                                                      incomingQuery.getDataSource(), incomingQuery.getLabel(),
+                DataSourceComponentGroup group;
+                String groupId = request.getGroupId();
+                if (groupId == null) {
+                    group = new DataSourceComponentGroup();
+                    group.setId(UUID.randomUUID().toString());
+                    group.setUserName(currentUser());
+                    group.setLabel(request.getGroupLabel());
+                    group.setVersion("1.0");
+                    group.setDescription(group.getLabel());
+                    group.setAuthors(currentUser());
+                    group.setCopyright("(C) " + currentUser());
+                    group.setNodeAffinity("Any");
+                    group = getPersistenceManager().saveDataSourceComponentGroup(group);
+                    entities.push(group);
+                    for (GroupQuery query : request.getQueries()) {
+                        Query q = query.getQuery();
+                        DataSourceComponent component = service.createForProductNames(query.getProductNames(), q.getSensor(),
+                                                                                      q.getDataSource(), q.getLabel(),
                                                                                       SessionStore.currentContext().getPrincipal());
+                        entities.push(component);
+                        q.setUserId(currentUser());
+                        q.setComponentId(component.getId());
+                        q = getPersistenceManager().saveQuery(q);
+                        entities.push(q);
                         group.addDataSourceComponent(component);
-                        dbQuery.setComponentId(component.getId());
-                        group.addQuery(dbQuery, component.getSources().get(0).getId());
+                        group.addQuery(q, component.getSources().get(0).getId());
                     }
-                    getPersistenceManager().saveQuery(dbQuery);
+                    result = prepareResult(getPersistenceManager().updateDataSourceComponentGroup(group));
+                } else {
+                    group = dataSourceGroupService.findById(groupId);
+                    Set<Query> querySet = group.getDataSourceQueries();
+                    GroupQuery[] incomingQueries = request.getQueries();
+                    for (GroupQuery query : incomingQueries) {
+                        Query incomingQuery = query.getQuery();
+                        Query dbQuery = querySet.stream().filter(q -> Objects.equals(q.getId(), incomingQuery.getId())).findFirst().orElse(null);
+                        dbQuery = updateQuery(incomingQuery, dbQuery);
+                        if (query.getComponentId() == null) {
+                            DataSourceComponent component = service.createForProductNames(query.getProductNames(), incomingQuery.getSensor(),
+                                                                                          incomingQuery.getDataSource(), incomingQuery.getLabel(),
+                                                                                          SessionStore.currentContext().getPrincipal());
+                            entities.push(component);
+                            group.addDataSourceComponent(component);
+                            dbQuery.setComponentId(component.getId());
+                            group.addQuery(dbQuery, component.getSources().get(0).getId());
+                        }
+                        getPersistenceManager().saveQuery(dbQuery);
+                        entities.push(dbQuery);
+                    }
+                    List<GroupQuery> notExisting = Arrays.stream(incomingQueries).filter(i -> !querySet.contains(i.getQuery()))
+                            .collect(Collectors.toList());
+                    for (GroupQuery query : notExisting) {
+                        Query q = query.getQuery();
+                        DataSourceComponent component = service.createForProductNames(query.getProductNames(), q.getSensor(),
+                                                                                      q.getDataSource(), q.getLabel(),
+                                                                                      SessionStore.currentContext().getPrincipal());
+                        entities.push(component);
+                        q.setComponentId(component.getId());
+                        q.setUserId(currentUser());
+                        q = getPersistenceManager().saveQuery(q);
+                        entities.push(q);
+                        group.addDataSourceComponent(component);
+                        group.addQuery(q, component.getSources().get(0).getId());
+                    }
+                    result = prepareResult(getPersistenceManager().updateDataSourceComponentGroup(group));
                 }
-                List<GroupQuery> notExisting = Arrays.stream(incomingQueries).filter(i -> !querySet.contains(i.getQuery()))
-                        .collect(Collectors.toList());
-                for (GroupQuery query : notExisting) {
-                    Query q = query.getQuery();
-                    DataSourceComponent component = service.createForProductNames(query.getProductNames(), q.getSensor(),
-                                                                                  q.getDataSource(), q.getLabel(),
-                                                                                  SessionStore.currentContext().getPrincipal());
-                    q.setComponentId(component.getId());
-                    q = getPersistenceManager().saveQuery(q);
-                    group.addDataSourceComponent(component);
-                    group.addQuery(q, component.getSources().get(0).getId());
+            }
+        } catch (Exception ex) {
+            result = handleException(ex);
+            List<String> rollbackErrors = new ArrayList<>();
+            while (!entities.isEmpty()) {
+                Object item = entities.pop();
+                try {
+                    if (item instanceof Query) {
+                        getPersistenceManager().removeQuery((Query) item);
+                    } else if (item instanceof DataSourceComponent) {
+                        getPersistenceManager().deleteDataSourceComponent(((DataSourceComponent) item).getId());
+                    } else if (item instanceof DataSourceComponentGroup) {
+                        getPersistenceManager().deleteDataSourceComponentGroup(((DataSourceComponentGroup) item).getId());
+                    }
+                } catch (Exception e) {
+                    rollbackErrors.add(e.getMessage());
                 }
-                result = prepareResult(getPersistenceManager().updateDataSourceComponentGroup(group));
+            }
+            entities.clear();
+            if (rollbackErrors.size() > 0) {
+                rollbackErrors.add(0, result.getBody().getMessage());
+                result = new ResponseEntity<>(new ServiceResponse<>(String.join(";", rollbackErrors),
+                                                                    ResponseStatus.FAILED),
+                                                                    HttpStatus.OK);
             }
         }
         return result;
