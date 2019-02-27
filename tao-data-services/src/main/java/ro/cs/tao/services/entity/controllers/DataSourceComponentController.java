@@ -161,6 +161,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                                                                                       SessionStore.currentContext().getPrincipal());
                         products = filterProducts(component.getId(), query.getProducts());
                         persister.handle(products);
+                        entities.push(products);
                         entities.push(component);
                         q.setUserId(currentUser());
                         q.setComponentId(component.getId());
@@ -186,6 +187,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                                                                                           SessionStore.currentContext().getPrincipal());
                             products = filterProducts(component.getId(), products);
                             persister.handle(products);
+                            entities.push(products);
                             entities.push(component);
                             group.addDataSourceComponent(component);
                             dbQuery.setComponentId(component.getId());
@@ -205,6 +207,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                                                                                       SessionStore.currentContext().getPrincipal());
                         products = filterProducts(component.getId(), products);
                         persister.handle(products);
+                        entities.push(products);
                         entities.push(component);
                         q.setComponentId(component.getId());
                         q.setUserId(currentUser());
@@ -245,6 +248,12 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             while (!entities.isEmpty()) {
                 Object item = entities.pop();
                 try {
+                    if (item instanceof List) {
+                        List<EOProduct> toRemove = (List<EOProduct>) item;
+                        for (EOProduct p : toRemove) {
+                            persistenceManager.remove(p);
+                        }
+                    }
                     if (item instanceof Query) {
                         persistenceManager.removeQuery((Query) item);
                     } else if (item instanceof DataSourceComponent) {
