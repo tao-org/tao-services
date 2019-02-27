@@ -2,6 +2,7 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ro.cs.tao.Tag;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
@@ -49,6 +50,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     }
 
     @Override
+    @Transactional
     public DataSourceComponentGroup save(DataSourceComponentGroup dataSourceGroup) {
         if (dataSourceGroup == null) {
             throw new NullPointerException("[dataSourceGroup]");
@@ -61,6 +63,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     }
 
     @Override
+    @Transactional
     public DataSourceComponentGroup update(DataSourceComponentGroup dataSourceGroup) throws PersistenceException {
         if (dataSourceGroup == null) {
             throw new NullPointerException("[dataSourceGroup]");
@@ -84,6 +87,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     }
 
     @Override
+    @Transactional(rollbackFor = { PersistenceException.class, Exception.class })
     public DataSourceComponentGroup saveDataSourceGroup(String groupId, String groupLabel,
                                                         List<Triple<Query, List<EOProduct>, String>> groupQueries,
                                                         Principal user) throws PersistenceException {
