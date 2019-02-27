@@ -21,6 +21,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.TaoEnum;
+import ro.cs.tao.eodata.sorting.Association;
+import ro.cs.tao.eodata.sorting.DataSorter;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ConfigurationService;
 import ro.cs.tao.services.model.KeyValuePair;
@@ -48,5 +50,37 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
         }
 
         return prepareResult(enumValues);
+    }
+
+    @RequestMapping(value = "/sorters", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getAvailableSorters() {
+        List<String> descriptions = new ArrayList<>();
+        Reflections reflections = new Reflections("ro.cs.tao");
+        Set<Class<? extends DataSorter>> sorters = reflections.getSubTypesOf(DataSorter.class);
+        for (Class<? extends DataSorter> sortClass : sorters) {
+            try {
+                descriptions.add(sortClass.newInstance().getFriendlyName());
+            } catch (InstantiationException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        descriptions.sort(Comparator.naturalOrder());
+        return prepareResult(descriptions);
+    }
+
+    @RequestMapping(value = "/groupers", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getAvailableGroupers() {
+        List<String[]> descriptions = new ArrayList<>();
+        Reflections reflections = new Reflections("ro.cs.tao");
+        Set<Class<? extends Association>> groupers = reflections.getSubTypesOf(Association.class);
+        for (Class<? extends Association> aClass : groupers) {
+            try {
+                descriptions.add(aClass.newInstance().description());
+            } catch (InstantiationException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        descriptions.sort(Comparator.comparing(o -> o[0]));
+        return prepareResult(descriptions);
     }
 }
