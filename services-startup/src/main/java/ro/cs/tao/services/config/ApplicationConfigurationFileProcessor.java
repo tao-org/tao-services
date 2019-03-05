@@ -20,9 +20,9 @@ import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
 
 public class ApplicationConfigurationFileProcessor implements ConfigurationFileProcessor {
     @Override
-    public String getConfigFileName() { return "application.properties"; }
+    public String getFileName() { return "application.properties"; }
 
     @Override
-    public String getConfigFileResourceLocation() { return "/config/spring.properties"; }
+    public String getFileResourceLocation() { return "/config/spring.properties"; }
 
 }
