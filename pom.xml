@@ -7,7 +7,7 @@
     <parent>
         <groupId>ro.cs.tao</groupId>
         <artifactId>tao-core</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
     </parent>
 
     <artifactId>tao-services</artifactId>
@@ -23,7 +23,6 @@
         <module>monitoring-service</module>
         <module>services-startup</module>
         <module>progress-report-service</module>
-        <module>tao-cli</module>
         <module>tao-orchestration-services</module>
         <module>auth-service</module>
         <module>user-service</module>
