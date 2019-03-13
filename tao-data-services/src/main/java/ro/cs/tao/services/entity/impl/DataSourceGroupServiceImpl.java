@@ -125,9 +125,12 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                 group = persistenceManager.updateDataSourceComponentGroup(group);
             } else { // existing group
                 group = findById(groupId);
+                if (group == null) {
+                    throw new PersistenceException(String.format("Inexistent group [id=%s", groupId));
+                }
                 group.setLabel(groupLabel);
                 Set<Query> querySet = group.getDataSourceQueries();
-                Set<Long> updatedQueries = querySet.stream().map(Query::getId).collect(Collectors.toSet());
+                Set<Long> updatedQueries = new HashSet<>();//querySet.stream().map(Query::getId).collect(Collectors.toSet());
                 for (Triple<Query, List<EOProduct>, String> triple : groupQueries) {
                     Query incomingQuery = triple.getKeyOne();
                     Query dbQuery = querySet.stream().filter(q -> Objects.equals(q.getId(), incomingQuery.getId())).findFirst().orElse(null);
@@ -139,6 +142,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                         String componentId = triple.getKeyThree();
                         List<EOProduct> products = filterProducts(componentId, triple.getKeyTwo());
                         persister.handle(products);
+                        updatedQueries.add(dbQuery.getId());
                     }
                 }
                 // remove previously persisted queries that are no longer part of this group
