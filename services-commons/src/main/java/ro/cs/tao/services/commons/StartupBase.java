@@ -21,6 +21,7 @@ import org.springframework.boot.system.ApplicationHome;
 import org.springframework.context.ApplicationListener;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
+import ro.cs.tao.services.commons.config.FileProcessor;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 
@@ -43,17 +44,22 @@ public abstract class StartupBase implements ApplicationListener {
     protected static Properties initialize() throws IOException {
         home = new ApplicationHome();
         Path configDirectory = homeDirectory().resolve("config");
-        /*Logger.getLogger(StartupBase.class.getName()).info(String.format("Configuration files will be read from %s",
-                                                                         configDirectory.toString()));*/
+        Files.createDirectories(configDirectory);
+        Path scriptsDirectory = homeDirectory().resolve("scripts");
+        Files.createDirectories(scriptsDirectory);
         System.out.println(String.format("Configuration files will be read from %s", configDirectory.toString()));
         if (!Files.exists(configDirectory)) {
             Files.createDirectory(configDirectory);
         }
-        ServiceRegistry<ConfigurationFileProcessor> serviceRegistry =
-                ServiceRegistryManager.getInstance().getServiceRegistry(ConfigurationFileProcessor.class);
-        Set<ConfigurationFileProcessor> configurationFileProcessors = serviceRegistry.getServices();
-        for (ConfigurationFileProcessor processor : configurationFileProcessors) {
-            allProperties.putAll(processor.processFile(configDirectory));
+        ServiceRegistry<FileProcessor> serviceRegistry =
+                ServiceRegistryManager.getInstance().getServiceRegistry(FileProcessor.class);
+        Set<FileProcessor> configurationFileProcessors = serviceRegistry.getServices();
+        for (FileProcessor processor : configurationFileProcessors) {
+            if (processor instanceof ConfigurationFileProcessor) {
+                allProperties.putAll(((ConfigurationFileProcessor) processor).processConfigFile(configDirectory));
+            } else {
+                processor.processFile(scriptsDirectory);
+            }
         }
         try {
             Field field = ConfigurationManager.class.getDeclaredField("configFolder");
@@ -62,6 +68,9 @@ public abstract class StartupBase implements ApplicationListener {
             field = ConfigurationManager.class.getDeclaredField("settings");
             field.setAccessible(true);
             ((Properties) field.get(ConfigurationManager.getInstance())).putAll(allProperties);
+            field = ConfigurationManager.class.getDeclaredField("scriptsFolder");
+            field.setAccessible(true);
+            field.set(null, scriptsDirectory);
         } catch (Exception e){
             throw new RuntimeException(e);
         }

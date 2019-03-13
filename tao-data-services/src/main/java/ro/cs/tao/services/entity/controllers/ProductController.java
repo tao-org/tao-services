@@ -33,6 +33,14 @@ import java.nio.file.Paths;
 @RequestMapping("/product")
 public class ProductController extends DataEntityController<EOProduct, String, ProductService> {
 
+    @RequestMapping(value = "", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getByNames(@RequestParam("name") String nameList) {
+        if (nameList == null || nameList.isEmpty()) {
+            return prepareResult("[name] parameter is empty");
+        }
+        return prepareResult(service.getByNames(nameList.split(",")));
+    }
+
     @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> inspect(@RequestParam("sourceDir") String sourceDir) {
         if (sourceDir == null) {

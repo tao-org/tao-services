@@ -28,7 +28,6 @@ import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
-import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
@@ -41,10 +40,13 @@ import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceGroupService;
 import ro.cs.tao.services.interfaces.QueryService;
+import ro.cs.tao.utils.Triple;
 
 import java.security.Principal;
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Controller
@@ -108,134 +110,68 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     @RequestMapping(value = "/user/group/save", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> createOrUpdateDataSourceGroup(@RequestBody DataSourceGroupRequest request) throws PersistenceException {
         ResponseEntity<ServiceResponse<?>> result;
-        List<String> errors = new ArrayList<>();
-        if (request == null) {
-            errors.add("Empty body");
-        } else if (request.getGroupLabel() == null) {
-            errors.add("Empty label");
-        } else if (request.getQueries() == null || request.getQueries().length == 0) {
-            errors.add("Query list is null or empty");
-        } else {
-            GroupQuery[] queries = request.getQueries();
-            for (int i = 0; i < queries.length; i++) {
-                if (queries[i].getQuery() == null) {
-                    errors.add(String.format("Empty query on position %d", i + 1));
-                }
-                if (queries[i].getProductNames() == null && queries[i].getProductNames().size() == 0) {
-                    errors.add(String.format("Empty product names list on position %d", i + 1));
-                }
-            }
-        }
-        if (errors.size() > 0) {
-            result = prepareResult(String.join(";", errors), ResponseStatus.FAILED);
-        } else {
-            DataSourceComponentGroup group;
-            String groupId = request.getGroupId();
-            if (groupId == null) {
-                group = new DataSourceComponentGroup();
-                group.setId(UUID.randomUUID().toString());
-                group.setUserName(currentUser());
-                group.setLabel(request.getGroupLabel());
-                group.setVersion("1.0");
-                group.setDescription(group.getLabel());
-                group.setAuthors(currentUser());
-                group.setCopyright("(C) " + currentUser());
-                group.setNodeAffinity("Any");
-                group = getPersistenceManager().saveDataSourceComponentGroup(group);
-                for (GroupQuery query : request.getQueries()) {
-                    Query q = query.getQuery();
-                    q = getPersistenceManager().saveQuery(q);
-                    DataSourceComponent component = service.createForProductNames(query.getProductNames(), q.getSensor(),
-                                                                                  q.getDataSource(), q.getLabel(),
-                                                                                  SessionStore.currentContext().getPrincipal());
-                    group.addDataSourceComponent(component);
-                    group.addQuery(q, component.getSources().get(0).getId());
-                }
-                result = prepareResult(getPersistenceManager().updateDataSourceComponentGroup(group));
+        try {
+            List<String> errors = new ArrayList<>();
+            if (request == null) {
+                errors.add("Empty body");
+            } else if (request.getGroupLabel() == null) {
+                errors.add("Empty label");
+            } else if (request.getQueries() == null || request.getQueries().length == 0) {
+                errors.add("Query list is null or empty");
             } else {
-                group = dataSourceGroupService.findById(groupId);
-                Set<Query> querySet = group.getDataSourceQueries();
-                GroupQuery[] incomingQueries = request.getQueries();
-                for (GroupQuery query : incomingQueries) {
-                    Query incomingQuery = query.getQuery();
-                    Query dbQuery = querySet.stream().filter(q -> Objects.equals(q.getId(), incomingQuery.getId())).findFirst().orElse(null);
-                    dbQuery = updateQuery(incomingQuery, dbQuery);
-                    if (query.getComponentId() == null) {
-                        DataSourceComponent component = service.createForProductNames(query.getProductNames(), incomingQuery.getSensor(),
-                                                                                      incomingQuery.getDataSource(), incomingQuery.getLabel(),
-                                                                                      SessionStore.currentContext().getPrincipal());
-                        group.addDataSourceComponent(component);
-                        group.addQuery(dbQuery, component.getSources().get(0).getId());
+                GroupQuery[] queries = request.getQueries();
+                for (int i = 0; i < queries.length; i++) {
+                    if (queries[i].getQuery() == null) {
+                        errors.add(String.format("Empty query on position %d", i + 1));
+                    }
+                    if (queries[i].getProducts() == null && queries[i].getProducts().size() == 0) {
+                        errors.add(String.format("Empty product names list on position %d", i + 1));
                     }
                 }
-                List<GroupQuery> notExisting = Arrays.stream(incomingQueries).filter(i -> !querySet.contains(i.getQuery()))
-                        .collect(Collectors.toList());
-                for (GroupQuery query : notExisting) {
-                    Query q = query.getQuery();
-                    q = getPersistenceManager().saveQuery(q);
-                    DataSourceComponent component = service.createForProductNames(query.getProductNames(), q.getSensor(),
-                                                                                  q.getDataSource(), q.getLabel(),
-                                                                                  SessionStore.currentContext().getPrincipal());
-                    group.addDataSourceComponent(component);
-                    group.addQuery(q, component.getSources().get(0).getId());
-                }
-                result = prepareResult(getPersistenceManager().updateDataSourceComponentGroup(group));
             }
+            if (errors.size() > 0) {
+                result = prepareResult(String.join(";", errors), ResponseStatus.FAILED);
+            } else {
+                DataSourceComponentGroup group =
+                        dataSourceGroupService.saveDataSourceGroup(request.getGroupId(), request.getGroupLabel(),
+                                                                   Arrays.stream(request.getQueries())
+                                                                           .map(q -> new Triple<>(q.getQuery(), q.getProducts(), q.getComponentId()))
+                                                                           .collect(Collectors.toList()),
+                                                                   SessionStore.currentContext().getPrincipal());
+                result = prepareResult(group);
+
+            }
+        } catch (Exception ex) {
+            result = handleException(ex);
         }
         return result;
     }
 
-    private Query updateQuery(Query incomingQuery, Query dbQuery) throws PersistenceException {
-        if (dbQuery != null) {
-            dbQuery.setLabel(incomingQuery.getLabel());
-            dbQuery.setLimit(incomingQuery.getLimit());
-            dbQuery.setModified(LocalDateTime.now());
-            dbQuery.setPageNumber(incomingQuery.getPageNumber());
-            dbQuery.setPageSize(incomingQuery.getPageSize());
-            dbQuery.setPassword(incomingQuery.getPassword());
-            dbQuery.setSensor(incomingQuery.getSensor());
-            dbQuery.setUser(incomingQuery.getUser());
-            dbQuery.setUserId(currentUser());
-            Map<String, String> parameters = dbQuery.getValues();
-            if (parameters == null) {
-                parameters = new HashMap<>();
-            }
-            parameters.putAll(incomingQuery.getValues());
-            dbQuery.setValues(parameters);
-        } else {
-            dbQuery = incomingQuery;
-        }
-        return getPersistenceManager().saveQuery(dbQuery);
-    }
-
-    @RequestMapping(value = "/user/group/remove", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> removeDataSourceComponentFromGroup(@RequestParam("groupId") String groupId,
-                                                                                 @RequestParam("componentId") String componentId,
-                                                                                 @RequestParam("queryId") long queryId) {
+    @RequestMapping(value = "/user/group/remove", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> removeDataSourceComponentFromGroup(@RequestParam("groupId") String groupId) {
         ResponseEntity<ServiceResponse<?>> result;
         try {
             if (groupId == null || groupId.isEmpty()) {
                 throw new IllegalArgumentException("Invalid group id");
             }
-            if (componentId == null || componentId.isEmpty()) {
-                throw new IllegalArgumentException("Invalid component id");
-            }
             DataSourceComponentGroup group = dataSourceGroupService.findById(groupId);
             if (group == null) {
                 throw new PersistenceException(String.format("Group with id '%s' does not exist", groupId));
             }
-            DataSourceComponent component = service.findById(componentId);
-            if (component == null) {
-                throw new PersistenceException(String.format("Data source with id '%s' does not exist", component));
+            List<DataSourceComponent> components = group.getDataSourceComponents();
+            for (DataSourceComponent component : components) {
+                String nameList = component.getSources().get(0).getDataDescriptor().getLocation();
+                if (nameList != null) {
+                    String[] names = nameList.split(",");
+                    for (String name : names) {
+                        if (getPersistenceManager().getOtherProductReferences(component.getId(), name) == 0) {
+                            getPersistenceManager().removeProduct(name);
+                        }
+                    }
+                }
             }
-            group.removeDataSourceComponent(component);
-            group.removeQuery(queryId);
-            Query query = queryService.findById(queryId);
-            if (query != null) {
-                queryService.delete(queryId);
-            }
-            result = prepareResult(dataSourceGroupService.update(group));
-            service.delete(component.getId());
+            dataSourceGroupService.delete(groupId);
+            result = prepareResult("Group " + groupId + " deleted", ResponseStatus.SUCCEEDED);
         } catch (PersistenceException e) {
             result = handleException(e);
         }
