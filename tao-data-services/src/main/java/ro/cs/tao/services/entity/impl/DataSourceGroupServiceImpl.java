@@ -112,9 +112,11 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     public DataSourceComponentGroup saveDataSourceGroup(String groupId, String groupLabel,
                                                         List<Triple<Query, List<EOProduct>, String>> groupQueries,
                                                         Principal user) throws PersistenceException {
+        if (groupLabel == null || groupLabel.isEmpty()) {
+            throw new PersistenceException("Group label is required");
+        }
         DataSourceComponentGroup group;
         try {
-            ProductPersister persister = new ProductPersister();
             if (groupId == null) { // new group
                 group = createGroup(user.getName(), groupLabel);
                 for (Triple<Query, List<EOProduct>, String> triple : groupQueries) {
@@ -126,24 +128,41 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
             } else { // existing group
                 group = findById(groupId);
                 if (group == null) {
-                    throw new PersistenceException(String.format("Inexistent group [id=%s", groupId));
+                    throw new PersistenceException(String.format("Non-existent group [id=%s]", groupId));
                 }
                 group.setLabel(groupLabel);
                 Set<Query> querySet = group.getDataSourceQueries();
-                Set<Long> updatedQueries = new HashSet<>();//querySet.stream().map(Query::getId).collect(Collectors.toSet());
+                Set<Long> updatedQueries = new HashSet<>();
                 for (Triple<Query, List<EOProduct>, String> triple : groupQueries) {
                     Query incomingQuery = triple.getKeyOne();
                     Query dbQuery = querySet.stream().filter(q -> Objects.equals(q.getId(), incomingQuery.getId())).findFirst().orElse(null);
+                    List<EOProduct> productList = triple.getKeyTwo();
                     if (dbQuery == null) { // new query
+                        if (triple.getKeyThree() != null && !triple.getKeyThree().isEmpty()) {
+                            logger.warning(String.format("Query [label=%s] seems to be new, but it has an associated component [id=%s]. A new component will be created instead.",
+                                                         incomingQuery.getLabel(), triple.getKeyThree()));
+                        }
                         incomingQuery.setUserId(user.getName());
-                        addQueryToGroup(group, incomingQuery, triple.getKeyTwo());
+                        dbQuery = addQueryToGroup(group, incomingQuery, productList);
                     } else { // existing query
                         dbQuery = updateQuery(incomingQuery, dbQuery, user.getName());
                         String componentId = triple.getKeyThree();
-                        List<EOProduct> products = filterProducts(componentId, triple.getKeyTwo());
-                        persister.handle(products);
-                        updatedQueries.add(dbQuery.getId());
+                        if (componentId == null || componentId.isEmpty()) {
+                            String message = String.format("Query [id=%s, label=%s] was already persisted, but its associated component Id is empty.",
+                                          dbQuery.getId(), dbQuery.getLabel());
+                            logger.warning(message);
+                            throw new PersistenceException(message);
+                        }
+                        DataSourceComponent component = group.getDataSourceComponents().stream().filter(c -> c.getId().equals(componentId)).findFirst().orElse(null);
+                        if (component == null) {
+                            throw new PersistenceException(String.format("Component [id=%s] was not found in the group[id=%s]",
+                                                                         componentId, group.getId()));
+                        }
+                        updateProducts(componentId, productList);
+                        component.getSources().get(0).getDataDescriptor().setLocation(productList.stream().map(EOProduct::getName).collect(Collectors.joining(",")));
+                        persistenceManager.updateDataSourceComponent(component);
                     }
+                    updatedQueries.add(dbQuery.getId());
                 }
                 // remove previously persisted queries that are no longer part of this group
                 // to prevent a ConcurrentModificationException thrown by Hibernate, wrap queries in an array
@@ -205,12 +224,12 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         return group;
     }
 
-    private void addQueryToGroup(DataSourceComponentGroup group, Query query, List<EOProduct> products) throws PersistenceException {
+    private Query addQueryToGroup(DataSourceComponentGroup group, Query query, List<EOProduct> products) throws PersistenceException {
         DataSourceComponent component =
                 dataSourceComponentService.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
                                                                  query.getSensor(), query.getDataSource(), query.getLabel(),
                                                                  SessionStore.currentContext().getPrincipal());
-        products = filterProducts(component.getId(), products);
+        products = updateProducts(component.getId(), products);
         ProductPersister persister = new ProductPersister();
         persister.handle(products);
         query.setComponentId(component.getId());
@@ -219,9 +238,10 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         group.addQuery(query, component.getSources().get(0).getId());
         logger.finest(String.format("Query [id=%s, label=%s] added to data source group [id=%s]",
                                     query.getId(), query.getLabel(), group.getId()));
+        return query;
     }
 
-    private List<EOProduct> filterProducts(String componentId, List<EOProduct> products) {
+    private List<EOProduct> updateProducts(String componentId, List<EOProduct> products) {
         String[] names = products.stream().map(EOProduct::getName).toArray(String[]::new);
         Map<String, EOProduct> existingProducts = persistenceManager.getProductsByNames(names).stream()
                 .collect(Collectors.toMap(EOProduct::getName, Function.identity()));
@@ -243,6 +263,8 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                                             product));
                 persistenceManager.deleteIfNotReferenced(componentId, product);
             }
+            ProductPersister persister = new ProductPersister();
+            persister.handle(results);
         }
         return results;
     }
