@@ -61,6 +61,7 @@ public class SampleDSGroupSnapWorkflow extends SampleWorkflowBase {
         query1.setLabel(String.format("First query for sample workflow %d", workflow.getId()));
         query1.setUserId(principal.getName());
         query1.setSensor(dataSourceComponent1.getSensorName());
+        query1.setComponentId(dataSourceComponent1.getId());
         query1.setDataSource("Scientific Data Hub");
         query1.setPageNumber(1);
         query1.setPageSize(10);
@@ -80,6 +81,7 @@ public class SampleDSGroupSnapWorkflow extends SampleWorkflowBase {
         query2.setUserId(principal.getName());
         query2.setSensor(dataSourceComponent2.getSensorName());
         query2.setDataSource("Scientific Data Hub");
+        query2.setComponentId(dataSourceComponent2.getId());
         query2.setPageNumber(1);
         query2.setPageSize(10);
         query2.setLimit(1);

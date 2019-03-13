@@ -16,32 +16,14 @@
 
 package ro.cs.tao.services.commons.config;
 
-import ro.cs.tao.configuration.ConfigurationManager;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
-public interface ConfigurationFileProcessor {
-    String getConfigFileName();
-    String getConfigFileResourceLocation();
-    default Properties processFile(Path configDirectory) throws IOException {
-        Path configFile = configDirectory.resolve(getConfigFileName());
-        if (!Files.exists(configFile)) {
-            byte[] buffer = new byte[1024];
-            try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream(getConfigFileResourceLocation()));
-                 OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile))) {
-                int read;
-                while ((read = is.read(buffer)) != -1) {
-                    os.write(buffer, 0, read);
-                }
-                os.flush();
-            }
-        }
+public interface ConfigurationFileProcessor extends FileProcessor {
+    default Properties processConfigFile(Path configDirectory) throws IOException {
+        Path configFile = processFile(configDirectory);
         Properties properties = new Properties();
         properties.load(Files.newInputStream(configFile));
         performAdditionalConfiguration(configDirectory, properties);

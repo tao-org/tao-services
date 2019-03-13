@@ -24,8 +24,8 @@ import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
-import ro.cs.tao.eodata.EOData;
 import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
@@ -111,7 +111,12 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             throw new IllegalArgumentException("Products must be of the same type");
         }
         String productType = types.iterator().next();
-        List<String> nameList = products.stream().map(EOData::getName).collect(Collectors.toList());
+        List<String> nameList = new ArrayList<>();
+        for (EOProduct product : products) {
+            product.setProductStatus(ProductStatus.QUERIED);
+            nameList.add(product.getName());
+            persistenceManager.saveEOProduct(product);
+        }
         return createForProductNames(nameList, productType, dataSource, label, principal);
     }
 
