@@ -14,7 +14,7 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceGroupService;
-import ro.cs.tao.utils.Triple;
+import ro.cs.tao.utils.Tuple;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
@@ -110,7 +110,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     @Override
     @Transactional(rollbackFor = { PersistenceException.class, Exception.class })
     public DataSourceComponentGroup saveDataSourceGroup(String groupId, String groupLabel,
-                                                        List<Triple<Query, List<EOProduct>, String>> groupQueries,
+                                                        List<Tuple<Query, List<EOProduct>>> groupQueries,
                                                         Principal user) throws PersistenceException {
         if (groupLabel == null || groupLabel.isEmpty()) {
             throw new PersistenceException("Group label is required");
@@ -119,10 +119,10 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         try {
             if (groupId == null) { // new group
                 group = createGroup(user.getName(), groupLabel);
-                for (Triple<Query, List<EOProduct>, String> triple : groupQueries) {
-                    Query q = triple.getKeyOne();
+                for (Tuple<Query, List<EOProduct>> tuple : groupQueries) {
+                    Query q = tuple.getKeyOne();
                     q.setUserId(user.getName());
-                    addQueryToGroup(group, q, triple.getKeyTwo());
+                    addQueryToGroup(group, q, tuple.getKeyTwo());
                 }
                 group = persistenceManager.updateDataSourceComponentGroup(group);
             } else { // existing group
@@ -133,20 +133,20 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                 group.setLabel(groupLabel);
                 Set<Query> querySet = group.getDataSourceQueries();
                 Set<Long> updatedQueries = new HashSet<>();
-                for (Triple<Query, List<EOProduct>, String> triple : groupQueries) {
-                    Query incomingQuery = triple.getKeyOne();
+                for (Tuple<Query, List<EOProduct>> tuple : groupQueries) {
+                    Query incomingQuery = tuple.getKeyOne();
                     Query dbQuery = querySet.stream().filter(q -> Objects.equals(q.getId(), incomingQuery.getId())).findFirst().orElse(null);
-                    List<EOProduct> productList = triple.getKeyTwo();
+                    List<EOProduct> productList = tuple.getKeyTwo();
                     if (dbQuery == null) { // new query
-                        if (triple.getKeyThree() != null && !triple.getKeyThree().isEmpty()) {
+                        if (incomingQuery.getComponentId() != null) {
                             logger.warning(String.format("Query [label=%s] seems to be new, but it has an associated component [id=%s]. A new component will be created instead.",
-                                                         incomingQuery.getLabel(), triple.getKeyThree()));
+                                                         incomingQuery.getLabel(), incomingQuery.getComponentId()));
                         }
                         incomingQuery.setUserId(user.getName());
                         dbQuery = addQueryToGroup(group, incomingQuery, productList);
                     } else { // existing query
                         dbQuery = updateQuery(incomingQuery, dbQuery, user.getName());
-                        String componentId = triple.getKeyThree();
+                        String componentId = dbQuery.getComponentId();
                         if (componentId == null || componentId.isEmpty()) {
                             String message = String.format("Query [id=%s, label=%s] was already persisted, but its associated component Id is empty.",
                                           dbQuery.getId(), dbQuery.getLabel());
@@ -280,6 +280,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
             dbQuery.setSensor(incomingQuery.getSensor());
             dbQuery.setUser(incomingQuery.getUser());
             dbQuery.setUserId(userName);
+            dbQuery.setComponentId(incomingQuery.getComponentId());
             Map<String, String> parameters = dbQuery.getValues();
             if (parameters == null) {
                 parameters = new HashMap<>();
