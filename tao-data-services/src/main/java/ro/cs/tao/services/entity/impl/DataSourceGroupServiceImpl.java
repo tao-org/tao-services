@@ -158,9 +158,9 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                             throw new PersistenceException(String.format("Component [id=%s] was not found in the group[id=%s]",
                                                                          componentId, group.getId()));
                         }
-                        updateProducts(componentId, productList);
                         component.getSources().get(0).getDataDescriptor().setLocation(productList.stream().map(EOProduct::getName).collect(Collectors.joining(",")));
                         persistenceManager.updateDataSourceComponent(component);
+                        updateProducts(componentId, productList);
                     }
                     updatedQueries.add(dbQuery.getId());
                 }
