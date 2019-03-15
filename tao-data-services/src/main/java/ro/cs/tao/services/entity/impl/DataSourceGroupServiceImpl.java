@@ -1,5 +1,6 @@
 package ro.cs.tao.services.entity.impl;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +20,6 @@ import ro.cs.tao.utils.Tuple;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -158,9 +158,14 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                             throw new PersistenceException(String.format("Component [id=%s] was not found in the group[id=%s]",
                                                                          componentId, group.getId()));
                         }
+                        String previousProductList = component.getSources().get(0).getDataDescriptor().getLocation();
+                        Set<String> previousNames = null;
+                        if (previousProductList != null) {
+                            previousNames = Arrays.stream(previousProductList.split(",")).collect(Collectors.toSet());
+                        }
+                        updateProducts(componentId, productList, previousNames);
                         component.getSources().get(0).getDataDescriptor().setLocation(productList.stream().map(EOProduct::getName).collect(Collectors.joining(",")));
                         persistenceManager.updateDataSourceComponent(component);
-                        updateProducts(componentId, productList);
                     }
                     updatedQueries.add(dbQuery.getId());
                 }
@@ -229,7 +234,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                 dataSourceComponentService.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
                                                                  query.getSensor(), query.getDataSource(), query.getLabel(),
                                                                  SessionStore.currentContext().getPrincipal());
-        products = updateProducts(component.getId(), products);
+        products = updateProducts(component.getId(), products, null);
         ProductPersister persister = new ProductPersister();
         persister.handle(products);
         query.setComponentId(component.getId());
@@ -241,32 +246,27 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         return query;
     }
 
-    private List<EOProduct> updateProducts(String componentId, List<EOProduct> products) {
+    private List<EOProduct> updateProducts(String componentId, List<EOProduct> products, Set<String> previousNames) {
         String[] names = products.stream().map(EOProduct::getName).toArray(String[]::new);
-        Map<String, EOProduct> existingProducts = persistenceManager.getProductsByNames(names).stream()
-                .collect(Collectors.toMap(EOProduct::getName, Function.identity()));
-        List<EOProduct> results = new ArrayList<>(products);
-        for (EOProduct product : products) {
-            // remove products that are already in database
-            if (existingProducts.containsKey(product.getName())) {
-                logger.finest(String.format("Product [%s] already exists in database", product.getName()));
-                results.remove(product);
-            }
-        }
-        if (results.size() > 0) {
-            List<String> candidatesToRemove = products.stream()
-                    .filter(not(new HashSet<>(results)::contains))
-                    .map(EOProduct::getName)
-                    .collect(Collectors.toList());
+        Set<String> existingProducts = persistenceManager.getProductsByNames(names).stream()
+                                                         .map(EOProduct::getName).collect(Collectors.toSet());
+        List<EOProduct> candidatesToSave = new ArrayList<>(products);
+        // remove from the list the products that are already in database
+        candidatesToSave.removeIf(p -> existingProducts.contains(p.getName()));
+        if (previousNames != null) {
+            Collection<String> candidatesToRemove = CollectionUtils.subtract(previousNames,
+                                                                             products.stream().map(EOProduct::getName).collect(Collectors.toSet()));
             for (String product : candidatesToRemove) {
                 logger.finest(String.format("Product [%s] will be removed from database if not already downloaded or referenced by another component",
                                             product));
                 persistenceManager.deleteIfNotReferenced(componentId, product);
             }
-            ProductPersister persister = new ProductPersister();
-            persister.handle(results);
         }
-        return results;
+        if (candidatesToSave.size() > 0) {
+            ProductPersister persister = new ProductPersister();
+            persister.handle(candidatesToSave);
+        }
+        return candidatesToSave;
     }
 
     private Query updateQuery(Query incomingQuery, Query dbQuery, String userName) throws PersistenceException {
