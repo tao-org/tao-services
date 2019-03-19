@@ -24,7 +24,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.*;
+import ro.cs.tao.configuration.ConfigurationManager;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @EnableWebMvc
@@ -33,8 +36,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/ui/**")
-                .addResourceLocations(TaoServicesStartup.homeDirectory().resolve("static").toUri().toString());
+        String siteBase = ConfigurationManager.getInstance().getValue("site.location", "static");
+        Path sitePath = Paths.get(siteBase);
+        if (!sitePath.isAbsolute()) {
+            sitePath = TaoServicesStartup.homeDirectory().resolve(siteBase);
+        }
+        registry.addResourceHandler("/ui/**").addResourceLocations(sitePath.toUri().toString());
+        ConfigurationManager.getInstance().setValue("site.path", sitePath.toString());
+        ConfigurationManager.getInstance().setValue("site.url", sitePath.toUri().toString());
     }
 
     @Override
