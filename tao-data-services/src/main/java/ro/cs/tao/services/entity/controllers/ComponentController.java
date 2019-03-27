@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -27,13 +28,16 @@ import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.eodata.naming.NamingRule;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.beans.NamingRuleInfo;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.GroupComponentService;
+import ro.cs.tao.services.interfaces.NameTokenService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,6 +51,9 @@ public class ComponentController extends DataEntityController<ProcessingComponen
 
     @Autowired
     private GroupComponentService groupComponentService;
+
+    @Autowired
+    private NameTokenService nameTokenService;
 
     @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listUserComponents(@RequestParam("type") ProcessingComponentType componentType) {
@@ -97,6 +104,57 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         } else {
             String[] ids = groupIdList.split(",");
             responseEntity = prepareResult(groupComponentService.list(Arrays.asList(ids)));
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/naming/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getNamingRules() {
+        return prepareResult(nameTokenService.list().stream().map(NamingRuleInfo::new).collect(Collectors.toList()));
+    }
+
+    @RequestMapping(value = "/naming/tokens", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getTokens(@RequestParam(name = "sensor") String sensor) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        if (StringUtils.isBlank(sensor)) {
+            responseEntity = prepareResult("Invalid sensor value", ResponseStatus.FAILED);
+        } else {
+            responseEntity = prepareResult(nameTokenService.getNameTokens(sensor));
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/naming/{id}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getNamingRuleDetails(@PathVariable("id") int id) {
+        try {
+            return prepareResult(nameTokenService.findById(id));
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/naming", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> saveRule(@RequestBody NamingRule rule) {
+        try {
+            return prepareResult(nameTokenService.save(rule));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/naming", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> updateRule(@RequestBody NamingRule rule) {
+        return saveRule(rule);
+    }
+
+    @RequestMapping(value = "/naming/{id}", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> deleteRule(@PathVariable("id") int id) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            nameTokenService.delete(id);
+            responseEntity = prepareResult("Entity deleted", ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            responseEntity = handleException(e);
         }
         return responseEntity;
     }
