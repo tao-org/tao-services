@@ -85,6 +85,8 @@ public class TaoServicesStartup extends StartupBase {
             try {
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_FILES.value()));
+                Path cachePath = TaoServicesStartup.homeDirectory().resolve("static").resolve("previews");
+                FileUtilities.ensureExists(cachePath);
             } catch (IOException e) {
                 logger.severe("Cannot create required folders: " + e.getMessage());
                 System.exit(1);
