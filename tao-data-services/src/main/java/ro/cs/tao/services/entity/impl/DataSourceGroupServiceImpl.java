@@ -1,5 +1,6 @@
 package ro.cs.tao.services.entity.impl;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,12 +15,11 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceGroupService;
-import ro.cs.tao.utils.Triple;
+import ro.cs.tao.utils.Tuple;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -110,7 +110,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     @Override
     @Transactional(rollbackFor = { PersistenceException.class, Exception.class })
     public DataSourceComponentGroup saveDataSourceGroup(String groupId, String groupLabel,
-                                                        List<Triple<Query, List<EOProduct>, String>> groupQueries,
+                                                        List<Tuple<Query, List<EOProduct>>> groupQueries,
                                                         Principal user) throws PersistenceException {
         if (groupLabel == null || groupLabel.isEmpty()) {
             throw new PersistenceException("Group label is required");
@@ -119,10 +119,10 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         try {
             if (groupId == null) { // new group
                 group = createGroup(user.getName(), groupLabel);
-                for (Triple<Query, List<EOProduct>, String> triple : groupQueries) {
-                    Query q = triple.getKeyOne();
+                for (Tuple<Query, List<EOProduct>> tuple : groupQueries) {
+                    Query q = tuple.getKeyOne();
                     q.setUserId(user.getName());
-                    addQueryToGroup(group, q, triple.getKeyTwo());
+                    addQueryToGroup(group, q, tuple.getKeyTwo());
                 }
                 group = persistenceManager.updateDataSourceComponentGroup(group);
             } else { // existing group
@@ -133,20 +133,20 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                 group.setLabel(groupLabel);
                 Set<Query> querySet = group.getDataSourceQueries();
                 Set<Long> updatedQueries = new HashSet<>();
-                for (Triple<Query, List<EOProduct>, String> triple : groupQueries) {
-                    Query incomingQuery = triple.getKeyOne();
+                for (Tuple<Query, List<EOProduct>> tuple : groupQueries) {
+                    Query incomingQuery = tuple.getKeyOne();
                     Query dbQuery = querySet.stream().filter(q -> Objects.equals(q.getId(), incomingQuery.getId())).findFirst().orElse(null);
-                    List<EOProduct> productList = triple.getKeyTwo();
+                    List<EOProduct> productList = tuple.getKeyTwo();
                     if (dbQuery == null) { // new query
-                        if (triple.getKeyThree() != null && !triple.getKeyThree().isEmpty()) {
+                        if (incomingQuery.getComponentId() != null) {
                             logger.warning(String.format("Query [label=%s] seems to be new, but it has an associated component [id=%s]. A new component will be created instead.",
-                                                         incomingQuery.getLabel(), triple.getKeyThree()));
+                                                         incomingQuery.getLabel(), incomingQuery.getComponentId()));
                         }
                         incomingQuery.setUserId(user.getName());
                         dbQuery = addQueryToGroup(group, incomingQuery, productList);
                     } else { // existing query
                         dbQuery = updateQuery(incomingQuery, dbQuery, user.getName());
-                        String componentId = triple.getKeyThree();
+                        String componentId = dbQuery.getComponentId();
                         if (componentId == null || componentId.isEmpty()) {
                             String message = String.format("Query [id=%s, label=%s] was already persisted, but its associated component Id is empty.",
                                           dbQuery.getId(), dbQuery.getLabel());
@@ -158,7 +158,12 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                             throw new PersistenceException(String.format("Component [id=%s] was not found in the group[id=%s]",
                                                                          componentId, group.getId()));
                         }
-                        updateProducts(componentId, productList);
+                        String previousProductList = component.getSources().get(0).getDataDescriptor().getLocation();
+                        Set<String> previousNames = null;
+                        if (previousProductList != null) {
+                            previousNames = Arrays.stream(previousProductList.split(",")).collect(Collectors.toSet());
+                        }
+                        updateProducts(componentId, productList, previousNames);
                         component.getSources().get(0).getDataDescriptor().setLocation(productList.stream().map(EOProduct::getName).collect(Collectors.joining(",")));
                         persistenceManager.updateDataSourceComponent(component);
                     }
@@ -229,7 +234,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                 dataSourceComponentService.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
                                                                  query.getSensor(), query.getDataSource(), query.getLabel(),
                                                                  SessionStore.currentContext().getPrincipal());
-        products = updateProducts(component.getId(), products);
+        products = updateProducts(component.getId(), products, null);
         ProductPersister persister = new ProductPersister();
         persister.handle(products);
         query.setComponentId(component.getId());
@@ -241,32 +246,27 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         return query;
     }
 
-    private List<EOProduct> updateProducts(String componentId, List<EOProduct> products) {
+    private List<EOProduct> updateProducts(String componentId, List<EOProduct> products, Set<String> previousNames) {
         String[] names = products.stream().map(EOProduct::getName).toArray(String[]::new);
-        Map<String, EOProduct> existingProducts = persistenceManager.getProductsByNames(names).stream()
-                .collect(Collectors.toMap(EOProduct::getName, Function.identity()));
-        List<EOProduct> results = new ArrayList<>(products);
-        for (EOProduct product : products) {
-            // remove products that are already in database
-            if (existingProducts.containsKey(product.getName())) {
-                logger.finest(String.format("Product [%s] already exists in database", product.getName()));
-                results.remove(product);
-            }
-        }
-        if (results.size() > 0) {
-            List<String> candidatesToRemove = products.stream()
-                    .filter(not(new HashSet<>(results)::contains))
-                    .map(EOProduct::getName)
-                    .collect(Collectors.toList());
+        Set<String> existingProducts = persistenceManager.getProductsByNames(names).stream()
+                                                         .map(EOProduct::getName).collect(Collectors.toSet());
+        List<EOProduct> candidatesToSave = new ArrayList<>(products);
+        // remove from the list the products that are already in database
+        candidatesToSave.removeIf(p -> existingProducts.contains(p.getName()));
+        if (previousNames != null) {
+            Collection<String> candidatesToRemove = CollectionUtils.subtract(previousNames,
+                                                                             products.stream().map(EOProduct::getName).collect(Collectors.toSet()));
             for (String product : candidatesToRemove) {
                 logger.finest(String.format("Product [%s] will be removed from database if not already downloaded or referenced by another component",
                                             product));
                 persistenceManager.deleteIfNotReferenced(componentId, product);
             }
-            ProductPersister persister = new ProductPersister();
-            persister.handle(results);
         }
-        return results;
+        if (candidatesToSave.size() > 0) {
+            ProductPersister persister = new ProductPersister();
+            persister.handle(candidatesToSave);
+        }
+        return candidatesToSave;
     }
 
     private Query updateQuery(Query incomingQuery, Query dbQuery, String userName) throws PersistenceException {
@@ -280,6 +280,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
             dbQuery.setSensor(incomingQuery.getSensor());
             dbQuery.setUser(incomingQuery.getUser());
             dbQuery.setUserId(userName);
+            dbQuery.setComponentId(incomingQuery.getComponentId());
             Map<String, String> parameters = dbQuery.getValues();
             if (parameters == null) {
                 parameters = new HashMap<>();

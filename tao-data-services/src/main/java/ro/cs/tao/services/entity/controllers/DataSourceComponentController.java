@@ -40,7 +40,7 @@ import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceGroupService;
 import ro.cs.tao.services.interfaces.QueryService;
-import ro.cs.tao.utils.Triple;
+import ro.cs.tao.utils.Tuple;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -135,7 +135,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 DataSourceComponentGroup group =
                         dataSourceGroupService.saveDataSourceGroup(request.getGroupId(), request.getGroupLabel(),
                                                                    Arrays.stream(request.getQueries())
-                                                                           .map(q -> new Triple<>(q.getQuery(), q.getProducts(), q.getComponentId()))
+                                                                           .map(q -> new Tuple<>(q.getQuery(), q.getProducts()))
                                                                            .collect(Collectors.toList()),
                                                                    SessionStore.currentContext().getPrincipal());
                 result = prepareResult(group);
