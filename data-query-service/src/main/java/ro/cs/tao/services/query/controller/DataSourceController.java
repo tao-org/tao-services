@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.Variable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.beans.Query;
+import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.Polygon2D;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
@@ -36,7 +37,6 @@ import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.model.datasource.ParameterDescriptor;
 import ro.cs.tao.services.query.beans.FetchRequest;
-import ro.cs.tao.services.query.beans.OrderedParameter;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
@@ -99,9 +99,14 @@ public class DataSourceController extends BaseController {
             params = new ArrayList<>();
         }
         int count = params.size();
-        List<OrderedParameter> parameters = new ArrayList<>(count);
+        List<DataSourceParameter> parameters = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            parameters.add(new OrderedParameter(params.get(i), i + 1));
+            ParameterDescriptor current = params.get(i);
+            DataSourceParameter dsp = new DataSourceParameter(current.getName(), current.getType(), current.getLabel(),
+                                                              current.getDefaultValue(), current.isRequired(),
+                                                              current.getValueSet());
+            dsp.setOrder(i + 1);
+            parameters.add(dsp);
         }
         return prepareResult(parameters);
     }
