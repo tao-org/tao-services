@@ -36,6 +36,7 @@ import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.model.datasource.ParameterDescriptor;
 import ro.cs.tao.services.query.beans.FetchRequest;
+import ro.cs.tao.services.query.beans.OrderedParameter;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
@@ -97,7 +98,12 @@ public class DataSourceController extends BaseController {
         if (params == null) {
             params = new ArrayList<>();
         }
-        return prepareResult(params);
+        int count = params.size();
+        List<OrderedParameter> parameters = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            parameters.add(new OrderedParameter(params.get(i), i + 1));
+        }
+        return prepareResult(parameters);
     }
 
     @RequestMapping(value = "/footprint/sentinel2", method = RequestMethod.GET, produces = "application/json")
