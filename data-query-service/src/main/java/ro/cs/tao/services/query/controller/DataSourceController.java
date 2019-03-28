@@ -23,8 +23,11 @@ import ro.cs.tao.component.Variable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.eodata.Polygon2D;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
+import ro.cs.tao.products.landsat.Landsat8TileExtent;
+import ro.cs.tao.products.sentinels.Sentinel2TileExtent;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -36,6 +39,7 @@ import ro.cs.tao.services.query.beans.FetchRequest;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
+import java.awt.geom.Path2D;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
@@ -44,6 +48,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 /**
  * @author Cosmin Cara
@@ -51,6 +56,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Controller
 @RequestMapping("/query")
 public class DataSourceController extends BaseController {
+
+    private static final Pattern s2TilePattern = Pattern.compile("\\d{2}\\w{3}");
+    private static final Pattern l8TilePattern = Pattern.compile("\\d{6}");
 
     @Autowired
     private DataSourceService dataSourceService;
@@ -84,12 +92,52 @@ public class DataSourceController extends BaseController {
 
     @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getSupportedParameters(@PathVariable("name") String sensorName,
-                                                                            @PathVariable("source") String dataSourceClassName) {
+                                                                     @PathVariable("source") String dataSourceClassName) {
         List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
         if (params == null) {
             params = new ArrayList<>();
         }
         return prepareResult(params);
+    }
+
+    @RequestMapping(value = "/footprint/sentinel2", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getS2TileFootprint(@RequestParam("tile") String tile) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        if (tile == null) {
+            responseEntity = prepareResult("Empty parameter [tile]", ResponseStatus.FAILED);
+        } else {
+            if (!s2TilePattern.matcher(tile).matches()) {
+                responseEntity = prepareResult(String.format("[%s] is not a valid UTM tile", tile), ResponseStatus.FAILED);
+            } else {
+                Path2D.Double tileExtent = Sentinel2TileExtent.getInstance().getTileExtent(tile);
+                if (tileExtent == null) {
+                    responseEntity = prepareResult(String.format("[%s] is not found", tile), ResponseStatus.FAILED);
+                } else {
+                    responseEntity = prepareResult(Polygon2D.fromPath2D(tileExtent).toWKT());
+                }
+            }
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/footprint/landsat8", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getL8TileFootprint(@RequestParam("tile") String tile) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        if (tile == null) {
+            responseEntity = prepareResult("Empty parameter [tile]", ResponseStatus.FAILED);
+        } else {
+            if (!l8TilePattern.matcher(tile).matches()) {
+                responseEntity = prepareResult(String.format("[%s] is not a valid Landsat-8 path row", tile), ResponseStatus.FAILED);
+            } else {
+                Path2D.Double tileExtent = Landsat8TileExtent.getInstance().getTileExtent(tile);
+                if (tileExtent == null) {
+                    responseEntity = prepareResult(String.format("[%s] is not found", tile), ResponseStatus.FAILED);
+                } else {
+                    responseEntity = prepareResult(Polygon2D.fromPath2D(tileExtent).toWKT());
+                }
+            }
+        }
+        return responseEntity;
     }
 
     @RequestMapping(value = "/count", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
