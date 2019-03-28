@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.query.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.datasource.DataSource;
@@ -40,6 +41,9 @@ import java.util.stream.Collectors;
  */
 @Service("dataSourceService")
 public class DataSourceServiceImpl implements DataSourceService {
+
+    @Autowired
+    private DownloadListener downloadListener;
 
     @Override
     public SortedSet<String> getSupportedSensors() {
@@ -100,10 +104,9 @@ public class DataSourceServiceImpl implements DataSourceService {
             DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
             dsComponent.setUserCredentials(query.getUser(), query.getPassword());
             dsComponent.setFetchMode(mode);
-            //String path = ConfigurationManager.getInstance().getValue("product.location");
+            dsComponent.setProductStatusListener(downloadListener);
             String path = SystemVariable.SHARED_WORKSPACE.value();
             if ((mode == FetchMode.SYMLINK || mode == FetchMode.COPY) && localPath != null) {
-                DataSource dataSource = DataSourceManager.getInstance().get(query.getSensor(), query.getDataSource());
                 Properties properties = new Properties();
                 properties.put("local.archive.path.format", pathFormat);
                 products = dsComponent.doFetch(products, null, path, localPath, properties);
