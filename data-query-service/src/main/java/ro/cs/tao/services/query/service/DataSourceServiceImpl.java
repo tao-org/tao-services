@@ -24,16 +24,14 @@ import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.ParameterName;
 import ro.cs.tao.datasource.remote.FetchMode;
-import ro.cs.tao.eodata.DataHandlingException;
 import ro.cs.tao.eodata.EOProduct;
-import ro.cs.tao.execution.OutputDataHandlerManager;
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.model.datasource.ParameterDescriptor;
 
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -44,6 +42,9 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     @Autowired
     private DownloadListener downloadListener;
+
+    @Autowired
+    private PersistenceManager persistenceManager;
 
     @Override
     public SortedSet<String> getSupportedSensors() {
@@ -106,6 +107,8 @@ public class DataSourceServiceImpl implements DataSourceService {
             dsComponent.setFetchMode(mode);
             dsComponent.setProductStatusListener(downloadListener);
             String path = SystemVariable.SHARED_WORKSPACE.value();
+            final Set<String> existingSet = new HashSet<>(persistenceManager.getExistingProductNames(products.stream().map(EOProduct::getName).toArray(String[]::new)));
+            products.removeIf(p -> existingSet.contains(p.getName()));
             if ((mode == FetchMode.SYMLINK || mode == FetchMode.COPY) && localPath != null) {
                 Properties properties = new Properties();
                 properties.put("local.archive.path.format", pathFormat);
@@ -113,12 +116,12 @@ public class DataSourceServiceImpl implements DataSourceService {
             } else {
                 products = dsComponent.doFetch(products, null, path);
             }
-            try {
+            /*try {
                 OutputDataHandlerManager.getInstance().applyHandlers(products);
             } catch (DataHandlingException ex) {
                 Logger.getLogger(DataSourceService.class.getName()).severe(String.format("Error persisting products: %s",
                                                                                          ex.getMessage()));
-            }
+            }*/
         }
         return products;
     }
