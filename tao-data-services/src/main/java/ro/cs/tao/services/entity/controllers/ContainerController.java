@@ -46,10 +46,10 @@ public class ContainerController extends DataEntityController<Container, String,
 
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> list(Optional<Integer> pageNumber,
-                                                   Optional<Integer> pageSize,
-                                                   Optional<String> sortByField,
-                                                   Optional<SortDirection> sortDirection) {
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
+                                                   @RequestParam(name = "pageSize", required = false)Optional<Integer> pageSize,
+                                                   @RequestParam(name = "sortByField", required = false)Optional<String> sortByField,
+                                                   @RequestParam(name = "sortDirection", required = false)Optional<SortDirection> sortDirection) {
         List<Container> objects = TopologyManager.getInstance().getAvailableDockerImages();
         if (objects == null) {
             objects = new ArrayList<>();
