@@ -17,10 +17,7 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.docker.Container;
@@ -60,7 +57,8 @@ public class ContainerController extends DataEntityController<Container, String,
     @PostMapping(value = "/upload", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> upload(@RequestParam("file") MultipartFile dockerFile,
                                                      @RequestParam("name") String shortName,
-                                                     @RequestParam("desc") String description) {
+                                                     @RequestParam("desc") String description,
+                                                     @RequestBody Container container) {
         asyncExecute(() -> {
             try {
                 service.registerContainer(dockerFile, shortName, description);

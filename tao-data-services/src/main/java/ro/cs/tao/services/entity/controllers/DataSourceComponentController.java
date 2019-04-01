@@ -196,12 +196,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             String description = request.getLabel();
             Principal currentUser = SessionStore.currentContext().getPrincipal();
             if (products != null && products.size() > 0) {
-                if (productType != null) {
-                    return prepareResult(service.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
-                                                                       productType, dataSource, request.getQueryId(), description, currentUser));
-                } else {
-                    return prepareResult(service.createForProducts(products, dataSource, request.getQueryId(), description, currentUser));
-                }
+                return prepareResult(service.createForProducts(products, dataSource, request.getQueryId(), description, currentUser));
             } else {
                 return prepareResult("Product list not provided", ResponseStatus.FAILED);
             }
