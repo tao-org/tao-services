@@ -146,7 +146,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         if (userDSC != null) {
             SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
             sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
-            userDSC = persistenceManager.saveDataSourceComponent(userDSC);
+            userDSC = persistenceManager.updateDataSourceComponent(userDSC);
         } else {
             DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(sensor + "-Local Database");
             if (systemDSC == null) {
