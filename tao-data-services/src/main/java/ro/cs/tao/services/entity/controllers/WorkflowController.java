@@ -76,7 +76,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     }
 
     @RequestMapping(value = "/visibility/{visibility}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByVisibility(@PathVariable("visibility")Visibility visibility) {
+    public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByVisibility(@PathVariable("visibility") Visibility visibility) {
         return prepareResult(service.getUserPublishedWorkflowsByVisibility(currentUser(), visibility));
     }
 

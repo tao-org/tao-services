@@ -24,6 +24,7 @@ import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -101,7 +102,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
-    public DataSourceComponent createForProducts(List<EOProduct> products, String dataSource,
+    public DataSourceComponent createForProducts(List<EOProduct> products, String dataSource, Long queryId,
                                                  String label, Principal principal) throws PersistenceException {
         if (products == null || products.isEmpty()) {
             throw new IllegalArgumentException("Product list is empty");
@@ -112,17 +113,20 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         }
         String productType = types.iterator().next();
         List<String> nameList = new ArrayList<>();
+        Set<String> existingSet = new HashSet<>(persistenceManager.getExistingProductNames(products.stream().map(EOProduct::getName).toArray(String[]::new)));
         for (EOProduct product : products) {
-            product.setProductStatus(ProductStatus.QUERIED);
+            if (!existingSet.contains(product.getName())) {
+                product.setProductStatus(ProductStatus.QUERIED);
+                persistenceManager.saveEOProduct(product);
+            }
             nameList.add(product.getName());
-            persistenceManager.saveEOProduct(product);
         }
-        return createForProductNames(nameList, productType, dataSource, label, principal);
+        return createForProductNames(nameList, productType, dataSource, queryId, label, principal);
     }
 
     @Override
     public DataSourceComponent createForProductNames(List<String> productNames, String sensor, String dataSource,
-                                                     String label, Principal principal) throws PersistenceException {
+                                                     Long queryId, String label, Principal principal) throws PersistenceException {
         if (productNames == null || productNames.isEmpty()) {
             throw new IllegalArgumentException("Product list is empty");
         }
@@ -135,35 +139,53 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         if (principal == null) {
             throw new IllegalArgumentException("Invalid principal (null)");
         }
-        DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(sensor + "-Local Database");
-        if (systemDSC == null) {
-            return null;
+        DataSourceComponent userDSC = null;
+        if (queryId != null) {
+            userDSC = persistenceManager.getQueryDataSourceComponent(queryId);
         }
-        DataSourceComponent userDSC;
-        try {
-            userDSC = systemDSC.clone();
-            LocalDateTime time = LocalDateTime.now();
-            String newId = String.join("-", sensor, dataSource, principal.getName(),
-                                       time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
-            userDSC.setId(newId);
-            userDSC.setLabel(label != null && !label.isEmpty() ?
-                                     label : String.join("-", sensor, dataSource, principal.getName()) +
-                                     " [customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "]");
+        if (userDSC != null) {
             SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
-            sourceDescriptor.setId(UUID.randomUUID().toString());
-            sourceDescriptor.setParentId(newId);
             sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
-            sourceDescriptor.setCardinality(productNames.size());
-            TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
-            targetDescriptor.setId(UUID.randomUUID().toString());
-            targetDescriptor.setParentId(newId);
-            targetDescriptor.setCardinality(productNames.size());
-            targetDescriptor.addConstraint("Same cardinality");
-            userDSC.setSystem(false);
-            userDSC = persistenceManager.saveDataSourceComponent(userDSC);
-            tag(userDSC.getId(), new ArrayList<String>() {{ add(sensor); add(dataSource); add(label); }});
-        } catch (CloneNotSupportedException e) {
-            throw new PersistenceException(e);
+            userDSC = persistenceManager.updateDataSourceComponent(userDSC);
+        } else {
+            DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(sensor + "-Local Database");
+            if (systemDSC == null) {
+                return null;
+            }
+            try {
+                userDSC = systemDSC.clone();
+                LocalDateTime time = LocalDateTime.now();
+                String newId = String.join("-", sensor, dataSource, principal.getName(),
+                                           time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+                userDSC.setId(newId);
+                userDSC.setLabel(label != null && !label.isEmpty() ?
+                                         label : String.join("-", sensor, dataSource, principal.getName()) +
+                        " [customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "]");
+                SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
+                sourceDescriptor.setId(UUID.randomUUID().toString());
+                sourceDescriptor.setParentId(newId);
+                sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
+                sourceDescriptor.setCardinality(productNames.size());
+                TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
+                targetDescriptor.setId(UUID.randomUUID().toString());
+                targetDescriptor.setParentId(newId);
+                targetDescriptor.setCardinality(productNames.size());
+                targetDescriptor.addConstraint("Same cardinality");
+                userDSC.setSystem(false);
+                userDSC = persistenceManager.saveDataSourceComponent(userDSC);
+                tag(userDSC.getId(), new ArrayList<String>() {{
+                    add(sensor);
+                    add(dataSource);
+                    add(label);
+                }});
+                if (queryId != null) {
+                    Query query = persistenceManager.findQueryById(queryId);
+                    query.setComponentId(userDSC.getId());
+                    persistenceManager.saveQuery(query);
+                }
+            } catch (CloneNotSupportedException e) {
+                throw new PersistenceException(e);
+            }
         }
         return userDSC;
     }
