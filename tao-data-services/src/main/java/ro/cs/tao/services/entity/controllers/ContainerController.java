@@ -17,10 +17,7 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.docker.Container;
@@ -46,10 +43,10 @@ public class ContainerController extends DataEntityController<Container, String,
 
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> list(Optional<Integer> pageNumber,
-                                                   Optional<Integer> pageSize,
-                                                   Optional<String> sortByField,
-                                                   Optional<SortDirection> sortDirection) {
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
+                                                   @RequestParam(name = "pageSize", required = false)Optional<Integer> pageSize,
+                                                   @RequestParam(name = "sortByField", required = false)Optional<String> sortByField,
+                                                   @RequestParam(name = "sortDirection", required = false)Optional<SortDirection> sortDirection) {
         List<Container> objects = TopologyManager.getInstance().getAvailableDockerImages();
         if (objects == null) {
             objects = new ArrayList<>();
@@ -60,7 +57,8 @@ public class ContainerController extends DataEntityController<Container, String,
     @PostMapping(value = "/upload", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> upload(@RequestParam("file") MultipartFile dockerFile,
                                                      @RequestParam("name") String shortName,
-                                                     @RequestParam("desc") String description) {
+                                                     @RequestParam("desc") String description,
+                                                     @RequestBody Container container) {
         asyncExecute(() -> {
             try {
                 service.registerContainer(dockerFile, shortName, description);

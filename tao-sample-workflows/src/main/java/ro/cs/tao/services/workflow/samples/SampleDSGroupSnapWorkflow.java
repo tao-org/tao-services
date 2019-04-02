@@ -31,7 +31,7 @@ public class SampleDSGroupSnapWorkflow extends SampleWorkflowBase {
         productNames.add("S2A_MSIL1C_20170731T093041_N0205_R136_T34TFR_20170731T093607");
         DataSourceComponent dataSourceComponent1 =
                 dataSourceComponentService.createForProductNames(productNames,
-                                                                 "Sentinel2", "Scientific Data Hub",
+                                                                 "Sentinel2", "Scientific Data Hub", null,
                                                                  "Sample data source 1",
                                                                  principal);
         productNames.clear();
@@ -41,7 +41,7 @@ public class SampleDSGroupSnapWorkflow extends SampleWorkflowBase {
         } catch (InterruptedException ignored) { }
         DataSourceComponent dataSourceComponent2 =
                 dataSourceComponentService.createForProductNames(productNames,
-                                                                 "Sentinel2", "Scientific Data Hub",
+                                                                 "Sentinel2", "Scientific Data Hub", null,
                                                                  "Sample data source 2",
                                                                  principal);
         DataSourceComponentGroup group = new DataSourceComponentGroup();

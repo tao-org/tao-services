@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.query.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.datasource.DataSource;
@@ -23,9 +24,10 @@ import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.ParameterName;
 import ro.cs.tao.datasource.remote.FetchMode;
-import ro.cs.tao.eodata.DataHandlingException;
 import ro.cs.tao.eodata.EOProduct;
-import ro.cs.tao.execution.OutputDataHandlerManager;
+import ro.cs.tao.eodata.enums.ProductStatus;
+import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
@@ -40,6 +42,12 @@ import java.util.stream.Collectors;
  */
 @Service("dataSourceService")
 public class DataSourceServiceImpl implements DataSourceService {
+
+    @Autowired
+    private DownloadListener downloadListener;
+
+    @Autowired
+    private PersistenceManager persistenceManager;
 
     @Override
     public SortedSet<String> getSupportedSensors() {
@@ -71,7 +79,6 @@ public class DataSourceServiceImpl implements DataSourceService {
             Map<String, Map<ParameterName, ro.cs.tao.datasource.param.DataSourceParameter>> map = dataSource.getSupportedParameters();
             Map<ParameterName, ro.cs.tao.datasource.param.DataSourceParameter> parameterDescriptorMap = map.get(sensorName);
             if (parameterDescriptorMap != null) {
-                //parameters = new ArrayList<>(parameterDescriptorMap.values());
                 parameters = parameterDescriptorMap.entrySet().stream()
                         .map(e -> new ParameterDescriptor(e.getKey().getSystemName(), e.getKey().getLabel(),
                                                           e.getKey().getDescription(),
@@ -100,21 +107,25 @@ public class DataSourceServiceImpl implements DataSourceService {
             DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
             dsComponent.setUserCredentials(query.getUser(), query.getPassword());
             dsComponent.setFetchMode(mode);
-            //String path = ConfigurationManager.getInstance().getValue("product.location");
+            dsComponent.setProductStatusListener(downloadListener);
             String path = SystemVariable.SHARED_WORKSPACE.value();
+            final Set<String> existingSet = new HashSet<>(persistenceManager.getExistingProductNames(products.stream().map(EOProduct::getName).toArray(String[]::new)));
+            products.removeIf(p -> existingSet.contains(p.getName()));
+            for (EOProduct product : products) {
+                product.setProductStatus(ProductStatus.QUERIED);
+                try {
+                    persistenceManager.saveEOProduct(product);
+                } catch (PersistenceException e) {
+                    Logger.getLogger(DataSourceService.class.getName()).warning(String.format("Cannot persist product %s. Reason: %s",
+                                                                                              product.getName(), e.getMessage()));
+                }
+            }
             if ((mode == FetchMode.SYMLINK || mode == FetchMode.COPY) && localPath != null) {
-                DataSource dataSource = DataSourceManager.getInstance().get(query.getSensor(), query.getDataSource());
                 Properties properties = new Properties();
                 properties.put("local.archive.path.format", pathFormat);
                 products = dsComponent.doFetch(products, null, path, localPath, properties);
             } else {
                 products = dsComponent.doFetch(products, null, path);
-            }
-            try {
-                OutputDataHandlerManager.getInstance().applyHandlers(products);
-            } catch (DataHandlingException ex) {
-                Logger.getLogger(DataSourceService.class.getName()).severe(String.format("Error persisting products: %s",
-                                                                                         ex.getMessage()));
             }
         }
         return products;

@@ -114,7 +114,8 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public void registerContainer(MultipartFile dockerFile, String shortName, String description) throws IOException {
+    public String registerContainer(MultipartFile dockerFile, String shortName, String description) throws IOException {
+        String containerId = null;
         String fileName = StringUtils.cleanPath(dockerFile.getOriginalFilename());
         if (dockerFile.isEmpty()) {
             throw new IOException("Failed to store empty docker file " + fileName);
@@ -132,15 +133,16 @@ public class ContainerServiceImpl
         }
         TopologyManager topologyManager = TopologyManager.getInstance();
         if (topologyManager.getDockerImage(shortName) == null) {
-            topologyManager.registerImage(filePath, shortName, description);
+            containerId = topologyManager.registerImage(filePath, shortName, description);
         }
+        return containerId;
     }
 
     @Override
     public Container initializeContainer(String id, String name, String path, List<Application> applications) {
         List<Container> containers = persistenceManager.getContainers();
-        Container container = null;
-        if (containers == null || containers.stream().noneMatch(c -> c.getName().equals(name))) {
+        Container container;
+        if (containers == null || (container = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null)) == null) {
             container = new Container();
             container.setId(id);
             container.setName(name);
@@ -150,7 +152,7 @@ public class ContainerServiceImpl
             for (Application app : applications) {
                 Application application = new Application();
                 appPath = app.getPath() + (SystemUtils.IS_OS_WINDOWS && (winExtensions.stream()
-                                                                  .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
+                                                              .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
                 application.setName(app.getName());
                 application.setPath(appPath);
                 container.addApplication(application);
@@ -161,7 +163,6 @@ public class ContainerServiceImpl
                 logger.severe(e.getMessage());
             }
         } else {
-            container = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
             container.setId(id);
             container.setName(name);
             container.setTag(name);

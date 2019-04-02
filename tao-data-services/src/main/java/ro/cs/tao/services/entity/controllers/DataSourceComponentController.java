@@ -87,9 +87,18 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return prepareResult(service.list(Arrays.asList(ids)));
     }
 
-    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/user/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponents() {
         return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.getUserDataSourceComponents(SessionStore.currentContext().getPrincipal().getName())));
+    }
+
+    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponent(@RequestParam("id") String id) {
+        try {
+            return prepareResult(service.findById(id));
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
     }
 
     @RequestMapping(value = "/user/group", method = RequestMethod.GET, produces = "application/json")
@@ -187,12 +196,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             String description = request.getLabel();
             Principal currentUser = SessionStore.currentContext().getPrincipal();
             if (products != null && products.size() > 0) {
-                if (productType != null) {
-                    return prepareResult(service.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
-                                                                       productType, dataSource, description, currentUser));
-                } else {
-                    return prepareResult(service.createForProducts(products, dataSource, description, currentUser));
-                }
+                return prepareResult(service.createForProducts(products, dataSource, request.getQueryId(), description, currentUser));
             } else {
                 return prepareResult("Product list not provided", ResponseStatus.FAILED);
             }

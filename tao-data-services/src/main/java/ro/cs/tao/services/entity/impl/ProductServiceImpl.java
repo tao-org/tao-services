@@ -190,7 +190,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
     @Override
     public int importProducts(String sourcePath, boolean linkOnly) throws IOException {
-        Path srcPath = null;
+        Path srcPath;
         if (sourcePath == null || !Files.exists((srcPath = Paths.get(sourcePath)))) {
             throw new IOException("Source directory not found");
         }

@@ -27,8 +27,8 @@ public class UtilityConroller {
     @RequestMapping(value = "/tunnel/get", method = RequestMethod.GET)
     public ResponseEntity<?> get(@RequestParam("url") String url,
                                  @RequestParam("name") String productName,
-                                 @RequestParam("user") Optional<String> user,
-                                 @RequestParam("password") Optional<String> password) {
+                                 @RequestParam(name = "user", required = false) Optional<String> user,
+                                 @RequestParam(name = "password", required = false) Optional<String> password) {
         ResponseEntity<?> serviceResponse;
         try {
             String sitePath = ConfigurationManager.getInstance().getValue("site.path");
