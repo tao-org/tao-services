@@ -45,12 +45,23 @@ public class QueryServiceImpl extends EntityService<Query>
     @Override
     public Query getQueryById(long id) {
         //return persistenceManager.findQueryById(id);
-        return persistenceManager.getQuery(id);
+        try {
+            return persistenceManager.getQuery(id);
+        } catch (PersistenceException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
     public List<Query> list() {
-        return persistenceManager.getQueries(SessionStore.currentContext().getPrincipal().getName());
+        //return persistenceManager.getQueries(SessionStore.currentContext().getPrincipal().getName());
+        try {
+            return persistenceManager.getUserQueries(SessionStore.currentContext().getPrincipal().getName());
+        } catch (PersistenceException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
@@ -76,7 +87,12 @@ public class QueryServiceImpl extends EntityService<Query>
     @Override
     public List<Query> getQueries(String userId) {
         //return persistenceManager.getQueries(userId);
-        return persistenceManager.getUserQueries(userId);
+        try {
+            return persistenceManager.getUserQueries(userId);
+        } catch (PersistenceException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
