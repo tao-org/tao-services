@@ -80,7 +80,7 @@ public abstract class StartupBase implements ApplicationListener {
     protected static Class[] detectLaunchers(Class startupClass) {
         ServiceRegistry<ServiceLauncher> registry = ServiceRegistryManager.getInstance().getServiceRegistry(ServiceLauncher.class);
         Set<ServiceLauncher> launchers = registry.getServices();
-        System.out.println("Detected services: " + String.join(",", launchers.stream().map(ServiceLauncher::serviceName).sorted().collect(Collectors.toList())));
+        System.out.println("Installed services: " + launchers.stream().map(ServiceLauncher::serviceName).sorted().collect(Collectors.joining(",")));
         List<Class> classes = launchers.stream().map(ServiceLauncher::getClass).collect(Collectors.toList());
         classes.add(0, startupClass);
         return classes.toArray(new Class[0]);

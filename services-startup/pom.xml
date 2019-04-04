@@ -85,6 +85,16 @@
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-drmaa-slurm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-drmaa-torque</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
             <artifactId>tao-sample-workflows</artifactId>
             <version>${project.version}</version>
         </dependency>

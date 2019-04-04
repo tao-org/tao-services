@@ -55,6 +55,15 @@ public class FileStorageService implements StorageService<MultipartFile> {
     public FileStorageService() { }
 
     @Override
+    public Path createFolder(String folderRelativePath, boolean userOnly) throws IOException {
+        String cleanPath = StringUtils.cleanPath(folderRelativePath);
+        Path basePath = userOnly ?
+                SessionStore.currentContext().getUploadPath() : Paths.get(SystemVariable.SHARED_FILES.value());
+        Path newFolder = basePath.resolve(cleanPath);
+        return Files.createDirectories(newFolder);
+    }
+
+    @Override
     public void storeUserFile(MultipartFile file, String description) throws Exception {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         if (file.isEmpty()) {
@@ -194,7 +203,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
         if (!Files.exists(location)) {
             Files.createDirectories(location);
         }
-        return list(location, 1);
+        return list(location, 10);
     }
 
     @Override
@@ -205,7 +214,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
         if (!Files.exists(location)) {
             Files.createDirectories(location);
         }
-        return list(location, 5);
+        return list(location, 10);
     }
 
     @Override
@@ -214,7 +223,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
         if (!path.isAbsolute()) {
             path = Paths.get(ConfigurationManager.getInstance().getValue("product.location"), fromPath);
         }
-        return list(path, 1);
+        return list(path, 10);
     }
 
     @Override
