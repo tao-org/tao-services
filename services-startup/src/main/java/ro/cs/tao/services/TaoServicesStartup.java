@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services;
 
+import org.ggf.drmaa.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationEvent;
@@ -23,16 +24,21 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.Identifiable;
+import ro.cs.tao.component.RuntimeOptimizer;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.eodata.OutputDataHandler;
+import ro.cs.tao.eodata.metadata.MetadataInspector;
 import ro.cs.tao.execution.ExecutionsManager;
 import ro.cs.tao.execution.Executor;
 import ro.cs.tao.execution.drmaa.DrmaaTaoExecutor;
+import ro.cs.tao.execution.model.TaskSelector;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -44,6 +50,8 @@ import ro.cs.tao.services.model.monitoring.OSRuntimeInfo;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.services.security.TaoLocalLoginModule;
+import ro.cs.tao.spi.ServiceRegistry;
+import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.topology.*;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
 import ro.cs.tao.utils.DockerHelper;
@@ -67,7 +75,16 @@ import java.util.stream.Collectors;
 @EnableWebMvc
 public class TaoServicesStartup extends StartupBase {
     private final static Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
-
+    private static final Map<String, Class> plugins = new LinkedHashMap<String, Class>() {{
+        put("Docker plugins", DockerImageInstaller.class);
+        put("Datasource plugins", DataSource.class);
+        put("DRMAA plugins", SessionFactory.class);
+        put("Executor plugins", Executor.class);
+        put("Metadata plugins", MetadataInspector.class);
+        put("Product plugins", OutputDataHandler.class);
+        put("Runtime plugins", RuntimeOptimizer.class);
+        put("Orchestrator plugins", TaskSelector.class);
+    }};
     @Autowired
     private PersistenceManager persistenceManager;
 
@@ -82,9 +99,19 @@ public class TaoServicesStartup extends StartupBase {
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof ContextRefreshedEvent) {
             logger.fine("Spring initialization completed");
+            for (Map.Entry<String, Class> entry : plugins.entrySet()) {
+                ServiceRegistry registry = ServiceRegistryManager.getInstance().getServiceRegistry(entry.getValue());
+                Set instances = registry.getServices();
+                logger.info(String.format("Installed %s: %s",
+                                          entry.getKey(), instances.stream().map(i -> i.getClass().getSimpleName())
+                                                                    .sorted().collect(Collectors.joining(","))));
+            }
+            logger.info("Web interface is accessible at https://localhost:" + ConfigurationManager.getInstance().getValue("server.port"));
             try {
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_FILES.value()));
+                String tempPath = ConfigurationManager.getInstance().getValue("spring.http.multipart.location", "/mnt/tao/tmp");
+                FileUtilities.ensureExists(Paths.get(tempPath));
                 Path cachePath = TaoServicesStartup.homeDirectory().resolve("static").resolve("previews");
                 FileUtilities.ensureExists(cachePath);
             } catch (IOException e) {

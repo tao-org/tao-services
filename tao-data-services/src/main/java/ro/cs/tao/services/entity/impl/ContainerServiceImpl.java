@@ -15,12 +15,8 @@
  */
 package ro.cs.tao.services.entity.impl;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
-import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -28,12 +24,7 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.TopologyManager;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,8 +35,7 @@ import java.util.logging.Logger;
  */
 @Service("containerService")
 public class ContainerServiceImpl
-    extends EntityService<Container>
-        implements ContainerService<MultipartFile> {
+        extends EntityService<Container> implements ContainerService {
 
     private static final Set<String> winExtensions = new HashSet<String>() {{ add(".bat"); add(".exe"); }};
 
@@ -114,26 +104,13 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public String registerContainer(MultipartFile dockerFile, String shortName, String description) throws IOException {
+    public String registerContainer(Path dockerFile, String shortName, String description, Container dbContainer) {
         String containerId = null;
-        String fileName = StringUtils.cleanPath(dockerFile.getOriginalFilename());
-        if (dockerFile.isEmpty()) {
-            throw new IOException("Failed to store empty docker file " + fileName);
-        }
-        if (fileName.contains("..")) {
-            // This is a security check
-            throw new IOException( "Cannot store docker file with relative path outside image directory " + fileName);
-        }
-        Path filePath;
-        try (InputStream inputStream = dockerFile.getInputStream()) {
-            Path imagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), shortName.replace(" ", "-"));
-            Files.createDirectories(imagesPath);
-            filePath = imagesPath.resolve("Dockerfile");
-            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
         TopologyManager topologyManager = TopologyManager.getInstance();
         if (topologyManager.getDockerImage(shortName) == null) {
-            containerId = topologyManager.registerImage(filePath, shortName, description);
+            containerId = topologyManager.registerImage(dockerFile, shortName, description);
+            initializeContainer(containerId, shortName, dbContainer.getApplicationPath(),
+                                dbContainer.getApplications());
         }
         return containerId;
     }
@@ -141,45 +118,31 @@ public class ContainerServiceImpl
     @Override
     public Container initializeContainer(String id, String name, String path, List<Application> applications) {
         List<Container> containers = persistenceManager.getContainers();
-        Container container;
-        if (containers == null || (container = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null)) == null) {
+        Container container = null;
+        if (containers != null) {
+            container = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
+        }
+        boolean existing = (container != null);
+        if (!existing) {
             container = new Container();
-            container.setId(id);
             container.setName(name);
             container.setTag(name);
             container.setApplicationPath(path);
-            String appPath;
-            for (Application app : applications) {
-                Application application = new Application();
-                appPath = app.getPath() + (SystemUtils.IS_OS_WINDOWS && (winExtensions.stream()
-                                                              .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
-                application.setName(app.getName());
-                application.setPath(appPath);
-                container.addApplication(application);
-            }
-            try {
-                container = persistenceManager.saveContainer(container);
-            } catch (Exception e) {
-                logger.severe(e.getMessage());
-            }
         } else {
-            container.setId(id);
-            container.setName(name);
-            container.setTag(name);
-            String appPath;
-            for (Application app : applications) {
-                Application application = new Application();
-                appPath = app.getName() + (SystemUtils.IS_OS_WINDOWS && (winExtensions.stream()
-                                                            .noneMatch(e -> path.toLowerCase().endsWith(e))) ? ".bat" : "");
-                application.setName(app.getName());
-                application.setPath(appPath);
-                container.addApplication(application);
-            }
-            try {
-                container = persistenceManager.updateContainer(container);
-            } catch (Exception e) {
-                logger.severe(e.getMessage());
-            }
+            existing = id.equals(container.getId());
+        }
+        container.setId(id);
+        for (Application app : applications) {
+            Application application = new Application();
+            application.setName(app.getName());
+            application.setPath(app.getPath());
+            container.addApplication(application);
+        }
+
+        try {
+            container = existing ? persistenceManager.updateContainer(container) : persistenceManager.saveContainer(container);
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
         }
         return container;
     }
