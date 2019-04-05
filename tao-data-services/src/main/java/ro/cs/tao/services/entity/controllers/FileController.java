@@ -333,6 +333,18 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
+    @RequestMapping(value = "/user/folder", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> createUserFolder(@RequestParam("folder") String folder) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            storageService.createFolder(folder, true);
+            responseEntity = prepareResult(String.format("Folder %s created", folder), ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
+        return responseEntity;
+    }
+
     @RequestMapping(value = "/user/upload", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile file,
                                         @RequestParam("desc") String description) {
@@ -346,9 +358,21 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
+    @RequestMapping(value = "/public/folder", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> createPublicFolder(@RequestParam("folder") String folder) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            storageService.createFolder(folder, false);
+            responseEntity = prepareResult(String.format("Folder %s created", folder), ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
+        return responseEntity;
+    }
+
     @RequestMapping(value = "/public/upload", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> uploadPublic(@RequestParam("file") MultipartFile file,
-                                        @RequestParam("desc") String description) {
+                                          @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (!isCurrentUserAdmin()) {
