@@ -347,10 +347,14 @@ public class FileController extends BaseController {
 
     @RequestMapping(value = "/user/upload", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile file,
+                                        @RequestParam("folder") String folder,
                                         @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.storeUserFile(file, description);
+            if (folder == null || folder.trim().isEmpty()) {
+                throw new IllegalArgumentException("[folder] Parameter is mandatory");
+            }
+            storageService.storeUserFile(file, folder.trim(), description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -372,13 +376,17 @@ public class FileController extends BaseController {
 
     @RequestMapping(value = "/public/upload", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> uploadPublic(@RequestParam("file") MultipartFile file,
+                                          @RequestParam("folder") String folder,
                                           @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (!isCurrentUserAdmin()) {
                 throw new AccessDeniedException("The operation is permitted only for administrators");
             }
-            storageService.storePublicFile(file, description);
+            if (folder == null || folder.trim().isEmpty()) {
+                throw new IllegalArgumentException("[folder] Parameter is mandatory");
+            }
+            storageService.storePublicFile(file, folder.trim(), description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
