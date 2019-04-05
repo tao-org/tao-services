@@ -64,18 +64,18 @@ public class FileStorageService implements StorageService<MultipartFile> {
     }
 
     @Override
-    public void storeUserFile(MultipartFile file, String description) throws Exception {
+    public void storeUserFile(MultipartFile file, String relativeFolder, String description) throws Exception {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         if (file.isEmpty()) {
             throw new IOException("Failed to store empty file " + fileName);
         }
-        if (fileName.contains("..")) {
+        if (relativeFolder.contains("..")) {
             // This is a security check
-            throw new IOException( "Cannot store file with relative path outside user directory " + fileName);
+            throw new IOException( "Cannot store file with relative path outside user directory [" + relativeFolder + "]");
         }
         Path filePath;
         try (InputStream inputStream = file.getInputStream()) {
-            Path userPath = SessionStore.currentContext().getUploadPath();
+            Path userPath = SessionStore.currentContext().getUploadPath().resolve(relativeFolder);
             Files.createDirectories(userPath);
             // Resolve filename when coming from IE
             filePath = userPath.resolve(Paths.get(fileName).getFileName());
@@ -100,20 +100,21 @@ public class FileStorageService implements StorageService<MultipartFile> {
     }
 
     @Override
-    public void storePublicFile(MultipartFile file, String description) throws Exception {
+    public void storePublicFile(MultipartFile file, String relativeFolder, String description) throws Exception {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         if (file.isEmpty()) {
             throw new IOException("Failed to store empty file " + fileName);
         }
-        if (fileName.contains("..")) {
+        if (relativeFolder.contains("..")) {
             // This is a security check
-            throw new IOException( "Cannot store file with relative path outside user directory " + fileName);
+            throw new IOException( "Cannot store file with relative path outside user directory [" + relativeFolder + "]");
         }
         Path filePath;
         try (InputStream inputStream = file.getInputStream()) {
-            Path publicPath = Paths.get(SystemVariable.SHARED_FILES.value());
+            Path publicPath = Paths.get(SystemVariable.SHARED_FILES.value()).resolve(relativeFolder);
             Files.createDirectories(publicPath);
-            filePath = publicPath.resolve(fileName);
+            // Resolve filename when coming from IE
+            filePath = publicPath.resolve(Paths.get(fileName).getFileName());
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
         String userName = SystemSessionContext.instance().getPrincipal().getName();
