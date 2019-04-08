@@ -16,6 +16,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,10 +31,13 @@ import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topics;
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.ContainerUploadRequest;
@@ -45,10 +49,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -57,6 +59,9 @@ import java.util.logging.Logger;
 @Controller
 @RequestMapping("/docker")
 public class ContainerController extends DataEntityController<Container, String, ContainerService> {
+
+    @Autowired
+    private PersistenceManager persistenceManager;
 
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
@@ -115,7 +120,15 @@ public class ContainerController extends DataEntityController<Container, String,
             final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
             for (MultipartFile file : dockerFiles) {
                 try {
-                    resolveMultiPartFile(file, dockerImagesPath);
+                    Path auxFile = resolveMultiPartFile(file, dockerImagesPath);
+                    AuxiliaryData data = new AuxiliaryData();
+                    data.setId(UUID.randomUUID().toString());
+                    data.setLocation(auxFile.toString());
+                    data.setDescription(String.format("Auxiliary file for container '%s'", name));
+                    data.setUserName(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
+                    data.setCreated(LocalDateTime.now());
+                    data.setModified(data.getCreated());
+                    persistenceManager.saveAuxiliaryData(data);
                 } catch (IOException e) {
                     error(e.getMessage());
                 }

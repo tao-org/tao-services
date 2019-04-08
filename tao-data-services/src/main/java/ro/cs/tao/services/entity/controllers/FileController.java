@@ -63,8 +63,18 @@ public class FileController extends BaseController {
     private PersistenceManager persistenceManager;
 
     @RequestMapping(value = "/config", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getConfiguration() {
-        return prepareResult(Collections.unmodifiableSortedMap(new TreeMap<>(ConfigurationManager.getInstance().getAll())));
+    public ResponseEntity<ServiceResponse<?>> getConfiguration(@RequestParam("filter") String filter) {
+        if (filter == null || filter.trim().isEmpty()) {
+            return handleException(new IllegalAccessException("[filter] Value required"));
+        }
+        final Map<String, String> springSettings = new TreeMap<>();
+        final Map<String, String> all = ConfigurationManager.getInstance().getAll();
+        for (Map.Entry<String, String> entry : all.entrySet()) {
+            if (entry.getKey().startsWith(filter)) {
+                springSettings.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return prepareResult(springSettings);
     }
 
     @RequestMapping(value = "/user/uploaded/", method = RequestMethod.GET, produces = "application/json")
@@ -272,7 +282,7 @@ public class FileController extends BaseController {
     @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
     @ResponseBody
     public ResponseEntity<ServiceResponse<?>> toggleVisibility(@RequestParam("folder") String folder,
-                                              @RequestParam("visibility") Visibility visibility) {
+                                                               @RequestParam("visibility") Visibility visibility) {
         ResponseEntity<ServiceResponse<?>> responseEntity = null;
         try {
             Path path = Paths.get(SystemVariable.USER_WORKSPACE.value(), folder);
