@@ -39,7 +39,7 @@ public class WebConfig implements WebMvcConfigurer {
         String siteBase = ConfigurationManager.getInstance().getValue("site.location", "static");
         Path sitePath = Paths.get(siteBase);
         if (!sitePath.isAbsolute()) {
-            sitePath = TaoServicesStartup.homeDirectory().resolve(siteBase);
+            sitePath = TaoServicesStartup.homeDirectory().resolve(siteBase).toAbsolutePath();
         }
         registry.addResourceHandler("/ui/**").addResourceLocations(sitePath.toUri().toString());
         ConfigurationManager.getInstance().setValue("site.path", sitePath.toString());
