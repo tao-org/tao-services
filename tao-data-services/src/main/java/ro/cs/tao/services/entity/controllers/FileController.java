@@ -30,27 +30,24 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.eodata.EOProduct;
-import ro.cs.tao.eodata.VectorData;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
-import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.StorageService;
-import ro.cs.tao.services.model.FileObject;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 @Controller
 @RequestMapping("/files")
@@ -81,20 +78,7 @@ public class FileController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> listFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            List<Path> list = storageService.listFiles(true).collect(Collectors.toList());
-            List<FileObject> fileObjects = new ArrayList<>(list.size());
-            long size;
-            Path realRoot = Paths.get(SystemVariable.USER_WORKSPACE.value());
-            for (Path path : list) {
-                Path realPath = realRoot.resolve(path);
-                try {
-                    size = Files.size(realPath);
-                } catch (IOException e) {
-                    size = -1;
-                }
-                fileObjects.add(new FileObject(path.toString(), Files.isDirectory(realPath), size));
-            }
-            responseEntity = prepareResult(fileObjects);
+            responseEntity = prepareResult(storageService.listUploaded(currentUser()));
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -106,62 +90,23 @@ public class FileController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> list() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            List<Path> list = storageService.listWorkspace(true).collect(Collectors.toList());
-            //list.removeIf(p -> p.endsWith(".png") && list.contains(Paths.get(p.toString().replace(".png", ""))));
-            List<FileObject> fileObjects = new ArrayList<>(list.size());
-            if (list.size() > 0) {
-                long size;
-                Path realRoot = Paths.get(SystemVariable.USER_WORKSPACE.value());
-                String[] strings = list.stream().map(p -> realRoot.resolve(p).toUri().toString()).toArray(String[]::new);
-                List<EOProduct> rasters = persistenceManager.getEOProducts(strings);
-                List<VectorData> vectors = persistenceManager.getVectorDataProducts(strings);
-                List<AuxiliaryData> auxData = persistenceManager.getAuxiliaryData(SessionStore.currentContext().getPrincipal().getName(),
-                                                                                  list.stream().map(Path::toString).toArray(String[]::new));
-                for (Path path : list) {
-                    Path realPath = realRoot.resolve(path);
-                    String realUri = realPath.toUri().toString();
-                    try {
-                        size = Files.size(realPath);
-                    } catch (IOException e) {
-                        size = -1;
-                    }
-                    FileObject fileObject = new FileObject(path.toString(), Files.isDirectory(realPath), size);
-                    Optional<EOProduct> product = rasters.stream()
-                                                         .filter(r -> realUri.equals(r.getLocation()))
-                                                         .findFirst();
-                    if (product.isPresent()) {
-                        Map<String, String> attributeMap = product.get().toAttributeMap();
-                        attributeMap.remove("formatType");
-                        attributeMap.remove("width");
-                        attributeMap.remove("height");
-                        attributeMap.remove("pixelType");
-                        attributeMap.remove("sensorType");
-                        fileObject.setAttributes(attributeMap);
-                    } else {
-                        product = rasters.stream()
-                                .filter(r -> realUri.equals(r.getLocation() + r.getEntryPoint()))
-                                .findFirst();
-                    }
-                    if (product.isPresent() && !fileObject.isFolder()) {
-                        Map<String, String> attributeMap = product.get().toAttributeMap();
-                        fileObject.setAttributes(attributeMap);
-                    } else {
-                        Optional<VectorData> vector = vectors.stream()
-                                                        .filter(v -> realUri.equals(v.getLocation() + v.getLocation()))
-                                                        .findFirst();
-                        if (vector.isPresent()) {
-                            fileObject.setAttributes(vector.get().toAttributeMap());
-                        } else {
-                            Optional<AuxiliaryData> aData = auxData.stream()
-                                                        .filter(a -> path.toString().equals(a.getLocation()))
-                                                        .findFirst();
-                            aData.ifPresent(auxiliaryData -> fileObject.setAttributes(auxiliaryData.toAttributeMap()));
-                        }
-                    }
-                    fileObjects.add(fileObject);
-                }
+            responseEntity = prepareResult(storageService.listUserWorkspace(currentUser()));
+        } catch (IOException ex) {
+            responseEntity = handleException(ex);
+        }
+
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam("folder") String relativeFolder) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
+                responseEntity = prepareResult(storageService.listUserWorkspace(currentUser()));
+            } else {
+                responseEntity = prepareResult(storageService.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder)));
             }
-            responseEntity = prepareResult(fileObjects);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -185,20 +130,7 @@ public class FileController extends BaseController {
     public ResponseEntity<?> listPublicFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            List<Path> list = storageService.listWorkspace(false).collect(Collectors.toList());
-            List<FileObject> fileObjects = new ArrayList<>(list.size());
-            long size;
-            Path realRoot = Paths.get(SystemVariable.SHARED_FILES.value());
-            for (Path path : list) {
-                Path realPath = realRoot.resolve(path);
-                try {
-                    size = Files.size(realPath);
-                } catch (IOException e) {
-                    size = -1;
-                }
-                fileObjects.add(new FileObject(path.toString(), Files.isDirectory(realPath), size));
-            }
-            responseEntity = prepareResult(fileObjects);
+            responseEntity = prepareResult(storageService.listUploaded());
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -207,71 +139,26 @@ public class FileController extends BaseController {
     }
 
     @RequestMapping(value = "/public/", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> listAllPublic() {
+    public ResponseEntity<ServiceResponse<?>> listPublic() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            List<Path> list = storageService.listWorkspace(false).collect(Collectors.toList());
-            List<AuxiliaryData> auxData = persistenceManager.getAuxiliaryData(SystemSessionContext.instance().getPrincipal().getName(),
-                                                                              list.stream().map(Path::toString).toArray(String[]::new));
-            List<FileObject> fileObjects = new ArrayList<>(list.size());
-            long size;
-            Path realRoot = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
-            for (Path path : list) {
-                if (path.startsWith("files")) {
-                    Path realPath = realRoot.resolve(path);
-                    try {
-                        size = Files.size(realPath);
-                    } catch (IOException e) {
-                        size = -1;
-                    }
-                    FileObject fileObject = new FileObject(path.toString(), Files.isDirectory(realPath), size);
-                    Optional<AuxiliaryData> aData = auxData.stream()
-                            .filter(a -> path.toString().equals(a.getLocation()))
-                            .findFirst();
-                    aData.ifPresent(auxiliaryData -> fileObject.setAttributes(auxiliaryData.toAttributeMap()));
-                    fileObjects.add(fileObject);
-                }
-            }
-            List<EOProduct> publicProducts = persistenceManager.getPublicProducts();
-            Path root = Paths.get(ConfigurationManager.getInstance().getValue("product.location"));
-            for (EOProduct product : publicProducts) {
-                String location = product.getLocation();
-                if (location != null) {
-                    Path productLocation = Paths.get(URI.create(location));
-                    Path userPath = Paths.get(productLocation.toString().replace(root.toString(), "")).getName(0);
-                    realRoot = root.resolve(userPath).resolve(product.getName());
-                    if (!realRoot.getFileName().equals(productLocation.getFileName())) {
-                        realRoot = root.resolve(userPath).resolve(productLocation.getFileName());
-                    }
-                    FileObject fileObject = new FileObject(root.relativize(realRoot).toString(), Files.isDirectory(realRoot), 0);
-                    Map<String, String> attributeMap = product.toAttributeMap();
-                    attributeMap.remove("formatType");
-                    attributeMap.remove("width");
-                    attributeMap.remove("height");
-                    attributeMap.remove("pixelType");
-                    attributeMap.remove("sensorType");
-                    fileObject.setAttributes(attributeMap);
-                    fileObject.setProductName(product.getName());
-                    fileObjects.add(fileObject);
-                    String productFolder = root.relativize(realRoot).toString();
-                    list = storageService.listFiles(productFolder).collect(Collectors.toList());
-                    for (Path path : list) {
-                        if (!path.toString().isEmpty()) {
-                            Path realPath = realRoot.resolve(path);
-                            try {
-                                size = Files.size(realPath);
-                            } catch (IOException e) {
-                                size = -1;
-                            }
-                            FileObject fo = new FileObject(root.relativize(realPath).toString(), Files.isDirectory(realPath), size);
-                            fo.setAttributes(product.toAttributeMap());
-                            fileObjects.add(fo);
-                        }
-                    }
-                }
-            }
+            responseEntity = prepareResult(storageService.listPublicWorkspace());
+        } catch (IOException ex) {
+            responseEntity = handleException(ex);
+        }
 
-            responseEntity = prepareResult(fileObjects);
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/public", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> listPublic(@RequestParam("folder") String relativeFolder) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
+                responseEntity = prepareResult(storageService.listPublicWorkspace());
+            } else {
+                responseEntity = prepareResult(storageService.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder)));
+            }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -356,10 +243,7 @@ public class FileController extends BaseController {
                                         @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            if (folder == null || folder.trim().isEmpty()) {
-                throw new IllegalArgumentException("[folder] Parameter is mandatory");
-            }
-            storageService.storeUserFile(file, folder.trim(), description);
+            storageService.storeUserFile(file, folder, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -388,10 +272,7 @@ public class FileController extends BaseController {
             if (!isCurrentUserAdmin()) {
                 throw new AccessDeniedException("The operation is permitted only for administrators");
             }
-            if (folder == null || folder.trim().isEmpty()) {
-                throw new IllegalArgumentException("[folder] Parameter is mandatory");
-            }
-            storageService.storePublicFile(file, folder.trim(), description);
+            storageService.storePublicFile(file, folder, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
