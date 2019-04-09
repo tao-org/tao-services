@@ -174,49 +174,56 @@ public class FileStorageService implements StorageService<MultipartFile> {
 
     @Override
     public List<FileObject> listFiles(Path realRoot) throws IOException {
-        final Path root = Paths.get(ConfigurationManager.getInstance().getValue("product.location"));
+        final Path root = Paths.get(ConfigurationManager.getInstance().getValue("product.location")).toAbsolutePath();
+        realRoot = realRoot.toAbsolutePath();
+        final Path startPath = root.relativize(realRoot);
         final String principalName = realRoot.getName(root.getNameCount()).toString();
         final int depth = realRoot.getNameCount() - root.getNameCount() == 1 ? 1 : 10;
         List<Path> list = list(realRoot, depth);
-        String[] pathArray = list.stream().map(Path::toString).toArray(String[]::new);
+        String[] pathArray = list.stream().map(p -> p.toUri().toString()).toArray(String[]::new);
         final Map<Path, Map<String, String>> auxAttributes = new HashMap<>();
         List<AuxiliaryData> auxData = persistenceManager.getAuxiliaryData(principalName,
                                                                           pathArray);
         for (AuxiliaryData auxiliaryData : auxData) {
-            auxAttributes.put(Paths.get(auxiliaryData.getLocation()), auxiliaryData.toAttributeMap());
+            auxAttributes.put(realRoot.relativize(Paths.get(URI.create(auxiliaryData.getLocation()))),
+                              auxiliaryData.toAttributeMap());
         }
         final List<EOProduct> productList = persistenceManager.getEOProducts(pathArray);
         final Map<Path, Map<String, String>> productAttributes = new HashMap<>();
         for (EOProduct product : productList) {
-            productAttributes.put(realRoot.relativize(Paths.get(URI.create(product.getLocation()))), product.toAttributeMap());
+            productAttributes.put(realRoot.relativize(Paths.get(URI.create(product.getLocation()))),
+                                  product.toAttributeMap());
         }
         List<VectorData> vectors = persistenceManager.getVectorDataProducts(pathArray);
         final Map<Path, Map<String, String>> vectorAttributes = new HashMap<>();
         for (VectorData vectorData : vectors) {
-            vectorAttributes.put(realRoot.relativize(Paths.get(URI.create(vectorData.getLocation()))), vectorData.toAttributeMap());
+            vectorAttributes.put(realRoot.relativize(Paths.get(URI.create(vectorData.getLocation()))),
+                                 vectorData.toAttributeMap());
         }
         List<FileObject> fileObjects = new ArrayList<>(list.size());
         long size;
-        for (Path path : list) {
+        for (Path realPath : list) {
             final FileObject fileObject;
-            Path realPath = realRoot.resolve(path);
+            //Path realPath = realRoot.resolve(path);
             try {
                 size = Files.size(realPath);
             } catch (IOException e) {
                 size = -1;
             }
-            if (path.startsWith("files")) {
+            final Path path = realRoot.relativize(realPath);
+            final String pathToRecord = startPath.resolve(path).toString().replace("\\", "/");
+            if (path.startsWith("files") || path.toString().equals("files")) {
                 if (auxAttributes.containsKey(path)) {
-                    fileObject = new FileObject(path.toString(), Files.isDirectory(realPath), size);
+                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
                     fileObject.setAttributes(auxAttributes.get(path));
                 } else  {
-                    fileObject = new FileObject(path.toString(), Files.isDirectory(realPath), size);
+                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
                 }
             } else {
                 if (productAttributes.containsKey(path)) {
-                    fileObject = new FileObject(path.toString(), Files.isDirectory(realRoot), 0);
+                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), 0);
                     Map<String, String> attributeMap = productAttributes.get(path);
-                    fileObject.setProductName("name");
+                    fileObject.setProductName(attributeMap.get("name"));
                     attributeMap.remove("name");
                     attributeMap.remove("formatType");
                     attributeMap.remove("width");
@@ -225,10 +232,10 @@ public class FileStorageService implements StorageService<MultipartFile> {
                     attributeMap.remove("sensorType");
                     fileObject.setAttributes(attributeMap);
                 } else if (vectorAttributes.containsKey(path)) {
-                    fileObject = new FileObject(path.toString(), Files.isDirectory(realPath), size);
+                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
                     fileObject.setAttributes(vectorAttributes.get(path));
                 } else {
-                    fileObject = new FileObject(path.toString(), Files.isDirectory(realPath), size);
+                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
                 }
             }
             fileObjects.add(fileObject);
@@ -247,10 +254,40 @@ public class FileStorageService implements StorageService<MultipartFile> {
     }
 
     private List<FileObject> listProducts(String principalName) throws IOException {
-        final Path realRoot = SystemSessionContext.instance().getPrincipal().getName().equals(principalName) ?
-                Paths.get(SystemVariable.SHARED_WORKSPACE.value()) :
-                SessionStore.currentContext().getWorkspace();
-        return listFiles(realRoot);
+        boolean isSystem = SystemSessionContext.instance().getPrincipal().getName().equals(principalName);
+        final Path realRoot = isSystem ? Paths.get(SystemVariable.SHARED_WORKSPACE.value()) : SessionStore.currentContext().getWorkspace();
+        List<FileObject> list = listFiles(realRoot);
+        if (isSystem) {
+            // add products published by other users (for system account, it means all other users)
+            List<EOProduct> products = persistenceManager.getOtherPublishedProducts(principalName);
+            final String publicPath = Paths.get(SystemVariable.SHARED_WORKSPACE.value()).toUri().toString();
+            final int tokensToSkip = realRoot.getNameCount();
+            if (products != null) {
+                products.removeIf(p -> p.getLocation().startsWith(publicPath));
+                FileObject fileObject;
+                for (EOProduct product : products) {
+                    Path productPath = Paths.get(URI.create(product.getLocation()));
+                    Path relativePath = productPath.getName(tokensToSkip);
+                    for (int i = 0; i < productPath.getNameCount(); i++) {
+                        if (i > tokensToSkip) {
+                            relativePath = relativePath.resolve(productPath.getName(i));
+                        }
+                    }
+                    fileObject = new FileObject(relativePath.toString(), Files.isDirectory(productPath), 0);
+                    Map<String, String> attributeMap = product.toAttributeMap();
+                    fileObject.setProductName(product.getName());
+                    attributeMap.remove("name");
+                    attributeMap.remove("formatType");
+                    attributeMap.remove("width");
+                    attributeMap.remove("height");
+                    attributeMap.remove("pixelType");
+                    attributeMap.remove("sensorType");
+                    fileObject.setAttributes(attributeMap);
+                    list.add(fileObject);
+                }
+            }
+        }
+        return list;
     }
 
     private List<FileObject> getResults(Long workflowId, Long jobId) throws IOException {
@@ -320,6 +357,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
     private List<Path> list(Path path, int depth) throws IOException {
         return Files.walk(path, depth)
                     .filter(p -> !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
-                    .map(path::relativize).collect(Collectors.toList());
+                    //.map(path::relativize)
+                    .collect(Collectors.toList());
     }
 }
