@@ -157,6 +157,9 @@ public class FileController extends BaseController {
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
                 responseEntity = prepareResult(storageService.listPublicWorkspace());
             } else {
+                if (relativeFolder.startsWith("public")) {
+                    relativeFolder = relativeFolder.substring(relativeFolder.indexOf('/') + 1);
+                }
                 responseEntity = prepareResult(storageService.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder)));
             }
         } catch (IOException ex) {
