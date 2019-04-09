@@ -105,7 +105,7 @@ public class FileController extends BaseController {
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
                 responseEntity = prepareResult(storageService.listUserWorkspace(currentUser()));
             } else {
-                responseEntity = prepareResult(storageService.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder)));
+                responseEntity = prepareResult(storageService.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder), null));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -160,7 +160,7 @@ public class FileController extends BaseController {
                 if (relativeFolder.startsWith("public")) {
                     relativeFolder = relativeFolder.substring(relativeFolder.indexOf('/') + 1);
                 }
-                responseEntity = prepareResult(storageService.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder)));
+                responseEntity = prepareResult(storageService.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder), null));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
