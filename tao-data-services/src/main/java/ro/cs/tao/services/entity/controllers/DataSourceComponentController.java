@@ -43,10 +43,7 @@ import ro.cs.tao.services.interfaces.QueryService;
 import ro.cs.tao.utils.Tuple;
 
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -200,6 +197,38 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             } else {
                 return prepareResult("Product list not provided", ResponseStatus.FAILED);
             }
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/create/names", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestParam("label") String label,
+                                                                 @RequestParam("products") Map<String, String> products) {
+        try {
+            if (products == null || products.size() == 0) {
+                throw new IllegalArgumentException("[products] Body is empty");
+            }
+            Map<String, List<String>> groups = new HashMap<>();
+            for (Map.Entry<String, String> entry : products.entrySet()) {
+                if (!groups.containsKey(entry.getValue())) {
+                    groups.put(entry.getValue(), new ArrayList<>());
+                }
+                groups.get(entry.getValue()).add(entry.getKey());
+            }
+            final Principal currentUser = SessionStore.currentContext().getPrincipal();
+            final String dataSource = "Local Database";
+            List<EOProduct> prods;
+            List<String> names;
+            List<DataSourceComponent> components = new ArrayList<>();
+            for (Map.Entry<String, List<String>> entry : groups.entrySet()) {
+                names = entry.getValue();
+                prods = getPersistenceManager().getProductsByNames(names.toArray(new String[0]));
+                if (prods != null && prods.size() > 0) {
+                    components.add(service.createForProductNames(names, entry.getKey(), dataSource, null, label, currentUser));
+                }
+            }
+            return prepareResult(components);
         } catch (PersistenceException e) {
             return handleException(e);
         }

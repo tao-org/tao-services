@@ -134,7 +134,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             throw new IllegalArgumentException("[sensor] is null or empty");
         }
         if (dataSource == null || dataSource.isEmpty()) {
-            throw new IllegalArgumentException("[sensor] is null or empty");
+            throw new IllegalArgumentException("[dataSource] is null or empty");
         }
         if (principal == null) {
             throw new IllegalArgumentException("Invalid principal (null)");
