@@ -34,6 +34,7 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.DataSourceGroupRequest;
+import ro.cs.tao.services.entity.beans.DataSourceNameRequest;
 import ro.cs.tao.services.entity.beans.DataSourceRequest;
 import ro.cs.tao.services.entity.beans.GroupQuery;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
@@ -203,12 +204,12 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     }
 
     @RequestMapping(value = "/create/names", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestParam("label") String label,
-                                                                 @RequestParam("products") Map<String, String> products) {
+    public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody DataSourceNameRequest request) {
         try {
-            if (products == null || products.size() == 0) {
+            if (request == null || request.getProducts() == null || request.getProducts().size() == 0) {
                 throw new IllegalArgumentException("[products] Body is empty");
             }
+            final Map<String, String> products = request.getProducts();
             Map<String, List<String>> groups = new HashMap<>();
             for (Map.Entry<String, String> entry : products.entrySet()) {
                 if (!groups.containsKey(entry.getValue())) {
@@ -225,10 +226,10 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 names = entry.getValue();
                 prods = getPersistenceManager().getProductsByNames(names.toArray(new String[0]));
                 if (prods != null && prods.size() > 0) {
-                    components.add(service.createForProductNames(names, entry.getKey(), dataSource, null, label, currentUser));
+                    components.add(service.createForProductNames(names, entry.getKey(), dataSource, null, request.getLabel(), currentUser));
                 }
             }
-            return prepareResult(components);
+            return components.size() > 0 ? prepareResult(components) : prepareResult("No component was created", ResponseStatus.FAILED);
         } catch (PersistenceException e) {
             return handleException(e);
         }
