@@ -105,6 +105,10 @@ public class FileController extends BaseController {
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
                 responseEntity = prepareResult(storageService.listUserWorkspace(currentUser()));
             } else {
+                if (relativeFolder.startsWith(currentUser())) {
+                    Path relativePath = Paths.get(relativeFolder);
+                    relativeFolder = relativePath.subpath(1, relativePath.getNameCount()).toString();
+                }
                 responseEntity = prepareResult(storageService.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder), null));
             }
         } catch (IOException ex) {
