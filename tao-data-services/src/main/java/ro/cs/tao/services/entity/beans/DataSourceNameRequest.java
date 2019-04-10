@@ -1,10 +1,12 @@
 package ro.cs.tao.services.entity.beans;
 
-import java.util.Map;
+import ro.cs.tao.component.Variable;
+
+import java.util.List;
 
 public class DataSourceNameRequest {
     private String label;
-    private Map<String, String> products;
+    private List<Variable> products;
 
     public String getLabel() {
         return label;
@@ -14,11 +16,11 @@ public class DataSourceNameRequest {
         this.label = label;
     }
 
-    public Map<String, String> getProducts() {
+    public List<Variable> getProducts() {
         return products;
     }
 
-    public void setProducts(Map<String, String> products) {
+    public void setProducts(List<Variable> products) {
         this.products = products;
     }
 }

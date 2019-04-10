@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
+import ro.cs.tao.component.Variable;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.eodata.EOProduct;
@@ -209,9 +210,9 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             if (request == null || request.getProducts() == null || request.getProducts().size() == 0) {
                 throw new IllegalArgumentException("[products] Body is empty");
             }
-            final Map<String, String> products = request.getProducts();
+            final List<Variable> products = request.getProducts();
             Map<String, List<String>> groups = new HashMap<>();
-            for (Map.Entry<String, String> entry : products.entrySet()) {
+            for (Variable entry : products) {
                 if (!groups.containsKey(entry.getValue())) {
                     groups.put(entry.getValue(), new ArrayList<>());
                 }
