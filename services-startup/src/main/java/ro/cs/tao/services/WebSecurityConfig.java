@@ -121,8 +121,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     protected void configure(HttpSecurity http) throws Exception {
         http
           .sessionManagement()
-                .maximumSessions(10)
-                .and()
+                /*.maximumSessions(10)
+                .and()*/
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
           .and()
           .headers()

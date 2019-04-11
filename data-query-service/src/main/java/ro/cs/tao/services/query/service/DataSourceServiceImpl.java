@@ -110,7 +110,7 @@ public class DataSourceServiceImpl implements DataSourceService {
             dsComponent.setProductStatusListener(downloadListener);
             String path = SystemVariable.SHARED_WORKSPACE.value();
             final Set<String> existingSet = new HashSet<>(persistenceManager.getExistingProductNames(products.stream().map(EOProduct::getName).toArray(String[]::new)));
-            products.removeIf(p -> existingSet.contains(p.getName()));
+            products.removeIf(p -> existingSet.contains(p.getName()) && mode != FetchMode.RESUME);
             for (EOProduct product : products) {
                 product.setProductStatus(ProductStatus.QUERIED);
                 try {
