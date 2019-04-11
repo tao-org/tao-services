@@ -102,10 +102,10 @@
             <version>${spring.boot.version}</version>
             <exclusions>
                 <!-- Exclude the Tomcat dependency -->
-                <exclusion>
+                <!--<exclusion>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-tomcat</artifactId>
-                </exclusion>
+                </exclusion>-->
                 <exclusion>
                     <groupId>org.apache.logging.log4j</groupId>
                     <artifactId>log4j-api</artifactId>
@@ -118,11 +118,11 @@
             <version>${spring.boot.version}</version>
         </dependency>
 
-        <dependency>
+        <!--<dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-undertow</artifactId>
             <version>${spring.boot.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>org.springframework.session</groupId>
             <artifactId>spring-session</artifactId>

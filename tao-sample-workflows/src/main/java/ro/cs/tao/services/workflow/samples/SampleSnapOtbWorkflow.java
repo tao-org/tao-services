@@ -16,13 +16,17 @@
 
 package ro.cs.tao.services.workflow.samples;
 
+import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.base.SampleWorkflowBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SampleSnapOtbWorkflow extends SampleWorkflowBase {
@@ -32,14 +36,20 @@ public class SampleSnapOtbWorkflow extends SampleWorkflowBase {
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
-        WorkflowNodeDescriptor node1 = addNode(workflow,
-                                               "SNAP NDVI", "snap-ndvi", ComponentType.PROCESSING, null,
+
+        List<String> productNames = new ArrayList<>();
+        productNames.add("S2B_MSIL1C_20181226T103439_N0207_R108_T32UMF_20181226T122504");
+        DataSourceComponent component = newDataSourceComponent("Sentinel2", productNames, SystemPrincipal.instance());
+        WorkflowNodeDescriptor node1 = addNode(workflow, "Local DB", component.getId(), ComponentType.DATASOURCE, null,
                                                null, null, null);
+        WorkflowNodeDescriptor node2 = addNode(workflow,
+                                               "SNAP NDVI", "snap-ndvi", ComponentType.PROCESSING, null,
+                                               node1, ComponentType.DATASOURCE, Direction.RIGHT);
         Map<String, String> customValues = new HashMap<>();
         customValues.put("transform_type_id_scalex_number", "0.5");
         customValues.put("transform_type_id_scaley_number", "0.5");
         addNode(workflow,
                 "OTB Resample", "RigidTransformResample", ComponentType.PROCESSING, customValues,
-                node1, ComponentType.PROCESSING, Direction.RIGHT);
+                node2, ComponentType.PROCESSING, Direction.RIGHT);
     }
 }

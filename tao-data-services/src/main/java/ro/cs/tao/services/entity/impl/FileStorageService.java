@@ -359,7 +359,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
         String userName = principal.getName();
-        String location = workspacePath.relativize(filePath).toString();
+        String location = filePath.toUri().toString(); //workspacePath.relativize(filePath).toString();
         List<AuxiliaryData> listData = persistenceManager.getAuxiliaryData(userName, location);
         AuxiliaryData data;
         if (listData != null && listData.size() == 1) {
