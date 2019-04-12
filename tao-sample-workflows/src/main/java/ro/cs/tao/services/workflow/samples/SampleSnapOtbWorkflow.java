@@ -32,7 +32,7 @@ import java.util.Map;
 public class SampleSnapOtbWorkflow extends SampleWorkflowBase {
 
     @Override
-    public String getName() { return "Single product SNAP NDVI + OTB RESAMPLE workflow"; }
+    public String getName() { return "Single product SNAP NDVI + OTB RESAMPLE with name rule workflow"; }
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
@@ -42,12 +42,15 @@ public class SampleSnapOtbWorkflow extends SampleWorkflowBase {
         DataSourceComponent component = newDataSourceComponent("Sentinel2", productNames, SystemPrincipal.instance());
         WorkflowNodeDescriptor node1 = addNode(workflow, "Local DB", component.getId(), ComponentType.DATASOURCE, null,
                                                null, null, null);
-        WorkflowNodeDescriptor node2 = addNode(workflow,
-                                               "SNAP NDVI", "snap-ndvi", ComponentType.PROCESSING, null,
-                                               node1, ComponentType.DATASOURCE, Direction.RIGHT);
         Map<String, String> customValues = new HashMap<>();
+        customValues.put("t", "${1:MISSION}_${1:ADATE}_${1:ORBIT}_NDVI.tif");
+        WorkflowNodeDescriptor node2 = addNode(workflow,
+                                               "SNAP NDVI", "snap-ndvi", ComponentType.PROCESSING, customValues,
+                                               node1, ComponentType.DATASOURCE, Direction.RIGHT);
+        customValues.clear();
         customValues.put("transform_type_id_scalex_number", "0.5");
         customValues.put("transform_type_id_scaley_number", "0.5");
+        customValues.put("out", "${1:MISSION}_${1:ADATE}_${1:ORBIT}_NDVI_resampled.tif");
         addNode(workflow,
                 "OTB Resample", "RigidTransformResample", ComponentType.PROCESSING, customValues,
                 node2, ComponentType.PROCESSING, Direction.RIGHT);
