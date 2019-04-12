@@ -1,16 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>ro.cs.tao</groupId>
-        <artifactId>tao-core</artifactId>
-        <version>1.0</version>
-    </parent>
-
+    <groupId>ro.cs.tao</groupId>
     <artifactId>tao-services</artifactId>
+    <version>1.0</version>
     <packaging>pom</packaging>
 
     <name>TAO Services Project</name>
@@ -34,7 +30,12 @@
     <properties>
         <spring.boot.version>2.0.4.RELEASE</spring.boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
+        <geotools.version>20.0</geotools.version>
+        <spring.version>5.0.8.RELEASE</spring.version>
+        <jackson.version>2.9.7</jackson.version>
+        <postgresql.version>42.2.4</postgresql.version>
+        <hibernate.version>5.3.5.Final</hibernate.version>
+        <jts.version>1.16.0</jts.version>
         <!-- maven -->
         <maven.compiler.data>1.8</maven.compiler.data>
         <maven.compiler.target>1.8</maven.compiler.target>
