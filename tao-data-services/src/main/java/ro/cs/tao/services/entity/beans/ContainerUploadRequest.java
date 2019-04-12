@@ -8,7 +8,9 @@ public class ContainerUploadRequest {
     private String name;
     private String description;
     private boolean system;
-    private String jsonDescriptor;
+    private MultipartFile containerLogo;
+    private MultipartFile jsonContainerDescriptor;
+    private MultipartFile jsonComponentsDescriptor;
     private List<MultipartFile> dockerFiles;
     private List<MultipartFile> auxiliaryFiles;
 
@@ -21,8 +23,14 @@ public class ContainerUploadRequest {
     public boolean isSystem() { return system; }
     public void setSystem(boolean system) { this.system = system; }
 
-    public String getJsonDescriptor() { return jsonDescriptor; }
-    public void setJsonDescriptor(String jsonDescriptor) { this.jsonDescriptor = jsonDescriptor; }
+    public MultipartFile getContainerLogo() { return containerLogo; }
+    public void setContainerLogo(MultipartFile containerLogo) { this.containerLogo = containerLogo; }
+
+    public MultipartFile getJsonContainerDescriptor() { return jsonContainerDescriptor; }
+    public void setJsonContainerDescriptor(MultipartFile jsonContainerDescriptor) { this.jsonContainerDescriptor = jsonContainerDescriptor; }
+
+    public MultipartFile getJsonComponentsDescriptor() { return jsonComponentsDescriptor; }
+    public void setJsonComponentsDescriptor(MultipartFile jsonComponentsDescriptor) { this.jsonComponentsDescriptor = jsonComponentsDescriptor; }
 
     public List<MultipartFile> getDockerFiles() { return dockerFiles; }
     public void setDockerFiles(List<MultipartFile> dockerFiles) { this.dockerFiles = dockerFiles; }

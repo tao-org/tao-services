@@ -2,6 +2,7 @@ package ro.cs.tao.services.workflow.samples;
 
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.beans.Query;
+import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.base.SampleWorkflowBase;
@@ -32,8 +33,8 @@ public class SampleDBGroupSnapOtbWorkflow extends SampleWorkflowBase {
         dsQuery.setPageSize(10);
         dsQuery.setLimit(2);
         Map<String, String> values = new HashMap<>();
-        values.put("acquisition_date", "[2017-04-08,2017-04-10]");
-        values.put("geometry", "POLYGON(44.22597512802537 23.50357106719914,44.18762158427181 24.8757389462752," +
+        values.put(CommonParameterNames.START_DATE, "[2017-04-08,2017-04-10]");
+        values.put(CommonParameterNames.FOOTPRINT, "POLYGON(44.22597512802537 23.50357106719914,44.18762158427181 24.8757389462752," +
                 "43.201211355403785 24.8126316594684,43.238273156784096 23.46273547769195," +
                 "44.22597512802537 23.50357106719914,44.22597512802537 23.50357106719914))");
         dsQuery.setValues(values);

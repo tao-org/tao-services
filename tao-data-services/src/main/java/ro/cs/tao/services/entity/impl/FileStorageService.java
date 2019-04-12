@@ -29,6 +29,7 @@ import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
@@ -36,15 +37,16 @@ import ro.cs.tao.utils.FileUtilities;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service("storageService")
 public class FileStorageService implements StorageService<MultipartFile> {
@@ -64,74 +66,19 @@ public class FileStorageService implements StorageService<MultipartFile> {
     }
 
     @Override
-    public void storeUserFile(MultipartFile file, String description) throws Exception {
-        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-        if (file.isEmpty()) {
-            throw new IOException("Failed to store empty file " + fileName);
-        }
-        if (fileName.contains("..")) {
-            // This is a security check
-            throw new IOException( "Cannot store file with relative path outside user directory " + fileName);
-        }
-        Path filePath;
-        try (InputStream inputStream = file.getInputStream()) {
-            Path userPath = SessionStore.currentContext().getUploadPath();
-            Files.createDirectories(userPath);
-            // Resolve filename when coming from IE
-            filePath = userPath.resolve(Paths.get(fileName).getFileName());
-            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
-        String userName = SessionStore.currentContext().getPrincipal().getName();
-        String location = SessionStore.currentContext().getWorkspace().relativize(filePath).toString();
-        List<AuxiliaryData> listData = persistenceManager.getAuxiliaryData(userName, location);
-        AuxiliaryData data;
-        if (listData != null && listData.size() == 1) {
-            data = listData.get(0);
-        } else {
-            data = new AuxiliaryData();
-            data.setId(UUID.randomUUID().toString());
-        }
-        data.setLocation(location);
-        data.setDescription(description);
-        data.setUserName(userName);
-        data.setCreated(LocalDateTime.now());
-        data.setModified(data.getCreated());
-        persistenceManager.saveAuxiliaryData(data);
+    public void storeUserFile(MultipartFile file, String relativeFolder, String description) throws Exception {
+        checkParameters(file, relativeFolder);
+        storeFile(file, SessionStore.currentContext().getUploadPath(),
+                  SessionStore.currentContext().getWorkspace(),
+                  relativeFolder, description, SessionStore.currentContext().getPrincipal());
     }
 
     @Override
-    public void storePublicFile(MultipartFile file, String description) throws Exception {
-        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-        if (file.isEmpty()) {
-            throw new IOException("Failed to store empty file " + fileName);
-        }
-        if (fileName.contains("..")) {
-            // This is a security check
-            throw new IOException( "Cannot store file with relative path outside user directory " + fileName);
-        }
-        Path filePath;
-        try (InputStream inputStream = file.getInputStream()) {
-            Path publicPath = Paths.get(SystemVariable.SHARED_FILES.value());
-            Files.createDirectories(publicPath);
-            filePath = publicPath.resolve(fileName);
-            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
-        }
-        String userName = SystemSessionContext.instance().getPrincipal().getName();
-        String location = Paths.get(SystemVariable.SHARED_WORKSPACE.value()).relativize(filePath).toString();
-        List<AuxiliaryData> listData = persistenceManager.getAuxiliaryData(userName, location);
-        AuxiliaryData data;
-        if (listData != null && listData.size() == 1) {
-            data = listData.get(0);
-        } else {
-            data = new AuxiliaryData();
-            data.setId(UUID.randomUUID().toString());
-        }
-        data.setLocation(location);
-        data.setDescription(description);
-        data.setUserName(userName);
-        data.setCreated(LocalDateTime.now());
-        data.setModified(data.getCreated());
-        persistenceManager.saveAuxiliaryData(data);
+    public void storePublicFile(MultipartFile file, String relativeFolder, String description) throws Exception {
+        checkParameters(file, relativeFolder);
+        storeFile(file, Paths.get(SystemVariable.SHARED_FILES.value()),
+                  Paths.get(SystemVariable.SHARED_WORKSPACE.value()),
+                  relativeFolder, description, SystemSessionContext.instance().getPrincipal());
     }
 
     @Override
@@ -196,34 +143,124 @@ public class FileStorageService implements StorageService<MultipartFile> {
     }
 
     @Override
-    public Stream<Path> listFiles(boolean userOnly) throws IOException {
-        Path location = Paths.get(userOnly ?
-                                          SystemVariable.USER_FILES.value() :
-                                          SystemVariable.SHARED_FILES.value());
-        if (!Files.exists(location)) {
-            Files.createDirectories(location);
-        }
-        return list(location, 10);
+    public List<FileObject> listPublicWorkspace() throws IOException {
+        final List<FileObject> files = new ArrayList<>();
+        final String name = SystemPrincipal.instance().getName();
+        files.addAll(listProducts(name));
+        files.addAll(listUploaded(name));
+        return files;
     }
 
     @Override
-    public Stream<Path> listWorkspace(boolean userOnly) throws IOException {
-        Path location = Paths.get(userOnly ?
-                                          SystemVariable.USER_WORKSPACE.value() :
-                                          SystemVariable.SHARED_WORKSPACE.value());
-        if (!Files.exists(location)) {
-            Files.createDirectories(location);
-        }
-        return list(location, 10);
+    public List<FileObject> listUserWorkspace(String userName) throws IOException {
+        final List<FileObject> files = new ArrayList<>();
+        files.addAll(listProducts(userName));
+        files.addAll(listUploaded(userName));
+        return files;
     }
 
     @Override
-    public Stream<Path> listFiles(String fromPath) throws IOException {
-        Path path = Paths.get(fromPath);
-        if (!path.isAbsolute()) {
-            path = Paths.get(ConfigurationManager.getInstance().getValue("product.location"), fromPath);
+    public List<FileObject> listUploaded() throws IOException {
+        return listUploaded(SystemPrincipal.instance().getName());
+    }
+
+    @Override
+    public List<FileObject> listUploaded(String principalName) throws IOException {
+        final Path realRoot = SystemSessionContext.instance().getPrincipal().getName().equals(principalName) ?
+                Paths.get(SystemVariable.SHARED_FILES.value()) :
+                SessionStore.currentContext().getUploadPath();
+        return listFiles(realRoot, null);
+    }
+
+    @Override
+    public List<FileObject> listFiles(Path realRoot, Set<Path> exclusions) throws IOException {
+        final Path root = Paths.get(ConfigurationManager.getInstance().getValue("product.location")).toAbsolutePath();
+        realRoot = realRoot.toAbsolutePath();
+        final Path startPath = root.relativize(realRoot);
+        final String principalName = realRoot.getName(root.getNameCount()).toString();
+        final int depth = realRoot.getNameCount() - root.getNameCount() == 1 ? 1 : 10;
+        List<Path> list = list(realRoot, depth);
+        if (exclusions != null) {
+            ListIterator<Path> iterator = list.listIterator();
+            int nc;
+            while (iterator.hasNext()) {
+                Path current = iterator.next();
+                for (Path exc : exclusions) {
+                    nc = exc.getNameCount();
+                    if (current.getNameCount() < nc) {
+                        continue;
+                    }
+                    if (current.startsWith(exc)) {
+                        iterator.remove();
+                    }
+                }
+            }
         }
-        return list(path, 10);
+        String[] pathArray = list.stream().map(p -> p.toUri().toString()).toArray(String[]::new);
+        final Map<Path, Map<String, String>> auxAttributes = new HashMap<>();
+        List<AuxiliaryData> auxData = persistenceManager.getAuxiliaryData(principalName,
+                                                                          pathArray);
+        for (AuxiliaryData auxiliaryData : auxData) {
+            auxAttributes.put(Paths.get(URI.create(auxiliaryData.getLocation())),
+                              auxiliaryData.toAttributeMap());
+        }
+        final List<EOProduct> productList = persistenceManager.getEOProducts(pathArray);
+        final Map<Path, Map<String, String>> productAttributes = new HashMap<>();
+        for (EOProduct product : productList) {
+            productAttributes.put(Paths.get(URI.create(product.getLocation())),
+                                  product.toAttributeMap());
+        }
+        List<VectorData> vectors = persistenceManager.getVectorDataProducts(pathArray);
+        final Map<Path, Map<String, String>> vectorAttributes = new HashMap<>();
+        for (VectorData vectorData : vectors) {
+            vectorAttributes.put(Paths.get(URI.create(vectorData.getLocation())),
+                                 vectorData.toAttributeMap());
+        }
+        List<FileObject> fileObjects = new ArrayList<>(list.size());
+        final int filesNameIndex = root.getNameCount() + 1;
+        long size;
+        for (Path realPath : list) {
+            final FileObject fileObject;
+            //Path realPath = realRoot.resolve(path);
+            try {
+                size = Files.size(realPath);
+            } catch (IOException e) {
+                size = -1;
+            }
+            boolean isInFiles = realPath.getNameCount() > filesNameIndex && realPath.getName(filesNameIndex).toString().equals("files");
+            final Path path = realRoot.relativize(realPath);
+            final String pathToRecord = (isInFiles ?
+                    realPath.subpath(filesNameIndex, realPath.getNameCount()).toString() :
+                    startPath.resolve(path).toString()).replace("\\", "/");
+            if (isInFiles) {
+                if (auxAttributes.containsKey(realPath)) {
+                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
+                    fileObject.setAttributes(auxAttributes.get(realPath));
+                } else  {
+                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
+                }
+            } else {
+                if (productAttributes.containsKey(realPath)) {
+                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), 0);
+                    Map<String, String> attributeMap = productAttributes.get(realPath);
+                    fileObject.setProductName(attributeMap.get("name"));
+                    attributeMap.remove("name");
+                    attributeMap.remove("formatType");
+                    attributeMap.remove("width");
+                    attributeMap.remove("height");
+                    attributeMap.remove("pixelType");
+                    attributeMap.remove("sensorType");
+                    fileObject.setAttributes(attributeMap);
+                } else if (vectorAttributes.containsKey(realPath)) {
+                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
+                    fileObject.setAttributes(vectorAttributes.get(realPath));
+                } else {
+                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
+                }
+            }
+            fileObjects.add(fileObject);
+        }
+        return fileObjects;
     }
 
     @Override
@@ -236,79 +273,113 @@ public class FileStorageService implements StorageService<MultipartFile> {
         return getResults(workflowId, null);
     }
 
+    private List<FileObject> listProducts(String principalName) throws IOException {
+        boolean isSystem = SystemSessionContext.instance().getPrincipal().getName().equals(principalName);
+        final Path realRoot = isSystem ? Paths.get(SystemVariable.SHARED_WORKSPACE.value()) : SessionStore.currentContext().getWorkspace();
+        Set<Path> exclusions = new HashSet<>();
+        exclusions.add(realRoot.resolve("files").toAbsolutePath());
+        List<FileObject> list = listFiles(realRoot, exclusions);
+        if (isSystem) {
+            // add products published by other users (for system account, it means all other users)
+            List<EOProduct> products = persistenceManager.getOtherPublishedProducts(principalName);
+            final String publicPath = Paths.get(SystemVariable.SHARED_WORKSPACE.value()).toUri().toString();
+            final int tokensToSkip = realRoot.getNameCount();
+            if (products != null) {
+                products.removeIf(p -> p.getLocation().startsWith(publicPath));
+                FileObject fileObject;
+                for (EOProduct product : products) {
+                    Path productPath = Paths.get(URI.create(product.getLocation()));
+                    Path relativePath = productPath.getName(tokensToSkip);
+                    for (int i = 0; i < productPath.getNameCount(); i++) {
+                        if (i > tokensToSkip) {
+                            relativePath = relativePath.resolve(productPath.getName(i));
+                        }
+                    }
+                    fileObject = new FileObject(relativePath.toString(), Files.isDirectory(productPath), 0);
+                    Map<String, String> attributeMap = product.toAttributeMap();
+                    fileObject.setProductName(product.getName());
+                    attributeMap.remove("name");
+                    attributeMap.remove("formatType");
+                    attributeMap.remove("width");
+                    attributeMap.remove("height");
+                    attributeMap.remove("pixelType");
+                    attributeMap.remove("sensorType");
+                    fileObject.setAttributes(attributeMap);
+                    list.add(fileObject);
+                }
+            }
+        }
+        return list;
+    }
+
     private List<FileObject> getResults(Long workflowId, Long jobId) throws IOException {
         if ((workflowId == null) == (jobId == null)) {
             throw new IllegalArgumentException("Exactly one of [workflowId] or [jobId] should be passed");
         }
-        List<Path> list = listWorkspace(true).collect(Collectors.toList());
-        List<FileObject> fileObjects = new ArrayList<>(list.size());
+        List<FileObject> list = listProducts(SessionStore.currentContext().getPrincipal().getName());
+        List<FileObject> results = new ArrayList<>();
         if (list.size() > 0) {
-            long size;
-            Path realRoot = Paths.get(SystemVariable.USER_WORKSPACE.value());
-            String[] strings = list.stream().map(p -> realRoot.resolve(p).toUri().toString()).toArray(String[]::new);
             List<String> outputKeys = workflowId != null ? persistenceManager.getJobsOutputKeys(workflowId) :
                                                            persistenceManager.getJobOutputKeys(jobId);
             if (outputKeys != null && outputKeys.size() > 0) {
                 Set<String> keys = new LinkedHashSet<>(outputKeys);
-                List<EOProduct> rasters = persistenceManager.getEOProducts(strings);
-                List<VectorData> vectors = persistenceManager.getVectorDataProducts(strings);
-                List<AuxiliaryData> auxData = persistenceManager.getAuxiliaryData(SessionStore.currentContext().getPrincipal().getName(),
-                                                                                  list.stream().map(Path::toString).toArray(String[]::new));
-                for (Path path : list) {
-                    String stringPath = path.toString();
+                for (FileObject fileObject: list) {
+                    String stringPath = fileObject.getRelativePath();
                     if (stringPath.indexOf('-') > 0 && stringPath.indexOf('-', stringPath.indexOf('-') + 1) > 0 &&
                             keys.contains(stringPath.substring(0, stringPath.indexOf('-', stringPath.indexOf('-', 0) + 1)))) {
-                        Path realPath = realRoot.resolve(path);
-                        String realUri = realPath.toUri().toString();
-                        try {
-                            size = Files.size(realPath);
-                        } catch (IOException e) {
-                            size = -1;
-                        }
-                        FileObject fileObject = new FileObject(stringPath, Files.isDirectory(realPath), size);
-                        Optional<EOProduct> product = rasters.stream()
-                                .filter(r -> realUri.equals(r.getLocation()))
-                                .findFirst();
-                        if (product.isPresent()) {
-                            Map<String, String> attributeMap = product.get().toAttributeMap();
-                            attributeMap.remove("formatType");
-                            attributeMap.remove("width");
-                            attributeMap.remove("height");
-                            attributeMap.remove("pixelType");
-                            attributeMap.remove("sensorType");
-                            fileObject.setAttributes(attributeMap);
-                        } else {
-                            product = rasters.stream()
-                                    .filter(r -> realUri.equals(r.getLocation() + r.getEntryPoint()))
-                                    .findFirst();
-                        }
-                        if (product.isPresent() && !fileObject.isFolder()) {
-                            Map<String, String> attributeMap = product.get().toAttributeMap();
-                            fileObject.setAttributes(attributeMap);
-                        } else {
-                            Optional<VectorData> vector = vectors.stream()
-                                    .filter(v -> realUri.equals(v.getLocation() + v.getLocation()))
-                                    .findFirst();
-                            if (vector.isPresent()) {
-                                fileObject.setAttributes(vector.get().toAttributeMap());
-                            } else {
-                                Optional<AuxiliaryData> aData = auxData.stream()
-                                        .filter(a -> stringPath.equals(a.getLocation()))
-                                        .findFirst();
-                                aData.ifPresent(auxiliaryData -> fileObject.setAttributes(auxiliaryData.toAttributeMap()));
-                            }
-                        }
-                        fileObjects.add(fileObject);
+                        results.add(fileObject);
                     }
                 }
             }
         }
-        return fileObjects;
+        return results;
     }
 
-    private Stream<Path> list(Path path, int depth) throws IOException {
+    private void checkParameters(MultipartFile file, String relativeFolder) throws IOException {
+        if (file == null) {
+            throw new NullPointerException("[file]");
+        }
+        if (file.isEmpty()) {
+            throw new IOException("Failed to store empty file " + file.getOriginalFilename());
+        }
+        if (relativeFolder.contains("..")) {
+            // This is a security check
+            throw new IOException( "Cannot store file with relative path outside user directory [" + relativeFolder + "]");
+        }
+    }
+
+    private void storeFile(MultipartFile file, Path uploadPath, Path workspacePath,
+                           String relativeFolder, String description, Principal principal) throws IOException, PersistenceException {
+        Path filePath;
+        try (InputStream inputStream = file.getInputStream()) {
+            Path userPath = uploadPath.resolve(relativeFolder);
+            Files.createDirectories(userPath);
+            // Resolve filename when coming from IE
+            filePath = userPath.resolve(Paths.get(file.getOriginalFilename()).getFileName());
+            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+        }
+        String userName = principal.getName();
+        String location = filePath.toUri().toString(); //workspacePath.relativize(filePath).toString();
+        List<AuxiliaryData> listData = persistenceManager.getAuxiliaryData(userName, location);
+        AuxiliaryData data;
+        if (listData != null && listData.size() == 1) {
+            data = listData.get(0);
+        } else {
+            data = new AuxiliaryData();
+            data.setId(UUID.randomUUID().toString());
+        }
+        data.setLocation(location);
+        data.setDescription(description);
+        data.setUserName(userName);
+        data.setCreated(LocalDateTime.now());
+        data.setModified(data.getCreated());
+        persistenceManager.saveAuxiliaryData(data);
+    }
+
+    private List<Path> list(Path path, int depth) throws IOException {
         return Files.walk(path, depth)
                     .filter(p -> !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
-                    .map(path::relativize);
+                    //.map(path::relativize)
+                    .collect(Collectors.toList());
     }
 }

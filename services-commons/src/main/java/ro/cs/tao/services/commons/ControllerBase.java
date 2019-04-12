@@ -26,6 +26,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import ro.cs.tao.component.validation.ValidationException;
 
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -42,11 +43,11 @@ public abstract class ControllerBase {
         return authentication.getName();
     }
 
-    protected void asyncExecute(Runnable runnable) {
-        asyncExecute(runnable, null);
+    protected Future<?> asyncExecute(Runnable runnable) {
+        return asyncExecute(runnable, null);
     }
 
-    protected void asyncExecute(Runnable runnable, Consumer<Exception> callback) {
+    protected Future<?> asyncExecute(Runnable runnable, Consumer<Exception> callback) {
         synchronized (sharedLock) {
             if (this.executorService == null) {
                 executorService = new ThreadPoolTaskExecutor() {
@@ -73,7 +74,7 @@ public abstract class ControllerBase {
                 executorService.initialize();
             }
         }
-        executorService.execute(() -> {
+        return executorService.submit(() -> {
             try {
                 runnable.run();
             } catch (Exception ex) {
