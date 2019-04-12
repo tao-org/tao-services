@@ -48,12 +48,12 @@
         <repository>
             <id>tao-core</id>
             <name>TAO Core</name>
-            <url>https://github.com/tao-org/tao-core/tree/repository</url>
+            <url>https://github.com/tao-org/tao-core/raw/repository</url>
         </repository>
         <repository>
             <id>tao-plugins</id>
             <name>TAO Plugins</name>
-            <url>https://github.com/tao-org/tao-plugins/tree/repository</url>
+            <url>https://github.com/tao-org/tao-plugins/raw/repository</url>
         </repository>
         <repository>
             <id>spring-releases</id>
