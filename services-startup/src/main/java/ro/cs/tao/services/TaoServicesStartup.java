@@ -110,7 +110,7 @@ public class TaoServicesStartup extends StartupBase {
             try {
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_FILES.value()));
-                String tempPath = ConfigurationManager.getInstance().getValue("spring.http.multipart.location", "/mnt/tao/tmp");
+                String tempPath = ConfigurationManager.getInstance().getValue("spring.servlet.multipart.location", "/mnt/tao/tmp");
                 FileUtilities.ensureExists(Paths.get(tempPath));
                 Path cachePath = TaoServicesStartup.homeDirectory().resolve("static").resolve("previews");
                 FileUtilities.ensureExists(cachePath);

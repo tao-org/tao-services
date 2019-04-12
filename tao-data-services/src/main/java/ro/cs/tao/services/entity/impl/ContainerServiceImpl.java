@@ -17,17 +17,26 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.Tag;
+import ro.cs.tao.component.ParameterDescriptor;
+import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.SourceDescriptor;
+import ro.cs.tao.component.TargetDescriptor;
+import ro.cs.tao.component.enums.ProcessingComponentType;
+import ro.cs.tao.component.enums.ProcessingComponentVisibility;
+import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.TopologyManager;
 
 import java.nio.file.Path;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
@@ -37,10 +46,9 @@ import java.util.logging.Logger;
 public class ContainerServiceImpl
         extends EntityService<Container> implements ContainerService {
 
-    private static final Set<String> winExtensions = new HashSet<String>() {{ add(".bat"); add(".exe"); }};
-
     @Autowired
     private PersistenceManager persistenceManager;
+
     private Logger logger = Logger.getLogger(ContainerService.class.getName());
 
     @Override
@@ -104,13 +112,88 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public String registerContainer(Path dockerFile, String shortName, String description, Container dbContainer) {
+    public String registerContainer(Path dockerFile, String shortName, String description,
+                                    Container dbContainer, ProcessingComponent[] components) {
         String containerId = null;
         TopologyManager topologyManager = TopologyManager.getInstance();
         if (topologyManager.getDockerImage(shortName) == null) {
+            // build Docker image and put it in Docker registry
             containerId = topologyManager.registerImage(dockerFile, shortName, description);
+            // update database with container and applications information
             initializeContainer(containerId, shortName, dbContainer.getApplicationPath(),
                                 dbContainer.getApplications());
+        }
+        // if provided, register the components of this container
+        if (containerId != null && components != null) {
+            final List<Application> containerApplications = dbContainer.getApplications();
+            List<Tag> componentTags = this.persistenceManager.getComponentTags();
+            if (componentTags == null) {
+                componentTags = new ArrayList<>();
+            }
+            ProcessingComponent current = null;
+            for (ProcessingComponent component : components) {
+                try {
+                    current = component;
+                    component.setContainerId(dbContainer.getId());
+                    component.setLabel(component.getId());
+                    component.setComponentType(ProcessingComponentType.EXECUTABLE);
+                    component.setFileLocation(containerApplications.stream().filter(a -> a.getName().equals(component.getId())).findFirst().get().getPath());
+                    List<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
+                    if (parameterDescriptors != null) {
+                        parameterDescriptors.forEach(p -> {
+                            if (p.getName() == null) {
+                                p.setName(p.getId());
+                                p.setId(UUID.randomUUID().toString());
+                            }
+                            String[] valueSet = p.getValueSet();
+                            if (valueSet != null && valueSet.length == 1 &&
+                                    ("null".equals(valueSet[0]) || valueSet[0].isEmpty())) {
+                                p.setValueSet(null);
+                            }
+                            if (valueSet != null && valueSet.length > 0 &&
+                                    ("null".equals(valueSet[0]) || valueSet[0].isEmpty())) {
+                                p.setDefaultValue(valueSet[0]);
+                            }
+                        });
+                    }
+                    List<SourceDescriptor> sources = component.getSources();
+                    if (sources != null) {
+                        sources.forEach(s -> s.setId(UUID.randomUUID().toString()));
+                    }
+                    List<TargetDescriptor> targets = component.getTargets();
+                    if (targets != null) {
+                        targets.forEach(t -> t.setId(UUID.randomUUID().toString()));
+                    }
+                    String template = component.getTemplateContents();
+                    int i = 0;
+                    while (i < template.length()) {
+                        char ch = template.charAt(i);
+                        if (ch == '$' && template.charAt(i - 1) != '\n') {
+                            template = template.substring(0, i) + "\n" + template.substring(i);
+                        }
+                        i++;
+                    }
+                    String[] tokens = template.split("\n");
+                    for (int j = 0; j < tokens.length; j++) {
+                        final int idx = j;
+                        if ((targets != null && targets.stream().anyMatch(t -> t.getName().equals(tokens[idx].substring(1)))) ||
+                                (sources != null && sources.stream().anyMatch(s -> s.getName().equals(tokens[idx].substring(1))))) {
+                            tokens[j + 1] = tokens[j].replace('-', '$');
+                            j++;
+                        }
+                    }
+                    component.setTemplateContents(String.join("\n", tokens));
+                    component.setComponentType(ProcessingComponentType.EXECUTABLE);
+                    component.setVisibility(ProcessingComponentVisibility.SYSTEM);
+                    component.setOwner(SystemPrincipal.instance().getName());
+                    component.addTags(getOrCreateTag(componentTags, dbContainer.getName()).getText());
+                    persistenceManager.saveProcessingComponent(component);
+                } catch (Exception inner) {
+                    logger.severe(String.format("Faulty component: %s. Error: %s",
+                                                current != null ? current.getId() : "n/a",
+                                                inner.getMessage()));
+                }
+            }
         }
         return containerId;
     }
@@ -179,5 +262,14 @@ public class ContainerServiceImpl
                 }
             }
         });
+    }
+
+    private Tag getOrCreateTag(List<Tag> tags, String tagText) {
+        Tag tag = tags.stream().filter(t -> t.getText().equalsIgnoreCase(tagText)).findFirst().orElse(null);
+        if (tag == null) {
+            tag = this.persistenceManager.saveTag(new Tag(TagType.COMPONENT, tagText));
+            tags.add(tag);
+        }
+        return tag;
     }
 }

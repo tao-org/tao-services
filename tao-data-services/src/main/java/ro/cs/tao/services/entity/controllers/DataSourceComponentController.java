@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
+import ro.cs.tao.component.Variable;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.eodata.EOProduct;
@@ -34,6 +35,7 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.DataSourceGroupRequest;
+import ro.cs.tao.services.entity.beans.DataSourceNameRequest;
 import ro.cs.tao.services.entity.beans.DataSourceRequest;
 import ro.cs.tao.services.entity.beans.GroupQuery;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
@@ -43,10 +45,7 @@ import ro.cs.tao.services.interfaces.QueryService;
 import ro.cs.tao.utils.Tuple;
 
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -200,6 +199,38 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             } else {
                 return prepareResult("Product list not provided", ResponseStatus.FAILED);
             }
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/create/names", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody DataSourceNameRequest request) {
+        try {
+            if (request == null || request.getProducts() == null || request.getProducts().size() == 0) {
+                throw new IllegalArgumentException("[products] Body is empty");
+            }
+            final List<Variable> products = request.getProducts();
+            Map<String, List<String>> groups = new HashMap<>();
+            for (Variable entry : products) {
+                if (!groups.containsKey(entry.getValue())) {
+                    groups.put(entry.getValue(), new ArrayList<>());
+                }
+                groups.get(entry.getValue()).add(entry.getKey());
+            }
+            final Principal currentUser = SessionStore.currentContext().getPrincipal();
+            final String dataSource = "Local Database";
+            List<EOProduct> prods;
+            List<String> names;
+            List<DataSourceComponent> components = new ArrayList<>();
+            for (Map.Entry<String, List<String>> entry : groups.entrySet()) {
+                names = entry.getValue();
+                prods = getPersistenceManager().getProductsByNames(names.toArray(new String[0]));
+                if (prods != null && prods.size() > 0) {
+                    components.add(service.createForProductNames(names, entry.getKey(), dataSource, null, request.getLabel(), currentUser));
+                }
+            }
+            return components.size() > 0 ? prepareResult(components) : prepareResult("No component was created", ResponseStatus.FAILED);
         } catch (PersistenceException e) {
             return handleException(e);
         }

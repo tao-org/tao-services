@@ -16,6 +16,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,13 +27,17 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.SortDirection;
+import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topics;
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.ContainerUploadRequest;
@@ -44,9 +49,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -55,6 +59,9 @@ import java.util.logging.Logger;
 @Controller
 @RequestMapping("/docker")
 public class ContainerController extends DataEntityController<Container, String, ContainerService> {
+
+    @Autowired
+    private PersistenceManager persistenceManager;
 
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
@@ -74,23 +81,33 @@ public class ContainerController extends DataEntityController<Container, String,
                                                      @ModelAttribute ContainerUploadRequest request,
                                                      Model model) {
         try {
-            final List<MultipartFile> files = request.getDockerFiles();
-            if (files == null || files.isEmpty()) {
+            final List<MultipartFile> dockerFiles = request.getDockerFiles();
+            if (dockerFiles == null || dockerFiles.isEmpty()) {
                 throw new IllegalArgumentException("Empty file list");
             }
-            final MultipartFile jsonFile = files.stream().filter(f -> f.getOriginalFilename().toLowerCase().endsWith(".json"))
-                                                .findFirst().orElse(null);
-            if (request.getJsonDescriptor() == null && jsonFile == null) {
-                throw new IllegalArgumentException("Please either attach a json file or set the [jsonDescriptor] field");
+            final MultipartFile jsonContainerFile = request.getJsonContainerDescriptor();
+            if (jsonContainerFile == null) {
+                throw new IllegalArgumentException("Please attach a json file with the container and applications descriptors");
             }
-            final String json;
-            if (jsonFile != null) {
-                json = new String(jsonFile.getBytes());
-            } else {
-                json = request.getJsonDescriptor();
-            }
+            String json;
+            json = new String(jsonContainerFile.getBytes());
             final Container container = new ObjectMapper().readValue(json, Container.class);
-            final MultipartFile dockerFile = files.stream().filter(f -> "Dockerfile".equals(f.getOriginalFilename())).findFirst().orElse(null);
+
+            final MultipartFile logoFile = request.getContainerLogo();
+            if (logoFile != null) {
+                container.setLogo(Base64.getEncoder().encodeToString(logoFile.getBytes()));
+            }
+
+            final MultipartFile jsonComponentsFile = request.getJsonComponentsDescriptor();
+            final ProcessingComponent[] components;
+            if (jsonComponentsFile != null) {
+                json = new String(jsonComponentsFile.getBytes());
+                components = new ObjectMapper().readValue(json, ProcessingComponent[].class);
+            } else {
+                components = null;
+            }
+
+            final MultipartFile dockerFile = dockerFiles.stream().filter(f -> "Dockerfile".equals(f.getOriginalFilename())).findFirst().orElse(null);
             if (dockerFile == null) {
                 throw new IllegalArgumentException("Dockerfile not found");
             }
@@ -98,12 +115,20 @@ public class ContainerController extends DataEntityController<Container, String,
             if (name == null) {
                 throw new IllegalArgumentException("[name] cannot be null");
             }
-            files.remove(dockerFile);
+            dockerFiles.remove(dockerFile);
             final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
             final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
-            for (MultipartFile file : files) {
+            for (MultipartFile file : dockerFiles) {
                 try {
-                    resolveMultiPartFile(file, dockerImagesPath);
+                    Path auxFile = resolveMultiPartFile(file, dockerImagesPath);
+                    AuxiliaryData data = new AuxiliaryData();
+                    data.setId(UUID.randomUUID().toString());
+                    data.setLocation(auxFile.toString());
+                    data.setDescription(String.format("Auxiliary file for container '%s'", name));
+                    data.setUserName(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
+                    data.setCreated(LocalDateTime.now());
+                    data.setModified(data.getCreated());
+                    persistenceManager.saveAuxiliaryData(data);
                 } catch (IOException e) {
                     error(e.getMessage());
                 }
@@ -125,7 +150,7 @@ public class ContainerController extends DataEntityController<Container, String,
                 try {
                     service.registerContainer(dockerPath, name,
                                               request.getDescription() == null ? name : request.getDescription(),
-                                              container);
+                                              container, components);
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
