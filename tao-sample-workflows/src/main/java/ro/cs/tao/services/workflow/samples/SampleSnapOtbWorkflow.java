@@ -32,7 +32,7 @@ import java.util.Map;
 public class SampleSnapOtbWorkflow extends SampleWorkflowBase {
 
     @Override
-    public String getName() { return "SNAP NDVI + OTB RESAMPLE workflow"; }
+    public String getName() { return "Single product SNAP NDVI + OTB RESAMPLE workflow"; }
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {

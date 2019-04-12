@@ -116,7 +116,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     }
 
     @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> initializeSampleWorkflows() {
+    public ResponseEntity<ServiceResponse<?>> initializeSampleWorkflows(@RequestParam(name = "name", required = false) String name) {
         ServiceRegistry<SampleWorkflow> registry = ServiceRegistryManager.getInstance().getServiceRegistry(SampleWorkflow.class);
         Set<SampleWorkflow> services = registry.getServices();
         if (services == null || services.size() == 0) {
@@ -130,7 +130,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             BaseException aggregated = null;
             for (SampleWorkflow sample : services) {
                 try {
-                    descriptors.add(sample.createWorkflowDescriptor());
+                    if (name == null || name.isEmpty() || name.equals(sample.getName())) {
+                        descriptors.add(sample.createWorkflowDescriptor());
+                    }
                 } catch (PersistenceException e) {
                     if (aggregated == null) {
                         aggregated = new BaseException(e.getMessage());
