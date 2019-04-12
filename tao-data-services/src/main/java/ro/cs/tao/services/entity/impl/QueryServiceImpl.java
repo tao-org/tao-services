@@ -22,12 +22,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.beans.Query;
+import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.QueryService;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service("queryService")
 public class QueryServiceImpl extends EntityService<Query>
@@ -134,15 +137,28 @@ public class QueryServiceImpl extends EntityService<Query>
         if (entity.getWorkflowNodeId() <= 0) {
             errors.add("[workflowNodeId] Invalid node identifier");
         }
+        DataSourceManager dataSourceManager = DataSourceManager.getInstance();
         String value = entity.getSensor();
         if (value == null || value.isEmpty() ||
-                !DataSourceManager.getInstance().getSupportedSensors().contains(value)) {
+                !dataSourceManager.getSupportedSensors().contains(value)) {
             errors.add("[sensor] Invalid value");
         } else {
             value = entity.getDataSource();
             if (value == null || value.isEmpty() ||
-                    DataSourceManager.getInstance().get(entity.getSensor(), value) == null) {
+                    dataSourceManager.get(entity.getSensor(), value) == null) {
                 errors.add("[dataSource] Invalid value");
+            } else {
+                final Map<String, DataSourceParameter> parameters = dataSourceManager.getSupportedParameters(entity.getSensor(), entity.getDataSource());
+                final Map<String, String> values = entity.getValues();
+                if (values != null) {
+                    Set<String> keys = values.keySet();
+                    for (String key : keys) {
+                        if (!parameters.containsKey(key)) {
+                            errors.add(String.format("[%s] Parameter not supported for this data source", key));
+                        }
+                    }
+                }
+
             }
         }
     }
