@@ -21,6 +21,7 @@ import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
+import ro.cs.tao.datasource.ProductStatusListener;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.ParameterName;
 import ro.cs.tao.datasource.remote.FetchMode;
@@ -32,6 +33,7 @@ import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.model.datasource.ParameterDescriptor;
+import ro.cs.tao.utils.async.Parallel;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -102,32 +104,69 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
-    public List<EOProduct> fetch(Query query, List<EOProduct> products, FetchMode mode, String localPath, String pathFormat) {
+    public List<EOProduct> fetch(Query query, final List<EOProduct> products, FetchMode mode, String localPath, String pathFormat) {
+        final List<EOProduct> results;
         if (products != null) {
-            DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
+            final DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
             dsComponent.setUserCredentials(query.getUser(), query.getPassword());
             dsComponent.setFetchMode(mode);
             dsComponent.setProductStatusListener(downloadListener);
             String path = SystemVariable.SHARED_WORKSPACE.value();
             final Set<String> existingSet = new HashSet<>(persistenceManager.getExistingProductNames(products.stream().map(EOProduct::getName).toArray(String[]::new)));
             products.removeIf(p -> existingSet.contains(p.getName()) && mode != FetchMode.RESUME);
+            final Logger logger = Logger.getLogger(DataSourceService.class.getName());
             for (EOProduct product : products) {
                 product.setProductStatus(ProductStatus.QUERIED);
                 try {
                     persistenceManager.saveEOProduct(product);
                 } catch (PersistenceException e) {
-                    Logger.getLogger(DataSourceService.class.getName()).warning(String.format("Cannot persist product %s. Reason: %s",
-                                                                                              product.getName(), e.getMessage()));
+                    logger.warning(String.format("Cannot persist product %s. Reason: %s",product.getName(), e.getMessage()));
                 }
             }
+            final int parallelism = DataSourceManager.getInstance().get(dsComponent.getSensorName(),
+                                                                        dsComponent.getDataSourceName()).getMaximumAllowedTransfers();
             if ((mode == FetchMode.SYMLINK || mode == FetchMode.COPY) && localPath != null) {
                 Properties properties = new Properties();
                 properties.put("local.archive.path.format", pathFormat);
-                products = dsComponent.doFetch(products, null, path, localPath, properties);
+                if (parallelism > 1) {
+                    results = Collections.synchronizedList(new ArrayList<>());
+                    Parallel.For(0, products.size(), parallelism, (i) -> {
+                        try {
+                            DataSourceComponent clone = cloneComponent(dsComponent, downloadListener);
+                            results.addAll(dsComponent.doFetch(products.subList(i, i + 1), null, path, localPath, properties));
+                        } catch (Exception ex) {
+                            logger.severe(ex.getMessage());
+                        }
+                    });
+                } else {
+                    results = dsComponent.doFetch(products, null, path, localPath, properties);
+                }
             } else {
-                products = dsComponent.doFetch(products, null, path);
+                if (parallelism > 1) {
+                    results = Collections.synchronizedList(new ArrayList<>());
+                    Parallel.For(0, products.size(), parallelism, (i) -> {
+                        try {
+                            DataSourceComponent clone = cloneComponent(dsComponent, downloadListener);
+                            results.addAll(clone.doFetch(products.subList(i, i + 1), null, path));
+                        } catch (Exception ex) {
+                            logger.severe(ex.getMessage());
+                        }
+                    });
+                } else {
+                    results = dsComponent.doFetch(products, null, path);
+                }
             }
+        } else {
+            results = null;
         }
-        return products;
+        return results;
+    }
+
+    private DataSourceComponent cloneComponent(DataSourceComponent source, ProductStatusListener listener) throws CloneNotSupportedException {
+        DataSourceComponent clone = source.clone();
+        clone.setUserCredentials(source.getUserName(), source.getPassword());
+        clone.setFetchMode(source.getFetchMode());
+        clone.setProductStatusListener(listener);
+        return clone;
     }
 }
