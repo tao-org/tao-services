@@ -134,7 +134,7 @@ public class QueryServiceImpl extends EntityService<Query>
 
     @Override
     protected void validateFields(Query entity, List<String> errors) {
-        if (entity.getWorkflowNodeId() <= 0) {
+        if (entity.getWorkflowNodeId() != null && entity.getWorkflowNodeId() <= 0) {
             errors.add("[workflowNodeId] Invalid node identifier");
         }
         DataSourceManager dataSourceManager = DataSourceManager.getInstance();
