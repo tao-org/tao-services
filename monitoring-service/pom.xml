@@ -18,6 +18,11 @@
             <artifactId>services-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-execution</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
