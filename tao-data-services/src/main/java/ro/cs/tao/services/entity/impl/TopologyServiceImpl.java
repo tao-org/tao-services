@@ -95,6 +95,7 @@ public class TopologyServiceImpl
         NodeDescription existing = findById(node.getId());
         if (existing != null && existing.getNodeType() != node.getNodeType()) {
             try {
+                tagType(node);
                 untag(node, new ArrayList<String>() {{ add(existing.getNodeType().friendlyName()); }});
                 tag(node, new ArrayList<String>() {{ add(node.getNodeType().friendlyName()); }});
             } catch (PersistenceException e) {
@@ -174,7 +175,7 @@ public class TopologyServiceImpl
                     entityTags.remove(value);
                 }
                 entity.setTags(entityTags);
-                return update(entity);
+                //return update(entity);
             }
         }
         return entity;
