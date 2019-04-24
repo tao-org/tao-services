@@ -153,8 +153,18 @@ public class TaoServicesStartup extends StartupBase {
                 NodeDescription master = persistenceManager.getNodeByHostName(masterHost);
                 if (master == null) {
                     Tag masterTag = new Tag(TagType.TOPOLOGY_NODE, "master");
-                    Tag procTag = new Tag(TagType.TOPOLOGY_NODE,
-                                          Runtime.getRuntime().availableProcessors() + " processors");
+                    int processors = Runtime.getRuntime().availableProcessors();
+                    final NodeType nodeType;
+                    if (processors <= 4) {
+                        nodeType = NodeType.S;
+                    } else if (processors <= 8) {
+                        nodeType = NodeType.M;
+                    } else if (processors <= 16) {
+                        nodeType = NodeType.L;
+                    } else {
+                        nodeType = NodeType.XL;
+                    }
+                    Tag procTag = new Tag(TagType.TOPOLOGY_NODE, nodeType.friendlyName());
                     persistenceManager.saveTag(masterTag);
                     persistenceManager.saveTag(procTag);
                     master = new NodeDescription();
@@ -166,7 +176,8 @@ public class TaoServicesStartup extends StartupBase {
                     OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(masterHost, user, pwd);
                     master.setDescription(node.getDescription());
                     master.setServicesStatus(node.getServicesStatus());
-                    master.setProcessorCount(Runtime.getRuntime().availableProcessors());
+                    master.setProcessorCount(processors);
+                    master.setNodeType(nodeType);
                     master.setDiskSpaceSizeGB((int) inspector.getTotalDiskGB());
                     master.setMemorySizeGB((int) inspector.getTotalMemoryMB() / 1024);
                     master.setActive(true);
