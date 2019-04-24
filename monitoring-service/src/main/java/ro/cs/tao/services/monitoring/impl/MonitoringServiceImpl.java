@@ -60,6 +60,21 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
+    public Map<String, RuntimeInfo> getNodesSnapshot() {
+        Map<String, RuntimeInfo> runtimeInfo = null;
+        try {
+            if (NodeManager.isAvailable()) {
+                runtimeInfo = NodeManager.getInstance().getNodesSnapshot();
+            } else {
+                runtimeInfo = new HashMap<>();
+            }
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+        }
+        return runtimeInfo;
+    }
+
+    @Override
     public RuntimeInfo getMasterSnapshot() {
         RuntimeInfo runtimeInfo = null;
         try {

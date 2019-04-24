@@ -41,6 +41,12 @@ public class MonitoringController extends BaseController {
     @Autowired
     private MonitoringService<Notification> monitoringService;
 
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getAllSnapshot() {
+        return prepareResult(monitoringService.getNodesSnapshot(),
+                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm:ss")));
+    }
+
     @RequestMapping(value = "/master", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getMasterSnapshot() {
         final RuntimeInfo snapshot = monitoringService.getMasterSnapshot();
