@@ -31,7 +31,6 @@ import ro.cs.tao.topology.TopologyManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -78,15 +77,19 @@ public class TopologyServiceImpl
     @Override
     public NodeDescription save(NodeDescription node) {
         tagType(node);
-        TopologyManager.getInstance().add(node);
-        List<String> tags = new ArrayList<String>() {{ add(node.getNodeType().friendlyName()); }};
-        try {
-            tag(node, tags);
-        } catch (PersistenceException e) {
-            Logger.getLogger(TopologyService.class.getName()).warning(String.format("Cannot tag node '%s' with tag '%s'. Reason: %s",
-                                                                                    node.getId(), node.getNodeType().friendlyName(),
-                                                                                    e.getMessage()));
+        List<String> nodeTags = node.getTags();
+        if (nodeTags != null) {
+            if (!nodeTags.contains(node.getNodeType().friendlyName())) {
+                nodeTags.add(node.getNodeType().friendlyName());
+            }
+            Set<String> existingTags = persistenceManager.getNodeTags().stream().map(Tag::getText).collect(Collectors.toSet());
+            for (String value : nodeTags) {
+                if (!existingTags.contains(value)) {
+                    persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
+                }
+            }
         }
+        TopologyManager.getInstance().add(node);
         return node;
     }
 
@@ -94,14 +97,18 @@ public class TopologyServiceImpl
     public NodeDescription update(NodeDescription node) {
         NodeDescription existing = findById(node.getId());
         if (existing != null && existing.getNodeType() != node.getNodeType()) {
-            try {
-                tagType(node);
-                untag(node, new ArrayList<String>() {{ add(existing.getNodeType().friendlyName()); }});
-                tag(node, new ArrayList<String>() {{ add(node.getNodeType().friendlyName()); }});
-            } catch (PersistenceException e) {
-                Logger.getLogger(TopologyService.class.getName()).warning(String.format("Cannot tag node '%s' with tag '%s'. Reason: %s",
-                                                                                        node.getId(), node.getNodeType().friendlyName(),
-                                                                                        e.getMessage()));
+            tagType(node);
+            List<String> nodeTags = node.getTags();
+            if (nodeTags != null) {
+                if (!nodeTags.contains(node.getNodeType().friendlyName())) {
+                    nodeTags.add(node.getNodeType().friendlyName());
+                }
+                Set<String> existingTags = persistenceManager.getNodeTags().stream().map(Tag::getText).collect(Collectors.toSet());
+                for (String value : nodeTags) {
+                    if (!existingTags.contains(value)) {
+                        persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
+                    }
+                }
             }
         }
         TopologyManager.getInstance().update(node);
@@ -133,41 +140,12 @@ public class TopologyServiceImpl
         return entity;
     }
 
-    public NodeDescription tag(NodeDescription entity, List<String> tags) throws PersistenceException {
-        if (tags != null && tags.size() > 0) {
-            Set<String> existingTags = persistenceManager.getNodeTags().stream()
-                    .map(Tag::getText).collect(Collectors.toSet());
-            for (String value : tags) {
-                if (!existingTags.contains(value)) {
-                    persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
-                }
-            }
-            entity.setTags(tags);
-            //return update(entity);
-        }
-        return entity;
-    }
-
     @Override
     public NodeDescription untag(String id, List<String> tags) throws PersistenceException {
         NodeDescription entity = findById(id);
         if (entity == null) {
             throw new PersistenceException(String.format("Node with id '%s' not found", id));
         }
-        if (tags != null && tags.size() > 0) {
-            List<String> entityTags = entity.getTags();
-            if (entityTags != null) {
-                for (String value : tags) {
-                    entityTags.remove(value);
-                }
-                entity.setTags(entityTags);
-                //return update(entity);
-            }
-        }
-        return entity;
-    }
-
-    public NodeDescription untag(NodeDescription entity, List<String> tags) throws PersistenceException {
         if (tags != null && tags.size() > 0) {
             List<String> entityTags = entity.getTags();
             if (entityTags != null) {

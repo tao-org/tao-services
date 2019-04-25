@@ -148,6 +148,12 @@ public class TaoServicesStartup extends StartupBase {
         NodeDescription node = TopologyManager.getInstance().get("localhost");
         if (node != null) {
             try {
+                List<Tag> nodeTags = persistenceManager.getNodeTags();
+                if (nodeTags == null || nodeTags.size() == 0) {
+                    for (TagType tagType : TagType.values()) {
+                        persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, tagType.friendlyName()));
+                    }
+                }
                 logger.finest("Overriding the default 'localhost' database entry");
                 String masterHost = InetAddress.getLocalHost().getHostName();
                 NodeDescription master = persistenceManager.getNodeByHostName(masterHost);
@@ -164,9 +170,7 @@ public class TaoServicesStartup extends StartupBase {
                     } else {
                         nodeType = NodeType.XL;
                     }
-                    Tag procTag = new Tag(TagType.TOPOLOGY_NODE, nodeType.friendlyName());
                     persistenceManager.saveTag(masterTag);
-                    persistenceManager.saveTag(procTag);
                     master = new NodeDescription();
                     master.setId(masterHost);
                     String user = ConfigurationManager.getInstance().getValue("topology.master.user", node.getUserName());
@@ -182,7 +186,7 @@ public class TaoServicesStartup extends StartupBase {
                     master.setMemorySizeGB((int) inspector.getTotalMemoryMB() / 1024);
                     master.setActive(true);
                     master.addTag(masterTag.getText());
-                    master.addTag(procTag.getText());
+                    master.addTag(nodeType.friendlyName());
                     if (master.getServicesStatus() == null || master.getServicesStatus().size() == 0) {
                         // check docker service on master
                         NodeServiceStatus nodeService = new NodeServiceStatus();
