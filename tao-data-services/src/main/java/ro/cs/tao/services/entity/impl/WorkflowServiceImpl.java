@@ -22,7 +22,6 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
-import ro.cs.tao.component.enums.ParameterType;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
@@ -1095,14 +1094,9 @@ public class WorkflowServiceImpl
                             descriptors = ((ProcessingComponent) component).getParameterDescriptors();
                         }
                         if (descriptors != null && descriptors.size() > 0) {
-                            final List<ParameterDescriptor> descriptorList = descriptors;
+                            final List<ParameterDescriptor> descriptorList = new ArrayList<>(descriptors);
                             component.getTargets().forEach(t -> {
-                               ParameterDescriptor outDescriptor = new ParameterDescriptor();
-                               outDescriptor.setName(t.getName());
-                               outDescriptor.setType(ParameterType.REGULAR);
-                               outDescriptor.setDataType(String.class);
-                               outDescriptor.setDefaultValue(t.getDataDescriptor().getLocation());
-                               descriptorList.add(outDescriptor);
+                                descriptorList.add(t.toParameter());
                             });
                             customValues.forEach(v -> {
                                 ParameterDescriptor descriptor = descriptorList.stream()

@@ -131,15 +131,17 @@ public class TaoServicesStartup extends StartupBase {
             updateLocalhost();
             backgroundWorker.submit(this::registerEmbeddedContainers);
             backgroundWorker.submit(this::registerDataSourceComponents);
-            NodeManager nodeManager = NodeManager.getInstance();
-            if (nodeManager != null) {
-                nodeManager.initialize(persistenceManager.getNodes());
-                backgroundWorker.submit(nodeManager::start);
-                logger.fine("Topology monitoring initialized");
-            } else {
-                logger.fine(String.format("Topology monitoring not available (DRMAA session factory set to %s",
-                                          ConfigurationManager.getInstance().getValue("tao.drmaa.sessionfactory")));
-            }
+            backgroundWorker.submit(() -> {
+                final NodeManager nodeManager = NodeManager.getInstance();
+                if (nodeManager != null) {
+                    nodeManager.initialize(persistenceManager.getNodes());
+                    nodeManager.start();
+                    logger.fine("Topology monitoring initialized");
+                } else {
+                    logger.fine(String.format("Topology monitoring not available (DRMAA session factory set to %s",
+                                              ConfigurationManager.getInstance().getValue("tao.drmaa.sessionfactory")));
+                }
+            });
         }
     }
 

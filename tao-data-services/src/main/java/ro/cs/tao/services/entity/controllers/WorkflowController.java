@@ -133,7 +133,10 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                 try {
                     if (name == null || name.isEmpty() || name.equals(sample.getName())) {
                         Logger.getLogger(getClass().getName()).fine(String.format("Creating workflow %s", sample.getName()));
-                        descriptors.add(sample.createWorkflowDescriptor());
+                        WorkflowDescriptor descriptor = sample.createWorkflowDescriptor();
+                        if (descriptor != null) {
+                            descriptors.add(descriptor);
+                        }
                     }
                 } catch (Exception e) {
                     if (aggregated == null) {
