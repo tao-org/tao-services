@@ -179,7 +179,7 @@ public class FileController extends BaseController {
                                                                @RequestParam("visibility") Visibility visibility) {
         ResponseEntity<ServiceResponse<?>> responseEntity = null;
         try {
-            Path path = Paths.get(SystemVariable.USER_WORKSPACE.value(), folder);
+            Path path = Paths.get(SystemVariable.USER_WORKSPACE.value()).getParent().resolve(folder);
             if (Files.isDirectory(path)) {
                 List<EOProduct> eoProducts = persistenceManager.getEOProducts(path.toUri().toString());
                 for (EOProduct eoProduct : eoProducts) {
