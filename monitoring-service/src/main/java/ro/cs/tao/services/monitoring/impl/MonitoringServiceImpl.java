@@ -18,6 +18,9 @@ package ro.cs.tao.services.monitoring.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.execution.monitor.NodeManager;
+import ro.cs.tao.execution.monitor.OSRuntimeInfo;
+import ro.cs.tao.execution.monitor.RuntimeInfo;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.NotifiableComponent;
 import ro.cs.tao.messaging.Topics;
@@ -26,8 +29,6 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.MessageConverter;
 import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.interfaces.MonitoringService;
-import ro.cs.tao.services.model.monitoring.OSRuntimeInfo;
-import ro.cs.tao.services.model.monitoring.RuntimeInfo;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.utils.executors.Executor;
@@ -59,11 +60,31 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
+    public Map<String, RuntimeInfo> getNodesSnapshot() {
+        Map<String, RuntimeInfo> runtimeInfo = null;
+        try {
+            if (NodeManager.isAvailable()) {
+                runtimeInfo = NodeManager.getInstance().getNodesSnapshot();
+            } else {
+                runtimeInfo = new HashMap<>();
+            }
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+        }
+        return runtimeInfo;
+    }
+
+    @Override
     public RuntimeInfo getMasterSnapshot() {
         RuntimeInfo runtimeInfo = null;
         try {
-            OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(TopologyManager.getInstance().getMasterNodeInfo());
-            runtimeInfo = inspector.getInfo();
+            NodeDescription nodeInfo = TopologyManager.getInstance().getMasterNodeInfo();
+            if (NodeManager.isAvailable()) {
+                runtimeInfo = NodeManager.getInstance().getNodeSnapshot(nodeInfo.getId());
+            } else {
+                OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(nodeInfo.getId(), nodeInfo.getUserName(), nodeInfo.getUserPass());
+                runtimeInfo = inspector.getInfo();
+            }
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
@@ -74,8 +95,12 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     public RuntimeInfo getNodeSnapshot(String hostName) {
         RuntimeInfo runtimeInfo = null;
         try {
-            NodeDescription node = persistenceManager.getNodeByHostName(hostName);
-            runtimeInfo = OSRuntimeInfo.createInspector(node).getSnapshot();
+            if (NodeManager.isAvailable()) {
+                runtimeInfo = NodeManager.getInstance().getNodeSnapshot(hostName);
+            } else {
+                NodeDescription node = persistenceManager.getNodeByHostName(hostName);
+                runtimeInfo = OSRuntimeInfo.createInspector(node.getId(), node.getUserName(), node.getUserPass()).getSnapshot();
+            }
         } catch (Throwable ex) {
             logger.warning(ex.getMessage());
         }

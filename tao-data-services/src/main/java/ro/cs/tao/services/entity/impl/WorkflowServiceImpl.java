@@ -22,7 +22,6 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
-import ro.cs.tao.component.enums.ParameterType;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
@@ -185,11 +184,7 @@ public class WorkflowServiceImpl
         if (tags != null && tags.size() > 0) {
             Set<String> existingTags = persistenceManager.getWorkflowTags().stream()
                     .map(Tag::getText).collect(Collectors.toSet());
-            for (String value : tags) {
-                if (!existingTags.contains(value)) {
-                    persistenceManager.saveTag(new Tag(TagType.WORKFLOW, value));
-                }
-            }
+            tags.stream().filter(t -> !existingTags.contains(t)).forEach(t -> persistenceManager.saveTag(new Tag(TagType.WORKFLOW, t)));
             entity.setTags(tags);
             return update(entity);
         }
@@ -205,9 +200,7 @@ public class WorkflowServiceImpl
         if (tags != null && tags.size() > 0) {
             List<String> entityTags = entity.getTags();
             if (entityTags != null) {
-                for (String value : tags) {
-                    entityTags.remove(value);
-                }
+                entityTags.removeAll(tags);
                 entity.setTags(entityTags);
                 return update(entity);
             }
@@ -369,12 +362,14 @@ public class WorkflowServiceImpl
         if (targetComponent == null) {
             throw new PersistenceException("Target component not found");
         }
-        TargetDescriptor linkInput = sourceComponent.getTargets().stream()
+        /*TargetDescriptor linkInput = sourceComponent.getTargets().stream()
                                                     .filter(t -> t.getId().equals(sourceTargetId))
                                                     .findFirst().orElse(null);
         SourceDescriptor linkOutput = targetComponent.getSources().stream()
                                                     .filter(s -> s.getId().equals(targetSourceId))
-                                                    .findFirst().orElse(null);
+                                                    .findFirst().orElse(null);*/
+        TargetDescriptor linkInput = sourceComponent.findDescriptor(sourceTargetId);
+        SourceDescriptor linkOutput = targetComponent.findDescriptor(targetSourceId);
         if (linkInput == null) {
             throw new PersistenceException(String.format("Target descriptor [%s] not found in source component %s",
                                                          sourceTargetId, sourceComponent.getId()));
@@ -819,8 +814,9 @@ public class WorkflowServiceImpl
             throw new IllegalArgumentException(String.format("Non-existent workflow with id '%s'", workflowId));
         }
         final List<WorkflowNodeDescriptor> nodes = workflow.getOrderedNodes();
-        boolean prefixWithId = false;
-        final int size = nodes.size();
+        final long distinct = nodes.stream().distinct().count();
+        final boolean prefixWithId = nodes.size() != distinct;
+        /*final int size = nodes.size();
         for (int i = 0; i < size - 1; i++) {
             for (int j = i + 1; j < size; j++) {
                 if (nodes.get(i).getName().equals(nodes.get(j).getName())) {
@@ -828,7 +824,7 @@ public class WorkflowServiceImpl
                     break;
                 }
             }
-        }
+        }*/
         for (WorkflowNodeDescriptor node : nodes) {
             if (node instanceof WorkflowNodeGroupDescriptor) {
                 continue;
@@ -944,8 +940,8 @@ public class WorkflowServiceImpl
      */
     private TargetDescriptor findTarget(String id, WorkflowNodeDescriptor nodeDescriptor) throws PersistenceException {
         TaoComponent component = componentService.findComponent(nodeDescriptor.getComponentId(), nodeDescriptor.getComponentType());
-        return component != null ?
-                component.getTargets().stream().filter(t -> t.getId().equals(id)).findFirst().orElse(null) : null;
+        return component != null ? component.findDescriptor(id) : null;
+                //component.getTargets().stream().filter(t -> t.getId().equals(id)).findFirst().orElse(null) : null;
     }
     /**
      * Returns the SourceDescriptor entity of a workflow node by its id.
@@ -954,8 +950,8 @@ public class WorkflowServiceImpl
      */
     private SourceDescriptor findSource(String id, WorkflowNodeDescriptor nodeDescriptor) throws PersistenceException {
         TaoComponent component = componentService.findComponent(nodeDescriptor.getComponentId(), nodeDescriptor.getComponentType());
-        return component != null ?
-                component.getSources().stream().filter(s -> s.getId().equals(id)).findFirst().orElse(null) : null;
+        return component != null ? component.findDescriptor(id) : null;
+                //component.getSources().stream().filter(s -> s.getId().equals(id)).findFirst().orElse(null) : null;
     }
 
     /**
@@ -984,18 +980,21 @@ public class WorkflowServiceImpl
         WorkflowNodeDescriptor outsideNode = persistenceManager.getWorkflowNodeById(sourceNodeId);
         TaoComponent component = componentService.findComponent(outsideNode.getComponentId(),
                                                                 outsideNode.getComponentType());
-        if (component.getTargets().stream().noneMatch(t -> t.getId().equals(linkInput.getId()))) {
+        if (!component.hasDescriptor(linkInput.getId())) {
+        //if (component.getTargets().stream().noneMatch(t -> t.getId().equals(linkInput.getId()))) {
             throw new IllegalArgumentException(String.format("Target descriptor %s not found in node %d",
                                                              linkInput.getId(), sourceNodeId));
         }
         component = componentService.findComponent(targetNode.getComponentId(), targetNode.getComponentType());
-        if (component.getSources().stream().noneMatch(t -> t.getId().equals(linkOutput.getId()))) {
+        if (!component.hasDescriptor(linkOutput.getId())) {
+        //if (component.getSources().stream().noneMatch(t -> t.getId().equals(linkOutput.getId()))) {
             throw new IllegalArgumentException(String.format("Source descriptor %s not found in node %d",
                                                              linkOutput.getId(), targetNode.getId()));
         }
         component = componentService.findComponent(groupNode.getComponentId(), groupNode.getComponentType());
-        List<SourceDescriptor> sources = component.getSources();
-        if (sources == null || sources.stream().noneMatch(s -> s.getId().equals(linkOutput.getId()))) {
+        if (!component.hasDescriptor(linkOutput.getId())) {
+        /*List<SourceDescriptor> sources = component.getSources();
+        if (sources == null || sources.stream().noneMatch(s -> s.getId().equals(linkOutput.getId()))) {*/
             component.addSource(linkOutput);
         }
         groupComponentService.save((GroupComponent) component);
@@ -1028,18 +1027,21 @@ public class WorkflowServiceImpl
         WorkflowNodeDescriptor outsideNode = persistenceManager.getWorkflowNodeById(targetNodeId);
         TaoComponent component = componentService.findComponent(outsideNode.getComponentId(),
                                                                 outsideNode.getComponentType());
-        if (component.getSources().stream().noneMatch(s -> s.getId().equals(linkOutput.getId()))) {
+        if (!component.hasDescriptor(linkOutput.getId())) {
+        //if (component.getSources().stream().noneMatch(s -> s.getId().equals(linkOutput.getId()))) {
             throw new IllegalArgumentException(String.format("Source descriptor %s not found in node %d",
                                                              linkOutput.getId(), targetNodeId));
         }
         component = componentService.findComponent(sourceNode.getComponentId(), sourceNode.getComponentType());
-        if (component.getTargets().stream().noneMatch(t -> t.getId().equals(linkInput.getId()))) {
+        if (!component.hasDescriptor(linkInput.getId())) {
+        //if (component.getTargets().stream().noneMatch(t -> t.getId().equals(linkInput.getId()))) {
             throw new IllegalArgumentException(String.format("Target descriptor %s not found in node %d",
                                                              linkInput.getId(), sourceNode.getId()));
         }
         component = componentService.findComponent(groupNode.getComponentId(), groupNode.getComponentType());
-        List<TargetDescriptor> targets = component.getTargets();
-        if (targets == null || targets.stream().noneMatch(t -> t.getId().equals(linkInput.getId()))) {
+        if (!component.hasDescriptor(linkInput.getId())) {
+        /*List<TargetDescriptor> targets = component.getTargets();
+        if (targets == null || targets.stream().noneMatch(t -> t.getId().equals(linkInput.getId()))) {*/
             component.addTarget(linkInput);
         }
         groupComponentService.save((GroupComponent) component);
@@ -1092,14 +1094,9 @@ public class WorkflowServiceImpl
                             descriptors = ((ProcessingComponent) component).getParameterDescriptors();
                         }
                         if (descriptors != null && descriptors.size() > 0) {
-                            final List<ParameterDescriptor> descriptorList = descriptors;
+                            final List<ParameterDescriptor> descriptorList = new ArrayList<>(descriptors);
                             component.getTargets().forEach(t -> {
-                               ParameterDescriptor outDescriptor = new ParameterDescriptor();
-                               outDescriptor.setName(t.getName());
-                               outDescriptor.setType(ParameterType.REGULAR);
-                               outDescriptor.setDataType(String.class);
-                               outDescriptor.setDefaultValue(t.getDataDescriptor().getLocation());
-                               descriptorList.add(outDescriptor);
+                                descriptorList.add(t.toParameter());
                             });
                             customValues.forEach(v -> {
                                 ParameterDescriptor descriptor = descriptorList.stream()

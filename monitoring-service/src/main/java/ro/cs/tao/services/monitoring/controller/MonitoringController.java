@@ -19,13 +19,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.execution.monitor.RuntimeInfo;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.MonitoringService;
-import ro.cs.tao.services.model.monitoring.RuntimeInfo;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -40,6 +40,12 @@ public class MonitoringController extends BaseController {
 
     @Autowired
     private MonitoringService<Notification> monitoringService;
+
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getAllSnapshot() {
+        return prepareResult(monitoringService.getNodesSnapshot(),
+                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm:ss")));
+    }
 
     @RequestMapping(value = "/master", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getMasterSnapshot() {

@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -131,9 +132,13 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             for (SampleWorkflow sample : services) {
                 try {
                     if (name == null || name.isEmpty() || name.equals(sample.getName())) {
-                        descriptors.add(sample.createWorkflowDescriptor());
+                        Logger.getLogger(getClass().getName()).fine(String.format("Creating workflow %s", sample.getName()));
+                        WorkflowDescriptor descriptor = sample.createWorkflowDescriptor();
+                        if (descriptor != null) {
+                            descriptors.add(descriptor);
+                        }
                     }
-                } catch (PersistenceException e) {
+                } catch (Exception e) {
                     if (aggregated == null) {
                         aggregated = new BaseException(e.getMessage());
                     }

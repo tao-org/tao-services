@@ -114,7 +114,7 @@ public class ContainerServiceImpl
     @Override
     public String registerContainer(Path dockerFile, String shortName, String description,
                                     Container dbContainer, ProcessingComponent[] components) {
-        String containerId = null;
+        String containerId;
         TopologyManager topologyManager = TopologyManager.getInstance();
         if (topologyManager.getDockerImage(shortName) == null) {
             // build Docker image and put it in Docker registry
@@ -122,6 +122,10 @@ public class ContainerServiceImpl
             // update database with container and applications information
             initializeContainer(containerId, shortName, dbContainer.getApplicationPath(),
                                 dbContainer.getApplications());
+        } else {
+            // the image is already registered with Docker, and should be also registered in the database
+            Container c = persistenceManager.getContainerByName(shortName);
+            containerId = c != null ? c.getId() : null;
         }
         // if provided, register the components of this container
         if (containerId != null && components != null) {
@@ -134,7 +138,7 @@ public class ContainerServiceImpl
             for (ProcessingComponent component : components) {
                 try {
                     current = component;
-                    component.setContainerId(dbContainer.getId());
+                    component.setContainerId(containerId);
                     component.setLabel(component.getId());
                     component.setComponentType(ProcessingComponentType.EXECUTABLE);
                     component.setFileLocation(containerApplications.stream().filter(a -> a.getName().equals(component.getId())).findFirst().get().getPath());
@@ -174,7 +178,7 @@ public class ContainerServiceImpl
                         i++;
                     }
                     String[] tokens = template.split("\n");
-                    for (int j = 0; j < tokens.length; j++) {
+                    for (int j = 0; j < tokens.length - 1; j++) {
                         final int idx = j;
                         if ((targets != null && targets.stream().anyMatch(t -> t.getName().equals(tokens[idx].substring(1)))) ||
                                 (sources != null && sources.stream().anyMatch(s -> s.getName().equals(tokens[idx].substring(1))))) {
@@ -191,7 +195,7 @@ public class ContainerServiceImpl
                 } catch (Exception inner) {
                     logger.severe(String.format("Faulty component: %s. Error: %s",
                                                 current != null ? current.getId() : "n/a",
-                                                inner.getMessage()));
+                                                inner.getClass().getSimpleName() + ":" + inner.getMessage()));
                 }
             }
         }

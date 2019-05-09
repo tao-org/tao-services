@@ -25,6 +25,7 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
+import ro.cs.tao.topology.NodeType;
 import ro.cs.tao.topology.TopologyManager;
 
 import java.util.ArrayList;
@@ -64,13 +65,52 @@ public class TopologyServiceImpl
     }
 
     @Override
+    public List<NodeDescription> getNodes(boolean active) {
+        return persistenceManager.getNodes(active);
+    }
+
+    @Override
+    public List<NodeDescription> getNodes(NodeType nodeType) {
+        return persistenceManager.getNodesByType(nodeType);
+    }
+
+    @Override
     public NodeDescription save(NodeDescription node) {
+        tagType(node);
+        List<String> nodeTags = node.getTags();
+        if (nodeTags != null) {
+            if (!nodeTags.contains(node.getNodeType().friendlyName())) {
+                nodeTags.add(node.getNodeType().friendlyName());
+            }
+            Set<String> existingTags = persistenceManager.getNodeTags().stream().map(Tag::getText).collect(Collectors.toSet());
+            for (String value : nodeTags) {
+                if (!existingTags.contains(value)) {
+                    persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
+                }
+            }
+        }
         TopologyManager.getInstance().add(node);
         return node;
     }
 
     @Override
     public NodeDescription update(NodeDescription node) {
+        NodeDescription existing = findById(node.getId());
+        if (existing != null && existing.getNodeType() != node.getNodeType()) {
+            tagType(node);
+            List<String> nodeTags = node.getTags();
+            if (nodeTags != null) {
+                if (!nodeTags.contains(node.getNodeType().friendlyName())) {
+                    nodeTags.add(node.getNodeType().friendlyName());
+                }
+                Set<String> existingTags = persistenceManager.getNodeTags().stream().map(Tag::getText).collect(Collectors.toSet());
+                for (String value : nodeTags) {
+                    if (!existingTags.contains(value)) {
+                        persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
+                    }
+                }
+            }
+        }
         TopologyManager.getInstance().update(node);
         return node;
     }
@@ -113,7 +153,7 @@ public class TopologyServiceImpl
                     entityTags.remove(value);
                 }
                 entity.setTags(entityTags);
-                return update(entity);
+                //return update(entity);
             }
         }
         return entity;
@@ -152,5 +192,23 @@ public class TopologyServiceImpl
         if (object.getDiskSpaceSizeGB() <= 0) {
             errors.add("[diskSpace] cannot be empty");
         }
+    }
+
+    private NodeDescription tagType(NodeDescription node) {
+        NodeType nodeType = node.getNodeType();
+        if (nodeType == null) {
+            int processors = node.getProcessorCount();
+            if (processors <= 4) {
+                nodeType = NodeType.S;
+            } else if (processors <= 8) {
+                nodeType = NodeType.M;
+            } else if (processors <= 16) {
+                nodeType = NodeType.L;
+            } else {
+                nodeType = NodeType.XL;
+            }
+            node.setNodeType(nodeType);
+        }
+        return node;
     }
 }

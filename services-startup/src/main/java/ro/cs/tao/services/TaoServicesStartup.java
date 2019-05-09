@@ -39,6 +39,8 @@ import ro.cs.tao.execution.ExecutionsManager;
 import ro.cs.tao.execution.Executor;
 import ro.cs.tao.execution.drmaa.DrmaaTaoExecutor;
 import ro.cs.tao.execution.model.TaskSelector;
+import ro.cs.tao.execution.monitor.NodeManager;
+import ro.cs.tao.execution.monitor.OSRuntimeInfo;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
@@ -46,7 +48,6 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.StartupBase;
 import ro.cs.tao.services.interfaces.ContainerService;
-import ro.cs.tao.services.model.monitoring.OSRuntimeInfo;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.services.security.TaoLocalLoginModule;
@@ -130,6 +131,17 @@ public class TaoServicesStartup extends StartupBase {
             updateLocalhost();
             backgroundWorker.submit(this::registerEmbeddedContainers);
             backgroundWorker.submit(this::registerDataSourceComponents);
+            backgroundWorker.submit(() -> {
+                final NodeManager nodeManager = NodeManager.getInstance();
+                if (nodeManager != null) {
+                    nodeManager.initialize(persistenceManager.getNodes());
+                    nodeManager.start();
+                    logger.fine("Topology monitoring initialized");
+                } else {
+                    logger.fine(String.format("Topology monitoring not available (DRMAA session factory set to %s",
+                                              ConfigurationManager.getInstance().getValue("tao.drmaa.sessionfactory")));
+                }
+            });
         }
     }
 
@@ -138,30 +150,45 @@ public class TaoServicesStartup extends StartupBase {
         NodeDescription node = TopologyManager.getInstance().get("localhost");
         if (node != null) {
             try {
+                List<Tag> nodeTags = persistenceManager.getNodeTags();
+                if (nodeTags == null || nodeTags.size() == 0) {
+                    for (TagType tagType : TagType.values()) {
+                        persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, tagType.friendlyName()));
+                    }
+                }
                 logger.finest("Overriding the default 'localhost' database entry");
                 String masterHost = InetAddress.getLocalHost().getHostName();
                 NodeDescription master = persistenceManager.getNodeByHostName(masterHost);
                 if (master == null) {
                     Tag masterTag = new Tag(TagType.TOPOLOGY_NODE, "master");
-                    Tag procTag = new Tag(TagType.TOPOLOGY_NODE,
-                                          String.valueOf(Runtime.getRuntime().availableProcessors()) + " processors");
+                    int processors = Runtime.getRuntime().availableProcessors();
+                    final NodeType nodeType;
+                    if (processors <= 4) {
+                        nodeType = NodeType.S;
+                    } else if (processors <= 8) {
+                        nodeType = NodeType.M;
+                    } else if (processors <= 16) {
+                        nodeType = NodeType.L;
+                    } else {
+                        nodeType = NodeType.XL;
+                    }
                     persistenceManager.saveTag(masterTag);
-                    persistenceManager.saveTag(procTag);
                     master = new NodeDescription();
                     master.setId(masterHost);
-                    OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(master);
                     String user = ConfigurationManager.getInstance().getValue("topology.master.user", node.getUserName());
                     master.setUserName(user);
                     String pwd = ConfigurationManager.getInstance().getValue("topology.master.password", node.getUserPass());
                     master.setUserPass(pwd);
+                    OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(masterHost, user, pwd);
                     master.setDescription(node.getDescription());
                     master.setServicesStatus(node.getServicesStatus());
-                    master.setProcessorCount(Runtime.getRuntime().availableProcessors());
+                    master.setProcessorCount(processors);
+                    master.setNodeType(nodeType);
                     master.setDiskSpaceSizeGB((int) inspector.getTotalDiskGB());
                     master.setMemorySizeGB((int) inspector.getTotalMemoryMB() / 1024);
                     master.setActive(true);
                     master.addTag(masterTag.getText());
-                    master.addTag(procTag.getText());
+                    master.addTag(nodeType.friendlyName());
                     if (master.getServicesStatus() == null || master.getServicesStatus().size() == 0) {
                         // check docker service on master
                         NodeServiceStatus nodeService = new NodeServiceStatus();
@@ -192,8 +219,8 @@ public class TaoServicesStartup extends StartupBase {
                     persistenceManager.saveExecutionNode(master);
                     persistenceManager.removeExecutionNode(node.getId());
                     logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
-                    createMasterShare(master);
                 }
+                createMasterShare(master);
             } catch (Exception ex) {
                 logger.severe("Cannot update localhost name: " + ex.getMessage());
             }
