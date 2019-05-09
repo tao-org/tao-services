@@ -44,4 +44,13 @@ public class TopologyController extends DataEntityController<NodeDescription, St
         return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 
+    @RequestMapping(value = "/active", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getActiveNodes() {
+        return prepareResult(service.getNodes(true));
+    }
+
+    @RequestMapping(value = "/inactive", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getInactiveNodes() {
+        return prepareResult(service.getNodes(false));
+    }
 }

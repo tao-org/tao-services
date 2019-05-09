@@ -31,6 +31,7 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.utils.async.Parallel;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,6 +42,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -197,15 +199,15 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
         Set<MetadataInspector> services = ServiceRegistryManager.getInstance()
                 .getServiceRegistry(MetadataInspector.class)
                 .getServices();
-        MetadataInspector inspector;
         if (services == null) {
             throw new IOException("No product inspector found");
         }
-        int count = 0;
+        final AtomicInteger count = new AtomicInteger(0);
         try {
             List<Path> folders = Files.walk(srcPath, 1).collect(Collectors.toList());
             Path publicFolder = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
-            for (Path folder : folders) {
+            Parallel.For(0, folders.size(), (idx) -> {
+                Path folder = folders.get(idx);
                 try {
                     if (Files.isDirectory(folder) && !folder.equals(srcPath)) {
                         Path targetPath;
@@ -225,7 +227,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
                         } else {
                             targetPath = folder;
                         }
-                        inspector = services.stream()
+                        MetadataInspector inspector = services.stream()
                                 .filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath))
                                 .findFirst()
                                 .orElse(services.stream()
@@ -233,7 +235,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
                                                 .findFirst()
                                                 .orElse(null));
                         if (inspector == null) {
-                            continue;
+                            return;
                         }
                         MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
                         if (metadata != null) {
@@ -252,7 +254,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
                             }
                             product.setProductStatus(ProductStatus.DOWNLOADED);
                             persistenceManager.saveEOProduct(product);
-                            count++;
+                            count.getAndIncrement();
                         } else {
                             Logger.getLogger(ProductService.class.getName()).info(String.format("Skipping %s. Reason: unable to read metadata", targetPath));
                         }
@@ -260,11 +262,11 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
                 } catch (Exception e1) {
                     Logger.getLogger(ProductService.class.getName()).warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
                 }
-            }
+            });
         } catch (Exception e) {
             throw new IOException(e);
         }
-        return count;
+        return count.get();
     }
 
     @Override

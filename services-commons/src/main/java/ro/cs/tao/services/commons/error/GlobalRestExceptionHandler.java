@@ -132,7 +132,7 @@ public class GlobalRestExceptionHandler extends ResponseEntityExceptionHandler {
         Map<String, Object> body = new HashMap<>();
         body.put("error", exception.getMessage());
         body.put("requestParameters", request.getParameterMap());
-        body.put("user", request.getUserPrincipal().getName());
+        body.put("user", request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : "guest");
         return new ResponseEntity<>(body, status);
     }
 }
