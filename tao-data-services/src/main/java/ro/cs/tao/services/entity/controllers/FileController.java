@@ -304,8 +304,8 @@ public class FileController extends BaseController {
             throw new IOException("[fileName] cannot be null or empty");
         }
         Path file = fileName.startsWith("public") ?
-                Paths.get(SystemVariable.SHARED_WORKSPACE.value(), fileName) :
-                Paths.get(SystemVariable.USER_WORKSPACE.value(), fileName);
+                Paths.get(SystemVariable.SHARED_WORKSPACE.value()).getParent().resolve(fileName) :
+                Paths.get(SystemVariable.USER_WORKSPACE.value()).getParent().resolve(fileName);
         if (!Files.exists(file)) {
             // maybe it is a file published by another user
             file = Paths.get(ConfigurationManager.getInstance().getValue("product.location"), fileName);
