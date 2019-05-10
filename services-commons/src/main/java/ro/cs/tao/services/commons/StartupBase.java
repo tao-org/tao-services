@@ -29,9 +29,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -74,6 +72,16 @@ public abstract class StartupBase implements ApplicationListener {
         } catch (Exception e){
             throw new RuntimeException(e);
         }
+        StringBuilder builder = new StringBuilder();
+        builder.append("Active logging levels: ");
+        allProperties.entrySet().stream()
+                .filter(e -> e.getKey().toString().startsWith("logging.level."))
+                .map(e -> new AbstractMap.SimpleEntry<String, String>(e.getKey().toString(), e.getValue().toString()) {})
+                .sorted(Comparator.comparing(AbstractMap.SimpleEntry::getKey)).forEach(e -> {
+            builder.append(e.getKey().replace("logging.level.", "")).append(" -> ").append(e.getValue()).append(", ");
+        });
+        builder.setLength(builder.length() - 1);
+        System.out.println(builder.toString());
         return allProperties;
     }
 
