@@ -154,6 +154,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                                       @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
+            // until UI exposes this, default preserveOutput to true;
+            node.setPreserveOutput(true);
             responseEntity = prepareResult(service.addNode(workflowId, node));
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
