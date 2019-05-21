@@ -191,12 +191,18 @@ public class TaoServicesStartup extends StartupBase {
                     master.addTag(nodeType.friendlyName());
                     if (master.getServicesStatus() == null || master.getServicesStatus().size() == 0) {
                         // check docker service on master
+                        String name = "Docker";
+                        String version = DockerHelper.getDockerVersion();
+                        ServiceDescription description = persistenceManager.getServiceDescription(name, version);
+                        if (description == null) {
+                            description = new ServiceDescription();
+                            description.setName(name);
+                            description.setDescription("Application container manager");
+                            description.setVersion(version);
+                            description = persistenceManager.saveServiceDescription(description);
+                        }
                         NodeServiceStatus nodeService = new NodeServiceStatus();
-                        ServiceDescription description = new ServiceDescription();
-                        description.setName("Docker");
-                        description.setDescription("Application container manager");
-                        description.setVersion(DockerHelper.getDockerVersion());
-                        nodeService.setServiceDescription(persistenceManager.saveServiceDescription(description));
+                        nodeService.setServiceDescription(description);
                         nodeService.setStatus(DockerHelper.isDockerFound() ? ServiceStatus.INSTALLED : ServiceStatus.NOT_FOUND);
                         master.addServiceStatus(nodeService);
                         // check CRM on master
@@ -205,12 +211,17 @@ public class TaoServicesStartup extends StartupBase {
                         if (executor != null) {
                             DrmaaTaoExecutor taoExecutor = (DrmaaTaoExecutor) executor;
                             nodeService = new NodeServiceStatus();
-                            description = new ServiceDescription();
-                            String drmName = taoExecutor.getDRMName();
-                            description.setName(drmName);
-                            description.setDescription("NoCRM".equals(drmName) ? "Local execution" : drmName);
-                            description.setVersion(taoExecutor.getDRMVersion());
-                            nodeService.setServiceDescription(persistenceManager.saveServiceDescription(description));
+                            name = taoExecutor.getDRMName();
+                            version = taoExecutor.getDRMVersion();
+                            description = persistenceManager.getServiceDescription(name, version);
+                            if (description == null) {
+                                description = new ServiceDescription();
+                                description.setName(name);
+                                description.setDescription("NoCRM".equals(name) ? "Local execution" : name);
+                                description.setVersion(version);
+                                description = persistenceManager.saveServiceDescription(description);
+                            }
+                            nodeService.setServiceDescription(description);
                             nodeService.setStatus("n/a".equals(description.getVersion()) ? ServiceStatus.NOT_FOUND : ServiceStatus.INSTALLED);
                             master.addServiceStatus(nodeService);
                         }
