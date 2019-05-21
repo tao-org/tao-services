@@ -18,7 +18,6 @@ package ro.cs.tao.services.workflow.samples;
 
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.base.SampleWorkflowBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
@@ -39,7 +38,7 @@ public class SampleSnapOtbWorkflow extends SampleWorkflowBase {
 
         List<String> productNames = new ArrayList<>();
         productNames.add("S2B_MSIL1C_20181226T103439_N0207_R108_T32UMF_20181226T122504");
-        DataSourceComponent component = newDataSourceComponent("Sentinel2", productNames, SystemPrincipal.instance());
+        DataSourceComponent component = newDataSourceComponent("Sentinel2", productNames, () -> "admin");
         WorkflowNodeDescriptor node1 = addNode(workflow, "Local DB", component.getId(), ComponentType.DATASOURCE, null,
                                                null, null, null);
         Map<String, String> customValues = new HashMap<>();

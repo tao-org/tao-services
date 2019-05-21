@@ -219,6 +219,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
         List<FileObject> fileObjects = new ArrayList<>(list.size());
         final int filesNameIndex = root.getNameCount() + 1;
         long size;
+        Map<String, String> currentAttributeMap = null;
         for (Path realPath : list) {
             final FileObject fileObject;
             //Path realPath = realRoot.resolve(path);
@@ -242,15 +243,18 @@ public class FileStorageService implements StorageService<MultipartFile> {
             } else {
                 if (productAttributes.containsKey(realPath)) {
                     fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), 0);
-                    Map<String, String> attributeMap = productAttributes.get(realPath);
-                    fileObject.setProductName(attributeMap.get("name"));
-                    attributeMap.remove("name");
-                    attributeMap.remove("formatType");
-                    attributeMap.remove("width");
-                    attributeMap.remove("height");
-                    attributeMap.remove("pixelType");
-                    attributeMap.remove("sensorType");
-                    fileObject.setAttributes(attributeMap);
+                    currentAttributeMap = productAttributes.get(realPath);
+                    fileObject.setProductName(currentAttributeMap.get("name"));
+                    currentAttributeMap.remove("name");
+                    //currentAttributeMap.remove("formatType");
+                    currentAttributeMap.remove("width");
+                    currentAttributeMap.remove("height");
+                    currentAttributeMap.remove("pixelType");
+                    currentAttributeMap.remove("sensorType");
+                    fileObject.setAttributes(currentAttributeMap);
+                } else if (productAttributes.containsKey(realPath.getParent()) && currentAttributeMap != null) {
+                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
+                    fileObject.setAttributes(currentAttributeMap);
                 } else if (vectorAttributes.containsKey(realPath)) {
                     fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
                     fileObject.setAttributes(vectorAttributes.get(realPath));

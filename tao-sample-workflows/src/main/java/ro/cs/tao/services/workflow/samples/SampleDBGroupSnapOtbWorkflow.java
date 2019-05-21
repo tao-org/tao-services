@@ -34,9 +34,9 @@ public class SampleDBGroupSnapOtbWorkflow extends SampleWorkflowBase {
         dsQuery.setLimit(2);
         Map<String, String> values = new HashMap<>();
         values.put(CommonParameterNames.START_DATE, "[2017-04-08,2017-04-10]");
-        values.put(CommonParameterNames.FOOTPRINT, "POLYGON(44.22597512802537 23.50357106719914,44.18762158427181 24.8757389462752," +
-                "43.201211355403785 24.8126316594684,43.238273156784096 23.46273547769195," +
-                "44.22597512802537 23.50357106719914,44.22597512802537 23.50357106719914))");
+        values.put(CommonParameterNames.FOOTPRINT, "POLYGON((23.50357106719914 44.22597512802537,24.8757389462752 44.18762158427181," +
+                "24.8126316594684 43.201211355403785,23.46273547769195 43.238273156784096," +
+                "23.50357106719914 44.22597512802537,23.50357106719914 44.22597512802537))");
         dsQuery.setValues(values);
         dsQuery.setWorkflowNodeId(node1.getId());
         persistenceManager.saveQuery(dsQuery);
