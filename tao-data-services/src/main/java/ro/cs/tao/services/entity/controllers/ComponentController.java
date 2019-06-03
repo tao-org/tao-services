@@ -124,6 +124,15 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         return responseEntity;
     }
 
+    @RequestMapping(value = "/naming/find", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getNamingRuleDetails(@RequestParam("nodeId") long nodeId) {
+        try {
+            return prepareResult(nameTokenService.findTokens(nodeId));
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
     @RequestMapping(value = "/naming/{id}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNamingRuleDetails(@PathVariable("id") int id) {
         try {
