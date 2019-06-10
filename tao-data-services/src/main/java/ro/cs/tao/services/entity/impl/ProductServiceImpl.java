@@ -148,7 +148,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
                         if (metadata != null) {
                             EOProduct product = metadata.toProductDescriptor(targetPath);
                             product.setEntryPoint(metadata.getEntryPoint());
-                            product.setUserName(SessionStore.currentContext().getPrincipal().getName());
+                            product.addReference(SessionStore.currentContext().getPrincipal().getName());
                             product.setVisibility(Visibility.PUBLIC);
                             if (metadata.getAquisitionDate() != null) {
                                 product.setAcquisitionDate(Date.from(metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
@@ -241,7 +241,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
                         if (metadata != null) {
                             EOProduct product = metadata.toProductDescriptor(targetPath);
                             product.setEntryPoint(metadata.getEntryPoint());
-                            product.setUserName(SessionStore.currentContext().getPrincipal().getName());
+                            product.addReference(SessionStore.currentContext().getPrincipal().getName());
                             product.setVisibility(Visibility.PUBLIC);
                             if (metadata.getAquisitionDate() != null) {
                                 product.setAcquisitionDate(Date.from(metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
