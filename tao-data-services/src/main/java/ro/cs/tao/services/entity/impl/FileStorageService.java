@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
-import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.VectorData;
@@ -174,7 +173,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
 
     @Override
     public List<FileObject> listFiles(Path realRoot, Set<Path> exclusions) throws IOException {
-        final Path root = Paths.get(ConfigurationManager.getInstance().getValue("product.location")).toAbsolutePath();
+        final Path root = Paths.get(SystemVariable.ROOT.value()).toAbsolutePath();
         realRoot = realRoot.toAbsolutePath();
         final Path startPath = root.relativize(realRoot);
         final String principalName = realRoot.getName(root.getNameCount()).toString();
