@@ -19,8 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.component.Variable;
-import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.eodata.EOProduct;
@@ -42,6 +42,7 @@ import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
 import java.awt.geom.Path2D;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CompletionService;
@@ -249,14 +250,15 @@ public class DataSourceController extends BaseController {
                 .getServiceRegistry(MetadataInspector.class)
                 .getServices();
         MetadataInspector metadataInspector = null;
+        final Path path = Paths.get(SystemVariable.SHARED_WORKSPACE.value(), productPath);
         if (services != null) {
             metadataInspector = services.stream()
-                    .filter(s -> s.decodeQualification(Paths.get(ConfigurationManager.getInstance().getValue("product.location"))) == DecodeStatus.SUITABLE)
+                    .filter(s -> s.decodeQualification(path) == DecodeStatus.SUITABLE)
                     .findFirst().orElse(null);
         }
         if (metadataInspector != null) {
             try {
-                MetadataInspector.Metadata metadata = metadataInspector.getMetadata(Paths.get(productPath));
+                MetadataInspector.Metadata metadata = metadataInspector.getMetadata(path);
                 return prepareResult(metadata.toString());
             } catch (IOException e) {
                 return handleException(e);
