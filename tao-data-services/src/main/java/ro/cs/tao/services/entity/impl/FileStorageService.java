@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
-import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.VectorData;
@@ -174,7 +173,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
 
     @Override
     public List<FileObject> listFiles(Path realRoot, Set<Path> exclusions) throws IOException {
-        final Path root = Paths.get(ConfigurationManager.getInstance().getValue("product.location")).toAbsolutePath();
+        final Path root = Paths.get(SystemVariable.ROOT.value()).toAbsolutePath();
         realRoot = realRoot.toAbsolutePath();
         final Path startPath = root.relativize(realRoot);
         final String principalName = realRoot.getName(root.getNameCount()).toString();
@@ -290,26 +289,8 @@ public class FileStorageService implements StorageService<MultipartFile> {
             final int tokensToSkip = realRoot.getNameCount();
             if (products != null) {
                 products.removeIf(p -> p.getLocation().startsWith(publicPath));
-                FileObject fileObject;
                 for (EOProduct product : products) {
-                    Path productPath = Paths.get(URI.create(product.getLocation()));
-                    Path relativePath = productPath.getName(tokensToSkip);
-                    for (int i = 0; i < productPath.getNameCount(); i++) {
-                        if (i > tokensToSkip) {
-                            relativePath = relativePath.resolve(productPath.getName(i));
-                        }
-                    }
-                    fileObject = new FileObject(relativePath.toString(), Files.isDirectory(productPath), 0);
-                    Map<String, String> attributeMap = product.toAttributeMap();
-                    fileObject.setProductName(product.getName());
-                    attributeMap.remove("name");
-                    attributeMap.remove("formatType");
-                    attributeMap.remove("width");
-                    attributeMap.remove("height");
-                    attributeMap.remove("pixelType");
-                    attributeMap.remove("sensorType");
-                    fileObject.setAttributes(attributeMap);
-                    list.add(fileObject);
+                    list.add(fromEOProduct(product, tokensToSkip));
                 }
             }
         }
@@ -320,8 +301,8 @@ public class FileStorageService implements StorageService<MultipartFile> {
         if ((workflowId == null) == (jobId == null)) {
             throw new IllegalArgumentException("Exactly one of [workflowId] or [jobId] should be passed");
         }
-        List<FileObject> list = listProducts(SessionStore.currentContext().getPrincipal().getName());
         List<FileObject> results = new ArrayList<>();
+        /*List<FileObject> list = listProducts(SessionStore.currentContext().getPrincipal().getName());
         if (list.size() > 0) {
             List<String> outputKeys = workflowId != null ? persistenceManager.getJobsOutputKeys(workflowId) :
                                                            persistenceManager.getJobOutputKeys(jobId);
@@ -335,8 +316,35 @@ public class FileStorageService implements StorageService<MultipartFile> {
                     }
                 }
             }
+        }*/
+        List<EOProduct> products = workflowId != null ?
+                persistenceManager.getWorkflowOutputs(workflowId) : persistenceManager.getJobOutputs(jobId);
+        int tokensToSkip = Paths.get(SystemVariable.ROOT.value()).getNameCount() + 1;
+        for (EOProduct product : products) {
+            results.add(fromEOProduct(product, tokensToSkip));
         }
         return results;
+    }
+
+    private FileObject fromEOProduct(EOProduct product, int tokensToSkip) {
+        Path productPath = Paths.get(URI.create(product.getLocation()));
+        Path relativePath = productPath.getName(tokensToSkip);
+        for (int i = 0; i < productPath.getNameCount(); i++) {
+            if (i > tokensToSkip) {
+                relativePath = relativePath.resolve(productPath.getName(i));
+            }
+        }
+        FileObject fileObject = new FileObject(relativePath.toString(), Files.isDirectory(productPath), 0);
+        Map<String, String> attributeMap = product.toAttributeMap();
+        fileObject.setProductName(product.getName());
+        attributeMap.remove("name");
+        attributeMap.remove("formatType");
+        attributeMap.remove("width");
+        attributeMap.remove("height");
+        attributeMap.remove("pixelType");
+        attributeMap.remove("sensorType");
+        fileObject.setAttributes(attributeMap);
+        return fileObject;
     }
 
     private void checkParameters(MultipartFile file, String relativeFolder) throws IOException {
