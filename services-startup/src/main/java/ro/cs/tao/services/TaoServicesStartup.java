@@ -34,6 +34,7 @@ import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.OutputDataHandler;
+import ro.cs.tao.eodata.Projection;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
 import ro.cs.tao.execution.ExecutionsManager;
 import ro.cs.tao.execution.Executor;
@@ -131,6 +132,10 @@ public class TaoServicesStartup extends StartupBase {
             updateLocalhost();
             backgroundWorker.submit(this::registerEmbeddedContainers);
             backgroundWorker.submit(this::registerDataSourceComponents);
+            backgroundWorker.submit(() -> {
+                Projection.getSupported();
+                logger.fine("Projection database initialized");
+            });
             backgroundWorker.submit(() -> {
                 final NodeManager nodeManager = NodeManager.getInstance();
                 if (nodeManager != null) {
