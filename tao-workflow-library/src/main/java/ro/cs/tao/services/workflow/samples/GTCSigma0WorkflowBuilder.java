@@ -1,7 +1,7 @@
 package ro.cs.tao.services.workflow.samples;
 
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.services.base.SampleWorkflowBase;
+import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
@@ -9,7 +9,7 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GTCSigma0Workflow extends SampleWorkflowBase {
+public class GTCSigma0WorkflowBuilder extends WorkflowBuilderBase {
 
     @Override
     public String getName() { return "Geocoded Terrain Corrected Sigma0"; }
@@ -17,18 +17,18 @@ public class GTCSigma0Workflow extends SampleWorkflowBase {
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
         Map<String, String> customValues = new HashMap<>();
-        customValues.put("PnRgLooks", "3");
-        customValues.put("PnAzLooks", "3");
-        customValues.put("PoutputIntensity", "true");
+        customValues.put("nRgLooks", "3");
+        customValues.put("nAzLooks", "3");
+        customValues.put("outputIntensity", "true");
         customValues.put("formatName", "BEAM-DIMAP");
         customValues.put("t", "multilook_intermediate.dim");
         WorkflowNodeDescriptor node1 = addNode(workflow,
                                                "Multilook", "snap-multilook", ComponentType.PROCESSING, customValues,
                                                null, null, null);
         customValues.clear();
-        customValues.put("PsaveDEM", "true");
-        customValues.put("PapplyRadiometricNormalization", "true");
-        customValues.put("PsaveSigmaNought", "true");
+        customValues.put("saveDEM", "true");
+        customValues.put("applyRadiometricNormalization", "true");
+        customValues.put("saveSigmaNought", "true");
         WorkflowNodeDescriptor node2 = addNode(workflow,
                                                "Terrain Correction", "snap-terrain-correction", ComponentType.PROCESSING, customValues,
                                                node1, ComponentType.PROCESSING, Direction.RIGHT);

@@ -362,6 +362,9 @@ public class FileStorageService implements StorageService<MultipartFile> {
 
     private void storeFile(MultipartFile file, Path uploadPath, Path workspacePath,
                            String relativeFolder, String description, Principal principal) throws IOException, PersistenceException {
+        if (file == null || file.getOriginalFilename() == null) {
+            return;
+        }
         Path filePath;
         try (InputStream inputStream = file.getInputStream()) {
             Path userPath = uploadPath.resolve(relativeFolder);
