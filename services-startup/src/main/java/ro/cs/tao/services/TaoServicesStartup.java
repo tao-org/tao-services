@@ -49,6 +49,7 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.StartupBase;
 import ro.cs.tao.services.interfaces.ContainerService;
+import ro.cs.tao.services.interfaces.WorkflowBuilder;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.services.security.TaoLocalLoginModule;
@@ -58,6 +59,7 @@ import ro.cs.tao.topology.*;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
 import ro.cs.tao.utils.DockerHelper;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.workflow.WorkflowDescriptor;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -132,6 +134,7 @@ public class TaoServicesStartup extends StartupBase {
             updateLocalhost();
             backgroundWorker.submit(this::registerEmbeddedContainers);
             backgroundWorker.submit(this::registerDataSourceComponents);
+            backgroundWorker.submit(this::registerWorkflowLibrary);
             backgroundWorker.submit(() -> {
                 Projection.getSupported();
                 logger.fine("Projection database initialized");
@@ -333,6 +336,27 @@ public class TaoServicesStartup extends StartupBase {
             if (existing.size() > 0) {
                 logger.warning(String.format("There are %s data source components in the database that have not been found: %s",
                                              existing.size(), String.join(",", existing)));
+            }
+        }
+    }
+
+    private void registerWorkflowLibrary() {
+        ServiceRegistry<WorkflowBuilder> registry = ServiceRegistryManager.getInstance().getServiceRegistry(WorkflowBuilder.class);
+        Set<WorkflowBuilder> services = registry.getServices();
+        if (services == null || services.size() == 0) {
+            logger.fine("System workflow library is empty");
+        } else {
+            for (WorkflowBuilder workflow : services) {
+                try {
+                    WorkflowDescriptor descriptor = workflow.createWorkflowDescriptor();
+                    if (descriptor != null) {
+                        logger.finest(String.format("Registration completed for workflow %s", workflow.getName()));
+                    } else {
+                        logger.fine(String.format("Registration failed for workflow %s", workflow.getName()));
+                    }
+                } catch (Exception e) {
+                    logger.warning(e.getMessage());
+                }
             }
         }
     }

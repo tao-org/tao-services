@@ -17,7 +17,7 @@
 package ro.cs.tao.services.workflow.samples;
 
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.services.base.SampleWorkflowBase;
+import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
@@ -25,7 +25,7 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleOtbTwoSnapOtbWorkflow extends SampleWorkflowBase {
+public class OtbTwoSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
     @Override
     public String getName() { return "OTB Resample, NDVI, TNDVI and Concatenate"; }
 

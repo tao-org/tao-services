@@ -14,13 +14,16 @@
 # with this program; if not, see http://www.gnu.org/licenses/
 #
 
-ro.cs.tao.services.workflow.samples.SampleSnapOtbWorkflow
-ro.cs.tao.services.workflow.samples.SampleTwoOtbWorkflow
-ro.cs.tao.services.workflow.samples.SampleOtbTwoSnapOtbWorkflow
-ro.cs.tao.services.workflow.samples.SampleThreeSnapOtbWorkflow
+ro.cs.tao.services.workflow.samples.SnapOtbWorkflowBuilder
+ro.cs.tao.services.workflow.samples.TwoOtbWorkflowBuilder
+ro.cs.tao.services.workflow.samples.OtbTwoSnapOtbWorkflowBuilder
+ro.cs.tao.services.workflow.samples.ThreeSnapOtbWorkflowBuilder
 #ro.cs.tao.services.workflow.samples.SampleAWSWithGroupWorkflow
 #ro.cs.tao.services.workflow.samples.SampleAWSSnapOtbWorkflow
-ro.cs.tao.services.workflow.samples.SampleDBThreeSnapBranchesOtbWorkflow
-ro.cs.tao.services.workflow.samples.SampleDBSnapOtbWorkflow
-ro.cs.tao.services.workflow.samples.SampleDBGroupSnapOtbWorkflow
-ro.cs.tao.services.workflow.samples.SampleDSGroupSnapWorkflow
+ro.cs.tao.services.workflow.samples.DBThreeSnapBranchesOtbWorkflowBuilder
+ro.cs.tao.services.workflow.samples.DBSnapOtbWorkflowBuilder
+ro.cs.tao.services.workflow.samples.DBGroupSnapOtbWorkflowBuilder
+ro.cs.tao.services.workflow.samples.DSGroupSnapWorkflowBuilder
+ro.cs.tao.services.workflow.samples.GECSigma0WorkflowBuilder
+ro.cs.tao.services.workflow.samples.GTCSigma0WorkflowBuilder
+ro.cs.tao.services.workflow.samples.BackscatterWorkflowBuilder
