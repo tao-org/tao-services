@@ -20,7 +20,7 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
-import ro.cs.tao.services.base.SampleWorkflowBase;
+import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
@@ -28,7 +28,7 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleAWSSnapOtbWorkflow extends SampleWorkflowBase {
+public class AWSSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
     @Override
     public String getName() { return "AWS Download, SNAP NDVI, SNAP RVI, SNAP SAVI and OTB Resample (no group)"; }
 

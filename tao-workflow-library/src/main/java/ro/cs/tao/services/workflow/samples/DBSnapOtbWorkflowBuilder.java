@@ -5,7 +5,7 @@ import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
-import ro.cs.tao.services.base.SampleWorkflowBase;
+import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
@@ -13,7 +13,7 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleDBSnapOtbWorkflow extends SampleWorkflowBase {
+public class DBSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
     @Override
     public String getName() { return "Local DB, SNAP NDVI and OTB Resample"; }
 
