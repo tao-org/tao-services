@@ -100,7 +100,7 @@
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-sample-workflows</artifactId>
+            <artifactId>tao-workflow-library</artifactId>
             <version>${project.version}</version>
         </dependency>
 

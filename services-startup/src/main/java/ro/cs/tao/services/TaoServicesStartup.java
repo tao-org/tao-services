@@ -43,6 +43,7 @@ import ro.cs.tao.execution.model.TaskSelector;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.OSRuntimeInfo;
 import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
@@ -132,6 +133,7 @@ public class TaoServicesStartup extends StartupBase {
             CustomAuthenticationProvider.setPersistenceManager(this.persistenceManager);
             logger.fine("Initialized authentication provider");
             updateLocalhost();
+            Orchestrator.getInstance().start();
             backgroundWorker.submit(this::registerEmbeddedContainers);
             backgroundWorker.submit(this::registerDataSourceComponents);
             backgroundWorker.submit(this::registerWorkflowLibrary);
