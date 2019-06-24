@@ -176,6 +176,5 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 return new DelegatingSecurityContextRunnable(runnable, SecurityContextHolder.getContext());
             }
         });
-        Orchestrator.getInstance().start();
     }
 }
