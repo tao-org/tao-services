@@ -96,10 +96,10 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public List<ExecutionTaskSummary> getRunningTasks(String userName) {
-        List<ExecutionTaskSummary> summaries = new ArrayList<>();
-        Set<ExecutionStatus> statuses = new HashSet<>();
+        final List<ExecutionTaskSummary> summaries = new ArrayList<>();
+        final Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
-        List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
+        final List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
         for (ExecutionJob job : jobs) {
             summaries.addAll(getTasksStatus(job.getId()));
         }
@@ -114,16 +114,20 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public List<ExecutionJobSummary> getRunningJobs(String userName) {
-        List<ExecutionJobSummary> summaries = new ArrayList<>();
-        Set<ExecutionStatus> statuses = new HashSet<>();
+        final List<ExecutionJobSummary> summaries = new ArrayList<>();
+        final Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
-        List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
+        final List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
+        List<ExecutionTaskSummary> tasksStatus;
         for (ExecutionJob job : jobs) {
-            List<ExecutionTaskSummary> tasksStatus = getTasksStatus(job.getId());
+            tasksStatus = getTasksStatus(job.getId());
+            final String workflowName = tasksStatus.size() > 0 ?
+                    tasksStatus.get(0).getWorkflowName() :
+                    persistenceManager.getWorkflowDescriptor(job.getWorkflowId()).getName();
             ExecutionJobSummary summary = new ExecutionJobSummary();
             summary.setJobName(job.getName());
             summary.setUser(job.getUserName());
-            summary.setWorkflowName(tasksStatus.stream().findFirst().get().getWorkflowName());
+            summary.setWorkflowName(workflowName);
             summary.setJobStatus(job.getExecutionStatus());
             summary.setJobStart(job.getStartTime());
             summary.setJobEnd(job.getEndTime());
@@ -135,17 +139,21 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public List<ExecutionJobSummary> getCompletedJobs(String userName) {
-        List<ExecutionJobSummary> summaries = new ArrayList<>();
-        Set<ExecutionStatus> statuses = new HashSet<>();
+        final List<ExecutionJobSummary> summaries = new ArrayList<>();
+        final Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.SUSPENDED, ExecutionStatus.DONE,
                                      ExecutionStatus.FAILED, ExecutionStatus.CANCELLED);
-        List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
+        final List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
+        List<ExecutionTaskSummary> tasksStatus;
         for (ExecutionJob job : jobs) {
-            List<ExecutionTaskSummary> tasksStatus = getTasksStatus(job.getId());
+            tasksStatus = getTasksStatus(job.getId());
+            final String workflowName = tasksStatus.size() > 0 ?
+                    tasksStatus.get(0).getWorkflowName() :
+                    persistenceManager.getWorkflowDescriptor(job.getWorkflowId()).getName();
             ExecutionJobSummary summary = new ExecutionJobSummary();
             summary.setJobName(job.getName());
             summary.setUser(job.getUserName());
-            summary.setWorkflowName(tasksStatus.stream().findFirst().get().getWorkflowName());
+            summary.setWorkflowName(workflowName);
             summary.setJobStatus(job.getExecutionStatus());
             summary.setJobStart(job.getStartTime());
             summary.setJobEnd(job.getEndTime());
@@ -168,12 +176,5 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 return new DelegatingSecurityContextRunnable(runnable, SecurityContextHolder.getContext());
             }
         });
-        /*ExecutorServiceFactory.setDelegateProvider(new ExecutorServiceDelegateProvider() {
-            @Override
-            public ExecutorService createExecutor(int threads) {
-                return executor;
-            }
-        });*/
-        Orchestrator.getInstance().setPersistenceManager(persistenceManager);
     }
 }

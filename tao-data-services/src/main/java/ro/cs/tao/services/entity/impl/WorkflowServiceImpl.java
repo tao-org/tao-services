@@ -1096,7 +1096,7 @@ public class WorkflowServiceImpl
                         if (descriptors != null && descriptors.size() > 0) {
                             final List<ParameterDescriptor> descriptorList = new ArrayList<>(descriptors);
                             component.getTargets().forEach(t -> {
-                                descriptorList.add(t.toParameter());
+                                descriptorList.addAll(t.toParameter());
                             });
                             customValues.forEach(v -> {
                                 ParameterDescriptor descriptor = descriptorList.stream()

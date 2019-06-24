@@ -25,6 +25,7 @@ import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.VectorData;
 import ro.cs.tao.eodata.enums.Visibility;
+import ro.cs.tao.execution.monitor.UserQuotaManager;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
@@ -139,6 +140,9 @@ public class FileStorageService implements StorageService<MultipartFile> {
                 }
             }
         }
+        
+        // update user's quota
+        UserQuotaManager.getInstance().updateUserProcessingQuota();
     }
 
     @Override
@@ -362,6 +366,9 @@ public class FileStorageService implements StorageService<MultipartFile> {
 
     private void storeFile(MultipartFile file, Path uploadPath, Path workspacePath,
                            String relativeFolder, String description, Principal principal) throws IOException, PersistenceException {
+        if (file == null || file.getOriginalFilename() == null) {
+            return;
+        }
         Path filePath;
         try (InputStream inputStream = file.getInputStream()) {
             Path userPath = uploadPath.resolve(relativeFolder);
