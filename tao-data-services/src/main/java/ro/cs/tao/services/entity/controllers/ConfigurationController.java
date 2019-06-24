@@ -21,6 +21,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.TaoEnum;
+import ro.cs.tao.eodata.Projection;
 import ro.cs.tao.eodata.sorting.Association;
 import ro.cs.tao.eodata.sorting.DataSorter;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -82,5 +83,15 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
         }
         descriptions.sort(Comparator.comparing(o -> o[0]));
         return prepareResult(descriptions);
+    }
+
+    @RequestMapping(value = "/projection/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getAvailableProjections() {
+        return prepareResult(Projection.getSupported());
+    }
+
+    @RequestMapping(value = "/projection/codes/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getAvailableProjectionCodes() {
+        return prepareResult(Projection.getSupported().keySet());
     }
 }

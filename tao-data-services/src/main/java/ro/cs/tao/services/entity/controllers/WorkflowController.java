@@ -24,13 +24,12 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.exception.PersistenceException;
-import ro.cs.tao.services.base.SampleWorkflowBase;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
-import ro.cs.tao.services.interfaces.SampleWorkflow;
+import ro.cs.tao.services.interfaces.WorkflowBuilder;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
@@ -118,18 +117,14 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> initializeSampleWorkflows(@RequestParam(name = "name", required = false) String name) {
-        ServiceRegistry<SampleWorkflow> registry = ServiceRegistryManager.getInstance().getServiceRegistry(SampleWorkflow.class);
-        Set<SampleWorkflow> services = registry.getServices();
+        ServiceRegistry<WorkflowBuilder> registry = ServiceRegistryManager.getInstance().getServiceRegistry(WorkflowBuilder.class);
+        Set<WorkflowBuilder> services = registry.getServices();
         if (services == null || services.size() == 0) {
             return prepareResult("No sample workflows found", ResponseStatus.FAILED);
         } else {
-            SampleWorkflowBase.setPersistenceManager(getPersistenceManager());
-            SampleWorkflowBase.setComponentService(componentService);
-            SampleWorkflowBase.setDataSourceComponentService(dataSourceComponentService);
-            SampleWorkflowBase.setWorkflowService(service);
             List<WorkflowDescriptor> descriptors = new ArrayList<>();
             BaseException aggregated = null;
-            for (SampleWorkflow sample : services) {
+            for (WorkflowBuilder sample : services) {
                 try {
                     if (name == null || name.isEmpty() || name.equals(sample.getName())) {
                         Logger.getLogger(getClass().getName()).fine(String.format("Creating workflow %s", sample.getName()));
