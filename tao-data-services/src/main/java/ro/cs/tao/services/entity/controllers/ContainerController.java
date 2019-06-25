@@ -36,6 +36,7 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topics;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -74,6 +75,21 @@ public class ContainerController extends DataEntityController<Container, String,
             objects = new ArrayList<>();
         }
         return prepareResult(objects);
+    }
+
+    @RequestMapping(value = "/formats", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getFormats(@RequestParam("containerId") String containerId) {
+        try {
+            Container container = service.findById(containerId);
+            if (container == null) {
+                return prepareResult(String.format("Container [%s] does not exist", containerId), ResponseStatus.FAILED);
+            } else {
+                Set<String> formats = container.getFormat();
+                return prepareResult(formats != null ? formats : new HashSet<>());
+            }
+        } catch (PersistenceException pex) {
+            return handleException(pex);
+        }
     }
 
     @RequestMapping(value = "/upload", method = RequestMethod.POST, consumes = "multipart/form-data", produces = "application/json")
