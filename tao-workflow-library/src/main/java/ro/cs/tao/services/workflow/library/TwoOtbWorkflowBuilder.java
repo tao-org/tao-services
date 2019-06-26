@@ -14,44 +14,33 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-package ro.cs.tao.services.workflow.samples;
+package ro.cs.tao.services.workflow.library;
 
-import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public class SnapOtbWorkflowBuilder extends WorkflowBuilderBase {
-
+public class TwoOtbWorkflowBuilder extends WorkflowBuilderBase {
     @Override
-    public String getName() { return "Single product SNAP NDVI + OTB RESAMPLE with name rule workflow"; }
+    public String getName() { return "OTB Radiometric Indices + OTB RESAMPLE workflow"; }
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
-
-        List<String> productNames = new ArrayList<>();
-        productNames.add("S2B_MSIL1C_20181226T103439_N0207_R108_T32UMF_20181226T122504");
-        DataSourceComponent component = newDataSourceComponent("Sentinel2", productNames, () -> "admin");
-        WorkflowNodeDescriptor node1 = addNode(workflow, "Local DB", component.getId(), ComponentType.DATASOURCE, null,
-                                               null, null, null);
         Map<String, String> customValues = new HashMap<>();
-        customValues.put("t", "${1:MISSION}_${1:ADATE}_${1:ORBIT}_NDVI.tif");
-        WorkflowNodeDescriptor node2 = addNode(workflow,
-                                               "SNAP NDVI", "snap-ndvi", ComponentType.PROCESSING, customValues,
-                                               node1, ComponentType.DATASOURCE, Direction.RIGHT);
+        customValues.put("list_str", "Vegetation:RVI");
+        WorkflowNodeDescriptor node1 = addNode(workflow,
+                                               "OTB RI", "RadiometricIndices", ComponentType.PROCESSING, customValues,
+                                               null, null, (Direction) null);
         customValues.clear();
         customValues.put("transform_type_id_scalex_number", "0.5");
         customValues.put("transform_type_id_scaley_number", "0.5");
-        customValues.put("out", "${1:MISSION}_${1:ADATE}_${1:ORBIT}_NDVI_resampled.tif");
         addNode(workflow,
                 "OTB Resample", "RigidTransformResample", ComponentType.PROCESSING, customValues,
-                node2, ComponentType.PROCESSING, Direction.RIGHT);
+                node1, ComponentType.PROCESSING, Direction.RIGHT);
     }
 }

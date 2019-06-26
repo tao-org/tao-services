@@ -1,4 +1,4 @@
-package ro.cs.tao.services.workflow.samples;
+package ro.cs.tao.services.workflow.library;
 
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.beans.Query;
@@ -13,9 +13,9 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DBSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
+public class DBGroupSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
     @Override
-    public String getName() { return "Local DB, SNAP NDVI and OTB Resample"; }
+    public String getName() { return "Local DB, { SNAP NDVI, OTB Resample}, OTB Concatenate "; }
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
@@ -23,7 +23,7 @@ public class DBSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
         DataSourceComponent dataSourceComponent = newDataSourceComponent("Sentinel2", "Local Database");
         WorkflowNodeDescriptor node1 = addNode(workflow,
                                                "Local DB", dataSourceComponent.getId(), ComponentType.DATASOURCE, null,
-                                               null, null, null);
+                                               null, null, (Direction) null);
         Query dsQuery = new Query();
         dsQuery.setLabel(String.format("Query for sample workflow %d", workflow.getId()));
         dsQuery.setUserId(SessionStore.currentContext().getPrincipal().getName());
@@ -31,7 +31,7 @@ public class DBSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
         dsQuery.setDataSource(dataSourceComponent.getDataSourceName());
         dsQuery.setPageNumber(1);
         dsQuery.setPageSize(10);
-        dsQuery.setLimit(1);
+        dsQuery.setLimit(2);
         Map<String, String> values = new HashMap<>();
         values.put(CommonParameterNames.START_DATE, "[2017-04-08,2017-04-10]");
         values.put(CommonParameterNames.FOOTPRINT, "POLYGON((23.50357106719914 44.22597512802537,24.8757389462752 44.18762158427181," +
@@ -46,8 +46,11 @@ public class DBSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
                                                node1, ComponentType.DATASOURCE, Direction.TOP_RIGHT);
         customValues.put("transform_type_id_scalex_number", "0.5");
         customValues.put("transform_type_id_scaley_number", "0.5");
-        WorkflowNodeDescriptor node5 = addNode(workflow,
+        WorkflowNodeDescriptor node3 = addNode(workflow,
                                                "OTB Resample", "RigidTransformResample", ComponentType.PROCESSING, customValues,
                                                node2, ComponentType.PROCESSING, Direction.RIGHT);
+        WorkflowNodeDescriptor groupNode = addGroupNode(workflow, "Group-2", node1, node2, node3);
+        addNode(workflow, "OTB Concatenate", "ConcatenateImages", ComponentType.PROCESSING, null,
+                groupNode, ComponentType.GROUP, Direction.RIGHT);
     }
 }

@@ -14,7 +14,7 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-package ro.cs.tao.services.workflow.samples;
+package ro.cs.tao.services.workflow.library;
 
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.base.WorkflowBuilderBase;
@@ -25,26 +25,30 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ThreeSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
+public class OtbTwoSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
     @Override
-    public String getName() { return "SNAP Resample, NDVI, MSAVI and OTB Concatenate"; }
+    public String getName() { return "OTB Resample, NDVI, TNDVI and Concatenate"; }
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
         Map<String, String> customValues = new HashMap<>();
-        customValues.put("targetResolution", "60");
+        customValues.put("transform_type_id_scalex_number", "0.5");
+        customValues.put("transform_type_id_scaley_number", "0.5");
         WorkflowNodeDescriptor node1 = addNode(workflow,
-                                               "SNAP Resample", "snap-resample", ComponentType.PROCESSING, customValues,
-                                               null, null, null);
+                                               "OTB Resample", "RigidTransformResample", ComponentType.PROCESSING, customValues,
+                                               null, null, (Direction) null);
         customValues.clear();
+        customValues.put("list_str", "Vegetation:NDVI");
         WorkflowNodeDescriptor node2 = addNode(workflow,
-                                               "SNAP NDVI", "snap-ndvi", ComponentType.PROCESSING, null,
+                                               "OTB NDVI", "RadiometricIndices", ComponentType.PROCESSING, customValues,
                                                node1, ComponentType.PROCESSING, Direction.TOP_RIGHT);
+        customValues.clear();
+        customValues.put("list_str", "Vegetation:TNDVI");
         WorkflowNodeDescriptor node3 = addNode(workflow,
-                                               "SNAP MSAVI", "snap-msavi", ComponentType.PROCESSING, null,
+                                               "OTB TNDVI", "RadiometricIndices", ComponentType.PROCESSING, customValues,
                                                node1, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
         WorkflowNodeDescriptor node4 = addNode(workflow,
-                                               "OTB Combine", "ConcatenateImages", ComponentType.PROCESSING, null,
+                                               "OTB Concatenate", "ConcatenateImages", ComponentType.PROCESSING, null,
                                                node2, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
         addLink(workflow, node3, node4);
     }
