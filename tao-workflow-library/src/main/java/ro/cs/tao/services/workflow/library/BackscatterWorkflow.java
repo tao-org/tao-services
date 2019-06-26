@@ -1,4 +1,4 @@
-package ro.cs.tao.services.workflow.samples;
+package ro.cs.tao.services.workflow.library;
 
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.base.WorkflowBuilderBase;
@@ -9,7 +9,7 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BackscatterWorkflowBuilder extends WorkflowBuilderBase {
+public class BackscatterWorkflow extends WorkflowBuilderBase {
 
     @Override
     public String getName() { return "Compute Sentinel-1 Backscatter"; }
@@ -24,11 +24,11 @@ public class BackscatterWorkflowBuilder extends WorkflowBuilderBase {
         customValues.put("t", "apply_orbit_file_intermediate1.dim");
         WorkflowNodeDescriptor orbitFileNode1 = addNode(workflow,
                                                "Apply Orbit File 1", "snap-apply-orbit-file", ComponentType.PROCESSING, customValues,
-                                               null, null, null);
+                                               null, null, Direction.BOTTOM);
         customValues.put("t", "apply_orbit_file_intermediate2.dim");
         WorkflowNodeDescriptor orbitFileNode2 = addNode(workflow,
                                                         "Apply Orbit File 2", "snap-apply-orbit-file", ComponentType.PROCESSING, customValues,
-                                                        null, null, Direction.BOTTOM);
+                                                        null, null, Direction.BOTTOM, Direction.BOTTOM, Direction.BOTTOM, Direction.BOTTOM);
         customValues.clear();
         customValues.put("auxFile", "Latest Auxiliary File");
         customValues.put("outputImageInComplex", "true");
@@ -60,12 +60,12 @@ public class BackscatterWorkflowBuilder extends WorkflowBuilderBase {
         customValues.put("t", "topsar_split_intermediate21.dim");
         WorkflowNodeDescriptor splitNode21 = addNode(workflow,
                                                      "TOPSAR-Split 2-1", "snap-topsar-split", ComponentType.PROCESSING, customValues,
-                                                     calibrationNode2, ComponentType.PROCESSING, Direction.TOP_RIGHT);
+                                                     calibrationNode2, ComponentType.PROCESSING, Direction.TOP_RIGHT, Direction.TOP);
         customValues.put("subswath","IW2");
         customValues.put("t", "topsar_split_intermediate12.dim");
         WorkflowNodeDescriptor splitNode12 = addNode(workflow,
                                                      "TOPSAR-Split 1-2", "snap-topsar-split", ComponentType.PROCESSING, customValues,
-                                                     calibrationNode1, ComponentType.PROCESSING, Direction.RIGHT);
+                                                     calibrationNode1, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
         customValues.put("t", "topsar_split_intermediate22.dim");
         WorkflowNodeDescriptor splitNode22 = addNode(workflow,
                                                      "TOPSAR-Split 2-2", "snap-topsar-split", ComponentType.PROCESSING, customValues,
@@ -74,11 +74,11 @@ public class BackscatterWorkflowBuilder extends WorkflowBuilderBase {
         customValues.put("t", "topsar_split_intermediate13.dim");
         WorkflowNodeDescriptor splitNode13 = addNode(workflow,
                                                      "TOPSAR-Split 1-3", "snap-topsar-split", ComponentType.PROCESSING, customValues,
-                                                     calibrationNode1, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+                                                     calibrationNode1, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT, Direction.BOTTOM, Direction.BOTTOM);
         customValues.put("t", "topsar_split_intermediate13.dim");
         WorkflowNodeDescriptor splitNode23 = addNode(workflow,
-                                                     "TOPSAR-Split 3-3", "snap-topsar-split", ComponentType.PROCESSING, customValues,
-                                                     calibrationNode2, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+                                                     "TOPSAR-Split 2-3", "snap-topsar-split", ComponentType.PROCESSING, customValues,
+                                                     calibrationNode2, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT, Direction.BOTTOM);
         customValues.clear();
         customValues.put("demName", "SRTM 3sec");
         customValues.put("demResamplingMethod", "BICUBIC_INTERPOLATION");
@@ -92,17 +92,17 @@ public class BackscatterWorkflowBuilder extends WorkflowBuilderBase {
         customValues.put("t", "back_geocoding_1.dim");
         WorkflowNodeDescriptor geocoding1 = addNode(workflow,
                                                     "Back-Geocoding 1", "snap-back-geocoding", ComponentType.PROCESSING, customValues,
-                                                    splitNode11, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+                                                    splitNode11, ComponentType.PROCESSING, Direction.RIGHT);
         addLink(workflow, splitNode21, geocoding1);
         customValues.put("t", "back_geocoding_2.dim");
         WorkflowNodeDescriptor geocoding2 = addNode(workflow,
                                                     "Back-Geocoding 2", "snap-back-geocoding", ComponentType.PROCESSING, customValues,
-                                                    splitNode12, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+                                                    splitNode12, ComponentType.PROCESSING, Direction.RIGHT);
         addLink(workflow, splitNode22, geocoding2);
         customValues.put("t", "back_geocoding_3.dim");
         WorkflowNodeDescriptor geocoding3 = addNode(workflow,
                                                     "Back-Geocoding 3", "snap-back-geocoding", ComponentType.PROCESSING, customValues,
-                                                    splitNode13, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+                                                    splitNode13, ComponentType.PROCESSING, Direction.RIGHT);
         addLink(workflow, splitNode23, geocoding3);
         customValues.clear();
         customValues.put("selectedPolarisations", "VH");

@@ -1,4 +1,4 @@
-package ro.cs.tao.services.workflow.samples;
+package ro.cs.tao.services.workflow.library;
 
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
@@ -99,7 +99,7 @@ public class DSGroupSnapWorkflowBuilder extends WorkflowBuilderBase {
 
         WorkflowNodeDescriptor node1 = addNode(workflow,
                                                "DS Group", group.getId(), ComponentType.DATASOURCE_GROUP, null,
-                                               null, null, null);
+                                               null, null, (Direction) null);
         WorkflowNodeDescriptor node2 = addNode(workflow,
                                                "SNAP NDVI", "snap-ndviop", ComponentType.PROCESSING, null,
                                                node1, ComponentType.DATASOURCE_GROUP, 0, Direction.TOP_RIGHT);
