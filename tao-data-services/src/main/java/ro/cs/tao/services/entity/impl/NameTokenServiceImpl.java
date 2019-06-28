@@ -13,6 +13,7 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.NameTokenService;
 import ro.cs.tao.services.model.component.NamingRuleTokens;
+import ro.cs.tao.services.utils.WorkflowUtilities;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
@@ -50,8 +51,7 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
         for (WorkflowNodeDescriptor ancestor : ancestors) {
             switch (ancestor.getComponentType()) {
                 case DATASOURCE:
-                    DataSourceComponent dsComponent = (DataSourceComponent) componentService.findComponent(ancestor.getComponentId(),
-                                                                                                           ComponentType.DATASOURCE);
+                    DataSourceComponent dsComponent = (DataSourceComponent) WorkflowUtilities.findComponent(ancestor);
                     sensorName = dsComponent.getSensorName();
                     sensorTokens = new NamingRuleTokens();
                     sensorTokens.setSensor(sensorName);
@@ -61,8 +61,7 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
                     tokens.add(sensorTokens);
                     break;
                 case DATASOURCE_GROUP:
-                    DataSourceComponentGroup dsGroup = (DataSourceComponentGroup) componentService.findComponent(ancestor.getComponentId(),
-                                                                                                                 ComponentType.DATASOURCE_GROUP);
+                    DataSourceComponentGroup dsGroup = (DataSourceComponentGroup) WorkflowUtilities.findComponent(ancestor);
                     List<DataSourceComponent> dataSourceComponents = dsGroup.getDataSourceComponents();
                     final int groupCount = dataSourceComponents.size();
                     for (DataSourceComponent component : dataSourceComponents) {

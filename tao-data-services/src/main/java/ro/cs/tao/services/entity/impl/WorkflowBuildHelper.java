@@ -11,6 +11,7 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.services.utils.WorkflowUtilities;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
@@ -18,6 +19,7 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import ro.cs.tao.workflow.enums.Status;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Map;
 
 public class WorkflowBuildHelper {
@@ -124,8 +126,8 @@ public class WorkflowBuildHelper {
         node.setCreated(LocalDateTime.now());
         node = workflowService.addNode(this.workflow.getId(), node);
         if (parentNode != null) {
-            TaoComponent component1 = componentService.findComponent(parentNode.getComponentId(), parentComponentType);
-            TaoComponent component2 = componentService.findComponent(node.getComponentId(), componentType);
+            TaoComponent component1 = WorkflowUtilities.findComponent(parentNode);
+            TaoComponent component2 = WorkflowUtilities.findComponent(node);
             workflowService.addLink(parentNode.getId(), component1.getTargets().get(0).getId(),
                                     node.getId(), component2.getSources().get(0).getId());
         }
@@ -142,7 +144,7 @@ public class WorkflowBuildHelper {
         grpNode.setyCoord(coords[1]);
         grpNode.setCreated(LocalDateTime.now());
         grpNode.setPreserveOutput(true);
-        return workflowService.addGroup(this.workflow.getId(), grpNode, parentNode.getId(), nodes);
+        return workflowService.group(this.workflow.getId(), grpNode, Arrays.asList(nodes));
     }
 
     public void addLink(WorkflowNodeDescriptor parent, WorkflowNodeDescriptor child) throws PersistenceException {
