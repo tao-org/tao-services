@@ -58,6 +58,8 @@ import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.topology.*;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
+import ro.cs.tao.user.User;
+import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.DockerHelper;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.workflow.WorkflowDescriptor;
@@ -133,9 +135,10 @@ public class TaoServicesStartup extends StartupBase {
             CustomAuthenticationProvider.setPersistenceManager(this.persistenceManager);
             logger.fine("Initialized authentication provider");
             updateLocalhost();
+            backgroundWorker.submit(this::createUserWorkspaces);
             Orchestrator.getInstance().start();
-            backgroundWorker.submit(this::registerEmbeddedContainers);
             backgroundWorker.submit(this::registerDataSourceComponents);
+            registerEmbeddedContainers();
             backgroundWorker.submit(this::registerWorkflowLibrary);
             backgroundWorker.submit(() -> {
                 Projection.getSupported();
@@ -253,25 +256,44 @@ public class TaoServicesStartup extends StartupBase {
         manager.onCompleted(master, manager.checkShare(master));
     }
 
+    private void createUserWorkspaces() {
+        List<User> activeUsers = persistenceManager.findUsersByStatus(UserStatus.ACTIVE);
+        if (activeUsers != null) {
+            final Path rootPath = Paths.get(SystemVariable.ROOT.value());
+            for (User user : activeUsers) {
+                try {
+                    Path userPath = rootPath.resolve(user.getUsername());
+                    Files.createDirectories(userPath);
+                    Files.createDirectories(userPath.resolve("files"));
+                } catch (IOException e) {
+                    logger.severe(String.format("Failed to create user workspace [user=%s, reason=%s]",
+                                                user.getUsername(), e.getMessage()));
+                }
+            }
+        }
+    }
+
     private void registerEmbeddedContainers() {
         List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
         if (installers != null && installers.size() > 0) {
             logger.finest(String.format("Found %s docker image plugins: %s", installers.size(),
                                         installers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.joining(","))));
             for (DockerImageInstaller imageInstaller : installers) {
-                try {
-                    Container container = imageInstaller.installImage();
-                    if (container != null && container.getLogo() != null) {
-                        Path imgPath = homeDirectory().resolve("static").resolve("workflow").resolve("media")
-                                                    .resolve(container.getId() + ".png");
-                        if (!Files.exists(imgPath)) {
-                            Files.createDirectories(imgPath.getParent());
-                            Files.write(imgPath, Base64.getDecoder().decode(container.getLogo()));
+                backgroundWorker.submit(() -> {
+                    try {
+                        Container container = imageInstaller.installImage();
+                        if (container != null && container.getLogo() != null) {
+                            Path imgPath = homeDirectory().resolve("static").resolve("workflow").resolve("media")
+                                    .resolve(container.getId() + ".png");
+                            if (!Files.exists(imgPath)) {
+                                Files.createDirectories(imgPath.getParent());
+                                Files.write(imgPath, Base64.getDecoder().decode(container.getLogo()));
+                            }
                         }
+                    } catch (Throwable e) {
+                        logger.severe(e.getMessage());
                     }
-                } catch (Throwable e) {
-                    logger.severe(e.getMessage());
-                }
+                });
             }
         } else {
             logger.fine("No docker image plugin found");
