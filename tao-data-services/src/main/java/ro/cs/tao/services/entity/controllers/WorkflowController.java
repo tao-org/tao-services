@@ -162,8 +162,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     public ResponseEntity<ServiceResponse<?>> addGroup(@RequestBody WorkflowGroupNodeRequest request) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(service.addGroup(request.getWorkflowId(), request.getParentNodeId(),
-                                                            request.getGroupNodeName(), request.getGroupNodeIds()));
+            responseEntity = prepareResult(service.group(request.getWorkflowId(), request.getGroupNodeName(), request.getGroupNodeIds()));
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }

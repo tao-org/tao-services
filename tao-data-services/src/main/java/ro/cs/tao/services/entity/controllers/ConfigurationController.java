@@ -28,6 +28,7 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ConfigurationService;
 import ro.cs.tao.services.model.KeyValuePair;
 
+import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,51 +39,63 @@ import java.util.stream.Collectors;
 @RequestMapping("/config")
 public class ConfigurationController extends DataEntityController<KeyValuePair, String, ConfigurationService> {
 
+    private WeakReference<List<String>> sorters;
+    private WeakReference<List<String[]>> groupers;
+    private WeakReference<Map<String, List<KeyValuePair>>> enums;
+
     @RequestMapping(value = "/enums", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getAvailableEnumValues() {
-        Map<String, List<KeyValuePair>> enumValues = new HashMap<>();
-        Reflections reflections = new Reflections("ro.cs.tao");
-        Set<Class<? extends TaoEnum>> enums = reflections.getSubTypesOf(TaoEnum.class);
-        for (Class<? extends TaoEnum> anEnum : enums) {
-            List<TaoEnum> values = Arrays.stream(anEnum.getEnumConstants()).collect(Collectors.toList());
-            enumValues.put(anEnum.getName(),
-                           values.stream().map(v -> new KeyValuePair(((Enum) v).name(), v.friendlyName()))
-                                          .collect(Collectors.toList()));
+        if (this.enums == null || this.enums.get() == null) {
+            Map<String, List<KeyValuePair>> enumValues = new HashMap<>();
+            Reflections reflections = new Reflections("ro.cs.tao");
+            Set<Class<? extends TaoEnum>> enums = reflections.getSubTypesOf(TaoEnum.class);
+            for (Class<? extends TaoEnum> anEnum : enums) {
+                List<TaoEnum> values = Arrays.stream(anEnum.getEnumConstants()).collect(Collectors.toList());
+                enumValues.put(anEnum.getName(),
+                               values.stream().map(v -> new KeyValuePair(((Enum) v).name(), v.friendlyName()))
+                                       .collect(Collectors.toList()));
+            }
+            this.enums = new WeakReference<>(enumValues);
         }
-
-        return prepareResult(enumValues);
+        return prepareResult(this.enums.get());
     }
 
     @RequestMapping(value = "/sorters", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getAvailableSorters() {
-        List<String> descriptions = new ArrayList<>();
-        Reflections reflections = new Reflections("ro.cs.tao");
-        Set<Class<? extends DataSorter>> sorters = reflections.getSubTypesOf(DataSorter.class);
-        for (Class<? extends DataSorter> sortClass : sorters) {
-            try {
-                descriptions.add(sortClass.newInstance().getFriendlyName());
-            } catch (InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
+        if (this.sorters == null || this.sorters.get() == null) {
+            List<String> descriptions = new ArrayList<>();
+            Reflections reflections = new Reflections("ro.cs.tao");
+            Set<Class<? extends DataSorter>> sorters = reflections.getSubTypesOf(DataSorter.class);
+            for (Class<? extends DataSorter> sortClass : sorters) {
+                try {
+                    descriptions.add(sortClass.newInstance().getFriendlyName());
+                } catch (InstantiationException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
             }
+            descriptions.sort(Comparator.naturalOrder());
+            this.sorters = new WeakReference<>(descriptions);
         }
-        descriptions.sort(Comparator.naturalOrder());
-        return prepareResult(descriptions);
+        return prepareResult(this.sorters.get());
     }
 
     @RequestMapping(value = "/groupers", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getAvailableGroupers() {
-        List<String[]> descriptions = new ArrayList<>();
-        Reflections reflections = new Reflections("ro.cs.tao");
-        Set<Class<? extends Association>> groupers = reflections.getSubTypesOf(Association.class);
-        for (Class<? extends Association> aClass : groupers) {
-            try {
-                descriptions.add(aClass.newInstance().description());
-            } catch (InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
+        if (this.groupers == null || this.groupers.get() == null) {
+            List<String[]> descriptions = new ArrayList<>();
+            Reflections reflections = new Reflections("ro.cs.tao");
+            Set<Class<? extends Association>> groupers = reflections.getSubTypesOf(Association.class);
+            for (Class<? extends Association> aClass : groupers) {
+                try {
+                    descriptions.add(aClass.newInstance().description());
+                } catch (InstantiationException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
             }
+            descriptions.sort(Comparator.comparing(o -> o[0]));
+            this.groupers = new WeakReference<>(descriptions);
         }
-        descriptions.sort(Comparator.comparing(o -> o[0]));
-        return prepareResult(descriptions);
+        return prepareResult(this.groupers.get());
     }
 
     @RequestMapping(value = "/projection/", method = RequestMethod.GET, produces = "application/json")

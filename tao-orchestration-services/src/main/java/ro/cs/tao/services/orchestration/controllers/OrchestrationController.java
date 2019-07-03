@@ -46,10 +46,14 @@ public class OrchestrationController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> start(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            response = prepareResult(orchestrationService.startWorkflow(request.getWorkflowId(),
-                                                                        request.getName(),
-                                                                        request.getParameters()),
-                                     "Execution started");
+        	final long jobID = orchestrationService.startWorkflow(request.getWorkflowId(),
+                    request.getName(),
+                    request.getParameters());
+        	if (jobID != -1) {
+                response = prepareResult(jobID, "Execution started");
+        	} else {
+        		response = prepareResult("Cannot start execution. See error log for details", ResponseStatus.FAILED);
+        	}
         } catch (ExecutionException ex) {
             response = handleException(ex);
         }

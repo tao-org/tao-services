@@ -33,6 +33,7 @@ import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WorkflowService;
@@ -62,7 +63,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public Map<String, List<Parameter>> getWorkflowParameters(long workflowId) {
+    public Map<String, List<Parameter>> getWorkflowParameters(long workflowId) throws PersistenceException {
         if (!isDevModeEnabled()) {
             return workflowService.getWorkflowParameters(workflowId);
         } else {
@@ -71,7 +72,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<TargetDescriptor> getWorkflowOutputs(long workflowId) {
+    public List<TargetDescriptor> getWorkflowOutputs(long workflowId) throws PersistenceException {
         if (!isDevModeEnabled()) {
             return workflowService.getWorkflowOutputs(workflowId);
         } else {
