@@ -71,6 +71,9 @@ public class FileStorageService implements StorageService<MultipartFile> {
         storeFile(file, SessionStore.currentContext().getUploadPath(),
                   SessionStore.currentContext().getWorkspace(),
                   relativeFolder, description, SessionStore.currentContext().getPrincipal());
+        
+        // Update user processing quota
+        UserQuotaManager.getInstance().updateUserProcessingQuota();
     }
 
     @Override
