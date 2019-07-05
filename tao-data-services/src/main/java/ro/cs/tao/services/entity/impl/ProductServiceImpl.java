@@ -40,6 +40,7 @@ import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
 import ro.cs.tao.execution.monitor.UserQuotaManager;
+import ro.cs.tao.execution.quota.QuotaException;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
@@ -203,6 +204,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 			throw new IOException("No product inspector found");
 		}
 		final AtomicInteger count = new AtomicInteger(0);
+		final AtomicInteger skipped = new AtomicInteger(0);
 		try {
 			List<Path> folders = Files.walk(srcPath, 1).collect(Collectors.toList());
 			Path publicFolder = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
@@ -212,6 +214,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 					if (Files.isDirectory(folder) && !folder.equals(srcPath)) {
 						// check user quota. Return if no more quota available
 						if (!UserQuotaManager.getInstance().checkUserInputQuota(Logger.getLogger(ProductService.class.getName()))) {
+							// increase the skipped products number
+							skipped.getAndIncrement();
 							return;
 						}
 						
@@ -275,6 +279,13 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 			throw new IOException(e);
 		}
 
+		if (skipped.get() != 0) {
+			// throw am exception to force an error response sent to the user
+			QuotaException ex = new QuotaException(String.format("Not all products found were imported because you have reached your input quota! Imported products: %d, Skipped products: %d", count.get(), skipped.get()));
+			throw ex;
+		}
+		
+		
 		return count.get();
 	}
 
