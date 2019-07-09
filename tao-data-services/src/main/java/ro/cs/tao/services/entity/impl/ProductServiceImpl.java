@@ -39,10 +39,10 @@ import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
-import ro.cs.tao.execution.monitor.UserQuotaManager;
-import ro.cs.tao.execution.quota.QuotaException;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.quota.QuotaException;
+import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.spi.ServiceRegistryManager;
@@ -193,7 +193,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 	}
 
 	@Override
-	public int importProducts(String sourcePath, boolean linkOnly) throws IOException {
+	public int importProducts(String sourcePath, boolean linkOnly) throws IOException, QuotaException {
 		Path srcPath;
 		if (sourcePath == null || !Files.exists((srcPath = Paths.get(sourcePath)))) {
 			throw new IOException("Source directory not found");
@@ -213,7 +213,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 				try {
 					if (Files.isDirectory(folder) && !folder.equals(srcPath)) {
 						// check user quota. Return if no more quota available
-						if (!UserQuotaManager.getInstance().checkUserInputQuota(Logger.getLogger(ProductService.class.getName()))) {
+						if (!UserQuotaManager.getInstance().checkUserInputQuota(SessionStore.currentContext().getPrincipal())) {
 							// increase the skipped products number
 							skipped.getAndIncrement();
 							return;
@@ -264,7 +264,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 							count.getAndIncrement();
 							
 							// update user quota
-							UserQuotaManager.getInstance().updateUserInputQuota();
+							UserQuotaManager.getInstance().updateUserInputQuota(SessionStore.currentContext().getPrincipal(), product.getApproximateSize());
 						} else {
 							Logger.getLogger(ProductService.class.getName())
 									.info(String.format("Skipping %s. Reason: unable to read metadata", targetPath));

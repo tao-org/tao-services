@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import ro.cs.tao.eodata.EOProduct;
-import ro.cs.tao.execution.quota.QuotaException;
+import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ProductService;
