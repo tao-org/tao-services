@@ -5,11 +5,13 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.datasource.ProductStatusListener;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
-import ro.cs.tao.execution.monitor.UserQuotaManager;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.quota.QuotaException;
+import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
 
+import java.security.Principal;
 import java.util.logging.Logger;
 
 @Service("downloadListener")
@@ -21,18 +23,19 @@ public class DownloadListener implements ProductStatusListener {
 
     @Override
     public boolean downloadStarted(EOProduct product) {
-    	// check input quota before download
-    	if (!UserQuotaManager.getInstance().checkUserInputQuota(logger)) {
-    		// do not allow for the download to start
-    		return false;
-    	}
+    	final Principal principal = SessionStore.currentContext().getPrincipal();
     	
-        product.setProductStatus(ProductStatus.DOWNLOADING);
-
         try {
+        	// check input quota before download
+        	if (!UserQuotaManager.getInstance().updateUserInputQuota(principal, product.getApproximateSize())) {
+        		// do not allow for the download to start
+        		return false;
+        	}
+    	
+        	product.setProductStatus(ProductStatus.DOWNLOADING);
             persistenceManager.saveEOProduct(product);
             return true;
-        } catch (PersistenceException e) {
+        } catch (QuotaException | PersistenceException e) {
             logger.severe(String.format("Updating product %s failed. Reason: %s", product.getName(), e.getMessage()));
             return false;
         }
@@ -45,9 +48,6 @@ public class DownloadListener implements ProductStatusListener {
         product.addReference(SessionStore.currentContext().getPrincipal().getName());
         try {
             persistenceManager.saveEOProduct(product);
-            
-            // update user input quota
-            UserQuotaManager.getInstance().updateUserInputQuota();
         } catch (PersistenceException e) {
             logger.severe(String.format("Updating product %s failed. Reason: %s", product.getName(), e.getMessage()));
         }
@@ -55,11 +55,15 @@ public class DownloadListener implements ProductStatusListener {
 
     @Override
     public void downloadFailed(EOProduct product, String reason) {
+    	final Principal principal = SessionStore.currentContext().getPrincipal();
         product.setProductStatus(ProductStatus.FAILED);
         try {
             persistenceManager.saveEOProduct(product);
+            // roll back the user's quota
+            UserQuotaManager.getInstance().updateUserInputQuota(principal, -product.getApproximateSize());
+
             logger.warning(String.format("Product %s not downloaded. Reason: %s", product.getName(), reason));
-        } catch (PersistenceException e) {
+        } catch (QuotaException | PersistenceException e) {
             logger.severe(String.format("Updating product %s failed. Reason: %s", product.getName(), e.getMessage()));
         }
     }

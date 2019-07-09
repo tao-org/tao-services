@@ -25,7 +25,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import ro.cs.tao.component.validation.ValidationException;
-import ro.cs.tao.execution.quota.QuotaException;
+import ro.cs.tao.quota.QuotaException;
 
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
