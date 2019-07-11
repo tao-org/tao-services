@@ -16,23 +16,9 @@
 
 package ro.cs.tao.services.entity.impl;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.Date;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
@@ -48,6 +34,19 @@ import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.async.Parallel;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.Date;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service("productService")
 public class ProductServiceImpl extends EntityService<EOProduct> implements ProductService {
@@ -246,20 +245,25 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 						MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
 						if (metadata != null) {
 							EOProduct product = metadata.toProductDescriptor(targetPath);
-							product.setEntryPoint(metadata.getEntryPoint());
-							product.addReference(SessionStore.currentContext().getPrincipal().getName());
-							product.setVisibility(Visibility.PUBLIC);
-							if (metadata.getAquisitionDate() != null) {
-								product.setAcquisitionDate(Date
-										.from(metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
-							}
-							if (metadata.getSize() != null) {
-								product.setApproximateSize(metadata.getSize());
-							}
 							if (metadata.getProductId() != null) {
 								product.setId(metadata.getProductId());
 							}
+							EOProduct existing = persistenceManager.getEOProduct(product.getId());
+							if (existing == null) {
+								product.setEntryPoint(metadata.getEntryPoint());
+								product.setVisibility(Visibility.PUBLIC);
+								if (metadata.getAquisitionDate() != null) {
+									product.setAcquisitionDate(Date
+																	   .from(metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
+								}
+								if (metadata.getSize() != null) {
+									product.setApproximateSize(metadata.getSize());
+								}
+							} else {
+								product = existing;
+							}
 							product.setProductStatus(ProductStatus.DOWNLOADED);
+							product.addReference(SessionStore.currentContext().getPrincipal().getName());
 							persistenceManager.saveEOProduct(product);
 							count.getAndIncrement();
 							
