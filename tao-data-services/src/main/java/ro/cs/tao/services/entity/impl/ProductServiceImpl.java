@@ -39,12 +39,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.sql.Date;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -179,12 +182,17 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 			return 0;
 		}
 		int count = 0;
+		final Principal principal = SessionStore.currentContext().getPrincipal();
 		for (EOProduct product : products) {
 			try {
 				product.setProductStatus(ProductStatus.DOWNLOADED);
+				product.addReference(principal.getName());
 				persistenceManager.saveEOProduct(product);
+				UserQuotaManager.getInstance().updateUserInputQuota(principal);
 				count++;
 			} catch (PersistenceException e) {
+				e.printStackTrace();
+			} catch (QuotaException e) {
 				e.printStackTrace();
 			}
 		}
@@ -204,6 +212,11 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		}
 		final AtomicInteger count = new AtomicInteger(0);
 		final AtomicInteger skipped = new AtomicInteger(0);
+		final AtomicLong addedSize = new AtomicLong(0);
+		final Object lock = new Object();
+		final AtomicBoolean firstFail = new AtomicBoolean(true);
+		final Principal principal = SessionStore.currentContext().getPrincipal();
+		final List<String> skippedProducts = new ArrayList<String>();
 		try {
 			List<Path> folders = Files.walk(srcPath, 1).collect(Collectors.toList());
 			Path publicFolder = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
@@ -211,13 +224,24 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 				Path folder = folders.get(idx);
 				try {
 					if (Files.isDirectory(folder) && !folder.equals(srcPath)) {
-						// check user quota. Return if no more quota available
-						if (!UserQuotaManager.getInstance().checkUserInputQuota(SessionStore.currentContext().getPrincipal())) {
-							// increase the skipped products number
-							skipped.getAndIncrement();
-							return;
-						}
+						// estimate the size of the product
+						final long size = FileUtilities.folderSize(folder);
 						
+						synchronized (lock) {
+							// check user quota. Return if no more quota available
+							if (!UserQuotaManager.getInstance().checkUserInputQuota(principal, addedSize.get() + size)) {
+								if (firstFail.get()) {
+									// allow first fail.
+									firstFail.set(false);
+								} else {
+									// increase the skipped products number
+									skipped.getAndIncrement();
+									return;
+								}
+							}
+							addedSize.addAndGet(size);
+						}
+
 						Path targetPath;
 						if (!folder.toString().startsWith(publicFolder.toString())) {
 							targetPath = publicFolder.resolve(folder.getFileName());
@@ -253,8 +277,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 								product.setEntryPoint(metadata.getEntryPoint());
 								product.setVisibility(Visibility.PUBLIC);
 								if (metadata.getAquisitionDate() != null) {
-									product.setAcquisitionDate(Date
-																	   .from(metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
+									product.setAcquisitionDate(Date.from(
+											metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
 								}
 								if (metadata.getSize() != null) {
 									product.setApproximateSize(metadata.getSize());
@@ -266,9 +290,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 							product.addReference(SessionStore.currentContext().getPrincipal().getName());
 							persistenceManager.saveEOProduct(product);
 							count.getAndIncrement();
-							
-							// update user quota
-							UserQuotaManager.getInstance().updateUserInputQuota(SessionStore.currentContext().getPrincipal(), product.getApproximateSize());
+
 						} else {
 							Logger.getLogger(ProductService.class.getName())
 									.info(String.format("Skipping %s. Reason: unable to read metadata", targetPath));
@@ -282,14 +304,17 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		} catch (Exception e) {
 			throw new IOException(e);
 		}
+		// update user quota
+		UserQuotaManager.getInstance().updateUserInputQuota(principal);
 
 		if (skipped.get() != 0) {
 			// throw am exception to force an error response sent to the user
-			QuotaException ex = new QuotaException(String.format("Not all products found were imported because you have reached your input quota! Imported products: %d, Skipped products: %d", count.get(), skipped.get()));
+			QuotaException ex = new QuotaException(String.format(
+					"Not all products found were imported because you have reached your input quota! "
+					+ "Imported products: %d, Skipped products: %d", count.get(), skipped.get()));
 			throw ex;
 		}
-		
-		
+
 		return count.get();
 	}
 

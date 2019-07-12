@@ -74,7 +74,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
                   relativeFolder, description, SessionStore.currentContext().getPrincipal());
         
         // Update user processing quota
-        UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal(), 0);
+        UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
     }
 
     @Override
@@ -146,8 +146,8 @@ public class FileStorageService implements StorageService<MultipartFile> {
         }
         
         try {
-			// update user's quota
-			UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal(), 0);
+			// update user's processing quota
+			UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
 		} catch (QuotaException e) {
 			throw new IOException(e);
 		}

@@ -30,7 +30,11 @@ import ro.cs.tao.component.Variable;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.eodata.enums.ProductStatus;
+import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.quota.QuotaException;
+import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -226,12 +230,38 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             for (Map.Entry<String, List<String>> entry : groups.entrySet()) {
                 names = entry.getValue();
                 prods = getPersistenceManager().getProductsByNames(names.toArray(new String[0]));
+                long addedQuota = 0;
                 if (prods != null && prods.size() > 0) {
+                	// check if, by adding the selected products, the quota will not be reached
+                    for (EOProduct p: prods)
+                    {
+                    	if (p.getRefs().contains(currentUser.getName()) || 
+                    		(p.getProductStatus() != ProductStatus.DOWNLOADED && p.getProductStatus() != ProductStatus.DOWNLOADING)) {
+                    		// product already attached to the user or not yet downloaded.
+                    		continue;
+                    	}
+                    	
+                    	addedQuota += p.getApproximateSize();
+                    	if (!UserQuotaManager.getInstance().checkUserInputQuota(currentUser, addedQuota)) 
+                    	{
+                    		// by adding this product to the user the quota will be reached
+                    		throw new QuotaException("Cannot create query because you have reached your input quota! "
+                    				+ "Please remove some of your products to continue.");
+                    	}
+                    	
+                    	// attach the product to the current user
+                    	p.addReference(currentUser.getName());
+                    	getPersistenceManager().saveEOProduct(p);
+                    	
+                    }
+                	
                     components.add(service.createForProductNames(names, entry.getKey(), dataSource, null, request.getLabel(), currentUser));
                 }
             }
             return components.size() > 0 ? prepareResult(components) : prepareResult("No component was created", ResponseStatus.FAILED);
         } catch (PersistenceException e) {
+            return handleException(e);
+        } catch (QuotaException e) {
             return handleException(e);
         }
     }
