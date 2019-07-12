@@ -117,6 +117,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         for (EOProduct product : products) {
             if (!existingSet.contains(product.getName())) {
                 product.setProductStatus(ProductStatus.QUERIED);
+                // add the referecnce to the user that performed the operation
+                product.addReference(principal.getName());
                 persistenceManager.saveEOProduct(product);
             }
             nameList.add(product.getName());

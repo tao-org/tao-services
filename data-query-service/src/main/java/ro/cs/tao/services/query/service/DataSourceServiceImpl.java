@@ -117,6 +117,7 @@ public class DataSourceServiceImpl implements DataSourceService {
             final Logger logger = Logger.getLogger(DataSourceService.class.getName());
             for (EOProduct product : products) {
                 product.setProductStatus(ProductStatus.QUERIED);
+                product.addReference(query.getUser());
                 try {
                     persistenceManager.saveEOProduct(product);
                 } catch (PersistenceException e) {
