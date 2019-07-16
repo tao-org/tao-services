@@ -1,4 +1,4 @@
-
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright (C) 2018 CS ROMANIA
   ~
@@ -25,7 +25,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tao-sample-workflows</artifactId>
+    <artifactId>tao-workflow-library</artifactId>
     <name>TAO Sample Workflows</name>
     <packaging>jar</packaging>
 
