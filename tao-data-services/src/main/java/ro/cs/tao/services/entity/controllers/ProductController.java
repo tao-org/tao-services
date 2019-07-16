@@ -16,18 +16,20 @@
 
 package ro.cs.tao.services.entity.controllers;
 
+import java.io.IOException;
+import java.nio.file.Paths;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+
 import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ProductService;
-
-import java.io.IOException;
-import java.nio.file.Paths;
 
 @Controller
 @RequestMapping("/product")
@@ -61,7 +63,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
         }
         try {
             return prepareResult(this.service.importProducts(sourceDir, linkOnly));
-        } catch (IOException e) {
+        } catch (QuotaException | IOException e) {
             return handleException(e);
         }
     }

@@ -46,6 +46,7 @@ import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.StartupBase;
@@ -91,6 +92,7 @@ public class TaoServicesStartup extends StartupBase {
         put("Product plugins", OutputDataHandler.class);
         put("Runtime plugins", RuntimeOptimizer.class);
         put("Orchestrator plugins", TaskSelector.class);
+        put("Quota Manager plugins", QuotaManager.class);
     }};
     @Autowired
     private PersistenceManager persistenceManager;
