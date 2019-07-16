@@ -25,9 +25,10 @@ import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.VectorData;
 import ro.cs.tao.eodata.enums.Visibility;
-import ro.cs.tao.execution.monitor.UserQuotaManager;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.quota.QuotaException;
+import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.SystemSessionContext;
@@ -71,6 +72,9 @@ public class FileStorageService implements StorageService<MultipartFile> {
         storeFile(file, SessionStore.currentContext().getUploadPath(),
                   SessionStore.currentContext().getWorkspace(),
                   relativeFolder, description, SessionStore.currentContext().getPrincipal());
+        
+        // Update user processing quota
+        UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
     }
 
     @Override
@@ -141,8 +145,12 @@ public class FileStorageService implements StorageService<MultipartFile> {
             }
         }
         
-        // update user's quota
-        UserQuotaManager.getInstance().updateUserProcessingQuota();
+        try {
+			// update user's processing quota
+			UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
+		} catch (QuotaException e) {
+			throw new IOException(e);
+		}
     }
 
     @Override

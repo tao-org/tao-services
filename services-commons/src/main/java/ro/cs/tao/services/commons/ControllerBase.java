@@ -25,6 +25,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.quota.QuotaException;
 
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -125,6 +126,11 @@ public abstract class ControllerBase {
             return new ResponseEntity<>(new ServiceResponse<>(vex.getAdditionalInfo(),
                                                               ResponseStatus.FAILED),
                                         HttpStatus.OK);
+        } else if(ex instanceof QuotaException) {
+            return new ResponseEntity<>(new ServiceResponse<>(ex.getMessage(),
+                                                              ResponseStatus.FAILED),
+                                        HttpStatus.OK);
+        	
         } else {
             return new ResponseEntity<>(new ServiceResponse<>(String.format("Failed with error: %s - %s",
                                                                             ex.getClass().getSimpleName(),
