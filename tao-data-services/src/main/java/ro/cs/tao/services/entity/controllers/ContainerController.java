@@ -131,6 +131,9 @@ public class ContainerController extends DataEntityController<Container, String,
             if (name == null) {
                 throw new IllegalArgumentException("[name] cannot be null");
             }
+            if (!name.equals(container.getName())) {
+                container.setName(name);
+            }
             dockerFiles.remove(dockerFile);
             final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
             final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
@@ -162,11 +165,13 @@ public class ContainerController extends DataEntityController<Container, String,
                     }
                 }
             }
+            final String description = request.getDescription();
+            if (description != null && !description.equals(container.getDescription())) {
+                container.setDescription(description);
+            }
             asyncExecute(() -> {
                 try {
-                    service.registerContainer(dockerPath, name,
-                                              request.getDescription() == null ? name : request.getDescription(),
-                                              container, components);
+                    service.registerContainer(dockerPath, container, components);
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
