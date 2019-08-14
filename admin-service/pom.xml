@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>admin-service</artifactId>
-    <name>TAO User Service</name>
+    <name>TAO Administration Service</name>
 
     <dependencies>
         <dependency>
