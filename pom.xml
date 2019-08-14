@@ -28,7 +28,8 @@
         <module>tao-orchestration-services</module>
         <module>tao-web-processing-service</module>
         <module>tao-workflow-library</module>
-        <module>services-startup</module>
+        <module>tao-scheduling-service</module>
+		<module>services-startup</module>
     </modules>
 
     <properties>
