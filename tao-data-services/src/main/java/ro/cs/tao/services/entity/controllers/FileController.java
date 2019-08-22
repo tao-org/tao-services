@@ -18,11 +18,13 @@ package ro.cs.tao.services.entity.controllers;
 
 import com.google.common.net.HttpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,7 +40,10 @@ import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.StorageService;
+import ro.cs.tao.utils.FileUtilities;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
@@ -48,6 +53,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Controller
 @RequestMapping("/files")
@@ -203,16 +210,63 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
+    @RequestMapping(value = "/downloads", method = RequestMethod.GET, produces = { "application/octet-stream", "application/json" } )
+    public void download(@RequestParam("folder") String folder, HttpServletResponse response) {
+        final Path path = Paths.get(SystemVariable.ROOT.value(), folder);
+        if (Files.exists(path) && Files.isDirectory(path)) {
+            try {
+                List<Path> paths = FileUtilities.listTree(path);
+                response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
+                response.setStatus(HttpServletResponse.SC_OK);
+                try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
+                    for (Path p : paths) {
+                        if (Files.isRegularFile(p)) {
+                            String zipPath = path.relativize(p).toString();
+                            ZipEntry entry = new ZipEntry(zipPath);
+                            entry.setSize(Files.size(p));
+                            entry.setTime(System.currentTimeMillis());
+                            zipOutputStream.putNextEntry(entry);
+                            StreamUtils.copy(Files.newInputStream(p), zipOutputStream);
+                            zipOutputStream.closeEntry();
+                        } else {
+                            if (!path.equals(p)) {
+                                String zipPath = path.relativize(p).toString() + File.separator;
+                                ZipEntry entry = new ZipEntry(zipPath);
+                                zipOutputStream.putNextEntry(entry);
+                                zipOutputStream.closeEntry();
+                            }
+                        }
+                    }
+                    zipOutputStream.finish();
+                }
+            } catch (IOException ex) {
+                try {
+                    warn(ex.getMessage());
+                    response.sendError(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+                } catch (IOException e) {
+                    error(e.getMessage());
+                }
+            }
+        } else {
+            try {
+                response.sendError(HttpStatus.BAD_REQUEST.value(), String.format("%s does not exist or it is not a folder", folder));
+            } catch (IOException e) {
+                error(e.getMessage());
+            }
+        }
+    }
+
     @RequestMapping(value = "/download", method = RequestMethod.GET, produces = { "application/octet-stream", "application/json" } )
     public @ResponseBody ResponseEntity<?> download(@RequestParam("fileName") String fileName) {
         ResponseEntity<?> responseEntity;
         try {
             Resource file = loadAsResource(fileName);
-            responseEntity =  ResponseEntity.ok()
-                                .contentLength(file.contentLength())
-                                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename())
-                                .body(file);
+            responseEntity = ResponseEntity.ok()
+                    .contentLength(file.contentLength())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename())
+                    .body(file);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -299,7 +353,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    private Resource loadAsResource(String fileName) throws IOException {
+    private InputStreamResource loadAsResource(String fileName) throws IOException {
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("[fileName] cannot be null or empty");
         }
@@ -307,7 +361,8 @@ public class FileController extends BaseController {
         if (!Files.exists(filePath)) {
             throw new IOException(String.format("File '%s' does not exist", filePath));
         }
-        Resource resource = new UrlResource(filePath.toUri());
+        InputStreamResource resource = new InputStreamResource(Files.newInputStream(filePath));
+        //Resource resource = new UrlResource(filePath.toUri());
         if (resource.exists() || resource.isReadable()) {
             return resource;
         } else {

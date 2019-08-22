@@ -610,7 +610,7 @@ public class WorkflowServiceImpl
         clone = persistenceManager.saveWorkflowDescriptor(clone);
         // key: old id, value: new node
         final Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
-        final List<WorkflowNodeDescriptor> workflowNodeDescriptors = workflow.orderNodes(workflow.getNodes());
+        final List<WorkflowNodeDescriptor> workflowNodeDescriptors = workflow.orderNodes(workflow.getNodes(), null);
         for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
             WorkflowNodeDescriptor clonedNode = node instanceof WorkflowNodeGroupDescriptor ?
                     new WorkflowNodeGroupDescriptor() : new WorkflowNodeDescriptor();

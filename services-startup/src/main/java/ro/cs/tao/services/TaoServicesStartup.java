@@ -47,6 +47,7 @@ import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.quota.QuotaManager;
+import ro.cs.tao.scheduling.ScheduleManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.StartupBase;
@@ -156,6 +157,10 @@ public class TaoServicesStartup extends StartupBase {
                     logger.fine(String.format("Topology monitoring not available (DRMAA session factory set to %s",
                                               ConfigurationManager.getInstance().getValue("tao.drmaa.sessionfactory")));
                 }
+            });
+            backgroundWorker.submit(() -> {
+            	ScheduleManager.start();
+            	logger.fine("Scheduling engine started");
             });
         }
     }
