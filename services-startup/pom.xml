@@ -95,7 +95,19 @@
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-sample-workflows</artifactId>
+            <artifactId>tao-workflow-library</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+		
+		<dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-quota-database</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-scheduling-service</artifactId>
             <version>${project.version}</version>
         </dependency>
 
