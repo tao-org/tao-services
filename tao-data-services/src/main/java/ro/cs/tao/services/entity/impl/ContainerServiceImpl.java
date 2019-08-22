@@ -112,24 +112,22 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public String registerContainer(Path dockerFile, String shortName, String description,
-                                    Container dbContainer, ProcessingComponent[] components) {
+    public String registerContainer(Path dockerFile, Container container, ProcessingComponent[] components) {
         String containerId;
         TopologyManager topologyManager = TopologyManager.getInstance();
-        if (topologyManager.getDockerImage(shortName) == null) {
+        if (topologyManager.getDockerImage(container.getName()) == null) {
             // build Docker image and put it in Docker registry
-            containerId = topologyManager.registerImage(dockerFile, shortName, description);
+            containerId = topologyManager.registerImage(dockerFile, container.getName(), container.getDescription());
             // update database with container and applications information
-            initializeContainer(containerId, shortName, dbContainer.getApplicationPath(),
-                                dbContainer.getApplications());
+            initializeContainer(containerId, container);
         } else {
             // the image is already registered with Docker, and should be also registered in the database
-            Container c = persistenceManager.getContainerByName(shortName);
+            Container c = persistenceManager.getContainerByName(container.getName());
             containerId = c != null ? c.getId() : null;
         }
         // if provided, register the components of this container
         if (containerId != null && components != null) {
-            final List<Application> containerApplications = dbContainer.getApplications();
+            final List<Application> containerApplications = container.getApplications();
             List<Tag> componentTags = this.persistenceManager.getComponentTags();
             if (componentTags == null) {
                 componentTags = new ArrayList<>();
@@ -190,7 +188,7 @@ public class ContainerServiceImpl
                     component.setComponentType(ProcessingComponentType.EXECUTABLE);
                     component.setVisibility(ProcessingComponentVisibility.SYSTEM);
                     component.setOwner(SystemPrincipal.instance().getName());
-                    component.addTags(getOrCreateTag(componentTags, dbContainer.getName()).getText());
+                    component.addTags(getOrCreateTag(componentTags, container.getName()).getText());
                     persistenceManager.saveProcessingComponent(component);
                 } catch (Exception inner) {
                     logger.severe(String.format("Faulty component: %s. Error: %s",
@@ -200,6 +198,27 @@ public class ContainerServiceImpl
             }
         }
         return containerId;
+    }
+
+    @Override
+    public Container initializeContainer(String id, Container webContainer) {
+        if (webContainer == null) {
+            return null;
+        }
+        Container container = persistenceManager.getContainerByName(webContainer.getName());
+        boolean existing = (container != null);
+        if (!existing) {
+            container = webContainer;
+        } else {
+            existing = id.equals(container.getId());
+        }
+        container.setId(id);
+        try {
+            container = existing ? persistenceManager.updateContainer(container) : persistenceManager.saveContainer(container);
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+        }
+        return container;
     }
 
     @Override
