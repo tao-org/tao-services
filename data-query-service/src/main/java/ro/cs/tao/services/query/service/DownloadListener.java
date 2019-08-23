@@ -32,6 +32,26 @@ public class DownloadListener implements ProductStatusListener {
         		return false;
         	}
     	
+        	// check if the product already exists
+        	final EOProduct oldProd = persistenceManager.getEOProduct(product.getId());
+        	if (oldProd != null) {
+        		// if the product is failed or downloading, copy its references but continue with the download
+        		if (oldProd.getProductStatus() == ProductStatus.FAILED || oldProd.getProductStatus() == ProductStatus.DOWNLOADING) {
+        			product.setRefs(oldProd.getRefs());
+        		} else {
+        			// add the current user as reference
+        			product.setRefs(oldProd.getRefs());
+        			// copy the status of the previous product
+        			product.setProductStatus(oldProd.getProductStatus());
+
+        			// update the user's input quota
+                    UserQuotaManager.getInstance().updateUserInputQuota(principal);
+            		// do not allow for the download to start
+        			return false;
+        		}
+        	}
+        	
+        	product.addReference(principal.getName());
         	product.setProductStatus(ProductStatus.DOWNLOADING);
             persistenceManager.saveEOProduct(product);
             // update the user's input quota
@@ -51,6 +71,13 @@ public class DownloadListener implements ProductStatusListener {
     	
     	final Principal principal = SessionStore.currentContext().getPrincipal();
         try {
+        	// re-update the references, in case some other user tried to download this product after 
+        	// the current user started
+        	final EOProduct oldProd = persistenceManager.getEOProduct(product.getId());
+        	if (oldProd != null) {
+        		product.setRefs(oldProd.getRefs());
+        	}
+        	
             product.setProductStatus(ProductStatus.DOWNLOADED);
             // update the product's reference
             product.addReference(principal.getName());
@@ -70,6 +97,7 @@ public class DownloadListener implements ProductStatusListener {
     	final Principal principal = SessionStore.currentContext().getPrincipal();
     	
         try {
+        	product.removeReference(principal.getName());
             product.setProductStatus(ProductStatus.FAILED);
             persistenceManager.saveEOProduct(product);
             // roll back the user's quota
