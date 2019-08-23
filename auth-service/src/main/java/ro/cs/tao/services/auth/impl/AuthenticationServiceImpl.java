@@ -65,7 +65,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             // update user last login date
             persistenceManager.updateUserLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
             try {
-                Path path = Paths.get(ConfigurationManager.getInstance().getValue("product.location")).resolve(username);
+                Path path = Paths.get(ConfigurationManager.getInstance().getValue("workspace.location")).resolve(username);
                 FileUtilities.ensureExists(path);
                 FileUtilities.ensureExists(path.resolve("files"));
             } catch (IOException e) {
