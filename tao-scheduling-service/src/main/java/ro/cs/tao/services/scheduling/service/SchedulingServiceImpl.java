@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import ro.cs.tao.scheduling.AbstractJob;
@@ -18,6 +19,7 @@ import ro.cs.tao.scheduling.ScheduleManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.SchedulingService;
 import ro.cs.tao.services.model.scheduling.SchedulingInfo;
+import ro.cs.tao.services.model.scheduling.SchedulingMode;
 import ro.cs.tao.services.scheduling.job.WorkflowExecutionJob;
 
 @Service("schedulingService")
@@ -42,14 +44,15 @@ public class SchedulingServiceImpl implements SchedulingService {
 
 	@Override
 	public String addExecutionSchedule(String name, LocalDateTime startTime, int repeatInterval, long workflowId,
-			Map<String, Map<String, String>> inputs, Map<String, Map<String, String>> additional) {
+			Map<String, Map<String, String>> inputs, final SchedulingMode mode) {
 		
 		final Map<String, Object> parameters = new HashMap<>();
 		parameters.put(WorkflowExecutionJob.WORKFLOW_ID_KEY, workflowId);
 		parameters.put(WorkflowExecutionJob.DESCRIPTION_KEY, name);
 		parameters.put(WorkflowExecutionJob.INPUTS_KEY, inputs);
-		parameters.put(WorkflowExecutionJob.ADDITIONAL_KEY, additional);
+		parameters.put(WorkflowExecutionJob.EXECUTION_MODE_KEY, mode);
 		parameters.put(AbstractJob.FRIENDLY_NAME_KEY, name);
+		parameters.put(AbstractJob.USER_AUTHENTICATION_KEY, SecurityContextHolder.getContext().getAuthentication());
 		
 		WorkflowExecutionJob job = new WorkflowExecutionJob();
 
@@ -61,14 +64,15 @@ public class SchedulingServiceImpl implements SchedulingService {
 
 	@Override
 	public String updateExecutionSchedule(String id, String name, LocalDateTime startTime, int repeatInterval, long workflowId,
-			Map<String, Map<String, String>> inputs, Map<String, Map<String, String>> additional) {
+			Map<String, Map<String, String>> inputs, final SchedulingMode mode) {
 		
 		final Map<String, Object> parameters = new HashMap<>();
 		parameters.put(WorkflowExecutionJob.WORKFLOW_ID_KEY, workflowId);
 		parameters.put(WorkflowExecutionJob.DESCRIPTION_KEY, name);
 		parameters.put(WorkflowExecutionJob.INPUTS_KEY, inputs);
-		parameters.put(WorkflowExecutionJob.ADDITIONAL_KEY, additional);
+		parameters.put(WorkflowExecutionJob.EXECUTION_MODE_KEY, mode);
 		parameters.put(AbstractJob.FRIENDLY_NAME_KEY, name);
+		parameters.put(AbstractJob.USER_AUTHENTICATION_KEY, SecurityContextHolder.getContext().getAuthentication());
 		
 		WorkflowExecutionJob job = new WorkflowExecutionJob();
 
