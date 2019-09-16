@@ -56,6 +56,7 @@ public class SchedulingServiceImpl implements SchedulingService {
 				info.setFriendlyName(jobDataMap.getString(AbstractJob.FRIENDLY_NAME_KEY));
 				info.setMode((SchedulingMode)jobDataMap.get(WorkflowExecutionJob.EXECUTION_MODE_KEY));
 				info.setState(triggerState == null ? TriggerState.NONE.name() : triggerState.name());
+				info.setParameters((Map<String, Map<String, String>>)jobDataMap.get(WorkflowExecutionJob.INPUTS_KEY));
 				
 				// build a job descriptor from the trigger
 				final JobDescriptor descriptor = JobDescriptor.buildDescriptor(trigger);
