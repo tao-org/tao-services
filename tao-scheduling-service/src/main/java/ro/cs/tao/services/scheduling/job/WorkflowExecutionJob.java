@@ -6,6 +6,7 @@ package ro.cs.tao.services.scheduling.job;
 import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -94,11 +95,21 @@ public class WorkflowExecutionJob extends AbstractJob {
         SecurityContextHolder.setContext(securityContext);
         
 		final JobDataMap jobParams = jobDetail.getJobDataMap();
+		final List<Long> jobIds;
+        if (!jobParams.containsKey(JOB_ID_KEY)) {
+        	// initialise an empty list because this is the first time the job is executed
+        	jobIds = new ArrayList<Long>();
+        } else {
+        	// get the current list
+        	jobIds = (List<Long>) jobParams.get(JOB_ID_KEY); 
+        }
+        
 		final Map<String, Map<String, String>> inputs;
 		// check if this job has already a TAO job id associated
-		if (jobParams.containsKey(JOB_ID_KEY)) {
+		if (!jobIds.isEmpty()) {
 			// a job was already started. Check if it is still running
-			final long jobId = jobParams.getLongValue(JOB_ID_KEY);
+			// get last job id.
+ 			final long jobId = jobIds.get(jobIds.size() - 1);
 			final ExecutionJob taoJob = persistenceManager.getJobById(jobId);
 			if (taoJob != null && taoJob.getExecutionStatus().value() < ExecutionStatus.DONE.value()) {
 				// the job is not done. do nothing
@@ -131,15 +142,14 @@ public class WorkflowExecutionJob extends AbstractJob {
 		final String description = dataMap.getString(DESCRIPTION_KEY);
 		
 		
-		
-		
 		final long jobId = Orchestrator.getInstance().startWorkflow(context, workflowId, description, new HashMap<String, Map<String,String>>(inputs),
                                                         new DelegatingSecurityContextExecutorService(
                                                         		Executors.newFixedThreadPool(2), 
                                                         		SecurityContextHolder.getContext()));
 		
 		// save the job id to the job details map
-		jobDetail.getJobDataMap().put(JOB_ID_KEY, jobId);
+		jobIds.add(jobId);
+		jobDetail.getJobDataMap().put(JOB_ID_KEY, jobIds);
 		logger.info("Started job " + jobId);
 	}
 
