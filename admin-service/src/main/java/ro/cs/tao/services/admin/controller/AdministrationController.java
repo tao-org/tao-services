@@ -18,9 +18,12 @@ package ro.cs.tao.services.admin.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.quota.QuotaManager;
+import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.services.admin.mail.Constants;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
@@ -114,6 +117,15 @@ public class AdministrationController extends BaseController {
         try {
             final User userInfo = adminService.updateUserInfo(updatedUserInfo);
             if (userInfo != null) {
+            	if (userInfo.getInputQuota() != -1) {
+            		// compute user quota
+            		UserQuotaManager.getInstance().updateUserInputQuota(SecurityContextHolder.getContext().getAuthentication());
+            	}
+            	if (userInfo.getProcessingQuota() != -1) {
+            		// compute user quota
+            		UserQuotaManager.getInstance().updateUserProcessingQuota(SecurityContextHolder.getContext().getAuthentication());
+            	}
+            	
                 return prepareResult(userInfo);
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
