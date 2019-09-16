@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.scheduling.AbstractJob;
 import ro.cs.tao.scheduling.JobData;
@@ -24,6 +25,7 @@ import ro.cs.tao.scheduling.JobDescriptor;
 import ro.cs.tao.scheduling.ScheduleManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.SchedulingService;
+import ro.cs.tao.services.model.scheduling.JobInfo;
 import ro.cs.tao.services.model.scheduling.SchedulingInfo;
 import ro.cs.tao.services.model.scheduling.SchedulingMode;
 import ro.cs.tao.services.scheduling.job.WorkflowExecutionJob;
@@ -39,11 +41,11 @@ public class SchedulingServiceImpl implements SchedulingService {
 	public List<SchedulingInfo> listUserSchedules() {
 		final Principal principal = SessionStore.currentContext().getPrincipal();
 		final List<SchedulingInfo> list = new LinkedList<>();
-		final List<JobData> jobs = ScheduleManager.getUserSchedules(principal.getName());
-		for (JobData job : jobs) {
-			final JobDetail jobDetail = job.getJobDetail();
-			final Trigger trigger = job.getTrigger();
-			final TriggerState triggerState = job.getTriggerState();
+		final List<JobData> jobsData = ScheduleManager.getUserSchedules(principal.getName());
+		for (JobData jobData : jobsData) {
+			final JobDetail jobDetail = jobData.getJobDetail();
+			final Trigger trigger = jobData.getTrigger();
+			final TriggerState triggerState = jobData.getTriggerState();
 			final JobDataMap jobDataMap = jobDetail.getJobDataMap();
 			
 			final SchedulingInfo info = new SchedulingInfo();
@@ -65,8 +67,23 @@ public class SchedulingServiceImpl implements SchedulingService {
 			final WorkflowDescriptor workflowDescriptor = persistenceManager.getWorkflowDescriptor(workflowId);
 			info.setWorkflowName(workflowDescriptor.getName());
 			
-			// set the list of job ids associated with the schedule
-			info.setJobIds((List<Long>)jobDataMap.get(WorkflowExecutionJob.JOB_ID_KEY));
+			final List<Long> jobIds =(List<Long>)jobDataMap.get(WorkflowExecutionJob.JOB_ID_KEY);
+			final List<JobInfo> jobs = new LinkedList<JobInfo>();
+			for (Long jobId : jobIds) {
+				final ExecutionJob job = persistenceManager.getJobById(jobId);
+				final JobInfo jobInfo = new JobInfo();
+
+				jobInfo.setJobId(jobId);
+				jobInfo.setName(job.getName());
+				jobInfo.setStartTime(job.getStartTime());
+				jobInfo.setEndTime(job.getEndTime());
+				jobInfo.setStatus(job.getExecutionStatus());
+
+				jobs.add(jobInfo);
+			}
+			
+			// set the list of jobs associated with the schedule
+			info.setJobs(jobs);
 			
 			list.add(info);
 		}
