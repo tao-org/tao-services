@@ -39,55 +39,63 @@ public class SchedulingServiceImpl implements SchedulingService {
     
 	@Override
 	public List<SchedulingInfo> listUserSchedules() {
-		final Principal principal = SessionStore.currentContext().getPrincipal();
-		final List<SchedulingInfo> list = new LinkedList<>();
-		final List<JobData> jobsData = ScheduleManager.getUserSchedules(principal.getName());
-		for (JobData jobData : jobsData) {
-			final JobDetail jobDetail = jobData.getJobDetail();
-			final Trigger trigger = jobData.getTrigger();
-			final TriggerState triggerState = jobData.getTriggerState();
-			final JobDataMap jobDataMap = jobDetail.getJobDataMap();
-			
-			final SchedulingInfo info = new SchedulingInfo();
-			
-			// set the data
-			info.setId(jobDetail.getKey().getName());
-			info.setFriendlyName(jobDataMap.getString(AbstractJob.FRIENDLY_NAME_KEY));
-			info.setMode((SchedulingMode)jobDataMap.get(WorkflowExecutionJob.EXECUTION_MODE_KEY));
-			info.setState(triggerState == null ? TriggerState.NONE.name() : triggerState.name());
-			
-			// build a job descriptor from the trigger
-			final JobDescriptor descriptor = JobDescriptor.buildDescriptor(trigger);
-			info.setRepeatInterval(descriptor.getRepeatInterval());
-			info.setStartTime(descriptor.getFireTime());
-			
-			// set the workflow related data
-			final long workflowId = jobDataMap.getLong(WorkflowExecutionJob.WORKFLOW_ID_KEY); 
-			info.setWorkflowId(workflowId);
-			final WorkflowDescriptor workflowDescriptor = persistenceManager.getWorkflowDescriptor(workflowId);
-			info.setWorkflowName(workflowDescriptor.getName());
-			
-			final List<Long> jobIds =(List<Long>)jobDataMap.get(WorkflowExecutionJob.JOB_ID_KEY);
-			final List<JobInfo> jobs = new LinkedList<JobInfo>();
-			for (Long jobId : jobIds) {
-				final ExecutionJob job = persistenceManager.getJobById(jobId);
-				final JobInfo jobInfo = new JobInfo();
+		try {
+			final Principal principal = SessionStore.currentContext().getPrincipal();
+			final List<SchedulingInfo> list = new LinkedList<>();
+			final List<JobData> jobsData = ScheduleManager.getUserSchedules(principal.getName());
+			for (JobData jobData : jobsData) {
+				final JobDetail jobDetail = jobData.getJobDetail();
+				final Trigger trigger = jobData.getTrigger();
+				final TriggerState triggerState = jobData.getTriggerState();
+				final JobDataMap jobDataMap = jobDetail.getJobDataMap();
+				
+				final SchedulingInfo info = new SchedulingInfo();
+				
+				// set the data
+				info.setId(jobDetail.getKey().getName());
+				info.setFriendlyName(jobDataMap.getString(AbstractJob.FRIENDLY_NAME_KEY));
+				info.setMode((SchedulingMode)jobDataMap.get(WorkflowExecutionJob.EXECUTION_MODE_KEY));
+				info.setState(triggerState == null ? TriggerState.NONE.name() : triggerState.name());
+				
+				// build a job descriptor from the trigger
+				final JobDescriptor descriptor = JobDescriptor.buildDescriptor(trigger);
+				info.setRepeatInterval(descriptor.getRepeatInterval());
+				info.setStartTime(descriptor.getFireTime());
+				
+				// set the workflow related data
+				final long workflowId = jobDataMap.getLong(WorkflowExecutionJob.WORKFLOW_ID_KEY); 
+				info.setWorkflowId(workflowId);
+				final WorkflowDescriptor workflowDescriptor = persistenceManager.getWorkflowDescriptor(workflowId);
+				info.setWorkflowName(workflowDescriptor.getName());
+				
+				final List<Long> jobIds =(List<Long>)jobDataMap.get(WorkflowExecutionJob.JOB_ID_KEY);
+				final List<JobInfo> jobs = new LinkedList<JobInfo>();
+				if (jobIds != null) {
+					for (Long jobId : jobIds) {
+						final ExecutionJob job = persistenceManager.getJobById(jobId);
+						final JobInfo jobInfo = new JobInfo();
 
-				jobInfo.setJobId(jobId);
-				jobInfo.setName(job.getName());
-				jobInfo.setStartTime(job.getStartTime());
-				jobInfo.setEndTime(job.getEndTime());
-				jobInfo.setStatus(job.getExecutionStatus());
+						jobInfo.setJobId(jobId);
+						jobInfo.setName(job.getName());
+						jobInfo.setStartTime(job.getStartTime());
+						jobInfo.setEndTime(job.getEndTime());
+						jobInfo.setStatus(job.getExecutionStatus());
 
-				jobs.add(jobInfo);
+						jobs.add(jobInfo);
+					}
+				}
+				
+				// set the list of jobs associated with the schedule
+				info.setJobs(jobs);
+				
+				list.add(info);
 			}
-			
-			// set the list of jobs associated with the schedule
-			info.setJobs(jobs);
-			
-			list.add(info);
+			return list;
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
 		}
-		return list;
+
 	}
 
 	@Override
