@@ -44,21 +44,21 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
             this.previousMessage = message;
         }
         String taskName;
-        if (message instanceof TaskStartMessage) {
-            taskName = ((TaskStartMessage) message).getTaskName();
+        if (message instanceof ActivityStartMessage) {
+            taskName = ((ActivityStartMessage) message).getTaskName();
             tasksInProgress.put(taskName, new TaskProgress(taskName, 0));
-        } else if (message instanceof TaskEndMessage) {
-            tasksInProgress.remove(((TaskEndMessage) message).getTaskName());
-        } else if (message instanceof SubTaskStartMessage) {
-            SubTaskStartMessage casted = (SubTaskStartMessage) message;
+        } else if (message instanceof ActivityEndMessage) {
+            tasksInProgress.remove(((ActivityEndMessage) message).getTaskName());
+        } else if (message instanceof SubActivityStartMessage) {
+            SubActivityStartMessage casted = (SubActivityStartMessage) message;
             taskName = casted.getTaskName();
             if (tasksInProgress.containsKey(taskName)) {
                 double mainProgress = tasksInProgress.get(taskName).getProgress();
                 tasksInProgress.put(taskName,
                                     new TaskProgress(taskName, mainProgress, casted.getSubTaskName(), 0.0));
             }
-        } else if (message instanceof SubTaskEndMessage) {
-            SubTaskEndMessage casted = (SubTaskEndMessage) message;
+        } else if (message instanceof SubActivityEndMessage) {
+            SubActivityEndMessage casted = (SubActivityEndMessage) message;
             taskName = casted.getTaskName();
             final TaskProgress taskProgress = tasksInProgress.get(taskName);
             if (taskProgress != null) {
@@ -66,14 +66,14 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
                 tasksInProgress.put(taskName,
                                     new TaskProgress(taskName, mainProgress, casted.getSubTaskName(), 100.0));
             }
-        } else if (message instanceof SubTaskProgressMessage) {
-            SubTaskProgressMessage casted = (SubTaskProgressMessage) message;
+        } else if (message instanceof SubActivityProgressMessage) {
+            SubActivityProgressMessage casted = (SubActivityProgressMessage) message;
             taskName = casted.getTaskName();
             final String subTask = casted.getSubTaskName();
             tasksInProgress.put(taskName,
                                 new TaskProgress(taskName, casted.getTaskProgress(), subTask, casted.getSubTaskProgress()));
-        } else if (message instanceof TaskProgressMessage) {
-            TaskProgressMessage casted = (TaskProgressMessage) message;
+        } else if (message instanceof ActivityProgressMessage) {
+            ActivityProgressMessage casted = (ActivityProgressMessage) message;
             taskName = casted.getTaskName();
             tasksInProgress.put(taskName, new TaskProgress(taskName, casted.getProgress()));
         }
