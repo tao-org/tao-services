@@ -26,3 +26,4 @@ ro.cs.tao.services.workflow.library.GECSigma0WorkflowBuilder
 ro.cs.tao.services.workflow.library.GTCSigma0WorkflowBuilder
 ro.cs.tao.services.workflow.library.BackscatterWorkflow
 ro.cs.tao.services.workflow.library.CoherenceWorkflow
+ro.cs.tao.services.workflow.library.MundiSnapOtbWorkflowBuilder

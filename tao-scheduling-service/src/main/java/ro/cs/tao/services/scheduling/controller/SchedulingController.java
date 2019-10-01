@@ -52,7 +52,7 @@ public class SchedulingController extends BaseController {
         			request.getRepeatInterval(), 
         			request.getWorkflowId(), 
         			request.getParameters(),
-        			request.getAdditional());
+        			request.getMode());
         	
             response = prepareResult("Successfully started schedule with id: " + id, ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
@@ -110,7 +110,7 @@ public class SchedulingController extends BaseController {
         			request.getRepeatInterval(), 
         			request.getWorkflowId(), 
         			request.getParameters(),
-        			request.getAdditional());
+        			request.getMode());
         	
             response = prepareResult("Successfully updated schedule with id: " + id, ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {

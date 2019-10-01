@@ -50,6 +50,6 @@ public class OtbTwoSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
         WorkflowNodeDescriptor node4 = addNode(workflow,
                                                "OTB Concatenate", "ConcatenateImages", ComponentType.PROCESSING, null,
                                                node2, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
-        addLink(workflow, node3, node4);
+        addLink(node3, node4);
     }
 }

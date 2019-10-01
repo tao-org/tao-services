@@ -3,6 +3,8 @@ package ro.cs.tao.services.scheduling.beans;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import ro.cs.tao.services.model.scheduling.SchedulingMode;
+
 /**
  * Data structure for schedule creation
  * 
@@ -15,8 +17,8 @@ public class SchedulingRequest {
     private int repeatInterval;
     private LocalDateTime startTime;
 	private long workflowId;
+	private SchedulingMode mode;
     private Map<String, Map<String, String>> parameters;
-    private Map<String, Map<String, String>> additional;
 
     public String getId() {	return id; } 
 	public void setId(String id) { this.id = id; }
@@ -35,7 +37,7 @@ public class SchedulingRequest {
 
     public Map<String, Map<String, String>> getParameters() { return parameters; }
     public void setParameters(Map<String, Map<String, String>> parameters) { this.parameters = parameters; }
-
-    public Map<String, Map<String, String>> getAdditional() { return additional; }
-	public void setAdditional(Map<String, Map<String, String>> additional) { this.additional = additional; }
+	
+    public SchedulingMode getMode() { return mode; }
+	public void setMode(SchedulingMode mode) { this.mode = mode; }
 }

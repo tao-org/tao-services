@@ -93,17 +93,17 @@ public class BackscatterWorkflow extends WorkflowBuilderBase {
         WorkflowNodeDescriptor geocoding1 = addNode(workflow,
                                                     "Back-Geocoding 1", "snap-back-geocoding", ComponentType.PROCESSING, customValues,
                                                     splitNode11, ComponentType.PROCESSING, Direction.RIGHT);
-        addLink(workflow, splitNode21, geocoding1);
+        addLink(splitNode21, geocoding1);
         customValues.put("t", "back_geocoding_2.dim");
         WorkflowNodeDescriptor geocoding2 = addNode(workflow,
                                                     "Back-Geocoding 2", "snap-back-geocoding", ComponentType.PROCESSING, customValues,
                                                     splitNode12, ComponentType.PROCESSING, Direction.RIGHT);
-        addLink(workflow, splitNode22, geocoding2);
+        addLink(splitNode22, geocoding2);
         customValues.put("t", "back_geocoding_3.dim");
         WorkflowNodeDescriptor geocoding3 = addNode(workflow,
                                                     "Back-Geocoding 3", "snap-back-geocoding", ComponentType.PROCESSING, customValues,
                                                     splitNode13, ComponentType.PROCESSING, Direction.RIGHT);
-        addLink(workflow, splitNode23, geocoding3);
+        addLink(splitNode23, geocoding3);
         customValues.clear();
         customValues.put("selectedPolarisations", "VH");
         customValues.put("formatName", "BEAM-DIMAP");
@@ -123,8 +123,8 @@ public class BackscatterWorkflow extends WorkflowBuilderBase {
         WorkflowNodeDescriptor backscatterRaw = addNode(workflow,
                                                         "TOPSAR-Merge", "snap-topsar-merge", ComponentType.PROCESSING, customValues,
                                                         deburst1, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
-        addLink(workflow, deburst2, backscatterRaw);
-        addLink(workflow, deburst3, backscatterRaw);
+        addLink(deburst2, backscatterRaw);
+        addLink(deburst3, backscatterRaw);
         customValues.clear();
         customValues.put("nRgLooks", "4");
         customValues.put("nAzLooks", "1");

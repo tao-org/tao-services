@@ -80,7 +80,7 @@ public class DBThreeSnapBranchesOtbWorkflowBuilder extends WorkflowBuilderBase {
         WorkflowNodeDescriptor node8 = addNode(workflow,
                                                "OTB Concatenate", "ConcatenateImages", ComponentType.PROCESSING, null,
                                                node6, ComponentType.PROCESSING, Direction.RIGHT);
-        addLink(workflow, node5, node8);
-        addLink(workflow, node7, node8);
+        addLink(node5, node8);
+        addLink(node7, node8);
     }
 }
