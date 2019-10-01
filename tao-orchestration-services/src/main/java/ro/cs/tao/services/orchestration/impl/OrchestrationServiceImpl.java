@@ -34,6 +34,7 @@ import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WorkflowService;
@@ -57,7 +58,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public long startWorkflow(long workflowId, String description, Map<String, Map<String, String>> inputs) throws ExecutionException {
-        return Orchestrator.getInstance().startWorkflow(workflowId, description, inputs,
+        return Orchestrator.getInstance().startWorkflow(SessionStore.currentContext(), workflowId, description, inputs,
                                                         new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
                                                                                                      SecurityContextHolder.getContext()));
     }

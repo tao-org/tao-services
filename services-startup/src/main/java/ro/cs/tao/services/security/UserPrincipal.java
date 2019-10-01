@@ -17,11 +17,16 @@
 package ro.cs.tao.services.security;
 
 import javax.security.auth.Subject;
+
+import java.io.Serializable;
 import java.security.Principal;
 
-public class UserPrincipal implements Principal {
+public class UserPrincipal implements Principal, Serializable {
 
-    private final String userName;
+    /** Generated serial ID. */
+	private static final long serialVersionUID = -138887607776483992L;
+	
+	private final String userName;
 
     public UserPrincipal(String userName) {
         this.userName = userName;
