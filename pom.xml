@@ -37,6 +37,13 @@
         <taoReleasesUrl>${project.deploy.root.path}/tao-services</taoReleasesUrl>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>Nexus</id>
+            <url>http://nexus.senbox.net/nexus/content/repositories/public/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <!-- TAO domain model -->
         <dependency>
