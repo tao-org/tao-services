@@ -23,7 +23,7 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.ProductStatusListener;
 import ro.cs.tao.datasource.beans.Query;
-import ro.cs.tao.datasource.param.ParameterName;
+import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
@@ -32,12 +32,10 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
-import ro.cs.tao.services.model.datasource.ParameterDescriptor;
 import ro.cs.tao.utils.async.Parallel;
 
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -74,20 +72,14 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
-    public List<ParameterDescriptor> getSupportedParameters(String sensorName, String dataSourceName) {
-        List<ParameterDescriptor> parameters = null;
-        DataSource dataSource = DataSourceManager.getInstance().get(sensorName, dataSourceName);
+    public List<DataSourceParameter> getSupportedParameters(String sensorName, String dataSourceName) {
+        List<DataSourceParameter> parameters = null;
+        DataSource<?> dataSource = DataSourceManager.getInstance().get(sensorName, dataSourceName);
         if (dataSource != null) {
-            Map<String, Map<ParameterName, ro.cs.tao.datasource.param.DataSourceParameter>> map = dataSource.getSupportedParameters();
-            Map<ParameterName, ro.cs.tao.datasource.param.DataSourceParameter> parameterDescriptorMap = map.get(sensorName);
+            Map<String, Map<String, ro.cs.tao.datasource.param.DataSourceParameter>> map = dataSource.getSupportedParameters();
+            Map<String, ro.cs.tao.datasource.param.DataSourceParameter> parameterDescriptorMap = map.get(sensorName);
             if (parameterDescriptorMap != null) {
-                parameters = parameterDescriptorMap.entrySet().stream()
-                        .map(e -> new ParameterDescriptor(e.getKey().getSystemName(), e.getKey().getLabel(),
-                                                          e.getKey().getDescription(),
-                                                          e.getValue().getType(),
-                                                          e.getValue().getDefaultValue(), e.getValue().isRequired(),
-                                                          e.getValue().getValueSet()))
-                        .collect(Collectors.toList());
+                parameters = new ArrayList<>(parameterDescriptorMap.values());
             }
         }
         return parameters;

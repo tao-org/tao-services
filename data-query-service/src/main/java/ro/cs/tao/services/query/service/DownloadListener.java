@@ -36,7 +36,7 @@ public class DownloadListener implements ProductStatusListener {
         	final EOProduct oldProd = persistenceManager.getEOProduct(product.getId());
         	if (oldProd != null) {
         		// if the product is failed or downloading, copy its references but continue with the download
-        		if (oldProd.getProductStatus() == ProductStatus.FAILED || oldProd.getProductStatus() == ProductStatus.DOWNLOADING) {
+        		if (oldProd.getProductStatus() == ProductStatus.FAILED || oldProd.getProductStatus() == ProductStatus.QUERIED) {
         			product.setRefs(oldProd.getRefs());
         		} else {
         			// add the current user as reference
