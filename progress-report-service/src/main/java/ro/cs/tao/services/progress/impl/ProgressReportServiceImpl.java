@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 public class ProgressReportServiceImpl extends Notifiable implements ProgressReportService {
     private static final Pattern TOPIC_PATTERN = Pattern.compile("(.+)progress");
     private static final Map<String, TaskProgress> tasksInProgress = Collections.synchronizedMap(new LinkedHashMap<>());
-    private Message previousMessage;
+    private String previousMessage;
 
     public ProgressReportServiceImpl() {
         Messaging.subscribe(this, TOPIC_PATTERN);
@@ -39,9 +39,9 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
     @Override
     protected void onMessageReceived(Message message) {
         final String contents = message.getItem(Message.PAYLOAD_KEY);
-        if (!message.equals(this.previousMessage)) {
+        if (!Objects.equals(contents, this.previousMessage)) {
             logger.fine(contents);
-            this.previousMessage = message;
+            this.previousMessage = contents;
         }
         String taskName;
         if (message instanceof ActivityStartMessage) {

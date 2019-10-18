@@ -35,7 +35,6 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
-import ro.cs.tao.services.model.datasource.ParameterDescriptor;
 import ro.cs.tao.services.query.beans.FetchRequest;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
@@ -95,21 +94,15 @@ public class DataSourceController extends BaseController {
     @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getSupportedParameters(@PathVariable("name") String sensorName,
                                                                      @PathVariable("source") String dataSourceClassName) {
-        List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
+        List<DataSourceParameter> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
         if (params == null) {
             params = new ArrayList<>();
         }
         int count = params.size();
-        List<DataSourceParameter> parameters = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            ParameterDescriptor current = params.get(i);
-            DataSourceParameter dsp = new DataSourceParameter(current.getName(), current.getType(), current.getLabel(),
-                                                              current.getDefaultValue(), current.isRequired(),
-                                                              current.getValueSet());
-            dsp.setOrder(i + 1);
-            parameters.add(dsp);
+            params.get(i).setOrder(i + 1);
         }
-        return prepareResult(parameters);
+        return prepareResult(params);
     }
 
     @RequestMapping(value = "/footprint/sentinel2", method = RequestMethod.GET, produces = "application/json")
@@ -154,7 +147,7 @@ public class DataSourceController extends BaseController {
 
     @RequestMapping(value = "/count", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doCount(@RequestBody Query query) {
-        List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(query.getSensor(),
+        List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
         if (params == null || params.isEmpty()) {
             return prepareResult(String.format("No data source named [%s] available for [%s]",
@@ -207,7 +200,7 @@ public class DataSourceController extends BaseController {
 
     @RequestMapping(value = "/exec", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doQuery(@RequestBody Query query) {
-        List<ParameterDescriptor> params = dataSourceService.getSupportedParameters(query.getSensor(),
+        List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
         if (params == null || params.isEmpty()) {
             return prepareResult(String.format("No data source named [%s] available for [%s]",
