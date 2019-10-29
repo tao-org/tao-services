@@ -16,10 +16,7 @@
 package ro.cs.tao.services.progress.impl;
 
 import org.springframework.stereotype.Service;
-import ro.cs.tao.messaging.Message;
-import ro.cs.tao.messaging.Messaging;
-import ro.cs.tao.messaging.Notifiable;
-import ro.cs.tao.messaging.TaskProgress;
+import ro.cs.tao.messaging.*;
 import ro.cs.tao.messaging.progress.*;
 import ro.cs.tao.services.interfaces.ProgressReportService;
 
@@ -28,7 +25,7 @@ import java.util.regex.Pattern;
 
 @Service("progressReportService")
 public class ProgressReportServiceImpl extends Notifiable implements ProgressReportService {
-    private static final Pattern TOPIC_PATTERN = Pattern.compile("(.+)progress");
+    private static final Pattern TOPIC_PATTERN = Topic.getCategoryPattern(Topic.PROGRESS);
     private static final Map<String, TaskProgress> tasksInProgress = Collections.synchronizedMap(new LinkedHashMap<>());
     private String previousMessage;
 

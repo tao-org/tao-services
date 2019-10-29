@@ -34,7 +34,7 @@ import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
-import ro.cs.tao.messaging.Topics;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
@@ -206,12 +206,12 @@ public class ContainerController extends DataEntityController<Container, String,
         if (ex != null) {
             msg = "Docker image registration failed. Reason: " + ex.getMessage();
             message.setData(msg);
-            topic = Topics.ERROR;
+            topic = Topic.ERROR.value();
             Logger.getLogger(getClass().getName()).severe(msg);
         } else {
             msg = "Docker image registration completed";
             message.setData(msg);
-            topic = Topics.INFORMATION;
+            topic = Topic.INFORMATION.value();
             Logger.getLogger(getClass().getName()).info(msg);
         }
         Messaging.send(SessionStore.currentContext().getPrincipal(), topic, message);
