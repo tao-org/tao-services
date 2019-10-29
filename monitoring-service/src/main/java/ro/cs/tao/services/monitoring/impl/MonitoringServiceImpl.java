@@ -23,7 +23,7 @@ import ro.cs.tao.execution.monitor.OSRuntimeInfo;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.NotifiableComponent;
-import ro.cs.tao.messaging.Topics;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.commons.MessageConverter;
@@ -56,7 +56,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
 
     @Override
     protected String[] topics() {
-        return new String[] { Topics.INFORMATION, Topics.WARNING, Topics.ERROR, Topics.PROGRESS };
+        return new String[] { Topic.INFORMATION.value(), Topic.WARNING.value(), Topic.ERROR.value(), Topic.PROGRESS.value() };
     }
 
     @Override
@@ -119,23 +119,17 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
         List<Message> unread = persistenceManager.getUnreadMessages(userName);
         final MessageConverter converter = new MessageConverter();
         if (unread != null) {
-            messages.put(Topics.INFORMATION, new ArrayList<>());
-            messages.put(Topics.ERROR, new ArrayList<>());
-            messages.put(Topics.EXECUTION, new ArrayList<>());
+            messages.put(Topic.INFORMATION.value(), new ArrayList<>());
+            messages.put(Topic.ERROR.value(), new ArrayList<>());
+            messages.put(Topic.EXECUTION.value(), new ArrayList<>());
             unread.stream().map(converter::to).forEach(n -> {
-                switch (n.getTopic()) {
-                    case Topics.WARNING:
-                    case Topics.ERROR:
-                        messages.get(Topics.ERROR).add(n);
-                        break;
-                    case Topics.EXECUTION:
-                        messages.get(Topics.EXECUTION).add(n);
-                        break;
-                    case Topics.INFORMATION:
-                    case Topics.PROGRESS:
-                    default:
-                        messages.get(Topics.INFORMATION).add(n);
-                        break;
+                final String topic = n.getTopic();
+                if (Topic.WARNING.isParentOf(topic) || Topic.ERROR.isParentOf(topic)) {
+                    messages.get(Topic.ERROR.value()).add(n);
+                } else if (Topic.EXECUTION.isParentOf(topic)) {
+                    messages.get(Topic.EXECUTION.value()).add(n);
+                } else { //if (topic.endsWith(Topic.INFORMATION.value()) || topic.endsWith(Topic.PROGRESS.value())) {
+                    messages.get(Topic.INFORMATION.value()).add(n);
                 }
             });
         }
