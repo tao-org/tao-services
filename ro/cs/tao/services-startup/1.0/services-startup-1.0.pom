@@ -117,6 +117,12 @@
         </dependency>
 
         <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-datasources-asf</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-jul</artifactId>
             <version>2.11.1</version>
