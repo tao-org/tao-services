@@ -70,7 +70,7 @@
 		<dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
-            <version>${spring.version}</version>
+            <version>5.2.0.RELEASE</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
