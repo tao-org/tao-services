@@ -83,7 +83,7 @@ public class QueryController extends BaseController {
                                                             @RequestParam("pageSize") int size,
                                                             @RequestParam("sort") String sortDirection) {
         Sort.Direction sort = Enum.valueOf(Sort.Direction.class, sortDirection);
-        PageRequest page = PageRequest.of(pageNumber, size, new Sort(sort));
+        PageRequest page = PageRequest.of(pageNumber, size, Sort.by(sort));
         List<Query> queries = new ArrayList<>();
         Page<Query> queryPage = queryService.getAllQueries(page);
         if (queryPage != null) {

@@ -9,8 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tao-scheduling-service</artifactId>
-    <name>TAO Scheduling Service</name>
+    <artifactId>tao-user-service</artifactId>
+    <name>TAO User Service</name>
 
     <dependencies>
         <dependency>
@@ -18,9 +18,10 @@
             <artifactId>tao-services-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-scheduling</artifactId>
+            <artifactId>tao-auth-service</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

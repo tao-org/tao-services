@@ -9,18 +9,23 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tao-scheduling-service</artifactId>
-    <name>TAO Scheduling Service</name>
+    <artifactId>tao-services-commons</artifactId>
+    <name>TAO Services Commons</name>
 
     <dependencies>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-services-commons</artifactId>
+            <artifactId>tao-utils</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-scheduling</artifactId>
+            <artifactId>tao-service-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-notification</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

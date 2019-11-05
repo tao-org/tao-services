@@ -9,8 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tao-scheduling-service</artifactId>
-    <name>TAO Scheduling Service</name>
+    <artifactId>tao-auth-service</artifactId>
+    <name>TAO Authentication Service</name>
 
     <dependencies>
         <dependency>
@@ -18,10 +18,17 @@
             <artifactId>tao-services-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
-            <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-scheduling</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.jasypt</groupId>
+            <artifactId>jasypt</artifactId>
+            <version>1.9.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sf.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
+            <version>2.10.5</version>
         </dependency>
     </dependencies>
 
@@ -34,5 +41,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
