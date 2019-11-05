@@ -33,7 +33,7 @@
     </modules>
 
     <properties>
-        <spring.boot.version>2.0.4.RELEASE</spring.boot.version>
+        <spring.boot.version>2.2.0.RELEASE</spring.boot.version>
         <taoReleasesUrl>${project.deploy.root.path}/tao-services</taoReleasesUrl>
     </properties>
 
@@ -78,7 +78,7 @@
         <dependency>
             <groupId>org.springframework.session</groupId>
             <artifactId>spring-session</artifactId>
-            <version>1.3.4.RELEASE</version>
+            <version>1.3.5.RELEASE</version>
         </dependency>
 
         <dependency>
