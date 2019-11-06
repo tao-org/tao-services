@@ -6,7 +6,7 @@
 
     <groupId>ro.cs.tao</groupId>
     <artifactId>tao-services</artifactId>
-    <version>1.0</version>
+    <version>1.0.1</version>
     <packaging>pom</packaging>
 
     <name>TAO Services Project</name>
@@ -29,14 +29,14 @@
     </modules>
 
     <properties>
-        <spring.boot.version>2.0.4.RELEASE</spring.boot.version>
+        <spring.boot.version>2.2.0.RELEASE</spring.boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <geotools.version>20.0</geotools.version>
-        <spring.version>5.0.8.RELEASE</spring.version>
-        <jackson.version>2.9.8</jackson.version>
+        <spring.version>5.2.0.RELEASE</spring.version>
+        <jackson.version>2.10.0</jackson.version>
         <postgresql.version>42.2.4</postgresql.version>
-        <hibernate.version>5.3.5.Final</hibernate.version>
-        <jts.version>1.16.0</jts.version>
+        <hibernate.version>5.4.7.Final</hibernate.version>
+        <jts.version>1.16.1</jts.version>
         <!-- maven -->
         <maven.compiler.data>1.8</maven.compiler.data>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -50,12 +50,12 @@
         <repository>
             <id>tao-core</id>
             <name>TAO Core</name>
-            <url>https://github.com/tao-org/tao-core/raw/repository</url>
+            <url>https://raw.githubusercontent.com/tao-org/tao-core/repository</url>
         </repository>
         <repository>
             <id>tao-plugins</id>
             <name>TAO Plugins</name>
-            <url>https://github.com/tao-org/tao-plugins/raw/repository</url>
+            <url>https://raw.githubusercontent.com/tao-org/tao-plugins/repository</url>
         </repository>
         <repository>
             <id>spring-releases</id>
@@ -78,7 +78,7 @@
         <repository>
             <id>snap-repo-public</id>
             <name>Public Maven Repository for SNAP</name>
-            <url>http://nexus.senbox.net/nexus/content/repositories/snapshots/</url>
+            <url>http://nexus.senbox.net/nexus/content/repositories/public/</url>
             <releases>
                 <enabled>true</enabled>
                 <checksumPolicy>warn</checksumPolicy>
@@ -119,24 +119,16 @@
             <artifactId>spring-boot-starter-security</artifactId>
             <version>${spring.boot.version}</version>
         </dependency>
-
-        <!--<dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-undertow</artifactId>
-            <version>${spring.boot.version}</version>
-        </dependency>-->
         <dependency>
             <groupId>org.springframework.session</groupId>
             <artifactId>spring-session</artifactId>
-            <version>1.3.4.RELEASE</version>
+            <version>1.3.5.RELEASE</version>
         </dependency>
-
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <version>${jackson.version}</version>
         </dependency>
-
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -174,27 +166,6 @@
             <scope>runtime</scope>
         </dependency>
     </dependencies>
-
-    <!--<distributionManagement>
-        <repository>
-            <id>tao-releases</id>
-            <name>TAO releases</name>
-            <url>${taoReleasesUrl}</url>
-        </repository>
-        <snapshotRepository>
-            <id>tao-snapshots</id>
-            <name>TAO snapshots</name>
-            <url>${taoSnapshotsUrl}</url>
-        </snapshotRepository>
-    </distributionManagement>-->
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>spring-releases</id>
-            <url>https://repo.spring.io/libs-release</url>
-        </pluginRepository>
-    </pluginRepositories>
-
     <build>
         <directory>${project.basedir}/target</directory>
         <outputDirectory>${project.build.directory}/classes</outputDirectory>
@@ -264,19 +235,6 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>1.5.6.RELEASE</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <version>2.8.2</version>
-            </plugin>
-        </plugins>
     </build>
 
     <developers>
@@ -332,6 +290,15 @@
             <organization>CS ROMANIA</organization>
             <roles>
                 <role>Web Developer</role>
+            </roles>
+        </developer>
+		<developer>
+            <id>sabine</id>
+            <name>Sabine Embacher</name>
+            <email>sabine.embacher@brockmann-consult.de</email>
+            <organization>Brockmann Consult Gmbh</organization>
+            <roles>
+                <role>Java Developer</role>
             </roles>
         </developer>
     </developers>
