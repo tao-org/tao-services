@@ -17,46 +17,13 @@ package ro.cs.tao.services;
 
 //import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 
-import org.springframework.boot.web.server.WebServerFactoryCustomizer;
-import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.task.TaskExecutor;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import ro.cs.tao.configuration.ConfigurationManager;
-
-import java.util.logging.Logger;
+import ro.cs.tao.services.commons.ServletConfiguration;
 
 /**
  * @author Cosmin Cara
  */
 @Configuration
-public class ServletConfig {
-    @Bean
-    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> containerCustomizer() {
-        return (container -> {
-            String strPort = ConfigurationManager.getInstance().getValue("server.port");
-            int port = strPort != null ? Integer.parseInt(strPort) : 8080;
-            Logger.getLogger(ServletConfig.class.getName()).info("Using server port " + port);
-            container.setPort(port);
-        });
-    }
+public class ServletConfig extends ServletConfiguration {
 
-    @Bean
-    public TaskScheduler taskScheduler() {
-        return new ConcurrentTaskScheduler();
-    }
-
-    @Bean
-    public TaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setCorePoolSize(2);
-        taskExecutor.setMaxPoolSize(4);
-        taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
-        taskExecutor.setAwaitTerminationSeconds(10);
-        taskExecutor.initialize();
-        return taskExecutor;
-    }
 }
