@@ -39,8 +39,6 @@ import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 
-import javax.xml.transform.stream.StreamSource;
-import java.io.StringReader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.*;
@@ -195,7 +193,7 @@ public class ComponentServiceImpl
     @Override
     public ProcessingComponent importFrom(MediaType mediaType, String data) throws SerializationException {
         Serializer<ProcessingComponent, String> serializer = SerializerFactory.create(ProcessingComponent.class, mediaType);
-        return serializer.deserialize(new StreamSource(new StringReader(data)));
+        return serializer.deserialize(data);
     }
 
     @Override
