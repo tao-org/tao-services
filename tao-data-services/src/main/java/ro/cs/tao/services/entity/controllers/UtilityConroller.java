@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.component.Variable;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.datasource.util.NetStreamResponse;
-import ro.cs.tao.datasource.util.NetUtils;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.entity.beans.FetchFilesRequest;
+import ro.cs.tao.utils.NetStreamResponse;
+import ro.cs.tao.utils.NetUtils;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.async.Parallel;
 
