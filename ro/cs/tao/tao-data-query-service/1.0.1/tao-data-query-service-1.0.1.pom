@@ -45,7 +45,7 @@
             <artifactId>tao-datasources-usgs</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-datasources-localdb</artifactId>
             <version>${project.version}</version>
@@ -54,7 +54,7 @@
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-datasources-fedeo</artifactId>
             <version>${project.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-datasources-mundi</artifactId>
