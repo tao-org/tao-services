@@ -82,7 +82,7 @@ public class OrchestrationController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> stop(@PathVariable("id") long workflowId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            orchestrationService.stopWorkflow(workflowId);
+            orchestrationService.stopJob(workflowId);
             response = prepareResult("Execution stopped", ResponseStatus.SUCCEEDED);
         } catch (ExecutionException ex) {
             response = handleException(ex);
@@ -94,7 +94,7 @@ public class OrchestrationController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> pause(@PathVariable("id") long workflowId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            orchestrationService.pauseWorkflow(workflowId);
+            orchestrationService.pauseJob(workflowId);
             response = prepareResult("Execution suspended", ResponseStatus.SUCCEEDED);
         } catch (ExecutionException ex) {
             response = handleException(ex);
@@ -106,7 +106,7 @@ public class OrchestrationController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> resume(@PathVariable("id") long workflowId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            orchestrationService.resumeWorkflow(workflowId);
+            orchestrationService.resumeJob(workflowId);
             response = prepareResult("Execution resumed", ResponseStatus.SUCCEEDED);
         } catch (ExecutionException ex) {
             response = handleException(ex);

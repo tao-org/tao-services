@@ -51,6 +51,7 @@ import ro.cs.tao.scheduling.ScheduleManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.StartupBase;
+import ro.cs.tao.services.commons.update.UpdateChecker;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WorkflowBuilder;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
@@ -109,6 +110,7 @@ public class TaoServicesStartup extends StartupBase {
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof ContextRefreshedEvent) {
             logger.fine("Spring initialization completed");
+            ConfigurationManager.getInstance().setValue(ConfigurationManager.APP_HOME, homeDirectory().toString());
             for (Map.Entry<String, Class> entry : plugins.entrySet()) {
                 ServiceRegistry registry = ServiceRegistryManager.getInstance().getServiceRegistry(entry.getValue());
                 Set instances = registry.getServices();
@@ -162,6 +164,7 @@ public class TaoServicesStartup extends StartupBase {
             	ScheduleManager.start();
             	logger.fine("Scheduling engine started");
             });
+            UpdateChecker.initialize();
         }
     }
 

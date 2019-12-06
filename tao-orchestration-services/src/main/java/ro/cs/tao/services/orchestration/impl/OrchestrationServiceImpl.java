@@ -82,18 +82,18 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public void stopWorkflow(long workflowId) throws ExecutionException {
-        Orchestrator.getInstance().stopWorkflow(workflowId);
+    public void stopJob(long jobId) throws ExecutionException {
+        Orchestrator.getInstance().stopJob(jobId);
     }
 
     @Override
-    public void pauseWorkflow(long workflowId) throws ExecutionException {
-        Orchestrator.getInstance().pauseWorkflow(workflowId);
+    public void pauseJob(long jobId) throws ExecutionException {
+        Orchestrator.getInstance().pauseJob(jobId);
     }
 
     @Override
-    public void resumeWorkflow(long workflowId) throws ExecutionException {
-        Orchestrator.getInstance().resumeWorkflow(workflowId);
+    public void resumeJob(long jobId) throws ExecutionException {
+        Orchestrator.getInstance().resumeJob(jobId);
     }
 
     @Override
