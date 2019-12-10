@@ -25,7 +25,7 @@ import com.bc.wps.api.schema.*;
 import com.bc.wps.exceptions.InvalidRequestException;
 import com.bc.wps.responses.ExceptionResponse;
 import com.bc.wps.utilities.JaxbHelper;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;

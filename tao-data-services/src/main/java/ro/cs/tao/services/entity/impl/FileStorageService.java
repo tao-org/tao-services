@@ -122,11 +122,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
                         throw new IOException("Cannot remove a public product. Please reduce its visibility first.");
                     }
                     FileUtilities.deleteTree(filePath);
-                    try {
-                        persistenceManager.remove(product);
-                    } catch (PersistenceException e) {
-                        throw new IOException(e);
-                    }
+                    persistenceManager.remove(product);
                 }
             } else {
                 if (products.size() > 1) {
@@ -137,11 +133,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
                     throw new IOException("Cannot remove a public product. Please reduce its visibility first.");
                 }
                 FileUtilities.deleteTree(filePath);
-                try {
-                    persistenceManager.remove(product);
-                } catch (PersistenceException e) {
-                    throw new IOException(e);
-                }
+                persistenceManager.remove(product);
             }
         }
         

@@ -76,7 +76,7 @@ public class WorkflowServiceImpl
     private Logger logger = Logger.getLogger(WorkflowService.class.getName());
     //region Workflow
     @Override
-    public WorkflowDescriptor findById(Long id) throws PersistenceException {
+    public WorkflowDescriptor findById(Long id) {
         return persistenceManager.getWorkflowDescriptor(id);
     }
 

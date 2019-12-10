@@ -24,7 +24,6 @@ import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.interfaces.WebProcessingService;
@@ -85,7 +84,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
                 String jobName = descriptor.getName() + " via WPS on " + LocalDateTime.now().format(DateTimeFormatter.ISO_TIME);
                 result = orchestratorService.startWorkflow(workflowId, jobName, parameters);
             }
-        } catch (PersistenceException e) {
+        } catch (Exception e) {
             Logger.getLogger(WebProcessingService.class.getName()).severe(e.getMessage());
         }
         return result;

@@ -66,6 +66,11 @@ public class AdministrationServiceImpl implements AdministrationService{
     }
 
     @Override
+    public List<User> getAdministrators() {
+        return persistenceManager.getAdministrators();
+    }
+
+    @Override
     public User getUserInfo(String username) {
         return persistenceManager.findUserByUsername(username);
     }

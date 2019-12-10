@@ -63,8 +63,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 	}
 
 	@Override
-	public EOProduct findById(String id) throws PersistenceException {
-		return null;
+	public EOProduct findById(String id) {
+		return persistenceManager.getEOProduct(id);
 	}
 
 	@Override
@@ -100,12 +100,27 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
 	@Override
 	public EOProduct update(EOProduct object) throws PersistenceException {
-		return null;
+		return persistenceManager.saveEOProduct(object);
 	}
 
 	@Override
-	public void delete(String id) throws PersistenceException {
+	public void delete(String id) {
+		persistenceManager.removeProduct(id);
+	}
 
+	@Override
+	public void delete(EOProduct product) {
+		persistenceManager.remove(product);
+	}
+
+	@Override
+	public int countAdditionalProductReferences(String componentId, String name) {
+		return persistenceManager.getOtherProductReferences(componentId, name);
+	}
+
+	@Override
+	public void deleteIfNotReferenced(String refererComponentId, String productName) {
+		persistenceManager.deleteIfNotReferenced(refererComponentId, productName);
 	}
 
 	@Override
@@ -190,9 +205,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 				persistenceManager.saveEOProduct(product);
 				UserQuotaManager.getInstance().updateUserInputQuota(principal);
 				count++;
-			} catch (PersistenceException e) {
-				e.printStackTrace();
-			} catch (QuotaException e) {
+			} catch (PersistenceException | QuotaException e) {
 				e.printStackTrace();
 			}
 		}
