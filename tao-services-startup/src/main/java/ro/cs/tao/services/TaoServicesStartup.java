@@ -49,7 +49,6 @@ import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.scheduling.ScheduleManager;
 import ro.cs.tao.security.SessionStore;
-import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.StartupBase;
 import ro.cs.tao.services.commons.update.UpdateChecker;
 import ro.cs.tao.services.interfaces.ContainerService;
@@ -130,7 +129,7 @@ public class TaoServicesStartup extends StartupBase {
                 logger.severe("Cannot create required folders: " + e.getMessage());
                 System.exit(1);
             }
-            BaseController.setPersistenceManager(this.persistenceManager);
+            //BaseController.setPersistenceManager(this.persistenceManager);
             logger.fine("Initialized persistence manager");
             Messaging.setPersister(this.persistenceManager);
             logger.fine("Initialized messaging subsystem");

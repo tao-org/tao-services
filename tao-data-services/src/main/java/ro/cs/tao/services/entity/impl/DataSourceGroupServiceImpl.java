@@ -35,7 +35,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     private Logger logger = Logger.getLogger(DataSourceGroupService.class.getName());
 
     @Override
-    public DataSourceComponentGroup findById(String id) throws PersistenceException {
+    public DataSourceComponentGroup findById(String id) {
         return persistenceManager.getDataSourceComponentGroup(id);
     }
 

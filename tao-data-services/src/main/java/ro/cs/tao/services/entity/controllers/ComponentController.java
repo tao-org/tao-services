@@ -137,7 +137,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     public ResponseEntity<ServiceResponse<?>> getNamingRuleDetails(@PathVariable("id") int id) {
         try {
             return prepareResult(nameTokenService.findById(id));
-        } catch (PersistenceException e) {
+        } catch (Exception e) {
             return handleException(e);
         }
     }
@@ -241,9 +241,10 @@ public class ComponentController extends DataEntityController<ProcessingComponen
                     });
                 }
                 this.service.validate(component);
-                getPersistenceManager().saveProcessingComponent(component);
+                this.service.save(component);
+                //getPersistenceManager().saveProcessingComponent(component);
                 response = prepareResult(component);
-            } catch (ValidationException | PersistenceException vex) {
+            } catch (ValidationException vex) {
                 response = handleException(vex);
             }
         } else {

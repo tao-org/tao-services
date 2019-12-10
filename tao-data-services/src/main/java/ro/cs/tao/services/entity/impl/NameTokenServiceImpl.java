@@ -97,7 +97,7 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
     }
 
     @Override
-    public NamingRule findById(Integer id) throws PersistenceException {
+    public NamingRule findById(Integer id) {
         return persistenceManager.getRuleById(id);
     }
 
