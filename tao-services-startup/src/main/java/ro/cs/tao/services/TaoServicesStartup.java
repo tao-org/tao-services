@@ -43,12 +43,15 @@ import ro.cs.tao.execution.model.TaskSelector;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.OSRuntimeInfo;
 import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.messaging.system.StartupCompletedMessage;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.scheduling.ScheduleManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.StartupBase;
 import ro.cs.tao.services.commons.update.UpdateChecker;
 import ro.cs.tao.services.interfaces.ContainerService;
@@ -164,6 +167,7 @@ public class TaoServicesStartup extends StartupBase {
             	logger.fine("Scheduling engine started");
             });
             UpdateChecker.initialize();
+            Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.value(), new StartupCompletedMessage());
         }
     }
 
