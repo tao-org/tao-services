@@ -70,7 +70,11 @@
             <artifactId>tao-execution-model</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-quota</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- TAO Services dependencies -->
         <dependency>
             <groupId>ro.cs.tao</groupId>

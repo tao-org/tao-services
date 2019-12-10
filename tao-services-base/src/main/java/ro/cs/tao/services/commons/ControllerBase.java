@@ -25,13 +25,12 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import ro.cs.tao.component.validation.ValidationException;
-import ro.cs.tao.quota.QuotaException;
 
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-@CrossOrigin(origins = {"http://localhost:8080", "http://localhost:63343"})
+@CrossOrigin(origins = {"http://localhost", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082"})
 public abstract class ControllerBase {
     private static final Object sharedLock = new Object();
 
@@ -126,18 +125,18 @@ public abstract class ControllerBase {
             return new ResponseEntity<>(new ServiceResponse<>(vex.getAdditionalInfo(),
                                                               ResponseStatus.FAILED),
                                         HttpStatus.OK);
-        } else if(ex instanceof QuotaException) {
+        } else {
             return new ResponseEntity<>(new ServiceResponse<>(ex.getMessage(),
                                                               ResponseStatus.FAILED),
                                         HttpStatus.OK);
         	
-        } else {
+        }/* else {
             return new ResponseEntity<>(new ServiceResponse<>(String.format("Failed with error: %s - %s",
                                                                             ex.getClass().getSimpleName(),
                                                                             ex.getMessage()),
                                                               ResponseStatus.FAILED),
                                         HttpStatus.OK);
-        }
+        }*/
     }
 
     protected void debug(String message, Object... args) {

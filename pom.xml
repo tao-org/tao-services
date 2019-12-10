@@ -30,6 +30,7 @@
         <module>tao-workflow-library</module>
         <module>tao-scheduling-service</module>
 		<module>tao-services-startup</module>
+        <module>tao-services-base</module>
     </modules>
 
     <properties>

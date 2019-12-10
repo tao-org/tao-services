@@ -15,14 +15,17 @@
  */
 package ro.cs.tao.services.commons;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.user.User;
 
-import java.util.*;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.stream.Collectors;
 
 /**
@@ -30,28 +33,22 @@ import java.util.stream.Collectors;
  */
 public class BaseController extends ControllerBase {
     private static Set<String> admins;
-    private static Timer groupRefreshTimer;
-    private static PersistenceManager persistenceManager;
+    private static final Timer groupRefreshTimer;
+    @Autowired
+    private static AdministrationService administrationService;
 
-    public static void setPersistenceManager(PersistenceManager persistenceManager) {
-        BaseController.persistenceManager = persistenceManager;
+    static {
         groupRefreshTimer = new Timer(true);
-        admins = Collections.synchronizedSet(new HashSet<>());
         groupRefreshTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                admins = persistenceManager.getAdministrators()
-                                            .stream().map(User::getUsername).collect(Collectors.toSet());
+                admins = administrationService.getAdministrators().stream().map(User::getUsername).collect(Collectors.toSet());
             }
         }, 0, 10000);
     }
 
     public static ServletUriComponentsBuilder currentURL() {
         return ServletUriComponentsBuilder.fromCurrentRequestUri();
-    }
-
-    protected PersistenceManager getPersistenceManager() {
-        return persistenceManager;
     }
 
     protected String currentUser() {
