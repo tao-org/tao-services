@@ -41,7 +41,7 @@ public class QueryServiceImpl extends EntityService<Query>
 
 
     @Override
-    public Query findById(Long id) throws PersistenceException {
+    public Query findById(Long id) {
         return getQueryById(id);
     }
 

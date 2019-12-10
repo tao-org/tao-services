@@ -43,7 +43,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") K id) {
         ResponseEntity<ServiceResponse<?>> response;
-        T entity = null;
+        T entity;
         try {
             entity = service.findById(id);
             if (entity == null) {
@@ -51,7 +51,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
             } else {
                 response = prepareResult(entity);
             }
-        } catch (PersistenceException e) {
+        } catch (Exception e) {
             response = handleException(e);
         }
         return response;

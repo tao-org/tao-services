@@ -44,7 +44,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     private PersistenceManager persistenceManager;
 
     @Override
-    public DataSourceComponent findById(String id) throws PersistenceException {
+    public DataSourceComponent findById(String id) {
         return persistenceManager.getDataSourceInstance(id);
     }
 

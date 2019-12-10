@@ -9,35 +9,24 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tao-monitoring-service</artifactId>
-    <name>TAO Monitoring Service</name>
+    <artifactId>tao-services-base</artifactId>
+    <name>TAO Services Base</name>
 
     <dependencies>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-services-commons</artifactId>
+            <artifactId>tao-utils</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-execution-api</artifactId>
+            <artifactId>tao-service-base-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-execution</artifactId>
+            <artifactId>tao-notification</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.10</version>
-            </plugin>
-        </plugins>
-    </build>
-
 </project>

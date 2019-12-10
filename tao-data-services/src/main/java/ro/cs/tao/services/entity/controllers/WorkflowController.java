@@ -93,7 +93,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     @RequestMapping(value = "/clone", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> cloneWorkflow(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
-        WorkflowDescriptor source = getPersistenceManager().getWorkflowDescriptor(workflowId);
+        WorkflowDescriptor source = this.service.findById(workflowId);
         try {
             if (source != null ) {
                 responseEntity = prepareResult(service.clone(source));
@@ -175,12 +175,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                                              @RequestParam("keepDataSources") boolean keepDataSources) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            WorkflowDescriptor master = getPersistenceManager().getWorkflowDescriptor(workflowId);
+            WorkflowDescriptor master = this.service.findById(workflowId);
             if (master == null) {
                 throw new PersistenceException(String.format("Workflow with identifier %s does not exist",
                                                              workflowId));
             }
-            WorkflowDescriptor subGraph = getPersistenceManager().getWorkflowDescriptor(subWorkflowId);
+            WorkflowDescriptor subGraph = this.service.findById(subWorkflowId);
             if (subGraph == null) {
                 throw new PersistenceException(String.format("Workflow with identifier %s does not exist",
                                                              subWorkflowId));

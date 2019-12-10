@@ -31,7 +31,6 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
-import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
@@ -45,6 +44,7 @@ import ro.cs.tao.services.entity.beans.GroupQuery;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceGroupService;
+import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.services.interfaces.QueryService;
 import ro.cs.tao.utils.Tuple;
 
@@ -56,6 +56,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/datasource")
 public class DataSourceComponentController extends DataEntityController<DataSourceComponent, String, DataSourceComponentService>{
 
+    @Autowired
+    private ProductService productService;
     @Autowired
     private DataSourceGroupService dataSourceGroupService;
     @Autowired
@@ -99,7 +101,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponent(@RequestParam("id") String id) {
         try {
             return prepareResult(service.findById(id));
-        } catch (PersistenceException e) {
+        } catch (Exception e) {
             return handleException(e);
         }
     }
@@ -108,7 +110,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponentGroup(@RequestParam("id") String groupId) {
         try {
             return prepareResult(dataSourceGroupService.findById(groupId));
-        } catch (PersistenceException e) {
+        } catch (Exception e) {
             return handleException(e);
         }
     }
@@ -176,8 +178,8 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 if (nameList != null) {
                     String[] names = nameList.split(",");
                     for (String name : names) {
-                        if (getPersistenceManager().getOtherProductReferences(component.getId(), name) == 0) {
-                            getPersistenceManager().removeProduct(name);
+                        if (this.productService.countAdditionalProductReferences(component.getId(), name) == 0) {
+                            this.productService.delete(name);
                         }
                     }
                 }
@@ -229,7 +231,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             List<DataSourceComponent> components = new ArrayList<>();
             for (Map.Entry<String, List<String>> entry : groups.entrySet()) {
                 names = entry.getValue();
-                prods = getPersistenceManager().getProductsByNames(names.toArray(new String[0]));
+                prods = this.productService.getByNames(names.toArray(new String[0]));
                 long addedQuota = 0;
                 if (prods != null && prods.size() > 0) {
                 	// check if, by adding the selected products, the quota will not be reached
@@ -251,7 +253,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                     	
                     	// attach the product to the current user
                     	p.addReference(currentUser.getName());
-                    	getPersistenceManager().saveEOProduct(p);
+                    	//getPersistenceManager().saveEOProduct(p);
                     	
                     }
                 	

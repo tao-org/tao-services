@@ -21,13 +21,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.commons.ControllerBase;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ProgressReportService;
 
 @Controller
 @RequestMapping("/progress")
-public class ProgressReportController extends BaseController {
+public class ProgressReportController extends ControllerBase {
 
     @Autowired
     private ProgressReportService progressReportService;

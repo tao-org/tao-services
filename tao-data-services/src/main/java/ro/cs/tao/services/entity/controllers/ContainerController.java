@@ -36,7 +36,6 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -87,7 +86,7 @@ public class ContainerController extends DataEntityController<Container, String,
                 Set<String> formats = container.getFormat();
                 return prepareResult(formats != null ? formats : new HashSet<>());
             }
-        } catch (PersistenceException pex) {
+        } catch (Exception pex) {
             return handleException(pex);
         }
     }

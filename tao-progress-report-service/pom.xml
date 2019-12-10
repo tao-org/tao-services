@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-services-commons</artifactId>
+            <artifactId>tao-services-base</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
