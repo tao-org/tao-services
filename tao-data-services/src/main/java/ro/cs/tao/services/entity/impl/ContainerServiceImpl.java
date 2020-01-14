@@ -31,7 +31,7 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.interfaces.ContainerService;
-import ro.cs.tao.topology.TopologyManager;
+import ro.cs.tao.topology.docker.DockerManager;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -114,10 +114,9 @@ public class ContainerServiceImpl
     @Override
     public String registerContainer(Path dockerFile, Container container, ProcessingComponent[] components) {
         String containerId;
-        TopologyManager topologyManager = TopologyManager.getInstance();
-        if (topologyManager.getDockerImage(container.getName()) == null) {
+        if (DockerManager.getDockerImage(container.getName()) == null) {
             // build Docker image and put it in Docker registry
-            containerId = topologyManager.registerImage(dockerFile, container.getName(), container.getDescription());
+            containerId = DockerManager.registerImage(dockerFile, container.getName(), container.getDescription());
             // update database with container and applications information
             initializeContainer(containerId, container);
         } else {
