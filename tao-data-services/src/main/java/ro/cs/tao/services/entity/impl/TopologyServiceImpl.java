@@ -25,8 +25,9 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
-import ro.cs.tao.topology.NodeType;
+import ro.cs.tao.topology.NodeFlavor;
 import ro.cs.tao.topology.TopologyManager;
+import ro.cs.tao.topology.docker.DockerManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,12 +48,12 @@ public class TopologyServiceImpl
 
     @Override
     public NodeDescription findById(String hostName) {
-       return TopologyManager.getInstance().get(hostName);
+       return TopologyManager.getInstance().getNode(hostName);
     }
 
     @Override
     public List<NodeDescription> list() {
-       return TopologyManager.getInstance().list();
+       return TopologyManager.getInstance().listNodes();
     }
 
     @Override
@@ -70,17 +71,16 @@ public class TopologyServiceImpl
     }
 
     @Override
-    public List<NodeDescription> getNodes(NodeType nodeType) {
-        return persistenceManager.getNodesByType(nodeType);
+    public List<NodeDescription> getNodes(NodeFlavor nodeFlavor) {
+        return persistenceManager.getNodesByType(nodeFlavor);
     }
 
     @Override
     public NodeDescription save(NodeDescription node) {
-        tagType(node);
         List<String> nodeTags = node.getTags();
         if (nodeTags != null) {
-            if (!nodeTags.contains(node.getNodeType().friendlyName())) {
-                nodeTags.add(node.getNodeType().friendlyName());
+            if (!nodeTags.contains(node.getFlavor().getId())) {
+                nodeTags.add(node.getFlavor().getId());
             }
             Set<String> existingTags = persistenceManager.getNodeTags().stream().map(Tag::getText).collect(Collectors.toSet());
             for (String value : nodeTags) {
@@ -89,19 +89,18 @@ public class TopologyServiceImpl
                 }
             }
         }
-        TopologyManager.getInstance().add(node);
+        TopologyManager.getInstance().addNode(node);
         return node;
     }
 
     @Override
     public NodeDescription update(NodeDescription node) {
         NodeDescription existing = findById(node.getId());
-        if (existing != null && existing.getNodeType() != node.getNodeType()) {
-            tagType(node);
+        if (existing != null && !existing.getFlavor().equals(node.getFlavor())) {
             List<String> nodeTags = node.getTags();
             if (nodeTags != null) {
-                if (!nodeTags.contains(node.getNodeType().friendlyName())) {
-                    nodeTags.add(node.getNodeType().friendlyName());
+                if (!nodeTags.contains(node.getFlavor().getId())) {
+                    nodeTags.add(node.getFlavor().getId());
                 }
                 Set<String> existingTags = persistenceManager.getNodeTags().stream().map(Tag::getText).collect(Collectors.toSet());
                 for (String value : nodeTags) {
@@ -111,13 +110,13 @@ public class TopologyServiceImpl
                 }
             }
         }
-        TopologyManager.getInstance().update(node);
+        TopologyManager.getInstance().updateNode(node);
         return node;
     }
 
     @Override
     public void delete(String hostName) {
-        TopologyManager.getInstance().remove(hostName);
+        TopologyManager.getInstance().removeNode(hostName);
     }
 
     @Override
@@ -161,7 +160,7 @@ public class TopologyServiceImpl
 
     @Override
     public List<Container> getDockerImages() {
-        return TopologyManager.getInstance().getAvailableDockerImages();
+        return DockerManager.getAvailableDockerImages();
     }
 
     @Override
@@ -183,32 +182,22 @@ public class TopologyServiceImpl
         if (value == null || value.trim().isEmpty()) {
             errors.add("[password] cannot be empty");
         }
-        if (object.getProcessorCount() <= 0) {
-            errors.add("[processorCount] cannot be empty");
-        }
-        if (object.getMemorySizeGB() <= 0) {
-            errors.add("[memorySize] cannot be empty");
-        }
-        if (object.getDiskSpaceSizeGB() <= 0) {
-            errors.add("[diskSpace] cannot be empty");
-        }
-    }
-
-    private NodeDescription tagType(NodeDescription node) {
-        NodeType nodeType = node.getNodeType();
-        if (nodeType == null) {
-            int processors = node.getProcessorCount();
-            if (processors <= 4) {
-                nodeType = NodeType.S;
-            } else if (processors <= 8) {
-                nodeType = NodeType.M;
-            } else if (processors <= 16) {
-                nodeType = NodeType.L;
-            } else {
-                nodeType = NodeType.XL;
+        final NodeFlavor flavor = object.getFlavor();
+        if (flavor == null) {
+            errors.add("[flavor] cannot be null");
+        } else {
+            if (flavor.getCpu() <= 0) {
+                errors.add("[flavor.cpu] cannot be less than 1");
             }
-            node.setNodeType(nodeType);
+            if (flavor.getMemory() <= 0) {
+                errors.add("[flavor.memory] cannot be less than 1");
+            }
+            if (flavor.getDisk() <= 0) {
+                errors.add("[flavor.disk] cannot be less than 1");
+            }
+            if (Float.compare(flavor.getRxtxFactor(), 0.0f) <= 0) {
+                errors.add("[flavor.rxtxFactor] must be positive");
+            }
         }
-        return node;
     }
 }

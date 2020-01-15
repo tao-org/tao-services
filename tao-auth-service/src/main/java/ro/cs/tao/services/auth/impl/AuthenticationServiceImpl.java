@@ -18,6 +18,7 @@ package ro.cs.tao.services.auth.impl;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.configuration.Configuration;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.auth.token.TokenManagementService;
@@ -65,7 +66,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             // update user last login date
             persistenceManager.updateUserLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
             try {
-                Path path = Paths.get(ConfigurationManager.getInstance().getValue("workspace.location")).resolve(username);
+                Path path = Paths.get(ConfigurationManager.getInstance().getValue(Configuration.FileSystem.WORKSPACE_LOCATION)).resolve(username);
                 FileUtilities.ensureExists(path);
                 FileUtilities.ensureExists(path.resolve("files"));
             } catch (IOException e) {
