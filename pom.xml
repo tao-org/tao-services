@@ -6,7 +6,7 @@
 
     <groupId>ro.cs.tao</groupId>
     <artifactId>tao-services</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>TAO Services Project</name>
@@ -26,6 +26,7 @@
         <module>tao-workflow-library</module>
 		<module>tao-scheduling-service</module>
         <module>tao-services-startup</module>
+        <module>tao-services-base</module>
     </modules>
 
     <properties>
@@ -189,7 +190,13 @@
                         <archive>
                             <manifest>
                                 <addClasspath>true</addClasspath>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             </manifest>
+                            <manifestEntries>
+                                <Bundle-Name>TAO Services</Bundle-Name>
+                                <Version>${project.version}</Version>
+                                <Build-Time>${maven.build.timestamp}</Build-Time>
+                            </manifestEntries>
                         </archive>
                     </configuration>
                 </plugin>
