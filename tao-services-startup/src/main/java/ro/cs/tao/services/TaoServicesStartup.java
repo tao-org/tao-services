@@ -27,6 +27,7 @@ import ro.cs.tao.component.Identifiable;
 import ro.cs.tao.component.RuntimeOptimizer;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.component.enums.TagType;
+import ro.cs.tao.configuration.Configuration;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceComponent;
@@ -43,12 +44,15 @@ import ro.cs.tao.execution.model.TaskSelector;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.OSRuntimeInfo;
 import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.messaging.system.StartupCompletedMessage;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.scheduling.ScheduleManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.StartupBase;
 import ro.cs.tao.services.commons.update.UpdateChecker;
 import ro.cs.tao.services.interfaces.ContainerService;
@@ -117,7 +121,7 @@ public class TaoServicesStartup extends StartupBase {
                                           entry.getKey(), instances.stream().map(i -> i.getClass().getSimpleName())
                                                                     .sorted().collect(Collectors.joining(","))));
             }
-            logger.info("Web interface is accessible at https://localhost:" + ConfigurationManager.getInstance().getValue("server.port"));
+            logger.info("Web interface is accessible at https://localhost:" + ConfigurationManager.getInstance().getValue(Configuration.Services.PORT));
             try {
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_FILES.value()));
@@ -156,7 +160,7 @@ public class TaoServicesStartup extends StartupBase {
                     logger.fine("Topology monitoring initialized");
                 } else {
                     logger.fine(String.format("Topology monitoring not available (DRMAA session factory set to %s",
-                                              ConfigurationManager.getInstance().getValue("tao.drmaa.sessionfactory")));
+                                              ConfigurationManager.getInstance().getValue(Configuration.DRMAA.SESSION_FACTORY_CLASS)));
                 }
             });
             backgroundWorker.submit(() -> {
@@ -164,12 +168,13 @@ public class TaoServicesStartup extends StartupBase {
             	logger.fine("Scheduling engine started");
             });
             UpdateChecker.initialize();
+            Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.value(), new StartupCompletedMessage());
         }
     }
 
     private void updateLocalhost() {
         Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
-        NodeDescription node = TopologyManager.getInstance().get("localhost");
+        NodeDescription node = TopologyManager.getInstance().getNode("localhost");
         if (node != null) {
             try {
                 List<Tag> nodeTags = persistenceManager.getNodeTags();
@@ -184,33 +189,23 @@ public class TaoServicesStartup extends StartupBase {
                 if (master == null) {
                     Tag masterTag = new Tag(TagType.TOPOLOGY_NODE, "master");
                     int processors = Runtime.getRuntime().availableProcessors();
-                    final NodeType nodeType;
-                    if (processors <= 4) {
-                        nodeType = NodeType.S;
-                    } else if (processors <= 8) {
-                        nodeType = NodeType.M;
-                    } else if (processors <= 16) {
-                        nodeType = NodeType.L;
-                    } else {
-                        nodeType = NodeType.XL;
-                    }
                     persistenceManager.saveTag(masterTag);
                     master = new NodeDescription();
                     master.setId(masterHost);
-                    String user = ConfigurationManager.getInstance().getValue("topology.master.user", node.getUserName());
+                    String user = ConfigurationManager.getInstance().getValue(Configuration.Topology.MASTER_USER, node.getUserName());
                     master.setUserName(user);
-                    String pwd = ConfigurationManager.getInstance().getValue("topology.master.password", node.getUserPass());
+                    String pwd = ConfigurationManager.getInstance().getValue(Configuration.Topology.MASTER_PASSWORD, node.getUserPass());
                     master.setUserPass(pwd);
                     OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(masterHost, user, pwd);
                     master.setDescription(node.getDescription());
                     master.setServicesStatus(node.getServicesStatus());
-                    master.setProcessorCount(processors);
-                    master.setNodeType(nodeType);
-                    master.setDiskSpaceSizeGB((int) inspector.getTotalDiskGB());
-                    master.setMemorySizeGB((int) inspector.getTotalMemoryMB() / 1024);
+                    final NodeFlavor masterFlavor = persistenceManager.getMasterFlavor();
+                    masterFlavor.setCpu(processors);
+                    masterFlavor.setMemory((int) inspector.getTotalMemoryMB() / 1024);
+                    masterFlavor.setDisk((int) inspector.getTotalDiskGB());
+                    master.setFlavor(masterFlavor);
                     master.setActive(true);
                     master.addTag(masterTag.getText());
-                    master.addTag(nodeType.friendlyName());
                     if (master.getServicesStatus() == null || master.getServicesStatus().size() == 0) {
                         // check docker service on master
                         String name = "Docker";
@@ -229,7 +224,7 @@ public class TaoServicesStartup extends StartupBase {
                         master.addServiceStatus(nodeService);
                         // check CRM on master
                         Set<Executor> executors = ExecutionsManager.getInstance().getRegisteredExecutors();
-                        Executor executor = executors.stream().filter(e -> e instanceof DrmaaTaoExecutor).findFirst().orElse(null);
+                        Executor<?> executor = executors.stream().filter(e -> e instanceof DrmaaTaoExecutor).findFirst().orElse(null);
                         if (executor != null) {
                             DrmaaTaoExecutor taoExecutor = (DrmaaTaoExecutor) executor;
                             nodeService = new NodeServiceStatus();
@@ -253,16 +248,17 @@ public class TaoServicesStartup extends StartupBase {
                     persistenceManager.removeExecutionNode(node.getId());
                     logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                 }
-                createMasterShare(master);
+                TopologyManager.setMasterNode(master);
+                createMasterShare();
             } catch (Exception ex) {
                 logger.severe("Cannot update localhost name: " + ex.getMessage());
             }
         }
     }
 
-    private void createMasterShare(NodeDescription master) {
+    private void createMasterShare() {
         TopologyManager manager = TopologyManager.getInstance();
-        manager.onCompleted(master, manager.checkShare(master));
+        manager.notifyListeners(manager.getMasterNodeInfo(), manager.checkMasterShare());
     }
 
     private void createUserWorkspaces() {

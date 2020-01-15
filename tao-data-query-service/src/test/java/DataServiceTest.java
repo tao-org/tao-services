@@ -2,6 +2,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.Assert;
+import ro.cs.tao.configuration.Configuration;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataQuery;
 import ro.cs.tao.datasource.DataSourceComponent;
@@ -126,7 +127,7 @@ public class DataServiceTest {
         DataSourceComponent component = new DataSourceComponent("Sentinel2", "Amazon Web Services");
         List<EOProduct> entry = new ArrayList<>();
         entry.add(this.testS2Result);
-        String folder = ConfigurationManager.getInstance().getValue("product.location");
+        String folder = ConfigurationManager.getInstance().getValue(Configuration.FileSystem.PRODUCTS_LOCATION);
         List<EOProduct> result = component.doFetch(entry, null, folder);
         Assert.notNull(result, "Unexpected result");
         Assert.notEmpty(result, "The list should have contained one result");
@@ -144,7 +145,7 @@ public class DataServiceTest {
         DataSourceComponent component = new DataSourceComponent("Landsat8", "Amazon Web Services");
         List<EOProduct> entry = new ArrayList<>();
         entry.add(this.testL8Result);
-        String folder = ConfigurationManager.getInstance().getValue("product.location");
+        String folder = ConfigurationManager.getInstance().getValue(Configuration.FileSystem.PRODUCTS_LOCATION);
         List<EOProduct> result = component.doFetch(entry, null, folder);
         Assert.notNull(result, "Unexpected result");
         Assert.notEmpty(result, "The list should have contained one result");
