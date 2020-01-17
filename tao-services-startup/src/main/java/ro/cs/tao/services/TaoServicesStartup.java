@@ -143,6 +143,7 @@ public class TaoServicesStartup extends StartupBase {
             CustomAuthenticationProvider.setPersistenceManager(this.persistenceManager);
             logger.fine("Initialized authentication provider");
             updateLocalhost();
+            backgroundWorker.submit(this::registerFlavors);
             backgroundWorker.submit(this::createUserWorkspaces);
             Orchestrator.getInstance().start();
             backgroundWorker.submit(this::registerDataSourceComponents);
@@ -259,6 +260,17 @@ public class TaoServicesStartup extends StartupBase {
     private void createMasterShare() {
         TopologyManager manager = TopologyManager.getInstance();
         manager.notifyListeners(manager.getMasterNodeInfo(), manager.checkMasterShare());
+    }
+
+    private void registerFlavors() {
+        TopologyManager manager = TopologyManager.getInstance();
+        final List<NodeFlavor> flavors = manager.listNodeFlavors();
+        if (flavors != null) {
+            for (NodeFlavor flavor : flavors) {
+                persistenceManager.save(flavor);
+            }
+            logger.fine("Updated node flavors from the topology node provider");
+        }
     }
 
     private void createUserWorkspaces() {

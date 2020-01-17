@@ -155,6 +155,7 @@
                                 <Bundle-Name>TAO Services</Bundle-Name>
                                 <Version>${project.version}</Version>
                                 <Build-Time>${maven.build.timestamp}</Build-Time>
+                                <Main-Class>ro.cs.tao.services.TaoServicesStartup</Main-Class>
                             </manifestEntries>
                         </archive>
                     </configuration>
