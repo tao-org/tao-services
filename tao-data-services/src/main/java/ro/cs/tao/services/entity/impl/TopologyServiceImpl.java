@@ -53,7 +53,8 @@ public class TopologyServiceImpl
 
     @Override
     public List<NodeDescription> list() {
-       return TopologyManager.getInstance().listNodes();
+       //return TopologyManager.getInstance().listNodes();
+        return persistenceManager.getNodes();
     }
 
     @Override
