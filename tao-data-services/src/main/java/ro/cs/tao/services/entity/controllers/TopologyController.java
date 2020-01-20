@@ -53,4 +53,9 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     public ResponseEntity<ServiceResponse<?>> getInactiveNodes() {
         return prepareResult(service.getNodes(false));
     }
+
+    @RequestMapping(value = "/flavors", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getNodeFlavors() {
+        return prepareResult(service.getNodeFlavors());
+    }
 }

@@ -47,6 +47,11 @@ public class TopologyServiceImpl
     private PersistenceManager persistenceManager;
 
     @Override
+    public List<NodeFlavor> getNodeFlavors() {
+        return TopologyManager.getInstance().listNodeFlavors();
+    }
+
+    @Override
     public NodeDescription findById(String hostName) {
        return TopologyManager.getInstance().getNode(hostName);
     }
@@ -54,7 +59,7 @@ public class TopologyServiceImpl
     @Override
     public List<NodeDescription> list() {
        //return TopologyManager.getInstance().listNodes();
-        return persistenceManager.getNodes();
+        return TopologyManager.getInstance().listNodes();
     }
 
     @Override
