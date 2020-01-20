@@ -157,6 +157,7 @@ public class TaoServicesStartup extends StartupBase {
                 final NodeManager nodeManager = NodeManager.getInstance();
                 if (nodeManager != null) {
                     nodeManager.initialize(persistenceManager.getNodes());
+                    TopologyManager.getInstance().registerListener(nodeManager);
                     nodeManager.start();
                     logger.fine("Topology monitoring initialized");
                 } else {
