@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.component.validation.ValidationException;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -109,7 +109,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
     @RequestMapping(value = "/{id:.+}/untag", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> untag(@PathVariable("id") K id, @RequestBody List<String> tags) {
         try {
-            return prepareResult(service.untag(id, tags));
+            return prepareResult(service.unTag(id, tags));
         } catch (PersistenceException e) {
             return handleException(e);
         }

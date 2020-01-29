@@ -3,7 +3,7 @@ package ro.cs.tao.services.workflow.library;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.CommonParameterNames;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
@@ -39,7 +39,7 @@ public class DBGroupSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
                 "23.50357106719914 44.22597512802537,23.50357106719914 44.22597512802537))");
         dsQuery.setValues(values);
         dsQuery.setWorkflowNodeId(node1.getId());
-        persistenceManager.saveQuery(dsQuery);
+        persistenceManager.queries().save(dsQuery);
 
         WorkflowNodeDescriptor node2 = addNode(workflow,
                                                "SNAP NDVI", "snap-ndviop", ComponentType.PROCESSING, null,

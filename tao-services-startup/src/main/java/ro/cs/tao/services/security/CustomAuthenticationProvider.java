@@ -22,6 +22,7 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.security.token.AuthenticationWithToken;
 import ro.cs.tao.user.Group;
+import ro.cs.tao.user.User;
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -59,7 +60,11 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             String userName = jaasAuthenticationToken.getPrincipal().toString();
             jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new UserPrincipal(userName));
             // add user groups as roles
-            final List<Group> userGroups = persistenceManager.getUserGroups(userName);
+            final User user = persistenceManager.users().getByName(userName);
+            if (user == null) {
+                throw new RuntimeException(String.format("No such user '%s'", userName));
+            }
+            final List<Group> userGroups = user.getGroups();
             if (userGroups != null) {
                 for (Group group : userGroups) {
                     jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new GroupPrincipal(group.getName()));

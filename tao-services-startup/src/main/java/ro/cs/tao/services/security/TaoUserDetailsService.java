@@ -27,12 +27,12 @@ import ro.cs.tao.user.User;
 public class TaoUserDetailsService implements UserDetailsService {
 
     @Autowired
-    private PersistenceManager persistenceMng;
+    private PersistenceManager persistenceManager;
 
     @Override
     public UserDetails loadUserByUsername(String userName)
       throws UsernameNotFoundException {
-        User user = persistenceMng.findUserByUsername(userName);
+        User user = persistenceManager.users().getByName(userName);
         if (user == null) {
             throw new UsernameNotFoundException("Username " + userName + " not found");
         }

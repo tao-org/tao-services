@@ -30,7 +30,7 @@ public class WebConfig extends WebConfiguration {
 
     @Override
     protected String siteURIPath() {
-        final String siteBase = ConfigurationManager.getInstance().getValue(ro.cs.tao.configuration.Configuration.FileSystem.WEB_SITE_LOCATION, "static");
+        final String siteBase = ConfigurationManager.getInstance().getValue("site.location", "static");
         Path sitePath = Paths.get(siteBase);
         if (!sitePath.isAbsolute()) {
             sitePath = TaoServicesStartup.homeDirectory().resolve(siteBase).toAbsolutePath();

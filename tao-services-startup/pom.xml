@@ -18,6 +18,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- TAO Services -->
         <dependency>
             <groupId>ro.cs.tao</groupId>

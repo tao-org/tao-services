@@ -19,7 +19,7 @@ package ro.cs.tao.services.workflow.library;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.CommonParameterNames;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
@@ -55,7 +55,7 @@ public class DBThreeSnapBranchesOtbWorkflowBuilder extends WorkflowBuilderBase {
         dsQuery.setValues(values);
         dsQuery.setWorkflowNodeId(node1.getId());
         dsQuery.setLabel(String.format("Query for sample workflow %d", workflow.getId()));
-        persistenceManager.saveQuery(dsQuery);
+        persistenceManager.queries().save(dsQuery);
 
         WorkflowNodeDescriptor node2 = addNode(workflow,
                                                "SNAP NDVI", "snap-ndviop", ComponentType.PROCESSING, null,

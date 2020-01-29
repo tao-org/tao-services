@@ -25,10 +25,13 @@ import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.beans.Query;
+import ro.cs.tao.datasource.persistence.DataSourceComponentProvider;
+import ro.cs.tao.datasource.persistence.QueryProvider;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.EOProductProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 
 import java.security.Principal;
@@ -41,47 +44,53 @@ import java.util.stream.Collectors;
 public class DataSourceComponentServiceImpl implements DataSourceComponentService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private DataSourceComponentProvider dataSourceComponentProvider;
+    @Autowired
+    private EOProductProvider productProvider;
+    @Autowired
+    private QueryProvider queryProvider;
+    @Autowired
+    private TagProvider tagProvider;
 
     @Override
     public DataSourceComponent findById(String id) {
-        return persistenceManager.getDataSourceInstance(id);
+        return dataSourceComponentProvider.get(id);
     }
 
     @Override
     public List<DataSourceComponent> list() {
-        return persistenceManager.getDataSourceComponents();
+        return dataSourceComponentProvider.list();
     }
 
     @Override
     public List<DataSourceComponent> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
-        return persistenceManager.getDataSourceComponents(pageNumber.orElse(0), pageSize.orElse(0), sort);
+        return dataSourceComponentProvider.list(pageNumber.orElse(0), pageSize.orElse(0), sort);
     }
 
     @Override
     public List<DataSourceComponent> list(Iterable<String> ids) {
-        return persistenceManager.getDataSourceComponents(ids);
+        return dataSourceComponentProvider.list(ids);
     }
 
     @Override
     public List<DataSourceComponent> getUserDataSourceComponents(String userName) {
-        return persistenceManager.getUserDataSourceComponents(userName);
+        return dataSourceComponentProvider.getUserDataSourceComponents(userName);
     }
 
     @Override
     public List<DataSourceComponent> getSystemDataSourceComponents() {
-        return persistenceManager.getSystemDataSourceComponents();
+        return dataSourceComponentProvider.getSystemDataSourceComponents();
     }
 
     @Override
     public List<Tag> getDatasourceTags() {
-        return persistenceManager.getDatasourceTags();
+        return tagProvider.list(TagType.DATASOURCE);
     }
 
     @Override
     public DataSourceComponent save(DataSourceComponent object) {
         try {
-            return persistenceManager.saveDataSourceComponent(object);
+            return dataSourceComponentProvider.save(object);
         } catch (PersistenceException e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -90,7 +99,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     @Override
     public DataSourceComponent update(DataSourceComponent object) {
         try {
-            return persistenceManager.updateDataSourceComponent(object);
+            return dataSourceComponentProvider.update(object);
         } catch (PersistenceException e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -113,13 +122,13 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         }
         String productType = types.iterator().next();
         List<String> nameList = new ArrayList<>();
-        Set<String> existingSet = new HashSet<>(persistenceManager.getExistingProductNames(products.stream().map(EOProduct::getName).toArray(String[]::new)));
+        Set<String> existingSet = new HashSet<>(productProvider.getExistingProductNames(products.stream().map(EOProduct::getName).toArray(String[]::new)));
         for (EOProduct product : products) {
             if (!existingSet.contains(product.getName())) {
                 product.setProductStatus(ProductStatus.QUERIED);
                 // add the referecnce to the user that performed the operation
                 product.addReference(principal.getName());
-                persistenceManager.saveEOProduct(product);
+                productProvider.save(product);
             }
             nameList.add(product.getName());
         }
@@ -143,14 +152,14 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         }
         DataSourceComponent userDSC = null;
         if (queryId != null) {
-            userDSC = persistenceManager.getQueryDataSourceComponent(queryId);
+            userDSC = dataSourceComponentProvider.getQueryDataSourceComponent(queryId);
         }
         if (userDSC != null) {
             SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
             sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
-            userDSC = persistenceManager.updateDataSourceComponent(userDSC);
+            userDSC = dataSourceComponentProvider.update(userDSC);
         } else {
-            DataSourceComponent systemDSC = persistenceManager.getDataSourceInstance(sensor + "-Local Database");
+            DataSourceComponent systemDSC = dataSourceComponentProvider.get(sensor + "-Local Database");
             if (systemDSC == null) {
                 return null;
             }
@@ -174,16 +183,16 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
                 targetDescriptor.setCardinality(productNames.size());
                 targetDescriptor.addConstraint("Same cardinality");
                 userDSC.setSystem(false);
-                userDSC = persistenceManager.saveDataSourceComponent(userDSC);
+                userDSC = dataSourceComponentProvider.save(userDSC);
                 tag(userDSC.getId(), new ArrayList<String>() {{
                     add(sensor);
                     add(dataSource);
                     add(label);
                 }});
                 if (queryId != null) {
-                    Query query = persistenceManager.findQueryById(queryId);
+                    Query query = queryProvider.get(queryId);
                     query.setComponentId(userDSC.getId());
-                    persistenceManager.saveQuery(query);
+                    queryProvider.save(query);
                 }
             } catch (CloneNotSupportedException e) {
                 throw new PersistenceException(e);
@@ -199,11 +208,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             throw new PersistenceException(String.format("Datasource with id '%s' not found", id));
         }
         if (tags != null && tags.size() > 0) {
-            Set<String> existingTags = persistenceManager.getDatasourceTags().stream()
+            Set<String> existingTags = tagProvider.list(TagType.DATASOURCE).stream()
                     .map(Tag::getText).collect(Collectors.toSet());
             for (String value : tags) {
                 if (!existingTags.contains(value)) {
-                    persistenceManager.saveTag(new Tag(TagType.DATASOURCE, value));
+                    tagProvider.save(new Tag(TagType.DATASOURCE, value));
                 }
             }
             entity.setTags(tags);
@@ -213,7 +222,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
-    public DataSourceComponent untag(String id, List<String> tags) throws PersistenceException {
+    public DataSourceComponent unTag(String id, List<String> tags) throws PersistenceException {
         DataSourceComponent entity = findById(id);
         if (entity == null) {
             throw new PersistenceException(String.format("Datasource with id '%s' not found", id));

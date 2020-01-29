@@ -29,14 +29,13 @@ import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SystemVariable;
-import ro.cs.tao.configuration.Configuration;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
-import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.AuxiliaryDataProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -62,7 +61,7 @@ import java.util.logging.Logger;
 public class ContainerController extends DataEntityController<Container, String, ContainerService> {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private AuxiliaryDataProvider auxiliaryDataProvider;
 
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
@@ -135,7 +134,7 @@ public class ContainerController extends DataEntityController<Container, String,
                 container.setName(name);
             }
             dockerFiles.remove(dockerFile);
-            final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue(Configuration.Docker.IMAGES_LOCATION), name.replace(" ", "-"));
+            final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
             final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
             for (MultipartFile file : dockerFiles) {
                 try {
@@ -147,7 +146,7 @@ public class ContainerController extends DataEntityController<Container, String,
                     data.setUserName(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
                     data.setCreated(LocalDateTime.now());
                     data.setModified(data.getCreated());
-                    persistenceManager.saveAuxiliaryData(data);
+                    auxiliaryDataProvider.save(data);
                 } catch (IOException e) {
                     error(e.getMessage());
                 }

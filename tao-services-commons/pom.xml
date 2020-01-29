@@ -11,6 +11,7 @@
 
     <artifactId>tao-services-commons</artifactId>
     <name>TAO Services Commons</name>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>

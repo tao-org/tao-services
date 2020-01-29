@@ -17,14 +17,13 @@
 package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.Sort;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.DataSourceParameter;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.datasource.persistence.QueryProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.QueryService;
 
@@ -37,7 +36,7 @@ public class QueryServiceImpl extends EntityService<Query>
         implements QueryService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private QueryProvider queryProvider;
 
 
     @Override
@@ -47,76 +46,58 @@ public class QueryServiceImpl extends EntityService<Query>
 
     @Override
     public Query getQueryById(long id) {
-        //return persistenceManager.findQueryById(id);
-        try {
-            return persistenceManager.getQuery(id);
-        } catch (PersistenceException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return queryProvider.get(id);
     }
 
     @Override
     public List<Query> list() {
-        //return persistenceManager.getQueries(SessionStore.currentContext().getPrincipal().getName());
-        try {
-            return persistenceManager.getUserQueries(SessionStore.currentContext().getPrincipal().getName());
-        } catch (PersistenceException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return queryProvider.list(SessionStore.currentContext().getPrincipal().getName());
     }
 
     @Override
     public List<Query> list(Iterable<Long> ids) {
-        return persistenceManager.getQueries(ids);
+        return queryProvider.list(ids);
     }
 
     @Override
     public Query getQuery(String userId, String sensor, String dataSource, long workflowNodeId) {
-        return persistenceManager.getQuery(userId, sensor, dataSource, workflowNodeId);
+        return queryProvider.get(userId, sensor, dataSource, workflowNodeId);
     }
 
     @Override
     public List<Query> getQueries(String userId, String sensor, String dataSource) {
-        return persistenceManager.getQueries(userId, sensor, dataSource);
+        return queryProvider.list(userId, sensor, dataSource);
     }
 
     @Override
-    public List<Query> getQueries(String userId, long nodeid) {
-        return persistenceManager.getQueries(userId, nodeid);
+    public List<Query> getQueries(String userId, long nodeId) {
+        return queryProvider.list(userId, nodeId);
     }
 
     @Override
     public List<Query> getQueries(String userId) {
-        //return persistenceManager.getQueries(userId);
-        try {
-            return persistenceManager.getUserQueries(userId);
-        } catch (PersistenceException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return queryProvider.list(userId);
     }
 
     @Override
     public List<Query> getQueriesBySensor(String userId, String sensor) {
-        return persistenceManager.getQueriesBySensor(userId, sensor);
+        return queryProvider.listBySensor(userId, sensor);
     }
 
     @Override
     public List<Query> getQueriesByDataSource(String userId, String dataSource) {
-        return persistenceManager.getQueriesByDataSource(userId, dataSource);
+        return queryProvider.listByDataSource(userId, dataSource);
     }
 
     @Override
-    public Page<Query> getAllQueries(Pageable pageable) {
-        return persistenceManager.getAllQueries(pageable);
+    public List<Query> getQueries(int pageNumber, int pageSize, Sort sort) {
+        return queryProvider.list(pageNumber, pageSize, sort);
     }
 
     @Override
     public Query save(Query object) {
         try {
-            return persistenceManager.saveQuery(object);
+            return queryProvider.save(object);
         } catch (PersistenceException e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -129,7 +110,7 @@ public class QueryServiceImpl extends EntityService<Query>
 
     @Override
     public void delete(Long id) throws PersistenceException {
-        persistenceManager.removeQuery(id);
+        queryProvider.delete(id);
     }
 
     @Override

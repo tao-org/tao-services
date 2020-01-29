@@ -34,7 +34,7 @@ import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
-import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -64,7 +64,7 @@ public class FileController extends BaseController {
     private StorageService<MultipartFile> storageService;
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private EOProductProvider productProvider;
 
     @RequestMapping(value = "/config", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getConfiguration(@RequestParam("filter") String filter) {
@@ -188,11 +188,11 @@ public class FileController extends BaseController {
         try {
             Path path = Paths.get(SystemVariable.USER_WORKSPACE.value()).getParent().resolve(folder);
             if (Files.isDirectory(path)) {
-                List<EOProduct> eoProducts = persistenceManager.getEOProducts(path.toUri().toString());
+                List<EOProduct> eoProducts = productProvider.getByLocation(path.toUri().toString());
                 for (EOProduct eoProduct : eoProducts) {
                     eoProduct.setVisibility(visibility);
                     try {
-                        persistenceManager.saveEOProduct(eoProduct);
+                        productProvider.save(eoProduct);
                     } catch (Exception e) {
                         String message = String.format("Cannot update product %s. Reason: %s",
                                                        eoProduct.getName(), e.getMessage());

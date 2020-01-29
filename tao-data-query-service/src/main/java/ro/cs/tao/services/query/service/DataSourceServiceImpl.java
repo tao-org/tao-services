@@ -27,8 +27,8 @@ import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.EOProductProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
@@ -47,7 +47,7 @@ public class DataSourceServiceImpl implements DataSourceService {
     private DownloadListener downloadListener;
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private EOProductProvider productProvider;
 
     @Override
     public SortedSet<String> getSupportedSensors() {
@@ -104,14 +104,14 @@ public class DataSourceServiceImpl implements DataSourceService {
             dsComponent.setFetchMode(mode);
             dsComponent.setProductStatusListener(downloadListener);
             String path = SystemVariable.SHARED_WORKSPACE.value();
-            final Set<String> existingSet = new HashSet<>(persistenceManager.getExistingProductNames(products.stream().map(EOProduct::getName).toArray(String[]::new)));
+            final Set<String> existingSet = new HashSet<>(productProvider.getExistingProductNames(products.stream().map(EOProduct::getName).toArray(String[]::new)));
             products.removeIf(p -> existingSet.contains(p.getName()) && mode != FetchMode.RESUME);
             final Logger logger = Logger.getLogger(DataSourceService.class.getName());
             for (EOProduct product : products) {
                 product.setProductStatus(ProductStatus.QUERIED);
                 product.addReference(query.getUser());
                 try {
-                    persistenceManager.saveEOProduct(product);
+                    productProvider.save(product);
                 } catch (PersistenceException e) {
                     logger.warning(String.format("Cannot persist product %s. Reason: %s",product.getName(), e.getMessage()));
                 }

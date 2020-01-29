@@ -16,7 +16,6 @@
 package ro.cs.tao.services.monitoring.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.OSRuntimeInfo;
@@ -24,8 +23,9 @@ import ro.cs.tao.execution.monitor.RuntimeInfo;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.NotifiableComponent;
 import ro.cs.tao.messaging.Topic;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.MessageProvider;
+import ro.cs.tao.persistence.NodeProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.commons.MessageConverter;
 import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.interfaces.MonitoringService;
@@ -48,7 +48,9 @@ import java.util.stream.Collectors;
 public class MonitoringServiceImpl extends NotifiableComponent implements MonitoringService<Notification> {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private MessageProvider messageProvider;
+    @Autowired
+    private NodeProvider nodeProvider;
 
     public MonitoringServiceImpl() {
         super();
@@ -98,7 +100,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
             if (NodeManager.isAvailable()) {
                 runtimeInfo = NodeManager.getInstance().getNodeSnapshot(hostName);
             } else {
-                NodeDescription node = persistenceManager.getNodeByHostName(hostName);
+                NodeDescription node = TopologyManager.getInstance().getNode(hostName);
                 runtimeInfo = OSRuntimeInfo.createInspector(node.getId(), node.getUserName(), node.getUserPass()).getSnapshot();
             }
         } catch (Throwable ex) {
@@ -116,7 +118,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     @Override
     public Map<String, List<Notification>> getUnreadNotifications(String userName) {
         Map<String, List<Notification>>  messages = new LinkedHashMap<>();
-        List<Message> unread = persistenceManager.getUnreadMessages(userName);
+        List<Message> unread = messageProvider.getUnreadMessages(userName);
         final MessageConverter converter = new MessageConverter();
         if (unread != null) {
             messages.put(Topic.INFORMATION.value(), new ArrayList<>());
@@ -138,9 +140,9 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
 
     @Override
     public List<Notification> getNotifications(String user, int page) {
-        final Page<Message> userMessages = persistenceManager.getUserMessages(user, page);
+        final List<Message> userMessages = messageProvider.getUserMessages(user, page);
         return userMessages != null ?
-                userMessages.getContent().stream()
+                userMessages.stream()
                         .map(m -> new MessageConverter().to(m))
                         .collect(Collectors.toList()) : new ArrayList<>();
     }
@@ -152,7 +154,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
             notifications.forEach(message -> {
                 message.setRead(true);
                 try {
-                    persistenceManager.saveMessage(converter.from(message));
+                    messageProvider.save(converter.from(message));
                 } catch (PersistenceException e) {
                     logger.severe(e.getMessage());
                 }
@@ -178,8 +180,8 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
                         master.setServicesStatus(node.getServicesStatus());
                         master.setFlavor(node.getFlavor());
                         master.setActive(true);
-                        master = persistenceManager.saveExecutionNode(master);
-                        persistenceManager.deleteExecutionNode(node.getId());
+                        master = nodeProvider.save(master);
+                        nodeProvider.delete(node.getId());
                         node = master;
                         logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                     }
