@@ -1,18 +1,4 @@
-/**
- * 
- */
 package ro.cs.tao.services.scheduling.job;
-
-import java.security.Principal;
-import java.text.SimpleDateFormat;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.Executors;
 
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -22,18 +8,23 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
-
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.scheduling.AbstractJob;
 import ro.cs.tao.security.SessionContext;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.bridge.spring.SpringContextBridge;
 import ro.cs.tao.services.model.scheduling.SchedulingMode;
 import ro.cs.tao.user.UserPreference;
+
+import java.security.Principal;
+import java.text.SimpleDateFormat;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.Executors;
 
 /**
  * @author Lucian Barbulescu
@@ -66,13 +57,8 @@ public class WorkflowExecutionJob extends AbstractJob {
 
             @Override
             protected List<UserPreference> setPreferences() {
-                try {
-                    return persistenceManager != null ?
-                            persistenceManager.getUserPreferences(getPrincipal().getName()) : null;
-                } catch (PersistenceException e) {
-                    logger.severe(e.getMessage());
-                }
-                return null;
+				return persistenceManager != null ?
+						persistenceManager.users().listPreferences(getPrincipal().getName()) : null;
             }
 
             @Override
@@ -110,7 +96,7 @@ public class WorkflowExecutionJob extends AbstractJob {
 			// a job was already started. Check if it is still running
 			// get last job id.
  			final long jobId = jobIds.get(jobIds.size() - 1);
-			final ExecutionJob taoJob = persistenceManager.getJobById(jobId);
+			final ExecutionJob taoJob = persistenceManager.jobs().get(jobId);
 			if (taoJob != null && taoJob.getExecutionStatus().value() < ExecutionStatus.DONE.value()) {
 				// the job is not done. do nothing
 				logger.info("The job named " + jobDetail.getKey().getName() + " for user " + jobDetail.getKey().getGroup() + " is already running!");
@@ -170,7 +156,7 @@ public class WorkflowExecutionJob extends AbstractJob {
 				}
 				
 				// get the date of the last product
-				Date date = persistenceManager.getNewestProductDateForUser(userName, footprint);
+				Date date = persistenceManager.rasterData().getNewestProductDateForUser(userName, footprint);
 				if (date == null) {
 					// no product defined for the user. Continue with existing values
 					continue;

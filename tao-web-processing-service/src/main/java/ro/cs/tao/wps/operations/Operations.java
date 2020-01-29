@@ -6,7 +6,7 @@ import com.bc.wps.api.utils.CapabilitiesBuilder;
 import com.bc.wps.api.utils.WpsTypeConverter;
 import org.springframework.web.util.UriComponentsBuilder;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.wps.controllers.WPSController;

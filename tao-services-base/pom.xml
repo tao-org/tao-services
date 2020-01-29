@@ -11,6 +11,7 @@
 
     <artifactId>tao-services-base</artifactId>
     <name>TAO Services Base</name>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
@@ -29,4 +30,15 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

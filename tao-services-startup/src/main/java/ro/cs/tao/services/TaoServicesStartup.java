@@ -27,8 +27,8 @@ import ro.cs.tao.component.Identifiable;
 import ro.cs.tao.component.RuntimeOptimizer;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.component.enums.TagType;
-import ro.cs.tao.configuration.Configuration;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
@@ -39,16 +39,23 @@ import ro.cs.tao.eodata.Projection;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
 import ro.cs.tao.execution.ExecutionsManager;
 import ro.cs.tao.execution.Executor;
+import ro.cs.tao.execution.TaskStatusListener;
 import ro.cs.tao.execution.drmaa.DrmaaTaoExecutor;
+import ro.cs.tao.execution.local.NullExecutor;
+import ro.cs.tao.execution.local.QueryExecutor;
+import ro.cs.tao.execution.model.ExecutionStatus;
+import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.execution.model.TaskSelector;
+import ro.cs.tao.execution.monitor.DefaultNodeInfo;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.OSRuntimeInfo;
+import ro.cs.tao.execution.wps.WPSExecutor;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.messaging.system.StartupCompletedMessage;
 import ro.cs.tao.orchestration.Orchestrator;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.scheduling.ScheduleManager;
 import ro.cs.tao.security.SessionStore;
@@ -64,10 +71,12 @@ import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.topology.*;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
+import ro.cs.tao.topology.provider.DefaultNodeProvider;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.DockerHelper;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 
 import java.io.IOException;
@@ -99,6 +108,12 @@ public class TaoServicesStartup extends StartupBase {
         put("Orchestrator plugins", TaskSelector.class);
         put("Quota Manager plugins", QuotaManager.class);
     }};
+    private static final String MASTER_USER = "topology.master.user";
+    private static final String MASTER_PASSWORD = "topology.master.password";
+    private static final String NODE_NAME_PREFIX = "topology.node.name.prefix";
+    private static final String NODE_DEFAULT_DESCRIPTION = "topology.node.default.description";
+    private static final String NODE_LIMIT = "topology.node.limit";
+
     @Autowired
     private PersistenceManager persistenceManager;
 
@@ -113,19 +128,25 @@ public class TaoServicesStartup extends StartupBase {
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof ContextRefreshedEvent) {
             logger.fine("Spring initialization completed");
-            ConfigurationManager.getInstance().setValue(ConfigurationManager.APP_HOME, homeDirectory().toString());
+            final ConfigurationProvider cfgManager = ConfigurationManager.getInstance();
+            if (cfgManager == null) {
+                throw new RuntimeException("Framework configuration unavailable");
+            }
+            cfgManager.setValue(ConfigurationProvider.APP_HOME, homeDirectory().toString());
+            injectPersistence();
+            logger.fine("Initialized persistence manager");
             for (Map.Entry<String, Class> entry : plugins.entrySet()) {
-                ServiceRegistry registry = ServiceRegistryManager.getInstance().getServiceRegistry(entry.getValue());
-                Set instances = registry.getServices();
+                ServiceRegistry<?> registry = ServiceRegistryManager.getInstance().getServiceRegistry(entry.getValue());
+                Set<?> instances = registry.getServices();
                 logger.info(String.format("Installed %s: %s",
                                           entry.getKey(), instances.stream().map(i -> i.getClass().getSimpleName())
                                                                     .sorted().collect(Collectors.joining(","))));
             }
-            logger.info("Web interface is accessible at https://localhost:" + ConfigurationManager.getInstance().getValue(Configuration.Services.PORT));
+            logger.info("Web interface is accessible at https://localhost:" + cfgManager.getValue("server.port"));
             try {
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
                 FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_FILES.value()));
-                String tempPath = ConfigurationManager.getInstance().getValue("spring.servlet.multipart.location", "/mnt/tao/tmp");
+                String tempPath = cfgManager.getValue("spring.servlet.multipart.location", "/mnt/tao/tmp");
                 FileUtilities.ensureExists(Paths.get(tempPath));
                 Path cachePath = TaoServicesStartup.homeDirectory().resolve("static").resolve("previews");
                 FileUtilities.ensureExists(cachePath);
@@ -133,9 +154,7 @@ public class TaoServicesStartup extends StartupBase {
                 logger.severe("Cannot create required folders: " + e.getMessage());
                 System.exit(1);
             }
-            //BaseController.setPersistenceManager(this.persistenceManager);
-            logger.fine("Initialized persistence manager");
-            Messaging.setPersister(this.persistenceManager);
+            Messaging.setPersister(this.persistenceManager.notifications());
             logger.fine("Initialized messaging subsystem");
             SpringSessionProvider.setPersistenceManager(this.persistenceManager);
             SessionStore.setSessionContextProvider(new SpringSessionProvider());
@@ -150,19 +169,33 @@ public class TaoServicesStartup extends StartupBase {
             registerEmbeddedContainers();
             backgroundWorker.submit(this::registerWorkflowLibrary);
             backgroundWorker.submit(() -> {
-                Projection.getSupported();
-                logger.fine("Projection database initialized");
+                final Map<String, String> map = Projection.getSupported();
+                logger.fine(String.format("Projection database initialized [%d projections]", map.size()));
             });
             backgroundWorker.submit(() -> {
                 final NodeManager nodeManager = NodeManager.getInstance();
                 if (nodeManager != null) {
-                    nodeManager.initialize(persistenceManager.getNodes());
+                    final String prefix = cfgManager.getValue(NODE_NAME_PREFIX);
+                    final String description = cfgManager.getValue(NODE_DEFAULT_DESCRIPTION);
+                    final String user = cfgManager.getValue(MASTER_USER);
+                    final String pwd = cfgManager.getValue(MASTER_PASSWORD);
+                    if (StringUtilities.isNullOrEmpty(prefix) || StringUtilities.isNullOrEmpty(description) ||
+                            StringUtilities.isNullOrEmpty(user) || StringUtilities.isNullOrEmpty(pwd)) {
+                        nodeManager.setDefaultNodeInfo(null);
+                    } else {
+                        nodeManager.setDefaultNodeInfo(new DefaultNodeInfo(prefix, description, user, pwd));
+                    }
+                    nodeManager.setNodeProvider(new DefaultNodeProvider());
+                    nodeManager.setNodeLimit(Integer.parseInt(cfgManager.getValue(NODE_LIMIT, "0")));
+                    nodeManager.initialize();
                     TopologyManager.getInstance().registerListener(nodeManager);
                     nodeManager.start();
-                    logger.fine("Topology monitoring initialized");
+                    logger.fine("Topology monitoring initialized. " + (nodeManager.canCreateNewNodes() ?
+                            "Node creation is enabled up to " + nodeManager.getNodeLimit() + " nodes." :
+                            "Node creation is not supported."));
                 } else {
                     logger.fine(String.format("Topology monitoring not available (DRMAA session factory set to %s",
-                                              ConfigurationManager.getInstance().getValue(Configuration.DRMAA.SESSION_FACTORY_CLASS)));
+                                              cfgManager.getValue("tao.drmaa.sessionfactory")));
                 }
             });
             backgroundWorker.submit(() -> {
@@ -174,34 +207,63 @@ public class TaoServicesStartup extends StartupBase {
         }
     }
 
+    private void injectPersistence() {
+        Executor.setStatusListener(new TaskStatusListener() {
+            @Override
+            public void taskStatusChanged(ExecutionTask task, ExecutionStatus status) {
+                try {
+                    persistenceManager.tasks().updateStatus(task, status);
+                } catch (PersistenceException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void taskChanged(ExecutionTask task) {
+                try {
+                    persistenceManager.tasks().update(task);
+                } catch (PersistenceException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        QueryExecutor.setProductProvider(persistenceManager.rasterData());
+        QueryExecutor.setWorkflowProvider(persistenceManager.workflows());
+        DrmaaTaoExecutor.setTaskProvider(persistenceManager.tasks());
+        DrmaaTaoExecutor.setContainerProvider(persistenceManager.containers());
+        NullExecutor.setWorkflowNodeProvider(persistenceManager.workflowNodes());
+        NullExecutor.setComponentProvider(persistenceManager.processingComponents());
+        WPSExecutor.setTaskProvider(persistenceManager.tasks());
+    }
+
     private void updateLocalhost() {
         Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
-        NodeDescription node = TopologyManager.getInstance().getNode("localhost");
+        NodeDescription node = persistenceManager.nodes().get("localhost");
         if (node != null) {
             try {
-                List<Tag> nodeTags = persistenceManager.getNodeTags();
+                List<Tag> nodeTags = persistenceManager.tags().list(TagType.TOPOLOGY_NODE);
                 if (nodeTags == null || nodeTags.size() == 0) {
                     for (TagType tagType : TagType.values()) {
-                        persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, tagType.friendlyName()));
+                        persistenceManager.tags().save(new Tag(TagType.TOPOLOGY_NODE, tagType.friendlyName()));
                     }
                 }
                 logger.finest("Overriding the default 'localhost' database entry");
                 String masterHost = InetAddress.getLocalHost().getHostName();
-                NodeDescription master = persistenceManager.getNodeByHostName(masterHost);
+                NodeDescription master = persistenceManager.nodes().get(masterHost);
                 if (master == null) {
                     Tag masterTag = new Tag(TagType.TOPOLOGY_NODE, "master");
                     int processors = Runtime.getRuntime().availableProcessors();
-                    persistenceManager.saveTag(masterTag);
+                    persistenceManager.tags().save(masterTag);
                     master = new NodeDescription();
                     master.setId(masterHost);
-                    String user = ConfigurationManager.getInstance().getValue(Configuration.Topology.MASTER_USER, node.getUserName());
+                    String user = ConfigurationManager.getInstance().getValue("topology.master.user", node.getUserName());
                     master.setUserName(user);
-                    String pwd = ConfigurationManager.getInstance().getValue(Configuration.Topology.MASTER_PASSWORD, node.getUserPass());
+                    String pwd = ConfigurationManager.getInstance().getValue("topology.master.password", node.getUserPass());
                     master.setUserPass(pwd);
                     OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(masterHost, user, pwd);
                     master.setDescription(node.getDescription());
                     master.setServicesStatus(node.getServicesStatus());
-                    final NodeFlavor masterFlavor = persistenceManager.getMasterFlavor();
+                    final NodeFlavor masterFlavor = persistenceManager.nodeFlavors().getMasterFlavor();
                     masterFlavor.setCpu(processors);
                     masterFlavor.setMemory((int) inspector.getTotalMemoryMB() / 1024);
                     masterFlavor.setDisk((int) inspector.getTotalDiskGB());
@@ -212,13 +274,13 @@ public class TaoServicesStartup extends StartupBase {
                         // check docker service on master
                         String name = "Docker";
                         String version = DockerHelper.getDockerVersion();
-                        ServiceDescription description = persistenceManager.getServiceDescription(name, version);
+                        ServiceDescription description = persistenceManager.nodes().getServiceDescription(name, version);
                         if (description == null) {
                             description = new ServiceDescription();
                             description.setName(name);
                             description.setDescription("Application container manager");
                             description.setVersion(version);
-                            description = persistenceManager.saveServiceDescription(description);
+                            description = persistenceManager.nodes().saveServiceDescription(description);
                         }
                         NodeServiceStatus nodeService = new NodeServiceStatus();
                         nodeService.setServiceDescription(description);
@@ -232,13 +294,13 @@ public class TaoServicesStartup extends StartupBase {
                             nodeService = new NodeServiceStatus();
                             name = taoExecutor.getDRMName();
                             version = taoExecutor.getDRMVersion();
-                            description = persistenceManager.getServiceDescription(name, version);
+                            description = persistenceManager.nodes().getServiceDescription(name, version);
                             if (description == null) {
                                 description = new ServiceDescription();
                                 description.setName(name);
                                 description.setDescription("NoCRM".equals(name) ? "Local execution" : name);
                                 description.setVersion(version);
-                                description = persistenceManager.saveServiceDescription(description);
+                                description = persistenceManager.nodes().saveServiceDescription(description);
                             }
                             nodeService.setServiceDescription(description);
                             nodeService.setStatus("n/a".equals(description.getVersion()) ? ServiceStatus.NOT_FOUND : ServiceStatus.INSTALLED);
@@ -246,8 +308,8 @@ public class TaoServicesStartup extends StartupBase {
                         }
 
                     }
-                    persistenceManager.saveExecutionNode(master);
-                    persistenceManager.removeExecutionNode(node.getId());
+                    persistenceManager.nodes().save(master);
+                    persistenceManager.nodes().delete(node.getId());
                     logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                 }
                 TopologyManager.setMasterNode(master);
@@ -266,16 +328,25 @@ public class TaoServicesStartup extends StartupBase {
     private void registerFlavors() {
         TopologyManager manager = TopologyManager.getInstance();
         final List<NodeFlavor> flavors = manager.listNodeFlavors();
+        final Set<String> existingFlavors = persistenceManager.nodeFlavors().list().stream().map(NodeFlavor::getId).collect(Collectors.toSet());
         if (flavors != null) {
             for (NodeFlavor flavor : flavors) {
-                persistenceManager.save(flavor);
+                try {
+                    if (existingFlavors.contains(flavor.getId())) {
+                        persistenceManager.nodeFlavors().update(flavor);
+                    } else {
+                        persistenceManager.nodeFlavors().save(flavor);
+                    }
+                } catch (PersistenceException e) {
+                    logger.severe(e.getMessage());
+                }
             }
             logger.fine("Updated node flavors from the topology node provider");
         }
     }
 
     private void createUserWorkspaces() {
-        List<User> activeUsers = persistenceManager.findUsersByStatus(UserStatus.ACTIVE);
+        List<User> activeUsers = persistenceManager.users().list(UserStatus.ACTIVE);
         if (activeUsers != null) {
             final Path rootPath = Paths.get(SystemVariable.ROOT.value());
             for (User user : activeUsers) {
@@ -321,12 +392,12 @@ public class TaoServicesStartup extends StartupBase {
     private void registerDataSourceComponents() {
         SortedSet<String> sensors = DataSourceManager.getInstance().getSupportedSensors();
         if (sensors != null) {
-            Set<String> existing = persistenceManager.getDataSourceComponents()
+            Set<String> existing = persistenceManager.dataSourceComponents().list()
                     .stream()
                     .filter(DataSourceComponent::getSystem)
                     .map(Identifiable::getId)
                     .collect(Collectors.toSet());
-            List<Tag> tags = persistenceManager.getDatasourceTags();
+            List<Tag> tags = persistenceManager.tags().list(TagType.DATASOURCE);
             if (tags == null) {
                 tags = new ArrayList<>();
             }
@@ -335,8 +406,12 @@ public class TaoServicesStartup extends StartupBase {
             for (String sensor : sensors) {
                 Tag sensorTag = tags.stream().filter(t -> t.getText().equalsIgnoreCase(sensor)).findFirst().orElse(null);
                 if (sensorTag == null) {
-                    sensorTag = persistenceManager.saveTag(new Tag(TagType.DATASOURCE, sensor));
-                    tags.add(sensorTag);
+                    try {
+                        sensorTag = persistenceManager.tags().save(new Tag(TagType.DATASOURCE, sensor));
+                        tags.add(sensorTag);
+                    } catch (PersistenceException e) {
+                        logger.severe(e.getMessage());
+                    }
                 }
                 List<String> dsNames = DataSourceManager.getInstance().getNames(sensor);
                 for (String dsName : dsNames) {
@@ -344,8 +419,12 @@ public class TaoServicesStartup extends StartupBase {
                     if (!existing.contains(componentId)) {
                         Tag dsNameTag = tags.stream().filter(t -> t.getText().equalsIgnoreCase(dsName)).findFirst().orElse(null);
                         if (dsNameTag == null) {
-                            dsNameTag = persistenceManager.saveTag(new Tag(TagType.DATASOURCE, dsName));
-                            tags.add(dsNameTag);
+                            try {
+                                dsNameTag = persistenceManager.tags().save(new Tag(TagType.DATASOURCE, dsName));
+                                tags.add(dsNameTag);
+                            } catch (PersistenceException e) {
+                                logger.severe(e.getMessage());
+                            }
                         }
                         DataSourceComponent dataSourceComponent = new DataSourceComponent(sensor, dsName);
                         dataSourceComponent.setFetchMode(FetchMode.OVERWRITE);
@@ -356,10 +435,14 @@ public class TaoServicesStartup extends StartupBase {
                         dataSourceComponent.setCopyright("(C) TAO Team");
                         dataSourceComponent.setNodeAffinity("Any");
                         dataSourceComponent.setSystem(true);
-                        dataSourceComponent.addTags(sensorTag.getText());
-                        dataSourceComponent.addTags(dsNameTag.getText());
+                        if (sensorTag != null) {
+                            dataSourceComponent.addTags(sensorTag.getText());
+                        }
+                        if (dsNameTag != null) {
+                            dataSourceComponent.addTags(dsNameTag.getText());
+                        }
                         try {
-                            dataSourceComponent = persistenceManager.saveDataSourceComponent(dataSourceComponent);
+                            dataSourceComponent = persistenceManager.dataSourceComponents().save(dataSourceComponent);
                             if (newDs == null) {
                                 newDs = new ArrayList<>();
                             }

@@ -4,7 +4,7 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.CommonParameterNames;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
@@ -26,7 +26,7 @@ public class DSGroupSnapWorkflowBuilder extends WorkflowBuilderBase {
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
-        Map<String, String> customValues = new HashMap<>();
+        //Map<String, String> customValues = new HashMap<>();
         Principal principal = SessionStore.currentContext().getPrincipal();
         List<String> productNames = new ArrayList<>();
         productNames.add("S2A_MSIL1C_20170731T093041_N0205_R136_T34TFR_20170731T093607");
@@ -56,7 +56,7 @@ public class DSGroupSnapWorkflowBuilder extends WorkflowBuilderBase {
         group.setNodeAffinity("Any");
         group.addDataSourceComponent(dataSourceComponent1);
         group.addDataSourceComponent(dataSourceComponent2);
-        group = persistenceManager.saveDataSourceComponentGroup(group);
+        group = persistenceManager.dataSourceGroups().save(group);
 
         Query query1 = new Query();
         query1.setLabel(String.format("First query for sample workflow %d", workflow.getId()));
@@ -74,7 +74,7 @@ public class DSGroupSnapWorkflowBuilder extends WorkflowBuilderBase {
         values.put(CommonParameterNames.FOOTPRINT, "POLYGON((23.08888415063469 45.64122237960987,23.497142114745625 45.64122237960987,23.497142114745625 45.884014164289056,23.08888415063469 45.884014164289056,23.08888415063469 45.64122237960987))");
         query1.setValues(values);
         //query1.setWorkflowNodeId(node1.getId());
-        query1 = persistenceManager.saveQuery(query1);
+        query1 = persistenceManager.queries().save(query1);
         group.addQuery(query1, dataSourceComponent1.getSources().get(0).getId());
 
         Query query2 = new Query();
@@ -93,9 +93,9 @@ public class DSGroupSnapWorkflowBuilder extends WorkflowBuilderBase {
         values.put(CommonParameterNames.FOOTPRINT, "POLYGON((23.08888415063469 45.64122237960987,23.497142114745625 45.64122237960987,23.497142114745625 45.884014164289056,23.08888415063469 45.884014164289056,23.08888415063469 45.64122237960987))");
         query2.setValues(values);
         //query2.setWorkflowNodeId(node1.getId());
-        query2 = persistenceManager.saveQuery(query2);
+        query2 = persistenceManager.queries().save(query2);
         group.addQuery(query2, dataSourceComponent2.getSources().get(0).getId());
-        group = persistenceManager.updateDataSourceComponentGroup(group);
+        group = persistenceManager.dataSourceGroups().update(group);
 
         WorkflowNodeDescriptor node1 = addNode(workflow,
                                                "DS Group", group.getId(), ComponentType.DATASOURCE_GROUP, null,

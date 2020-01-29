@@ -25,8 +25,8 @@ import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.EOProductProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl extends EntityService<EOProduct> implements ProductService {
 
 	@Autowired
-	private PersistenceManager persistenceManager;
+	private EOProductProvider productProvider;
 
 	@Override
 	protected void validateFields(EOProduct entity, List<String> errors) {
@@ -64,14 +64,14 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
 	@Override
 	public EOProduct findById(String id) {
-		return persistenceManager.getEOProduct(id);
+		return productProvider.get(id);
 	}
 
 	@Override
 	public List<EOProduct> list() {
 		List<EOProduct> products = null;
 		try {
-			products = persistenceManager.getEOProducts();
+			products = productProvider.list();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -80,47 +80,55 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
 	@Override
 	public List<EOProduct> list(Iterable<String> ids) {
-		return persistenceManager.getEOProducts(ids);
+		return productProvider.list(ids);
 	}
 
 	@Override
 	public List<EOProduct> getByNames(String... names) {
-		return persistenceManager.getProductsByNames(names);
+		return productProvider.getProductsByNames(names);
 	}
 
 	@Override
 	public EOProduct save(EOProduct object) {
 		try {
-			return persistenceManager.saveEOProduct(object);
+			return productProvider.save(object);
 		} catch (PersistenceException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			return null;
 		}
 	}
 
 	@Override
 	public EOProduct update(EOProduct object) throws PersistenceException {
-		return persistenceManager.saveEOProduct(object);
+		return productProvider.save(object);
 	}
 
 	@Override
 	public void delete(String id) {
-		persistenceManager.removeProduct(id);
+		try {
+			productProvider.delete(id);
+		} catch (PersistenceException e) {
+			logger.severe(e.getMessage());
+		}
 	}
 
 	@Override
 	public void delete(EOProduct product) {
-		persistenceManager.remove(product);
+		try {
+			productProvider.delete(product);
+		} catch (PersistenceException e) {
+			logger.severe(e.getMessage());
+		}
 	}
 
 	@Override
 	public int countAdditionalProductReferences(String componentId, String name) {
-		return persistenceManager.getOtherProductReferences(componentId, name);
+		return productProvider.countOtherProductReferences(componentId, name);
 	}
 
 	@Override
 	public void deleteIfNotReferenced(String refererComponentId, String productName) {
-		persistenceManager.deleteIfNotReferenced(refererComponentId, productName);
+		productProvider.deleteIfNotReferenced(refererComponentId, productName);
 	}
 
 	@Override
@@ -181,8 +189,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 						}
 					}
 				} catch (Exception e1) {
-					Logger.getLogger(ProductService.class.getName())
-							.warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
+					logger.warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
 				}
 			}
 		} catch (Exception e) {
@@ -202,11 +209,11 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 			try {
 				product.setProductStatus(ProductStatus.DOWNLOADED);
 				product.addReference(principal.getName());
-				persistenceManager.saveEOProduct(product);
+				productProvider.save(product);
 				UserQuotaManager.getInstance().updateUserInputQuota(principal);
 				count++;
 			} catch (PersistenceException | QuotaException e) {
-				e.printStackTrace();
+				logger.severe(e.getMessage());
 			}
 		}
 		return count;
@@ -285,7 +292,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 							if (metadata.getProductId() != null) {
 								product.setId(metadata.getProductId());
 							}
-							EOProduct existing = persistenceManager.getEOProduct(product.getId());
+							EOProduct existing = productProvider.get(product.getId());
 							if (existing == null) {
 								product.setEntryPoint(metadata.getEntryPoint());
 								product.setVisibility(Visibility.PUBLIC);
@@ -301,17 +308,15 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 							}
 							product.setProductStatus(ProductStatus.DOWNLOADED);
 							product.addReference(SessionStore.currentContext().getPrincipal().getName());
-							persistenceManager.saveEOProduct(product);
+							productProvider.save(product);
 							count.getAndIncrement();
 
 						} else {
-							Logger.getLogger(ProductService.class.getName())
-									.info(String.format("Skipping %s. Reason: unable to read metadata", targetPath));
+							logger.info(String.format("Skipping %s. Reason: unable to read metadata", targetPath));
 						}
 					}
 				} catch (Exception e1) {
-					Logger.getLogger(ProductService.class.getName())
-							.warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
+					logger.warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
 				}
 			});
 		} catch (Exception e) {
@@ -322,10 +327,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
 		if (skipped.get() != 0) {
 			// throw am exception to force an error response sent to the user
-			QuotaException ex = new QuotaException(String.format(
-					"Not all products found were imported because you have reached your input quota! "
-					+ "Imported products: %d, Skipped products: %d", count.get(), skipped.get()));
-			throw ex;
+			throw new QuotaException(String.format("Not all products found were imported because you have reached your input quota! "
+														   + "Imported products: %d, Skipped products: %d", count.get(), skipped.get()));
 		}
 
 		return count.get();
@@ -333,6 +336,6 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
 	@Override
 	public List<String> checkExisting(String... names) {
-		return persistenceManager.getExistingProductNames(names);
+		return productProvider.getExistingProductNames(names);
 	}
 }

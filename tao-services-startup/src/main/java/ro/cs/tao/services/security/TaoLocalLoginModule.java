@@ -85,7 +85,7 @@ public class TaoLocalLoginModule implements LoginModule {
         password = new String(passwordCallback.getPassword());
 
         // verify the username and password
-        if (persistenceManager.checkLoginCredentials(username, password)) {
+        if (persistenceManager.users().login(username, password)) {
             logger.fine("TAO Local Login Module - Successful login!");
             succeeded = true;
             return succeeded;
@@ -109,15 +109,14 @@ public class TaoLocalLoginModule implements LoginModule {
      */
     @Override
     public boolean commit() throws LoginException {
-        if (succeeded == false) {
+        if (!succeeded) {
             return false;
         } else {
             // add a Principal (authenticated identity) to the Subject
 
             // assume the user we authenticated is the SamplePrincipal
             userPrincipal = new UserPrincipal(username);
-            if (!subject.getPrincipals().contains(userPrincipal))
-                subject.getPrincipals().add(userPrincipal);
+            subject.getPrincipals().add(userPrincipal);
 
             // erase username and password values
             username = null;
@@ -147,9 +146,9 @@ public class TaoLocalLoginModule implements LoginModule {
      */
     @Override
     public boolean abort() throws LoginException {
-        if (succeeded == false) {
+        if (!succeeded) {
             return false;
-        } else if (commitSucceeded == false) {
+        } else if (!commitSucceeded) {
             // login succeeded but overall authentication failed
             succeeded = false;
             username = null;

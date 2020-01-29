@@ -1,13 +1,5 @@
 package ro.cs.tao.services.scheduling.service;
 
-import java.security.Principal;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -16,9 +8,9 @@ import org.quartz.Trigger.TriggerState;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
 import ro.cs.tao.execution.model.ExecutionJob;
-import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.execution.persistence.ExecutionJobProvider;
+import ro.cs.tao.persistence.WorkflowProvider;
 import ro.cs.tao.scheduling.AbstractJob;
 import ro.cs.tao.scheduling.JobData;
 import ro.cs.tao.scheduling.JobDescriptor;
@@ -31,11 +23,17 @@ import ro.cs.tao.services.model.scheduling.SchedulingMode;
 import ro.cs.tao.services.scheduling.job.WorkflowExecutionJob;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 
+import java.security.Principal;
+import java.time.LocalDateTime;
+import java.util.*;
+
 @Service("schedulingService")
 public class SchedulingServiceImpl implements SchedulingService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private WorkflowProvider workflowProvider;
+    @Autowired
+	private ExecutionJobProvider jobProvider;
     
 	@Override
 	public List<SchedulingInfo> listUserSchedules() {
@@ -66,14 +64,14 @@ public class SchedulingServiceImpl implements SchedulingService {
 				// set the workflow related data
 				final long workflowId = jobDataMap.getLong(WorkflowExecutionJob.WORKFLOW_ID_KEY); 
 				info.setWorkflowId(workflowId);
-				final WorkflowDescriptor workflowDescriptor = persistenceManager.getWorkflowDescriptor(workflowId);
+				final WorkflowDescriptor workflowDescriptor = workflowProvider.get(workflowId);
 				info.setWorkflowName(workflowDescriptor.getName());
 				
 				final List<Long> jobIds =(List<Long>)jobDataMap.get(WorkflowExecutionJob.JOB_ID_KEY);
 				final List<JobInfo> jobs = new LinkedList<JobInfo>();
 				if (jobIds != null) {
 					for (Long jobId : jobIds) {
-						final ExecutionJob job = persistenceManager.getJobById(jobId);
+						final ExecutionJob job = jobProvider.get(jobId);
 						final JobInfo jobInfo = new JobInfo();
 
 						jobInfo.setJobId(jobId);

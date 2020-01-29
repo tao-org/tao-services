@@ -18,9 +18,8 @@ package ro.cs.tao.services.auth.impl;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.configuration.Configuration;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
@@ -29,7 +28,6 @@ import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.FileUtilities;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
@@ -50,7 +48,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private TokenManagementService tokenService;
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private UserProvider userProvider;
 
     @Override
     public AuthInfo login(String username) {
@@ -61,20 +59,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         logger.finest("Token " + authenticationToken);
 
         // check if user is still active in TAO
-        final User user = persistenceManager.findUserByUsername(username);
+        final User user = userProvider.getByName(username);
         if (user != null && user.getStatus() == UserStatus.ACTIVE) {
-            // update user last login date
-            persistenceManager.updateUserLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
             try {
-                Path path = Paths.get(ConfigurationManager.getInstance().getValue(Configuration.FileSystem.WORKSPACE_LOCATION)).resolve(username);
+                // update user last login date
+                userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
+                Path path = Paths.get(ConfigurationManager.getInstance().getValue("workspace.location")).resolve(username);
                 FileUtilities.ensureExists(path);
                 FileUtilities.ensureExists(path.resolve("files"));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
                                             username, ExceptionUtils.getStackTrace(e)));
             }
             // retrieve user groups and send them as profiles
-            return new AuthInfo(true, authenticationToken, persistenceManager.getUserGroups(username).stream().map(Group::getName).collect(Collectors.toList()));
+            return new AuthInfo(true, authenticationToken, user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
         }
         // unauthorized
         return new AuthInfo(false, null, null);

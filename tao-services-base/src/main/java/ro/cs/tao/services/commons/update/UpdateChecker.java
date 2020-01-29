@@ -2,6 +2,7 @@ package ro.cs.tao.services.commons.update;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.utils.NetStreamResponse;
 import ro.cs.tao.utils.NetUtils;
 
@@ -26,7 +27,7 @@ public class UpdateChecker {
     public static void initialize() {
         if (instance == null) {
             final Logger localLogger = Logger.getLogger(UpdateChecker.class.getName());
-            final ConfigurationManager cfgManager = ConfigurationManager.getInstance();
+            final ConfigurationProvider cfgManager = ConfigurationManager.getInstance();
             ShutdownHook.register(cfgManager.getApplicationHome());
             final String url = cfgManager.getValue("update.repository.url");
             if (url == null) {

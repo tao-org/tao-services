@@ -5,8 +5,8 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.datasource.ProductStatusListener;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.EOProductProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
@@ -19,7 +19,7 @@ public class DownloadListener implements ProductStatusListener {
     private Logger logger = Logger.getLogger(DownloadListener.class.getName());
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private EOProductProvider productProvider;
 
     @Override
     public boolean downloadStarted(EOProduct product) {
@@ -33,7 +33,7 @@ public class DownloadListener implements ProductStatusListener {
         	}
     	
         	// check if the product already exists
-        	final EOProduct oldProd = persistenceManager.getEOProduct(product.getId());
+        	final EOProduct oldProd = productProvider.get(product.getId());
         	if (oldProd != null) {
         		// if the product is failed or downloading, copy its references but continue with the download
         		if (oldProd.getProductStatus() == ProductStatus.FAILED || oldProd.getProductStatus() == ProductStatus.QUERIED) {
@@ -53,7 +53,7 @@ public class DownloadListener implements ProductStatusListener {
         	
         	product.addReference(principal.getName());
         	product.setProductStatus(ProductStatus.DOWNLOADING);
-            persistenceManager.saveEOProduct(product);
+            productProvider.save(product);
             // update the user's input quota
             UserQuotaManager.getInstance().updateUserInputQuota(principal);
             return true;
@@ -73,7 +73,7 @@ public class DownloadListener implements ProductStatusListener {
         try {
         	// re-update the references, in case some other user tried to download this product after 
         	// the current user started
-        	final EOProduct oldProd = persistenceManager.getEOProduct(product.getId());
+        	final EOProduct oldProd = productProvider.get(product.getId());
         	if (oldProd != null) {
         		product.setRefs(oldProd.getRefs());
         	}
@@ -81,7 +81,7 @@ public class DownloadListener implements ProductStatusListener {
             product.setProductStatus(ProductStatus.DOWNLOADED);
             // update the product's reference
             product.addReference(principal.getName());
-            persistenceManager.saveEOProduct(product);
+            productProvider.save(product);
             
             // update the user's input quota
             UserQuotaManager.getInstance().updateUserInputQuota(principal);
@@ -99,7 +99,7 @@ public class DownloadListener implements ProductStatusListener {
         try {
         	product.removeReference(principal.getName());
             product.setProductStatus(ProductStatus.FAILED);
-            persistenceManager.saveEOProduct(product);
+            productProvider.save(product);
             // roll back the user's quota
             UserQuotaManager.getInstance().updateUserInputQuota(principal);
             logger.warning(String.format("Product %s not downloaded. Reason: %s", product.getName(), reason));

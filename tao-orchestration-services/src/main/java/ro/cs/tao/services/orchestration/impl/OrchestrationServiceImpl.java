@@ -29,11 +29,12 @@ import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
+import ro.cs.tao.execution.persistence.ExecutionJobProvider;
+import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.interfaces.OrchestratorService;
@@ -48,10 +49,10 @@ import java.util.concurrent.Executors;
 public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private ExecutionJobProvider jobProvider;
 
     @Autowired
-    private ExecutorService executor;
+    private ExecutionTaskProvider taskProvider;
 
     @Autowired
     private WorkflowService workflowService;
@@ -101,7 +102,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         final List<ExecutionTaskSummary> summaries = new ArrayList<>();
         final Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
-        final List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
+        final List<ExecutionJob> jobs = jobProvider.list(userName, statuses);
         for (ExecutionJob job : jobs) {
             summaries.addAll(getTasksStatus(job.getId()));
         }
@@ -110,7 +111,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public List<ExecutionTaskSummary> getTasksStatus(long jobId) {
-        return persistenceManager.getTasksStatus(jobId);
+        return taskProvider.getTasksStatus(jobId);
 
     }
 
@@ -119,13 +120,13 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         final List<ExecutionJobSummary> summaries = new ArrayList<>();
         final Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
-        final List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
+        final List<ExecutionJob> jobs = jobProvider.list(userName, statuses);
         List<ExecutionTaskSummary> tasksStatus;
         for (ExecutionJob job : jobs) {
             tasksStatus = getTasksStatus(job.getId());
             final String workflowName = tasksStatus.size() > 0 ?
                     tasksStatus.get(0).getWorkflowName() :
-                    persistenceManager.getWorkflowDescriptor(job.getWorkflowId()).getName();
+                    workflowService.getFullDescriptor(job.getWorkflowId()).getName();
             ExecutionJobSummary summary = new ExecutionJobSummary();
             summary.setJobName(job.getName());
             summary.setUser(job.getUserName());
@@ -145,13 +146,13 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         final Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.SUSPENDED, ExecutionStatus.DONE,
                                      ExecutionStatus.FAILED, ExecutionStatus.CANCELLED);
-        final List<ExecutionJob> jobs = persistenceManager.getJobs(userName, statuses);
+        final List<ExecutionJob> jobs = jobProvider.list(userName, statuses);
         List<ExecutionTaskSummary> tasksStatus;
         for (ExecutionJob job : jobs) {
             tasksStatus = getTasksStatus(job.getId());
             final String workflowName = tasksStatus.size() > 0 ?
                     tasksStatus.get(0).getWorkflowName() :
-                    persistenceManager.getWorkflowDescriptor(job.getWorkflowId()).getName();
+                    workflowService.getFullDescriptor(job.getWorkflowId()).getName();
             ExecutionJobSummary summary = new ExecutionJobSummary();
             summary.setJobName(job.getName());
             summary.setUser(job.getUserName());

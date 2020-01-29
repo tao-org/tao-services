@@ -23,7 +23,7 @@ import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
-import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.interfaces.WebProcessingService;
@@ -51,7 +51,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
     private OrchestratorService orchestratorService;
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private ExecutionJobProvider jobProvider;
 
     @Autowired
     private StorageService<MultipartFile> storageService;
@@ -100,7 +100,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
                 return executionJob;
             }
         }
-        return persistenceManager.getJobById(jobId);
+        return jobProvider.get(jobId);
     }
 
     @Override

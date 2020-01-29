@@ -18,11 +18,12 @@ import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.DataDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
-import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.interfaces.WorkflowService;
@@ -53,7 +54,7 @@ public class WPSIntegrationTest_SpringMocking {
     @MockBean
     private OrchestratorService orchestratorService;
     @MockBean
-    private PersistenceManager persistenceManager;
+    private ExecutionJobProvider jobProvider;
     @MockBean
     private StorageService<MultipartFile> storageService;
 
@@ -138,7 +139,7 @@ public class WPSIntegrationTest_SpringMocking {
         job.setWorkflowId(24);
         job.setExecutionStatus(ExecutionStatus.RUNNING);
 
-        given(this.persistenceManager.getJobById(13)).willReturn(job);
+        given(this.jobProvider.get(13L)).willReturn(job);
         given(this.workflowService.getWorkflowInfo(24)).willReturn(createWorkflowInfo("TestWorkflowName", 24));
 
         //execution
@@ -217,7 +218,7 @@ public class WPSIntegrationTest_SpringMocking {
     }
 
     private void prepareConfigurationManagerForTest() {
-        final ConfigurationManager configurationManager = ConfigurationManager.getInstance();
+        final ConfigurationProvider configurationManager = ConfigurationManager.getInstance();
         settingsBeforeTest = ReflectionTestUtils.getField(configurationManager, "settings");
         final Properties properties = new Properties();
         properties.setProperty("company.name", "Test.company.name");
@@ -244,7 +245,7 @@ public class WPSIntegrationTest_SpringMocking {
     }
 
     private void resetConfigurationManager() {
-        final ConfigurationManager configurationManager = ConfigurationManager.getInstance();
+        final ConfigurationProvider configurationManager = ConfigurationManager.getInstance();
         ReflectionTestUtils.setField(configurationManager, "settings", settingsBeforeTest);
     }
 

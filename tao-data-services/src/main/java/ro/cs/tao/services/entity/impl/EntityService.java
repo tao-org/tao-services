@@ -19,11 +19,14 @@ import ro.cs.tao.component.validation.ValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * @author Cosmin Cara
  */
 public abstract class EntityService<T> {
+
+    protected Logger logger = Logger.getLogger(getClass().getName());
 
     public void validate(T entity) throws ValidationException {
         List<String> errors = new ArrayList<>();

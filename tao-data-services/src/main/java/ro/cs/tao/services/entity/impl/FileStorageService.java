@@ -25,8 +25,10 @@ import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.VectorData;
 import ro.cs.tao.eodata.enums.Visibility;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.AuxiliaryDataProvider;
+import ro.cs.tao.persistence.EOProductProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.VectorDataProvider;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
@@ -53,7 +55,11 @@ import java.util.stream.Collectors;
 public class FileStorageService implements StorageService<MultipartFile> {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private EOProductProvider productProvider;
+    @Autowired
+    private VectorDataProvider vectorDataProvider;
+    @Autowired
+    private AuxiliaryDataProvider auxiliaryDataProvider;
 
     public FileStorageService() { }
 
@@ -104,15 +110,15 @@ public class FileStorageService implements StorageService<MultipartFile> {
             Path filePath = uploadPath.getParent().resolve(fileName);
             Files.delete(filePath);
             try {
-                persistenceManager.removeAuxiliaryData(SessionStore.currentContext().getWorkspace().relativize(filePath).toString());
+                auxiliaryDataProvider.delete(SessionStore.currentContext().getWorkspace().relativize(filePath).toString());
             } catch (Exception e) {
                 Logger.getLogger(FileStorageService.class.getName()).warning(String.format("File %s was not found in database", fileName));
             }
         } else { // it has to be a product folder
             Path filePath = SessionStore.currentContext().getWorkspace().resolve(fileName);
-            List<EOProduct> products = persistenceManager.getEOProducts(filePath.toUri().toString());
+            List<EOProduct> products = productProvider.getByLocation(filePath.toUri().toString());
             if (products == null || products.size() == 0) {
-                List<VectorData> vectorProducts = persistenceManager.getVectorDataProducts(filePath.toUri().toString());
+                List<VectorData> vectorProducts = vectorDataProvider.getByLocation(filePath.toUri().toString());
                 if (vectorProducts.size() > 1) {
                     throw new IOException("Cannot remove vector products");
                 }
@@ -122,7 +128,12 @@ public class FileStorageService implements StorageService<MultipartFile> {
                         throw new IOException("Cannot remove a public product. Please reduce its visibility first.");
                     }
                     FileUtilities.deleteTree(filePath);
-                    persistenceManager.remove(product);
+                    try {
+                        vectorDataProvider.delete(product);
+                    } catch (PersistenceException e) {
+                        throw new IOException(String.format("Failed to remove vector product %s. Reason: %s",
+                                                            product.getName(), e.getMessage()));
+                    }
                 }
             } else {
                 if (products.size() > 1) {
@@ -133,7 +144,12 @@ public class FileStorageService implements StorageService<MultipartFile> {
                     throw new IOException("Cannot remove a public product. Please reduce its visibility first.");
                 }
                 FileUtilities.deleteTree(filePath);
-                persistenceManager.remove(product);
+                try {
+                    productProvider.delete(product);
+                } catch (PersistenceException e) {
+                    throw new IOException(String.format("Failed to remove raster product %s. Reason: %s",
+                                                        product.getName(), e.getMessage()));
+                }
             }
         }
         
@@ -199,21 +215,21 @@ public class FileStorageService implements StorageService<MultipartFile> {
                 }
             }
         }
-        String[] pathArray = list.stream().map(p -> p.toUri().toString()).toArray(String[]::new);
+        final List<String> paths = list.stream().map(p -> p.toUri().toString()).collect(Collectors.toList());
+        final String[] pathArray = paths.toArray(new String[0]);
         final Map<Path, Map<String, String>> auxAttributes = new HashMap<>();
-        List<AuxiliaryData> auxData = persistenceManager.getAuxiliaryData(principalName,
-                                                                          pathArray);
+        List<AuxiliaryData> auxData = auxiliaryDataProvider.list(principalName, pathArray);
         for (AuxiliaryData auxiliaryData : auxData) {
             auxAttributes.put(Paths.get(URI.create(auxiliaryData.getLocation())),
                               auxiliaryData.toAttributeMap());
         }
-        final List<EOProduct> productList = persistenceManager.getEOProducts(pathArray);
+        final List<EOProduct> productList = productProvider.list(paths);
         final Map<Path, Map<String, String>> productAttributes = new HashMap<>();
         for (EOProduct product : productList) {
             productAttributes.put(Paths.get(URI.create(product.getLocation())),
                                   product.toAttributeMap());
         }
-        List<VectorData> vectors = persistenceManager.getVectorDataProducts(pathArray);
+        List<VectorData> vectors = vectorDataProvider.list(paths);
         final Map<Path, Map<String, String>> vectorAttributes = new HashMap<>();
         for (VectorData vectorData : vectors) {
             vectorAttributes.put(Paths.get(URI.create(vectorData.getLocation())),
@@ -288,7 +304,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
         List<FileObject> list = listFiles(realRoot, exclusions);
         if (isSystem) {
             // add products published by other users (for system account, it means all other users)
-            List<EOProduct> products = persistenceManager.getOtherPublishedProducts(principalName);
+            List<EOProduct> products = productProvider.getOtherPublishedProducts(principalName);
             final String publicPath = Paths.get(SystemVariable.SHARED_WORKSPACE.value()).toUri().toString();
             final int tokensToSkip = realRoot.getNameCount();
             if (products != null) {
@@ -322,7 +338,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
             }
         }*/
         List<EOProduct> products = workflowId != null ?
-                persistenceManager.getWorkflowOutputs(workflowId) : persistenceManager.getJobOutputs(jobId);
+                productProvider.getWorkflowOutputs(workflowId) : productProvider.getJobOutputs(jobId);
         int tokensToSkip = Paths.get(SystemVariable.ROOT.value()).getNameCount() + 1;
         for (EOProduct product : products) {
             results.add(fromEOProduct(product, tokensToSkip));
@@ -379,7 +395,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
         }
         String userName = principal.getName();
         String location = filePath.toUri().toString(); //workspacePath.relativize(filePath).toString();
-        List<AuxiliaryData> listData = persistenceManager.getAuxiliaryData(userName, location);
+        List<AuxiliaryData> listData = auxiliaryDataProvider.list(userName, location);
         AuxiliaryData data;
         if (listData != null && listData.size() == 1) {
             data = listData.get(0);
@@ -392,7 +408,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
         data.setUserName(userName);
         data.setCreated(LocalDateTime.now());
         data.setModified(data.getCreated());
-        persistenceManager.saveAuxiliaryData(data);
+        auxiliaryDataProvider.save(data);
     }
 
     private List<Path> list(Path path, int depth) throws IOException {

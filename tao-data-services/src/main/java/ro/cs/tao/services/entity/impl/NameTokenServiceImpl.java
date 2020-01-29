@@ -8,8 +8,9 @@ import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.eodata.naming.NameExpressionParser;
 import ro.cs.tao.eodata.naming.NameToken;
 import ro.cs.tao.eodata.naming.NamingRule;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.NamingRuleProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.WorkflowNodeProvider;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.NameTokenService;
 import ro.cs.tao.services.model.component.NamingRuleTokens;
@@ -19,7 +20,6 @@ import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
 
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -31,13 +31,14 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
     @Autowired
     private ComponentService componentService;
     @Autowired
-    private PersistenceManager persistenceManager;
-    private Logger logger = Logger.getLogger(ComponentService.class.getName());
+    private WorkflowNodeProvider workflowNodeProvider;
+    @Autowired
+    private NamingRuleProvider namingRuleProvider;
 
     @Override
     public List<NamingRuleTokens> findTokens(long workflowNodeId) throws PersistenceException {
         List<NamingRuleTokens> tokens = new ArrayList<>();
-        WorkflowNodeDescriptor node = persistenceManager.getWorkflowNodeById(workflowNodeId);
+        WorkflowNodeDescriptor node = workflowNodeProvider.get(workflowNodeId);
         if (node == null) {
             throw new PersistenceException(String.format("Workflow node with id=%d does not exist", workflowNodeId));
         }
@@ -84,7 +85,7 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
     @Override
     public Map<String, String> getNameTokens(String sensor) {
         final Map<String, String> tokens = new LinkedHashMap<>();
-        List<NamingRule> rules = persistenceManager.getRules(sensor);
+        List<NamingRule> rules = namingRuleProvider.listBySensor(sensor);
         if (rules != null && rules.size() > 0) {
             NamingRule first = rules.get(0);
             final List<NameToken> tokenList = first.getTokens();
@@ -98,12 +99,12 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
 
     @Override
     public NamingRule findById(Integer id) {
-        return persistenceManager.getRuleById(id);
+        return namingRuleProvider.get(id);
     }
 
     @Override
     public List<NamingRule> list() {
-        return persistenceManager.getAllRules();
+        return namingRuleProvider.list();
     }
 
     @Override
@@ -112,14 +113,14 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
         for (Integer id : ids) {
             idSet.add(id);
         }
-        return persistenceManager.getAllRules().stream()
+        return namingRuleProvider.list().stream()
                 .filter(r -> idSet.contains(r.getId())).collect(Collectors.toList());
     }
 
     @Override
     public NamingRule save(NamingRule object) {
         try {
-            return persistenceManager.saveRule(object);
+            return namingRuleProvider.save(object);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
             return null;
@@ -128,12 +129,12 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
 
     @Override
     public NamingRule update(NamingRule object) throws PersistenceException {
-        return persistenceManager.saveRule(object);
+        return namingRuleProvider.save(object);
     }
 
     @Override
     public void delete(Integer id) throws PersistenceException {
-        persistenceManager.deleteRule(id);
+        namingRuleProvider.delete(id);
     }
 
     @Override

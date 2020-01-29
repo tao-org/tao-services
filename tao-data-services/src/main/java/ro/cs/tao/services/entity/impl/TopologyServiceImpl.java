@@ -21,8 +21,8 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.docker.Container;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.NodeFlavor;
@@ -44,22 +44,21 @@ public class TopologyServiceImpl
         implements TopologyService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private TagProvider tagProvider;
 
     @Override
     public List<NodeFlavor> getNodeFlavors() {
-        return TopologyManager.getInstance().listNodeFlavors();
+        return topologyManager().listNodeFlavors();
     }
 
     @Override
     public NodeDescription findById(String hostName) {
-       return TopologyManager.getInstance().getNode(hostName);
+       return topologyManager().getNode(hostName);
     }
 
     @Override
     public List<NodeDescription> list() {
-       //return TopologyManager.getInstance().listNodes();
-        return TopologyManager.getInstance().listNodes();
+        return topologyManager().listNodes();
     }
 
     @Override
@@ -73,12 +72,12 @@ public class TopologyServiceImpl
 
     @Override
     public List<NodeDescription> getNodes(boolean active) {
-        return persistenceManager.getNodes(active);
+        return list().stream().filter(NodeDescription::getActive).collect(Collectors.toList());
     }
 
     @Override
     public List<NodeDescription> getNodes(NodeFlavor nodeFlavor) {
-        return persistenceManager.getNodesByType(nodeFlavor);
+        return list().stream().filter(n -> n.getFlavor().equals(nodeFlavor)).collect(Collectors.toList());
     }
 
     @Override
@@ -88,14 +87,18 @@ public class TopologyServiceImpl
             if (!nodeTags.contains(node.getFlavor().getId())) {
                 nodeTags.add(node.getFlavor().getId());
             }
-            Set<String> existingTags = persistenceManager.getNodeTags().stream().map(Tag::getText).collect(Collectors.toSet());
+            Set<String> existingTags = tagProvider.list(TagType.TOPOLOGY_NODE).stream().map(Tag::getText).collect(Collectors.toSet());
             for (String value : nodeTags) {
                 if (!existingTags.contains(value)) {
-                    persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
+                    try {
+                        tagProvider.save(new Tag(TagType.TOPOLOGY_NODE, value));
+                    } catch (PersistenceException e) {
+                        logger.severe(e.getMessage());
+                    }
                 }
             }
         }
-        TopologyManager.getInstance().addNode(node);
+        topologyManager().addNode(node);
         return node;
     }
 
@@ -108,21 +111,25 @@ public class TopologyServiceImpl
                 if (!nodeTags.contains(node.getFlavor().getId())) {
                     nodeTags.add(node.getFlavor().getId());
                 }
-                Set<String> existingTags = persistenceManager.getNodeTags().stream().map(Tag::getText).collect(Collectors.toSet());
+                Set<String> existingTags = tagProvider.list(TagType.TOPOLOGY_NODE).stream().map(Tag::getText).collect(Collectors.toSet());
                 for (String value : nodeTags) {
                     if (!existingTags.contains(value)) {
-                        persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
+                        try {
+                            tagProvider.save(new Tag(TagType.TOPOLOGY_NODE, value));
+                        } catch (PersistenceException e) {
+                            logger.severe(e.getMessage());
+                        }
                     }
                 }
             }
         }
-        TopologyManager.getInstance().updateNode(node);
+        topologyManager().updateNode(node);
         return node;
     }
 
     @Override
     public void delete(String hostName) {
-        TopologyManager.getInstance().removeNode(hostName);
+        topologyManager().removeNode(hostName);
     }
 
     @Override
@@ -132,11 +139,11 @@ public class TopologyServiceImpl
             throw new PersistenceException(String.format("Node with id '%s' not found", id));
         }
         if (tags != null && tags.size() > 0) {
-            Set<String> existingTags = persistenceManager.getNodeTags().stream()
+            Set<String> existingTags = tagProvider.list(TagType.TOPOLOGY_NODE).stream()
                     .map(Tag::getText).collect(Collectors.toSet());
             for (String value : tags) {
                 if (!existingTags.contains(value)) {
-                    persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
+                    tagProvider.save(new Tag(TagType.TOPOLOGY_NODE, value));
                 }
             }
             entity.setTags(tags);
@@ -146,7 +153,7 @@ public class TopologyServiceImpl
     }
 
     @Override
-    public NodeDescription untag(String id, List<String> tags) throws PersistenceException {
+    public NodeDescription unTag(String id, List<String> tags) throws PersistenceException {
         NodeDescription entity = findById(id);
         if (entity == null) {
             throw new PersistenceException(String.format("Node with id '%s' not found", id));
@@ -158,7 +165,6 @@ public class TopologyServiceImpl
                     entityTags.remove(value);
                 }
                 entity.setTags(entityTags);
-                //return update(entity);
             }
         }
         return entity;
@@ -171,7 +177,7 @@ public class TopologyServiceImpl
 
     @Override
     public List<Tag> getNodeTags() {
-        return persistenceManager.getNodeTags();
+        return tagProvider.list(TagType.TOPOLOGY_NODE);
     }
 
     @Override
@@ -206,4 +212,6 @@ public class TopologyServiceImpl
             }
         }
     }
+
+    private TopologyManager topologyManager() { return TopologyManager.getInstance(); }
 }

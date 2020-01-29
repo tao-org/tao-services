@@ -20,13 +20,13 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.system.ApplicationHome;
 import org.springframework.context.ApplicationListener;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
 import ro.cs.tao.services.commons.config.FileProcessor;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -59,25 +59,23 @@ public abstract class StartupBase implements ApplicationListener {
                 processor.processFile(scriptsDirectory);
             }
         }
-        try {
-            Field field = ConfigurationManager.class.getDeclaredField("configFolder");
-            field.setAccessible(true);
-            field.set(null, configDirectory);
-            field = ConfigurationManager.class.getDeclaredField("settings");
-            field.setAccessible(true);
-            ((Properties) field.get(ConfigurationManager.getInstance())).putAll(allProperties);
-            field = ConfigurationManager.class.getDeclaredField("scriptsFolder");
-            field.setAccessible(true);
-            field.set(null, scriptsDirectory);
-        } catch (Exception e){
-            throw new RuntimeException(e);
+        if (ConfigurationManager.getInstance() == null) {
+            final ServiceLoader<ConfigurationProvider> loader = ServiceLoader.load(ConfigurationProvider.class);
+            final Iterator<ConfigurationProvider> iterator = loader.iterator();
+            if (iterator.hasNext()) {
+                ConfigurationManager.setConfigurationProvider(iterator.next());
+            }
         }
+        final ConfigurationProvider configurationProvider = ConfigurationManager.getInstance();
+        configurationProvider.setConfigurationFolder(configDirectory);
+        configurationProvider.setScriptsFolder(scriptsDirectory);
+        configurationProvider.putAll(allProperties);
         StringBuilder builder = new StringBuilder();
         builder.append("Active logging levels: ");
         allProperties.entrySet().stream()
                 .filter(e -> e.getKey().toString().startsWith("logging.level."))
                 .map(e -> new AbstractMap.SimpleEntry<String, String>(e.getKey().toString(), e.getValue().toString()) {})
-                .sorted(Comparator.comparing(AbstractMap.SimpleEntry::getKey)).forEach(e -> {
+                .sorted(Map.Entry.comparingByKey()).forEach(e -> {
             builder.append(e.getKey().replace("logging.level.", "")).append(" -> ").append(e.getValue()).append(", ");
         });
         builder.setLength(builder.length() - 1);

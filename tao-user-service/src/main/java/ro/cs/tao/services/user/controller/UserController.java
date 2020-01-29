@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -58,7 +59,7 @@ public class UserController extends BaseController {
 
             // we need to know if the user is TAO internal or external
             final User userInfo = userService.getUserInfo(username);
-
+            final ConfigurationProvider configManager = ConfigurationManager.getInstance();
             if (!userInfo.isExternal()) {
                 // internal TAO authenticated users need to set a password
                 // we need a redirect to TAO reset password page from activation email within email that hits this endpoint
@@ -67,7 +68,7 @@ public class UserController extends BaseController {
                 userInfo.setPasswordResetKey(passwordResetKey);
                 userService.updateUserInfo(userInfo);
 
-                final ConfigurationManager configManager = ConfigurationManager.getInstance();
+
                 final String passwordResetUIUrl = configManager.getValue("tao.ui.base") + configManager.getValue("tao.ui.password.reset") + "?rk=" + passwordResetKey;
                 HttpHeaders headers = new HttpHeaders();
                 headers.add("Location", passwordResetUIUrl);
@@ -76,7 +77,6 @@ public class UserController extends BaseController {
             else {
                 // external authenticated users have already a password in the external authentication mechanism
                 // redirect to TAO login page from activation email within email that hits this endpoint
-                final ConfigurationManager configManager = ConfigurationManager.getInstance();
                 final String loginUIUrl = configManager.getValue("tao.ui.base") + configManager.getValue("tao.ui.login");
                 HttpHeaders headers = new HttpHeaders();
                 headers.add("Location", loginUIUrl);
