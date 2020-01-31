@@ -67,6 +67,7 @@ public abstract class StartupBase implements ApplicationListener {
             }
         }
         final ConfigurationProvider configurationProvider = ConfigurationManager.getInstance();
+        configurationProvider.setValue(ConfigurationProvider.APP_HOME, homeDirectory().toString());
         configurationProvider.setConfigurationFolder(configDirectory);
         configurationProvider.setScriptsFolder(scriptsDirectory);
         configurationProvider.putAll(allProperties);
