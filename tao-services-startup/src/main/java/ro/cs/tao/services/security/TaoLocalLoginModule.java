@@ -16,6 +16,7 @@
 package ro.cs.tao.services.security;
 
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.utils.Crypto;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.*;
@@ -82,7 +83,7 @@ public class TaoLocalLoginModule implements LoginModule {
         PasswordCallback passwordCallback = (PasswordCallback) callbacks[1];
 
         username = nameCallback.getName();
-        password = new String(passwordCallback.getPassword());
+        password = Crypto.encrypt(new String(passwordCallback.getPassword()), username);
 
         // verify the username and password
         if (persistenceManager.users().login(username, password)) {
