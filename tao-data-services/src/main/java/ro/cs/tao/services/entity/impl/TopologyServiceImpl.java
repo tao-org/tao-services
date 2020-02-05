@@ -72,7 +72,7 @@ public class TopologyServiceImpl
 
     @Override
     public List<NodeDescription> getNodes(boolean active) {
-        return list().stream().filter(NodeDescription::getActive).collect(Collectors.toList());
+        return list().stream().filter(n -> n.getActive() == active).collect(Collectors.toList());
     }
 
     @Override
