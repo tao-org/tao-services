@@ -17,6 +17,7 @@ package ro.cs.tao.services.monitoring.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.OSRuntimeInfo;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
@@ -52,13 +53,24 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     @Autowired
     private NodeProvider nodeProvider;
 
+    private String[] topics;
+
     public MonitoringServiceImpl() {
         super();
     }
 
     @Override
     protected String[] topics() {
-        return new String[] { Topic.INFORMATION.value(), Topic.WARNING.value(), Topic.ERROR.value(), Topic.PROGRESS.value() };
+        if (topics == null) {
+            final String value = ConfigurationManager.getInstance().getValue("monitoring.topics");
+            if (value != null) {
+                topics = value.split(",");
+            } else {
+                topics = new String[] { Topic.INFORMATION.value(), Topic.WARNING.value(), Topic.ERROR.value(),
+                                        Topic.PROGRESS.value(), Topic.TOPOLOGY.value(), Topic.EXECUTION.value() };
+            }
+        }
+        return topics;
     }
 
     @Override
@@ -154,7 +166,13 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
             notifications.forEach(message -> {
                 message.setRead(true);
                 try {
-                    messageProvider.save(converter.from(message));
+                    final Message existing = messageProvider.get(message.getUser(), message.getTimestamp().getTimeInMillis());
+                    final Message entity = converter.from(message);
+                    if (existing == null) {
+                        messageProvider.save(entity);
+                    } else {
+                        messageProvider.update(entity);
+                    }
                 } catch (PersistenceException e) {
                     logger.severe(e.getMessage());
                 }
