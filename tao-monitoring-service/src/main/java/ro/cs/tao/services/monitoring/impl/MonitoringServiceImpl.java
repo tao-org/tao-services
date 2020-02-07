@@ -171,6 +171,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
                     if (existing == null) {
                         messageProvider.save(entity);
                     } else {
+                        entity.setId(existing.getId());
                         messageProvider.update(entity);
                     }
                 } catch (PersistenceException e) {
