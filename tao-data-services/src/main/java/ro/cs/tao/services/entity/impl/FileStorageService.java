@@ -223,13 +223,13 @@ public class FileStorageService implements StorageService<MultipartFile> {
             auxAttributes.put(Paths.get(URI.create(auxiliaryData.getLocation())),
                               auxiliaryData.toAttributeMap());
         }
-        final List<EOProduct> productList = productProvider.list(paths);
+        final List<EOProduct> productList = productProvider.getByLocation(pathArray);
         final Map<Path, Map<String, String>> productAttributes = new HashMap<>();
         for (EOProduct product : productList) {
             productAttributes.put(Paths.get(URI.create(product.getLocation())),
                                   product.toAttributeMap());
         }
-        List<VectorData> vectors = vectorDataProvider.list(paths);
+        List<VectorData> vectors = vectorDataProvider.getByLocation(pathArray);
         final Map<Path, Map<String, String>> vectorAttributes = new HashMap<>();
         for (VectorData vectorData : vectors) {
             vectorAttributes.put(Paths.get(URI.create(vectorData.getLocation())),
