@@ -187,6 +187,7 @@ public class TaoServicesStartup extends StartupBase {
                         nodeManager.setDefaultNodeInfo(new DefaultNodeInfo(prefix, description, user, pwd));
                     }
                     nodeManager.setNodeProvider(new DefaultNodeProvider());
+                    nodeManager.setTaskProvider(persistenceManager.tasks());
                     nodeManager.setNodeLimit(Integer.parseInt(cfgManager.getValue(NODE_LIMIT, "0")));
                     nodeManager.initialize();
                     TopologyManager.getInstance().registerListener(nodeManager);
