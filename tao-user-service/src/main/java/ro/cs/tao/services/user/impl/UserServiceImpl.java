@@ -21,6 +21,7 @@ import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
+import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
 
@@ -30,10 +31,15 @@ import java.util.List;
  * @author Oana H.
  */
 @Service("userService")
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserProvider userProvider;
+
+    @Override
+    public List<Group> getGroups() {
+        return userProvider.listGroups();
+    }
 
     @Override
     public void activateUser(String username) throws PersistenceException {

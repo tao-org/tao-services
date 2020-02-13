@@ -49,6 +49,11 @@ public class UserController extends BaseController {
     @Autowired
     private TokenManagementService tokenService;
 
+    @RequestMapping(value = "/groups/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getGroups() {
+        return prepareResult(userService.getGroups());
+    }
+
     @RequestMapping(value = "/activate/{username}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> activate(@PathVariable("username") String username) {
         if (StringUtilities.isNullOrEmpty(username)) {

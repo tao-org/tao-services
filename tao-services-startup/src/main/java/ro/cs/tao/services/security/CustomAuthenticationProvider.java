@@ -19,6 +19,8 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.jaas.JaasAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.security.GroupPrincipal;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.security.token.AuthenticationWithToken;
 import ro.cs.tao.user.Group;
@@ -60,8 +62,16 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             String userName = jaasAuthenticationToken.getPrincipal().toString();
             jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new UserPrincipal(userName));
             // add user groups as roles
-            final User user = persistenceManager.users().getByName(userName);
+            User user = persistenceManager.users().getByName(userName);
             if (user == null) {
+                /*user = new User();
+                user.setUsername(userName);
+                user.setPassword(jaasAuthenticationToken.getCredentials().toString());
+                try {
+                    persistenceManager.users().save(user);
+                } catch (PersistenceException e) {
+                    e.printStackTrace();
+                }*/
                 throw new RuntimeException(String.format("No such user '%s'", userName));
             }
             final List<Group> userGroups = user.getGroups();
