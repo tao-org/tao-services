@@ -1,0 +1,2 @@
+ro.cs.tao.services.security.TaoLocalLoginModule
+ro.cs.tao.services.security.LdapLoginModule

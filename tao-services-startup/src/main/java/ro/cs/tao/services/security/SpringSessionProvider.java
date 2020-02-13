@@ -22,6 +22,7 @@ import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.ExternalSessionContextProvider;
 import ro.cs.tao.security.SessionContext;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.user.UserPreference;
 
 import java.security.Principal;

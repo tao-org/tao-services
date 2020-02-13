@@ -60,13 +60,13 @@ import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.scheduling.ScheduleManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.security.TaoLoginModule;
 import ro.cs.tao.services.commons.StartupBase;
 import ro.cs.tao.services.commons.update.UpdateChecker;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WorkflowBuilder;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.SpringSessionProvider;
-import ro.cs.tao.services.security.TaoLocalLoginModule;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.topology.*;
@@ -80,6 +80,7 @@ import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 
+import javax.security.auth.spi.LoginModule;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Files;
@@ -159,7 +160,12 @@ public class TaoServicesStartup extends StartupBase {
             logger.fine("Initialized messaging subsystem");
             SpringSessionProvider.setPersistenceManager(this.persistenceManager);
             SessionStore.setSessionContextProvider(new SpringSessionProvider());
-            TaoLocalLoginModule.setPersistenceManager(this.persistenceManager);
+            final Set<LoginModule> loginModules = ServiceRegistryManager.getInstance().getServiceRegistry(LoginModule.class).getServices();
+            for (LoginModule module : loginModules) {
+                if (TaoLoginModule.class.isAssignableFrom(module.getClass())) {
+                    TaoLoginModule.setUserProvider(this.persistenceManager.users());
+                }
+            }
             CustomAuthenticationProvider.setPersistenceManager(this.persistenceManager);
             logger.fine("Initialized authentication provider");
             updateLocalhost();
