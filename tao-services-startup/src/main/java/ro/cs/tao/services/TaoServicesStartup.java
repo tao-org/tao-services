@@ -277,6 +277,7 @@ public class TaoServicesStartup extends StartupBase {
                     masterFlavor.setDisk((int) inspector.getTotalDiskGB());
                     master.setFlavor(masterFlavor);
                     master.setActive(true);
+                    master.setRole(NodeRole.MASTER);
                     master.addTag(masterTag.getText());
                     if (master.getServicesStatus() == null || master.getServicesStatus().size() == 0) {
                         // check docker service on master
