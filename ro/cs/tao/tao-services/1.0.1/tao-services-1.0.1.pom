@@ -17,6 +17,7 @@
     <description>Spring services for TAO</description>
 
     <modules>
+        <module>tao-services-base</module>
         <module>tao-services-commons</module>
         <module>tao-data-services</module>
         <module>tao-auth-service</module>
@@ -30,7 +31,6 @@
         <module>tao-workflow-library</module>
         <module>tao-scheduling-service</module>
 		<module>tao-services-startup</module>
-        <module>tao-services-base</module>
     </modules>
 
     <properties>
@@ -155,6 +155,7 @@
                                 <Bundle-Name>TAO Services</Bundle-Name>
                                 <Version>${project.version}</Version>
                                 <Build-Time>${maven.build.timestamp}</Build-Time>
+                                <Main-Class>ro.cs.tao.services.TaoServicesStartup</Main-Class>
                             </manifestEntries>
                         </archive>
                     </configuration>
