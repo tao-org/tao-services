@@ -1,0 +1,114 @@
+package ro.cs.tao.services.startup;
+
+import ro.cs.tao.Tag;
+import ro.cs.tao.component.enums.TagType;
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.execution.ExecutionsManager;
+import ro.cs.tao.execution.Executor;
+import ro.cs.tao.execution.drmaa.DrmaaTaoExecutor;
+import ro.cs.tao.execution.monitor.OSRuntimeInfo;
+import ro.cs.tao.topology.*;
+import ro.cs.tao.utils.DockerHelper;
+
+import java.net.InetAddress;
+import java.util.List;
+import java.util.Set;
+
+public class MasterNodeUpdater extends BaseLifeCycle {
+
+    @Override
+    public int priority() {
+        return 1;
+    }
+
+    @Override
+    public void onStartUp() {
+        NodeDescription node = persistenceManager.nodes().get("localhost");
+        if (node != null) {
+            try {
+                List<Tag> nodeTags = persistenceManager.tags().list(TagType.TOPOLOGY_NODE);
+                if (nodeTags == null || nodeTags.size() == 0) {
+                    for (TagType tagType : TagType.values()) {
+                        persistenceManager.tags().save(new Tag(TagType.TOPOLOGY_NODE, tagType.friendlyName()));
+                    }
+                }
+                logger.finest("Overriding the default 'localhost' database entry");
+                String masterHost = InetAddress.getLocalHost().getHostName();
+                NodeDescription master = persistenceManager.nodes().get(masterHost);
+                if (master == null) {
+                    Tag masterTag = new Tag(TagType.TOPOLOGY_NODE, "master");
+                    int processors = Runtime.getRuntime().availableProcessors();
+                    persistenceManager.tags().save(masterTag);
+                    master = new NodeDescription();
+                    master.setId(masterHost);
+                    String user = ConfigurationManager.getInstance().getValue("topology.master.user", node.getUserName());
+                    master.setUserName(user);
+                    String pwd = ConfigurationManager.getInstance().getValue("topology.master.password", node.getUserPass());
+                    master.setUserPass(pwd);
+                    OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(masterHost, user, pwd);
+                    master.setDescription(node.getDescription());
+                    master.setServicesStatus(node.getServicesStatus());
+                    final NodeFlavor masterFlavor = persistenceManager.nodeFlavors().getMasterFlavor();
+                    masterFlavor.setCpu(processors);
+                    masterFlavor.setMemory((int) inspector.getTotalMemoryMB() / 1024);
+                    masterFlavor.setDisk((int) inspector.getTotalDiskGB());
+                    master.setFlavor(masterFlavor);
+                    master.setActive(true);
+                    master.setRole(NodeRole.MASTER);
+                    master.addTag(masterTag.getText());
+                    if (master.getServicesStatus() == null || master.getServicesStatus().size() == 0) {
+                        // check docker service on master
+                        String name = "Docker";
+                        String version = DockerHelper.getDockerVersion();
+                        ServiceDescription description = persistenceManager.nodes().getServiceDescription(name, version);
+                        if (description == null) {
+                            description = new ServiceDescription();
+                            description.setName(name);
+                            description.setDescription("Application container manager");
+                            description.setVersion(version);
+                            description = persistenceManager.nodes().saveServiceDescription(description);
+                        }
+                        NodeServiceStatus nodeService = new NodeServiceStatus();
+                        nodeService.setServiceDescription(description);
+                        nodeService.setStatus(DockerHelper.isDockerFound() ? ServiceStatus.INSTALLED : ServiceStatus.NOT_FOUND);
+                        master.addServiceStatus(nodeService);
+                        // check CRM on master
+                        Set<Executor> executors = ExecutionsManager.getInstance().getRegisteredExecutors();
+                        Executor<?> executor = executors.stream().filter(e -> e instanceof DrmaaTaoExecutor).findFirst().orElse(null);
+                        if (executor != null) {
+                            DrmaaTaoExecutor taoExecutor = (DrmaaTaoExecutor) executor;
+                            nodeService = new NodeServiceStatus();
+                            name = taoExecutor.getDRMName();
+                            version = taoExecutor.getDRMVersion();
+                            description = persistenceManager.nodes().getServiceDescription(name, version);
+                            if (description == null) {
+                                description = new ServiceDescription();
+                                description.setName(name);
+                                description.setDescription("NoCRM".equals(name) ? "Local execution" : name);
+                                description.setVersion(version);
+                                description = persistenceManager.nodes().saveServiceDescription(description);
+                            }
+                            nodeService.setServiceDescription(description);
+                            nodeService.setStatus("n/a".equals(description.getVersion()) ? ServiceStatus.NOT_FOUND : ServiceStatus.INSTALLED);
+                            master.addServiceStatus(nodeService);
+                        }
+
+                    }
+                    persistenceManager.nodes().save(master);
+                    persistenceManager.nodes().delete(node.getId());
+                    logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
+                }
+                TopologyManager.setMasterNode(master);
+                TopologyManager manager = TopologyManager.getInstance();
+                manager.notifyListeners(manager.getMasterNodeInfo(), manager.checkMasterShare());
+            } catch (Exception ex) {
+                logger.severe("Cannot update localhost name: " + ex.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void onShutdown() {
+
+    }
+}
