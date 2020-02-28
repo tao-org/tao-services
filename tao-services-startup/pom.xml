@@ -91,11 +91,11 @@
             <artifactId>tao-ldap</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-docker-gdal</artifactId>
             <version>${project.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-docker-otb</artifactId>
@@ -129,6 +129,11 @@
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-quota-database</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-integration-sen2agri</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -39,6 +39,9 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.workflow.ExternalGraphConverter;
+import ro.cs.tao.workflow.WorkflowDescriptor;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
@@ -164,6 +167,20 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             summaries.add(summary);
         }
         return summaries;
+    }
+
+    @Override
+    public WorkflowDescriptor startExternalWorkflow(String jsonGraph) throws ExecutionException {
+        final Set<ExternalGraphConverter> services = ServiceRegistryManager.getInstance().getServiceRegistry(ExternalGraphConverter.class).getServices();
+        if (services == null || services.isEmpty()) {
+            throw new ExecutionException("No external graph converter modules found");
+        }
+        final ExternalGraphConverter converter = services.iterator().next();
+        try {
+            return converter.convert(jsonGraph);
+        } catch (Exception e) {
+            throw new ExecutionException(e);
+        }
     }
 
     @Bean
