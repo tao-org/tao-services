@@ -150,4 +150,12 @@ public class OrchestrationController extends BaseController {
         }
         return prepareResult(summaries);
     }
+    @RequestMapping(value = "/process", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> processExternalGraph(@RequestBody String jsonGraph) {
+        try {
+            return prepareResult(orchestrationService.startExternalWorkflow(jsonGraph));
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
 }
