@@ -170,14 +170,14 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public WorkflowDescriptor startExternalWorkflow(String jsonGraph) throws ExecutionException {
+    public WorkflowDescriptor startExternalWorkflow(String jsonGraph, String container) throws ExecutionException {
         final Set<ExternalGraphConverter> services = ServiceRegistryManager.getInstance().getServiceRegistry(ExternalGraphConverter.class).getServices();
         if (services == null || services.isEmpty()) {
             throw new ExecutionException("No external graph converter modules found");
         }
         final ExternalGraphConverter converter = services.iterator().next();
         try {
-            return converter.convert(jsonGraph);
+            return converter.convert(jsonGraph, container);
         } catch (Exception e) {
             throw new ExecutionException(e);
         }
