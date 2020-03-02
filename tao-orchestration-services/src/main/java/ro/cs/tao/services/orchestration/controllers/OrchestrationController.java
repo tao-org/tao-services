@@ -19,10 +19,7 @@ package ro.cs.tao.services.orchestration.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
@@ -151,9 +148,10 @@ public class OrchestrationController extends BaseController {
         return prepareResult(summaries);
     }
     @RequestMapping(value = "/process", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> processExternalGraph(@RequestBody String jsonGraph) {
+    public ResponseEntity<ServiceResponse<?>> processExternalGraph(@RequestParam("graph") String jsonGraph,
+                                                                   @RequestParam(name = "container", required = false) String container) {
         try {
-            return prepareResult(orchestrationService.startExternalWorkflow(jsonGraph));
+            return prepareResult(orchestrationService.startExternalWorkflow(jsonGraph, container));
         } catch (Exception ex) {
             return handleException(ex);
         }
