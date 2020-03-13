@@ -54,9 +54,9 @@ public abstract class StartupBase implements ApplicationListener {
         Set<FileProcessor> configurationFileProcessors = serviceRegistry.getServices();
         for (FileProcessor processor : configurationFileProcessors) {
             if (processor instanceof ConfigurationFileProcessor) {
-                allProperties.putAll(((ConfigurationFileProcessor) processor).processConfigFile(configDirectory));
+                allProperties.putAll(((ConfigurationFileProcessor) processor).processConfigFiles(configDirectory));
             } else {
-                processor.processFile(scriptsDirectory);
+                processor.processFiles(scriptsDirectory);
             }
         }
         if (ConfigurationManager.getInstance() == null) {

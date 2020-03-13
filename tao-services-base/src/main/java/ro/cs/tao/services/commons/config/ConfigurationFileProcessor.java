@@ -16,16 +16,25 @@
 
 package ro.cs.tao.services.commons.config;
 
+import ro.cs.tao.utils.FileUtilities;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Properties;
 
 public interface ConfigurationFileProcessor extends FileProcessor {
-    default Properties processConfigFile(Path configDirectory) throws IOException {
-        Path configFile = processFile(configDirectory);
-        Properties properties = new Properties();
-        properties.load(Files.newInputStream(configFile));
+    default Properties processConfigFiles(Path configDirectory) throws IOException {
+        List<Path> configFiles = processFiles(configDirectory);
+        final Properties properties = new Properties();
+        for (Path configFile : configFiles) {
+            if (".properties".equals(FileUtilities.getExtension(configFile))) {
+                Properties fileProps = new Properties();
+                fileProps.load(Files.newInputStream(configFile));
+                properties.putAll(fileProps);
+            }
+        }
         performAdditionalConfiguration(configDirectory, properties);
         return properties;
     }
