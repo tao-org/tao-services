@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public interface FileProcessor {
     Map<String, String> getFileMap();
@@ -30,6 +31,8 @@ public interface FileProcessor {
                             os.write(buffer, 0, read);
                         }
                         os.flush();
+                    } catch (Exception ex) {
+                        Logger.getLogger(getClass().getName()).severe("Cannot read or find resource " + entry.getValue());
                     }
                 }
                 files.add(configFile);
