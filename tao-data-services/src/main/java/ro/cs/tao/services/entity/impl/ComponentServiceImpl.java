@@ -115,7 +115,7 @@ public class ComponentServiceImpl
     @Override
     public ProcessingComponent save(ProcessingComponent component) {
         if (component != null) {
-            if (processingComponentProvider.exists(component.getId())) {
+            if (processingComponentProvider.get(component.getId(), component.getContainerId()) != null) {
                 return update(component);
             } else {
                 try {
