@@ -24,6 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
+import ro.cs.tao.execution.ExecutionConfiguration;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
@@ -170,14 +171,21 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public WorkflowDescriptor startExternalWorkflow(String jsonGraph, String container) throws ExecutionException {
+    public long startExternalWorkflow(String jsonGraph, String container) throws ExecutionException {
         final Set<ExternalGraphConverter> services = ServiceRegistryManager.getInstance().getServiceRegistry(ExternalGraphConverter.class).getServices();
         if (services == null || services.isEmpty()) {
             throw new ExecutionException("No external graph converter modules found");
         }
         final ExternalGraphConverter converter = services.iterator().next();
         try {
-            return converter.convert(jsonGraph, container);
+            WorkflowDescriptor workflowDescriptor = null;
+            if (ExecutionConfiguration.developmentModeEnabled()) {
+                workflowDescriptor = workflowService.getDescriptor("Sen2Agri-Workflow-4875");
+            }
+            if (workflowDescriptor == null) {
+                workflowDescriptor = converter.convert(jsonGraph, container);
+            }
+            return startWorkflow(workflowDescriptor.getId(), workflowDescriptor.getName(), null);
         } catch (Exception e) {
             throw new ExecutionException(e);
         }

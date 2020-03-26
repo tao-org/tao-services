@@ -151,7 +151,10 @@ public class OrchestrationController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> processExternalGraph(@RequestParam("graph") String jsonGraph,
                                                                    @RequestParam(name = "container", required = false) String container) {
         try {
-            return prepareResult(orchestrationService.startExternalWorkflow(jsonGraph, container));
+            final long jobId = orchestrationService.startExternalWorkflow(jsonGraph, container);
+            return jobId != -1 ?
+                    prepareResult(jobId, "Execution started") :
+                    prepareResult("Cannot start execution. See error log for details", ResponseStatus.FAILED);
         } catch (Exception ex) {
             return handleException(ex);
         }
