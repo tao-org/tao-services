@@ -128,15 +128,20 @@ public class WorkflowExecutionJob extends AbstractJob {
 		final String description = dataMap.getString(DESCRIPTION_KEY);
 		
 		
-		final long jobId = Orchestrator.getInstance().startWorkflow(context, workflowId, description, new HashMap<String, Map<String,String>>(inputs),
-                                                        new DelegatingSecurityContextExecutorService(
-                                                        		Executors.newFixedThreadPool(2), 
-                                                        		SecurityContextHolder.getContext()));
+		final ExecutionJob job = Orchestrator.getInstance().startWorkflow(context, workflowId, description,
+																		  new HashMap<>(inputs),
+																		  new DelegatingSecurityContextExecutorService(
+																		  		Executors.newFixedThreadPool(2),
+																				SecurityContextHolder.getContext()));
 		
 		// save the job id to the job details map
-		jobIds.add(jobId);
-		jobDetail.getJobDataMap().put(JOB_ID_KEY, jobIds);
-		logger.info("Started job " + jobId);
+		if (job != null) {
+			jobIds.add(job.getId());
+			jobDetail.getJobDataMap().put(JOB_ID_KEY, jobIds);
+			logger.info("Started job " + job.getId());
+		} else {
+			throw new RuntimeException("No job was created");
+		}
 	}
 
 	@Override
