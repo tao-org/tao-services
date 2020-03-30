@@ -63,9 +63,10 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public long startWorkflow(long workflowId, String description, Map<String, Map<String, String>> inputs) throws ExecutionException {
-        return Orchestrator.getInstance().startWorkflow(SessionStore.currentContext(), workflowId, description, inputs,
-                                                        new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
-                                                                                                     SecurityContextHolder.getContext()));
+        final ExecutionJob job = Orchestrator.getInstance().startWorkflow(SessionStore.currentContext(), workflowId, description, inputs,
+                                                                                   new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
+                                                                                                                                SecurityContextHolder.getContext()));
+        return job != null ? job.getId() : -1;
     }
 
     @Override
@@ -185,7 +186,13 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             if (workflowDescriptor == null) {
                 workflowDescriptor = converter.convert(jsonGraph, container);
             }
-            return startWorkflow(workflowDescriptor.getId(), workflowDescriptor.getName(), null);
+            final ExecutionJob job = Orchestrator.getInstance().startExternalWorkflow(SessionStore.currentContext(),
+                                                                                      workflowDescriptor.getId(),
+                                                                                      workflowDescriptor.getName(),
+                                                                                      null,
+                                                                                      new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
+                                                                                                                                   SecurityContextHolder.getContext()));
+            return job != null ? job.getId() : -1;
         } catch (Exception e) {
             throw new ExecutionException(e);
         }

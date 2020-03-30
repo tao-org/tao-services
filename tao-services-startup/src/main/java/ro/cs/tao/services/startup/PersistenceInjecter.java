@@ -9,7 +9,6 @@ import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.execution.wps.WPSExecutor;
 import ro.cs.tao.messaging.Messaging;
-import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.TaoLoginModule;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
@@ -33,7 +32,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
             public void taskStatusChanged(ExecutionTask task, ExecutionStatus status) {
                 try {
                     persistenceManager.tasks().updateStatus(task, status);
-                } catch (PersistenceException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -42,7 +41,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
             public void taskChanged(ExecutionTask task) {
                 try {
                     persistenceManager.tasks().update(task);
-                } catch (PersistenceException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
