@@ -26,10 +26,7 @@ import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.ExecutionConfiguration;
 import ro.cs.tao.execution.ExecutionException;
-import ro.cs.tao.execution.model.ExecutionJob;
-import ro.cs.tao.execution.model.ExecutionJobSummary;
-import ro.cs.tao.execution.model.ExecutionStatus;
-import ro.cs.tao.execution.model.ExecutionTaskSummary;
+import ro.cs.tao.execution.model.*;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.orchestration.Orchestrator;
@@ -172,7 +169,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public long startExternalWorkflow(String jsonGraph, String container) throws ExecutionException {
+    public long startExternalWorkflow(String jsonGraph, String container, ExternalTaskListenerDescriptor callback) throws ExecutionException {
         final Set<ExternalGraphConverter> services = ServiceRegistryManager.getInstance().getServiceRegistry(ExternalGraphConverter.class).getServices();
         if (services == null || services.isEmpty()) {
             throw new ExecutionException("No external graph converter modules found");
@@ -191,7 +188,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                                                                                       workflowDescriptor.getName(),
                                                                                       null,
                                                                                       new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
-                                                                                                                                   SecurityContextHolder.getContext()));
+                                                                                                                                   SecurityContextHolder.getContext()),
+                                                                                      callback);
             return job != null ? job.getId() : -1;
         } catch (Exception e) {
             throw new ExecutionException(e);
