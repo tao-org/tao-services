@@ -16,16 +16,14 @@
 
 package ro.cs.tao.services.orchestration.controllers;
 
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.ExecutionException;
+import ro.cs.tao.execution.model.EndpointDescriptor;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
-import ro.cs.tao.execution.model.ExternalTaskListenerDescriptor;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -153,27 +151,25 @@ public class OrchestrationController extends BaseController {
     }
     @RequestMapping(value = "/process", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> processExternalGraph(@RequestParam("graph") String jsonGraph,
-                                                                   @RequestParam(name = "container", required = false) String container,
-                                                                   @RequestParam(name = "callbackHost") String host,
-                                                                   @RequestParam(name = "callbackPort") int port,
-                                                                   @RequestParam(name = "endpoint", required = false) String endpoint,
-                                                                   @RequestParam(name = "user", required = false) String user,
-                                                                   @RequestParam(name = "password", required = false) String pwd) {
+                                                                   @RequestParam("callback") EndpointDescriptor callback,
+                                                                   @RequestParam(name = "container", required = false) String container) {
         try {
             if (StringUtilities.isNullOrEmpty(jsonGraph)) {
                 throw new Exception("Empty execution graph");
             }
-            if (StringUtilities.isNullOrEmpty(host)) {
-                throw new Exception("Empty callback host");
+            if (callback == null) {
+                throw new Exception("Empty callback");
+            } else {
+                if (callback.getProtocol() == null) {
+                    throw new Exception("No protocol specified for callback");
+                }
+                if (callback.getHostName() == null) {
+                    throw new Exception("No host specified for callback");
+                }
+                if (callback.getPort() < 0 || callback.getPort() > 65535) {
+                    throw new Exception("Invalid port value for callback");
+                }
             }
-            if (port <= 0 || port >= 65535) {
-                throw new Exception("Invalid callback port");
-            }
-            Credentials credentials = null;
-            if (!StringUtilities.isNullOrEmpty(user) && !StringUtilities.isNullOrEmpty(pwd)) {
-                credentials = new UsernamePasswordCredentials(user, pwd);
-            }
-            final ExternalTaskListenerDescriptor callback = new ExternalTaskListenerDescriptor(host, port, endpoint, credentials);
             final long jobId = orchestrationService.startExternalWorkflow(jsonGraph, container, callback);
             return jobId != -1 ?
                     prepareResult(jobId, "Execution started") :
