@@ -65,7 +65,7 @@ public class MasterNodeUpdater extends BaseLifeCycle {
                             description = new ServiceDescription();
                             description.setName(name);
                             description.setDescription("Application container manager");
-                            description.setVersion(version);
+                            description.setVersion(version != null ? version : "n/a");
                             description = persistenceManager.nodes().saveServiceDescription(description);
                         }
                         NodeServiceStatus nodeService = new NodeServiceStatus();
