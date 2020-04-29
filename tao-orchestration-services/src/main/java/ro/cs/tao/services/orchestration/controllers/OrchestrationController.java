@@ -16,12 +16,13 @@
 
 package ro.cs.tao.services.orchestration.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.ExecutionException;
-import ro.cs.tao.execution.model.EndpointDescriptor;
+import ro.cs.tao.execution.callback.EndpointDescriptor;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.services.commons.BaseController;
@@ -151,26 +152,28 @@ public class OrchestrationController extends BaseController {
     }
     @RequestMapping(value = "/process", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> processExternalGraph(@RequestParam("graph") String jsonGraph,
-                                                                   @RequestParam("callback") EndpointDescriptor callback,
+                                                                   @RequestParam("callback") String callback,
                                                                    @RequestParam(name = "container", required = false) String container) {
         try {
             if (StringUtilities.isNullOrEmpty(jsonGraph)) {
                 throw new Exception("Empty execution graph");
             }
+            EndpointDescriptor callbackObj = null;
             if (callback == null) {
                 throw new Exception("Empty callback");
             } else {
-                if (callback.getProtocol() == null) {
+                callbackObj = new ObjectMapper().readerFor(EndpointDescriptor.class).readValue(callback);
+                if (callbackObj.getProtocol() == null) {
                     throw new Exception("No protocol specified for callback");
                 }
-                if (callback.getHostName() == null) {
+                if (callbackObj.getHostName() == null) {
                     throw new Exception("No host specified for callback");
                 }
-                if (callback.getPort() < 0 || callback.getPort() > 65535) {
+                if (callbackObj.getPort() < 0 || callbackObj.getPort() > 65535) {
                     throw new Exception("Invalid port value for callback");
                 }
             }
-            final long jobId = orchestrationService.startExternalWorkflow(jsonGraph, container, callback);
+            final long jobId = orchestrationService.startExternalWorkflow(jsonGraph, container, callbackObj);
             return jobId != -1 ?
                     prepareResult(jobId, "Execution started") :
                     prepareResult("Cannot start execution. See error log for details", ResponseStatus.FAILED);
