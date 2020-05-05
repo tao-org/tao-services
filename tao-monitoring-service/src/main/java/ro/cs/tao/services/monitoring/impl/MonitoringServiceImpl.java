@@ -96,7 +96,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
             if (NodeManager.isAvailable()) {
                 runtimeInfo = NodeManager.getInstance().getNodeSnapshot(nodeInfo.getId());
             } else {
-                OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(nodeInfo.getId(), nodeInfo.getUserName(), nodeInfo.getUserPass());
+                OSRuntimeInfo<?> inspector = OSRuntimeInfo.createInspector(nodeInfo.getId(), nodeInfo.getUserName(), nodeInfo.getUserPass(), RuntimeInfo.class);
                 runtimeInfo = inspector.getInfo();
             }
         } catch (Exception e) {
@@ -113,7 +113,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
                 runtimeInfo = NodeManager.getInstance().getNodeSnapshot(hostName);
             } else {
                 NodeDescription node = TopologyManager.getInstance().getNode(hostName);
-                runtimeInfo = OSRuntimeInfo.createInspector(node.getId(), node.getUserName(), node.getUserPass()).getSnapshot();
+                runtimeInfo = OSRuntimeInfo.createInspector(node.getId(), node.getUserName(), node.getUserPass(), RuntimeInfo.class).getSnapshot();
             }
         } catch (Throwable ex) {
             logger.warning(ex.getMessage());
