@@ -1,5 +1,6 @@
 package ro.cs.tao.services.startup;
 
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.commons.update.UpdateChecker;
 
 public class SelfUpdateInitializer extends BaseLifeCycle {
@@ -8,7 +9,9 @@ public class SelfUpdateInitializer extends BaseLifeCycle {
 
     @Override
     public void onStartUp() {
-        UpdateChecker.initialize();
+        if (Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("check.for.updates", "false"))) {
+            UpdateChecker.initialize();
+        }
     }
 
     @Override
