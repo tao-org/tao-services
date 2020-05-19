@@ -21,8 +21,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.component.Variable;
+import ro.cs.tao.datasource.DataQuery;
+import ro.cs.tao.datasource.DataSource;
+import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.beans.Query;
+import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.datasource.param.DataSourceParameter;
+import ro.cs.tao.datasource.param.QueryParameter;
+import ro.cs.tao.eodata.EOData;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.Polygon2D;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
@@ -36,13 +42,18 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.query.beans.FetchRequest;
+import ro.cs.tao.services.query.beans.TileRequest;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 
 import java.awt.geom.Path2D;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
@@ -50,6 +61,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -105,44 +117,93 @@ public class DataSourceController extends BaseController {
         return prepareResult(params);
     }
 
-    @RequestMapping(value = "/footprint/sentinel2", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getS2TileFootprint(@RequestParam("tile") String tile) {
-        ResponseEntity<ServiceResponse<?>> responseEntity;
-        if (tile == null) {
-            responseEntity = prepareResult("Empty parameter [tile]", ResponseStatus.FAILED);
-        } else {
-            if (!s2TilePattern.matcher(tile).matches()) {
-                responseEntity = prepareResult(String.format("[%s] is not a valid UTM tile", tile), ResponseStatus.FAILED);
-            } else {
-                Path2D.Double tileExtent = Sentinel2TileExtent.getInstance().getTileExtent(tile);
-                if (tileExtent == null) {
-                    responseEntity = prepareResult(String.format("[%s] is not found", tile), ResponseStatus.FAILED);
-                } else {
-                    responseEntity = prepareResult(Polygon2D.fromPath2D(tileExtent).toWKT());
-                }
+    @RequestMapping(value = "/footprint", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getTileFootprint(@RequestParam("satellite") String satellite, @RequestParam("tile") String tile) {
+        try {
+            if (StringUtilities.isNullOrEmpty(satellite)) {
+                throw new IllegalArgumentException("Empty parameter [satellite]");
             }
+            if (StringUtilities.isNullOrEmpty(tile)) {
+                throw new IllegalArgumentException("Empty parameter [tile]");
+            }
+            if ("sentinel2".equalsIgnoreCase(satellite) || "sentinel-2".equalsIgnoreCase(satellite) || "s2".equalsIgnoreCase(satellite)) {
+                if (!s2TilePattern.matcher(tile).matches()) {
+                    throw new IllegalArgumentException(String.format("[%s] is not a valid UTM tile", tile));
+                } else {
+                    Path2D.Double tileExtent = Sentinel2TileExtent.getInstance().getTileExtent(tile);
+                    return tileExtent == null ?
+                            prepareResult(String.format("[%s] is not found", tile), ResponseStatus.FAILED) :
+                            prepareResult(Polygon2D.fromPath2D(tileExtent).toWKT());
+                }
+            } else if ("landsat8".equalsIgnoreCase(satellite) || "landsat-8".equalsIgnoreCase(satellite) || "l8".equalsIgnoreCase(satellite)) {
+                if (!l8TilePattern.matcher(tile).matches()) {
+                    throw new IllegalArgumentException(String.format("[%s] is not a valid Landsat-8 path row", tile));
+                } else {
+                    Path2D.Double tileExtent = Landsat8TileExtent.getInstance().getTileExtent(tile);
+                    return tileExtent == null ?
+                            prepareResult(String.format("[%s] is not found", tile), ResponseStatus.FAILED) :
+                            prepareResult(Polygon2D.fromPath2D(tileExtent).toWKT());
+                }
+            } else {
+                throw new IllegalArgumentException("Satellite not supported");
+            }
+        } catch (Exception e) {
+            return handleException(e);
         }
-        return responseEntity;
     }
 
-    @RequestMapping(value = "/footprint/landsat8", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getL8TileFootprint(@RequestParam("tile") String tile) {
-        ResponseEntity<ServiceResponse<?>> responseEntity;
-        if (tile == null) {
-            responseEntity = prepareResult("Empty parameter [tile]", ResponseStatus.FAILED);
-        } else {
-            if (!l8TilePattern.matcher(tile).matches()) {
-                responseEntity = prepareResult(String.format("[%s] is not a valid Landsat-8 path row", tile), ResponseStatus.FAILED);
-            } else {
-                Path2D.Double tileExtent = Landsat8TileExtent.getInstance().getTileExtent(tile);
-                if (tileExtent == null) {
-                    responseEntity = prepareResult(String.format("[%s] is not found", tile), ResponseStatus.FAILED);
-                } else {
-                    responseEntity = prepareResult(Polygon2D.fromPath2D(tileExtent).toWKT());
-                }
+    @RequestMapping(value = "/tiles", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getTilesForFootprint(@RequestBody TileRequest request) {
+        try {
+            if (request == null) {
+                throw new IllegalArgumentException("Empty request");
             }
+            final String satellite = request.getSatellite();
+            final String wkt = request.getWkt();
+            if (StringUtilities.isNullOrEmpty(satellite)) {
+                throw new IllegalArgumentException("Empty parameter [satellite]");
+            }
+            if (StringUtilities.isNullOrEmpty(wkt)) {
+                throw new IllegalArgumentException("Empty parameter [wkt]");
+            }
+            if ("sentinel2".equalsIgnoreCase(satellite) || "sentinel-2".equalsIgnoreCase(satellite) || "s2".equalsIgnoreCase(satellite)) {
+                final Set<String> tiles = Sentinel2TileExtent.getInstance().intersectingTiles(Polygon2D.fromWKT(wkt));
+                return prepareResult(String.join(",", tiles));
+            } else if ("landsat8".equalsIgnoreCase(satellite) || "landsat-8".equalsIgnoreCase(satellite) || "l8".equalsIgnoreCase(satellite)) {
+                final Set<String> tiles = Landsat8TileExtent.getInstance().intersectingTiles(Polygon2D.fromWKT(wkt));
+                return prepareResult(String.join(",", tiles));
+            } else if ("sentinel1".equalsIgnoreCase(satellite) || "sentinel-1".equalsIgnoreCase(satellite) || "s1".equalsIgnoreCase(satellite)) {
+                final DataSource<?> dataSource = DataSourceManager.getInstance().createInstance("Sentinel1", "Scientific Data Hub");
+                if (dataSource == null) {
+                    throw new NoSuchMethodException("Scientific Data Hub plugin not found");
+                }
+                dataSource.setCredentials(request.getUser(), request.getPassword());
+                final DataQuery query = dataSource.createQuery("Sentinel1");
+                query.addParameter(CommonParameterNames.PLATFORM, "Sentinel-1");
+                QueryParameter<Date> begin = query.createParameter(CommonParameterNames.START_DATE, Date.class);
+                final int year = LocalDate.now().getYear() - 1;
+                begin.setMinValue(Date.from(LocalDateTime.of(year, 1, 1, 0, 0, 0, 0)
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant()));
+                begin.setMaxValue(Date.from(LocalDateTime.of(year, 12, 31, 0, 0, 0, 0)
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant()));
+                query.addParameter(begin);
+                query.addParameter("sensorOperationalMode", "IW");
+                query.addParameter(CommonParameterNames.PRODUCT_TYPE, "SLC");
+                query.addParameter(CommonParameterNames.FOOTPRINT, Polygon2D.fromWKT(wkt));
+                query.setPageSize(100);
+                final List<EOProduct> results = query.execute();
+                final long count = results.stream().map(EOData::getName).distinct().count();
+                return prepareResult(results.stream()
+                                            .map(p -> Integer.parseInt(p.getAttributeValue("relativeorbitnumber"))).distinct().sorted().map(String::valueOf)
+                                            .collect(Collectors.joining(",")), count + " products");
+            } else {
+                throw new IllegalArgumentException("Satellite not supported");
+            }
+        } catch (Exception e) {
+            return handleException(e);
         }
-        return responseEntity;
     }
 
     @RequestMapping(value = "/count", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
