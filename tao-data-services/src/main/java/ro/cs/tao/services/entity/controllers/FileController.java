@@ -17,7 +17,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -277,8 +277,8 @@ public class FileController extends BaseController {
     public ResponseEntity<?> downloadPreview(@RequestParam("fileName") String fileName) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            Resource file = loadAsResource(fileName + ".png");
-            String result = Base64.getEncoder().encodeToString(Files.readAllBytes(file.getFile().toPath()));
+            FileSystemResource file = loadAsResource(fileName + ".png");
+            String result = Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(file.getPath())));
             responseEntity = prepareResult(result);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -353,7 +353,7 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    private InputStreamResource loadAsResource(String fileName) throws IOException {
+    private FileSystemResource loadAsResource(String fileName) throws IOException {
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("[fileName] cannot be null or empty");
         }
@@ -361,7 +361,8 @@ public class FileController extends BaseController {
         if (!Files.exists(filePath)) {
             throw new IOException(String.format("File '%s' does not exist", filePath));
         }
-        InputStreamResource resource = new InputStreamResource(Files.newInputStream(filePath));
+        FileSystemResource resource = new FileSystemResource(filePath);
+        //InputStreamResource resource = new InputStreamResource(Files.newInputStream(filePath));
         //Resource resource = new UrlResource(filePath.toUri());
         if (resource.exists() || resource.isReadable()) {
             return resource;
