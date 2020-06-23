@@ -7,7 +7,6 @@ import ro.cs.tao.execution.local.NullExecutor;
 import ro.cs.tao.execution.local.QueryExecutor;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
-import ro.cs.tao.execution.wps.WPSExecutor;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.TaoLoginModule;
@@ -17,6 +16,8 @@ import ro.cs.tao.spi.ServiceRegistryManager;
 
 import javax.security.auth.spi.LoginModule;
 import java.util.Set;
+
+//import ro.cs.tao.execution.wps.WPSExecutor;
 
 public class PersistenceInjecter extends BaseLifeCycle {
 
@@ -52,7 +53,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
         DrmaaTaoExecutor.setContainerProvider(persistenceManager.containers());
         NullExecutor.setWorkflowNodeProvider(persistenceManager.workflowNodes());
         NullExecutor.setComponentProvider(persistenceManager.processingComponents());
-        WPSExecutor.setTaskProvider(persistenceManager.tasks());
+        //WPSExecutor.setTaskProvider(persistenceManager.tasks());
         Messaging.setPersister(this.persistenceManager.notifications());
         logger.fine("Persistence injection completed");
         SpringSessionProvider.setPersistenceManager(this.persistenceManager);
