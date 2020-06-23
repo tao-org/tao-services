@@ -118,8 +118,8 @@ public class DataSourceServiceImpl implements DataSourceService {
             }
             final int parallelism = DataSourceManager.getInstance().get(dsComponent.getSensorName(),
                                                                         dsComponent.getDataSourceName()).getMaximumAllowedTransfers();
+            final Properties properties = new Properties();
             if ((mode == FetchMode.SYMLINK || mode == FetchMode.COPY) && localPath != null) {
-                Properties properties = new Properties();
                 properties.put("local.archive.path.format", pathFormat);
                 if (parallelism > 1) {
                     results = Collections.synchronizedList(new ArrayList<>());
@@ -135,18 +135,19 @@ public class DataSourceServiceImpl implements DataSourceService {
                     results = dsComponent.doFetch(products, null, path, localPath, properties);
                 }
             } else {
+                properties.put("auto.uncompress", "true");
                 if (parallelism > 1) {
                     results = Collections.synchronizedList(new ArrayList<>());
                     Parallel.For(0, products.size(), parallelism, (i) -> {
                         try {
                             DataSourceComponent clone = cloneComponent(dsComponent, downloadListener);
-                            results.addAll(clone.doFetch(products.subList(i, i + 1), null, path));
+                            results.addAll(clone.doFetch(products.subList(i, i + 1), null, path, null, properties));
                         } catch (Exception ex) {
                             logger.severe(ex.getMessage());
                         }
                     });
                 } else {
-                    results = dsComponent.doFetch(products, null, path);
+                    results = dsComponent.doFetch(products, null, path, null, properties);
                 }
             }
         } else {

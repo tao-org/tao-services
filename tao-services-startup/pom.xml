@@ -69,11 +69,11 @@
             <artifactId>tao-user-service</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-web-processing-service</artifactId>
             <version>${project.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-workflow-library</artifactId>
