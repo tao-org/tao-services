@@ -146,8 +146,8 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-            <!--<version>${spring.version}</version>-->
-            <version>5.3.2.RELEASE</version>
+            <version>${spring.version}</version>
+            <!--<version>5.3.2.RELEASE</version>-->
         </dependency>
     </dependencies>
 
