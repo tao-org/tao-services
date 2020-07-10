@@ -20,13 +20,14 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.system.ApplicationHome;
 import org.springframework.context.ApplicationListener;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.configuration.TaoConfigurationProvider;
 import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
 import ro.cs.tao.services.commons.config.FileProcessor;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -59,19 +60,11 @@ public abstract class StartupBase implements ApplicationListener {
                 processor.processFile(scriptsDirectory);
             }
         }
-        try {
-            Field field = ConfigurationManager.class.getDeclaredField("configFolder");
-            field.setAccessible(true);
-            field.set(null, configDirectory);
-            field = ConfigurationManager.class.getDeclaredField("settings");
-            field.setAccessible(true);
-            ((Properties) field.get(ConfigurationManager.getInstance())).putAll(allProperties);
-            field = ConfigurationManager.class.getDeclaredField("scriptsFolder");
-            field.setAccessible(true);
-            field.set(null, scriptsDirectory);
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
+        allProperties.put(ConfigurationProvider.APP_HOME, homeDirectory().toString());
+        final ConfigurationProvider configurationProvider = ConfigurationManager.getInstance();
+        configurationProvider.setConfigurationFolder(configDirectory);
+        configurationProvider.setScriptsFolder(scriptsDirectory);
+        configurationProvider.putAll(allProperties);
         StringBuilder builder = new StringBuilder();
         builder.append("Active logging levels: ");
         allProperties.entrySet().stream()
@@ -100,7 +93,7 @@ public abstract class StartupBase implements ApplicationListener {
                                         .sources(detectLaunchers(startupClass))
                                         .build();
         app.setDefaultProperties(initialize());
-        if (Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.dev.mode", "false"))) {
+        if (Boolean.parseBoolean(TaoConfigurationProvider.getInstance().getValue("tao.dev.mode", "false"))) {
             System.out.println("Development mode is ON");
         }
         app.run(args);

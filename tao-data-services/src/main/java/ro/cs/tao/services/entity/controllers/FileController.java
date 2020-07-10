@@ -16,10 +16,10 @@
 
 package ro.cs.tao.services.entity.controllers;
 
-import com.google.common.net.HttpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
-import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.TaoConfigurationProvider;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -72,7 +72,7 @@ public class FileController extends BaseController {
             return handleException(new IllegalAccessException("[filter] Value required"));
         }
         final Map<String, String> springSettings = new TreeMap<>();
-        final Map<String, String> all = ConfigurationManager.getInstance().getAll();
+        final Map<String, String> all = TaoConfigurationProvider.getInstance().getAll();
         for (Map.Entry<String, String> entry : all.entrySet()) {
             if (entry.getKey().startsWith(filter)) {
                 springSettings.put(entry.getKey(), entry.getValue());

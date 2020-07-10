@@ -1,6 +1,6 @@
 package ro.cs.tao.services.commons.config;
 
-import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.TaoConfigurationProvider;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -16,7 +16,7 @@ public interface FileProcessor {
         Path configFile = configDirectory.resolve(getFileName());
         if (!Files.exists(configFile)) {
             byte[] buffer = new byte[1024];
-            try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream(getFileResourceLocation()));
+            try (BufferedInputStream is = new BufferedInputStream(TaoConfigurationProvider.class.getResourceAsStream(getFileResourceLocation()));
                  OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile))) {
                 int read;
                 while ((read = is.read(buffer)) != -1) {

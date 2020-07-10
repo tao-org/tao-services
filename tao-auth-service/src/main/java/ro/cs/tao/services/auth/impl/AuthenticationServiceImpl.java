@@ -15,11 +15,9 @@
  */
 package ro.cs.tao.services.auth.impl;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.configuration.Configuration;
-import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.TaoConfigurationProvider;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.interfaces.AuthenticationService;
@@ -27,6 +25,7 @@ import ro.cs.tao.services.model.auth.AuthInfo;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
+import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.FileUtilities;
 
 import java.io.IOException;
@@ -66,12 +65,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             // update user last login date
             persistenceManager.updateUserLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
             try {
-                Path path = Paths.get(ConfigurationManager.getInstance().getValue(Configuration.FileSystem.WORKSPACE_LOCATION)).resolve(username);
+                Path path = Paths.get(TaoConfigurationProvider.getInstance().getValue("workspace.location")).resolve(username);
                 FileUtilities.ensureExists(path);
                 FileUtilities.ensureExists(path.resolve("files"));
             } catch (IOException e) {
                 logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
-                                            username, ExceptionUtils.getStackTrace(e)));
+                                            username, ExceptionUtils.getStackTrace(logger, e)));
             }
             // retrieve user groups and send them as profiles
             return new AuthInfo(true, authenticationToken, persistenceManager.getUserGroups(username).stream().map(Group::getName).collect(Collectors.toList()));

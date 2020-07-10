@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.component.Variable;
-import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.TaoConfigurationProvider;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.entity.beans.FetchFilesRequest;
 import ro.cs.tao.utils.NetStreamResponse;
@@ -38,7 +38,7 @@ public class UtilityConroller extends BaseController {
                                  @RequestParam(name = "password", required = false) Optional<String> password) {
         ResponseEntity<?> serviceResponse;
         try {
-            String sitePath = ConfigurationManager.getInstance().getValue("site.path");
+            String sitePath = TaoConfigurationProvider.getInstance().getValue("site.path");
             if (sitePath == null || sitePath.isEmpty()) {
                 throw new IOException("Cannot determine site path");
             }
@@ -61,7 +61,7 @@ public class UtilityConroller extends BaseController {
     public ResponseEntity<?> getMany(@RequestBody FetchFilesRequest request) {
         ResponseEntity<?> serviceResponse;
         try {
-            String sitePath = ConfigurationManager.getInstance().getValue("site.path");
+            String sitePath = TaoConfigurationProvider.getInstance().getValue("site.path");
             if (sitePath == null || sitePath.isEmpty()) {
                 throw new IOException("Cannot determine site path");
             }

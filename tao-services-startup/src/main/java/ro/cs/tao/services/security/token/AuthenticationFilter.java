@@ -24,6 +24,7 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.util.UrlPathHelper;
 import ro.cs.tao.services.commons.Endpoints;
+import ro.cs.tao.utils.ExceptionUtils;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -76,7 +77,7 @@ public class AuthenticationFilter extends GenericFilterBean {
             httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, authenticationException.getMessage());
         } catch (Throwable t) {
             if (t.getMessage() != null) {
-                logger.severe(t.getMessage());//ExceptionUtils.getStackTrace(t));
+                logger.severe(ExceptionUtils.getStackTrace(logger, t));
             }
         }
 

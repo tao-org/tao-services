@@ -5,7 +5,7 @@ import com.bc.wps.api.schema.*;
 import com.bc.wps.api.utils.CapabilitiesBuilder;
 import com.bc.wps.api.utils.WpsTypeConverter;
 import org.springframework.web.util.UriComponentsBuilder;
-import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.TaoConfigurationProvider;
 import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
@@ -154,7 +154,7 @@ public class Operations {
     }
 
     private String getPropertyValue(String name) {
-        return ConfigurationManager.getInstance().getValue(name);
+        return TaoConfigurationProvider.getInstance().getValue(name);
     }
 
     private DCP getPostDcp(String serviceUrl) {

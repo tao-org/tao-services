@@ -164,7 +164,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     @Override
     public Map<String, Boolean> getNodesOnlineStatus() {
         Map<String, Boolean> statuses = new HashMap<>();
-        List<NodeDescription> nodes = TopologyManager.getInstance().listNodes();
+        List<NodeDescription> nodes = TopologyManager.getInstance().list();
         if (nodes != null) {
             try {
                 String masterHost = InetAddress.getLocalHost().getHostName();
@@ -176,7 +176,9 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
                         master.setUserPass(node.getUserPass());
                         master.setDescription(node.getDescription());
                         master.setServicesStatus(node.getServicesStatus());
-                        master.setFlavor(node.getFlavor());
+                        master.setProcessorCount(node.getProcessorCount());
+                        master.setDiskSpaceSizeGB(node.getDiskSpaceSizeGB());
+                        master.setMemorySizeGB(node.getMemorySizeGB());
                         master.setActive(true);
                         master = persistenceManager.saveExecutionNode(master);
                         persistenceManager.deleteExecutionNode(node.getId());
@@ -184,7 +186,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
                         logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                     }
                     String hostName = node.getId();
-                    Executor<?> executor;
+                    Executor executor;
                     if (hostName.equals(masterHost)) {
                         executor = Executor.create(ExecutorType.PROCESS, hostName, null);
                     } else {

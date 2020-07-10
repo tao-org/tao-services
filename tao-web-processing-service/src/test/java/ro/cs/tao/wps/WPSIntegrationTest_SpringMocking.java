@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.DataDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
-import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.TaoConfigurationProvider;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.ExecutionJob;
@@ -217,7 +217,7 @@ public class WPSIntegrationTest_SpringMocking {
     }
 
     private void prepareConfigurationManagerForTest() {
-        final ConfigurationManager configurationManager = ConfigurationManager.getInstance();
+        final TaoConfigurationProvider configurationManager = TaoConfigurationProvider.getInstance();
         settingsBeforeTest = ReflectionTestUtils.getField(configurationManager, "settings");
         final Properties properties = new Properties();
         properties.setProperty("company.name", "Test.company.name");
@@ -244,7 +244,7 @@ public class WPSIntegrationTest_SpringMocking {
     }
 
     private void resetConfigurationManager() {
-        final ConfigurationManager configurationManager = ConfigurationManager.getInstance();
+        final TaoConfigurationProvider configurationManager = TaoConfigurationProvider.getInstance();
         ReflectionTestUtils.setField(configurationManager, "settings", settingsBeforeTest);
     }
 
