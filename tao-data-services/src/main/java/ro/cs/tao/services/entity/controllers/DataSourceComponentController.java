@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
+import ro.cs.tao.Tuple;
 import ro.cs.tao.component.Variable;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
@@ -46,7 +47,6 @@ import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceGroupService;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.services.interfaces.QueryService;
-import ro.cs.tao.utils.Tuple;
 
 import java.security.Principal;
 import java.util.*;

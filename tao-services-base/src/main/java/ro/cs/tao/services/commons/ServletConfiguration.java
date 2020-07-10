@@ -7,7 +7,6 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import ro.cs.tao.configuration.Configuration;
 import ro.cs.tao.configuration.ConfigurationManager;
 
 import java.io.IOException;
@@ -25,7 +24,7 @@ public abstract class ServletConfiguration {
     @Bean
     public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> containerCustomizer() {
         return (container -> {
-            String strPort = ConfigurationManager.getInstance().getValue(Configuration.Services.PORT);
+            String strPort = ConfigurationManager.getInstance().getValue("server.port");
             int port = strPort != null ? Integer.parseInt(strPort) : 8080;
             final Logger logger = Logger.getLogger(ServletConfiguration.class.getName());
             final Map<String, String> map = versionInfo();

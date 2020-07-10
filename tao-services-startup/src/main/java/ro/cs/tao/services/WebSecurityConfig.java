@@ -15,7 +15,6 @@
  */
 package ro.cs.tao.services;
 
-import com.google.common.collect.ImmutableList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,6 +42,8 @@ import ro.cs.tao.services.security.TaoAuthorityGranter;
 import ro.cs.tao.services.security.token.AuthenticationFilter;
 import ro.cs.tao.services.security.token.TokenAuthenticationProvider;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -103,14 +104,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         final CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(ImmutableList.of("*"));
-        configuration.setAllowedMethods(ImmutableList.of("HEAD", "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedOrigins(Collections.unmodifiableList(new ArrayList<String>() {{ add("*"); }}));
+        configuration.setAllowedMethods(Collections.unmodifiableList(new ArrayList<String>() {{
+            add("HEAD"); add("GET"); add("POST"); add("PUT"); add("DELETE"); add("PATCH"); add("OPTIONS"); }}));
         // setAllowCredentials(true) is important, otherwise:
         // The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*' when the request's credentials mode is 'include'.
         configuration.setAllowCredentials(true);
         // setAllowedHeaders is important! Without it, OPTIONS preflight request
         // will fail with 403 Invalid CORS request
-        configuration.setAllowedHeaders(ImmutableList.of("Authorization", "Cache-Control", "Content-Type", "x-auth-token", "user"));
+        configuration.setAllowedHeaders(Collections.unmodifiableList(new ArrayList<String>() {{
+            add("Authorization"); add("Cache-Control"); add("Content-Type"); add("x-auth-token"); add("user");
+        }}));
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

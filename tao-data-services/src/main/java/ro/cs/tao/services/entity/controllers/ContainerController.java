@@ -29,8 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SystemVariable;
-import ro.cs.tao.configuration.Configuration;
-import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.TaoConfigurationProvider;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Message;
@@ -43,7 +42,7 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.ContainerUploadRequest;
 import ro.cs.tao.services.interfaces.ContainerService;
-import ro.cs.tao.topology.docker.DockerManager;
+import ro.cs.tao.topology.TopologyManager;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -70,7 +69,7 @@ public class ContainerController extends DataEntityController<Container, String,
                                                    @RequestParam(name = "pageSize", required = false)Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortByField", required = false)Optional<String> sortByField,
                                                    @RequestParam(name = "sortDirection", required = false)Optional<SortDirection> sortDirection) {
-        List<Container> objects = DockerManager.getAvailableDockerImages();
+        List<Container> objects = TopologyManager.getInstance().getAvailableDockerImages();
         if (objects == null) {
             objects = new ArrayList<>();
         }
@@ -135,7 +134,7 @@ public class ContainerController extends DataEntityController<Container, String,
                 container.setName(name);
             }
             dockerFiles.remove(dockerFile);
-            final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue(Configuration.Docker.IMAGES_LOCATION), name.replace(" ", "-"));
+            final Path dockerImagesPath = Paths.get(TaoConfigurationProvider.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
             final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
             for (MultipartFile file : dockerFiles) {
                 try {

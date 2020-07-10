@@ -21,7 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.TaoConfigurationProvider;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.services.admin.mail.Constants;
 import ro.cs.tao.services.auth.token.TokenManagementService;
@@ -58,7 +58,7 @@ public class AdministrationController extends BaseController {
             if (userInfo != null) {
                 //send email with activation link
                 final MailSender mailSender = new MailSender();
-                final ConfigurationManager configManager = ConfigurationManager.getInstance();
+                final TaoConfigurationProvider configManager = TaoConfigurationProvider.getInstance();
                 final String activationEndpointUrl = configManager.getValue("tao.services.base") + "/user/activate/" + userInfo.getUsername();
                 final String userFullName = userInfo.getFirstName() + " " + userInfo.getLastName();
                 final String activationEmailContent = constructEmailContentForAccountActivation(userFullName, activationEndpointUrl);

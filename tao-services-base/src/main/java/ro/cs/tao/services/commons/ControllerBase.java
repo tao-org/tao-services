@@ -16,7 +16,6 @@
 
 package ro.cs.tao.services.commons;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -25,6 +24,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.utils.ExceptionUtils;
 
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -88,7 +88,7 @@ public abstract class ControllerBase {
     }
 
     protected void onUnhandledException(Exception e) {
-        error(ExceptionUtils.getStackTrace(e));
+        error(ExceptionUtils.getStackTrace(logger, e));
     }
 
     protected <T> ResponseEntity<ServiceResponse<?>> prepareResult(T result) {
@@ -119,7 +119,7 @@ public abstract class ControllerBase {
     }
 
     protected ResponseEntity<ServiceResponse<?>> handleException(Exception ex) {
-        Logger.getLogger(getClass().getName()).severe(ExceptionUtils.getStackFrames(ex)[0]);
+        Logger.getLogger(getClass().getName()).severe(org.apache.commons.lang3.exception.ExceptionUtils.getStackFrames(ex)[0]);
         if (ex instanceof ValidationException) {
             ValidationException vex = (ValidationException) ex;
             return new ResponseEntity<>(new ServiceResponse<>(vex.getAdditionalInfo(),
