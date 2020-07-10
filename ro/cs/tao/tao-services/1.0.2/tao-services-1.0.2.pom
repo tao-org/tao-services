@@ -27,7 +27,7 @@
         <module>tao-monitoring-service</module>
         <module>tao-progress-report-service</module>
         <module>tao-orchestration-services</module>
-        <module>tao-web-processing-service</module>
+        <!--<module>tao-web-processing-service</module>-->
         <module>tao-workflow-library</module>
         <module>tao-scheduling-service</module>
 		<module>tao-services-startup</module>
