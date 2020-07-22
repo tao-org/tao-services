@@ -260,7 +260,8 @@ public class DataSourceController extends BaseController {
     }
 
     @RequestMapping(value = "/exec", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> doQuery(@RequestBody Query query) {
+    public ResponseEntity<ServiceResponse<?>> doQuery(@RequestParam(name = "mode", required = false) String mode,
+                                                      @RequestBody Query query) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
         if (params == null || params.isEmpty()) {
@@ -268,11 +269,22 @@ public class DataSourceController extends BaseController {
                                                query.getDataSource(), query.getSensor()), ResponseStatus.FAILED);
         }
         try {
+            final String actualMode = mode == null || mode.trim().isEmpty() ? "details" : mode.toLowerCase();
+            if (!actualMode.equals("details") && !actualMode.equals("list")) {
+                throw new IllegalArgumentException("Unsupported parameter value [mode=" + actualMode + "]");
+            }
             List<EOProduct> results = dataSourceService.query(query);
             if (results == null) {
                 results = new ArrayList<>();
             }
-            return prepareResult(results);
+            switch (actualMode) {
+                case "details":
+                    return prepareResult(results);
+                case "list":
+                    return prepareResult(results.stream().map(EOData::getName).collect(Collectors.joining(",")));
+                default:
+                    return prepareResult("");
+            }
         } catch (Exception ex) {
             return handleException(ex);
         }
