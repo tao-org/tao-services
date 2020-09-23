@@ -162,17 +162,12 @@ public class UserController extends BaseController {
 
     @RequestMapping(value = "/prefs", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> removeUserPreferences(@RequestBody List<String> userPrefsKeysToDelete, @RequestHeader("X-Auth-Token") String authToken) {
-        if (userPrefsKeysToDelete == null || userPrefsKeysToDelete.isEmpty() || StringUtilities.isNullOrEmpty(authToken)) {
-            return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
+        if (StringUtilities.isNullOrEmpty(authToken)) {
+            return prepareResult("Invalid token!", ResponseStatus.FAILED);
         }
         try {
             final String username = tokenService.retrieve(authToken).getPrincipal().toString();
-            final List<UserPreference> userUpdatedPrefs = userService.removeUserPreferences(username, userPrefsKeysToDelete);
-            if (userUpdatedPrefs != null && !userUpdatedPrefs.isEmpty()) {
-                return prepareResult(userUpdatedPrefs);
-            } else {
-                return prepareResult(null, HttpStatus.UNAUTHORIZED);
-            }
+            return prepareResult(userService.removeUserPreferences(username, userPrefsKeysToDelete));
         } catch (Exception ex) {
             return handleException(ex);
         }
