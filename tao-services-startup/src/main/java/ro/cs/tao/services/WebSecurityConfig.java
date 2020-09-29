@@ -187,7 +187,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     }
 
     private String[] apiEndpointsWithAuthToken() {
-        String[] expressions = Endpoints.endpoints();
+        String[] expressions = Endpoints.endpoints("ro.cs.tao");
         Logger.getLogger(WebSecurityConfig.class.getName())
                 .fine("Security active for the following endpoints: " + String.join(",", expressions));
         return expressions;

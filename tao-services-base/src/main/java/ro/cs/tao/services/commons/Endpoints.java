@@ -46,9 +46,9 @@ public class Endpoints {
     public static final String API_PATH_EXPRESSION = "/api/**/*";
     public static final String GLOBAL_PATH_EXPRESSION = "/**/*";
 
-    public static String[] endpoints() {
+    public static String[] endpoints(String packagePrefix) {
         Set<String> list = new HashSet<>();
-        Set<Class<?>> controllers = new Reflections("ro.cs.tao").getTypesAnnotatedWith(Controller.class);
+        Set<Class<?>> controllers = new Reflections(packagePrefix).getTypesAnnotatedWith(Controller.class);
         for (Class<?> controller : controllers) {
             String path;
             RequestMapping annotation = controller.getAnnotation(RequestMapping.class);
