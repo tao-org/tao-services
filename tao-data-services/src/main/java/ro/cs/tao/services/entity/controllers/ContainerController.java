@@ -40,6 +40,7 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.beans.ContainerRequest;
 import ro.cs.tao.services.entity.beans.ContainerUploadRequest;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.docker.DockerManager;
@@ -177,6 +178,86 @@ public class ContainerController extends DataEntityController<Container, String,
             }, this::registrationCallback);
             return prepareResult("Docker image registration started. A notification will be send when the process completes",
                                  ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/register", method = RequestMethod.POST, consumes = "multipart/form-data", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> upload(HttpServletRequest servletRequest,
+                                                     @ModelAttribute ContainerRequest request,
+                                                     Model model) {
+        try {
+            final List<MultipartFile> dockerFiles = request.getDockerFiles();
+            if (dockerFiles == null || dockerFiles.isEmpty()) {
+                throw new IllegalArgumentException("Empty file list");
+            }
+            final Container container = request.getContainerDescriptor();
+            if (container == null) {
+                throw new IllegalArgumentException("No container descriptor received");
+            }
+            final MultipartFile logoFile = request.getContainerLogo();
+            if (logoFile != null) {
+                container.setLogo(Base64.getEncoder().encodeToString(logoFile.getBytes()));
+            }
+
+            final ProcessingComponent[] components = request.getComponentDescriptors();
+
+            final MultipartFile dockerFile = dockerFiles.stream().filter(f -> "Dockerfile".equals(f.getOriginalFilename())).findFirst().orElse(null);
+            if (dockerFile == null) {
+                throw new IllegalArgumentException("Dockerfile not found");
+            }
+            final String name = request.getName();
+            if (name == null) {
+                throw new IllegalArgumentException("[name] cannot be null");
+            }
+            if (!name.equals(container.getName())) {
+                container.setName(name);
+            }
+            dockerFiles.remove(dockerFile);
+            final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
+            final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
+            for (MultipartFile file : dockerFiles) {
+                try {
+                    Path auxFile = resolveMultiPartFile(file, dockerImagesPath);
+                    AuxiliaryData data = new AuxiliaryData();
+                    data.setId(UUID.randomUUID().toString());
+                    data.setLocation(auxFile.toString());
+                    data.setDescription(String.format("Auxiliary file for container '%s'", name));
+                    data.setUserName(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
+                    data.setCreated(LocalDateTime.now());
+                    data.setModified(data.getCreated());
+                    auxiliaryDataProvider.save(data);
+                } catch (IOException e) {
+                    error(e.getMessage());
+                }
+            }
+            List<MultipartFile> auxiliaryFiles = request.getAuxiliaryFiles();
+            if (auxiliaryFiles != null) {
+                Path auxiliaryFilesPath = request.isSystem() ?
+                        Paths.get(SystemVariable.SHARED_FILES.value()) :
+                        SessionStore.currentContext().getUploadPath();
+                for (MultipartFile file : auxiliaryFiles) {
+                    try {
+                        resolveMultiPartFile(file, auxiliaryFilesPath);
+                    } catch (IOException e) {
+                        error(e.getMessage());
+                    }
+                }
+            }
+            final String description = request.getDescription();
+            if (description != null && !description.equals(container.getDescription())) {
+                container.setDescription(description);
+            }
+            asyncExecute(() -> {
+                try {
+                    service.registerContainer(dockerPath, container, components);
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }, this::registrationCallback);
+            return prepareResult("Docker image registration started. A notification will be send when the process completes",
+                    ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
         }
