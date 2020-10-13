@@ -52,7 +52,7 @@ public class Endpoints {
         for (Class<?> controller : controllers) {
             String path;
             RequestMapping annotation = controller.getAnnotation(RequestMapping.class);
-            if (annotation.value().length > 0) {
+            if (annotation != null && annotation.value().length > 0) {
                 path = annotation.value()[0];
                 if (!"/user".equals(path)) {
                     Method[] methods = controller.getDeclaredMethods();
