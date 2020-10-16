@@ -28,7 +28,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
 
     @Override
     public void onStartUp() {
-        Executor.setStatusListener(new TaskStatusListener() {
+        Executor.addStatusListener(new TaskStatusListener() {
             @Override
             public void taskStatusChanged(ExecutionTask task, ExecutionStatus status) {
                 try {
