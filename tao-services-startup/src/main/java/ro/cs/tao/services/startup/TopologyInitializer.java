@@ -17,11 +17,12 @@ public class TopologyInitializer extends BaseLifeCycle {
 
     @Override
     public int priority() {
-        return 8;
+        return 0;
     }
 
     @Override
     public void onStartUp() {
+        TopologyManager.getInstance().setLocalNodeProvider(new DefaultNodeProvider());
         final NodeManager nodeManager = NodeManager.getInstance();
         final ConfigurationProvider cfgManager = ConfigurationManager.getInstance();
         if (nodeManager != null) {
