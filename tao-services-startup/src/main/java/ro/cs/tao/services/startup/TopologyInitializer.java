@@ -22,7 +22,8 @@ public class TopologyInitializer extends BaseLifeCycle {
 
     @Override
     public void onStartUp() {
-        TopologyManager.getInstance().setLocalNodeProvider(new DefaultNodeProvider());
+        final DefaultNodeProvider nodeProvider = new DefaultNodeProvider();
+        TopologyManager.getInstance().setLocalNodeProvider(nodeProvider);
         final NodeManager nodeManager = NodeManager.getInstance();
         final ConfigurationProvider cfgManager = ConfigurationManager.getInstance();
         if (nodeManager != null) {
@@ -36,7 +37,7 @@ public class TopologyInitializer extends BaseLifeCycle {
             } else {
                 nodeManager.setDefaultNodeInfo(new DefaultNodeInfo(prefix, description, user, pwd));
             }
-            nodeManager.setNodeProvider(new DefaultNodeProvider());
+            nodeManager.setNodeProvider(nodeProvider);
             nodeManager.setTaskProvider(persistenceManager.tasks());
             nodeManager.setNodeLimit(Integer.parseInt(cfgManager.getValue(NODE_LIMIT, "0")));
             nodeManager.initialize();
