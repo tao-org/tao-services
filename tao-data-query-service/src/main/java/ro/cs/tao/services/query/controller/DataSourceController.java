@@ -173,7 +173,7 @@ public class DataSourceController extends BaseController {
                 final Set<String> tiles = Landsat8TileExtent.getInstance().intersectingTiles(Polygon2D.fromWKT(wkt));
                 return prepareResult(String.join(",", tiles));
             } else if ("sentinel1".equalsIgnoreCase(satellite) || "sentinel-1".equalsIgnoreCase(satellite) || "s1".equalsIgnoreCase(satellite)) {
-                final DataSource<?> dataSource = DataSourceManager.getInstance().createInstance("Sentinel1", "Scientific Data Hub");
+                final DataSource<?, ?> dataSource = DataSourceManager.getInstance().createInstance("Sentinel1", "Scientific Data Hub");
                 if (dataSource == null) {
                     throw new NoSuchMethodException("Scientific Data Hub plugin not found");
                 }
