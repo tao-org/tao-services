@@ -28,6 +28,7 @@ import ro.cs.tao.utils.ExceptionUtils;
 
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @CrossOrigin(origins = {"http://localhost", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082"})
@@ -119,7 +120,7 @@ public abstract class ControllerBase {
     }
 
     protected ResponseEntity<ServiceResponse<?>> handleException(Exception ex) {
-        Logger.getLogger(getClass().getName()).severe(org.apache.commons.lang3.exception.ExceptionUtils.getStackFrames(ex)[0]);
+        logger.severe(ExceptionUtils.getExceptionLoggingMessage(ex, 1));
         if (ex instanceof ValidationException) {
             ValidationException vex = (ValidationException) ex;
             return new ResponseEntity<>(new ServiceResponse<>(vex.getAdditionalInfo(),
