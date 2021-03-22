@@ -74,7 +74,7 @@ public class DataSourceServiceImpl implements DataSourceService {
     @Override
     public List<DataSourceParameter> getSupportedParameters(String sensorName, String dataSourceName) {
         List<DataSourceParameter> parameters = null;
-        DataSource<?> dataSource = DataSourceManager.getInstance().get(sensorName, dataSourceName);
+        DataSource<?, ?> dataSource = DataSourceManager.getInstance().get(sensorName, dataSourceName);
         if (dataSource != null) {
             Map<String, Map<String, ro.cs.tao.datasource.param.DataSourceParameter>> map = dataSource.getSupportedParameters();
             Map<String, ro.cs.tao.datasource.param.DataSourceParameter> parameterDescriptorMap = map.get(sensorName);

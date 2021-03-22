@@ -1,18 +1,4 @@
-/**
- * 
- */
 package ro.cs.tao.services.scheduling.job;
-
-import java.security.Principal;
-import java.text.SimpleDateFormat;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.Executors;
 
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -22,7 +8,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
-
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.orchestration.Orchestrator;
@@ -34,6 +19,14 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.bridge.spring.SpringContextBridge;
 import ro.cs.tao.services.model.scheduling.SchedulingMode;
 import ro.cs.tao.user.UserPreference;
+import ro.cs.tao.utils.DateUtils;
+
+import java.security.Principal;
+import java.text.DateFormat;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.Executors;
 
 /**
  * @author Lucian Barbulescu
@@ -178,7 +171,7 @@ public class WorkflowExecutionJob extends AbstractJob {
 				
 				// shift the date with one day into the future
 				date = Date.from(date.toInstant().plus(1, ChronoUnit.DAYS));
-				final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+				final DateFormat df = DateUtils.getFormatterAtLocal("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 				
 				nodeData.getValue().put("startDate", df.format(date));
 				// update endDate to today if it was already defined

@@ -54,6 +54,8 @@ public abstract class ServletConfiguration {
         return taskExecutor;
     }
 
+    protected String name() { return null; }
+
     protected Map<String, String> versionInfo() {
         final Map<String, String> version = readManifest();
         if (version.size() == 0) {
@@ -71,8 +73,12 @@ public abstract class ServletConfiguration {
                     Manifest manifest = new Manifest(inputStream);
                     Attributes attributes = manifest.getMainAttributes();
                     String value = attributes.getValue("Bundle-Name");
-                    if (value != null && value.startsWith("TAO")) {
-                        entries.put("TAO Services", attributes.getValue("Version") + " (" + attributes.getValue("Build-Time") + ")");
+                    if (value != null) {
+                        if (value.startsWith("TAO")) {
+                            entries.put("TAO Services", attributes.getValue("Version") + " (" + attributes.getValue("Build-Time") + ")");
+                        } else if (name() != null && value.startsWith(name())) {
+                            entries.put(name() + " Services", attributes.getValue("Version") + " (" + attributes.getValue("Build-Time") + ")");
+                        }
                     }
                 }
             }
