@@ -60,6 +60,17 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
+    public Map<String, String[]> getDataSourceProviders() {
+        Map<String, String[]> instances = new HashMap<>();
+        final DataSourceManager dataSourceManager = DataSourceManager.getInstance();
+        final Set<DataSource<?, ?>> dataSources = dataSourceManager.getRegisteredDataSources();
+        for (DataSource<?, ?> dataSource : dataSources) {
+            instances.put(dataSource.defaultId(), dataSource.getSupportedSensors());
+        }
+        return instances;
+    }
+
+    @Override
     public List<DataSourceDescriptor> getDatasourceInstances() {
         List<DataSourceDescriptor> instances = new ArrayList<>();
         final DataSourceManager dataSourceManager = DataSourceManager.getInstance();
