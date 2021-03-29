@@ -85,6 +85,15 @@ public class DataSourceController extends BaseController {
         return prepareResult(instances);
     }
 
+    @RequestMapping(value = "/providers", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getProviders() {
+        Map<String, String[]> providers = dataSourceService.getDataSourceProviders();
+        if (providers == null) {
+            providers = new HashMap<>();
+        }
+        return prepareResult(providers);
+    }
+
     @RequestMapping(value = "/sensor/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getSupportedSensors() {
         Set<String> sensors = dataSourceService.getSupportedSensors();
