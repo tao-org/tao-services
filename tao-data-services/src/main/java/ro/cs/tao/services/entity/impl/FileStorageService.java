@@ -41,6 +41,7 @@ import ro.cs.tao.utils.FileUtilities;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -159,6 +160,81 @@ public class FileStorageService implements StorageService<MultipartFile> {
 		} catch (QuotaException e) {
 			throw new IOException(e);
 		}
+    }
+
+    @Override
+    public void move(String source, String destination) throws  IOException {
+        if (source == null || source.isEmpty() || destination == null || destination.isEmpty()) {
+            throw new IOException("Invalid argument (empty)");
+        }
+        if (destination.contains("..")) {
+            // This is a security check
+            throw new IOException( "Cannot move file with relative path outside user directory " + source);
+        }
+        Path uploadPath = SessionStore.currentContext().getUploadPath();
+        Path sourcePath = uploadPath.getParent().resolve(source);
+        Path destinationPath = uploadPath.getParent().resolve(destination);
+
+        if (destination.equals(uploadPath.toString()) ||
+                destination.startsWith(SystemVariable.SHARED_WORKSPACE.value()) ||
+                destination.startsWith(SystemVariable.SHARED_FILES.value())) {
+            throw new IOException( "Operation not allowed");
+        }
+        if (destination.startsWith("files")) {
+            FileUtilities.move(sourcePath, destinationPath);
+            try {
+                Path workspaceCurrentUser = SessionStore.currentContext().getWorkspace();
+                AuxiliaryData auxiliaryData = auxiliaryDataProvider.getByLocation(sourcePath.toUri().toString());
+                if (auxiliaryData != null) {
+                    auxiliaryData.setLocation(workspaceCurrentUser.resolve(destinationPath).toUri().toString());
+                    auxiliaryDataProvider.update(auxiliaryData);
+                }
+            } catch (Exception e) {
+                Logger.getLogger(FileStorageService.class.getName()).warning(String.format("File %s was not found in database", source));
+            }
+        } else { //it's a product
+            Path sourceLocation = SessionStore.currentContext().getWorkspace().resolve(sourcePath);
+            String destinationLocation = SessionStore.currentContext().getWorkspace().resolve(destinationPath).toUri().toString();
+            List<EOProduct> products = productProvider.getByLocation(sourceLocation.toUri().toString());
+
+            if (products == null || products.size() == 0) { // we might have vector products
+                List<VectorData> vectorProducts = vectorDataProvider.getByLocation(sourceLocation.toUri().toString());
+                if (vectorProducts.size() > 1) {
+                    throw new IOException("Cannot move vector products");
+                }
+                if (vectorProducts.size() == 1) {
+                    VectorData product = vectorProducts.get(0);
+                    if (Visibility.PUBLIC.equals(product.getVisibility())) {
+                        throw new IOException("Cannot move a public product. Please reduce its visibility first.");
+                    }
+                    FileUtilities.move(sourcePath, destinationPath);
+                    try {
+                        product.setLocation(destinationLocation);
+                        vectorDataProvider.update(product);
+                    } catch (PersistenceException | URISyntaxException e) {
+                        throw new IOException(String.format("Failed to move vector product %s. Reason: %s",
+                                product.getName(), e.getMessage()));
+                    }
+                }
+            } else { // we might have raster products
+                if (products.size() > 1) {
+                    throw new IOException("Cannot move raster products");
+                }
+                EOProduct product = products.get(0);
+                if (Visibility.PUBLIC.equals(product.getVisibility())) {
+                    throw new IOException("Cannot move a public product. Please reduce its visibility first.");
+                }
+                FileUtilities.move(sourcePath, destinationPath);
+                try {
+                    product.setLocation(destinationLocation);
+                    productProvider.update(product);
+                } catch (PersistenceException | URISyntaxException e) {
+                    throw new IOException(String.format("Failed to move vector product %s. Reason: %s",
+                            product.getName(), e.getMessage()));
+                }
+            }
+            //TODO: no need to update the user quota, right?
+        }
     }
 
     @Override
