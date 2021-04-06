@@ -1,4 +1,4 @@
-package ro.cs.tao.services.workspace.controllers;
+package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -23,7 +23,6 @@ import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
-import ro.cs.tao.services.entity.controllers.DataEntityController;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.utils.FileUtilities;
