@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -16,6 +18,7 @@ import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,6 +28,7 @@ import java.util.List;
 @Configuration
 @ImportResource("classpath:tao-workspace-service-context.xml")
 @EnableWebMvc
+@EnableAsync
 public class WorkspaceServicesLauncher implements ServiceLauncher {
 
     @Autowired
@@ -38,7 +42,7 @@ public class WorkspaceServicesLauncher implements ServiceLauncher {
     }
 
     @PostConstruct
-    private void initialize() {
+    private void initialize() { //TODO: move in tao-services-startup/../startup/WorkspaceInitializer?
         List<User> activeUsers = userRepository.findByStatus(UserStatus.ACTIVE);
         if (activeUsers != null) {
             final Path rootPath = Paths.get(SystemVariable.ROOT.value());
@@ -47,6 +51,7 @@ public class WorkspaceServicesLauncher implements ServiceLauncher {
                     Path userWorkspace = rootPath.resolve(user.getUsername());
                     try {
                         workspaceService.walkAndRegisterDirectories(userWorkspace);
+                        workspaceService.updateUserInputQuota(user.getUsername());
                     } catch (IOException e) {
                         System.out.println(String.format("Failed to watch user workspace [user=%s, reason=%s]",
                                 user.getUsername(), e.getMessage()));
@@ -56,12 +61,21 @@ public class WorkspaceServicesLauncher implements ServiceLauncher {
         }
     }
 
-    @Scheduled(fixedDelay = 50000)
+    @Async
+    @Scheduled(fixedDelay = 600000)
     public void enableWorkspaceWatcher() {
-        System.out.println("alive :)");
-        System.out.println("Fixed delay task - " + System.currentTimeMillis() / 1000);
-        if(workspaceService.hasKeys()){
-            workspaceService.watch();
+        workspaceService.watch();
+    }
+
+    @PreDestroy
+    private void updateUsersInputQuota() {
+        List<User> activeUsers = userRepository.findByStatus(UserStatus.ACTIVE);
+        if (activeUsers != null) {
+            for (User user : activeUsers) {
+                if (!SystemPrincipal.instance().getName().equals(user.getUsername())) {
+                    workspaceService.updateUserInputQuota(user.getUsername());
+                }
+            }
         }
     }
 
