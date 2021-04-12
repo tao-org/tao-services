@@ -21,8 +21,6 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
@@ -46,7 +44,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
             this.keys = new HashMap<>();
             this.eventsQueue = new LinkedBlockingDeque<>(BOUND);
         } catch (IOException e) {
-            logger.severe(String.format("Cannot create  new watcher service. Reason: %s",
+            logger.severe(String.format("Cannot create new watcher service. Reason: %s",
                     ExceptionUtils.getStackTrace(e)));
         }
     }
@@ -58,8 +56,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
             final Path rootPath = Paths.get(SystemVariable.ROOT.value());
             for (User user : activeUsers) {
                 if (!SystemPrincipal.instance().getName().equals(user.getUsername())) {
-                    Path userWorkspace = rootPath.resolve(user.getUsername());
                     try {
+                        Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(user.getUsername()));
                         this.walkAndRegisterDirectories(userWorkspace);
                         int usedSpace = getUsedSpace(user.getUsername());
                         this.updateUserInputQuota(user.getUsername(), usedSpace);
@@ -189,13 +187,14 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                                     child, ExceptionUtils.getStackTrace(e)));
                         }
                     }
-                    try {
-                        eventsQueue.put(directory.toString());
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        logger.severe(String.format("The thread %s has been interrupted. Reason: %s",
-                                this.getName(), ExceptionUtils.getStackTrace(e)));
-                    }
+                }
+
+                try {
+                    eventsQueue.put(directory.toString());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    logger.severe(String.format("The thread %s has been interrupted. Reason: %s",
+                            this.getName(), ExceptionUtils.getStackTrace(e)));
                 }
 
                 // reset key and remove from set if directory no longer accessible
