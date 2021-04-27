@@ -291,8 +291,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
                 }
             }
         }
-        final List<String> paths = list.stream().map(p -> p.toUri().toString()).collect(Collectors.toList());
-        final String[] pathArray = paths.toArray(new String[0]);
+        final String[] pathArray = list.stream().map(p -> p.toUri().toString()).toArray(String[]::new);
         final Map<Path, Map<String, String>> auxAttributes = new HashMap<>();
         List<AuxiliaryData> auxData = auxiliaryDataProvider.list(principalName, pathArray);
         for (AuxiliaryData auxiliaryData : auxData) {
@@ -328,16 +327,13 @@ public class FileStorageService implements StorageService<MultipartFile> {
             final String pathToRecord = (isInFiles ?
                     realPath.subpath(filesNameIndex, realPath.getNameCount()).toString() :
                     startPath.resolve(path).toString()).replace("\\", "/");
+            fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
             if (isInFiles) {
                 if (auxAttributes.containsKey(realPath)) {
-                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
                     fileObject.setAttributes(auxAttributes.get(realPath));
-                } else  {
-                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
                 }
             } else {
                 if (productAttributes.containsKey(realPath)) {
-                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), 0);
                     currentAttributeMap = productAttributes.get(realPath);
                     fileObject.setProductName(currentAttributeMap.get("name"));
                     currentAttributeMap.remove("name");
@@ -348,13 +344,9 @@ public class FileStorageService implements StorageService<MultipartFile> {
                     currentAttributeMap.remove("sensorType");
                     fileObject.setAttributes(currentAttributeMap);
                 } else if (productAttributes.containsKey(realPath.getParent()) && currentAttributeMap != null) {
-                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
                     fileObject.setAttributes(currentAttributeMap);
                 } else if (vectorAttributes.containsKey(realPath)) {
-                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
                     fileObject.setAttributes(vectorAttributes.get(realPath));
-                } else {
-                    fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
                 }
             }
             fileObjects.add(fileObject);
