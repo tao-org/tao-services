@@ -23,6 +23,7 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.user.User;
 
+import java.security.Principal;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
@@ -67,6 +68,10 @@ public abstract class BaseController extends ControllerBase {
     protected String currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication.getName();
+    }
+
+    protected Principal currentPrincipal() {
+        return SessionStore.currentContext().getPrincipal();
     }
 
     protected boolean isCurrentUserAdmin() {
