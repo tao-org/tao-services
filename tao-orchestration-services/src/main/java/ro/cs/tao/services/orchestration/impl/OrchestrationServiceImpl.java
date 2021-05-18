@@ -89,6 +89,11 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
+    public ExecutionJob createJobExternal(long workflowId, String jobName, Map<String, Map<String, String>> inputs) throws ExecutionException {
+        return Orchestrator.getInstance().createJob(SessionStore.currentContext(), workflowId, jobName, inputs);
+    }
+
+    @Override
     public void stopJob(long jobId) throws ExecutionException {
         Orchestrator.getInstance().stopJob(jobId);
     }
