@@ -38,7 +38,6 @@ import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.SessionStore;
-import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WorkflowService;
@@ -69,11 +68,6 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                                                                                    new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
                                                                                                                                 SecurityContextHolder.getContext()));
         return job != null ? job.getId() : -1;
-    }
-
-    @Override
-    public ExecutionJob createJobExternal(long workflowId, String jobName, Map<String, Map<String, String>> inputs) throws ExecutionException {
-        return Orchestrator.getInstance().createJob(SystemSessionContext.instance(), workflowId, jobName, inputs);
     }
 
     @Override
