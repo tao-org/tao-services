@@ -21,10 +21,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.EnumUtils;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
+import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
+import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -150,6 +156,7 @@ public class OrchestrationController extends BaseController {
         }
         return prepareResult(summaries);
     }
+
     @RequestMapping(value = "/process", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> processExternalGraph(@RequestParam("graph") String jsonGraph,
                                                                    @RequestParam("callback") String callback,
@@ -179,6 +186,37 @@ public class OrchestrationController extends BaseController {
                     prepareResult("Cannot start execution. See error log for details", ResponseStatus.FAILED);
         } catch (Exception ex) {
             return handleException(ex);
+        }
+    }
+
+    @RequestMapping(value = "/createJob", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> createJobTemplate(@RequestBody ExecutionRequest request) {
+        ResponseEntity<ServiceResponse<?>> response;
+        try {
+            response = prepareResult(orchestrationService.createJobExternal(request.getWorkflowId(),
+                                                                            request.getName(), request.getParameters()));
+        } catch (ExecutionException ex) {
+            response = handleException(ex);
+        }
+        return response;
+    }
+
+    @RequestMapping(value = "/statusChanged", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> taskStatusChanged(@RequestParam("taskId") long taskId,
+                                                            @RequestParam("status") String status,
+                                                            @RequestParam(name = "message", required = false) String message) {
+        try {
+            final ExecutionStatus taskStatus = EnumUtils.getEnumConstantByName(ExecutionStatus.class, status);
+            if (!StringUtilities.isNullOrEmpty(message)) {
+                final Message msg = Message.create(SystemPrincipal.instance().getName(), this, taskStatus.name());
+                msg.setMessage(message);
+                Messaging.send(SystemPrincipal.instance(), Topic.EXECUTION.value(), taskId, msg, true);
+            } else {
+                Messaging.send(SystemPrincipal.instance(), Topic.EXECUTION.value(), taskId, taskStatus.name());
+            }
+            return prepareResult("", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
         }
     }
 }
