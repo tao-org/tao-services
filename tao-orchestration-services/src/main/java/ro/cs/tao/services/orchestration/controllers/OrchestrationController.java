@@ -18,12 +18,15 @@ package ro.cs.tao.services.orchestration.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
+import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
+import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
@@ -38,6 +41,8 @@ import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.orchestration.beans.ExecutionRequest;
 import ro.cs.tao.utils.StringUtilities;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -193,8 +198,14 @@ public class OrchestrationController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> createJobTemplate(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            response = prepareResult(orchestrationService.createJobExternal(request.getWorkflowId(),
-                                                                            request.getName(), request.getParameters()));
+            final ExecutionJob job = orchestrationService.createJobExternal(request.getWorkflowId(),
+                                                                                    request.getName(), request.getParameters());
+            if (job == null) {
+                throw new ExecutionException("Failed to create JSON");
+            }
+            final Path jsonPath = Paths.get(SystemVariable.USER_FILES.value(), job.getId().toString() + ".json");
+            response = prepareResult(jsonPath, "The JSON model for the job should be available in the path",
+                                     ResponseStatus.SUCCEEDED, HttpStatus.OK);
         } catch (ExecutionException ex) {
             response = handleException(ex);
         }
