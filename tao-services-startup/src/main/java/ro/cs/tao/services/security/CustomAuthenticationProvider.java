@@ -18,6 +18,8 @@ package ro.cs.tao.services.security;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.jaas.JaasAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.GroupPrincipal;
 import ro.cs.tao.security.UserPrincipal;
@@ -26,9 +28,9 @@ import ro.cs.tao.services.security.token.AuthenticationWithToken;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Custom JAAS authentication provider
@@ -49,6 +51,10 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     public CustomAuthenticationProvider(AuthenticationProvider delegate, TokenManagementService tokenMngService) {
         this.delegate = delegate;
         this.tokenService = tokenMngService;
+        if (ConfigurationManager.getInstance().getValues("keycloak").size() > 0) {
+            // Keycloak settings are present
+            this.tokenService.setTokenProvider(new KeycloakClient());
+        }
     }
 
     public static void setPersistenceManager(PersistenceManager manager) { persistenceManager = manager; }
@@ -82,10 +88,10 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             }
 
             // generate and store a new authentication token
-            AuthenticationWithToken authenticationWithToken = new AuthenticationWithToken(jaasAuthenticationToken.getPrincipal(), jaasAuthenticationToken.getCredentials(), jaasAuthenticationToken.getAuthorities().stream().collect(Collectors.toList()), jaasAuthenticationToken.getLoginContext());
+            AuthenticationWithToken authenticationWithToken = new AuthenticationWithToken(jaasAuthenticationToken.getPrincipal(), jaasAuthenticationToken.getCredentials(), new ArrayList<>(jaasAuthenticationToken.getAuthorities()), jaasAuthenticationToken.getLoginContext());
             String token = tokenService.getUserToken(userName);
             if (token == null) {
-                token = tokenService.generateNewToken();
+                token = tokenService.generateNewToken(userName, user.getPassword());
             }
             authenticationWithToken.setToken(token);
             tokenService.store(token, authenticationWithToken);

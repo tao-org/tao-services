@@ -1,17 +1,5 @@
 package ro.cs.tao.services.startup;
 
-import ro.cs.tao.docker.Container;
-import ro.cs.tao.services.TaoServicesStartup;
-import ro.cs.tao.topology.TopologyManager;
-import ro.cs.tao.topology.docker.DockerImageInstaller;
-import ro.cs.tao.topology.docker.StandaloneContainer;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Base64;
-import java.util.List;
-import java.util.stream.Collectors;
-
 public class ContainerRegistrar extends BaseLifeCycle {
     @Override
     public int priority() {
@@ -20,7 +8,7 @@ public class ContainerRegistrar extends BaseLifeCycle {
 
     @Override
     public void onStartUp() {
-        List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
+        /*List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
         if (installers != null && installers.size() > 0) {
             logger.finest(String.format("Found %d docker image plugins: %s", installers.size(),
                                         installers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.joining(","))));
@@ -58,7 +46,7 @@ public class ContainerRegistrar extends BaseLifeCycle {
             }
         } else {
             logger.fine("No docker standalone container found");
-        }
+        }*/
     }
 
     @Override
