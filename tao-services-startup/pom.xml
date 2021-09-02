@@ -96,6 +96,11 @@
             <artifactId>tao-ldap</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-keycloak</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!--<dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-docker-gdal</artifactId>

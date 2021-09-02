@@ -22,10 +22,10 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import ro.cs.tao.security.TokenProvider;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
@@ -37,6 +37,11 @@ public class TokenManagementService {
     private static final Logger logger = Logger.getLogger(TokenManagementService.class.getName());
     private static final Cache authTokenCache = CacheManager.getInstance().getCache("authTokenCache");
     public static final int ONE_HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
+    private TokenProvider tokenProvider = new TokenProvider() { };
+
+    public void setTokenProvider(TokenProvider provider) {
+        this.tokenProvider = provider;
+    }
 
     @Scheduled(fixedRate = ONE_HOUR_IN_MILLISECONDS)
     public void evictExpiredTokens() {
@@ -44,8 +49,8 @@ public class TokenManagementService {
         authTokenCache.evictExpiredElements();
     }
 
-    public String generateNewToken() {
-        return UUID.randomUUID().toString();
+    public String generateNewToken(String user, String password) {
+        return tokenProvider.newToken(user, password);
     }
 
     public void store(String token, Authentication authentication) {
@@ -53,8 +58,10 @@ public class TokenManagementService {
         final String username = authentication.getPrincipal().toString();
         //removeUserTokens(username);
 
-        // store the new token
-        authTokenCache.put(new Element(token, authentication));
+        // store the new token, valid for 20 minutes
+        final Element element = new Element(token, authentication);
+        element.setTimeToLive(20 * 60 * 1000);
+        authTokenCache.put(element);
     }
 
     public boolean contains(String token) {
@@ -66,22 +73,19 @@ public class TokenManagementService {
     }
 
     public String getUserToken(String username) {
-        List<String> tokens = new ArrayList<>();
+        final List<String> tokens = new ArrayList<>();
+        String found = null;
         for (Object key : authTokenCache.getKeys()) {
             Element element = authTokenCache.get(key);
             if (element != null && ((Authentication) element.getObjectValue()).getPrincipal().toString().equals(username)) {
+                if (found == null) {
+                    found = key.toString();
+                }
                 tokens.add(key.toString());
             }
         }
-        logger.fine("User " + username + " has the token(s): " + tokens.toString());
-
-        for (Object key : authTokenCache.getKeys()) {
-            Element element = authTokenCache.get(key);
-            if (element != null && ((Authentication) element.getObjectValue()).getPrincipal().toString().equals(username)) {
-                return key.toString();
-            }
-        }
-        return null;
+        logger.finest("User " + username + " has the token(s): " + tokens);
+        return found;
     }
 
     public void removeUserTokens(String username) {
@@ -92,10 +96,7 @@ public class TokenManagementService {
                 tokens.add(key.toString());
             }
         }
-        logger.fine("User " + username + " had the token(s): " + tokens.toString());
-
-        for (String token : tokens) {
-            authTokenCache.remove(token);
-        }
+        logger.fine("User " + username + " had the token(s): " + tokens);
+        authTokenCache.removeAll(tokens);
     }
 }
