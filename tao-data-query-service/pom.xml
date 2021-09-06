@@ -50,11 +50,26 @@
             <artifactId>tao-datasources-localdb</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!--<dependency>
+        <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-datasources-fedeo</artifactId>
             <version>${project.version}</version>
-        </dependency>-->
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-datasources-eocat</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-datasources-earthdata</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-datasources-lsa</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-datasources-mundi</artifactId>
