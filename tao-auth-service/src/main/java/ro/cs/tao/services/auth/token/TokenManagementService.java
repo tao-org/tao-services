@@ -65,7 +65,7 @@ public class TokenManagementService {
     }
 
     public boolean contains(String token) {
-        return authTokenCache.get(token) != null;
+        return tokenProvider.validateToken(token) && authTokenCache.get(token) != null;
     }
 
     public Authentication retrieve(String token) {
