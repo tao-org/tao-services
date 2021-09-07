@@ -70,14 +70,6 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             // add user groups as roles
             User user = persistenceManager.users().getByName(userName);
             if (user == null) {
-                /*user = new User();
-                user.setUsername(userName);
-                user.setPassword(jaasAuthenticationToken.getCredentials().toString());
-                try {
-                    persistenceManager.users().save(user);
-                } catch (PersistenceException e) {
-                    e.printStackTrace();
-                }*/
                 throw new RuntimeException(String.format("No such user '%s'", userName));
             }
             final List<Group> userGroups = user.getGroups();
