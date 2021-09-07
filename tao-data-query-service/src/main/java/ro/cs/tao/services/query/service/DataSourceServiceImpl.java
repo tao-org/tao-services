@@ -18,15 +18,13 @@ package ro.cs.tao.services.query.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.SystemVariable;
-import ro.cs.tao.datasource.DataSource;
-import ro.cs.tao.datasource.DataSourceComponent;
-import ro.cs.tao.datasource.DataSourceManager;
-import ro.cs.tao.datasource.ProductStatusListener;
+import ro.cs.tao.datasource.*;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
+import ro.cs.tao.eodata.enums.SensorType;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.serialization.SerializationException;
@@ -76,8 +74,24 @@ public class DataSourceServiceImpl implements DataSourceService {
         final DataSourceManager dataSourceManager = DataSourceManager.getInstance();
         final SortedSet<String> sensors = dataSourceManager.getSupportedSensors();
         for (String sensor : sensors) {
-            dataSourceManager.getNames(sensor).forEach(n ->
-                instances.add(new DataSourceDescriptor(sensor, n, dataSourceManager.getSupportedParameters(sensor, n))));
+            dataSourceManager.getNames(sensor).forEach(n -> {
+                if (!"Local Database".equals(n)) {
+                    Map<String, CollectionDescription> sensorTypes = dataSourceManager.get(sensor, n).getSensorTypes();
+                    if (sensorTypes != null) {
+                        CollectionDescription cd = sensorTypes.get(sensor);
+                        if (cd != null) {
+                            instances.add(new DataSourceDescriptor(sensor, n, cd.getSensorType().friendlyName(), cd.getDescription(),
+                                    dataSourceManager.getSupportedParameters(sensor, n)));
+                        } else {
+                            instances.add(new DataSourceDescriptor(sensor, n, SensorType.UNKNOWN.friendlyName(), "",
+                                    dataSourceManager.getSupportedParameters(sensor, n)));
+                        }
+                    }
+                } else {
+                    instances.add(new DataSourceDescriptor(sensor, n, SensorType.UNKNOWN.friendlyName(), "Local database repository",
+                            dataSourceManager.getSupportedParameters(sensor, n)));
+                }
+            });
         }
         return instances;
     }
