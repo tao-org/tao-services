@@ -80,15 +80,15 @@ public class DataSourceServiceImpl implements DataSourceService {
                     if (sensorTypes != null) {
                         CollectionDescription cd = sensorTypes.get(sensor);
                         if (cd != null) {
-                            instances.add(new DataSourceDescriptor(sensor, n, cd.getSensorType().friendlyName(), cd.getDescription(),
+                            instances.add(new DataSourceDescriptor(sensor, n, cd.getSensorType().friendlyName(), cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
                                     dataSourceManager.getSupportedParameters(sensor, n)));
                         } else {
-                            instances.add(new DataSourceDescriptor(sensor, n, SensorType.UNKNOWN.friendlyName(), "",
+                            instances.add(new DataSourceDescriptor(sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
                                     dataSourceManager.getSupportedParameters(sensor, n)));
                         }
                     }
                 } else {
-                    instances.add(new DataSourceDescriptor(sensor, n, SensorType.UNKNOWN.friendlyName(), "Local database repository",
+                    instances.add(new DataSourceDescriptor(sensor, n, SensorType.UNKNOWN.friendlyName(), "Local database repository", "" , "",
                             dataSourceManager.getSupportedParameters(sensor, n)));
                 }
             });
