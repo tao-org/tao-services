@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.query.service;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.SystemVariable;
@@ -25,11 +26,14 @@ import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.SensorType;
+import ro.cs.tao.persistence.DataSourceCredentialsProvider;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
+import ro.cs.tao.utils.Crypto;
 import ro.cs.tao.utils.async.Parallel;
 
 import java.util.*;
@@ -46,6 +50,9 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     @Autowired
     private EOProductProvider productProvider;
+
+    @Autowired
+    private DataSourceCredentialsProvider credentialsProvider;
 
     @Override
     public SortedSet<String> getSupportedSensors() {
@@ -73,18 +80,40 @@ public class DataSourceServiceImpl implements DataSourceService {
         List<DataSourceDescriptor> instances = new ArrayList<>();
         final DataSourceManager dataSourceManager = DataSourceManager.getInstance();
         final SortedSet<String> sensors = dataSourceManager.getSupportedSensors();
+        final List<DataSourceCredentials> userCredentials = credentialsProvider.getByUser(SessionStore.currentContext().getPrincipal().getName());
         for (String sensor : sensors) {
             dataSourceManager.getNames(sensor).forEach(n -> {
                 if (!"Local Database".equals(n)) {
                     Map<String, CollectionDescription> sensorTypes = dataSourceManager.get(sensor, n).getSensorTypes();
                     if (sensorTypes != null) {
+                        final Map<String, DataSourceParameter> parameters = dataSourceManager.getSupportedParameters(sensor, n);
                         CollectionDescription cd = sensorTypes.get(sensor);
+                        final DataSourceDescriptor descriptor;
                         if (cd != null) {
-                            instances.add(new DataSourceDescriptor(sensor, n, cd.getSensorType().friendlyName(), cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
-                                    dataSourceManager.getSupportedParameters(sensor, n)));
+                            descriptor = new DataSourceDescriptor(sensor, n, cd.getSensorType().friendlyName(),
+                                                                  cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
+                                                                  parameters);
                         } else {
-                            instances.add(new DataSourceDescriptor(sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
-                                    dataSourceManager.getSupportedParameters(sensor, n)));
+                            descriptor = new DataSourceDescriptor(sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
+                                                                  parameters);
+                        }
+                        instances.add(descriptor);
+                        final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(sensor + "-" + n)).findFirst().orElse(null);
+                        if (dsCreds != null) {
+                            descriptor.setUser(dsCreds.getUserName());
+                            descriptor.setPwd(dsCreds.getPassword());
+                            if (dsCreds.getParams() != null) {
+                                final DataSourceParameter uParam = parameters.values().stream()
+                                        .filter(p -> p.getName().toLowerCase().contains("username")).findFirst().orElse(null);
+                                if (uParam != null) {
+                                    uParam.setDefaultValue(dsCreds.getParams().get(uParam.getName()));
+                                    parameters.values().stream()
+                                            .filter(p -> p.getName().toLowerCase().contains("password"))
+                                            .findFirst()
+                                            .ifPresent(pParam -> pParam.setDefaultValue(Crypto.decrypt(dsCreds.getParams().get(pParam.getName()),
+                                                                                                       dsCreds.getParams().get(uParam.getName()))));
+                                }
+                            }
                         }
                     }
                 }/* else {
@@ -117,6 +146,33 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     @Override
     public List<EOProduct> query(Query queryObject) throws SerializationException {
+        if (StringUtils.isNotEmpty(queryObject.getUser()) && StringUtils.isNotEmpty(queryObject.getPassword())) {
+            final String user = SessionStore.currentContext().getPrincipal().getName();
+            final String dsId = queryObject.getSensor() + "-" + queryObject.getDataSource();
+            DataSourceCredentials credentials = credentialsProvider.get(user, dsId);
+            if (credentials == null) {
+                credentials = new DataSourceCredentials();
+                credentials.setDataSource(dsId);
+                credentials.setUserId(user);
+            }
+            credentials.setUserName(queryObject.getUser());
+            credentials.setPassword(queryObject.getPassword());
+            final Map.Entry<String, String> additionalUser = queryObject.getValues().entrySet().stream().filter(e -> e.getKey().contains("username")).findFirst().orElse(null);
+            if (additionalUser != null) {
+                final Map.Entry<String, String> additionalPwd = queryObject.getValues().entrySet().stream().filter(e -> e.getKey().contains("password")).findFirst().orElse(null);
+                if (additionalPwd != null) {
+                    Map<String, String> params = new HashMap<>();
+                    params.put(additionalUser.getKey(), additionalUser.getValue());
+                    params.put(additionalPwd.getKey(), Crypto.encrypt(additionalPwd.getValue(), additionalUser.getValue()));
+                    credentials.setParams(params);
+                }
+            }
+            try {
+                credentialsProvider.save(credentials);
+            } catch (PersistenceException e) {
+                e.printStackTrace();
+            }
+        }
         return Query.toDataQuery(queryObject).execute();
     }
 
