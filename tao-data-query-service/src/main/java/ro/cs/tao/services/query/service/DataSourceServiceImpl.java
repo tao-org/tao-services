@@ -87,10 +87,10 @@ public class DataSourceServiceImpl implements DataSourceService {
                                     dataSourceManager.getSupportedParameters(sensor, n)));
                         }
                     }
-                } else {
+                }/* else {
                     instances.add(new DataSourceDescriptor(sensor, n, SensorType.UNKNOWN.friendlyName(), "Local database repository", "" , "",
                             dataSourceManager.getSupportedParameters(sensor, n)));
-                }
+                }*/
             });
         }
         return instances;
