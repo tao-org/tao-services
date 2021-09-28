@@ -157,9 +157,9 @@ public class DataSourceServiceImpl implements DataSourceService {
             }
             credentials.setUserName(queryObject.getUser());
             credentials.setPassword(queryObject.getPassword());
-            final Map.Entry<String, String> additionalUser = queryObject.getValues().entrySet().stream().filter(e -> e.getKey().contains("username")).findFirst().orElse(null);
+            final Map.Entry<String, String> additionalUser = queryObject.getValues().entrySet().stream().filter(e -> e.getKey().toLowerCase().contains("username")).findFirst().orElse(null);
             if (additionalUser != null) {
-                final Map.Entry<String, String> additionalPwd = queryObject.getValues().entrySet().stream().filter(e -> e.getKey().contains("password")).findFirst().orElse(null);
+                final Map.Entry<String, String> additionalPwd = queryObject.getValues().entrySet().stream().filter(e -> e.getKey().toLowerCase().contains("password")).findFirst().orElse(null);
                 if (additionalPwd != null) {
                     Map<String, String> params = new HashMap<>();
                     params.put(additionalUser.getKey(), additionalUser.getValue());
