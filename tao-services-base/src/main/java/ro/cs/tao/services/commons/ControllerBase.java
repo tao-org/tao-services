@@ -28,7 +28,6 @@ import ro.cs.tao.utils.ExceptionUtils;
 
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @CrossOrigin(origins = {"http://localhost", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082"})
@@ -78,6 +77,9 @@ public abstract class ControllerBase {
         return executorService.submit(() -> {
             try {
                 runnable.run();
+                if (callback != null) {
+                    callback.accept(null);
+                }
             } catch (Exception ex) {
                 if (callback != null) {
                     callback.accept(ex);
