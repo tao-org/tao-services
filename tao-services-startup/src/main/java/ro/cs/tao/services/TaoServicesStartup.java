@@ -88,6 +88,17 @@ public class TaoServicesStartup extends StartupBase {
                 throw new RuntimeException("Framework configuration unavailable");
             }
             cfgManager.setValue(ConfigurationProvider.APP_HOME, homeDirectory().toString());
+            try {
+                FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
+                FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_FILES.value()));
+                String tempPath = cfgManager.getValue("spring.servlet.multipart.location", "/mnt/tao/tmp");
+                FileUtilities.ensureExists(Paths.get(tempPath));
+                Path cachePath = TaoServicesStartup.homeDirectory().resolve("static").resolve("previews");
+                FileUtilities.ensureExists(cachePath);
+            } catch (IOException e) {
+                logger.severe("Cannot create required folders: " + e.getMessage());
+                System.exit(1);
+            }
             lifeCycleProcessor.activate(() -> {
                 for (Map.Entry<String, Class> entry : plugins.entrySet()) {
                     ServiceRegistry<?> registry = ServiceRegistryManager.getInstance().getServiceRegistry(entry.getValue());
@@ -97,17 +108,6 @@ public class TaoServicesStartup extends StartupBase {
                                                       .sorted().collect(Collectors.joining(","))));
                 }
                 logger.info("Web interface is accessible at https://localhost:" + cfgManager.getValue("server.port"));
-                try {
-                    FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_WORKSPACE.value()));
-                    FileUtilities.ensureExists(Paths.get(SystemVariable.SHARED_FILES.value()));
-                    String tempPath = cfgManager.getValue("spring.servlet.multipart.location", "/mnt/tao/tmp");
-                    FileUtilities.ensureExists(Paths.get(tempPath));
-                    Path cachePath = TaoServicesStartup.homeDirectory().resolve("static").resolve("previews");
-                    FileUtilities.ensureExists(cachePath);
-                } catch (IOException e) {
-                    logger.severe("Cannot create required folders: " + e.getMessage());
-                    System.exit(1);
-                }
                 Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.value(), new StartupCompletedMessage());
             });
         }
