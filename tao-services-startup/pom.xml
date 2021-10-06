@@ -101,11 +101,11 @@
             <artifactId>tao-keycloak</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!--<dependency>
+        <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-docker-gdal</artifactId>
             <version>${project.version}</version>
-        </dependency>-->
+        </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-docker-otb</artifactId>
@@ -119,6 +119,11 @@
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-docker-snap</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-docker-zarr</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
