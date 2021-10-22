@@ -61,7 +61,7 @@ import java.util.zip.ZipOutputStream;
 public class FileController extends BaseController {
 
     @Autowired
-    private StorageService<MultipartFile> storageService;
+    private StorageService<MultipartFile> fileStorage;
 
     @Autowired
     private EOProductProvider productProvider;
@@ -85,7 +85,7 @@ public class FileController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> listFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(storageService.listUploaded(currentUser()));
+            responseEntity = prepareResult(fileStorage.listUploaded(currentUser()));
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -97,7 +97,7 @@ public class FileController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> list() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(storageService.listUserWorkspace(currentUser()));
+            responseEntity = prepareResult(fileStorage.listUserWorkspace(currentUser()));
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -110,13 +110,13 @@ public class FileController extends BaseController {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
-                responseEntity = prepareResult(storageService.listUserWorkspace(currentUser()));
+                responseEntity = prepareResult(fileStorage.listUserWorkspace(currentUser()));
             } else {
                 Path relativePath = Paths.get(relativeFolder);
                 if (relativePath.getName(0).toString().equals(currentUser())) {
                     relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
                 }
-                responseEntity = prepareResult(storageService.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder), null));
+                responseEntity = prepareResult(fileStorage.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder), null));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -129,7 +129,7 @@ public class FileController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> listOutputs(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(storageService.getWorkflowResults(workflowId));
+            responseEntity = prepareResult(fileStorage.getWorkflowResults(workflowId));
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -141,7 +141,7 @@ public class FileController extends BaseController {
     public ResponseEntity<?> listPublicFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(storageService.listUploaded());
+            responseEntity = prepareResult(fileStorage.listUploaded());
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -153,7 +153,7 @@ public class FileController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> listPublic() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(storageService.listPublicWorkspace());
+            responseEntity = prepareResult(fileStorage.listPublicWorkspace());
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -166,12 +166,12 @@ public class FileController extends BaseController {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
-                responseEntity = prepareResult(storageService.listPublicWorkspace());
+                responseEntity = prepareResult(fileStorage.listPublicWorkspace());
             } else {
                 if (relativeFolder.startsWith("public")) {
                     relativeFolder = relativeFolder.substring(relativeFolder.indexOf('/') + 1);
                 }
-                responseEntity = prepareResult(storageService.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder), null));
+                responseEntity = prepareResult(fileStorage.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder), null));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -290,7 +290,7 @@ public class FileController extends BaseController {
     public ResponseEntity<?> createUserFolder(@RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.createFolder(folder, true);
+            fileStorage.createFolder(folder, true);
             responseEntity = prepareResult(String.format("Folder %s created", folder), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -304,7 +304,7 @@ public class FileController extends BaseController {
                                         @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.storeUserFile(file, folder, description);
+            fileStorage.storeUserFile(file, folder, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -316,7 +316,7 @@ public class FileController extends BaseController {
     public ResponseEntity<?> createPublicFolder(@RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.createFolder(folder, false);
+            fileStorage.createFolder(folder, false);
             responseEntity = prepareResult(String.format("Folder %s created", folder), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -333,7 +333,7 @@ public class FileController extends BaseController {
             if (!isCurrentUserAdmin()) {
                 throw new AccessDeniedException("The operation is permitted only for administrators");
             }
-            storageService.storePublicFile(file, folder, description);
+            fileStorage.storePublicFile(file, folder, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -345,7 +345,7 @@ public class FileController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("fileName") String fileName) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.remove(fileName);
+            fileStorage.remove(fileName);
             responseEntity = prepareResult("Delete succeeded", ResponseStatus.SUCCEEDED);
         } catch (IOException ex) {
             responseEntity = handleException(ex);

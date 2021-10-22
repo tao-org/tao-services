@@ -12,9 +12,7 @@ import ro.cs.tao.eodata.Polygon2D;
 import java.net.URI;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -57,10 +55,8 @@ public class DataServiceTest {
          */
         DataSourceComponent component = new DataSourceComponent("Sentinel2", "Amazon Web Services");
         final DataQuery query = component.createQuery();
-        QueryParameter<Date> begin = query.createParameter("beginPosition", Date.class);
-        begin.setValue(Date.from(LocalDateTime.now().minusDays(15)
-                                         .atZone(ZoneId.systemDefault())
-                                         .toInstant()));
+        QueryParameter<LocalDateTime> begin = query.createParameter("beginPosition", LocalDateTime.class);
+        begin.setValue(LocalDateTime.now().minusDays(15));
         query.addParameter(begin);
         Polygon2D aoi = new Polygon2D();
         aoi.append(20.738296999999992, 43.85597175445727);
@@ -100,10 +96,8 @@ public class DataServiceTest {
 
         DataSourceComponent component = new DataSourceComponent("Landsat8", "Amazon Web Services");
         final DataQuery query = component.createQuery();
-        QueryParameter<Date> begin = query.createParameter("sensingStart", Date.class);
-        begin.setValue(Date.from(LocalDateTime.now().minusDays(20)
-                                         .atZone(ZoneId.systemDefault())
-                                         .toInstant()));
+        QueryParameter<LocalDateTime> begin = query.createParameter("sensingStart", LocalDateTime.class);
+        begin.setValue(LocalDateTime.now().minusDays(20));
         query.addParameter(begin);
         Polygon2D aoi = new Polygon2D();
         aoi.append(-9.9866909768, 23.4186029838);

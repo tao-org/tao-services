@@ -52,7 +52,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-@Service("storageService")
+@Service("fileStorageService")
 public class FileStorageService implements StorageService<MultipartFile> {
 
     @Autowired

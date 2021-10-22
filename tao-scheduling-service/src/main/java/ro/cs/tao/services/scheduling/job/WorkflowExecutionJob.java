@@ -18,11 +18,15 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.bridge.spring.SpringContextBridge;
 import ro.cs.tao.services.model.scheduling.SchedulingMode;
 import ro.cs.tao.user.UserPreference;
+import ro.cs.tao.utils.DateUtils;
 
 import java.security.Principal;
 import java.text.SimpleDateFormat;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 
@@ -161,20 +165,20 @@ public class WorkflowExecutionJob extends AbstractJob {
 				}
 				
 				// get the date of the last product
-				Date date = persistenceManager.rasterData().getNewestProductDateForUser(userName, footprint);
+				LocalDateTime date = persistenceManager.rasterData().getNewestProductDateForUser(userName, footprint);
 				if (date == null) {
 					// no product defined for the user. Continue with existing values
 					continue;
 				}
 				
 				// shift the date with one day into the future
-				date = Date.from(date.toInstant().plus(1, ChronoUnit.DAYS));
+				date = date.plusDays(1);
 				final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 				
-				nodeData.getValue().put("startDate", df.format(date));
+				nodeData.getValue().put("startDate", DateUtils.getFormatterAtLocal("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(date));
 				// update endDate to today if it was already defined
 				if (nodeData.getValue().containsKey("endDate")) {
-					nodeData.getValue().put("endDate", df.format(new Date()));
+					nodeData.getValue().put("endDate", df.format(LocalDateTime.now()));
 				}
 			}
 		}

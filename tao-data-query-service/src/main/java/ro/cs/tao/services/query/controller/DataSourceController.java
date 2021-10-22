@@ -53,7 +53,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
@@ -189,14 +188,10 @@ public class DataSourceController extends BaseController {
                 dataSource.setCredentials(request.getUser(), request.getPassword());
                 final DataQuery query = dataSource.createQuery("Sentinel1");
                 query.addParameter(CommonParameterNames.PLATFORM, "Sentinel-1");
-                QueryParameter<Date> begin = query.createParameter(CommonParameterNames.START_DATE, Date.class);
+                QueryParameter<LocalDateTime> begin = query.createParameter(CommonParameterNames.START_DATE, LocalDateTime.class);
                 final int year = LocalDate.now().getYear() - 1;
-                begin.setMinValue(Date.from(LocalDateTime.of(year, 1, 1, 0, 0, 0, 0)
-                        .atZone(ZoneId.systemDefault())
-                        .toInstant()));
-                begin.setMaxValue(Date.from(LocalDateTime.of(year, 12, 31, 0, 0, 0, 0)
-                        .atZone(ZoneId.systemDefault())
-                        .toInstant()));
+                begin.setMinValue(LocalDateTime.of(year, 1, 1, 0, 0, 0, 0));
+                begin.setMaxValue(LocalDateTime.of(year, 12, 31, 0, 0, 0, 0));
                 query.addParameter(begin);
                 query.addParameter("sensorOperationalMode", "IW");
                 query.addParameter(CommonParameterNames.PRODUCT_TYPE, "SLC");

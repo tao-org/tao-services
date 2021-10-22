@@ -46,7 +46,7 @@ import java.util.zip.ZipOutputStream;
 public class WorkspaceController extends DataEntityController<EOProduct, String, ProductService> {
 
     @Autowired
-    private StorageService<MultipartFile> storageService;
+    private StorageService<MultipartFile> fileStorageService;
 
     @Autowired
     private EOProductProvider productProvider;
@@ -112,7 +112,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
     public ResponseEntity<ServiceResponse<?>> listFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(storageService.listUploaded(currentUser()));
+            responseEntity = prepareResult(fileStorageService.listUploaded(currentUser()));
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -124,7 +124,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
     public ResponseEntity<ServiceResponse<?>> list() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(storageService.listUserWorkspace(currentUser()));
+            responseEntity = prepareResult(fileStorageService.listUserWorkspace(currentUser()));
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -137,13 +137,13 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
-                responseEntity = prepareResult(storageService.listUserWorkspace(currentUser()));
+                responseEntity = prepareResult(fileStorageService.listUserWorkspace(currentUser()));
             } else {
                 Path relativePath = Paths.get(relativeFolder);
                 if (relativePath.getName(0).toString().equals(currentUser())) {
                     relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
                 }
-                responseEntity = prepareResult(storageService.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder), null));
+                responseEntity = prepareResult(fileStorageService.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder), null));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -156,7 +156,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
     public ResponseEntity<ServiceResponse<?>> listOutputs(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(storageService.getWorkflowResults(workflowId));
+            responseEntity = prepareResult(fileStorageService.getWorkflowResults(workflowId));
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -168,7 +168,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
     public ResponseEntity<?> listPublicFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(storageService.listUploaded());
+            responseEntity = prepareResult(fileStorageService.listUploaded());
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -180,7 +180,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
     public ResponseEntity<ServiceResponse<?>> listPublic() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(storageService.listPublicWorkspace());
+            responseEntity = prepareResult(fileStorageService.listPublicWorkspace());
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -193,12 +193,12 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
-                responseEntity = prepareResult(storageService.listPublicWorkspace());
+                responseEntity = prepareResult(fileStorageService.listPublicWorkspace());
             } else {
                 if (relativeFolder.startsWith("public")) {
                     relativeFolder = relativeFolder.substring(relativeFolder.indexOf('/') + 1);
                 }
-                responseEntity = prepareResult(storageService.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder), null));
+                responseEntity = prepareResult(fileStorageService.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder), null));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -317,7 +317,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
     public ResponseEntity<?> createUserFolder(@RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.createFolder(folder, true);
+            fileStorageService.createFolder(folder, true);
             responseEntity = prepareResult(String.format("Folder %s created", folder), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -331,7 +331,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
                                         @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.storeUserFile(file, folder, description);
+            fileStorageService.storeUserFile(file, folder, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -343,7 +343,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
     public ResponseEntity<?> createPublicFolder(@RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.createFolder(folder, false);
+            fileStorageService.createFolder(folder, false);
             responseEntity = prepareResult(String.format("Folder %s created", folder), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -360,7 +360,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
             if (!isCurrentUserAdmin()) {
                 throw new AccessDeniedException("The operation is permitted only for administrators");
             }
-            storageService.storePublicFile(file, folder, description);
+            fileStorageService.storePublicFile(file, folder, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -372,7 +372,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
     public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("fileName") String fileName) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.remove(fileName);
+            fileStorageService.remove(fileName);
             responseEntity = prepareResult("Delete succeeded", ResponseStatus.SUCCEEDED);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -385,7 +385,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
                                                   @RequestParam("destination") String destination) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            storageService.move(source, destination);
+            fileStorageService.move(source, destination);
             responseEntity = prepareResult("The file has been moved successfully", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
