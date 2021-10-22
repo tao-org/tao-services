@@ -40,8 +40,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
-import java.sql.Date;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -175,10 +173,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 							product.setEntryPoint(metadata.getEntryPoint());
 							product.addReference(SessionStore.currentContext().getPrincipal().getName());
 							product.setVisibility(Visibility.PUBLIC);
-							if (metadata.getAquisitionDate() != null) {
-								product.setAcquisitionDate(Date
-										.from(metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
-							}
+							product.setAcquisitionDate(metadata.getAquisitionDate());
 							if (metadata.getSize() != null) {
 								product.setApproximateSize(metadata.getSize());
 							}
@@ -296,10 +291,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 							if (existing == null) {
 								product.setEntryPoint(metadata.getEntryPoint());
 								product.setVisibility(Visibility.PUBLIC);
-								if (metadata.getAquisitionDate() != null) {
-									product.setAcquisitionDate(Date.from(
-											metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
-								}
+								product.setAcquisitionDate(metadata.getAquisitionDate());
 								if (metadata.getSize() != null) {
 									product.setApproximateSize(metadata.getSize());
 								}

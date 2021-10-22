@@ -43,7 +43,11 @@ import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -298,7 +302,7 @@ public class ComponentServiceImpl
                 if (dataType == null) {
                     errors.add(String.format("[$%s] cannot determine type", descriptorId));
                 }
-                if (Date.class.equals(dataType)) {
+                if (LocalDateTime.class.equals(dataType)) {
                     value = descriptor.getFormat();
                     if (value == null || value.trim().isEmpty()) {
                         errors.add(String.format("[$%s] format for date parameter not specified", descriptorId));
