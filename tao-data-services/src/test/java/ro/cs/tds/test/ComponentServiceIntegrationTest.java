@@ -87,7 +87,7 @@ public class ComponentServiceIntegrationTest extends AbstractServiceIntegrationT
                     "    \"parameterDescriptors\": [{" +
                     "        \"id\": \"outmode_string\"," +
                     "        \"type\": 1," +
-                    "        \"dataType\": \"java.lang.String\"," +
+                    "        \"dataType\": \"string\"," +
                     "        \"defaultValue\": \"ulco\"," +
                     "        \"description\": \"This allows setting the writing behaviour for the output vector file. Please note that the actual behaviour depends on the file format.\"," +
                     "        \"label\": \"outmode_string\"," +
@@ -99,7 +99,7 @@ public class ComponentServiceIntegrationTest extends AbstractServiceIntegrationT
                     "    }, {" +
                     "        \"id\": \"neighbor_bool\"," +
                     "        \"type\": 1," +
-                    "        \"dataType\": \"java.lang.Boolean\"," +
+                    "        \"dataType\": \"bool\"," +
                     "        \"defaultValue\": \"true\"," +
                     "        \"description\": \"Activate 8-Neighborhood connectivity (default is 4).\"," +
                     "        \"label\": \"neighbor_bool\"," +
