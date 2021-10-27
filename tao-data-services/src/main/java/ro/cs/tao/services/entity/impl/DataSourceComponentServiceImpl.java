@@ -24,8 +24,10 @@ import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.datasource.DataSourceConfiguration;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.persistence.DataSourceComponentProvider;
+import ro.cs.tao.datasource.persistence.DataSourceConfigurationProvider;
 import ro.cs.tao.datasource.persistence.QueryProvider;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
@@ -51,6 +53,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     private QueryProvider queryProvider;
     @Autowired
     private TagProvider tagProvider;
+    @Autowired
+    private DataSourceConfigurationProvider configurationProvider;
 
     @Override
     public DataSourceComponent findById(String id) {
@@ -238,5 +242,23 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             }
         }
         return entity;
+    }
+
+    @Override
+    public DataSourceConfiguration getConfiguration(String dataSourceId) throws PersistenceException {
+        final DataSourceComponent entity = findById(dataSourceId);
+        if (entity == null) {
+            throw new PersistenceException(String.format("Datasource with id '%s' not found", dataSourceId));
+        }
+        return this.configurationProvider.get(dataSourceId);
+    }
+
+    @Override
+    public void saveConfiguration(DataSourceConfiguration configuration) throws PersistenceException {
+        final DataSourceComponent entity = findById(configuration.getId());
+        if (entity == null) {
+            throw new PersistenceException(String.format("Datasource with id '%s' not found", configuration.getId()));
+        }
+        this.configurationProvider.save(configuration);
     }
 }

@@ -30,6 +30,7 @@ import ro.cs.tao.Tuple;
 import ro.cs.tao.component.Variable;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
+import ro.cs.tao.datasource.DataSourceConfiguration;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.persistence.PersistenceException;
@@ -275,5 +276,34 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             objects = new ArrayList<>();
         }
         return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
+    }
+
+    @RequestMapping(value = "/config", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getConfiguration(@RequestParam("dataSourceId") String dataSourceId) {
+        try {
+            return prepareResult(service.getConfiguration(dataSourceId));
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/config", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> saveConfiguration(@RequestBody DataSourceConfiguration configuration) {
+        try {
+            service.saveConfiguration(configuration);
+            return prepareResult("Succeeded", ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/config", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> update(@RequestBody DataSourceConfiguration configuration) {
+        try {
+            service.saveConfiguration(configuration);
+            return prepareResult("Succeeded", ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
     }
 }
