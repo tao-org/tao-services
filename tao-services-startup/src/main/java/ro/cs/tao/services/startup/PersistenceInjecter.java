@@ -49,6 +49,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
         });
         QueryExecutor.setProductProvider(persistenceManager.rasterData());
         QueryExecutor.setWorkflowProvider(persistenceManager.workflows());
+        QueryExecutor.setDataSourceConfigurationProvider(persistenceManager.dataSourceConfigurationProvider());
         DrmaaTaoExecutor.setTaskProvider(persistenceManager.tasks());
         DrmaaTaoExecutor.setContainerProvider(persistenceManager.containers());
         NullExecutor.setWorkflowNodeProvider(persistenceManager.workflowNodes());
