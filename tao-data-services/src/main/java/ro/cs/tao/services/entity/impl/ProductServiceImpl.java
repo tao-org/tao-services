@@ -234,7 +234,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		final List<String> skippedProducts = new ArrayList<String>();
 		try {
 			List<Path> folders = Files.walk(srcPath, 1).collect(Collectors.toList());
-			Path publicFolder = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
+			Path publicFolder = Paths.get(SystemVariable.USER_WORKSPACE.value());
 			Parallel.For(0, folders.size(), (idx) -> {
 				Path folder = folders.get(idx);
 				try {

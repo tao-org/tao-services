@@ -25,9 +25,7 @@ import ro.cs.tao.datasource.DataQuery;
 import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.beans.Query;
-import ro.cs.tao.datasource.param.CommonParameterNames;
-import ro.cs.tao.datasource.param.DataSourceParameter;
-import ro.cs.tao.datasource.param.QueryParameter;
+import ro.cs.tao.datasource.param.*;
 import ro.cs.tao.eodata.EOData;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.Polygon2D;
@@ -81,7 +79,7 @@ public class DataSourceController extends BaseController {
         if (instances == null) {
             instances = new ArrayList<>();
         }
-        return prepareResult(instances);
+        return prepareResult(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()));
     }
 
     @RequestMapping(value = "/providers", method = RequestMethod.GET, produces = "application/json")
@@ -122,7 +120,7 @@ public class DataSourceController extends BaseController {
         for (int i = 0; i < count; i++) {
             params.get(i).setOrder(i + 1);
         }
-        return prepareResult(params);
+        return prepareResult(params.stream().map(DataSourceParameterBean::new).collect(Collectors.toList()));
     }
 
     @RequestMapping(value = "/footprint", method = RequestMethod.GET, produces = "application/json")
@@ -320,7 +318,7 @@ public class DataSourceController extends BaseController {
                 .getServiceRegistry(MetadataInspector.class)
                 .getServices();
         MetadataInspector metadataInspector = null;
-        final Path path = Paths.get(SystemVariable.SHARED_WORKSPACE.value(), productPath);
+        final Path path = Paths.get(SystemVariable.USER_WORKSPACE.value(), productPath);
         if (services != null) {
             metadataInspector = services.stream()
                     .filter(s -> s.decodeQualification(path) == DecodeStatus.SUITABLE)
