@@ -17,7 +17,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Logger;
@@ -175,7 +178,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                     Path name = ((WatchEvent<Path>) event).context();
                     Path child = directory.resolve(name);
 
-                    System.out.format("%s: %s\n", event.kind().name(), child);
+                    logger.finest(String.format("%s: %s\n", event.kind().name(), child));
 
                     if (kind == ENTRY_CREATE) { // if directory is created, and watching recursively, then register it and its sub-directories
                         try {
@@ -192,7 +195,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 try {
                     eventsQueue.put(directory.toString());
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
                     logger.severe(String.format("The thread %s has been interrupted. Reason: %s",
                             this.getName(), ExceptionUtils.getStackTrace(e)));
                 }

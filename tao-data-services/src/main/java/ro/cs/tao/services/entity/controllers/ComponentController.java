@@ -24,6 +24,7 @@ import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.ProcessingComponentBean;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.ProcessingComponentType;
@@ -93,7 +94,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             return prepareResult("Invalid id list", ResponseStatus.FAILED);
         }
         String[] ids = idList.split(",");
-        return prepareResult(service.list(Arrays.asList(ids)));
+        return prepareResult(service.list(Arrays.asList(ids)).stream().map(ProcessingComponentBean::new).collect(Collectors.toList()));
     }
 
     @RequestMapping(value = "/group", method = RequestMethod.GET, produces = "application/json")
