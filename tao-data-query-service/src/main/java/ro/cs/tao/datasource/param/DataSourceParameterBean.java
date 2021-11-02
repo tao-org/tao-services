@@ -34,4 +34,8 @@ public class DataSourceParameterBean {
     public int getOrder() {
         return parameter.getOrder();
     }
+
+    public Object[] getValueSet() {
+        return parameter.getValueSet();
+    }
 }
