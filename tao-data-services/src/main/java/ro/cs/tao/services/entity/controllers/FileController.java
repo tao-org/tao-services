@@ -357,7 +357,7 @@ public class FileController extends BaseController {
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("[fileName] cannot be null or empty");
         }
-        final Path filePath = Paths.get(SystemVariable.ROOT.value(), fileName);
+        final Path filePath = Paths.get(SystemVariable.ROOT.value(), fileName).toAbsolutePath();
         if (!Files.exists(filePath)) {
             throw new IOException(String.format("File '%s' does not exist", filePath));
         }

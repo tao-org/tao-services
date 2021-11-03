@@ -37,6 +37,7 @@
     <properties>
         <spring.boot.version>2.2.4.RELEASE</spring.boot.version>
         <taoReleasesUrl>${project.deploy.root.path}/tao-services</taoReleasesUrl>
+        <tomcat.version>8.5.37</tomcat.version>
     </properties>
 
     <repositories>
@@ -124,6 +125,12 @@
             <artifactId>jaxb-api</artifactId>
             <version>2.2.11</version>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>javax.servlet.jsp-api</artifactId>
+            <version>2.3.3</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
