@@ -38,7 +38,7 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
 
     @Override
     protected void onMessageReceived(Message message) {
-        final String contents = message.getItem(Message.PAYLOAD_KEY);
+        final String contents = message.getData();
         if (!Objects.equals(contents, this.previousMessage)) {
             logger.finest(contents);
             this.previousMessage = contents;
