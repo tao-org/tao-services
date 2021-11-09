@@ -77,7 +77,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         QueueMonitor monitor = new QueueMonitor();
         monitor.setName("QueueMonitor");
         monitor.start();
-        logger.fine("Workspace service initialized");
+        logger.finest("Workspace service initialization completed");
     }
 
     @Override
@@ -96,7 +96,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     private void updateUserInputQuota(String userName, int usedSpace) {
         try { // update user quota
             userProvider.updateInputQuota(userName, usedSpace);
-            logger.fine(String.format("The input quota for the user %s has been updated.",userName));
+            logger.finest(String.format("Input quota update [%s:%dMB]", userName, usedSpace));
         } catch (PersistenceException e) {
             e.printStackTrace();
         }
@@ -166,6 +166,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 try { // wait for key to be signalled
                     key = watcher.take();
                 } catch (InterruptedException x) {
+                    logger.finest("Workspace service interrupted");
                     return;
                 }
                 Path directory = keys.get(key);
@@ -174,11 +175,11 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 }
 
                 for (WatchEvent<?> event : key.pollEvents()) {
-                    WatchEvent.Kind kind = event.kind();
+                    WatchEvent.Kind<?> kind = event.kind();
                     Path name = ((WatchEvent<Path>) event).context();
                     Path child = directory.resolve(name);
 
-                    logger.finest(String.format("%s: %s\n", event.kind().name(), child));
+                    //logger.finest(String.format("Filesystem event %s: %s\n", event.kind().name(), child));
 
                     if (kind == ENTRY_CREATE) { // if directory is created, and watching recursively, then register it and its sub-directories
                         try {
@@ -215,7 +216,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     private class QueueMonitor extends Thread {
         @Override
         public void run() {
-            while(true) {
+            while (true) {
                 try {
                     String entry = eventsQueue.take();
                     final String userName = getUserName(entry);

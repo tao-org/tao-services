@@ -126,7 +126,7 @@
             <artifactId>tao-docker-zarr</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-drmaa-slurm</artifactId>
             <version>${project.version}</version>
@@ -135,7 +135,7 @@
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-drmaa-torque</artifactId>
             <version>${project.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-openstack</artifactId>
@@ -146,11 +146,11 @@
             <artifactId>tao-quota-database</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-integration-sen2agri</artifactId>
             <version>${project.version}</version>
-        </dependency>
+        </dependency>-->
 
         <!-- Other dependencies -->
         <dependency>
