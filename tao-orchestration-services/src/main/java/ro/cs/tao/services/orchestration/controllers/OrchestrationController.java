@@ -16,7 +16,6 @@
 
 package ro.cs.tao.services.orchestration.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +33,7 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -174,7 +174,7 @@ public class OrchestrationController extends BaseController {
             if (callback == null) {
                 throw new Exception("Empty callback");
             } else {
-                callbackObj = new ObjectMapper().readerFor(EndpointDescriptor.class).readValue(callback);
+                callbackObj = JsonMapper.instance().readerFor(EndpointDescriptor.class).readValue(callback);
                 if (callbackObj.getProtocol() == null) {
                     throw new Exception("No protocol specified for callback");
                 }

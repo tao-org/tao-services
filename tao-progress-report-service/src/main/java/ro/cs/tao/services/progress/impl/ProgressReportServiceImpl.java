@@ -15,10 +15,10 @@
  */
 package ro.cs.tao.services.progress.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.messaging.*;
 import ro.cs.tao.messaging.progress.*;
+import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.services.interfaces.ProgressReportService;
 
 import java.util.*;
@@ -90,7 +90,7 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
         Filter filter = null;
         if (jsonFilter != null) {
             try {
-                filter = new ObjectMapper().readerFor(Filter.class).readValue(jsonFilter);
+                filter = JsonMapper.instance().readerFor(Filter.class).readValue(jsonFilter);
             } catch (Exception e) {
                 logger.warning(String.format("Invalid filter [%s]", e.getMessage()));
             }
