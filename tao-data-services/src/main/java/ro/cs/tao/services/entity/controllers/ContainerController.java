@@ -15,7 +15,6 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -38,6 +37,7 @@ import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.AuxiliaryDataProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.ContainerRequest;
@@ -107,7 +107,7 @@ public class ContainerController extends DataEntityController<Container, String,
             }
             String json;
             json = new String(jsonContainerFile.getBytes());
-            final Container container = new ObjectMapper().readValue(json, Container.class);
+            final Container container = JsonMapper.instance().readValue(json, Container.class);
 
             final MultipartFile logoFile = request.getContainerLogo();
             if (logoFile != null) {
@@ -118,7 +118,7 @@ public class ContainerController extends DataEntityController<Container, String,
             final ProcessingComponent[] components;
             if (jsonComponentsFile != null) {
                 json = new String(jsonComponentsFile.getBytes());
-                components = new ObjectMapper().readValue(json, ProcessingComponent[].class);
+                components = JsonMapper.instance().readValue(json, ProcessingComponent[].class);
             } else {
                 components = null;
             }
