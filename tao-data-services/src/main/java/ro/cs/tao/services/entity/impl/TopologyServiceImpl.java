@@ -72,12 +72,12 @@ public class TopologyServiceImpl
 
     @Override
     public List<NodeDescription> getNodes(boolean active) {
-        return list().stream().filter(n -> n.getActive() == active).collect(Collectors.toList());
+        return list().stream().filter(n -> n.getActive() != null && n.getActive() == active).collect(Collectors.toList());
     }
 
     @Override
     public List<NodeDescription> getNodes(NodeFlavor nodeFlavor) {
-        return list().stream().filter(n -> n.getFlavor().equals(nodeFlavor)).collect(Collectors.toList());
+        return list().stream().filter(n -> nodeFlavor.equals(n.getFlavor())).collect(Collectors.toList());
     }
 
     @Override
