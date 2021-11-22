@@ -28,6 +28,7 @@ import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.converters.ConversionException;
+import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.datasource.persistence.QueryProvider;
 import ro.cs.tao.eodata.enums.Visibility;
@@ -809,15 +810,31 @@ public class WorkflowServiceImpl
                     Map<String, DataSourceParameter> params =
                             DataSourceManager.getInstance().getSupportedParameters(dataSourceComponent.getSensorName(),
                                                                                    dataSourceComponent.getDataSourceName());
+                    final SourceDescriptor querySource = dataSourceComponent.getSources().stream()
+                            .filter(s -> s.getName().equals("query")).findFirst().orElse(null);
                     for (Map.Entry<String, DataSourceParameter> entry : params.entrySet()) {
                         DataSourceParameter descriptor = entry.getValue();
                         paramType = descriptor.getType();
-                        componentParams.add(new Parameter(entry.getKey(),
-                                                          paramType.getName(),
-                                                          descriptor.getDefaultValue() != null ? String.valueOf(descriptor.getDefaultValue()) : null,
-                                                          paramType.isEnum() ?
-                                                                  Parameter.stringValueSet(paramType.getEnumConstants()) :
-                                                                  Parameter.stringValueSet(descriptor.getValueSet())));
+                        final String paramName = entry.getKey();
+                        if (!(CommonParameterNames.PRODUCT.equals(paramName) && querySource != null)) {
+                            componentParams.add(new Parameter(paramName,
+                                                              descriptor.typeFriendlyName(),
+                                                              descriptor.getDefaultValue() != null ? String.valueOf(descriptor.getDefaultValue()) : null,
+                                                              paramType.isEnum() ?
+                                                                      Parameter.stringValueSet(paramType.getEnumConstants()) :
+                                                                      Parameter.stringValueSet(descriptor.getValueSet())));
+                        } else {
+                            final String location = querySource.getDataDescriptor().getLocation();
+                            String values = location != null ?
+                                                location.startsWith("[") ?
+                                                        location : "[" + location + "]" : null;
+                            componentParams.add(new Parameter(paramName,
+                                                              descriptor.typeFriendlyName(),
+                                                              values,
+                                                              paramType.isEnum() ?
+                                                                      Parameter.stringValueSet(paramType.getEnumConstants()) :
+                                                                      Parameter.stringValueSet(descriptor.getValueSet())));
+                        }
                     }
                     Query query = queryProvider.get(SessionStore.currentContext().getPrincipal().getName(),
                                                     dataSourceComponent.getSensorName(),
