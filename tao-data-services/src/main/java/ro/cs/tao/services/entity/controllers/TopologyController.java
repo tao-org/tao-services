@@ -15,16 +15,8 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.Tag;
@@ -32,15 +24,7 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -75,7 +59,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
         return prepareResult(service.getNodeFlavors());
     }
 
-    @RequestMapping(path = "/{host:.+}", method = RequestMethod.GET, produces = "application/json")
+    /*@RequestMapping(path = "/{host:.+}", method = RequestMethod.GET, produces = "application/json")
     public void tunnelWebSSH(@PathVariable("host") String host, HttpServletRequest request, HttpServletResponse response) {
         try {
             HttpUriRequest proxiedRequest = createHttpUriRequest(request, host);
@@ -112,5 +96,5 @@ public class TopologyController extends DataEntityController<NodeDescription, St
              OutputStream os = response.getOutputStream()) {
             IOUtils.copy(is, os);
         }
-    }
+    }*/
 }
