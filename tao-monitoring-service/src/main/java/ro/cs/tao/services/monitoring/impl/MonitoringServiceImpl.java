@@ -162,18 +162,14 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     @Override
     public List<Notification> acknowledgeNotification(List<Notification> notifications) {
         if (notifications != null) {
-            MessageConverter converter = new MessageConverter();
             notifications.forEach(message -> {
-                message.setRead(true);
                 try {
                     final Message existing = messageProvider.get(message.getUser(), message.getTimestamp().getTimeInMillis());
-                    final Message entity = converter.from(message);
-                    if (existing == null) {
-                        messageProvider.save(entity);
-                    } else {
-                        entity.setId(existing.getId());
-                        messageProvider.update(entity);
+                    if (existing != null) {
+                        existing.setRead(true);
+                        messageProvider.update(existing);
                     }
+                    message.setRead(true);
                 } catch (PersistenceException e) {
                     logger.severe(e.getMessage());
                 }
