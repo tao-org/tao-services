@@ -32,7 +32,7 @@ public class ContainerRegistrar extends BaseLifeCycle {
                                 .resolve(container.getId() + ".png");
                         if (!Files.exists(imgPath)) {
                             Files.createDirectories(imgPath.getParent());
-                            Files.write(imgPath, Base64.getDecoder().decode(container.getLogo()));
+                            Files.write(imgPath, Base64.getDecoder().decode(container.getLogo().trim()));
                         }
                     }
                 } catch (Throwable e) {
