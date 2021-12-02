@@ -84,7 +84,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
 
     @Override
     public List<DataSourceComponent> getSystemDataSourceComponents() {
-        return dataSourceComponentProvider.getSystemDataSourceComponents();
+        return dataSourceComponentProvider.getSystemDataSourceComponents().stream()
+                .filter(c -> !"Local Database".equals(c.getDataSourceName())).collect(Collectors.toList());
     }
 
     @Override
