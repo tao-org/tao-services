@@ -29,6 +29,7 @@ import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.persistence.DataSourceComponentProvider;
 import ro.cs.tao.datasource.persistence.DataSourceConfigurationProvider;
 import ro.cs.tao.datasource.persistence.QueryProvider;
+import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.persistence.EOProductProvider;
@@ -165,38 +166,50 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         } else {
             DataSourceComponent systemDSC = dataSourceComponentProvider.get(sensor + "-Local Database");
             if (systemDSC == null) {
-                return null;
+                //return null;
+                userDSC = new DataSourceComponent(sensor, dataSource);
+                userDSC.setFetchMode(FetchMode.OVERWRITE);
+                userDSC.setVersion("1.0");
+                userDSC.setDescription(sensor + " from " + dataSource);
+                userDSC.setAuthors("TAO Team");
+                userDSC.setCopyright("(C) TAO Team");
+                userDSC.setNodeAffinity("Any");
+                dataSourceComponentProvider.save(systemDSC);
             }
             try {
-                userDSC = systemDSC.clone();
-                LocalDateTime time = LocalDateTime.now();
-                String newId = String.join("-", sensor, dataSource, principal.getName(),
-                                           time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
-                userDSC.setId(newId);
-                userDSC.setLabel(label != null && !label.isEmpty() ?
-                                         label : String.join("-", sensor, dataSource, principal.getName()) +
-                        " [customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "]");
-                SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
-                sourceDescriptor.setId(UUID.randomUUID().toString());
-                sourceDescriptor.setParentId(newId);
-                sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
-                sourceDescriptor.setCardinality(productNames.size());
-                TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
-                targetDescriptor.setId(UUID.randomUUID().toString());
-                targetDescriptor.setParentId(newId);
-                targetDescriptor.setCardinality(productNames.size());
-                targetDescriptor.addConstraint("Same cardinality");
-                userDSC.setSystem(false);
-                userDSC = dataSourceComponentProvider.save(userDSC);
-                tag(userDSC.getId(), new ArrayList<String>() {{
-                    add(sensor);
-                    add(dataSource);
-                    add(label);
-                }});
-                if (queryId != null) {
-                    Query query = queryProvider.get(queryId);
-                    query.setComponentId(userDSC.getId());
-                    queryProvider.save(query);
+                if (systemDSC != null) {
+                    userDSC = systemDSC.clone();
+                }
+                if (userDSC != null) {
+                    LocalDateTime time = LocalDateTime.now();
+                    String newId = String.join("-", sensor, dataSource, principal.getName(),
+                            time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+                    userDSC.setId(newId);
+                    userDSC.setLabel(label != null && !label.isEmpty() ?
+                            label : String.join("-", sensor, dataSource, principal.getName()) +
+                            " [customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "]");
+                    SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
+                    sourceDescriptor.setId(UUID.randomUUID().toString());
+                    sourceDescriptor.setParentId(newId);
+                    sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
+                    sourceDescriptor.setCardinality(productNames.size());
+                    TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
+                    targetDescriptor.setId(UUID.randomUUID().toString());
+                    targetDescriptor.setParentId(newId);
+                    targetDescriptor.setCardinality(productNames.size());
+                    targetDescriptor.addConstraint("Same cardinality");
+                    userDSC.setSystem(false);
+                    userDSC = dataSourceComponentProvider.save(userDSC);
+                    tag(userDSC.getId(), new ArrayList<String>() {{
+                        add(sensor);
+                        add(dataSource);
+                        add(label);
+                    }});
+                    if (queryId != null) {
+                        Query query = queryProvider.get(queryId);
+                        query.setComponentId(userDSC.getId());
+                        queryProvider.save(query);
+                    }
                 }
             } catch (CloneNotSupportedException e) {
                 throw new PersistenceException(e);
