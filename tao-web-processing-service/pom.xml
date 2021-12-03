@@ -13,11 +13,11 @@
     <name>TAO Web Processing Service</name>
 
     <dependencies>
-        <dependency>
+        <!--<dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-executor-wps</artifactId>
             <version>${project.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-services-commons</artifactId>

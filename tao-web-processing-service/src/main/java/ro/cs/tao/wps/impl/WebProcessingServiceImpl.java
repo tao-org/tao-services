@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 @Service("webProcessingService")
-public class WebProcessingServiceImpl implements WebProcessingService {
+public class WebProcessingServiceImpl implements WebProcessingService<WorkflowInfo, TargetDescriptor> {
 
     @Autowired
     private WorkflowService workflowService;
@@ -141,7 +141,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
         }
     }
 
-    public static class ProcessInfoImpl implements ProcessInfo {
+    public static class ProcessInfoImpl implements ProcessInfo<WorkflowInfo, TargetDescriptor> {
 
         private Map<String, List<Parameter>> parameters;
         private List<TargetDescriptor> outputs;
@@ -166,7 +166,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
         }
 
         @Override
-        public WorkflowInfo getWorkflowInfo() {
+        public WorkflowInfo getCapabilityInfo() {
             return workflowInfo;
         }
 
