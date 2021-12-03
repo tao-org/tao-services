@@ -82,6 +82,15 @@ public class DataSourceController extends BaseController {
         return prepareResult(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()));
     }
 
+    @RequestMapping(value = "/summary", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getRegisteredSourcesSummary() {
+        List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
+        if (instances == null) {
+            instances = new ArrayList<>();
+        }
+        return prepareResult(instances.stream().map(DataSourceSummaryBean::new).collect(Collectors.toList()));
+    }
+
     @RequestMapping(value = "/providers", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getProviders() {
         Map<String, String[]> providers = dataSourceService.getDataSourceProviders();
