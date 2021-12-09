@@ -1,13 +1,14 @@
 package ro.cs.tao.services.startup;
 
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Container;
-import ro.cs.tao.services.TaoServicesStartup;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
 import ro.cs.tao.topology.docker.StandaloneContainer;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,8 +29,9 @@ public class ContainerRegistrar extends BaseLifeCycle {
                 try {
                     Container container = imageInstaller.installImage();
                     if (container != null && container.getLogo() != null) {
-                        Path imgPath = TaoServicesStartup.homeDirectory().resolve("static").resolve("workflow").resolve("media")
-                                .resolve(container.getId() + ".png");
+                        Path imgPath = Paths.get(ConfigurationManager.getInstance().getValue("site.path"))
+                                            .resolve("workflow").resolve("media")
+                                            .resolve(container.getId() + ".png");
                         if (!Files.exists(imgPath)) {
                             Files.createDirectories(imgPath.getParent());
                             Files.write(imgPath, Base64.getDecoder().decode(container.getLogo().trim()));
