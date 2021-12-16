@@ -16,7 +16,6 @@
 package ro.cs.tao.services.security.token;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -32,7 +31,7 @@ import java.util.Optional;
  * @author Oana H.
  */
 @Component
-@Scope(value = "singleton")
+//@Scope(value = "singleton")
 public class TokenAuthenticationProvider implements AuthenticationProvider {
 
     @Autowired

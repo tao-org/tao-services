@@ -18,7 +18,6 @@ package ro.cs.tao.services.auth.token;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
-import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -32,7 +31,7 @@ import java.util.logging.Logger;
  * @author Oana H.
  */
 @Component
-@Scope(value = "singleton")
+//@Scope(value = "singleton")
 public class TokenManagementService {
     private static final Logger logger = Logger.getLogger(TokenManagementService.class.getName());
     private static final Cache authTokenCache = CacheManager.getInstance().getCache("authTokenCache");
