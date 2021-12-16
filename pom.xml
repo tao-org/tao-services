@@ -7,7 +7,7 @@
     <parent>
         <groupId>ro.cs.tao</groupId>
         <artifactId>tao-core</artifactId>
-        <version>1.2.3</version>
+        <version>1.2.4</version>
     </parent>
 
     <artifactId>tao-services</artifactId>
@@ -35,9 +35,8 @@
     </modules>
 
     <properties>
-        <spring.boot.version>2.2.4.RELEASE</spring.boot.version>
+        <spring.boot.version>2.6.1</spring.boot.version>
         <taoReleasesUrl>${project.deploy.root.path}/tao-services</taoReleasesUrl>
-        <tomcat.version>8.5.37</tomcat.version>
     </properties>
 
     <repositories>

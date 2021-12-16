@@ -18,9 +18,6 @@ package ro.cs.tao.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.jaas.*;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -38,7 +35,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.Endpoints;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
-import ro.cs.tao.services.security.TaoAuthorityGranter;
 import ro.cs.tao.services.security.token.AuthenticationFilter;
 import ro.cs.tao.services.security.token.TokenAuthenticationProvider;
 
@@ -66,6 +62,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     private TokenManagementService tokenService;
 
     @Autowired
+    private CustomAuthenticationProvider customAuthenticationProvider;
+
+    @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
         /**
          * 1st way, in memory auth
@@ -84,16 +83,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
         /**
          * 3rd way, with JAAS custom auth provider
          */
-        auth.authenticationProvider(customAuthProvider())
-            .authenticationProvider(tokenAuthProvider());
+        auth.authenticationProvider(customAuthenticationProvider)
+            .authenticationProvider(tokenProvider);
 
         SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        final PasswordEncoder encoder = new BCryptPasswordEncoder();
-        return encoder;
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
@@ -137,14 +135,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .and()
                 .httpBasic()
                 .and()
-                .authenticationProvider(customAuthProvider())
+                .authenticationProvider(customAuthenticationProvider)
           /*.authorizeRequests()
                 .antMatchers(BaseController.ADMIN_SERVICE_PATH_EXPRESSION).hasRole("ADMIN").and()*/
           .authorizeRequests()
                 .antMatchers(apiEndpointsWithAuthToken())
                 .authenticated()
                 .and()
-                .authenticationProvider(tokenAuthProvider())
+                .authenticationProvider(tokenProvider)
                 .addFilterBefore(new AuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class)
           .authorizeRequests()
                 .antMatchers(Endpoints.GLOBAL_PATH_EXPRESSION)
@@ -163,27 +161,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .csrf()
                 .disable();
         http.cors();
-    }
-
-    @Bean
-    public AuthenticationProvider customAuthProvider() {
-        return new CustomAuthenticationProvider(jaasAuthProvider(), tokenService);
-    }
-
-    @Bean
-    public JaasAuthenticationProvider jaasAuthProvider() {
-        JaasAuthenticationProvider authenticationProvider = new JaasAuthenticationProvider();
-        authenticationProvider.setAuthorityGranters(new AuthorityGranter[] { new TaoAuthorityGranter() });
-        authenticationProvider.setCallbackHandlers(new JaasAuthenticationCallbackHandler[] {
-          new JaasNameCallbackHandler(), new JaasPasswordCallbackHandler() });
-        authenticationProvider.setLoginContextName("taologin");
-        authenticationProvider.setLoginConfig(new ClassPathResource("tao_jaas.config"));
-        return authenticationProvider;
-    }
-
-    @Bean
-    public AuthenticationProvider tokenAuthProvider() {
-        return tokenProvider;
     }
 
     private String[] apiEndpointsWithAuthToken() {

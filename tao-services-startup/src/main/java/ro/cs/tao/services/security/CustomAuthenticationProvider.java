@@ -15,9 +15,13 @@
  */
 package ro.cs.tao.services.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.jaas.JaasAuthenticationToken;
+import org.springframework.security.authentication.jaas.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -37,19 +41,20 @@ import java.util.logging.Logger;
  *
  * @author  Oana H.
  */
-
+@Service("customAuthenticationProvider")
 public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     private static final Logger logger = Logger.getLogger(CustomAuthenticationProvider.class.getName());
 
-    private AuthenticationProvider delegate;
+    private final AuthenticationProvider delegate;
 
-    private TokenManagementService tokenService;
+    @Autowired
+    private final TokenManagementService tokenService;
 
     public static PersistenceManager persistenceManager;
 
-    public CustomAuthenticationProvider(AuthenticationProvider delegate, TokenManagementService tokenMngService) {
-        this.delegate = delegate;
+    public CustomAuthenticationProvider(TokenManagementService tokenMngService) {
+        this.delegate = jaasAuthProvider();
         this.tokenService = tokenMngService;
         if (ConfigurationManager.getInstance().getValues("keycloak").size() > 0) {
             // Keycloak settings are present
@@ -99,5 +104,16 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     @Override
     public boolean supports(Class<?> authentication) {
         return delegate.supports(authentication);
+    }
+
+    @Bean
+    public JaasAuthenticationProvider jaasAuthProvider() {
+        JaasAuthenticationProvider authenticationProvider = new JaasAuthenticationProvider();
+        authenticationProvider.setAuthorityGranters(new AuthorityGranter[] { new TaoAuthorityGranter() });
+        authenticationProvider.setCallbackHandlers(new JaasAuthenticationCallbackHandler[] {
+                new JaasNameCallbackHandler(), new JaasPasswordCallbackHandler() });
+        authenticationProvider.setLoginContextName("taologin");
+        authenticationProvider.setLoginConfig(new ClassPathResource("tao_jaas.config"));
+        return authenticationProvider;
     }
 }
