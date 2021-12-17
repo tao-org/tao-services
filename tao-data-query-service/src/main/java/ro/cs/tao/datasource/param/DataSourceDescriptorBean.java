@@ -28,7 +28,7 @@ public class DataSourceDescriptorBean {
         return sensor.indexOf('(') > 0 ?
                 descriptor.getDataSourceName() + " " + sensor.substring(sensor.indexOf('(')) :
                 sensor.substring(sensor.lastIndexOf('-') + 1).length() > 2 ?
-                        descriptor.getDataSourceName() + " " + sensor.substring(sensor.lastIndexOf('(') + 1) :
+                        descriptor.getDataSourceName() + " " + sensor.substring(sensor.lastIndexOf('-') + 1) :
                         descriptor.getDataSourceName();
     }
 
