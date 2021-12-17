@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.http.CacheControl;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
@@ -12,12 +13,16 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public abstract class WebConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler(sitePrefix() + "/**").addResourceLocations(siteURIPath());
+        registry.addResourceHandler(sitePrefix() + "/**").addResourceLocations(siteURIPath())
+                .setCacheControl(CacheControl.maxAge(60, TimeUnit.MINUTES)
+                                             .noTransform()
+                                             .mustRevalidate());;
     }
 
     @Override

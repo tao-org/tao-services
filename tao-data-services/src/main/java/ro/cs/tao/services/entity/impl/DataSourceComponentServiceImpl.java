@@ -175,7 +175,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
                 userDSC.setAuthors("TAO Team");
                 userDSC.setCopyright("(C) TAO Team");
                 userDSC.setNodeAffinity("Any");
-                dataSourceComponentProvider.save(systemDSC);
+                //dataSourceComponentProvider.save(systemDSC);
             }
             try {
                 if (systemDSC != null) {

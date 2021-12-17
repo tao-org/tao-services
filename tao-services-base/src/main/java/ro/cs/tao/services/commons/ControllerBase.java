@@ -16,6 +16,7 @@
 
 package ro.cs.tao.services.commons;
 
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -27,6 +28,7 @@ import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.utils.ExceptionUtils;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -97,6 +99,13 @@ public abstract class ControllerBase {
     protected <T> ResponseEntity<ServiceResponse<?>> prepareResult(T result) {
         return new ResponseEntity<>(new ServiceResponse<>(result),
                                     HttpStatus.OK);
+    }
+
+    protected <T> ResponseEntity<ServiceResponse<?>> prepareResult(T result, int cacheTimeoutMinutes) {
+        CacheControl cacheControl = CacheControl.maxAge(cacheTimeoutMinutes, TimeUnit.MINUTES)
+                .noTransform()
+                .mustRevalidate();
+        return ResponseEntity.ok().cacheControl(cacheControl).body(new ServiceResponse<>(result));
     }
 
     protected <T> ResponseEntity<ServiceResponse<?>> prepareResult(T result, HttpStatus httpStatus) {
