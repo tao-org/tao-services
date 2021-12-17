@@ -79,7 +79,7 @@ public class DataSourceController extends BaseController {
         if (instances == null) {
             instances = new ArrayList<>();
         }
-        return prepareResult(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()));
+        return prepareResult(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()), 60);
     }
 
     @RequestMapping(value = "/summary", method = RequestMethod.GET, produces = "application/json")
