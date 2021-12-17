@@ -27,7 +27,9 @@ public class DataSourceDescriptorBean {
         final String sensor = descriptor.getSensor();
         return sensor.indexOf('(') > 0 ?
                 descriptor.getDataSourceName() + " " + sensor.substring(sensor.indexOf('(')) :
-                descriptor.getDataSourceName();
+                sensor.substring(sensor.lastIndexOf('-') + 1).length() > 2 ?
+                        descriptor.getDataSourceName() + " " + sensor.substring(sensor.lastIndexOf('(') + 1) :
+                        descriptor.getDataSourceName();
     }
 
     public String getCategory() {
