@@ -45,7 +45,7 @@ public abstract class StartupBase implements ApplicationListener {
         Files.createDirectories(configDirectory);
         Path scriptsDirectory = homeDirectory().resolve("scripts");
         Files.createDirectories(scriptsDirectory);
-        System.out.println(String.format("Configuration files will be read from %s", configDirectory.toString()));
+        System.out.printf("Configuration files will be read from %s%n", configDirectory.toString());
         if (!Files.exists(configDirectory)) {
             Files.createDirectory(configDirectory);
         }
@@ -80,7 +80,7 @@ public abstract class StartupBase implements ApplicationListener {
             builder.append(e.getKey().replace("logging.level.", "")).append(" -> ").append(e.getValue()).append(", ");
         });
         builder.setLength(builder.length() - 1);
-        System.out.println(builder.toString());
+        System.out.println(builder);
         return allProperties;
     }
 

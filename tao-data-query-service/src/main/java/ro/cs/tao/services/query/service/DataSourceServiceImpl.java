@@ -38,13 +38,14 @@ import ro.cs.tao.utils.async.Parallel;
 
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * @author Cosmin Cara
  */
 @Service("dataSourceService")
 public class DataSourceServiceImpl implements DataSourceService {
-
+    private static final Pattern satelliteVersionPattern = Pattern.compile("[-_]\\d[A-D]");
     @Autowired
     private DownloadListener downloadListener;
 
@@ -90,11 +91,18 @@ public class DataSourceServiceImpl implements DataSourceService {
                         CollectionDescription cd = sensorTypes.get(sensor);
                         final DataSourceDescriptor descriptor;
                         if (cd != null) {
-                            descriptor = new DataSourceDescriptor(sensor, n, cd.getSensorType().friendlyName(),
+                            String mission = cd.getMission();
+                            if (mission == null) {
+                                mission = sensor.indexOf('(') > 0 ? sensor.substring(0, sensor.indexOf('(')).trim() : sensor;
+                            }
+                            if (satelliteVersionPattern.matcher(mission).find()) {
+                                mission = mission.substring(0, mission.length() - 1);
+                            }
+                            descriptor = new DataSourceDescriptor(mission, sensor, n, cd.getSensorType().friendlyName(),
                                                                   cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
                                                                   parameters);
                         } else {
-                            descriptor = new DataSourceDescriptor(sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
+                            descriptor = new DataSourceDescriptor("n/a", sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
                                                                   parameters);
                         }
                         instances.add(descriptor);
