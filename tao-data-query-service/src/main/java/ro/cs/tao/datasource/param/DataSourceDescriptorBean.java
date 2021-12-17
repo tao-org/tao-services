@@ -13,12 +13,21 @@ public class DataSourceDescriptorBean {
         this.descriptor = descriptor;
     }
 
+    public String getMission() { return descriptor.getMission(); }
+
     public String getSensor() {
         return descriptor.getSensor();
     }
 
     public String getDataSourceName() {
         return descriptor.getDataSourceName();
+    }
+
+    public String getDataSourceLabel() {
+        final String sensor = descriptor.getSensor();
+        return sensor.indexOf('(') > 0 ?
+                descriptor.getDataSourceName() + " " + sensor.substring(sensor.indexOf('(')) :
+                descriptor.getDataSourceName();
     }
 
     public String getCategory() {
