@@ -2,6 +2,7 @@ package ro.cs.tao.services.security;
 
 import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.security.AuthenticationMode;
 import ro.cs.tao.security.TaoLoginModule;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
@@ -16,6 +17,11 @@ public class KeycloakLoginModule extends TaoLoginModule {
     public KeycloakLoginModule() {
         super();
         this.client = new KeycloakClient();
+    }
+
+    @Override
+    protected AuthenticationMode intendedFor() {
+        return AuthenticationMode.KEYCLOAK;
     }
 
     @Override

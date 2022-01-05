@@ -17,6 +17,7 @@ package ro.cs.tao.services.security;
 
 import ro.cs.tao.ldap.TaoLdapClient;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.security.AuthenticationMode;
 import ro.cs.tao.security.TaoLoginModule;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
@@ -31,6 +32,11 @@ public class LdapLoginModule extends TaoLoginModule {
     public LdapLoginModule() {
         super();
         ldapClient = new TaoLdapClient();
+    }
+
+    @Override
+    protected AuthenticationMode intendedFor() {
+        return AuthenticationMode.LDAP;
     }
 
     @Override
