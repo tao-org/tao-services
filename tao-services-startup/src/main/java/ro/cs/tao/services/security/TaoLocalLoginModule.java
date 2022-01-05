@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.security;
 
+import ro.cs.tao.security.AuthenticationMode;
 import ro.cs.tao.security.TaoLoginModule;
 import ro.cs.tao.user.User;
 
@@ -22,6 +23,11 @@ public class TaoLocalLoginModule extends TaoLoginModule {
 
     public TaoLocalLoginModule() {
         super();
+    }
+
+    @Override
+    protected AuthenticationMode intendedFor() {
+        return AuthenticationMode.LOCAL;
     }
 
     @Override
