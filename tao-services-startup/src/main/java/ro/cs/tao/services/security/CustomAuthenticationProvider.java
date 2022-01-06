@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.security.AuthenticationMode;
 import ro.cs.tao.security.GroupPrincipal;
 import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
@@ -56,7 +57,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     public CustomAuthenticationProvider(TokenManagementService tokenMngService) {
         this.delegate = jaasAuthProvider();
         this.tokenService = tokenMngService;
-        if (ConfigurationManager.getInstance().getValues("keycloak").size() > 0) {
+        if (AuthenticationMode.KEYCLOAK.name().equalsIgnoreCase(ConfigurationManager.getInstance().getValue("authentication.mode"))) {
             // Keycloak settings are present
             this.tokenService.setTokenProvider(new KeycloakClient());
         }

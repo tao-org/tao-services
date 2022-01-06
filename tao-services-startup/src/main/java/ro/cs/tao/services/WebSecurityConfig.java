@@ -32,6 +32,9 @@ import org.springframework.session.web.http.HttpSessionStrategy;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import ro.cs.tao.EnumUtils;
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.security.AuthenticationMode;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.Endpoints;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
@@ -167,6 +170,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
         String[] expressions = Endpoints.endpoints("ro.cs.tao");
         Logger.getLogger(WebSecurityConfig.class.getName())
                 .fine("Security active for the following endpoints: " + String.join(",", expressions));
+        Logger.getLogger(WebSecurityConfig.class.getName())
+                .fine("Authentication method: " +
+                        EnumUtils.getEnumConstantByName(AuthenticationMode.class,
+                                                        ConfigurationManager.getInstance().getValue("authentication.mode", "local")
+                                                                            .toUpperCase()).friendlyName());
         return expressions;
     }
 }

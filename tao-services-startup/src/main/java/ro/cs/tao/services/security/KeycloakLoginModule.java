@@ -4,6 +4,7 @@ import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.AuthenticationMode;
 import ro.cs.tao.security.TaoLoginModule;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 
@@ -31,6 +32,9 @@ public class KeycloakLoginModule extends TaoLoginModule {
 
     @Override
     protected User loginImpl(String user, String password) {
+        if (subject.getPrincipals().contains(new UserPrincipal(user))) {
+            return new User();
+        }
         if (userProvider == null) {
             throw new RuntimeException("[userProvider] not set");
         }
