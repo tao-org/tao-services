@@ -43,7 +43,7 @@ import java.util.logging.Logger;
 public class AuthenticationFilter extends GenericFilterBean {
     private static final Logger logger = Logger.getLogger(AuthenticationFilter.class.getName());
 
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
 
     public AuthenticationFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
@@ -55,6 +55,9 @@ public class AuthenticationFilter extends GenericFilterBean {
         HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
 
         Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
+        if (!token.isPresent()) {
+            token = Optional.ofNullable(httpRequest.getHeader("Authorization"));
+        }
 
         String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
 
