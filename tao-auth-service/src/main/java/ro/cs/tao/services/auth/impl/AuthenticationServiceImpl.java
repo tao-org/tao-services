@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.security.Token;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
@@ -51,28 +52,26 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private UserProvider userProvider;
 
     @Override
-    public AuthInfo login(String username) {
-        logger.fine("Logged in (" + username + ")...");
-        // if arrived here, this means that the JAAS login was successful
+    public AuthInfo login(String userName, String password) {
 
-        String authenticationToken = tokenService.getUserToken(username);
-        logger.finest("Token " + authenticationToken);
+        Token authenticationToken = tokenService.getUserToken(userName);
+        logger.finest("Token " + authenticationToken.getToken());
 
         // check if user is still active in TAO
-        final User user = userProvider.getByName(username);
+        final User user = userProvider.getByName(userName);
         if (user != null && user.getStatus() == UserStatus.ACTIVE) {
             try {
                 // update user last login date
                 userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
-                Path path = Paths.get(ConfigurationManager.getInstance().getValue("workspace.location")).resolve(username);
+                Path path = Paths.get(ConfigurationManager.getInstance().getValue("workspace.location")).resolve(userName);
                 FileUtilities.ensureExists(path);
                 FileUtilities.ensureExists(path.resolve("files"));
             } catch (Exception e) {
                 logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
-                                            username, ExceptionUtils.getStackTrace(e)));
+                                            userName, ExceptionUtils.getStackTrace(e)));
             }
             // retrieve user groups and send them as profiles
-            return new AuthInfo(true, authenticationToken, user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
+            return new AuthInfo(true, authenticationToken.getToken(), user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
         }
         // unauthorized
         return new AuthInfo(false, null, null);
@@ -80,7 +79,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public boolean logout(String authToken) {
-        if (tokenService.contains(authToken)) {
+        if (tokenService.isValid(authToken)) {
             final String username = tokenService.retrieve(authToken).getPrincipal().toString();
             logger.finest("Logging out (" + username + ")...");
             tokenService.removeUserTokens(username);

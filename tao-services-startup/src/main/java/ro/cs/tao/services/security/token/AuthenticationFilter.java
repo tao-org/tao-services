@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.security.token;
 
+import org.apache.commons.codec.binary.Base64;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.Authentication;
@@ -32,6 +33,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,19 +57,22 @@ public class AuthenticationFilter extends GenericFilterBean {
         HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
 
         Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
-        if (!token.isPresent()) {
-            token = Optional.ofNullable(httpRequest.getHeader("Authorization"));
-        }
-
         String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
 
         try {
-            if (token.isPresent() && !postToAuthenticate(httpRequest, resourcePath)) {
+            ServletRequest request = servletRequest;
+            if (postToAuthenticate(httpRequest, resourcePath)) {
+                final String username = httpRequest.getParameter("username");
+                final String password = httpRequest.getParameter("password");
+                MutableHttpServletRequest wrapper = new MutableHttpServletRequest(httpRequest);
+                wrapper.putHeader("Authorization", "Basic " + new String(Base64.encodeBase64((username + ":" + password).getBytes(StandardCharsets.US_ASCII))));
+                request = wrapper;
+            } else if (token.isPresent()) {
                 processTokenAuthentication(token);
             }
 
             //logger.fine("AuthenticationFilter is passing the request through the filter chain");
-            filterChain.doFilter(servletRequest, servletResponse);
+            filterChain.doFilter(request, servletResponse);
 
         } catch (InternalAuthenticationServiceException internalAuthenticationServiceException) {
             SecurityContextHolder.clearContext();
