@@ -27,6 +27,7 @@ import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.AuthenticationMode;
 import ro.cs.tao.security.GroupPrincipal;
+import ro.cs.tao.security.Token;
 import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.security.token.AuthenticationWithToken;
@@ -57,6 +58,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     public CustomAuthenticationProvider(TokenManagementService tokenMngService) {
         this.delegate = jaasAuthProvider();
         this.tokenService = tokenMngService;
+        this.tokenService.setTokenCache(TokenCacheManager.getCache());
         if (AuthenticationMode.KEYCLOAK.name().equalsIgnoreCase(ConfigurationManager.getInstance().getValue("authentication.mode"))) {
             // Keycloak settings are present
             this.tokenService.setTokenProvider(new KeycloakClient());
@@ -87,12 +89,19 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
             // generate and store a new authentication token
             AuthenticationWithToken authenticationWithToken = new AuthenticationWithToken(jaasAuthenticationToken.getPrincipal(), jaasAuthenticationToken.getCredentials(), new ArrayList<>(jaasAuthenticationToken.getAuthorities()), jaasAuthenticationToken.getLoginContext());
-            String token = tokenService.getUserToken(userName);
-            if (token == null) {
-                token = tokenService.generateNewToken(userName, user.getPassword());
+            //final UserPreference userToken = user.getPreferences().stream().filter(p -> p.getKey().equals("token")).findFirst().orElse(null);
+            Token userToken = tokenService.getUserToken(userName);
+            if (userToken == null) {
+                userToken = tokenService.generateNewToken(userName, user.getPassword());
+                tokenService.store(userToken, authenticationWithToken);
+            } else if (tokenService.retrieve(userToken.getToken()) == null) {
+                tokenService.store(userToken, authenticationWithToken);
+            }
+            String token = null;
+            if (userToken != null) {
+                token = userToken.getToken();
             }
             authenticationWithToken.setToken(token);
-            tokenService.store(token, authenticationWithToken);
 
             logger.finest("Stored token: " + token);
 

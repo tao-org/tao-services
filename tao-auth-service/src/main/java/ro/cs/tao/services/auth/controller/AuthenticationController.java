@@ -23,6 +23,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -44,17 +45,10 @@ public class AuthenticationController extends BaseController {
     private AuthenticationService authenticationService;
 
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> login(@RequestHeader("Authorization") String authHeader) {
-        if (StringUtilities.isNullOrEmpty(authHeader)) {
-            return prepareResult("Expected request header empty!", ResponseStatus.FAILED);
-        }
-
+    public ResponseEntity<ServiceResponse<?>> login(@RequestParam("username") String user,
+                                                    @RequestParam("password") String password) {
         try {
-            final String username = getUsernameFromBasicAuthHeader(authHeader);
-            if (StringUtilities.isNullOrEmpty(username)) {
-                return prepareResult("Empty credentials in request header!", ResponseStatus.FAILED);
-            }
-            final AuthInfo authInfo = authenticationService.login(username);
+            final AuthInfo authInfo = authenticationService.login(user, password);
             if (authInfo != null && authInfo.isAuthenticated()) {
                 return prepareResult(authInfo);
             } else {
