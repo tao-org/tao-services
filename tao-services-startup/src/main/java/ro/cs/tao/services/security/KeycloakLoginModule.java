@@ -8,9 +8,7 @@ import ro.cs.tao.security.TokenCache;
 import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
-import ro.cs.tao.user.UserPreference;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -53,7 +51,7 @@ public class KeycloakLoginModule extends TaoLoginModule {
                     userEntity.setPassword(password);
                     existing = userEntity;
                     userProvider.save(existing);
-                } else {
+                }/* else {
                     List<UserPreference> preferences = existing.getPreferences();
                     if (preferences == null) {
                         preferences = new ArrayList<>();
@@ -68,7 +66,7 @@ public class KeycloakLoginModule extends TaoLoginModule {
                         }
                     }
                     userProvider.update(existing);
-                }
+                }*/
                 userEntity = existing;
             } catch (PersistenceException e) {
                 logger.severe(String.format("Cannot persist user '%s'. Reason: %s", user, e.getMessage()));
