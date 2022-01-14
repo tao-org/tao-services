@@ -24,7 +24,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.util.UrlPathHelper;
+import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Notifiable;
+import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.messaging.system.StartupCompletedMessage;
 import ro.cs.tao.services.commons.Endpoints;
+import ro.cs.tao.utils.ExceptionUtils;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -44,18 +49,21 @@ import java.util.logging.Logger;
  */
 public class AuthenticationFilter extends GenericFilterBean {
     private static final Logger logger = Logger.getLogger(AuthenticationFilter.class.getName());
-
+    private static volatile boolean systemInitialised = false;
     private final AuthenticationManager authenticationManager;
 
     public AuthenticationFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
+        SystemMessageReceiver receiver = new SystemMessageReceiver();
     }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
         HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
-
+        if (!systemInitialised) {
+            httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "The system is not able yet to serve http requests");
+        }
         Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
         String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
 
@@ -78,14 +86,11 @@ public class AuthenticationFilter extends GenericFilterBean {
             SecurityContextHolder.clearContext();
             logger.log(Level.SEVERE, "Internal authentication service exception", internalAuthenticationServiceException);
             httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-
         } catch (AuthenticationException authenticationException) {
             SecurityContextHolder.clearContext();
             httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, authenticationException.getMessage());
         } catch (Throwable t) {
-            if (t.getMessage() != null) {
-                logger.severe(t.getMessage());//ExceptionUtils.getStackTrace(t));
-            }
+            ExceptionUtils.getStackTrace(logger, t);
         }
 
     }
@@ -111,5 +116,19 @@ public class AuthenticationFilter extends GenericFilterBean {
     private boolean postToAuthenticate(HttpServletRequest httpRequest, String resourcePath) {
         return Endpoints.LOGIN_ENDPOINT.equalsIgnoreCase(resourcePath) &&
                httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD);
+    }
+
+    private static class SystemMessageReceiver extends Notifiable {
+
+        SystemMessageReceiver() {
+            subscribe(Topic.SYSTEM.value());
+        }
+
+        @Override
+        protected void onMessageReceived(Message message) {
+            if (message instanceof StartupCompletedMessage) {
+                systemInitialised = true;
+            }
+        }
     }
 }
