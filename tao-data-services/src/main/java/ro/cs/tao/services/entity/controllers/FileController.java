@@ -40,6 +40,8 @@ import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.StorageService;
+import ro.cs.tao.spi.ServiceRegistry;
+import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.FileUtilities;
 
 import javax.servlet.http.HttpServletResponse;
@@ -49,10 +51,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -172,6 +171,31 @@ public class FileController extends BaseController {
                     relativeFolder = relativeFolder.substring(relativeFolder.indexOf('/') + 1);
                 }
                 responseEntity = prepareResult(fileStorage.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder), null));
+            }
+        } catch (IOException ex) {
+            responseEntity = handleException(ex);
+        }
+
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/remote", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> listRemote(@RequestParam("folder") String relativeFolder) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
+                responseEntity = prepareResult(fileStorage.listPublicWorkspace());
+            } else {
+                final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
+                final Set<StorageService> services = registry.getServices();
+                if (services == null || services.size() != 1) {
+                    throw new IllegalArgumentException("No remote file repository is available");
+                }
+                Path relativePath = Paths.get(relativeFolder);
+                if (relativePath.getName(0).toString().equals(currentUser())) {
+                    relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
+                }
+                responseEntity = prepareResult(services.iterator().next().listFiles(Paths.get(relativeFolder), null));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
