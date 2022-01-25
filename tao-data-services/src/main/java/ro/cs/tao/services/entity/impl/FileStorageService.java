@@ -36,6 +36,8 @@ import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
+import ro.cs.tao.spi.ServiceRegistry;
+import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.FileUtilities;
 
 import java.io.IOException;
@@ -250,6 +252,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
     public List<FileObject> listUserWorkspace(String userName) throws IOException {
         final List<FileObject> files = new ArrayList<>();
         files.addAll(listProducts(userName));
+        files.addAll(listS3Bucket(userName));
         files.addAll(listUploaded(userName));
         return files;
     }
@@ -362,6 +365,28 @@ public class FileStorageService implements StorageService<MultipartFile> {
     @Override
     public List<FileObject> getWorkflowResults(long workflowId) throws IOException {
         return getResults(workflowId, null);
+    }
+
+    private List<FileObject> listS3Bucket(String principalName) throws IOException {
+        final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
+        final Set<StorageService> services = registry.getServices();
+        List<FileObject> files = null;
+        if (services != null && services.size() > 0) {
+            final StorageService service = services.iterator().next();
+            files = service.listUserWorkspace(principalName);
+        }
+        return files;
+    }
+
+    private List<FileObject> listS3Bucket(Path currentPath, Set<Path> exclusions) throws IOException {
+        final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
+        final Set<StorageService> services = registry.getServices();
+        List<FileObject> files = null;
+        if (services != null && services.size() > 0) {
+            final StorageService service = services.iterator().next();
+            files = service.listFiles(currentPath, exclusions);
+        }
+        return files;
     }
 
     private List<FileObject> listProducts(String principalName) throws IOException {
