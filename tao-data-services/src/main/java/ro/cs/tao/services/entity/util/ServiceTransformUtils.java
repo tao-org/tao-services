@@ -16,6 +16,7 @@
 package ro.cs.tao.services.entity.util;
 
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.execution.model.ExecutionJob;
@@ -23,6 +24,7 @@ import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.services.model.component.DataSourceGroupInfo;
 import ro.cs.tao.services.model.component.DataSourceInfo;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
+import ro.cs.tao.services.model.component.WPSComponentInfo;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
@@ -63,6 +65,14 @@ public final class ServiceTransformUtils {
         final List<ProcessingComponentInfo> results = new ArrayList<>();
         for (ProcessingComponent component : components) {
             results.add(new ProcessingComponentInfo(component));
+        }
+        return results;
+    }
+
+    public static List<WPSComponentInfo> toWPSComponentInfos(final List<WPSComponent> components) {
+        final List<WPSComponentInfo> results = new ArrayList<>();
+        for (WPSComponent component : components) {
+            results.add(new WPSComponentInfo(component));
         }
         return results;
     }
