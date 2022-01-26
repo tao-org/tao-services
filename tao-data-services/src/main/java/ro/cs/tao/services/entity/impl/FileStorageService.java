@@ -17,7 +17,9 @@
 package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
@@ -40,6 +42,7 @@ import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.FileUtilities;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -53,6 +56,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Service("fileStorageService")
 public class FileStorageService implements StorageService<MultipartFile> {
@@ -365,6 +370,43 @@ public class FileStorageService implements StorageService<MultipartFile> {
     @Override
     public List<FileObject> getWorkflowResults(long workflowId) throws IOException {
         return getResults(workflowId, null);
+    }
+
+    @Override
+    public Object download(Path path) throws IOException {
+        FileSystemResource resource = new FileSystemResource(path);
+        if (resource.exists() || resource.isReadable()) {
+            return resource;
+        } else {
+            throw new IOException("Could not read file: " + path);
+        }
+    }
+
+    @Override
+    public void streamToZip(Path root, ZipOutputStream stream) throws IOException {
+        if (Files.exists(root) && Files.isDirectory(root)) {
+        List<Path> paths = FileUtilities.listTree(root);
+            for (Path current : paths) {
+                if (Files.isRegularFile(current)) {
+                    String zipPath = root.relativize(current).toString();
+                    ZipEntry entry = new ZipEntry(zipPath);
+                    entry.setSize(Files.size(current));
+                    entry.setTime(System.currentTimeMillis());
+                    stream.putNextEntry(entry);
+                    StreamUtils.copy(Files.newInputStream(current), stream);
+                    stream.closeEntry();
+                } else {
+                    if (!current.equals(root)) {
+                        String zipPath = root.relativize(current) + File.separator;
+                        ZipEntry entry = new ZipEntry(zipPath);
+                        stream.putNextEntry(entry);
+                        stream.closeEntry();
+                    }
+                }
+            }
+        } else {
+            throw new IOException("Not a folder");
+        }
     }
 
     private List<FileObject> listS3Bucket(String principalName) throws IOException {

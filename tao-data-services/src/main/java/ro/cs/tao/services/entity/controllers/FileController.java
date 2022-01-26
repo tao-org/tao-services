@@ -16,6 +16,7 @@
 
 package ro.cs.tao.services.entity.controllers;
 
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -24,7 +25,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -42,17 +42,15 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
-import ro.cs.tao.utils.FileUtilities;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @Controller
@@ -237,44 +235,18 @@ public class FileController extends BaseController {
     @RequestMapping(value = "/downloads", method = RequestMethod.GET, produces = { "application/octet-stream", "application/json" } )
     public void download(@RequestParam("folder") String folder, HttpServletResponse response) {
         final Path path = Paths.get(SystemVariable.ROOT.value(), folder);
-        if (Files.exists(path) && Files.isDirectory(path)) {
-            try {
-                List<Path> paths = FileUtilities.listTree(path);
-                response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
-                response.setStatus(HttpServletResponse.SC_OK);
-                try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
-                    for (Path p : paths) {
-                        if (Files.isRegularFile(p)) {
-                            String zipPath = path.relativize(p).toString();
-                            ZipEntry entry = new ZipEntry(zipPath);
-                            entry.setSize(Files.size(p));
-                            entry.setTime(System.currentTimeMillis());
-                            zipOutputStream.putNextEntry(entry);
-                            StreamUtils.copy(Files.newInputStream(p), zipOutputStream);
-                            zipOutputStream.closeEntry();
-                        } else {
-                            if (!path.equals(p)) {
-                                String zipPath = path.relativize(p).toString() + File.separator;
-                                ZipEntry entry = new ZipEntry(zipPath);
-                                zipOutputStream.putNextEntry(entry);
-                                zipOutputStream.closeEntry();
-                            }
-                        }
-                    }
-                    zipOutputStream.finish();
-                }
-            } catch (IOException ex) {
-                try {
-                    warn(ex.getMessage());
-                    response.sendError(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
-                } catch (IOException e) {
-                    error(e.getMessage());
-                }
+        try {
+            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
+            response.setStatus(HttpServletResponse.SC_OK);
+            try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
+                this.fileStorage.streamToZip(path, zipOutputStream);
+                zipOutputStream.finish();
             }
-        } else {
+        } catch (IOException ex) {
             try {
-                response.sendError(HttpStatus.BAD_REQUEST.value(), String.format("%s does not exist or it is not a folder", folder));
+                warn(ex.getMessage());
+                response.sendError(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
             } catch (IOException e) {
                 error(e.getMessage());
             }
@@ -285,16 +257,49 @@ public class FileController extends BaseController {
     public @ResponseBody ResponseEntity<?> download(@RequestParam("fileName") String fileName) {
         ResponseEntity<?> responseEntity;
         try {
-            Resource file = loadAsResource(fileName);
-            responseEntity = ResponseEntity.ok()
-                    .contentLength(file.contentLength())
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename())
-                    .body(file);
+                Resource file = loadAsResource(fileName);
+
+                responseEntity = ResponseEntity.ok()
+                        .contentLength(file.contentLength())
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename())
+                        .body(file);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
         return responseEntity;
+    }
+
+    @RequestMapping(value = "/download/s3", method = RequestMethod.GET)
+    public void downloadFromS3(@RequestParam("fileName") String fileName, HttpServletResponse response) {
+        try {
+            final Set<StorageService> services = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class).getServices();
+            if (services == null || services.size() != 1) {
+                response.sendError(HttpStatus.BAD_REQUEST.value(), "Not supported");
+            } else {
+                final StorageService s3Client = services.iterator().next();
+                final Path path = Paths.get(fileName.replace("s3://", ""));
+                // the only way we can tell it's a "folder"
+                if (fileName.endsWith("/")) {
+                    response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
+                        s3Client.streamToZip(path, zipOutputStream);
+                        zipOutputStream.finish();
+                    }
+                } else {
+                    InputStream stream = (InputStream) s3Client.download(path);
+                    response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                    response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    IOUtils.copy(stream, response.getOutputStream());
+                    response.flushBuffer();
+                }
+            }
+        } catch (IOException e) {
+            error(e.getMessage());
+        }
     }
 
     @RequestMapping(value = "/preview", method = RequestMethod.GET, produces = "application/json")
@@ -385,13 +390,6 @@ public class FileController extends BaseController {
         if (!Files.exists(filePath)) {
             throw new IOException(String.format("File '%s' does not exist", filePath));
         }
-        FileSystemResource resource = new FileSystemResource(filePath);
-        //InputStreamResource resource = new InputStreamResource(Files.newInputStream(filePath));
-        //Resource resource = new UrlResource(filePath.toUri());
-        if (resource.exists() || resource.isReadable()) {
-            return resource;
-        } else {
-            throw new IOException("Could not read file: " + fileName);
-        }
+        return (FileSystemResource) this.fileStorage.download(filePath);
     }
 }

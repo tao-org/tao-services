@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.ZipOutputStream;
 
 @Service("objectStorageService")
 public class ObjectStorageService implements StorageService<byte[]> {
@@ -86,5 +87,15 @@ public class ObjectStorageService implements StorageService<byte[]> {
     @Override
     public List<FileObject> getJobResults(long jobId) throws IOException {
         return null;
+    }
+
+    @Override
+    public Object download(Path path) throws IOException {
+        return null;
+    }
+
+    @Override
+    public void streamToZip(Path root, ZipOutputStream stream) throws IOException {
+
     }
 }
