@@ -106,7 +106,8 @@ public class DataSourceServiceImpl implements DataSourceService {
                                                                   parameters);
                         }
                         instances.add(descriptor);
-                        final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(sensor + "-" + n)).findFirst().orElse(null);
+                        //final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(sensor + "-" + n)).findFirst().orElse(null);
+                        final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(n)).findFirst().orElse(null);
                         if (dsCreds != null) {
                             descriptor.setUser(dsCreds.getUserName());
                             descriptor.setPwd(dsCreds.getPassword());
@@ -156,7 +157,8 @@ public class DataSourceServiceImpl implements DataSourceService {
     public List<EOProduct> query(Query queryObject) throws SerializationException {
         if (StringUtils.isNotEmpty(queryObject.getUser()) && StringUtils.isNotEmpty(queryObject.getPassword())) {
             final String user = SessionStore.currentContext().getPrincipal().getName();
-            final String dsId = queryObject.getSensor() + "-" + queryObject.getDataSource();
+            //final String dsId = queryObject.getSensor() + "-" + queryObject.getDataSource();
+            final String dsId = queryObject.getDataSource();
             DataSourceCredentials credentials = credentialsProvider.get(user, dsId);
             if (credentials == null) {
                 credentials = new DataSourceCredentials();
