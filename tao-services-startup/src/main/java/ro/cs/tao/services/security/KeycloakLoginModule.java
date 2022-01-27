@@ -46,27 +46,18 @@ public class KeycloakLoginModule extends TaoLoginModule {
             User existing = userProvider.getByName(user);
             try {
                 if (existing == null) {
-                    final List<Group> groups = userProvider.listGroups().stream().filter(g -> "USER".equalsIgnoreCase(g.getName())).collect(Collectors.toList());
+                    final boolean isAdmin = username.equals(this.client.getAdminUser());
+                    final List<Group> groups = userProvider.listGroups().stream()
+                            .filter(g -> (isAdmin ? "ADMIN" : "USER").equalsIgnoreCase(g.getName())).collect(Collectors.toList());
                     userEntity.setGroups(groups);
                     userEntity.setPassword(password);
+                    if (!isAdmin) {
+                        userEntity.setProcessingQuota(userProvider.defaultCPUQuota());
+                        userEntity.setMemoryQuota(userProvider.defaultMemoryQuota());
+                    }
                     existing = userEntity;
                     userProvider.save(existing);
-                }/* else {
-                    List<UserPreference> preferences = existing.getPreferences();
-                    if (preferences == null) {
-                        preferences = new ArrayList<>();
-                    }
-                    final List<UserPreference> uPrefs = userEntity.getPreferences();
-                    for (UserPreference uP : uPrefs) {
-                        final UserPreference pref = preferences.stream().filter(p -> p.getKey().equals(uP.getKey())).findFirst().orElse(null);
-                        if (pref != null) {
-                            pref.setValue(uP.getValue());
-                        } else {
-                            preferences.add(pref);
-                        }
-                    }
-                    userProvider.update(existing);
-                }*/
+                }
                 userEntity = existing;
             } catch (PersistenceException e) {
                 logger.severe(String.format("Cannot persist user '%s'. Reason: %s", user, e.getMessage()));
