@@ -152,7 +152,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
             return parameters;
         }
 
-        void setParameters(Map<String, List<Parameter>> parameters) {
+        public void setParameters(Map<String, List<Parameter>> parameters) {
             this.parameters = parameters;
         }
 
@@ -161,7 +161,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
             return outputs;
         }
 
-        void setOutputs(List<TargetDescriptor> outputs) {
+        public void setOutputs(List<TargetDescriptor> outputs) {
             this.outputs = outputs;
         }
 
@@ -170,7 +170,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
             return workflowInfo;
         }
 
-        void setWorkflowInfo(WorkflowInfo workflowInfo) {
+        public void setWorkflowInfo(WorkflowInfo workflowInfo) {
             this.workflowInfo = workflowInfo;
         }
     }

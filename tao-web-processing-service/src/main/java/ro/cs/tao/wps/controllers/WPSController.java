@@ -34,15 +34,17 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import ro.cs.tao.component.WPSAuthentication;
 import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.wps.impl.WPSClient;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBException;
 import java.io.*;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,9 +52,40 @@ import java.util.logging.Logger;
 @RequestMapping("/wps")
 public class WPSController extends BaseController {
 
+    private final static Set<String> allowedRequests = new HashSet<String>() {{
+        add("GetCapabilities"); add("DescribeProcess");
+    }};
+
     private final Logger logger = Logger.getLogger(getClass().getName());
     @Autowired
     private WpsServiceInstance wpsServiceInstance;
+    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> inspectRemote(@RequestParam(name = "request") String requestType,
+                                           @RequestParam(name = "remoteAddress") String endpoint,
+                                           @RequestParam(name = "capability", required = false) String capability,
+                                           @RequestParam(name = "authentication", required = false) WPSAuthentication authentication) {
+        try {
+            try {
+                final URL url = new URL(endpoint);
+            } catch (MalformedURLException mex) {
+                throw new InvalidRequestException("[remoteAddress] Malformed URL", mex);
+            }
+            if (!allowedRequests.contains(requestType)) {
+                throw new IllegalArgumentException("[request] Unsupported value");
+            }
+            final WPSClient client = new WPSClient(endpoint, authentication);
+            if ("GetCapabilities".equals(requestType)) {
+                return prepareResult(client.getCapabilities());
+            } else {
+                if (StringUtils.isEmpty(capability)) {
+                    throw new IllegalArgumentException("[capability] Must supply a value");
+                }
+                return prepareResult(client.describeProcess(capability));
+            }
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
 
     @RequestMapping(params = {"service=WPS", "request=GetCapabilities"}, method = RequestMethod.GET)
     public ResponseEntity<?> capabilities(HttpServletRequest request, HttpServletResponse response) {
