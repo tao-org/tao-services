@@ -20,7 +20,7 @@ public class WPSClientTest {
         auth.setUser("admin");
         auth.setPassword("eodata");
         auth.setType(AuthenticationType.TOKEN);
-        WPSClient client = new WPSClient("http://localhost:8443/wps", auth);
+        WPSClient client = new WPSClient("http://localhost:8443/wps", auth, () -> "test");
         final Container capabilities = client.getCapabilities();
         final WebProcessingService.ProcessInfo processInfo = client.describeProcess("23");
 
