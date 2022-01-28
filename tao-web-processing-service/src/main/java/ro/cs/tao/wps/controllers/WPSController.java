@@ -73,7 +73,7 @@ public class WPSController extends BaseController {
             if (!allowedRequests.contains(requestType)) {
                 throw new IllegalArgumentException("[request] Unsupported value");
             }
-            final WPSClient client = new WPSClient(endpoint, authentication);
+            final WPSClient client = new WPSClient(endpoint, authentication, currentPrincipal());
             if ("GetCapabilities".equals(requestType)) {
                 return prepareResult(client.getCapabilities());
             } else {

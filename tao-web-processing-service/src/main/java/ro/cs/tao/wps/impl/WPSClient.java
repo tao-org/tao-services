@@ -18,21 +18,22 @@ import ro.cs.tao.workflow.enums.Status;
 
 import java.io.IOException;
 import java.net.URL;
+import java.security.Principal;
 import java.util.*;
 
 public class WPSClient {
     private final String url;
     private final WPSAuthentication authentication;
-    private String authToken;
+    private final Principal currentPrincipal;
 
-    public WPSClient(String url, WPSAuthentication authentication) {
+    public WPSClient(String url, WPSAuthentication authentication, Principal principal) {
         this.url = url;
         this.authentication = authentication;
+        this.currentPrincipal = principal;
     }
 
     public Container getCapabilities() throws ServiceException, IOException {
         final WebProcessingService service = getService();
-        // TODO How to overwrite XML parser bindings (href is translated into URI and produces internally a CCE)?
         final WPSCapabilitiesType capabilities = service.getCapabilities();
         final ProcessOfferingsType processOfferings = capabilities.getProcessOfferings();
         final EList processes = processOfferings.getProcess();
@@ -63,7 +64,7 @@ public class WPSClient {
         workflowDescriptor.setId(Long.parseLong(pdt.getIdentifier().getValue()));
         final String title = pdt.getTitle().getValue();
         workflowDescriptor.setName(title);
-        workflowDescriptor.setUserName("test");
+        workflowDescriptor.setUserName(this.currentPrincipal.getName());
         workflowDescriptor.setActive(true);
         workflowDescriptor.setStatus(Status.PUBLISHED);
         workflowDescriptor.setPath(url);
