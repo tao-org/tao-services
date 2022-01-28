@@ -143,11 +143,11 @@ public class Operations {
         Languages languages = new Languages();
 
         Languages.Default defaultLanguage = new Languages.Default();
-        defaultLanguage.setLanguage(getPropertyValue("wps.default.lang"));
+        defaultLanguage.setLanguage(getPropertyValue("wps.default.lang", "en"));
         languages.setDefault(defaultLanguage);
 
         LanguagesType languageType = new LanguagesType();
-        languageType.getLanguage().add(0, getPropertyValue("wps.supported.lang"));
+        languageType.getLanguage().add(0, getPropertyValue("wps.supported.lang", "en"));
         languages.setSupported(languageType);
 
         return languages;
@@ -155,6 +155,10 @@ public class Operations {
 
     private String getPropertyValue(String name) {
         return ConfigurationManager.getInstance().getValue(name);
+    }
+
+    private String getPropertyValue(String name, String defaultValue) {
+        return ConfigurationManager.getInstance().getValue(name, defaultValue);
     }
 
     private DCP getPostDcp(String serviceUrl) {
