@@ -195,20 +195,22 @@ public class TopologyServiceImpl
             errors.add("[password] cannot be empty");
         }
         final NodeFlavor flavor = object.getFlavor();
-        if (flavor == null) {
-            errors.add("[flavor] cannot be null");
-        } else {
-            if (flavor.getCpu() <= 0) {
-                errors.add("[flavor.cpu] cannot be less than 1");
-            }
-            if (flavor.getMemory() <= 0) {
-                errors.add("[flavor.memory] cannot be less than 1");
-            }
-            if (flavor.getDisk() <= 0) {
-                errors.add("[flavor.disk] cannot be less than 1");
-            }
-            if (Float.compare(flavor.getRxtxFactor(), 0.0f) <= 0) {
-                errors.add("[flavor.rxtxFactor] must be positive");
+        if (TopologyManager.getInstance().isExternalProviderAvailable()) {
+            if (flavor == null) {
+                errors.add("[flavor] cannot be null");
+            } else {
+                if (flavor.getCpu() <= 0) {
+                    errors.add("[flavor.cpu] cannot be less than 1");
+                }
+                if (flavor.getMemory() <= 0) {
+                    errors.add("[flavor.memory] cannot be less than 1");
+                }
+                if (flavor.getDisk() <= 0) {
+                    errors.add("[flavor.disk] cannot be less than 1");
+                }
+                if (Float.compare(flavor.getRxtxFactor(), 0.0f) <= 0) {
+                    errors.add("[flavor.rxtxFactor] must be positive");
+                }
             }
         }
     }
