@@ -21,6 +21,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import ro.cs.tao.datasource.DownloadManager;
 import ro.cs.tao.services.commons.ControllerBase;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ProgressReportService;
@@ -36,6 +37,11 @@ public class ProgressReportController extends ControllerBase {
     public ResponseEntity<ServiceResponse<?>> getTasksInProgress(@RequestParam(name = "category", required = false) String category,
                                                                  @RequestParam(name = "filter", required = false) String jsonFilter) {
         return prepareResult(progressReportService.getRunningTasks(category, jsonFilter));
+    }
+
+    @RequestMapping(value = "/download", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getDownloadStatus() {
+        return prepareResult(DownloadManager.getCurrentStatus());
     }
 
 }

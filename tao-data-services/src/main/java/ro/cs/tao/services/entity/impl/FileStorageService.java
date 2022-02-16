@@ -412,10 +412,14 @@ public class FileStorageService implements StorageService<MultipartFile> {
     private List<FileObject> listS3Bucket(String principalName) throws IOException {
         final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
         final Set<StorageService> services = registry.getServices();
-        List<FileObject> files = null;
-        if (services != null && services.size() > 0) {
-            final StorageService service = services.iterator().next();
-            files = service.listUserWorkspace(principalName);
+        final List<FileObject> files = new ArrayList<>();
+        try {
+            if (services != null && services.size() > 0) {
+                final StorageService service = services.iterator().next();
+                files.addAll(service.listUserWorkspace(principalName));
+            }
+        } catch (IOException e) {
+            Logger.getLogger(getClass().getName()).warning(e.getMessage());
         }
         return files;
     }
