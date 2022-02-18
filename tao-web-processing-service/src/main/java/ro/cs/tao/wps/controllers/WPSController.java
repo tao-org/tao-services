@@ -25,6 +25,7 @@ import com.bc.wps.api.schema.*;
 import com.bc.wps.exceptions.InvalidRequestException;
 import com.bc.wps.responses.ExceptionResponse;
 import com.bc.wps.utilities.JaxbHelper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -34,8 +35,18 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.WPSAuthentication;
+import ro.cs.tao.component.WPSComponent;
+import ro.cs.tao.component.enums.ProcessingComponentVisibility;
+import ro.cs.tao.datasource.beans.Parameter;
+import ro.cs.tao.docker.Container;
 import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.interfaces.ContainerService;
+import ro.cs.tao.services.interfaces.WPSComponentService;
+import ro.cs.tao.services.interfaces.WebProcessingService;
+import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.wps.impl.WPSClient;
 
 import javax.servlet.http.HttpServletRequest;
@@ -47,6 +58,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/wps")
@@ -59,11 +71,19 @@ public class WPSController extends BaseController {
     private final Logger logger = Logger.getLogger(getClass().getName());
     @Autowired
     private WpsServiceInstance wpsServiceInstance;
+    @Autowired
+    private ContainerService containerService;
+    @Autowired
+    private WPSComponentService wpsComponentService;
+    @Autowired
+    private WorkflowService workflowService;
+
     @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> inspectRemote(@RequestParam(name = "request") String requestType,
                                            @RequestParam(name = "remoteAddress") String endpoint,
                                            @RequestParam(name = "capability", required = false) String capability,
-                                           @RequestParam(name = "authentication", required = false) WPSAuthentication authentication) {
+                                           @RequestParam(name = "authentication", required = false) String authentication,
+                                           @RequestParam(name = "save", required = false) Boolean save) {
         try {
             try {
                 final URL url = new URL(endpoint);
@@ -73,14 +93,33 @@ public class WPSController extends BaseController {
             if (!allowedRequests.contains(requestType)) {
                 throw new IllegalArgumentException("[request] Unsupported value");
             }
-            final WPSClient client = new WPSClient(endpoint, authentication, currentPrincipal());
-            if ("GetCapabilities".equals(requestType)) {
-                return prepareResult(client.getCapabilities());
+            final WPSAuthentication auth = new ObjectMapper().readerFor(WPSAuthentication.class).readValue(authentication);
+            final WPSClient client = new WPSClient(endpoint, auth, currentPrincipal());
+            if ("GetCapabilities".equalsIgnoreCase(requestType)) {
+                Container capabilities = client.getCapabilities();
+                if (Boolean.TRUE.equals(save)) {
+                    capabilities = containerService.save(capabilities);
+                }
+                return prepareResult(capabilities);
             } else {
                 if (StringUtils.isEmpty(capability)) {
                     throw new IllegalArgumentException("[capability] Must supply a value");
                 }
-                return prepareResult(client.describeProcess(capability));
+                final WebProcessingService.ProcessInfo<WorkflowInfo, TargetDescriptor> processInfo = client.describeProcess(capability);
+                WPSComponent component = new WPSComponent();
+                component.setId(endpoint + "~" + capability);
+                component.setLabel(processInfo.getCapabilityInfo().getName());
+                component.setRemoteAddress(endpoint);
+                component.setVisibility(ProcessingComponentVisibility.USER);
+                component.setOwner(processInfo.getCapabilityInfo().getUserName());
+                component.setVersion("WPS 1.0");
+                final List<Parameter> params = processInfo.getParameters().entrySet().iterator().next().getValue();
+                component.setParameters(params.stream().map(Parameter::toParameterDescriptor).collect(Collectors.toList()));
+                component.setTargets(processInfo.getOutputs());
+                if (Boolean.TRUE.equals(save)) {
+                    component = wpsComponentService.save(component);
+                }
+                return prepareResult(component);
             }
         } catch (Exception e) {
             return handleException(e);

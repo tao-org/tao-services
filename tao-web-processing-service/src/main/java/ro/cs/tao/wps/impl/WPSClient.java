@@ -6,10 +6,13 @@ import org.geotools.data.wps.WebProcessingService;
 import org.geotools.data.wps.request.DescribeProcessRequest;
 import org.geotools.data.wps.response.DescribeProcessResponse;
 import org.geotools.ows.ServiceException;
+import ro.cs.tao.component.DataDescriptor;
+import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.WPSAuthentication;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.execution.wps.WPSHttpClient;
 import ro.cs.tao.services.interfaces.WebProcessingService.ProcessInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
@@ -92,6 +95,22 @@ public class WPSClient {
             }
         }
         info.setParameters(parameters);
+        final EList output = pdt.getProcessOutputs().getOutput();
+        final List<TargetDescriptor> outDecriptors = new ArrayList<>();
+        for (Object o : output) {
+            final OutputDescriptionType outParam = (OutputDescriptionType) o;
+            final TargetDescriptor descriptor = new TargetDescriptor();
+            descriptor.setId(outParam.getIdentifier().getValue());
+            descriptor.setCardinality(0);
+            descriptor.setName(title + " output");
+            final DataDescriptor dataDescriptor = new DataDescriptor();
+            dataDescriptor.setFormatType(DataFormat.OTHER);
+            dataDescriptor.setFormatName(outParam.getComplexOutput().getDefault().getFormat().getMimeType());
+            dataDescriptor.setLocation(outParam.getTitle().getValue());
+            descriptor.setDataDescriptor(dataDescriptor);
+            outDecriptors.add(descriptor);
+        }
+        info.setOutputs(outDecriptors);
         return info;
     }
 
