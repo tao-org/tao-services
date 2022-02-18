@@ -72,6 +72,11 @@ public class FileStorageService implements StorageService<MultipartFile> {
     public FileStorageService() { }
 
     @Override
+    public boolean isIntendedFor(String protocol) {
+        return "file".equalsIgnoreCase(protocol);
+    }
+
+    @Override
     public Path createFolder(String folderRelativePath, boolean userOnly) throws IOException {
         String cleanPath = StringUtils.cleanPath(folderRelativePath);
         Path basePath = userOnly ?
@@ -414,9 +419,11 @@ public class FileStorageService implements StorageService<MultipartFile> {
         final Set<StorageService> services = registry.getServices();
         final List<FileObject> files = new ArrayList<>();
         try {
-            if (services != null && services.size() > 0) {
-                final StorageService service = services.iterator().next();
-                files.addAll(service.listUserWorkspace(principalName));
+            if (services != null) {
+                final StorageService service = services.stream().filter(s -> s.isIntendedFor("s3")).findFirst().orElse(null);
+                if (service != null) {
+                    files.addAll(service.listUserWorkspace(principalName));
+                }
             }
         } catch (IOException e) {
             Logger.getLogger(getClass().getName()).warning(e.getMessage());
@@ -428,9 +435,11 @@ public class FileStorageService implements StorageService<MultipartFile> {
         final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
         final Set<StorageService> services = registry.getServices();
         List<FileObject> files = null;
-        if (services != null && services.size() > 0) {
-            final StorageService service = services.iterator().next();
-            files = service.listFiles(currentPath, exclusions);
+        if (services != null) {
+            final StorageService service = services.stream().filter(s -> s.isIntendedFor("s3")).findFirst().orElse(null);
+            if (service != null) {
+                files = service.listFiles(currentPath, exclusions);
+            }
         }
         return files;
     }

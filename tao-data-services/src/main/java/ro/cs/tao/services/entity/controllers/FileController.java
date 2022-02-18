@@ -25,10 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
@@ -178,7 +175,8 @@ public class FileController extends BaseController {
     }
 
     @RequestMapping(value = "/remote", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> listRemote(@RequestParam("folder") String relativeFolder) {
+    public ResponseEntity<ServiceResponse<?>> listRemote(@RequestParam("protocol") String protocol,
+                                                         @RequestParam("folder") String relativeFolder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
@@ -186,14 +184,18 @@ public class FileController extends BaseController {
             } else {
                 final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
                 final Set<StorageService> services = registry.getServices();
-                if (services == null || services.size() != 1) {
+                if (services == null) {
                     throw new IllegalArgumentException("No remote file repository is available");
                 }
                 Path relativePath = Paths.get(relativeFolder);
                 if (relativePath.getName(0).toString().equals(currentUser())) {
                     relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
                 }
-                responseEntity = prepareResult(services.iterator().next().listFiles(Paths.get(relativeFolder), null));
+                final StorageService service = services.stream().filter(s -> s.isIntendedFor(protocol)).findFirst().orElse(null);
+                if (service == null) {
+                    throw new IllegalArgumentException("No remote file repository for the given protocol is available");
+                }
+                responseEntity = prepareResult(service.listFiles(Paths.get(relativeFolder), null));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -270,14 +272,18 @@ public class FileController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/download/s3", method = RequestMethod.GET)
-    public void downloadFromS3(@RequestParam("fileName") String fileName, HttpServletResponse response) {
+    @RequestMapping(value = "/download/{protocol}", method = RequestMethod.GET)
+    public void downloadFromS3(@PathVariable("protocol") String protocol,
+                               @RequestParam("fileName") String fileName, HttpServletResponse response) {
         try {
             final Set<StorageService> services = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class).getServices();
-            if (services == null || services.size() != 1) {
+            if (services == null) {
                 response.sendError(HttpStatus.BAD_REQUEST.value(), "Not supported");
             } else {
-                final StorageService s3Client = services.iterator().next();
+                final StorageService client = services.stream().filter(s -> s.isIntendedFor(protocol)).findFirst().orElse(null);
+                if (client == null) {
+                    throw new IllegalArgumentException("No remote file repository of the given protocol is available");
+                }
                 final Path path = Paths.get(fileName.replace("s3://", ""));
                 // the only way we can tell it's a "folder"
                 if (fileName.endsWith("/")) {
@@ -285,11 +291,11 @@ public class FileController extends BaseController {
                     response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
                     response.setStatus(HttpServletResponse.SC_OK);
                     try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
-                        s3Client.streamToZip(path, zipOutputStream);
+                        client.streamToZip(path, zipOutputStream);
                         zipOutputStream.finish();
                     }
                 } else {
-                    InputStream stream = (InputStream) s3Client.download(path);
+                    InputStream stream = (InputStream) client.download(path);
                     response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                     response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
                     response.setStatus(HttpServletResponse.SC_OK);
