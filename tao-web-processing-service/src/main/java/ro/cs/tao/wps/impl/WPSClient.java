@@ -76,18 +76,19 @@ public class WPSClient {
             Parameter param = new Parameter();
             final String pId = parameter.getIdentifier().getValue();
             param.setType(parameter.getLiteralData().getDataType().getValue());
-            param.setName(pId);
             if (pId.contains("~")) {
                 final String[] tokens = pId.split("~");
                 if (!parameters.containsKey(tokens[0])) {
                     parameters.put(tokens[0], new ArrayList<>());
                 }
+                param.setName(tokens[1]);
                 parameters.get(tokens[0]).add(param);
             } else {
-                if (!parameters.containsKey(title)) {
-                    parameters.put(title, new ArrayList<>());
+                if (!parameters.containsKey(pId)) {
+                    parameters.put(pId, new ArrayList<>());
                 }
-                parameters.get(title).add(param);
+                param.setName(pId);
+                parameters.get(pId).add(param);
             }
         }
         info.setParameters(parameters);
