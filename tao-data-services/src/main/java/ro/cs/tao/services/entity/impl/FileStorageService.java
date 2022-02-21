@@ -62,6 +62,7 @@ import java.util.zip.ZipOutputStream;
 @Service("fileStorageService")
 public class FileStorageService implements StorageService<MultipartFile> {
 
+    private static final String PROTOCOL = "file";
     @Autowired
     private EOProductProvider productProvider;
     @Autowired
@@ -73,7 +74,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
 
     @Override
     public boolean isIntendedFor(String protocol) {
-        return "file".equalsIgnoreCase(protocol);
+        return PROTOCOL.equalsIgnoreCase(protocol);
     }
 
     @Override
@@ -339,7 +340,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
             final String pathToRecord = (isInFiles ?
                     realPath.subpath(filesNameIndex, realPath.getNameCount()).toString() :
                     startPath.resolve(path).toString()).replace("\\", "/");
-            final FileObject fileObject = new FileObject(pathToRecord, Files.isDirectory(realPath), size);
+            final FileObject fileObject = new FileObject(PROTOCOL, pathToRecord, Files.isDirectory(realPath), size);
             if (isInFiles) {
                 if (auxAttributes.containsKey(realPath)) {
                     fileObject.setAttributes(auxAttributes.get(realPath));
@@ -503,7 +504,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
             }
         }
         final Map<String, String> attributeMap = product.toAttributeMap();
-        final FileObject fileObject = new FileObject(relativePath.toString(),
+        final FileObject fileObject = new FileObject(PROTOCOL, relativePath.toString(),
                                                      Files.isDirectory(productPath),
                                                      Long.parseLong(attributeMap.get("size")));
         fileObject.setProductName(product.getName());

@@ -24,6 +24,7 @@ import java.util.zip.ZipOutputStream;
 
 @Service("objectStorageService")
 public class ObjectStorageService implements StorageService<byte[]> {
+    private static final String PROTOCOL = "swift";
     @Autowired
     private EOProductProvider productProvider;
     @Autowired
@@ -35,7 +36,7 @@ public class ObjectStorageService implements StorageService<byte[]> {
 
     @Override
     public boolean isIntendedFor(String protocol) {
-        return "swift".equalsIgnoreCase(protocol);
+        return PROTOCOL.equalsIgnoreCase(protocol);
     }
 
     @Override
@@ -175,7 +176,7 @@ public class ObjectStorageService implements StorageService<byte[]> {
         if (objects != null) {
             objects.forEach(object -> {
                 final String oPath = bucket + "/" + object.getDirectoryName() + (!object.isDirectory() ? "/" + object.getName() : "");
-                final FileObject fileObject = new FileObject(oPath, object.isDirectory(), object.getSizeInBytes());
+                final FileObject fileObject = new FileObject(PROTOCOL, oPath, object.isDirectory(), object.getSizeInBytes());
                 fileObject.addAttribute("remotePath", "swift://" + fileObject.getRelativePath());
                 files.add(fileObject);
             });
@@ -192,7 +193,7 @@ public class ObjectStorageService implements StorageService<byte[]> {
         if (objects != null) {
             for (SwiftObject object : objects) {
                 final String oPath = bucket + "/" + object.getDirectoryName() + (!object.isDirectory() ? "/" + object.getName() : "");
-                final FileObject fileObject = new FileObject(oPath, object.isDirectory(), object.getSizeInBytes());
+                final FileObject fileObject = new FileObject(PROTOCOL, oPath, object.isDirectory(), object.getSizeInBytes());
                 fileObject.addAttribute("remotePath", "swift://" + fileObject.getRelativePath());
                 files.add(fileObject);
                 if (object.isDirectory()) {

@@ -59,6 +59,7 @@ public class KeycloakLoginModule extends TaoLoginModule {
                     userProvider.save(existing);
                 }
                 userEntity = existing;
+                logger.fine("User " + user + " logged in");
             } catch (PersistenceException e) {
                 logger.severe(String.format("Cannot persist user '%s'. Reason: %s", user, e.getMessage()));
             }
