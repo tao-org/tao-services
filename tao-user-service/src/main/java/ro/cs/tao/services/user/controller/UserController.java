@@ -28,6 +28,7 @@ import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.UserService;
+import ro.cs.tao.services.interfaces.WorkspaceService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
@@ -49,6 +50,9 @@ public class UserController extends BaseController {
     @Autowired
     private TokenManagementService tokenService;
 
+    @Autowired
+    private WorkspaceService workspaceService;
+
     @RequestMapping(value = "/groups/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getGroups() {
         return prepareResult(userService.getGroups());
@@ -65,6 +69,7 @@ public class UserController extends BaseController {
             // we need to know if the user is TAO internal or external
             final User userInfo = userService.getUserInfo(username);
             final ConfigurationProvider configManager = ConfigurationManager.getInstance();
+            workspaceService.registerUser(username);
             if (!userInfo.isExternal()) {
                 // internal TAO authenticated users need to set a password
                 // we need a redirect to TAO reset password page from activation email within email that hits this endpoint

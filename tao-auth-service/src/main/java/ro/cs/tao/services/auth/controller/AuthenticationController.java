@@ -17,6 +17,7 @@ package ro.cs.tao.services.auth.controller;
 
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -50,7 +51,13 @@ public class AuthenticationController extends BaseController {
         try {
             final AuthInfo authInfo = authenticationService.login(user, password);
             if (authInfo != null && authInfo.isAuthenticated()) {
-                return prepareResult(authInfo);
+                if (authInfo.getRefreshToken() != null) {
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.add("Set-Cookie", "refreshToken=" + authInfo.getRefreshToken() + ";Max-Age=" + authInfo.getExpiration());
+                    return ResponseEntity.status(HttpStatus.OK).headers(headers).body(new ServiceResponse<>(authInfo));
+                } else {
+                    return prepareResult(authInfo);
+                }
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
@@ -64,12 +71,30 @@ public class AuthenticationController extends BaseController {
         if (StringUtilities.isNullOrEmpty(authToken)) {
             return prepareResult("Expected request header absent!", ResponseStatus.FAILED);
         }
-
         try {
             if (authenticationService.logout(authToken)) {
                 return prepareResult("Logout successful", HttpStatus.OK);
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
+            }
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    @RequestMapping(value = "/refresh", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> refresh(@RequestHeader("X-Auth-Token") String authToken,
+                                                      @RequestParam(name = "user") String userName,
+                                                      @RequestParam(name = "token") String refreshToken) {
+        if (StringUtilities.isNullOrEmpty(authToken)) {
+            return prepareResult("Expected request header absent!", ResponseStatus.FAILED);
+        }
+        try {
+            final String newToken = authenticationService.getNewToken(userName, refreshToken);
+            if (newToken != null) {
+                return prepareResult(newToken);
+            } else {
+                return prepareResult(null, HttpStatus.BAD_REQUEST);
             }
         } catch (Exception ex) {
             return handleException(ex);
