@@ -17,6 +17,7 @@ package ro.cs.tao.services.auth.impl;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.persistence.UserProvider;
@@ -71,10 +72,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                                             userName, ExceptionUtils.getStackTrace(e)));
             }
             // retrieve user groups and send them as profiles
-            return new AuthInfo(true, authenticationToken.getToken(), user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
+            return new AuthInfo(true, authenticationToken.getToken(),
+                                authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
+                                user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
         }
         // unauthorized
-        return new AuthInfo(false, null, null);
+        return new AuthInfo(false, null, null, -1, null);
     }
 
     @Override
@@ -89,5 +92,26 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             logger.finest("Invalid auth token received at logout: " + authToken);
             return false;
         }
+    }
+
+    @Override
+    public String getNewToken(String userName, String refreshToken) {
+        final User user = userProvider.getByName(userName);
+        if (user != null && user.getStatus() == UserStatus.ACTIVE) {
+            Token authenticationToken = tokenService.getUserToken(userName);
+            if (authenticationToken != null) {
+                final String refreshTokenOriginal = authenticationToken.getRefreshToken();
+                if (refreshToken.equals(refreshTokenOriginal)) {
+                    final Token token = tokenService.generateNewToken(refreshToken);
+                    if (token != null) {
+                        final Authentication authentication = tokenService.retrieve(authenticationToken.getToken());
+                        tokenService.removeUserTokens(userName);
+                        tokenService.store(token, authentication);
+                        return token.getToken();
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

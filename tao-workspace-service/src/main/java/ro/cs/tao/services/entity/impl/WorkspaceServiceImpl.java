@@ -15,12 +15,10 @@ import ro.cs.tao.utils.FileUtilities;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Logger;
@@ -56,25 +54,16 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     public void startWatching() {
         List<User> activeUsers = userProvider.list(UserStatus.ACTIVE);
         if (activeUsers != null) {
-            final Path rootPath = Paths.get(SystemVariable.ROOT.value());
             for (User user : activeUsers) {
                 if (!SystemPrincipal.instance().getName().equals(user.getUsername())) {
-                    try {
-                        Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(user.getUsername()));
-                        this.walkAndRegisterDirectories(userWorkspace);
-                        int usedSpace = getUsedSpace(user.getUsername());
-                        this.updateUserInputQuota(user.getUsername(), usedSpace);
-                    } catch (IOException e) {
-                        System.out.printf("Failed to watch user workspace [user=%s, reason=%s]%n",
-                                user.getUsername(), e.getMessage());
-                    }
+                    registerUser(user.getUsername());
                 }
             }
         }
-        WatcherMonitor watcherMonitor = new WatcherMonitor();
+        final WatcherMonitor watcherMonitor = new WatcherMonitor();
         watcherMonitor.setName("WatcherMonitor");
         watcherMonitor.start();
-        QueueMonitor monitor = new QueueMonitor();
+        final QueueMonitor monitor = new QueueMonitor();
         monitor.setName("QueueMonitor");
         monitor.start();
         logger.finest("Workspace service initialization completed");
@@ -84,8 +73,31 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     public void stopWatching() {
         try {
             this.watcher.close();
+        } catch (IOException ignored) {
+        }
+    }
+
+    @Override
+    public void registerUser(String userName) {
+        final Path rootPath = Paths.get(SystemVariable.ROOT.value());
+        try {
+            Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userName));
+            walkAndRegisterDirectories(userWorkspace);
+            int usedSpace = getUsedSpace(userName);
+            updateUserInputQuota(userName, usedSpace);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(String.format("Failed to watch user workspace [user=%s, reason=%s]%n", userName, e.getMessage()));
+        }
+    }
+
+    @Override
+    public void unregisterUser(String userName) {
+        final Path rootPath = Paths.get(SystemVariable.ROOT.value());
+        try {
+            Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userName));
+            walkAndUnregisterDirectories(userWorkspace);
+        } catch (IOException e) {
+            logger.severe(String.format("Failed to watch user workspace [user=%s, reason=%s]%n", userName, e.getMessage()));
         }
     }
 
@@ -98,7 +110,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
             userProvider.updateInputQuota(userName, usedSpace);
             logger.finest(String.format("Input quota update [%s:%dMB]", userName, usedSpace));
         } catch (PersistenceException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
     }
 
@@ -107,8 +119,24 @@ public class WorkspaceServiceImpl implements WorkspaceService {
      * @param dir - directory to be registered
      */
     private void registerDirectory(Path dir) throws IOException {
-        WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+        final WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         keys.put(key, dir);
+    }
+
+    /**
+     * Unregister the given directory from the WatchService
+     * @param dir - directory to be unregistered
+     */
+    private void unregisterDirectory(Path dir) throws IOException {
+        final Iterator<Map.Entry<WatchKey, Path>> iterator = keys.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<WatchKey, Path> next = iterator.next();
+            if (next.getValue().equals(dir)) {
+                next.getKey().cancel();
+                iterator.remove();
+                break;
+            }
+        }
     }
 
     /**
@@ -126,13 +154,27 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     }
 
     /**
+     * Unregister the given directory, and all its sub-directories, from the WatchService.
+     * @param start - the path to the root directory
+     */
+    private void walkAndUnregisterDirectories(final Path start) throws IOException {
+        Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                unregisterDirectory(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    /**
      * Get the user name from the path
      * e.g.: mnt\tao\working_dir\simple should return simple
      * @param path - current given path
      * @return username
      */
     private String getUserName(String path) {
-        StringTokenizer dirTokenizer = new StringTokenizer(path, File.separator);
+        final StringTokenizer dirTokenizer = new StringTokenizer(path, File.separator);
         while (dirTokenizer.hasMoreElements()) {
             String nextDirectory = dirTokenizer.nextToken();
             if (nextDirectory.equalsIgnoreCase(WORKING_DIR)) {
@@ -222,9 +264,11 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                     final String userName = getUserName(entry);
                     final int usedSpace = getUsedSpace(userName);
                     updateUserInputQuota(userName, usedSpace);
-                } catch (InterruptedException | IOException e) {
+                } catch (InterruptedException e) {
                     logger.severe(String.format("The thread %s has been interrupted. Reason: %s",
                             this.getName(), ExceptionUtils.getStackTrace(e)));
+                } catch (IOException | UncheckedIOException e) {
+                    logger.warning(e.getMessage());
                 }
             }
         }

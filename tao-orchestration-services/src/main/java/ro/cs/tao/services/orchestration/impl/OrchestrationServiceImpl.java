@@ -150,6 +150,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             summary.setTaskSummaries(tasksStatus);
             summaries.add(summary);
         }
+        // Sort by start timestamp descending (newest first)
+        summaries.sort((o1, o2) -> o2.getJobStart().compareTo(o1.getJobStart()));
         return summaries;
     }
 
@@ -176,6 +178,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             summary.setTaskSummaries(tasksStatus);
             summaries.add(summary);
         }
+        // Sort by end timestamp descending (newest first)
+        summaries.sort((o1, o2) -> o2.getJobEnd().compareTo(o1.getJobEnd()));
         return summaries;
     }
 

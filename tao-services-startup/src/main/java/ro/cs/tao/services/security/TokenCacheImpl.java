@@ -7,19 +7,31 @@ import ro.cs.tao.security.TokenCache;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class TokenCacheImpl implements TokenCache {
     private final Map<String, Tuple<Token, Authentication>> cache = Collections.synchronizedMap(new HashMap<>());
+    private final Logger logger = Logger.getLogger(TokenCache.class.getName());
 
     @Override
     public void evictExpired() {
-        cache.entrySet().removeIf(e -> e.getValue().getKeyOne().isExpired());
+        final Iterator<Map.Entry<String, Tuple<Token, Authentication>>> iterator = cache.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<String, Tuple<Token, Authentication>> next = iterator.next();
+            if (next.getValue().getKeyOne().isExpired()) {
+                logger.fine(String.format("Token %s for user %s expired", next.getKey(), next.getValue().getKeyOne().getToken()));
+                iterator.remove();
+            }
+        }
     }
 
     @Override
     public void put(Token token, Authentication authentication) {
-        cache.put(authentication.getPrincipal().toString(), new Tuple<>(token, authentication));
+        final String user = authentication.getPrincipal().toString();
+        cache.put(user, new Tuple<>(token, authentication));
+        logger.fine(String.format("Token %s for user %s cached", token.getToken(), user));
     }
 
     @Override

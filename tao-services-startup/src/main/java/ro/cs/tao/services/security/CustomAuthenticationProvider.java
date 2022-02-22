@@ -25,10 +25,7 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.security.AuthenticationMode;
-import ro.cs.tao.security.GroupPrincipal;
-import ro.cs.tao.security.Token;
-import ro.cs.tao.security.UserPrincipal;
+import ro.cs.tao.security.*;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.security.token.AuthenticationWithToken;
 import ro.cs.tao.user.Group;
@@ -95,7 +92,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 userToken = tokenService.generateNewToken(userName, user.getPassword());
                 tokenService.store(userToken, authenticationWithToken);
             } else if (tokenService.retrieve(userToken.getToken()) == null) {
-                tokenService.store(userToken, authenticationWithToken);
+                tokenService.store(new Token(userToken.getToken(), userToken.getRefreshToken(), TokenProvider.defaultExpiration()),
+                                   authenticationWithToken);
             }
             String token = null;
             if (userToken != null) {
