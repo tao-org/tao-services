@@ -35,6 +35,11 @@ public class WorkspaceServiceImpl
     }
 
     @Override
+    public List<Workspace> getByUser(String userName) {
+        return workspaceProvider.getByUser(userName);
+    }
+
+    @Override
     public List<Workspace> list(Iterable<Integer> ids) {
         return workspaceProvider.list(ids);
     }
