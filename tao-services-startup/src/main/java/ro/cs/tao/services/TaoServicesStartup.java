@@ -107,7 +107,8 @@ public class TaoServicesStartup extends StartupBase {
                                               entry.getKey(), instances.stream().map(i -> i.getClass().getSimpleName())
                                                       .sorted().collect(Collectors.joining(","))));
                 }
-                logger.info("Web interface is accessible at https://localhost:" + cfgManager.getValue("server.port"));
+                final String url = cfgManager.getValue("tao.services.base");
+                logger.info(String.format("Web interface is accessible at %s", url));
                 Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.value(), new StartupCompletedMessage());
             });
         }
