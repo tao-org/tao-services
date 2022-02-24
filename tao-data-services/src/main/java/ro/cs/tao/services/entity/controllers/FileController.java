@@ -17,6 +17,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -32,6 +33,7 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.EOProductProvider;
+import ro.cs.tao.persistence.WorkspaceProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -39,6 +41,7 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.topology.Workspace;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -59,6 +62,9 @@ public class FileController extends BaseController {
 
     @Autowired
     private EOProductProvider productProvider;
+
+    @Autowired
+    private WorkspaceProvider workspaceProvider;
 
     @RequestMapping(value = "/config", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getConfiguration(@RequestParam("filter") String filter) {
@@ -175,28 +181,36 @@ public class FileController extends BaseController {
     }
 
     @RequestMapping(value = "/remote", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> listRemote(@RequestParam("protocol") String protocol,
+    public ResponseEntity<ServiceResponse<?>> listRemote(@RequestParam("workspace") int workspaceId,
                                                          @RequestParam("folder") String relativeFolder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
-                responseEntity = prepareResult(fileStorage.listPublicWorkspace());
-            } else {
-                final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
-                final Set<StorageService> services = registry.getServices();
-                if (services == null) {
-                    throw new IllegalArgumentException("No remote file repository is available");
-                }
-                Path relativePath = Paths.get(relativeFolder);
-                if (relativePath.getName(0).toString().equals(currentUser())) {
-                    relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
-                }
-                final StorageService service = services.stream().filter(s -> s.isIntendedFor(protocol)).findFirst().orElse(null);
-                if (service == null) {
-                    throw new IllegalArgumentException("No remote file repository for the given protocol is available");
-                }
-                responseEntity = prepareResult(service.listFiles(Paths.get(relativeFolder), null));
+            if (StringUtils.isEmpty(relativeFolder) || relativeFolder.startsWith(".")) {
+                throw new IOException("For remote files, the relative folder must begin with the bucket name");
             }
+            if (workspaceId == 1) {
+                // delegate to /user endpoint since it's a local folder
+                return list(relativeFolder);
+            }
+            final Workspace workspace = workspaceProvider.get(workspaceId);
+            if (workspace == null) {
+                throw new IOException("Workspace does not exist");
+            }
+            final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
+            final Set<StorageService> services = registry.getServices();
+            if (services == null) {
+                throw new IllegalArgumentException("No remote file repository is available");
+            }
+            Path relativePath = Paths.get(relativeFolder);
+            if (relativePath.getName(0).toString().equals(currentUser())) {
+                relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
+            }
+            final StorageService service = services.stream().filter(s -> s.isIntendedFor(workspace.getUrlPrefix())).findFirst().orElse(null);
+            if (service == null) {
+                throw new IllegalArgumentException("No remote file repository for the given protocol is available");
+            }
+            service.setup(workspace.getParameters());
+            responseEntity = prepareResult(service.listFiles(Paths.get(relativeFolder), null));
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
