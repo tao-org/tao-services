@@ -15,12 +15,15 @@
  */
 package ro.cs.tao.services.entity.util;
 
+import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.services.entity.beans.WorkspaceBean;
+import ro.cs.tao.services.entity.beans.WorkspaceTypeBean;
 import ro.cs.tao.services.model.component.DataSourceGroupInfo;
 import ro.cs.tao.services.model.component.DataSourceInfo;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
@@ -28,6 +31,8 @@ import ro.cs.tao.services.model.component.WPSComponentInfo;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
+import ro.cs.tao.topology.Workspace;
+import ro.cs.tao.topology.WorkspaceType;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 
 import java.util.ArrayList;
@@ -105,4 +110,24 @@ public final class ServiceTransformUtils {
         return new WorkflowInfo(descriptor);
     }
 
+    public static WorkspaceTypeBean toBean(WorkspaceType type) {
+        final WorkspaceTypeBean bean = new WorkspaceTypeBean();
+        bean.setId(type.value());
+        bean.setName(type.name());
+        bean.setDescription(type.friendlyName());
+        bean.setParameters(new ArrayList<>(type.getParameters()));
+        bean.getParameters().sort(String::compareTo);
+        return bean;
+    }
+
+    public static Workspace fromBean(WorkspaceBean bean) {
+        final Workspace entity = new Workspace();
+        entity.setId(bean.getId());
+        entity.setName(bean.getName());
+        entity.setDescription(bean.getDescription());
+        entity.setParameters(bean.getParameters());
+        entity.setUrlPrefix(bean.getUrlPrefix());
+        entity.setType(EnumUtils.getEnumConstantByName(WorkspaceType.class, bean.getType()));
+        return entity;
+    }
 }
