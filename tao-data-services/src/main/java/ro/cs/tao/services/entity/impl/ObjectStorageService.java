@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -37,6 +38,11 @@ public class ObjectStorageService implements StorageService<byte[]> {
     @Override
     public boolean isIntendedFor(String protocol) {
         return PROTOCOL.equalsIgnoreCase(protocol);
+    }
+
+    @Override
+    public void setup(Map<String, String> parameters) {
+        swiftService.setParameters(parameters);
     }
 
     @Override

@@ -8,7 +8,7 @@ import ro.cs.tao.execution.monitor.MemoryUnit;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.SystemPrincipal;
-import ro.cs.tao.services.interfaces.WorkspaceService;
+import ro.cs.tao.services.interfaces.WorkspaceWatcherService;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.FileUtilities;
@@ -26,9 +26,9 @@ import java.util.logging.Logger;
 import static java.nio.file.StandardWatchEventKinds.*;
 
 @Service("workspaceService")
-public class WorkspaceServiceImpl implements WorkspaceService {
+public class WorkspaceWatcherServiceImpl implements WorkspaceWatcherService {
 
-    private static final Logger logger = Logger.getLogger(WorkspaceServiceImpl.class.getName());
+    private static final Logger logger = Logger.getLogger(WorkspaceWatcherServiceImpl.class.getName());
     private static final String WORKING_DIR = "working_dir";
     private static final int BOUND = 10;
 
@@ -39,7 +39,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     @Autowired
     private UserProvider userProvider;
 
-    public WorkspaceServiceImpl() {
+    public WorkspaceWatcherServiceImpl() {
         try {
             this.watcher = FileSystems.getDefault().newWatchService();
             this.keys = new HashMap<>();

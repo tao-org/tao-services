@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.services.commons.ServiceLauncher;
-import ro.cs.tao.services.interfaces.WorkspaceService;
+import ro.cs.tao.services.interfaces.WorkspaceWatcherService;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -17,18 +17,18 @@ import javax.annotation.PreDestroy;
 public class WorkspaceServicesLauncher implements ServiceLauncher {
 
     @Autowired
-    WorkspaceService workspaceService;
+    WorkspaceWatcherService workspaceWatcherService;
 
     public static void main(String[] args) {
         SpringApplication.run(WorkspaceServicesLauncher.class, args);
     }
 
     @PostConstruct
-    private void initialize() { workspaceService.startWatching(); }
+    private void initialize() { workspaceWatcherService.startWatching(); }
 
     @PreDestroy
     private void stopWatcher() {
-        workspaceService.stopWatching();
+        workspaceWatcherService.stopWatching();
     }
 
     @Override
