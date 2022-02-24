@@ -8,6 +8,7 @@ import ro.cs.tao.services.interfaces.WorkspaceService;
 import ro.cs.tao.topology.Workspace;
 import ro.cs.tao.topology.WorkspaceType;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,7 +58,7 @@ public class WorkspaceServiceImpl
         existing.setName(object.getName());
         existing.setDescription(object.getDescription());
         existing.setType(object.getType());
-        final Map<String, String> parameters = object.getParameters();
+        final HashMap<String, String> parameters = object.getParameters();
         if (parameters == null && object.getType() != WorkspaceType.LOCAL) {
             throw new IllegalArgumentException("Worspace parameters not supplied");
         }

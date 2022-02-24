@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
-@Service("workspaceService")
+@Service("workspaceWatcherService")
 public class WorkspaceWatcherServiceImpl implements WorkspaceWatcherService {
 
     private static final Logger logger = Logger.getLogger(WorkspaceWatcherServiceImpl.class.getName());
