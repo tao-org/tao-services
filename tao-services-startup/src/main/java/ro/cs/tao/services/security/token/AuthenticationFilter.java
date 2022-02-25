@@ -61,7 +61,7 @@ public class AuthenticationFilter extends GenericFilterBean {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
         HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
-        if (!systemInitialised) {
+        if (!systemInitialised && !httpResponse.isCommitted()) {
             httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "The system is not able yet to serve http requests");
         }
         Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
@@ -85,10 +85,14 @@ public class AuthenticationFilter extends GenericFilterBean {
         } catch (InternalAuthenticationServiceException internalAuthenticationServiceException) {
             SecurityContextHolder.clearContext();
             logger.log(Level.SEVERE, "Internal authentication service exception", internalAuthenticationServiceException);
-            httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            if (!httpResponse.isCommitted()) {
+                httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            }
         } catch (AuthenticationException authenticationException) {
             SecurityContextHolder.clearContext();
-            httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, authenticationException.getMessage());
+            if (!httpResponse.isCommitted()) {
+                httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, authenticationException.getMessage());
+            }
         } catch (Throwable t) {
             ExceptionUtils.getStackTrace(logger, t);
         }

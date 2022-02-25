@@ -133,7 +133,8 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
     }
 
     @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> list(@RequestParam("folder") String relativeFolder) {
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam("folder") String relativeFolder,
+                                                   @RequestParam(name = "last", required = false) String lastItem) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
@@ -143,7 +144,8 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
                 if (relativePath.getName(0).toString().equals(currentUser())) {
                     relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
                 }
-                responseEntity = prepareResult(fileStorageService.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder), null));
+                final Path lastPath = lastItem != null ? Paths.get(lastItem) : null;
+                responseEntity = prepareResult(fileStorageService.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder), null, lastPath));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -198,7 +200,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
                 if (relativeFolder.startsWith("public")) {
                     relativeFolder = relativeFolder.substring(relativeFolder.indexOf('/') + 1);
                 }
-                responseEntity = prepareResult(fileStorageService.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder), null));
+                responseEntity = prepareResult(fileStorageService.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder), null, null));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);

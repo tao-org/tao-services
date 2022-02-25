@@ -210,6 +210,9 @@ public class WorkspaceWatcherServiceImpl implements WorkspaceWatcherService {
                 } catch (InterruptedException x) {
                     logger.finest("Workspace service interrupted");
                     return;
+                } catch (ClosedWatchServiceException e) {
+                    logger.fine("Workspace service closed");
+                    return;
                 }
                 Path directory = keys.get(key);
                 if (directory == null) {
