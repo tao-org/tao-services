@@ -278,11 +278,11 @@ public class FileStorageService implements StorageService<MultipartFile> {
         final Path realRoot = SystemSessionContext.instance().getPrincipal().getName().equals(principalName) ?
                 Paths.get(SystemVariable.SHARED_FILES.value()) :
                 SessionStore.currentContext().getUploadPath();
-        return listFiles(realRoot, null);
+        return listFiles(realRoot, null, null);
     }
 
     @Override
-    public List<FileObject> listFiles(Path realRoot, Set<Path> exclusions) throws IOException {
+    public List<FileObject> listFiles(Path realRoot, Set<Path> exclusions, Path lastItem) throws IOException {
         final Path root = Paths.get(SystemVariable.ROOT.value()).toAbsolutePath();
         realRoot = realRoot.toAbsolutePath();
         final Path startPath = root.relativize(realRoot);
@@ -432,25 +432,12 @@ public class FileStorageService implements StorageService<MultipartFile> {
         return files;
     }
 
-    private List<FileObject> listS3Bucket(Path currentPath, Set<Path> exclusions) throws IOException {
-        final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
-        final Set<StorageService> services = registry.getServices();
-        List<FileObject> files = null;
-        if (services != null) {
-            final StorageService service = services.stream().filter(s -> s.isIntendedFor("s3")).findFirst().orElse(null);
-            if (service != null) {
-                files = service.listFiles(currentPath, exclusions);
-            }
-        }
-        return files;
-    }
-
     private List<FileObject> listProducts(String principalName) throws IOException {
         boolean isSystem = SystemSessionContext.instance().getPrincipal().getName().equals(principalName);
         final Path realRoot = isSystem ? Paths.get(SystemVariable.SHARED_WORKSPACE.value()) : SessionStore.currentContext().getWorkspace();
         final Set<Path> exclusions = new HashSet<>();
         exclusions.add(realRoot.resolve("files").toAbsolutePath());
-        final List<FileObject> list = listFiles(realRoot, exclusions);
+        final List<FileObject> list = listFiles(realRoot, exclusions, null);
         if (isSystem) {
             // add products published by other users (for system account, it means all other users)
             final List<EOProduct> products = productProvider.getOtherPublishedProducts(principalName);

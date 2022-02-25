@@ -106,7 +106,8 @@ public class FileController extends BaseController {
     }
 
     @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> list(@RequestParam("folder") String relativeFolder) {
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam("folder") String relativeFolder,
+                                                   @RequestParam(name = "last", required = false) String lastItem) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
@@ -116,7 +117,8 @@ public class FileController extends BaseController {
                 if (relativePath.getName(0).toString().equals(currentUser())) {
                     relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
                 }
-                responseEntity = prepareResult(fileStorage.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder), null));
+                Path lastPath = lastItem != null ? Paths.get(lastItem) : null;
+                responseEntity = prepareResult(fileStorage.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder), null, lastPath));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -171,7 +173,7 @@ public class FileController extends BaseController {
                 if (relativeFolder.startsWith("public")) {
                     relativeFolder = relativeFolder.substring(relativeFolder.indexOf('/') + 1);
                 }
-                responseEntity = prepareResult(fileStorage.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder), null));
+                responseEntity = prepareResult(fileStorage.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder), null, null));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -182,7 +184,8 @@ public class FileController extends BaseController {
 
     @RequestMapping(value = "/remote", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listRemote(@RequestParam("workspace") int workspaceId,
-                                                         @RequestParam("folder") String relativeFolder) {
+                                                         @RequestParam("folder") String relativeFolder,
+                                                         @RequestParam(name = "last", required = false) String lastItem) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (StringUtils.isEmpty(relativeFolder) || relativeFolder.startsWith(".")) {
@@ -190,7 +193,7 @@ public class FileController extends BaseController {
             }
             if (workspaceId == 1) {
                 // delegate to /user endpoint since it's a local folder
-                return list(relativeFolder);
+                return list(relativeFolder, lastItem);
             }
             final Workspace workspace = workspaceProvider.get(workspaceId);
             if (workspace == null) {
@@ -205,13 +208,16 @@ public class FileController extends BaseController {
             if (relativePath.getName(0).toString().equals(currentUser())) {
                 relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
             }
-            final StorageService service = services.stream().filter(s -> s.isIntendedFor(workspace.getUrlPrefix())).findFirst().orElse(null);
+            StorageService service = services.stream().filter(s -> s.isIntendedFor(workspace.getUrlPrefix())).findFirst().orElse(null);
             if (service == null) {
                 throw new IllegalArgumentException("No remote file repository for the given protocol is available");
             }
+            // Don't forget that a SPI produces a single instance, and we don't want to re-use it
+            service = service.getClass().newInstance();
             service.setup(workspace.getParameters());
-            responseEntity = prepareResult(service.listFiles(Paths.get(relativeFolder), null));
-        } catch (IOException ex) {
+            final Path lastPath = lastItem != null ? Paths.get(lastItem) : null;
+            responseEntity = prepareResult(service.listFiles(Paths.get(relativeFolder), null, lastPath));
+        } catch (Exception ex) {
             responseEntity = handleException(ex);
         }
 
