@@ -60,7 +60,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @Service("fileStorageService")
-public class FileStorageService implements StorageService<MultipartFile> {
+public class FileStorageService implements StorageService<MultipartFile, FileSystemResource> {
 
     private static final String PROTOCOL = "file";
     @Autowired
@@ -93,6 +93,14 @@ public class FileStorageService implements StorageService<MultipartFile> {
                   SessionStore.currentContext().getWorkspace(),
                   relativeFolder, description, SessionStore.currentContext().getPrincipal());
         
+        // Update user processing quota
+        UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
+    }
+
+    @Override
+    public void storeFile(InputStream stream, long length, String relativeFolder, String description) throws Exception {
+        storeFile(stream, SessionStore.currentContext().getUploadPath().resolve(relativeFolder));
+
         // Update user processing quota
         UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
     }
@@ -263,7 +271,6 @@ public class FileStorageService implements StorageService<MultipartFile> {
     public List<FileObject> listUserWorkspace(String userName) throws IOException {
         final List<FileObject> files = new ArrayList<>();
         files.addAll(listProducts(userName));
-        files.addAll(listS3Bucket(userName));
         files.addAll(listUploaded(userName));
         return files;
     }
@@ -379,7 +386,7 @@ public class FileStorageService implements StorageService<MultipartFile> {
     }
 
     @Override
-    public Object download(Path path) throws IOException {
+    public FileSystemResource download(Path path) throws IOException {
         FileSystemResource resource = new FileSystemResource(path);
         if (resource.exists() || resource.isReadable()) {
             return resource;
@@ -548,6 +555,15 @@ public class FileStorageService implements StorageService<MultipartFile> {
         data.setCreated(LocalDateTime.now());
         data.setModified(data.getCreated());
         auxiliaryDataProvider.save(data);
+    }
+
+    private void storeFile(InputStream stream, Path uploadPath) throws IOException, PersistenceException {
+        if (stream == null) {
+            return;
+        }
+        Files.createDirectories(uploadPath);
+        // Resolve filename when coming from IE
+        Files.copy(stream, uploadPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
     private List<Path> list(Path path, int depth) throws IOException {

@@ -1,4 +1,4 @@
-package ro.cs.tao.services.entity.service;
+package ro.cs.tao.services.workspace.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
