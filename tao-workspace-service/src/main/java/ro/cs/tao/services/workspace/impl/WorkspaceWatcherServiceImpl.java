@@ -1,4 +1,4 @@
-package ro.cs.tao.services.entity.impl;
+package ro.cs.tao.services.workspace.impl;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -17,6 +17,7 @@
 package ro.cs.tao.wps.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.TargetDescriptor;
@@ -54,7 +55,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
     private ExecutionJobProvider jobProvider;
 
     @Autowired
-    private StorageService<MultipartFile> storageService;
+    private StorageService<MultipartFile, FileSystemResource> storageService;
     long justStartedJobId;
 
     @Override

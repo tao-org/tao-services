@@ -25,7 +25,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
@@ -53,12 +52,13 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.zip.ZipOutputStream;
 
-@Controller
-@RequestMapping("/files")
+//@Controller
+//@RequestMapping("/files")
+@Deprecated
 public class FileController extends BaseController {
 
     @Autowired
-    private StorageService<MultipartFile> fileStorage;
+    private StorageService<MultipartFile, FileSystemResource> fileStorage;
 
     @Autowired
     private EOProductProvider productProvider;

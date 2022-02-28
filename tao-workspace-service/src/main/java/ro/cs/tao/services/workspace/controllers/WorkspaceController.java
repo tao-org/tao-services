@@ -1,5 +1,7 @@
-package ro.cs.tao.services.entity.controllers;
+package ro.cs.tao.services.workspace.controllers;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -8,91 +10,53 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.StreamUtils;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.EOProductProvider;
+import ro.cs.tao.persistence.WorkspaceProvider;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.controllers.DataEntityController;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.services.interfaces.StorageService;
-import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.spi.ServiceRegistry;
+import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.topology.Workspace;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.zip.ZipEntry;
+import java.util.*;
 import java.util.zip.ZipOutputStream;
 
 @Controller
-@RequestMapping("/workspace")
+@RequestMapping("/files")
 public class WorkspaceController extends DataEntityController<EOProduct, String, ProductService> {
 
     @Autowired
-    private StorageService<MultipartFile> fileStorageService;
+    private StorageService<MultipartFile, FileSystemResource> fileStorageService;
 
     @Autowired
     private EOProductProvider productProvider;
 
-    // product endpoints
+    @Autowired
+    private WorkspaceProvider workspaceProvider;
 
-    @RequestMapping(value = "/product", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getByNames(@RequestParam("name") String nameList) {
-        if (nameList == null || nameList.isEmpty()) {
-            return prepareResult("[name] parameter is empty");
-        }
-        return prepareResult(service.getByNames(nameList.split(",")));
-    }
-
-    @RequestMapping(value = "/product/inspect", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> inspect(@RequestParam("sourceDir") String sourceDir) {
-        if (sourceDir == null) {
-            return prepareResult("Source directory not found", ResponseStatus.FAILED);
-        }
-        try {
-            return prepareResult(this.service.inspect(Paths.get(sourceDir)));
-        } catch (IOException e) {
-            return handleException(e);
-        }
-    }
-
-    @RequestMapping(value = "/product/import", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> importProducts(@RequestParam("sourceDir") String sourceDir,
-                                                             @RequestParam("linkOnly") boolean linkOnly) {
-        if (sourceDir == null) {
-            return prepareResult("Source directory not found", ResponseStatus.FAILED);
-        }
-        try {
-            return prepareResult(this.service.importProducts(sourceDir, linkOnly));
-        } catch (QuotaException | IOException e) {
-            return handleException(e);
-        }
-    }
-
-    @RequestMapping(value = "/product/check", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> checkExistingProducts(@RequestParam("names") String[] names) {
-        return prepareResult(this.service.checkExisting(names));
-    }
-
-    // file endpoints
-
+    /**
+     * List all configuration keys.
+     *
+     * @param filter    Filter to be applied on key names
+     */
     @RequestMapping(value = "/config", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getConfiguration(@RequestParam("filter") String filter) {
         if (filter == null || filter.trim().isEmpty()) {
@@ -108,7 +72,85 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         return prepareResult(springSettings);
     }
 
-    @RequestMapping(value = "/user/uploaded/", method = RequestMethod.GET, produces = "application/json")
+    //region Product endpoints
+    /**
+     * Retrieve a list of EOProducts given their names
+     * @param nameList  The list of product names
+     */
+    @RequestMapping(value = "/product", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getByNames(@RequestParam("name") String nameList) {
+        if (nameList == null || nameList.isEmpty()) {
+            return prepareResult("[name] parameter is empty");
+        }
+        return prepareResult(service.getByNames(nameList.split(",")));
+    }
+    /**
+     * Inspects a folder from the local workspace for products not present in the database and imports them.
+     *
+     * @param sourceDir     The source folder
+     */
+    @RequestMapping(value = "/product/inspect", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> inspect(@RequestParam("sourceDir") String sourceDir) {
+        if (sourceDir == null) {
+            return prepareResult("Source directory not found", ResponseStatus.FAILED);
+        }
+        try {
+            return prepareResult(this.service.inspect(Paths.get(sourceDir)));
+        } catch (IOException e) {
+            return handleException(e);
+        }
+    }
+    /**
+     * Imports the products from the given source folder into the TAO workspace.
+     *
+     * @param sourceDir     The source folder
+     * @param linkOnly      If <code>true</code>, only symlinks to the original products will be created
+     *                      in the workspace. Otherwise, the whole products will be copied locally
+     */
+    @RequestMapping(value = "/product/import", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> importProducts(@RequestParam("sourceDir") String sourceDir,
+                                                             @RequestParam("linkOnly") boolean linkOnly) {
+        if (sourceDir == null) {
+            return prepareResult("Source directory not found", ResponseStatus.FAILED);
+        }
+        try {
+            return prepareResult(this.service.importProducts(sourceDir, linkOnly));
+        } catch (QuotaException | IOException e) {
+            return handleException(e);
+        }
+    }
+    /**
+     * Checks if the database contains products with the given names.
+     * @param names     The list of product names to check
+     */
+    @RequestMapping(value = "/product/check", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> checkExistingProducts(@RequestParam("names") String[] names) {
+        return prepareResult(this.service.checkExisting(names));
+    }
+    /**
+     * Returns the preview file of a product.
+     *
+     * @param fileName  The preview file name
+     */
+    @RequestMapping(value = "/product/preview", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> downloadPreview(@RequestParam("fileName") String fileName) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            FileSystemResource file = loadAsResource(fileName + ".png");
+            String result = Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(file.getPath())));
+            responseEntity = prepareResult(result);
+        } catch (IOException ex) {
+            responseEntity = handleException(ex);
+        }
+        return responseEntity;
+    }
+    //endregion
+
+    /**
+     * Lists the files uploaded by the user in his/her workspace.
+     * These files should be found in the 'files' workspace folder.
+     */
+    @RequestMapping(value = "/local/uploaded/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -119,8 +161,10 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
 
         return responseEntity;
     }
-
-    @RequestMapping(value = "/user/", method = RequestMethod.GET, produces = "application/json")
+    /**
+     * Lists the content of the user local workspace.
+     */
+    @RequestMapping(value = "/local/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> list() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -131,8 +175,14 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
 
         return responseEntity;
     }
-
-    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
+    /**
+     * Lists the content of a local workspace folder, optionally starting from the last loaded item (this would allow
+     * for paginating the content if too large).
+     *
+     * @param relativeFolder    The folder relative to the root of the workspace
+     * @param lastItem          [Optional] The last retrieved item to start from
+     */
+    @RequestMapping(value = "/local", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam("folder") String relativeFolder,
                                                    @RequestParam(name = "last", required = false) String lastItem) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -153,8 +203,12 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
 
         return responseEntity;
     }
-
-    @RequestMapping(value = "/user/output", method = RequestMethod.GET, produces = "application/json")
+    /**
+     * Lists the outputs of a workflow.
+     *
+     * @param workflowId    The workflow identifier
+     */
+    @RequestMapping(value = "/output", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listOutputs(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -165,7 +219,9 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
 
         return responseEntity;
     }
-
+    /**
+     * Lists the uploaded files that are visible to all users.
+     */
     @RequestMapping(value = "/public/uploaded/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> listPublicFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -177,7 +233,9 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
 
         return responseEntity;
     }
-
+    /**
+     * Lists the content of the public (shared) workspace
+     */
     @RequestMapping(value = "/public/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listPublic() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -189,7 +247,10 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
 
         return responseEntity;
     }
-
+    /**
+     * Lists the content of the given folder from the public workspace
+     * @param relativeFolder    The folder
+     */
     @RequestMapping(value = "/public", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listPublic(@RequestParam("folder") String relativeFolder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -208,8 +269,61 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
 
         return responseEntity;
     }
+    /**
+     * Lists the content of a remote workspace that is linked to the current user.
+     *
+     * @param workspaceId       The workspace identifier
+     * @param relativeFolder    The folder to start with
+     * @param lastItem          [Optional] The item to start from (in case of paged results)
+     */
+    @RequestMapping(value = "/remote", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> listRemote(@RequestParam("workspace") int workspaceId,
+                                                         @RequestParam("folder") String relativeFolder,
+                                                         @RequestParam(name = "last", required = false) String lastItem) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (StringUtils.isEmpty(relativeFolder) || relativeFolder.startsWith(".")) {
+                throw new IOException("For remote files, the relative folder must begin with the bucket name");
+            }
+            if (workspaceId == 1) {
+                // delegate to /user endpoint since it's a local folder
+                return list(relativeFolder, lastItem);
+            }
+            final Workspace workspace = workspaceProvider.get(workspaceId);
+            if (workspace == null) {
+                throw new IOException("Workspace does not exist");
+            }
+            final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
+            final Set<StorageService> services = registry.getServices();
+            if (services == null) {
+                throw new IllegalArgumentException("No remote file repository is available");
+            }
+            Path relativePath = Paths.get(relativeFolder);
+            if (relativePath.getName(0).toString().equals(currentUser())) {
+                relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
+            }
+            StorageService service = services.stream().filter(s -> s.isIntendedFor(workspace.getUrlPrefix())).findFirst().orElse(null);
+            if (service == null) {
+                throw new IllegalArgumentException("No remote file repository for the given protocol is available");
+            }
+            // Don't forget that a SPI produces a single instance, and we don't want to re-use it
+            service = service.getClass().newInstance();
+            service.setup(workspace.getParameters());
+            final Path lastPath = lastItem != null ? Paths.get(lastItem) : null;
+            responseEntity = prepareResult(service.listFiles(Paths.get(relativeFolder), null, lastPath));
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
 
-    @RequestMapping(value = "/files", method = RequestMethod.POST, produces = "application/json")
+        return responseEntity;
+    }
+
+    /**
+     * Toggles the visibility (public or private) of a folder. A private folder is visible only to the user who created it.
+     * @param folder        The folder
+     * @param visibility    The new visibility
+     */
+    @RequestMapping(value = "/toggle", method = RequestMethod.POST, produces = "application/json")
     @ResponseBody
     public ResponseEntity<ServiceResponse<?>> toggleVisibility(@RequestParam("folder") String folder,
                                                                @RequestParam("visibility") Visibility visibility) {
@@ -238,35 +352,22 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         }
         return responseEntity;
     }
-
-    @RequestMapping(value = "/downloads", method = RequestMethod.GET, produces = { "application/octet-stream", "application/json" } )
+    /**
+     * Downloads a folder as a zip stream.
+     *
+     * @param folder        The folder to be downloaded
+     * @param response      The servlet response
+     */
+    @RequestMapping(value = "/download/folder", method = RequestMethod.GET, produces = { "application/octet-stream", "application/json" } )
     public void download(@RequestParam("folder") String folder, HttpServletResponse response) {
         final Path path = Paths.get(SystemVariable.ROOT.value(), folder);
         if (Files.exists(path) && Files.isDirectory(path)) {
             try {
-                List<Path> paths = FileUtilities.listTree(path);
                 response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                 response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
                 response.setStatus(HttpServletResponse.SC_OK);
                 try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
-                    for (Path p : paths) {
-                        if (Files.isRegularFile(p)) {
-                            String zipPath = path.relativize(p).toString();
-                            ZipEntry entry = new ZipEntry(zipPath);
-                            entry.setSize(Files.size(p));
-                            entry.setTime(System.currentTimeMillis());
-                            zipOutputStream.putNextEntry(entry);
-                            StreamUtils.copy(Files.newInputStream(p), zipOutputStream);
-                            zipOutputStream.closeEntry();
-                        } else {
-                            if (!path.equals(p)) {
-                                String zipPath = path.relativize(p).toString() + File.separator;
-                                ZipEntry entry = new ZipEntry(zipPath);
-                                zipOutputStream.putNextEntry(entry);
-                                zipOutputStream.closeEntry();
-                            }
-                        }
-                    }
+                    this.fileStorageService.streamToZip(path, zipOutputStream);
                     zipOutputStream.finish();
                 }
             } catch (IOException ex) {
@@ -285,8 +386,12 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
             }
         }
     }
-
-    @RequestMapping(value = "/download", method = RequestMethod.GET, produces = { "application/octet-stream", "application/json" } )
+    /**
+     * Downloads a single file from the user workspace.
+     *
+     * @param fileName  The file name
+     */
+    @RequestMapping(value = "/download/file", method = RequestMethod.GET, produces = { "application/octet-stream", "application/json" } )
     public @ResponseBody ResponseEntity<?> download(@RequestParam("fileName") String fileName) {
         ResponseEntity<?> responseEntity;
         try {
@@ -301,21 +406,54 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         }
         return responseEntity;
     }
-
-    @RequestMapping(value = "/file/preview", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<?> downloadPreview(@RequestParam("fileName") String fileName) {
-        ResponseEntity<ServiceResponse<?>> responseEntity;
+    /**
+     * Downloads a file from a remote repository.
+     *
+     * @param protocol      The protocol for the remote repository. Can be one of: s3|swift
+     * @param fileName      The name of the file
+     * @param response      The servlet response
+     */
+    @RequestMapping(value = "/download/{protocol}", method = RequestMethod.GET)
+    public void downloadFromS3(@PathVariable("protocol") String protocol,
+                               @RequestParam("fileName") String fileName, HttpServletResponse response) {
         try {
-            FileSystemResource file = loadAsResource(fileName + ".png");
-            String result = Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(file.getPath())));
-            responseEntity = prepareResult(result);
-        } catch (IOException ex) {
-            responseEntity = handleException(ex);
+            final Set<StorageService> services = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class).getServices();
+            if (services == null) {
+                response.sendError(HttpStatus.BAD_REQUEST.value(), "Not supported");
+            } else {
+                final StorageService client = services.stream().filter(s -> s.isIntendedFor(protocol)).findFirst().orElse(null);
+                if (client == null) {
+                    throw new IllegalArgumentException("No remote file repository of the given protocol is available");
+                }
+                final Path path = Paths.get(fileName.replace("s3://", ""));
+                // the only way we can tell it's a "folder"
+                if (fileName.endsWith("/")) {
+                    response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
+                        client.streamToZip(path, zipOutputStream);
+                        zipOutputStream.finish();
+                    }
+                } else {
+                    InputStream stream = (InputStream) client.download(path);
+                    response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                    response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    IOUtils.copy(stream, response.getOutputStream());
+                    response.flushBuffer();
+                }
+            }
+        } catch (IOException e) {
+            error(e.getMessage());
         }
-        return responseEntity;
     }
-
-    @RequestMapping(value = "/user/folder", method = RequestMethod.POST, produces = "application/json")
+    /**
+     * Creates a folder in the user workspace
+     *
+     * @param folder    The name of the folder
+     */
+    @RequestMapping(value = "/folder/", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> createUserFolder(@RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -326,8 +464,13 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         }
         return responseEntity;
     }
-
-    @RequestMapping(value = "/user/upload", method = RequestMethod.POST, produces = "application/json")
+    /**
+     * Uploads a file into the given folder of the user workspace
+     * @param file          The file to be uploaded
+     * @param folder        The folder into which the file will be uploaded
+     * @param description   A description of the file
+     */
+    @RequestMapping(value = "/upload/", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile file,
                                         @RequestParam("folder") String folder,
                                         @RequestParam("desc") String description) {
@@ -341,7 +484,12 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/public/folder", method = RequestMethod.POST, produces = "application/json")
+    /**
+     * Creates a folder in the public workspace
+     *
+     * @param folder    The name of the folder
+     */
+    @RequestMapping(value = "/public/folder/", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> createPublicFolder(@RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -352,7 +500,12 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         }
         return responseEntity;
     }
-
+    /**
+     * Uploads a file into the given folder of the public workspace
+     * @param file          The file to be uploaded
+     * @param folder        The folder into which the file will be uploaded
+     * @param description   A description of the file
+     */
     @RequestMapping(value = "/public/upload", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> uploadPublic(@RequestParam("file") MultipartFile file,
                                           @RequestParam("folder") String folder,
@@ -369,8 +522,12 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         }
         return responseEntity;
     }
-
-    @RequestMapping(value = "/file", method = RequestMethod.DELETE, produces = "application/json")
+    /**
+     * Deletes a file from the user workspace
+     *
+     * @param fileName      The name of the file to be deleted
+     */
+    @RequestMapping(value = "/delete/", method = RequestMethod.DELETE, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("fileName") String fileName) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -381,8 +538,13 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         }
         return responseEntity;
     }
-
-    @RequestMapping(value = "/file", method = RequestMethod.POST, produces = "application/json")
+    /**
+     * Moves a file or a product to another folder.
+     *
+     * @param source        The source file (or product folder)
+     * @param destination   The destination folder
+     */
+    @RequestMapping(value = "/move/", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> move(@RequestParam("source") String source,
                                                   @RequestParam("destination") String destination) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -399,18 +561,11 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("[fileName] cannot be null or empty");
         }
-        final Path filePath = Paths.get(SystemVariable.ROOT.value(), fileName);
+        final Path filePath = Paths.get(SystemVariable.ROOT.value(), fileName).toAbsolutePath();
         if (!Files.exists(filePath)) {
             throw new IOException(String.format("File '%s' does not exist", filePath));
         }
-        FileSystemResource resource = new FileSystemResource(filePath);
-        //InputStreamResource resource = new InputStreamResource(Files.newInputStream(filePath));
-        //Resource resource = new UrlResource(filePath.toUri());
-        if (resource.exists() || resource.isReadable()) {
-            return resource;
-        } else {
-            throw new IOException("Could not read file: " + fileName);
-        }
+        return (FileSystemResource) this.fileStorageService.download(filePath);
     }
 }
 

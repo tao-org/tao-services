@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/workspace")
-public class WorkspaceController extends DataEntityController<Workspace, Integer, WorkspaceService> {
+public class WorkspaceEntityController extends DataEntityController<Workspace, Integer, WorkspaceService> {
 
     @RequestMapping(value = "/types/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getWorkspaceTypes() {
