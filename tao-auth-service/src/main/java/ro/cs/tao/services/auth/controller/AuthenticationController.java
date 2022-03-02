@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import ro.cs.tao.security.Token;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -83,16 +84,14 @@ public class AuthenticationController extends BaseController {
     }
 
     @RequestMapping(value = "/refresh", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> refresh(@RequestHeader("X-Auth-Token") String authToken,
-                                                      @RequestParam(name = "user") String userName,
+    public ResponseEntity<ServiceResponse<?>> refresh(@RequestParam(name = "user") String userName,
                                                       @RequestParam(name = "token") String refreshToken) {
-        if (StringUtilities.isNullOrEmpty(authToken)) {
-            return prepareResult("Expected request header absent!", ResponseStatus.FAILED);
-        }
         try {
-            final String newToken = authenticationService.getNewToken(userName, refreshToken);
+            final Token newToken = authenticationService.getNewToken(userName, refreshToken);
             if (newToken != null) {
-                return prepareResult(newToken);
+                HttpHeaders headers = new HttpHeaders();
+                headers.add("Set-Cookie", "refreshToken=" + newToken.getRefreshToken() + ";Max-Age=" + newToken.getExpiresInSeconds());
+                return ResponseEntity.status(HttpStatus.OK).headers(headers).body(new ServiceResponse<>(newToken));
             } else {
                 return prepareResult(null, HttpStatus.BAD_REQUEST);
             }

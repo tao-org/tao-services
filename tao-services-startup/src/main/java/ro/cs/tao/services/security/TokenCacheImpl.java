@@ -21,7 +21,7 @@ public class TokenCacheImpl implements TokenCache {
         while (iterator.hasNext()) {
             final Map.Entry<String, Tuple<Token, Authentication>> next = iterator.next();
             if (next.getValue().getKeyOne().isExpired()) {
-                logger.fine(String.format("Token %s for user %s expired", next.getKey(), next.getValue().getKeyOne().getToken()));
+                logger.finest(String.format("Token %s for user %s expired", next.getValue().getKeyOne().getToken(), next.getKey()));
                 iterator.remove();
             }
         }
@@ -31,7 +31,7 @@ public class TokenCacheImpl implements TokenCache {
     public void put(Token token, Authentication authentication) {
         final String user = authentication.getPrincipal().toString();
         cache.put(user, new Tuple<>(token, authentication));
-        logger.fine(String.format("Token %s for user %s cached", token.getToken(), user));
+        //logger.finest(String.format("Token %s for user %s cached", token.getToken(), user));
     }
 
     @Override

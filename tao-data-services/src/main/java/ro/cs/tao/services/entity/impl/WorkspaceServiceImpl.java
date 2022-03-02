@@ -64,7 +64,7 @@ public class WorkspaceServiceImpl
         existing.setDescription(object.getDescription());
         existing.setType(object.getType());
         final HashMap<String, String> parameters = object.getParameters();
-        if (parameters == null && object.getType() != WorkspaceType.LOCAL) {
+        if (parameters == null || parameters.isEmpty()) {
             throw new IllegalArgumentException("Worspace parameters not supplied");
         }
         existing.setParameters(parameters);
@@ -89,13 +89,11 @@ public class WorkspaceServiceImpl
             errors.add("[description] cannot be empty");
         }
         final WorkspaceType type = entity.getType();
-        if (type != WorkspaceType.LOCAL) {
-            final Set<String> paramNames = type.getParameters();
-            final Map<String, String> parameters = entity.getParameters();
-            for (String pName : paramNames) {
-                if (parameters.get(pName) == null) {
-                    errors.add("[parameters] " + pName + " not set");
-                }
+        final Set<String> paramNames = type.getParameters();
+        final Map<String, String> parameters = entity.getParameters();
+        for (String pName : paramNames) {
+            if (parameters.get(pName) == null) {
+                errors.add("[parameters] " + pName + " not set");
             }
         }
     }
