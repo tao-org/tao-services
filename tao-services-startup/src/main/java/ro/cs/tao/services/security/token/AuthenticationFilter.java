@@ -118,9 +118,14 @@ public class AuthenticationFilter extends GenericFilterBean {
     }
 
     private boolean postToAuthenticate(HttpServletRequest httpRequest, String resourcePath) {
-        return Endpoints.LOGIN_ENDPOINT.equalsIgnoreCase(resourcePath) &&
-               httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD);
+        return Endpoints.LOGIN_ENDPOINT.equalsIgnoreCase(resourcePath)
+               && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD);
     }
+
+    /*private boolean postToRefresh(HttpServletRequest httpRequest, String resourcePath){
+        return Endpoints.REFRESH_ENDPOINT.equalsIgnoreCase(resourcePath)
+                && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD);
+    }*/
 
     private static class SystemMessageReceiver extends Notifiable {
 

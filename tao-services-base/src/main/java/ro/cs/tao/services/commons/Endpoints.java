@@ -26,6 +26,7 @@ import java.util.Set;
 
 public class Endpoints {
     public static final String LOGIN_ENDPOINT = "/auth/login";
+    public static final String REFRESH_ENDPOINT = "/auth/refresh";
     public static final String LOGIN_ENDPOINT_METHOD = "POST";
     public static final String LOGOUT_ENDPOINT = "/auth/logout";
     public static final String ADMIN_SERVICE_PATH_EXPRESSION = "/admin/**/*";
@@ -90,6 +91,7 @@ public class Endpoints {
 
             }
         }
+        list.remove(REFRESH_ENDPOINT);
         return list.toArray(new String[0]);
     }
 

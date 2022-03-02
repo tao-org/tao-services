@@ -21,10 +21,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.persistence.WorkspaceProvider;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
+import ro.cs.tao.topology.Workspace;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
@@ -34,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -52,6 +55,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Autowired
     private UserProvider userProvider;
 
+    @Autowired
+    private WorkspaceProvider workspaceProvider;
+
     @Override
     public AuthInfo login(String userName, String password) {
 
@@ -64,6 +70,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             try {
                 // update user last login date
                 userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
+                final List<Workspace> list = workspaceProvider.getByUser(userName);
+                if (list == null || list.isEmpty()) {
+                    userProvider.createWorkspaces(userName);
+                }
                 Path path = Paths.get(ConfigurationManager.getInstance().getValue("workspace.location")).resolve(userName);
                 FileUtilities.ensureExists(path);
                 FileUtilities.ensureExists(path.resolve("files"));
@@ -95,7 +105,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public String getNewToken(String userName, String refreshToken) {
+    public Token getNewToken(String userName, String refreshToken) {
         final User user = userProvider.getByName(userName);
         if (user != null && user.getStatus() == UserStatus.ACTIVE) {
             Token authenticationToken = tokenService.getUserToken(userName);
@@ -107,7 +117,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         final Authentication authentication = tokenService.retrieve(authenticationToken.getToken());
                         tokenService.removeUserTokens(userName);
                         tokenService.store(token, authentication);
-                        return token.getToken();
+                        return token;
                     }
                 }
             }
