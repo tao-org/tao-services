@@ -12,6 +12,7 @@ import ro.cs.tao.component.WPSAuthentication;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.execution.wps.WPSHttpClient;
 import ro.cs.tao.services.interfaces.WebProcessingService.ProcessInfo;
@@ -45,11 +46,12 @@ public class WPSClient {
         container.setId(url);
         container.setApplicationPath(url);
         container.setName("WPS Service");
+        container.setType(ContainerType.WPS);
         for (Object o : processes) {
             final ProcessBriefType process = (ProcessBriefType) o;
             final Application application = new Application();
-            application.setName(process.getIdentifier().getValue());
-            application.setPath(process.getTitle().getValue());
+            application.setName(process.getTitle().getValue());
+            application.setPath(process.getIdentifier().getValue());
             container.addApplication(application);
         }
         return container;

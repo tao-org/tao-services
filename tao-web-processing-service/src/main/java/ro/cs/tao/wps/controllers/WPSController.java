@@ -32,6 +32,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -41,12 +42,14 @@ import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WPSComponentService;
 import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.wps.impl.WPSClient;
 
 import javax.servlet.http.HttpServletRequest;
@@ -77,6 +80,51 @@ public class WPSController extends BaseController {
     private WPSComponentService wpsComponentService;
     @Autowired
     private WorkflowService workflowService;
+
+    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> list() {
+        try {
+            return prepareResult(containerService.listByType(ContainerType.WPS));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> save(@RequestBody Container container) {
+        try {
+            if (container == null) {
+                throw new IllegalArgumentException("Empty body");
+            }
+            if (container.getType() != ContainerType.WPS) {
+                throw new IllegalArgumentException("Wrong container type");
+            }
+            if (StringUtilities.isNullOrEmpty(container.getId())) {
+                container.setId(UUID.randomUUID().toString());
+            }
+            return prepareResult(containerService.save(container));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<?> update(@RequestBody Container container) {
+        try {
+            if (container == null) {
+                throw new IllegalArgumentException("Empty body");
+            }
+            if (container.getType() != ContainerType.WPS) {
+                throw new IllegalArgumentException("Wrong container type");
+            }
+            if (StringUtilities.isNullOrEmpty(container.getId())) {
+                throw new IllegalArgumentException("Wrong action - use POST instead");
+            }
+            return prepareResult(containerService.update(container));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
 
     @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> inspectRemote(@RequestParam(name = "request") String requestType,

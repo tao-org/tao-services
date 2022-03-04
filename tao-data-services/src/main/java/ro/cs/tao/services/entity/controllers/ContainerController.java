@@ -30,6 +30,7 @@ import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
@@ -134,6 +135,9 @@ public class ContainerController extends DataEntityController<Container, String,
             if (!name.equals(container.getName())) {
                 container.setName(name);
             }
+            if (container.getType() == null) {
+                container.setType(ContainerType.DOCKER);
+            }
             dockerFiles.remove(dockerFile);
             final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
             final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
@@ -213,6 +217,9 @@ public class ContainerController extends DataEntityController<Container, String,
             }
             if (!name.equals(container.getName())) {
                 container.setName(name);
+            }
+            if (container.getType() == null) {
+                container.setType(ContainerType.DOCKER);
             }
             dockerFiles.remove(dockerFile);
             final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
