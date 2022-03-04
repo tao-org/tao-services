@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 @Component
 //@Scope(value = "singleton")
 public class TokenManagementService {
-    private static final int REFRESH_INTERVAL = 300; // seconds
+    private static final int REFRESH_INTERVAL = 30; // seconds
     private final Logger logger = Logger.getLogger(TokenManagementService.class.getName());
     private TokenCache tokenCache = new TokenCache() { };
     private TokenProvider tokenProvider = new TokenProvider() { };
@@ -81,6 +81,10 @@ public class TokenManagementService {
 
     public Token getUserToken(String user) {
         return tokenCache.getToken(user);
+    }
+
+    public Token getFromRefreshToken(String refreshToken) {
+        return tokenCache.getFromRefreshToken(refreshToken);
     }
 
     public void removeUserTokens(String user) {

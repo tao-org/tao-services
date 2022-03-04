@@ -5,25 +5,29 @@ import ro.cs.tao.Tuple;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.security.TokenCache;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
 
 public class TokenCacheImpl implements TokenCache {
-    private final Map<String, Tuple<Token, Authentication>> cache = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, Tuple<Token, Authentication>> cache = new HashMap<>();
     private final Logger logger = Logger.getLogger(TokenCache.class.getName());
-    private final Map<String, Authentication> expiredTokens = Collections.synchronizedMap(new HashMap<>());
+    private final Map<Token, Authentication> expiredTokens = new HashMap<>();
 
     @Override
     public void evictExpired() {
         // Keep expired tokens only for one eviction cycle
-        expiredTokens.clear();
-        for (Map.Entry<String, Tuple<Token, Authentication>> next : cache.entrySet()) {
-            if (next.getValue().getKeyOne().isExpired()) {
-                logger.finest(String.format("Token %s for user %s expired", next.getValue().getKeyOne().getToken(), next.getKey()));
-                //iterator.remove();
-                expiredTokens.put(next.getValue().getKeyOne().getToken(), next.getValue().getKeyTwo());
+        synchronized (cache) {
+            expiredTokens.clear();
+            final Iterator<Map.Entry<String, Tuple<Token, Authentication>>> iterator = cache.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Map.Entry<String, Tuple<Token, Authentication>> next = iterator.next();
+                if (next.getValue().getKeyOne().isExpired()) {
+                    logger.finest(String.format("Token %s for user %s expired", next.getValue().getKeyOne().getToken(), next.getKey()));
+                    expiredTokens.put(next.getValue().getKeyOne(), next.getValue().getKeyTwo());
+                    iterator.remove();
+                }
             }
         }
     }
@@ -31,7 +35,9 @@ public class TokenCacheImpl implements TokenCache {
     @Override
     public void put(Token token, Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
-            throw new IllegalArgumentException("Cannot cache a null authentication");
+            IllegalArgumentException e =  new IllegalArgumentException("Cannot cache a null authentication");
+            e.printStackTrace();
+            throw e;
         }
         final String user = authentication.getPrincipal().toString();
         cache.put(user, new Tuple<>(token, authentication));
@@ -50,6 +56,11 @@ public class TokenCacheImpl implements TokenCache {
     }
 
     @Override
+    public Token getFromRefreshToken(String refreshToken) {
+        return expiredTokens.keySet().stream().filter(t -> t.getRefreshToken().equals(refreshToken)).findFirst().orElse(null);
+    }
+
+    @Override
     public Token getFullToken(String token) {
         return cache.values().stream()
                     .filter(t -> t.getKeyOne().getToken().equals(token) && !t.getKeyOne().isExpired())
@@ -61,13 +72,15 @@ public class TokenCacheImpl implements TokenCache {
         Authentication authentication = null;
         for (Map.Entry<String, Tuple<Token, Authentication>> entry : cache.entrySet()) {
             final Token t = entry.getValue().getKeyOne();
-            if (!t.isExpired() && t.getToken().equals(token)) {
+            if ((!t.isExpired() && t.getToken().equals(token)) ||
+                (t.isExpired() && t.getRefreshToken().equals(token))) {
                 authentication = entry.getValue().getKeyTwo();
             }
         }
         if (authentication == null) {
             // maybe it was a just expired token
-            authentication = expiredTokens.get(token);
+            final Map.Entry<Token, Authentication> entry = expiredTokens.entrySet().stream().filter(e -> e.getKey().getRefreshToken().equals(token)).findFirst().orElse(null);
+            return entry != null ? entry.getValue() : null;
         }
         return authentication;
     }
