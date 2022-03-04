@@ -109,12 +109,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         final User user = userProvider.getByName(userName);
         if (user != null && user.getStatus() == UserStatus.ACTIVE) {
             Token authenticationToken = tokenService.getUserToken(userName);
+            if (authenticationToken == null) {
+                authenticationToken = tokenService.getFromRefreshToken(refreshToken);
+            }
             if (authenticationToken != null) {
                 final String refreshTokenOriginal = authenticationToken.getRefreshToken();
                 if (refreshToken.equals(refreshTokenOriginal)) {
                     final Token token = tokenService.generateNewToken(refreshToken);
                     if (token != null) {
-                        final Authentication authentication = tokenService.retrieve(authenticationToken.getToken());
+                        final Authentication authentication = tokenService.retrieve(refreshToken);
                         tokenService.removeUserTokens(userName);
                         tokenService.store(token, authentication);
                         return token;
