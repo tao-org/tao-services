@@ -27,6 +27,7 @@ import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.persistence.ContainerProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
@@ -76,6 +77,11 @@ public class ContainerServiceImpl
     @Override
     public List<Container> list(Iterable<String> ids) {
         return containerProvider.list(ids);
+    }
+
+    @Override
+    public List<Container> listByType(ContainerType type) {
+        return containerProvider.getByType(type);
     }
 
     @Override
