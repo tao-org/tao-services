@@ -22,6 +22,7 @@ import ro.cs.tao.security.Token;
 import ro.cs.tao.security.TokenCache;
 import ro.cs.tao.security.TokenProvider;
 
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -30,7 +31,7 @@ import java.util.logging.Logger;
 @Component
 //@Scope(value = "singleton")
 public class TokenManagementService {
-    private static final int REFRESH_INTERVAL = 30; // seconds
+    private static final int REFRESH_INTERVAL = 300; // seconds
     private final Logger logger = Logger.getLogger(TokenManagementService.class.getName());
     private TokenCache tokenCache = new TokenCache() { };
     private TokenProvider tokenProvider = new TokenProvider() { };
@@ -43,7 +44,7 @@ public class TokenManagementService {
         this.tokenCache = tokenCache;
     }
 
-    @Scheduled(fixedRate = REFRESH_INTERVAL * 1000)
+    @Scheduled(fixedRate = REFRESH_INTERVAL, timeUnit = TimeUnit.SECONDS)
     public void evictExpiredTokens() {
         logger.finest("Evicting expired tokens...");
         tokenCache.evictExpired();
