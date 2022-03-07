@@ -2,6 +2,7 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.SortDirection;
@@ -43,7 +44,7 @@ public class WorkspaceEntityController extends DataEntityController<Workspace, I
     }
 
     @Override
-    public ResponseEntity<ServiceResponse<?>> save(Workspace entity) {
+    public ResponseEntity<ServiceResponse<?>> save(@RequestBody Workspace entity) {
         try {
             if (StringUtilities.isNullOrEmpty(entity.getUserName())) {
                 entity.setUserName(currentUser());

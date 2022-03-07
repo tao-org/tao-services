@@ -289,6 +289,11 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
+    public List<FileObject> listTree(Path realRoot) throws IOException {
+        return listFiles(realRoot, null, null);
+    }
+
+    @Override
     public List<FileObject> listFiles(Path realRoot, Set<Path> exclusions, Path lastItem) throws IOException {
         final Path root = Paths.get(SystemVariable.ROOT.value()).toAbsolutePath();
         realRoot = realRoot.toAbsolutePath();
@@ -561,7 +566,9 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
         if (stream == null) {
             return;
         }
-        Files.createDirectories(uploadPath);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
         // Resolve filename when coming from IE
         Files.copy(stream, uploadPath, StandardCopyOption.REPLACE_EXISTING);
     }
