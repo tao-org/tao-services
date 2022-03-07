@@ -35,13 +35,11 @@ public class TokenCacheImpl implements TokenCache {
     @Override
     public void put(Token token, Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
-            IllegalArgumentException e =  new IllegalArgumentException("Cannot cache a null authentication");
-            e.printStackTrace();
-            throw e;
+            logger.warning(String.format("Token %s has no corresponding authentication", token.getToken()));
+        } else {
+            final String user = authentication.getPrincipal().toString();
+            cache.put(user, new Tuple<>(token, authentication));
         }
-        final String user = authentication.getPrincipal().toString();
-        cache.put(user, new Tuple<>(token, authentication));
-        //logger.finest(String.format("Token %s for user %s cached", token.getToken(), user));
     }
 
     @Override
