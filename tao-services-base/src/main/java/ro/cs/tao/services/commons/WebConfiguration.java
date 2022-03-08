@@ -1,5 +1,6 @@
 package ro.cs.tao.services.commons;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
@@ -65,6 +66,7 @@ public abstract class WebConfiguration implements WebMvcConfigurer {
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         messageConverter.setObjectMapper(mapper);
         return messageConverter;
     }

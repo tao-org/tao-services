@@ -15,12 +15,12 @@ public class WPSClientTest {
     public static void main(String[] args) throws ServiceException, IOException {
         ConfigurationManager.getInstance().setValue("workspace.location", "/");
         WPSAuthentication auth = new WPSAuthentication();
-        auth.setLoginUrl("https://localhost:8443/login");
+        auth.setLoginUrl("http://192.168.61.18:8280/login");
         auth.setAuthHeader("X-Auth-Token");
-        auth.setUser("admin");
-        auth.setPassword("eodata");
+        auth.setUser("test");
+        auth.setPassword("test123");
         auth.setType(AuthenticationType.TOKEN);
-        WPSClient client = new WPSClient("https://localhost:8443/wps", auth, () -> "test");
+        WPSClient client = new WPSClient("http://192.168.61.18:8280/wps", auth, () -> "test");
         final Container capabilities = client.getCapabilities();
         final WebProcessingService.ProcessInfo processInfo = client.describeProcess("23");
 
