@@ -6,13 +6,11 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.services.entity.impl.FileStorageService;
+import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.workspace.model.TransferRequest;
-import ro.cs.tao.spi.ServiceRegistry;
-import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.topology.Workspace;
-import ro.cs.tao.topology.WorkspaceType;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
 
@@ -22,7 +20,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
@@ -63,30 +60,12 @@ public class TransferService {
         }
     }
 
-    public StorageService getService(Workspace workspace) throws Exception {
-        StorageService service;
-        if (workspace.getType() == WorkspaceType.LOCAL) {
-            service = fileStorageService;
-        } else {
-            final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
-            final Set<StorageService> services = registry.getServices();
-            service = services.stream().filter(s -> s.isIntendedFor(workspace.getUrlPrefix())).findFirst().orElse(null);
-            if (service == null) {
-                throw new IllegalArgumentException("No remote file repository for the given protocol is available");
-            }
-            // Don't forget that a SPI produces a single instance, and we don't want to re-use it
-            service = service.getClass().newInstance();
-            service.setup(workspace.getParameters());
-        }
-        return service;
-    }
-
     private Void processRequest(TransferRequest item) {
         //this.asyncCallbackWorker.execute(() -> {
             try {
-                final StorageService sourceService = getService(item.getSourceWorkspace());
+                final StorageService sourceService = StorageServiceFactory.getInstance(item.getSourceWorkspace());
                 final Workspace dstWorkspace = item.getDestinationWorkspace();
-                final StorageService destinationService = getService(dstWorkspace);
+                final StorageService destinationService = StorageServiceFactory.getInstance(dstWorkspace);
                 final FileObject fileObject = item.getSource();
                 final Object source = sourceService.download(Paths.get(fileObject.getRelativePath()));
                 final InputStream sourceStream;

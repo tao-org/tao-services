@@ -2,9 +2,7 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
@@ -31,7 +29,10 @@ public class WorkspaceEntityController extends DataEntityController<Workspace, I
     }
 
     @Override
-    public ResponseEntity<ServiceResponse<?>> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Optional<String> sortByField, Optional<SortDirection> sortDirection) {
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
+                                                   @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
+                                                   @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
+                                                   @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
         if (!(pageNumber.isPresent() || pageSize.isPresent() || sortByField.isPresent() || sortDirection.isPresent())) {
             try {
                 return prepareResult(this.service.getByUser(currentUser()));
@@ -56,24 +57,14 @@ public class WorkspaceEntityController extends DataEntityController<Workspace, I
     }
 
     @Override
-    public ResponseEntity<ServiceResponse<?>> update(Integer id, Workspace entity) {
+    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") Integer id, @RequestBody Workspace entity) {
         try {
             if (StringUtilities.isNullOrEmpty(entity.getUserName())) {
                 throw new IllegalArgumentException("Cannot update an unassigned workspace");
             }
-            return super.save(entity);
+            return super.update(id, entity);
         } catch (Exception e) {
             return handleException(e);
         }
     }
-
-    /*@RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> save(WorkspaceBean entity) {
-        return super.save(ServiceTransformUtils.fromBean(entity));
-    }
-
-    @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> update(WorkspaceBean entity) {
-        return super.update(entity.getId(), ServiceTransformUtils.fromBean(entity));
-    }*/
 }

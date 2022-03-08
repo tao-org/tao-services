@@ -2,6 +2,7 @@ package ro.cs.tao.services.workspace.controllers;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -20,13 +21,17 @@ import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.WorkspaceProvider;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.serialization.BaseSerializer;
+import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.controllers.DataEntityController;
+import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.services.interfaces.StorageService;
-import ro.cs.tao.spi.ServiceRegistry;
-import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.services.model.FileObject;
+import ro.cs.tao.services.workspace.impl.TransferService;
+import ro.cs.tao.services.workspace.model.TransferRequest;
 import ro.cs.tao.topology.Workspace;
 
 import javax.servlet.http.HttpServletResponse;
@@ -51,6 +56,9 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
 
     @Autowired
     private WorkspaceProvider workspaceProvider;
+
+    @Autowired
+    private TransferService transferService;
 
     /**
      * List all configuration keys.
@@ -293,22 +301,11 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
             if (workspace == null) {
                 throw new IOException("Workspace does not exist");
             }
-            final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
-            final Set<StorageService> services = registry.getServices();
-            if (services == null) {
-                throw new IllegalArgumentException("No remote file repository is available");
-            }
             Path relativePath = Paths.get(relativeFolder);
             if (relativePath.getName(0).toString().equals(currentUser())) {
                 relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
             }
-            StorageService service = services.stream().filter(s -> s.isIntendedFor(workspace.getUrlPrefix())).findFirst().orElse(null);
-            if (service == null) {
-                throw new IllegalArgumentException("No remote file repository for the given protocol is available");
-            }
-            // Don't forget that a SPI produces a single instance, and we don't want to re-use it
-            service = service.getClass().newInstance();
-            service.setup(workspace.getParameters());
+            StorageService service = StorageServiceFactory.getInstance(workspace);
             final Path lastPath = lastItem != null ? Paths.get(lastItem) : null;
             responseEntity = prepareResult(service.listFiles(Paths.get(relativeFolder), null, lastPath));
         } catch (Exception ex) {
@@ -413,36 +410,28 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
      * @param fileName      The name of the file
      * @param response      The servlet response
      */
-    @RequestMapping(value = "/download/{protocol}", method = RequestMethod.GET)
-    public void downloadFromS3(@PathVariable("protocol") String protocol,
+    @RequestMapping(value = "/remote/download/{protocol}", method = RequestMethod.GET)
+    public void downloadFromRemote(@PathVariable("protocol") String protocol,
                                @RequestParam("fileName") String fileName, HttpServletResponse response) {
         try {
-            final Set<StorageService> services = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class).getServices();
-            if (services == null) {
-                response.sendError(HttpStatus.BAD_REQUEST.value(), "Not supported");
+            StorageService client = StorageServiceFactory.getInstance(protocol);
+            final Path path = Paths.get(fileName.replace("s3://", ""));
+            // the only way we can tell it's a "folder"
+            if (fileName.endsWith("/")) {
+                response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
+                response.setStatus(HttpServletResponse.SC_OK);
+                try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
+                    client.streamToZip(path, zipOutputStream);
+                    zipOutputStream.finish();
+                }
             } else {
-                final StorageService client = services.stream().filter(s -> s.isIntendedFor(protocol)).findFirst().orElse(null);
-                if (client == null) {
-                    throw new IllegalArgumentException("No remote file repository of the given protocol is available");
-                }
-                final Path path = Paths.get(fileName.replace("s3://", ""));
-                // the only way we can tell it's a "folder"
-                if (fileName.endsWith("/")) {
-                    response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
-                    response.setStatus(HttpServletResponse.SC_OK);
-                    try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
-                        client.streamToZip(path, zipOutputStream);
-                        zipOutputStream.finish();
-                    }
-                } else {
-                    InputStream stream = (InputStream) client.download(path);
-                    response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                    response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
-                    response.setStatus(HttpServletResponse.SC_OK);
-                    IOUtils.copy(stream, response.getOutputStream());
-                    response.flushBuffer();
-                }
+                InputStream stream = (InputStream) client.download(path);
+                response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
+                response.setStatus(HttpServletResponse.SC_OK);
+                IOUtils.copy(stream, response.getOutputStream());
+                response.flushBuffer();
             }
         } catch (IOException e) {
             error(e.getMessage());
@@ -546,7 +535,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
      */
     @RequestMapping(value = "/move/", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> move(@RequestParam("source") String source,
-                                                  @RequestParam("destination") String destination) {
+                                                   @RequestParam("destination") String destination) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             fileStorageService.move(source, destination);
@@ -555,6 +544,80 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
             responseEntity = handleException(ex);
         }
         return responseEntity;
+    }
+
+    /**
+     * Transfers one or more file objects from the source workspace to the destination workspace
+     *
+     * @param srcWksId          The source workspace identifier
+     * @param jsonFileObject    The JSON representation of either a single file object or a list of file objects
+     * @param dstWksId          The destination workspace identifier
+     * @param dstFolder         The folder in the destination workspace where to transfer to
+     */
+    @RequestMapping(value = "/transfer/", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> moveTo(@RequestParam("sourceWorkspace") int srcWksId,
+                                                     @RequestParam("sourceObject") String jsonFileObject,
+                                                     @RequestParam("destinationWorkspace") int dstWksId,
+                                                     @RequestParam("destinationPath") String dstFolder) {
+        try {
+            List<FileObject> requestedFiles;
+            try {
+                final FileObject fileObject = new ObjectMapper().reader(FileObject.class).readValue(jsonFileObject);
+                requestedFiles = new ArrayList<>();
+                requestedFiles.add(fileObject);
+            } catch (Exception e) {
+                BaseSerializer<FileObject> serializer = SerializerFactory.create(FileObject.class, ro.cs.tao.serialization.MediaType.JSON);
+                requestedFiles = serializer.deserialize(FileObject.class, jsonFileObject);
+            }
+            final Workspace srcWorkspace = workspaceProvider.get(srcWksId);
+            final Workspace dstWorkspace = workspaceProvider.get(dstWksId);
+            if (dstWorkspace.isReadOnly()) {
+                throw new IllegalArgumentException("Destination is read-only");
+            }
+            int count = 0;
+            long size = 0;
+            if (!dstFolder.endsWith("/")) {
+                dstFolder += "/";
+            }
+            final String targetRoot = dstWorkspace.getParameters().get(dstWorkspace.getType().rootKey()) + "/" + currentUser() + "/";
+            String targetFolder;
+            for (FileObject fileObject : requestedFiles) {
+                String root = fileObject.getRelativePath();
+                size = fileObject.getSize();
+                targetFolder = dstFolder;
+                if (fileObject.isFolder()) {
+                    // Keep only the last part of the folder path (i.e. folder name)
+                    final int idx = root.lastIndexOf('/', root.length() - 2);
+                    if (idx > 0) {
+                        targetFolder += root.substring(idx + 1);
+                    }
+                    final StorageService service = StorageServiceFactory.getInstance(srcWorkspace);
+                    final List<FileObject> files = service.listTree(Paths.get(fileObject.getRelativePath()));
+                    for (FileObject fObject : files) {
+                        if (!fObject.isFolder()) {
+                            final String path = targetRoot + targetFolder + fObject.getRelativePath().replace(root, "");
+                            queueFile(root, fObject, srcWorkspace, dstWorkspace, path);
+                            size += fObject.getSize();
+                            count++;
+                        }
+                    }
+                } else {
+                    queueFile(root, fileObject, srcWorkspace, dstWorkspace,
+                              dstWorkspace.getParameters().get(dstWorkspace.getType().rootKey())
+                                      + "/" + currentUser() + "/" + targetFolder);
+                    count = 1;
+                }
+            }
+            return prepareResult(String.format("Transfer queued (%d files, %d bytes)", count, size),
+                                 ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    private void queueFile(String batchId, FileObject file, Workspace source, Workspace destination, String folder) {
+        final TransferRequest request = new TransferRequest(batchId, source, file, destination, folder);
+        transferService.request(request);
     }
 
     private FileSystemResource loadAsResource(String fileName) throws IOException {

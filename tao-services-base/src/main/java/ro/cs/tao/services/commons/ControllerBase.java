@@ -25,11 +25,15 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.utils.ExceptionUtils;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
 @CrossOrigin(origins = {"http://localhost", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082"})
@@ -46,10 +50,14 @@ public abstract class ControllerBase {
     }
 
     protected Future<?> asyncExecute(Runnable runnable) {
-        return asyncExecute(runnable, null);
+        return asyncExecute(runnable, "Operation completed", null);
     }
 
-    protected Future<?> asyncExecute(Runnable runnable, Consumer<Exception> callback) {
+    protected void onUnhandledException(Exception e) {
+        error(ExceptionUtils.getStackTrace(logger, e));
+    }
+
+    protected Future<?> asyncExecute(Runnable runnable, String successMessage, BiConsumer<Exception, String> callback) {
         synchronized (sharedLock) {
             if (this.executorService == null) {
                 executorService = new ThreadPoolTaskExecutor() {
@@ -80,20 +88,16 @@ public abstract class ControllerBase {
             try {
                 runnable.run();
                 if (callback != null) {
-                    callback.accept(null);
+                    callback.accept(null, successMessage);
                 }
             } catch (Exception ex) {
                 if (callback != null) {
-                    callback.accept(ex);
+                    callback.accept(ex, null);
                 } else {
                     onUnhandledException(ex);
                 }
             }
         });
-    }
-
-    protected void onUnhandledException(Exception e) {
-        error(ExceptionUtils.getStackTrace(logger, e));
     }
 
     protected <T> ResponseEntity<ServiceResponse<?>> prepareResult(T result) {
@@ -181,5 +185,24 @@ public abstract class ControllerBase {
         } else {
             logger.severe(message);
         }
+    }
+
+    protected void exceptionCallbackHandler(Exception ex, String successMessage) {
+        final Message message = new Message();
+        message.setTimestamp(System.currentTimeMillis());
+        String msg;
+        final String topic;
+        if (ex != null) {
+            msg = ex.getMessage();
+            message.setData(msg);
+            topic = Topic.ERROR.value();
+            Logger.getLogger(getClass().getName()).severe(msg);
+        } else {
+            msg = successMessage;
+            message.setData(msg);
+            topic = Topic.INFORMATION.value();
+            Logger.getLogger(getClass().getName()).info(msg);
+        }
+        Messaging.send(SessionStore.currentContext().getPrincipal(), topic, message);
     }
 }
