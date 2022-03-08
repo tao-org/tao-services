@@ -38,8 +38,6 @@ import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
-import ro.cs.tao.spi.ServiceRegistry;
-import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.FileUtilities;
 
 import java.io.File;
@@ -427,7 +425,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
         }
     }
 
-    private List<FileObject> listS3Bucket(String principalName) throws IOException {
+    /*private List<FileObject> listS3Bucket(String principalName) throws IOException {
         final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
         final Set<StorageService> services = registry.getServices();
         final List<FileObject> files = new ArrayList<>();
@@ -442,7 +440,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
             Logger.getLogger(getClass().getName()).warning(e.getMessage());
         }
         return files;
-    }
+    }*/
 
     private List<FileObject> listProducts(String principalName) throws IOException {
         boolean isSystem = SystemSessionContext.instance().getPrincipal().getName().equals(principalName);

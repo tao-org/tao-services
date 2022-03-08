@@ -32,9 +32,6 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.eodata.AuxiliaryData;
-import ro.cs.tao.messaging.Message;
-import ro.cs.tao.messaging.Messaging;
-import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.AuxiliaryDataProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
@@ -53,7 +50,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * @author Cosmin Cara
@@ -179,7 +175,7 @@ public class ContainerController extends DataEntityController<Container, String,
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
-            }, this::registrationCallback);
+            }, "Docker image registration completed", this::exceptionCallbackHandler);
             return prepareResult("Docker image registration started. A notification will be send when the process completes",
                                  ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
@@ -262,7 +258,7 @@ public class ContainerController extends DataEntityController<Container, String,
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
-            }, this::registrationCallback);
+            }, "Docker image registration completed", this::exceptionCallbackHandler);
             return prepareResult("Docker image registration started. A notification will be send when the process completes",
                     ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
@@ -283,24 +279,5 @@ public class ContainerController extends DataEntityController<Container, String,
         Path destination = targetBase.resolve(fileName);
         file.transferTo(destination.toAbsolutePath().toFile());
         return destination;
-    }
-
-    private void registrationCallback(Exception ex) {
-        final Message message = new Message();
-        message.setTimestamp(System.currentTimeMillis());
-        String msg;
-        final String topic;
-        if (ex != null) {
-            msg = "Docker image registration failed. Reason: " + ex.getMessage();
-            message.setData(msg);
-            topic = Topic.ERROR.value();
-            Logger.getLogger(getClass().getName()).severe(msg);
-        } else {
-            msg = "Docker image registration completed";
-            message.setData(msg);
-            topic = Topic.INFORMATION.value();
-            Logger.getLogger(getClass().getName()).info(msg);
-        }
-        Messaging.send(SessionStore.currentContext().getPrincipal(), topic, message);
     }
 }
