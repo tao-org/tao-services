@@ -228,12 +228,15 @@ public class WorkspaceWatcherServiceImpl implements WorkspaceWatcherService {
 
                     if (kind == ENTRY_CREATE) { // if directory is created, and watching recursively, then register it and its sub-directories
                         try {
-                            if (Files.isDirectory(child)) {
+                            final BasicFileAttributes attributes = Files.readAttributes(child, BasicFileAttributes.class);
+                            if (attributes.isDirectory()) {
                                 walkAndRegisterDirectories(child);
                             }
+                        } catch (NoSuchFileException ignored) {
+                            // a file may throw this exception if it's not fully "created"
                         } catch (IOException e) {
                             logger.severe(String.format("Cannot register directory %s. Reason: %s",
-                                    child, ExceptionUtils.getStackTrace(e)));
+                                                        child, ExceptionUtils.getStackTrace(e)));
                         }
                     }
                 }
