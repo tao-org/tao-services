@@ -115,6 +115,7 @@ public final class ServiceTransformUtils {
         bean.setId(type.value());
         bean.setName(type.name());
         bean.setDescription(type.friendlyName());
+        bean.setUrlPrefix(type.prefix());
         bean.setParameters(new ArrayList<>(type.getParameters()));
         bean.getParameters().sort(String::compareTo);
         return bean;

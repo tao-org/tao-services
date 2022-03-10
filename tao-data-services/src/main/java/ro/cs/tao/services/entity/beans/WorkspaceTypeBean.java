@@ -6,6 +6,7 @@ public class WorkspaceTypeBean {
     private int id;
     private String name;
     private String description;
+    private String urlPrefix;
     private List<String> parameters;
 
     public int getId() {
@@ -30,6 +31,14 @@ public class WorkspaceTypeBean {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getUrlPrefix() {
+        return urlPrefix;
+    }
+
+    public void setUrlPrefix(String prefix) {
+        this.urlPrefix = prefix;
     }
 
     public List<String> getParameters() {

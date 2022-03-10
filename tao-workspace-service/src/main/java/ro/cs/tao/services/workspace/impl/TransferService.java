@@ -11,6 +11,7 @@ import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.workspace.model.TransferRequest;
 import ro.cs.tao.topology.Workspace;
+import ro.cs.tao.topology.WorkspaceType;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
 
@@ -63,21 +64,34 @@ public class TransferService {
     private Void processRequest(TransferRequest item) {
         //this.asyncCallbackWorker.execute(() -> {
             try {
-                final StorageService sourceService = StorageServiceFactory.getInstance(item.getSourceWorkspace());
+                final StorageService sourceService = item.getSourceWorkspace().getType() == WorkspaceType.LOCAL
+                        ? fileStorageService
+                        : StorageServiceFactory.getInstance(item.getSourceWorkspace());
                 final Workspace dstWorkspace = item.getDestinationWorkspace();
-                final StorageService destinationService = StorageServiceFactory.getInstance(dstWorkspace);
+                final StorageService destinationService = dstWorkspace.getType() == WorkspaceType.LOCAL
+                        ? fileStorageService
+                        : StorageServiceFactory.getInstance(dstWorkspace);
                 final FileObject fileObject = item.getSource();
-                final Object source = sourceService.download(Paths.get(fileObject.getRelativePath()));
+                final String relativePath = fileObject.getRelativePath();
+                final Object source = sourceService.download(Paths.get(relativePath));
                 final InputStream sourceStream;
                 if (source instanceof FileSystemResource) {
                     sourceStream = ((FileSystemResource) source).getInputStream();
                 } else {
                     sourceStream = (InputStream) source;
                 }
-                logger.finest("Begin transferring file " + fileObject.getRelativePath());
-                destinationService.storeFile(sourceStream, fileObject.getSize(), item.getDestinationPath(), fileObject.getRelativePath());
-                logger.finest("End transferring file " + fileObject.getRelativePath());
+                logger.finest("Begin transferring file " + relativePath);
+                if (item.isForce() || !destinationService.exists(relativePath)) {
+                    destinationService.storeFile(sourceStream, fileObject.getSize(), item.getDestinationPath(), relativePath);
+                } else {
+                    logger.finest("Destination file exists and overwrite flag is not set");
+                }
+                logger.finest("End transferring file " + relativePath);
                 saveState();
+                if (item.isMove()) {
+                    sourceService.remove(relativePath);
+                    logger.finest("Removed file " + relativePath);
+                }
                 final TransferRequest next = this.queue.peek();
                 if (next == null || !item.getBatch().equals(next.getBatch())) {
                     //TODO Should notify potential listeners

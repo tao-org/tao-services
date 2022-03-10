@@ -9,13 +9,17 @@ public class TransferRequest {
     private final FileObject source;
     private final Workspace destinationWorkspace;
     private final String destinationPath;
+    private final boolean move;
+    private final boolean force;
 
-    public TransferRequest(String batch, Workspace sourceWorkspace, FileObject source, Workspace destinationWorkspace, String destinationPath) {
+    public TransferRequest(String batch, Workspace sourceWorkspace, FileObject source, Workspace destinationWorkspace, String destinationPath, boolean move, boolean force) {
         this.batch = batch;
         this.sourceWorkspace = sourceWorkspace;
         this.source = source;
         this.destinationWorkspace = destinationWorkspace;
         this.destinationPath = destinationPath;
+        this.move = move;
+        this.force = force;
     }
 
     public String getBatch() {
@@ -36,5 +40,13 @@ public class TransferRequest {
 
     public String getDestinationPath() {
         return destinationPath;
+    }
+
+    public boolean isMove() {
+        return move;
+    }
+
+    public boolean isForce() {
+        return force;
     }
 }

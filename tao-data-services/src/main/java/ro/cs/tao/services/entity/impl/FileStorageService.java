@@ -112,6 +112,11 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
+    public boolean exists(String path) throws Exception {
+        return Files.exists(Paths.get(path));
+    }
+
+    @Override
     public void remove(String fileName) throws IOException{
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("Invalid argument (empty)");
