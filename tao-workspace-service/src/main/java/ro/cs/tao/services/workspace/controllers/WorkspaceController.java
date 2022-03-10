@@ -33,6 +33,7 @@ import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.workspace.impl.TransferService;
 import ro.cs.tao.services.workspace.model.TransferRequest;
 import ro.cs.tao.topology.Workspace;
+import ro.cs.tao.topology.WorkspaceType;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -534,6 +535,7 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
      * @param destination   The destination folder
      */
     @RequestMapping(value = "/move/", method = RequestMethod.POST, produces = "application/json")
+    @Deprecated
     public ResponseEntity<ServiceResponse<?>> move(@RequestParam("source") String source,
                                                    @RequestParam("destination") String destination) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -555,10 +557,12 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
      * @param dstFolder         The folder in the destination workspace where to transfer to
      */
     @RequestMapping(value = "/transfer/", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> moveTo(@RequestParam("sourceWorkspace") int srcWksId,
-                                                     @RequestParam("sourceObject") String jsonFileObject,
-                                                     @RequestParam("destinationWorkspace") int dstWksId,
-                                                     @RequestParam("destinationPath") String dstFolder) {
+    public ResponseEntity<ServiceResponse<?>> transfer(@RequestParam("sourceWorkspace") int srcWksId,
+                                                       @RequestParam("sourceObject") String jsonFileObject,
+                                                       @RequestParam("destinationWorkspace") int dstWksId,
+                                                       @RequestParam("destinationPath") String dstFolder,
+                                                       @RequestParam(name = "move", required = false) Boolean move,
+                                                       @RequestParam(name = "overwrite", required = false) Boolean overwrite) {
         try {
             List<FileObject> requestedFiles;
             try {
@@ -581,6 +585,8 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
             }
             final String targetRoot = dstWorkspace.getParameters().get(dstWorkspace.getType().rootKey()) + "/" + currentUser() + "/";
             String targetFolder;
+            final boolean isMove = move != null && move;
+            final boolean overwriteExisting = overwrite != null && overwrite;
             for (FileObject fileObject : requestedFiles) {
                 String root = fileObject.getRelativePath();
                 size = fileObject.getSize();
@@ -591,12 +597,14 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
                     if (idx > 0) {
                         targetFolder += root.substring(idx + 1);
                     }
-                    final StorageService service = StorageServiceFactory.getInstance(srcWorkspace);
+                    final StorageService service = srcWorkspace.getType() == WorkspaceType.LOCAL
+                            ? fileStorageService
+                            : StorageServiceFactory.getInstance(srcWorkspace);
                     final List<FileObject> files = service.listTree(Paths.get(fileObject.getRelativePath()));
                     for (FileObject fObject : files) {
                         if (!fObject.isFolder()) {
                             final String path = targetRoot + targetFolder + fObject.getRelativePath().replace(root, "");
-                            queueFile(root, fObject, srcWorkspace, dstWorkspace, path);
+                            queueFile(root, fObject, srcWorkspace, dstWorkspace, path, isMove, overwriteExisting);
                             size += fObject.getSize();
                             count++;
                         }
@@ -604,7 +612,8 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
                 } else {
                     queueFile(root, fileObject, srcWorkspace, dstWorkspace,
                               dstWorkspace.getParameters().get(dstWorkspace.getType().rootKey())
-                                      + "/" + currentUser() + "/" + targetFolder);
+                                      + "/" + currentUser() + "/" + targetFolder,
+                              isMove, overwriteExisting);
                     count = 1;
                 }
             }
@@ -615,8 +624,8 @@ public class WorkspaceController extends DataEntityController<EOProduct, String,
         }
     }
 
-    private void queueFile(String batchId, FileObject file, Workspace source, Workspace destination, String folder) {
-        final TransferRequest request = new TransferRequest(batchId, source, file, destination, folder);
+    private void queueFile(String batchId, FileObject file, Workspace source, Workspace destination, String folder, boolean move, boolean overwrite) {
+        final TransferRequest request = new TransferRequest(batchId, source, file, destination, folder, move, overwrite);
         transferService.request(request);
     }
 
