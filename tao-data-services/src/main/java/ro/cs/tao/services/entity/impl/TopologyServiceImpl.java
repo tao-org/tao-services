@@ -108,8 +108,12 @@ public class TopologyServiceImpl
         if (existing != null && !existing.getFlavor().equals(node.getFlavor())) {
             List<String> nodeTags = node.getTags();
             if (nodeTags != null) {
-                if (!nodeTags.contains(node.getFlavor().getId())) {
-                    nodeTags.add(node.getFlavor().getId());
+                if (node.getFlavor() != null) {
+                    if (!nodeTags.contains(node.getFlavor().getId())) {
+                        nodeTags.add(node.getFlavor().getId());
+                    }
+                } else {
+                    node.setFlavor(existing.getFlavor());
                 }
                 Set<String> existingTags = tagProvider.list(TagType.TOPOLOGY_NODE).stream().map(Tag::getText).collect(Collectors.toSet());
                 for (String value : nodeTags) {
