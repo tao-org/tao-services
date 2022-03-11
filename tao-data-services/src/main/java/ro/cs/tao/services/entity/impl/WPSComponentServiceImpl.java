@@ -3,14 +3,16 @@ package ro.cs.tao.services.entity.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.Sort;
-import ro.cs.tao.component.*;
+import ro.cs.tao.component.ParameterDescriptor;
+import ro.cs.tao.component.SourceDescriptor;
+import ro.cs.tao.component.TargetDescriptor;
+import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.WPSComponentProvider;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.WPSComponentService;
 import ro.cs.tao.services.model.component.WPSComponentInfo;
-import ro.cs.tao.utils.Crypto;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -61,10 +63,6 @@ public class WPSComponentServiceImpl extends EntityService<WPSComponent> impleme
             if (wpsComponentProvider.get(component.getId()) != null) {
                 return update(component);
             } else {
-                final WPSAuthentication authentication = component.getAuthentication();
-                if (authentication != null) {
-                    authentication.setPassword(Crypto.encrypt(authentication.getPassword(), authentication.getUser()));
-                }
                 try {
                     return wpsComponentProvider.save(component);
                 } catch (PersistenceException e) {

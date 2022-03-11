@@ -1,5 +1,6 @@
 package ro.cs.tao.services.entity.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,7 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
+import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WPSComponentService;
 
 import java.util.Optional;
@@ -17,6 +19,9 @@ import java.util.Optional;
 @Controller
 @RequestMapping("/wpscomponent")
 public class WPSComponentController extends DataEntityController<WPSComponent, String, WPSComponentService> {
+
+    @Autowired
+    private ContainerService containerService;
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")

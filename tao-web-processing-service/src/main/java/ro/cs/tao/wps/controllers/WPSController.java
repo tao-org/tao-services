@@ -32,10 +32,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.WPSAuthentication;
 import ro.cs.tao.component.WPSComponent;
@@ -43,11 +40,13 @@ import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.commons.BaseController;
-import ro.cs.tao.services.interfaces.ContainerService;
-import ro.cs.tao.services.interfaces.WPSComponentService;
-import ro.cs.tao.services.interfaces.WebProcessingService;
-import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.beans.WPSContainerBean;
+import ro.cs.tao.services.entity.util.ServiceTransformUtils;
+import ro.cs.tao.services.interfaces.*;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.wps.impl.WPSClient;
@@ -77,6 +76,8 @@ public class WPSController extends BaseController {
     @Autowired
     private ContainerService containerService;
     @Autowired
+    private WPSAuthenticationService wpsAuthenticationService;
+    @Autowired
     private WPSComponentService wpsComponentService;
     @Autowired
     private WorkflowService workflowService;
@@ -90,40 +91,73 @@ public class WPSController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<?> save(@RequestBody Container container) {
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> getById(@PathVariable("id") String id) {
         try {
-            if (container == null) {
+            final Container container = containerService.findById(id);
+            final WPSAuthentication auth = wpsAuthenticationService.findById(id);
+            return prepareResult(ServiceTransformUtils.toBean(container, auth));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> save(@RequestBody WPSContainerBean bean) {
+        try {
+            if (bean == null) {
                 throw new IllegalArgumentException("Empty body");
             }
-            if (container.getType() != ContainerType.WPS) {
+            if (bean.getType() != ContainerType.WPS) {
                 throw new IllegalArgumentException("Wrong container type");
             }
-            if (StringUtilities.isNullOrEmpty(container.getId())) {
-                container.setId(UUID.randomUUID().toString());
+            if (StringUtilities.isNullOrEmpty(bean.getId())) {
+                bean.setId(UUID.randomUUID().toString());
             }
-            return prepareResult(containerService.save(container));
+            Container container = ServiceTransformUtils.getContainerPart(bean);
+            WPSAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
+            container = containerService.save(container);
+            auth.setId(container.getId());
+            auth = wpsAuthenticationService.save(auth);
+            return prepareResult(ServiceTransformUtils.toBean(container, auth));
         } catch (Exception e) {
             return handleException(e);
         }
     }
 
     @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
-    public ResponseEntity<?> update(@RequestBody Container container) {
+    public ResponseEntity<?> update(@RequestBody WPSContainerBean bean) {
         try {
-            if (container == null) {
+            if (bean == null) {
                 throw new IllegalArgumentException("Empty body");
             }
-            if (container.getType() != ContainerType.WPS) {
+            if (bean.getType() != ContainerType.WPS) {
                 throw new IllegalArgumentException("Wrong container type");
             }
-            if (StringUtilities.isNullOrEmpty(container.getId())) {
-                throw new IllegalArgumentException("Wrong action - use POST instead");
+            if (StringUtilities.isNullOrEmpty(bean.getId())) {
+                throw new IllegalArgumentException("Wrong HTTP verb");
             }
-            return prepareResult(containerService.update(container));
+            Container container = ServiceTransformUtils.getContainerPart(bean);
+            WPSAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
+            container = containerService.update(container);
+            auth = wpsAuthenticationService.update(auth);
+            return prepareResult(ServiceTransformUtils.toBean(container, auth));
         } catch (Exception e) {
             return handleException(e);
         }
+    }
+
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<?> delete(@PathVariable("id") String id) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            wpsAuthenticationService.delete(id);
+            containerService.delete(id);
+            responseEntity = prepareResult("Entity deleted", ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
     }
 
     @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
