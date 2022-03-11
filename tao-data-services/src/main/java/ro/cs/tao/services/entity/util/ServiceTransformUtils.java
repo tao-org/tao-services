@@ -17,11 +17,15 @@ package ro.cs.tao.services.entity.util;
 
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.WPSAuthentication;
 import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
+import ro.cs.tao.docker.Container;
+import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.services.entity.beans.WPSContainerBean;
 import ro.cs.tao.services.entity.beans.WorkspaceBean;
 import ro.cs.tao.services.entity.beans.WorkspaceTypeBean;
 import ro.cs.tao.services.model.component.DataSourceGroupInfo;
@@ -129,6 +133,52 @@ public final class ServiceTransformUtils {
         entity.setParameters(bean.getParameters());
         entity.setUrlPrefix(bean.getUrlPrefix());
         entity.setType(EnumUtils.getEnumConstantByName(WorkspaceType.class, bean.getType()));
+        return entity;
+    }
+
+    public static WPSContainerBean toBean(Container container, WPSAuthentication authentication) {
+        final WPSContainerBean bean = new WPSContainerBean();
+        bean.setId(container.getId());
+        bean.setName(container.getName());
+        bean.setDescription(container.getDescription());
+        bean.setType(ContainerType.WPS);
+        bean.setApplicationPath(container.getApplicationPath());
+        bean.setLogo(container.getLogo());
+        bean.setApplications(container.getApplications());
+        bean.setFormat(container.getFormat());
+        bean.setCommonParameters(container.getCommonParameters());
+        bean.setFormatNameParameter(container.getFormatNameParameter());
+        bean.setAuthType(authentication.getType());
+        bean.setUser(authentication.getUser());
+        bean.setPassword(authentication.getPassword());
+        bean.setLoginUrl(authentication.getLoginUrl());
+        bean.setAuthHeader(authentication.getAuthHeader());
+        return bean;
+    }
+
+    public static Container getContainerPart(WPSContainerBean bean) {
+        final Container entity = new Container();
+        entity.setId(bean.getId());
+        entity.setName(bean.getName());
+        entity.setDescription(bean.getDescription());
+        entity.setType(ContainerType.WPS);
+        entity.setApplicationPath(bean.getApplicationPath());
+        entity.setLogo(bean.getLogo());
+        entity.setApplications(bean.getApplications());
+        entity.setFormat(bean.getFormat());
+        entity.setCommonParameters(bean.getCommonParameters());
+        entity.setFormatNameParameter(bean.getFormatNameParameter());
+        return entity;
+    }
+
+    public static WPSAuthentication getAuthenticationPart(WPSContainerBean bean) {
+        final WPSAuthentication entity = new WPSAuthentication();
+        entity.setUser(bean.getId());
+        entity.setType(bean.getAuthType());
+        entity.setUser(bean.getUser());
+        entity.setPassword(bean.getPassword());
+        entity.setLoginUrl(bean.getLoginUrl());
+        entity.setAuthHeader(bean.getAuthHeader());
         return entity;
     }
 }
