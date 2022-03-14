@@ -16,6 +16,7 @@
 package ro.cs.tao.services.security.token;
 
 import org.apache.commons.codec.binary.Base64;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.Authentication;
@@ -75,8 +76,12 @@ public class AuthenticationFilter extends GenericFilterBean {
                 MutableHttpServletRequest wrapper = new MutableHttpServletRequest(httpRequest);
                 wrapper.putHeader("Authorization", "Basic " + new String(Base64.encodeBase64((username + ":" + password).getBytes(StandardCharsets.US_ASCII))));
                 request = wrapper;
+            } else if (postToRefresh(httpRequest, resourcePath)) {
+                // No-op
             } else if (token.isPresent()) {
                 processTokenAuthentication(token);
+            } else {
+                throw new AuthenticationCredentialsNotFoundException(resourcePath);
             }
 
             //logger.fine("AuthenticationFilter is passing the request through the filter chain");
@@ -119,13 +124,13 @@ public class AuthenticationFilter extends GenericFilterBean {
 
     private boolean postToAuthenticate(HttpServletRequest httpRequest, String resourcePath) {
         return Endpoints.LOGIN_ENDPOINT.equalsIgnoreCase(resourcePath)
-               && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD);
+                && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD);
     }
 
-    /*private boolean postToRefresh(HttpServletRequest httpRequest, String resourcePath){
+    private boolean postToRefresh(HttpServletRequest httpRequest, String resourcePath){
         return Endpoints.REFRESH_ENDPOINT.equalsIgnoreCase(resourcePath)
                 && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD);
-    }*/
+    }
 
     private static class SystemMessageReceiver extends Notifiable {
 

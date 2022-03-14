@@ -71,16 +71,28 @@ public class TokenCacheImpl implements TokenCache {
         for (Map.Entry<String, Tuple<Token, Authentication>> entry : cache.entrySet()) {
             final Token t = entry.getValue().getKeyOne();
             if ((!t.isExpired() && t.getToken().equals(token)) ||
-                (t.isExpired() && t.getRefreshToken().equals(token))) {
+                t.getRefreshToken().equals(token)) {
                 authentication = entry.getValue().getKeyTwo();
             }
         }
-        if (authentication == null) {
+        /*if (authentication == null) {
+            // maybe it was a just expired token
+            final Map.Entry<Token, Authentication> entry = expiredTokens.entrySet().stream().filter(e -> e.getKey().getRefreshToken().equals(token)).findFirst().orElse(null);
+            return entry != null ? entry.getValue() : null;
+        }*/
+        return authentication;
+    }
+
+    @Override
+    public Authentication getPreviousAuthentication(String token) {
+        final Map.Entry<String, Tuple<Token, Authentication>> tuple = cache.entrySet().stream().filter(e -> e.getValue().getKeyOne().getRefreshToken().equals(token)).findFirst().orElse(null);
+        if (tuple != null) {
+            return tuple.getValue().getKeyTwo();
+        } else {
             // maybe it was a just expired token
             final Map.Entry<Token, Authentication> entry = expiredTokens.entrySet().stream().filter(e -> e.getKey().getRefreshToken().equals(token)).findFirst().orElse(null);
             return entry != null ? entry.getValue() : null;
         }
-        return authentication;
     }
 
     @Override
