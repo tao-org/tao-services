@@ -17,5 +17,7 @@ public interface TokenCache {
 
     default Authentication getAuthentication(String token) { return null; }
 
+    default Authentication getPreviousAuthentication(String token) { return null; }
+
     default void remove(String user) { }
 }

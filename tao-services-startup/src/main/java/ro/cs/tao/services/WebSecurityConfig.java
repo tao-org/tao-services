@@ -130,7 +130,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
           .headers().frameOptions().sameOrigin()
           .and()
           .authorizeRequests()
-                .antMatchers(Endpoints.LOGIN_ENDPOINT, Endpoints.REFRESH_ENDPOINT)
+                .antMatchers(Endpoints.REFRESH_ENDPOINT)
                     .permitAll()
                 .antMatchers(Endpoints.LOGIN_ENDPOINT)
                     .authenticated()

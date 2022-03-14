@@ -80,6 +80,10 @@ public class TokenManagementService {
         return tokenCache.getAuthentication(token);
     }
 
+    public Authentication retrieveFromRefreshToken(String token) {
+        return tokenCache.getPreviousAuthentication(token);
+    }
+
     public Token getUserToken(String user) {
         return tokenCache.getToken(user);
     }
