@@ -144,6 +144,9 @@ public class WPSController extends BaseController {
                 throw new IllegalArgumentException("Wrong HTTP verb");
             }
             Container container = ServiceTransformUtils.getContainerPart(bean);
+            if (container.getTag() == null) {
+                container.setTag("WPS");
+            }
             WPSAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
             container = containerService.update(container);
             auth = wpsAuthenticationService.update(auth);
