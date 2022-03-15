@@ -148,6 +148,7 @@ public final class ServiceTransformUtils {
         bean.setFormat(container.getFormat());
         bean.setCommonParameters(container.getCommonParameters());
         bean.setFormatNameParameter(container.getFormatNameParameter());
+        bean.setTag(container.getTag());
         if (authentication != null) {
             bean.setAuthType(authentication.getType());
             bean.setUser(authentication.getUser());
@@ -167,6 +168,7 @@ public final class ServiceTransformUtils {
         entity.setApplicationPath(bean.getApplicationPath());
         entity.setLogo(bean.getLogo());
         entity.setApplications(bean.getApplications());
+        entity.setTag(bean.getTag());
         entity.setFormat(bean.getFormat());
         entity.setCommonParameters(bean.getCommonParameters());
         entity.setFormatNameParameter(bean.getFormatNameParameter());
@@ -175,7 +177,7 @@ public final class ServiceTransformUtils {
 
     public static WPSAuthentication getAuthenticationPart(WPSContainerBean bean) {
         final WPSAuthentication entity = new WPSAuthentication();
-        entity.setUser(bean.getId());
+        entity.setId(bean.getId());
         entity.setType(bean.getAuthType());
         entity.setUser(bean.getUser());
         entity.setPassword(bean.getPassword());
