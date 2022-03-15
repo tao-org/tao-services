@@ -85,7 +85,13 @@ public class WPSController extends BaseController {
     @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> list() {
         try {
-            return prepareResult(containerService.listByType(ContainerType.WPS));
+            final List<Container> containers = containerService.listByType(ContainerType.WPS);
+            final List<WPSContainerBean> results = new ArrayList<>();
+            for (Container container : containers) {
+                results.add(ServiceTransformUtils.toBean(container,
+                                                         wpsAuthenticationService.findById(container.getId())));
+            }
+            return prepareResult(results);
         } catch (Exception e) {
             return handleException(e);
         }

@@ -66,14 +66,13 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication authentication) {
-        JaasAuthenticationToken jaasAuthenticationToken = (JaasAuthenticationToken) delegate
-          .authenticate(authentication);
+        JaasAuthenticationToken jaasAuthenticationToken = (JaasAuthenticationToken) delegate.authenticate(authentication);
 
         if (jaasAuthenticationToken.isAuthenticated()) {
-            String userName = jaasAuthenticationToken.getPrincipal().toString();
+            final String userName = jaasAuthenticationToken.getPrincipal().toString();
             jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new UserPrincipal(userName));
             // add user groups as roles
-            User user = persistenceManager.users().getByName(userName);
+            final User user = persistenceManager.users().getByName(userName);
             if (user == null) {
                 throw new RuntimeException(String.format("No such user '%s'", userName));
             }
@@ -85,24 +84,23 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             }
 
             // generate and store a new authentication token
-            AuthenticationWithToken authenticationWithToken = new AuthenticationWithToken(jaasAuthenticationToken.getPrincipal(), jaasAuthenticationToken.getCredentials(), new ArrayList<>(jaasAuthenticationToken.getAuthorities()), jaasAuthenticationToken.getLoginContext());
-            //final UserPreference userToken = user.getPreferences().stream().filter(p -> p.getKey().equals("token")).findFirst().orElse(null);
+            final AuthenticationWithToken authenticationWithToken = new AuthenticationWithToken(jaasAuthenticationToken.getPrincipal(),
+                                                                                                jaasAuthenticationToken.getCredentials(),
+                                                                                                new ArrayList<>(jaasAuthenticationToken.getAuthorities()),
+                                                                                                jaasAuthenticationToken.getLoginContext());
             Token userToken = tokenService.getUserToken(userName);
             if (userToken == null) {
+                logger.finest(String.format("No previous token for user %s, generating a new one", userName));
                 userToken = tokenService.generateNewToken(userName, user.getPassword());
                 tokenService.store(userToken, authenticationWithToken);
+                logger.finest(String.format("Stored token %s for user %s", userToken.getToken(), userName));
             } else if (tokenService.retrieve(userToken.getToken()) == null) {
+                logger.finest(String.format("No previous authentication for user %s, storing the created one", userName));
                 tokenService.store(new Token(userToken.getToken(), userToken.getRefreshToken(), TokenProvider.defaultExpiration()),
                                    authenticationWithToken);
+                logger.finest(String.format("Stored token %s for user %s", userToken.getToken(), userName));
             }
-            String token = null;
-            if (userToken != null) {
-                token = userToken.getToken();
-            }
-            authenticationWithToken.setToken(token);
-
-            logger.finest("Stored token: " + token);
-
+            authenticationWithToken.setToken(userToken.getToken());
             return jaasAuthenticationToken;
         } else {
             return null;
@@ -119,7 +117,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         JaasAuthenticationProvider authenticationProvider = new JaasAuthenticationProvider();
         authenticationProvider.setAuthorityGranters(new AuthorityGranter[] { new TaoAuthorityGranter() });
         authenticationProvider.setCallbackHandlers(new JaasAuthenticationCallbackHandler[] {
-                new JaasNameCallbackHandler(), new JaasPasswordCallbackHandler() });
+                new JaasNameCallbackHandler(), new JaasPasswordCallbackHandler()
+        });
         authenticationProvider.setLoginContextName("taologin");
         authenticationProvider.setLoginConfig(new ClassPathResource("tao_jaas.config"));
         return authenticationProvider;
