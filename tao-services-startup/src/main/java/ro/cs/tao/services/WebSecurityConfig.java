@@ -130,7 +130,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
           .headers().frameOptions().sameOrigin()
           .and()
           .authorizeRequests()
-                .antMatchers(Endpoints.REFRESH_ENDPOINT)
+                .antMatchers(Endpoints.REFRESH_ENDPOINT, Endpoints.DOWNLOAD_ENDPOINT)
                     .permitAll()
                 .antMatchers(Endpoints.LOGIN_ENDPOINT)
                     .authenticated()
@@ -138,8 +138,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                     .httpBasic()
                     .and()
                     .authenticationProvider(customAuthenticationProvider)
-          /*.authorizeRequests()
-                .antMatchers(BaseController.ADMIN_SERVICE_PATH_EXPRESSION).hasRole("ADMIN").and()*/
           .authorizeRequests()
                 .antMatchers(apiEndpointsWithAuthToken())
                     .authenticated()
@@ -165,7 +163,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     }
 
     private String[] apiEndpointsWithAuthToken() {
-        String[] expressions = Endpoints.endpoints("ro.cs.tao");
+        String[] expressions = Endpoints.endpoints("ro.cs.tao").toArray(new String[0]);;
         Logger.getLogger(WebSecurityConfig.class.getName())
                 .fine("Security active for the following endpoints: " + String.join(",", expressions));
         Logger.getLogger(WebSecurityConfig.class.getName())

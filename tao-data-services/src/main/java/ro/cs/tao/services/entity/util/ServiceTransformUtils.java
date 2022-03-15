@@ -148,11 +148,13 @@ public final class ServiceTransformUtils {
         bean.setFormat(container.getFormat());
         bean.setCommonParameters(container.getCommonParameters());
         bean.setFormatNameParameter(container.getFormatNameParameter());
-        bean.setAuthType(authentication.getType());
-        bean.setUser(authentication.getUser());
-        bean.setPassword(authentication.getPassword());
-        bean.setLoginUrl(authentication.getLoginUrl());
-        bean.setAuthHeader(authentication.getAuthHeader());
+        if (authentication != null) {
+            bean.setAuthType(authentication.getType());
+            bean.setUser(authentication.getUser());
+            bean.setPassword(authentication.getPassword());
+            bean.setLoginUrl(authentication.getLoginUrl());
+            bean.setAuthHeader(authentication.getAuthHeader());
+        }
         return bean;
     }
 

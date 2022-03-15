@@ -21,6 +21,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.web.filter.GenericFilterBean;
@@ -29,6 +30,7 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Notifiable;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.messaging.system.StartupCompletedMessage;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.Endpoints;
 import ro.cs.tao.utils.ExceptionUtils;
 
@@ -40,6 +42,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,13 +63,13 @@ public class AuthenticationFilter extends GenericFilterBean {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
-        HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
+        final HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
+        final HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
         if (!systemInitialised && !httpResponse.isCommitted()) {
             httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "The system is not able yet to serve http requests");
         }
-        Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
-        String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
+        final Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
+        final String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
 
         try {
             ServletRequest request = servletRequest;
@@ -76,17 +79,18 @@ public class AuthenticationFilter extends GenericFilterBean {
                 MutableHttpServletRequest wrapper = new MutableHttpServletRequest(httpRequest);
                 wrapper.putHeader("Authorization", "Basic " + new String(Base64.encodeBase64((username + ":" + password).getBytes(StandardCharsets.US_ASCII))));
                 request = wrapper;
-            } else if (postToRefresh(httpRequest, resourcePath)) {
-                // No-op
             } else if (token.isPresent()) {
                 processTokenAuthentication(token);
             } else {
-                throw new AuthenticationCredentialsNotFoundException(resourcePath);
+                if (isExcludedResource(httpRequest, resourcePath)) {
+                    SecurityContextHolder.getContext().setAuthentication(new SystemAuthentication());
+                } else {
+                    if (requiresToken(resourcePath)) {
+                        throw new AuthenticationCredentialsNotFoundException(resourcePath);
+                    }
+                }
             }
-
-            //logger.fine("AuthenticationFilter is passing the request through the filter chain");
             filterChain.doFilter(request, servletResponse);
-
         } catch (InternalAuthenticationServiceException internalAuthenticationServiceException) {
             SecurityContextHolder.clearContext();
             logger.log(Level.SEVERE, "Internal authentication service exception", internalAuthenticationServiceException);
@@ -127,9 +131,17 @@ public class AuthenticationFilter extends GenericFilterBean {
                 && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD);
     }
 
-    private boolean postToRefresh(HttpServletRequest httpRequest, String resourcePath){
-        return Endpoints.REFRESH_ENDPOINT.equalsIgnoreCase(resourcePath)
-                && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD);
+    private boolean requiresToken(String resourcePath) {
+        return Endpoints.endpoints("ro.cs.tao").stream().anyMatch(e -> e.indexOf('*') > 0
+                ? resourcePath.startsWith(e.substring(0, e.indexOf('*')))
+                : resourcePath.startsWith(e));
+    }
+
+    private boolean isExcludedResource(HttpServletRequest httpRequest, String resourcePath){
+        return  (Endpoints.REFRESH_ENDPOINT.equalsIgnoreCase(resourcePath)
+                    && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD)) ||
+                (resourcePath.startsWith(Endpoints.DOWNLOAD_ENDPOINT)
+                    && httpRequest.getMethod().equals("GET"));
     }
 
     private static class SystemMessageReceiver extends Notifiable {
@@ -143,6 +155,44 @@ public class AuthenticationFilter extends GenericFilterBean {
             if (message instanceof StartupCompletedMessage) {
                 systemInitialised = true;
             }
+        }
+    }
+
+    private static class SystemAuthentication implements Authentication {
+
+        @Override
+        public Collection<? extends GrantedAuthority> getAuthorities() {
+            return null;
+        }
+
+        @Override
+        public Object getCredentials() {
+            return SystemPrincipal.instance();
+        }
+
+        @Override
+        public Object getDetails() {
+            return SystemPrincipal.instance();
+        }
+
+        @Override
+        public Object getPrincipal() {
+            return SystemPrincipal.instance();
+        }
+
+        @Override
+        public boolean isAuthenticated() {
+            return true;
+        }
+
+        @Override
+        public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+
+        }
+
+        @Override
+        public String getName() {
+            return SystemPrincipal.instance().getName();
         }
     }
 }
