@@ -3,6 +3,7 @@ package ro.cs.tao.component;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class WPSComponentBean {
 
@@ -18,7 +19,7 @@ public class WPSComponentBean {
     private List<String> tags;
     private String remoteAddress;
     private String capabilityName;
-    private List<ParameterDescriptor> parameters;
+    private List<ParameterDescriptorBean> parameters;
     private ProcessingComponentVisibility visibility;
     private boolean active;
     private String owner;
@@ -40,7 +41,10 @@ public class WPSComponentBean {
         this.tags = src.getTags();
         this.remoteAddress = src.getRemoteAddress();
         this.capabilityName = src.getCapabilityName();
-        this.parameters = src.getParameters();
+        final List<ParameterDescriptor> parameters = src.getParameters();
+        if (parameters != null) {
+            this.parameters = parameters.stream().map(ParameterDescriptorBean::new).collect(Collectors.toList());
+        }
         this.visibility = src.getVisibility();
         this.active = src.isActive();
         this.owner = src.getOwner();
@@ -145,11 +149,11 @@ public class WPSComponentBean {
         this.capabilityName = capabilityName;
     }
 
-    public List<ParameterDescriptor> getParameters() {
+    public List<ParameterDescriptorBean> getParameters() {
         return parameters;
     }
 
-    public void setParameters(List<ParameterDescriptor> parameters) {
+    public void setParameters(List<ParameterDescriptorBean> parameters) {
         this.parameters = parameters;
     }
 
@@ -199,7 +203,9 @@ public class WPSComponentBean {
         entity.setTags(this.tags);
         entity.setRemoteAddress(this.remoteAddress);
         entity.setCapabilityName(this.capabilityName);
-        entity.setParameters(this.parameters);
+        if (this.parameters != null) {
+            entity.setParameters(this.parameters.stream().map(ParameterDescriptorBean::toParameterDescriptor).collect(Collectors.toList()));
+        }
         entity.setVisibility(this.visibility);
         entity.setActive(this.active);
         entity.setOwner(this.owner);
