@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.WPSAuthentication;
 import ro.cs.tao.component.WPSComponent;
+import ro.cs.tao.component.WPSComponentBean;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.Container;
@@ -121,6 +122,9 @@ public class WPSController extends BaseController {
                 bean.setId(UUID.randomUUID().toString());
             }
             Container container = ServiceTransformUtils.getContainerPart(bean);
+            if (StringUtilities.isNullOrEmpty(container.getId())) {
+                container.setId(UUID.randomUUID().toString());
+            }
             WPSAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
             container = containerService.save(container);
             auth.setId(container.getId());
@@ -204,13 +208,16 @@ public class WPSController extends BaseController {
                 component.setVisibility(ProcessingComponentVisibility.USER);
                 component.setOwner(processInfo.getCapabilityInfo().getUserName());
                 component.setVersion("WPS 1.0");
-                final List<Parameter> params = processInfo.getParameters().entrySet().iterator().next().getValue();
-                component.setParameters(params.stream().map(Parameter::toParameterDescriptor).collect(Collectors.toList()));
+                final Map<String, List<Parameter>> parameters = processInfo.getParameters();
+                if (parameters.size() > 0) {
+                    final List<Parameter> params = parameters.entrySet().iterator().next().getValue();
+                    component.setParameters(params.stream().map(Parameter::toParameterDescriptor).collect(Collectors.toList()));
+                }
                 component.setTargets(processInfo.getOutputs());
                 if (Boolean.TRUE.equals(save)) {
                     component = wpsComponentService.save(component);
                 }
-                return prepareResult(component);
+                return prepareResult(new WPSComponentBean(component));
             }
         } catch (Exception e) {
             return handleException(e);

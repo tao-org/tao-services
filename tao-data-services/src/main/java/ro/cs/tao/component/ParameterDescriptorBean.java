@@ -6,7 +6,10 @@ import ro.cs.tao.component.validation.Validator;
 import java.util.List;
 
 public class ParameterDescriptorBean {
-    final ParameterDescriptor descriptor;
+    private ParameterDescriptor descriptor;
+
+    public ParameterDescriptorBean() {
+    }
 
     public ParameterDescriptorBean(ParameterDescriptor descriptor) {
         this.descriptor = descriptor;
@@ -66,5 +69,72 @@ public class ParameterDescriptorBean {
 
     public String getId() {
         return descriptor.getId();
+    }
+
+    public void setName(String value) {
+        descriptor().setName(value);
+    }
+
+    public void setType(ParameterType type) {
+        descriptor().setType(type);
+    }
+
+    public void setDataType(Class<?> dataType) {
+        descriptor().setDataType(dataType);
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        descriptor().setDefaultValue(defaultValue);
+    }
+
+    public void setDescription(String description) {
+        descriptor().setDescription(description);
+    }
+
+    public void setLabel(String label) {
+        descriptor().setLabel(label);
+    }
+
+    public void setUnit(String unit) {
+        descriptor().setUnit(unit);
+    }
+
+    public void setValueSet(String[] valueSet) {
+        descriptor().setValueSet(valueSet);
+    }
+
+    public void setFormat(String format) {
+        descriptor().setFormat(format);
+    }
+
+    public void setNotNull(boolean notNull) {
+        descriptor().setNotNull(notNull);
+    }
+
+    public void setValidator(Validator customValidator) {
+        descriptor().setValidator(customValidator);
+    }
+
+    public void setDependencies(List<ParameterDependency> dependencies) {
+        descriptor().setDependencies(dependencies);
+    }
+
+    public void setExpansionRule(ParameterExpansionRule expansionRule) {
+        descriptor().setExpansionRule(expansionRule);
+    }
+
+    public void setId(String id) {
+        descriptor().setId(id);
+    }
+
+    public ParameterDescriptor toParameterDescriptor() {
+        return this.descriptor;
+    }
+
+    private ParameterDescriptor descriptor() {
+        if (descriptor == null) {
+            descriptor = new ParameterDescriptor();
+        }
+        return descriptor;
     }
 }
