@@ -50,6 +50,7 @@ public class WorkspaceEntityController extends DataEntityController<Workspace, I
             if (StringUtilities.isNullOrEmpty(entity.getUserName())) {
                 entity.setUserName(currentUser());
             }
+            entity.setSystem(false);
             return super.save(entity);
         } catch (Exception e) {
             return handleException(e);
@@ -62,6 +63,7 @@ public class WorkspaceEntityController extends DataEntityController<Workspace, I
             if (StringUtilities.isNullOrEmpty(entity.getUserName())) {
                 throw new IllegalArgumentException("Cannot update an unassigned workspace");
             }
+            entity.setSystem(false);
             return super.update(id, entity);
         } catch (Exception e) {
             return handleException(e);
