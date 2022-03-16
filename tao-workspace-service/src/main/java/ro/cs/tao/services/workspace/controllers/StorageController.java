@@ -413,10 +413,18 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (!(StringUtilities.isNullOrEmpty(fileName) || isFile)) {
                 throw new IllegalArgumentException("Either [fileName] or [folder] (but not both) must be supplied");
             }
+            final String user = currentUser();
+            if (workspaceType == WorkspaceType.LOCAL) {
+                fileName = StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + (fileName.startsWith(user) ? fileName : user + "/" + fileName) + "\"";
+                folder = StringUtilities.isNullOrEmpty(folder) ? null : "\"" + (folder.startsWith(user) ? folder : user + "/" + folder) + "\"";
+            } else {
+                fileName = StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + fileName + "\"";
+                folder = StringUtilities.isNullOrEmpty(folder) ? null : "\"" + folder + "\"";
+            }
             final String json = "{ \"protocol\": \"" + protocol + "\", "
-                    + " \"fileName\": " + (StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + fileName + "\"") + ", "
-                    + "\"folder\": " + (StringUtilities.isNullOrEmpty(folder) ? null : "\"" + folder + "\"") + ", "
-                    + "\"user\":\"" + currentUser() + "\" }";
+                    + " \"fileName\": " + fileName + ", "
+                    + "\"folder\": " + folder + ", "
+                    + "\"user\":\"" + user + "\" }";
             return prepareResult("/files/get?token=" + URLEncoder.encode(Crypto.encrypt(json, SystemPrincipal.instance().getName()),
                                                                          "UTF8"));
         } catch (Exception e) {
