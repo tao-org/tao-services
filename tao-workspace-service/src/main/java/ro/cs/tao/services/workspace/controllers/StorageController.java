@@ -111,11 +111,12 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                                    @RequestParam(name = "last", required = false) String lastItem) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
+            final String currentUser = currentUser();
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
-                responseEntity = prepareResult(fileStorageService.listUserWorkspace(currentUser()));
+                responseEntity = prepareResult(fileStorageService.listUserWorkspace(currentUser));
             } else {
                 Path relativePath = Paths.get(relativeFolder);
-                if (relativePath.getName(0).toString().equals(currentUser())) {
+                if (relativePath.getName(0).toString().equals(currentUser)) {
                     relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
                 }
                 final Path lastPath = lastItem != null ? Paths.get(lastItem) : null;
@@ -363,7 +364,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param relativeFolder    The folder to start with
      * @param lastItem          [Optional] The item to start from (in case of paged results)
      */
-    @RequestMapping(value = "/remote", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/browse", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listRemote(@RequestParam("workspace") int workspaceId,
                                                          @RequestParam("folder") String relativeFolder,
                                                          @RequestParam(name = "last", required = false) String lastItem) {
@@ -372,13 +373,12 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (StringUtils.isEmpty(relativeFolder) || relativeFolder.startsWith(".")) {
                 throw new IOException("For remote files, the relative folder must begin with the bucket name");
             }
-            if (workspaceId == 1) {
-                // delegate to /user endpoint since it's a local folder
-                return list(relativeFolder, lastItem);
-            }
             final Workspace workspace = workspaceProvider.get(workspaceId);
             if (workspace == null) {
                 throw new IOException("Workspace does not exist");
+            }
+            if (workspace.getType() == WorkspaceType.LOCAL) {
+                return list(relativeFolder, lastItem);
             }
             Path relativePath = Paths.get(relativeFolder);
             if (relativePath.getName(0).toString().equals(currentUser())) {

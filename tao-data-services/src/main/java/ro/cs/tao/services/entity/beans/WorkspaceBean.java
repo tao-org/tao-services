@@ -1,14 +1,17 @@
 package ro.cs.tao.services.entity.beans;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class WorkspaceBean {
     private Integer id;
     private String name;
     private String description;
     private String urlPrefix;
+    private String rootKey;
     private String type;
-    private HashMap<String, String> parameters;
+    private boolean system;
+    private boolean readOnly;
+    private LinkedHashMap<String, String> parameters;
 
     public Integer getId() {
         return id;
@@ -34,6 +37,14 @@ public class WorkspaceBean {
         this.description = description;
     }
 
+    public String getRootKey() {
+        return rootKey;
+    }
+
+    public void setRootKey(String rootKey) {
+        this.rootKey = rootKey;
+    }
+
     public String getUrlPrefix() {
         return urlPrefix;
     }
@@ -50,11 +61,27 @@ public class WorkspaceBean {
         this.type = type;
     }
 
-    public HashMap<String, String> getParameters() {
+    public boolean isSystem() {
+        return system;
+    }
+
+    public void setSystem(boolean system) {
+        this.system = system;
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+    }
+
+    public LinkedHashMap<String, String> getParameters() {
         return parameters;
     }
 
-    public void setParameters(HashMap<String, String> parameters) {
+    public void setParameters(LinkedHashMap<String, String> parameters) {
         this.parameters = parameters;
     }
 }

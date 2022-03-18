@@ -8,10 +8,9 @@ import ro.cs.tao.services.interfaces.WorkspaceService;
 import ro.cs.tao.topology.Workspace;
 import ro.cs.tao.topology.WorkspaceType;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Implementation for Workspace entity service.
@@ -63,7 +62,7 @@ public class WorkspaceServiceImpl
         existing.setName(object.getName());
         existing.setDescription(object.getDescription());
         existing.setType(object.getType());
-        final HashMap<String, String> parameters = object.getParameters();
+        final LinkedHashMap<String, String> parameters = object.getParameters();
         if (parameters == null || parameters.isEmpty()) {
             throw new IllegalArgumentException("Worspace parameters not supplied");
         }
@@ -89,7 +88,7 @@ public class WorkspaceServiceImpl
             errors.add("[description] cannot be empty");
         }
         final WorkspaceType type = entity.getType();
-        final Set<String> paramNames = type.getParameters();
+        final List<String> paramNames = type.getParameters();
         final Map<String, String> parameters = entity.getParameters();
         for (String pName : paramNames) {
             if (parameters.get(pName) == null) {
