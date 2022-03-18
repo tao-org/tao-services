@@ -15,13 +15,13 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
-import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WPSComponentService;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/wpscomponent")
@@ -41,9 +41,11 @@ public class WPSComponentController extends BaseController {
                                                    @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
         if (pageNumber.isPresent() && sortByField.isPresent()) {
             Sort sort = new Sort().withField(sortByField.get(), sortDirection.orElse(SortDirection.ASC));
-            return prepareResult(ServiceTransformUtils.toWPSComponentInfos(wpsComponentService.list(pageNumber, pageSize, sort)));
+            //return prepareResult(ServiceTransformUtils.toWPSComponentInfos(wpsComponentService.list(pageNumber, pageSize, sort)));
+            return prepareResult(wpsComponentService.list(pageNumber, pageSize, sort).stream().map(WPSComponentBean::new).collect(Collectors.toList()));
         } else {
-            return prepareResult(ServiceTransformUtils.toWPSComponentInfos(wpsComponentService.list()));
+            //return prepareResult(ServiceTransformUtils.toWPSComponentInfos(wpsComponentService.list()));
+            return prepareResult(wpsComponentService.list().stream().map(WPSComponentBean::new).collect(Collectors.toList()));
         }
     }
 

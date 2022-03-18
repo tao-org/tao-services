@@ -35,21 +35,32 @@ public class WorkspaceEntityController extends DataEntityController<Workspace, I
                                                    @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
         if (!(pageNumber.isPresent() || pageSize.isPresent() || sortByField.isPresent() || sortDirection.isPresent())) {
             try {
-                return prepareResult(this.service.getByUser(currentUser()));
+                return prepareResult(this.service.getByUser(currentUser()).stream().map(ServiceTransformUtils::toBean).collect(Collectors.toList()));
             } catch (Exception e) {
                 return handleException(e);
             }
         } else{
-            return super.list(pageNumber, pageSize, sortByField, sortDirection);
+            return prepareResult(this.service.list().stream().map(ServiceTransformUtils::toBean).collect(Collectors.toList()));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") Integer id) {
+        try {
+            final Workspace entity = this.service.findById(id);
+            if (entity == null || !entity.getUserName().equals(currentUser())) {
+                throw new IllegalArgumentException("You cannot access this workspace");
+            }
+            return prepareResult(ServiceTransformUtils.toBean(entity));
+        } catch (Exception e) {
+            return handleException(e);
         }
     }
 
     @Override
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Workspace entity) {
         try {
-            if (StringUtilities.isNullOrEmpty(entity.getUserName())) {
-                entity.setUserName(currentUser());
-            }
+            entity.setUserName(currentUser());
             entity.setSystem(false);
             return super.save(entity);
         } catch (Exception e) {
@@ -60,8 +71,9 @@ public class WorkspaceEntityController extends DataEntityController<Workspace, I
     @Override
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") Integer id, @RequestBody Workspace entity) {
         try {
-            if (StringUtilities.isNullOrEmpty(entity.getUserName())) {
-                throw new IllegalArgumentException("Cannot update an unassigned workspace");
+            if (StringUtilities.isNullOrEmpty(entity.getUserName()) ||
+                !entity.getUserName().equals(currentUser())) {
+                throw new IllegalArgumentException("Cannot update this workspace");
             }
             entity.setSystem(false);
             return super.update(id, entity);

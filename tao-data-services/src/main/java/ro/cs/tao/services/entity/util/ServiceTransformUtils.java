@@ -120,8 +120,9 @@ public final class ServiceTransformUtils {
         bean.setName(type.name());
         bean.setDescription(type.friendlyName());
         bean.setUrlPrefix(type.prefix());
-        bean.setParameters(new ArrayList<>(type.getParameters()));
-        bean.getParameters().sort(String::compareTo);
+        bean.setRootKey(type.rootKey());
+        bean.setSingleton(type.singleton());
+        bean.setParameters(type.getParameters());
         return bean;
     }
 
@@ -132,8 +133,24 @@ public final class ServiceTransformUtils {
         entity.setDescription(bean.getDescription());
         entity.setParameters(bean.getParameters());
         entity.setUrlPrefix(bean.getUrlPrefix());
+        entity.setSystem(bean.isSystem());
+        entity.setReadOnly(bean.isReadOnly());
         entity.setType(EnumUtils.getEnumConstantByName(WorkspaceType.class, bean.getType()));
         return entity;
+    }
+
+    public static WorkspaceBean toBean(Workspace entity) {
+        final WorkspaceBean bean = new WorkspaceBean();
+        bean.setId(entity.getId());
+        bean.setName(entity.getName());
+        bean.setDescription(entity.getDescription());
+        bean.setParameters(entity.getParameters());
+        bean.setUrlPrefix(entity.getUrlPrefix());
+        bean.setType(entity.getType().name());
+        bean.setRootKey(entity.getType().rootKey());
+        bean.setReadOnly(entity.isReadOnly());
+        bean.setSystem(entity.isSystem());
+        return bean;
     }
 
     public static WPSContainerBean toBean(Container container, WPSAuthentication authentication) {

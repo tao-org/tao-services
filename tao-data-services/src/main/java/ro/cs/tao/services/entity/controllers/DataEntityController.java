@@ -115,7 +115,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
         }
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE)
     public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") K id) {
         ResponseEntity<ServiceResponse<?>> response;
         try {

@@ -7,6 +7,8 @@ public class WorkspaceTypeBean {
     private String name;
     private String description;
     private String urlPrefix;
+    private boolean singleton;
+    private String rootKey;
     private List<String> parameters;
 
     public int getId() {
@@ -33,12 +35,28 @@ public class WorkspaceTypeBean {
         this.description = description;
     }
 
+    public String getRootKey() {
+        return rootKey;
+    }
+
+    public void setRootKey(String rootKey) {
+        this.rootKey = rootKey;
+    }
+
     public String getUrlPrefix() {
         return urlPrefix;
     }
 
     public void setUrlPrefix(String prefix) {
         this.urlPrefix = prefix;
+    }
+
+    public boolean isSingleton() {
+        return singleton;
+    }
+
+    public void setSingleton(boolean singleton) {
+        this.singleton = singleton;
     }
 
     public List<String> getParameters() {
