@@ -60,15 +60,10 @@ public class WPSComponentServiceImpl extends EntityService<WPSComponent> impleme
     @Override
     public WPSComponent save(WPSComponent component) {
         if (component != null) {
-            if (wpsComponentProvider.get(component.getId()) != null) {
-                return update(component);
-            } else {
-                try {
-                    return wpsComponentProvider.save(component);
-                } catch (PersistenceException e) {
-                    logger.severe(e.getMessage());
-                    return null;
-                }
+            try {
+                return wpsComponentProvider.save(component);
+            } catch (PersistenceException e) {
+                logger.severe(e.getMessage());
             }
         }
         return null;

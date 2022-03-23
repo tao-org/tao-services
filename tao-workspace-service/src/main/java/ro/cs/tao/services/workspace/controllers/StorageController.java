@@ -146,22 +146,6 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return responseEntity;
     }
     /**
-     * Creates a folder in the user workspace
-     *
-     * @param folder    The name of the folder
-     */
-    @RequestMapping(value = "/folder/", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<?> createUserFolder(@RequestParam("folder") String folder) {
-        ResponseEntity<ServiceResponse<?>> responseEntity;
-        try {
-            fileStorageService.createFolder(folder, true);
-            responseEntity = prepareResult(String.format("Folder %s created", folder), ResponseStatus.SUCCEEDED);
-        } catch (Exception ex) {
-            responseEntity = handleException(ex);
-        }
-        return responseEntity;
-    }
-    /**
      * Uploads a file into the given folder of the user workspace
      * @param file          The file to be uploaded
      * @param folder        The folder into which the file will be uploaded
@@ -397,6 +381,47 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             responseEntity = handleException(ex);
         }
 
+        return responseEntity;
+    }
+    /**
+     * Creates a folder in the user workspace
+     *
+     * @param folder    The name of the folder
+     */
+    @RequestMapping(value = "/folder/", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> createUserFolder(@RequestParam("workspace") int workspaceId,
+                                              @RequestParam("folder") String folder) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (StringUtils.isEmpty(folder) || folder.startsWith(".") || folder.startsWith("..") || folder.startsWith("/")) {
+                throw new IOException("The folder must be relative and should not start with '.' or '..'");
+            }
+            final Workspace workspace = workspaceProvider.get(workspaceId);
+            if (workspace == null) {
+                throw new IOException("Workspace does not exist");
+            }
+            final String root = workspace.getParameters().get(workspace.getType().rootKey());
+            Path createdPath;
+            StorageService service;
+            if (workspace.getType() == WorkspaceType.LOCAL) {
+                service = fileStorageService;
+                if (folder.startsWith(root)) {
+                    folder = folder.replace(root + "/", "");
+                }
+            } else {
+                service = StorageServiceFactory.getInstance(workspace);
+                if (!folder.startsWith(root)) {
+                    folder = root + "/" + folder;
+                }
+            }
+            createdPath = service.createFolder(folder, true);
+            if (createdPath == null) {
+                throw new IOException("Folder was not created");
+            }
+            responseEntity = prepareResult(String.format("Folder %s created", createdPath), ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
         return responseEntity;
     }
     /**
