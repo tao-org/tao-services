@@ -19,6 +19,7 @@ import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.WPSAuthentication;
 import ro.cs.tao.component.WPSComponent;
+import ro.cs.tao.component.enums.AuthenticationType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.docker.Container;
@@ -37,6 +38,7 @@ import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.topology.Workspace;
 import ro.cs.tao.topology.WorkspaceType;
+import ro.cs.tao.utils.Crypto;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 
 import java.util.ArrayList;
@@ -169,7 +171,7 @@ public final class ServiceTransformUtils {
         if (authentication != null) {
             bean.setAuthType(authentication.getType());
             bean.setUser(authentication.getUser());
-            bean.setPassword(authentication.getPassword());
+            bean.setPassword(Crypto.decrypt(authentication.getPassword(), authentication.getUser()));
             bean.setLoginUrl(authentication.getLoginUrl());
             bean.setAuthHeader(authentication.getAuthHeader());
         }
@@ -195,11 +197,17 @@ public final class ServiceTransformUtils {
     public static WPSAuthentication getAuthenticationPart(WPSContainerBean bean) {
         final WPSAuthentication entity = new WPSAuthentication();
         entity.setId(bean.getId());
-        entity.setType(bean.getAuthType());
-        entity.setUser(bean.getUser());
-        entity.setPassword(bean.getPassword());
-        entity.setLoginUrl(bean.getLoginUrl());
-        entity.setAuthHeader(bean.getAuthHeader());
+        if (bean.getAuthType() != null) {
+            entity.setType(bean.getAuthType());
+            entity.setUser(bean.getUser());
+            if (entity.getUser() != null) {
+                entity.setPassword(Crypto.encrypt(bean.getPassword(), bean.getUser()));
+            }
+            entity.setLoginUrl(bean.getLoginUrl());
+            entity.setAuthHeader(bean.getAuthHeader());
+        } else {
+            entity.setType(AuthenticationType.NONE);
+        }
         return entity;
     }
 }
