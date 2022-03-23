@@ -72,7 +72,7 @@ public class WPSComponentController extends BaseController {
             if (targets != null) {
                 targets.forEach(t -> t.setParentId(component.getId()));
             }
-            return prepareResult(wpsComponentService.save(component));
+            return prepareResult(new WPSComponentBean(wpsComponentService.save(component)));
         } catch (Exception e) {
             return handleException(e);
         }
@@ -96,7 +96,7 @@ public class WPSComponentController extends BaseController {
             }
             final WPSComponent component = entity.toComponent();
             component.setService(container);
-            return prepareResult(wpsComponentService.update(component));
+            return prepareResult(new WPSComponentBean(wpsComponentService.update(component)));
         } catch (Exception e) {
             return handleException(e);
         }

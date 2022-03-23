@@ -2,6 +2,7 @@ package ro.cs.tao.component;
 
 import ro.cs.tao.component.enums.ParameterType;
 import ro.cs.tao.component.validation.Validator;
+import ro.cs.tao.datasource.param.JavaType;
 
 import java.util.List;
 
@@ -79,8 +80,8 @@ public class ParameterDescriptorBean {
         descriptor().setType(type);
     }
 
-    public void setDataType(Class<?> dataType) {
-        descriptor().setDataType(dataType);
+    public void setDataType(String dataType) {
+        descriptor().setDataType(JavaType.fromFriendlyName(dataType).value());
     }
 
     public void setDefaultValue(String defaultValue) {
