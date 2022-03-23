@@ -19,7 +19,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.persistence.WorkspaceProvider;
 import ro.cs.tao.security.Token;
@@ -74,7 +74,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 if (list == null || list.isEmpty()) {
                     userProvider.createWorkspaces(userName);
                 }
-                Path path = Paths.get(ConfigurationManager.getInstance().getValue("workspace.location")).resolve(userName);
+                Path path = Paths.get(SystemVariable.ROOT.value()).resolve(userName);
                 FileUtilities.ensureExists(path);
                 FileUtilities.ensureExists(path.resolve("files"));
             } catch (Exception e) {

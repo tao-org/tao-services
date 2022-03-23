@@ -21,8 +21,6 @@ import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.WorkspaceProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
-import ro.cs.tao.serialization.BaseSerializer;
-import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.controllers.DataEntityController;
@@ -32,6 +30,7 @@ import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.workspace.impl.TransferService;
 import ro.cs.tao.services.workspace.model.TransferRequest;
+import ro.cs.tao.services.workspace.model.TransferableItem;
 import ro.cs.tao.topology.Workspace;
 import ro.cs.tao.topology.WorkspaceType;
 import ro.cs.tao.utils.Crypto;
@@ -45,7 +44,10 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.zip.ZipOutputStream;
 
 @Controller
@@ -386,7 +388,11 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
             StorageService service = StorageServiceFactory.getInstance(workspace);
             final Path lastPath = lastItem != null ? Paths.get(lastItem) : null;
-            responseEntity = prepareResult(service.listFiles(Paths.get(relativeFolder), null, lastPath));
+            final List<FileObject> list = service.listFiles(Paths.get(relativeFolder), null, lastPath);
+            if (workspace.getParameters().get(workspace.getType().rootKey()).equals(relativeFolder) && list.isEmpty()) {
+                list.add(service.getRootObject(workspace));
+            }
+            responseEntity = prepareResult(list);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
         }
@@ -506,12 +512,13 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     final Path path;
                     if (isFile) {
                         path = Paths.get(fileName.replace("s3://", ""));
-                        InputStream stream = (InputStream) client.download(path);
-                        response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                        response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
-                        response.setStatus(HttpServletResponse.SC_OK);
-                        IOUtils.copy(stream, response.getOutputStream());
-                        response.flushBuffer();
+                        try (InputStream stream = (InputStream) client.download(path)) {
+                            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                            response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
+                            response.setStatus(HttpServletResponse.SC_OK);
+                            IOUtils.copy(stream, response.getOutputStream());
+                            response.flushBuffer();
+                        }
                     } else {
                         path = Paths.get(folder.replace("s3://", ""));
                         response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
@@ -531,42 +538,44 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     /**
      * Transfers one or more file objects from the source workspace to the destination workspace
      *
-     * @param srcWksId          The source workspace identifier
-     * @param jsonFileObject    The JSON representation of either a single file object or a list of file objects
-     * @param dstWksId          The destination workspace identifier
-     * @param dstFolder         The folder in the destination workspace where to transfer to
+     * @param request           The request structure for transferring a file or a folder.
+     *                          It consists in:
+     *                          - the source workspace identifier
+     *                          - the destination workspace identifier
+     *                          - the list of file objects to transfer
+     *                          - an optional flag to move or copy the files (default is copy)
+     *                          - an optional flag to overwrite existing files (default is not to overwrite)
+     *
      */
     @RequestMapping(value = "/transfer/", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> transfer(@RequestParam("sourceWorkspace") int srcWksId,
-                                                       @RequestParam("sourceObject") String jsonFileObject,
-                                                       @RequestParam("destinationWorkspace") int dstWksId,
-                                                       @RequestParam("destinationPath") String dstFolder,
-                                                       @RequestParam(name = "move", required = false) Boolean move,
-                                                       @RequestParam(name = "overwrite", required = false) Boolean overwrite) {
+    public ResponseEntity<ServiceResponse<?>> transfer(@RequestBody TransferRequest request) {
         try {
-            List<FileObject> requestedFiles;
-            try {
-                final FileObject fileObject = new ObjectMapper().reader(FileObject.class).readValue(jsonFileObject);
-                requestedFiles = new ArrayList<>();
-                requestedFiles.add(fileObject);
-            } catch (Exception e) {
-                BaseSerializer<FileObject> serializer = SerializerFactory.create(FileObject.class, ro.cs.tao.serialization.MediaType.JSON);
-                requestedFiles = serializer.deserialize(FileObject.class, jsonFileObject);
+            if (request == null) {
+                throw new IllegalArgumentException("Empty body");
             }
-            final Workspace srcWorkspace = workspaceProvider.get(srcWksId);
-            final Workspace dstWorkspace = workspaceProvider.get(dstWksId);
+            final String user = currentUser();
+            final List<FileObject> requestedFiles = request.getFileObjects();
+            final Workspace srcWorkspace = workspaceProvider.get(request.getSourceWorkspace());
+            if (!user.equals(srcWorkspace.getUserName())) {
+                throw new IllegalArgumentException("Cannot transfer from a not-owned workspace");
+            }
+            final Workspace dstWorkspace = workspaceProvider.get(request.getDestinationWorkspace());
+            if (!user.equals(dstWorkspace.getUserName())) {
+                throw new IllegalArgumentException("Cannot transfer to a not-owned workspace");
+            }
             if (dstWorkspace.isReadOnly()) {
                 throw new IllegalArgumentException("Destination is read-only");
             }
             int count = 0;
             long size = 0;
+            String dstFolder = request.getDestinationPath();
             if (!dstFolder.endsWith("/")) {
                 dstFolder += "/";
             }
-            final String targetRoot = dstWorkspace.getParameters().get(dstWorkspace.getType().rootKey()) + "/" + currentUser() + "/";
+            final String targetRoot = dstWorkspace.getParameters().get(dstWorkspace.getType().rootKey()) + "/";
             String targetFolder;
-            final boolean isMove = move != null && move;
-            final boolean overwriteExisting = overwrite != null && overwrite;
+            final boolean isMove = request.getMove() != null && request.getMove();
+            final boolean overwriteExisting = request.getOverwrite() != null && request.getOverwrite();
             for (FileObject fileObject : requestedFiles) {
                 String root = fileObject.getRelativePath();
                 size = fileObject.getSize();
@@ -581,18 +590,21 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                             ? fileStorageService
                             : StorageServiceFactory.getInstance(srcWorkspace);
                     final List<FileObject> files = service.listTree(Paths.get(fileObject.getRelativePath()));
+                    final TransferableItem[] items = new TransferableItem[files.size()];
                     for (FileObject fObject : files) {
                         if (!fObject.isFolder()) {
                             final String path = targetRoot + targetFolder + fObject.getRelativePath().replace(root, "");
-                            queueFile(root, fObject, srcWorkspace, dstWorkspace, path, isMove, overwriteExisting);
+                            items[count++] = new TransferableItem(user, root, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting);
+                            //queueFile(root, fObject, srcWorkspace, dstWorkspace, path, isMove, overwriteExisting);
                             size += fObject.getSize();
-                            count++;
                         }
                     }
+                    queueFiles(items);
                 } else {
+                    String fileName = root.substring(root.lastIndexOf('/', root.length() - 2) + 1);
                     queueFile(root, fileObject, srcWorkspace, dstWorkspace,
                               dstWorkspace.getParameters().get(dstWorkspace.getType().rootKey())
-                                      + "/" + currentUser() + "/" + targetFolder,
+                                      + "/" + user + "/" + targetFolder + "/" + fileName,
                               isMove, overwriteExisting);
                     count = 1;
                 }
@@ -606,8 +618,12 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     //endregion
 
     private void queueFile(String batchId, FileObject file, Workspace source, Workspace destination, String folder, boolean move, boolean overwrite) {
-        final TransferRequest request = new TransferRequest(batchId, source, file, destination, folder, move, overwrite);
+        final TransferableItem request = new TransferableItem(currentUser(), batchId, source, file, destination, folder, move, overwrite);
         transferService.request(request);
+    }
+
+    private void queueFiles(TransferableItem[] items) {
+        transferService.request(items);
     }
 
     private FileSystemResource loadAsResource(String fileName) throws IOException {

@@ -1,52 +1,62 @@
 package ro.cs.tao.services.workspace.model;
 
 import ro.cs.tao.services.model.FileObject;
-import ro.cs.tao.topology.Workspace;
+
+import java.util.List;
 
 public class TransferRequest {
-    private final String batch;
-    private final Workspace sourceWorkspace;
-    private final FileObject source;
-    private final Workspace destinationWorkspace;
-    private final String destinationPath;
-    private final boolean move;
-    private final boolean force;
+    private int sourceWorkspace;
+    private int destinationWorkspace;
+    private String destinationPath;
+    private Boolean move;
+    private Boolean overwrite;
+    private List<FileObject> fileObjects;
 
-    public TransferRequest(String batch, Workspace sourceWorkspace, FileObject source, Workspace destinationWorkspace, String destinationPath, boolean move, boolean force) {
-        this.batch = batch;
-        this.sourceWorkspace = sourceWorkspace;
-        this.source = source;
-        this.destinationWorkspace = destinationWorkspace;
-        this.destinationPath = destinationPath;
-        this.move = move;
-        this.force = force;
-    }
-
-    public String getBatch() {
-        return batch;
-    }
-
-    public Workspace getSourceWorkspace() {
+    public int getSourceWorkspace() {
         return sourceWorkspace;
     }
 
-    public FileObject getSource() {
-        return source;
+    public void setSourceWorkspace(int sourceWorkspace) {
+        this.sourceWorkspace = sourceWorkspace;
     }
 
-    public Workspace getDestinationWorkspace() {
+    public int getDestinationWorkspace() {
         return destinationWorkspace;
+    }
+
+    public void setDestinationWorkspace(int destinationWorkspace) {
+        this.destinationWorkspace = destinationWorkspace;
     }
 
     public String getDestinationPath() {
         return destinationPath;
     }
 
-    public boolean isMove() {
+    public void setDestinationPath(String destinationPath) {
+        this.destinationPath = destinationPath;
+    }
+
+    public Boolean getMove() {
         return move;
     }
 
-    public boolean isForce() {
-        return force;
+    public void setMove(Boolean move) {
+        this.move = move;
+    }
+
+    public Boolean getOverwrite() {
+        return overwrite;
+    }
+
+    public void setOverwrite(Boolean overwrite) {
+        this.overwrite = overwrite;
+    }
+
+    public List<FileObject> getFileObjects() {
+        return fileObjects;
+    }
+
+    public void setFileObjects(List<FileObject> objects) {
+        this.fileObjects = objects;
     }
 }

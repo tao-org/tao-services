@@ -131,7 +131,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                 fileName.startsWith(SystemVariable.SHARED_FILES.value())) {
             throw new IOException( "Operation not allowed");
         }
-        if (fileName.startsWith("files")) {
+        if (fileName.startsWith(SystemVariable.USER_FILES.value())) {
             Path filePath = uploadPath.getParent().resolve(fileName);
             Files.delete(filePath);
             try {
