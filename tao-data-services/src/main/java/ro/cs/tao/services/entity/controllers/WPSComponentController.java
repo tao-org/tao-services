@@ -3,7 +3,10 @@ package ro.cs.tao.services.entity.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.component.SourceDescriptor;
@@ -102,8 +105,8 @@ public class WPSComponentController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") String id) {
+    @RequestMapping(value = "/", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("id") String id) {
         try {
             final WPSComponent entity = wpsComponentService.findById(id);
             if (entity == null) {

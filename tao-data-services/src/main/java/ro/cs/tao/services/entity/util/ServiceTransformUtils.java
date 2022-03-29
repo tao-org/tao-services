@@ -36,10 +36,10 @@ import ro.cs.tao.services.model.component.WPSComponentInfo;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
-import ro.cs.tao.topology.Workspace;
-import ro.cs.tao.topology.WorkspaceType;
 import ro.cs.tao.utils.Crypto;
 import ro.cs.tao.workflow.WorkflowDescriptor;
+import ro.cs.tao.workspaces.Workspace;
+import ro.cs.tao.workspaces.WorkspaceType;
 
 import java.util.ArrayList;
 import java.util.List;

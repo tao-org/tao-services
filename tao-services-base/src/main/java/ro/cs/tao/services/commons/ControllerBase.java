@@ -42,7 +42,7 @@ public abstract class ControllerBase {
 
     private ThreadPoolTaskExecutor executorService;
 
-    private Logger logger = Logger.getLogger(getClass().getName());
+    private final Logger logger = Logger.getLogger(getClass().getName());
 
     protected String currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -135,7 +135,7 @@ public abstract class ControllerBase {
     }
 
     protected ResponseEntity<ServiceResponse<?>> handleException(Exception ex) {
-        logger.severe(ExceptionUtils.getExceptionLoggingMessage(ex, 1));
+        logger.severe(ExceptionUtils.getStackTrace(logger, ex));
         if (ex instanceof ValidationException) {
             ValidationException vex = (ValidationException) ex;
             return new ResponseEntity<>(new ServiceResponse<>(vex.getAdditionalInfo(),
@@ -146,13 +146,7 @@ public abstract class ControllerBase {
                                                               ResponseStatus.FAILED),
                                         HttpStatus.OK);
         	
-        }/* else {
-            return new ResponseEntity<>(new ServiceResponse<>(String.format("Failed with error: %s - %s",
-                                                                            ex.getClass().getSimpleName(),
-                                                                            ex.getMessage()),
-                                                              ResponseStatus.FAILED),
-                                        HttpStatus.OK);
-        }*/
+        }
     }
 
     protected void debug(String message, Object... args) {
@@ -196,12 +190,12 @@ public abstract class ControllerBase {
             msg = ex.getMessage();
             message.setData(msg);
             topic = Topic.ERROR.value();
-            Logger.getLogger(getClass().getName()).severe(msg);
+            logger.severe(msg);
         } else {
             msg = successMessage;
             message.setData(msg);
             topic = Topic.INFORMATION.value();
-            Logger.getLogger(getClass().getName()).info(msg);
+            logger.info(msg);
         }
         Messaging.send(SessionStore.currentContext().getPrincipal(), topic, message);
     }

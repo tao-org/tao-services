@@ -5,8 +5,8 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.WorkspaceProvider;
 import ro.cs.tao.services.interfaces.WorkspaceService;
-import ro.cs.tao.topology.Workspace;
-import ro.cs.tao.topology.WorkspaceType;
+import ro.cs.tao.workspaces.Workspace;
+import ro.cs.tao.workspaces.WorkspaceType;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -88,11 +88,11 @@ public class WorkspaceServiceImpl
             errors.add("[description] cannot be empty");
         }
         final WorkspaceType type = entity.getType();
-        final List<String> paramNames = type.getParameters();
+        final Map<String, Boolean> paramNames = type.getParameters();
         final Map<String, String> parameters = entity.getParameters();
-        for (String pName : paramNames) {
-            if (parameters.get(pName) == null) {
-                errors.add("[parameters] " + pName + " not set");
+        for (Map.Entry<String, Boolean> entry : paramNames.entrySet()) {
+            if (Boolean.TRUE.equals(entry.getValue()) && parameters.get(entry.getKey()) == null) {
+                errors.add("[parameters] " + entry.getKey() + " not set");
             }
         }
     }

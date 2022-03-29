@@ -26,7 +26,6 @@ import ro.cs.tao.messaging.NotifiableComponent;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.MessageProvider;
 import ro.cs.tao.persistence.NodeProvider;
-import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.commons.MessageConverter;
 import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.interfaces.MonitoringService;
@@ -162,18 +161,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     @Override
     public List<Notification> acknowledgeNotification(List<Notification> notifications) {
         if (notifications != null) {
-            notifications.forEach(message -> {
-                try {
-                    final Message existing = messageProvider.get(message.getUser(), message.getTimestamp().getTimeInMillis());
-                    if (existing != null) {
-                        existing.setRead(true);
-                        messageProvider.update(existing);
-                    }
-                    message.setRead(true);
-                } catch (PersistenceException e) {
-                    logger.severe(e.getMessage());
-                }
-            });
+            messageProvider.acknowledge(notifications.stream().map(Notification::getId).collect(Collectors.toList()));
         }
         return notifications;
     }
