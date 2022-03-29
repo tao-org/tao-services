@@ -26,11 +26,11 @@ import ro.cs.tao.security.Token;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
-import ro.cs.tao.topology.Workspace;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.workspaces.Workspace;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

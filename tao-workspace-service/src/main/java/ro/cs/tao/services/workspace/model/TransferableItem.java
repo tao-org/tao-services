@@ -1,7 +1,7 @@
 package ro.cs.tao.services.workspace.model;
 
 import ro.cs.tao.services.model.FileObject;
-import ro.cs.tao.topology.Workspace;
+import ro.cs.tao.workspaces.Workspace;
 
 import java.util.Objects;
 

@@ -11,16 +11,17 @@ import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.workspace.model.TransferableItem;
-import ro.cs.tao.topology.Workspace;
-import ro.cs.tao.topology.WorkspaceType;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
+import ro.cs.tao.workspaces.Workspace;
+import ro.cs.tao.workspaces.WorkspaceType;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
@@ -33,6 +34,7 @@ public class UserTransferService {
 
     private final BlockingQueue<TransferableItem> queue;
     private final Path stateFile;
+    private final Principal principal;
     private Timer retryTimer;
     private final BlockingQueueWorker<TransferableItem> queueWorker;
     private ProgressListener progressListener;
@@ -40,12 +42,13 @@ public class UserTransferService {
 
     private final FileStorageService fileStorageService;
 
-    UserTransferService(String user, FileStorageService fileService) {
+    UserTransferService(Principal user, FileStorageService fileService) {
         this.fileStorageService = fileService;
         this.logger = Logger.getLogger(TransferService.class.getName());
         this.queue = new LinkedBlockingDeque<>();
         this.queueWorker = new BlockingQueueWorker<>(this.queue, this::processRequest);
-        this.stateFile = Paths.get(SystemVariable.ROOT.value()).resolve(user).resolve("transfer").resolve("transfer_queue.json");
+        this.principal = user;
+        this.stateFile = Paths.get(SystemVariable.ROOT.value()).resolve(user.getName()).resolve("transfer").resolve("transfer_queue.json");
         restoreState();
         this.queueWorker.setStatePersister(this::saveState);
         queueWorker.start();
@@ -71,12 +74,13 @@ public class UserTransferService {
         //this.asyncCallbackWorker.execute(() -> {
         try {
             if (this.progressListener == null) {
-                this.progressListener = new ProgressNotifier(item.getBatch(), Topic.TRANSFER_PROGRESS);
+                this.progressListener = new ProgressNotifier(this.principal, item.getBatch(), Topic.TRANSFER_PROGRESS);
                 this.progressListener.started(item.getBatch());
             }
-            final StorageService sourceService = item.getSourceWorkspace().getType() == WorkspaceType.LOCAL
+            final Workspace srcWorkspace = item.getSourceWorkspace();
+            final StorageService sourceService = srcWorkspace.getType() == WorkspaceType.LOCAL
                     ? fileStorageService
-                    : StorageServiceFactory.getInstance(item.getSourceWorkspace());
+                    : StorageServiceFactory.getInstance(srcWorkspace);
             final Workspace dstWorkspace = item.getDestinationWorkspace();
             final StorageService destinationService = dstWorkspace.getType() == WorkspaceType.LOCAL
                     ? fileStorageService
@@ -94,8 +98,8 @@ public class UserTransferService {
                     sourceStream = (InputStream) source;
                 }
                 logger.finest("Begin transferring file " + relativePath);
-                if (item.isForce() || !destinationService.exists(item.getDestinationPath())) {
-                    destinationService.storeFile(sourceStream, fileObject.getSize(), item.getDestinationPath(), relativePath);
+                if (item.isForce() || !destinationService.exists(dstWorkspace, item.getDestinationPath())) {
+                    destinationService.storeFile(sourceStream, fileObject.getSize(), dstWorkspace, item.getDestinationPath(), relativePath);
                 } else {
                     logger.fine(String.format("File %s exists at the destination and no overwrite flag is set", relativePath));
                 }
@@ -106,7 +110,7 @@ public class UserTransferService {
             }
             logger.finest("End transferring file " + relativePath);
             if (item.isMove()) {
-                sourceService.remove(relativePath);
+                sourceService.remove(srcWorkspace, relativePath);
                 logger.finest("Removed file " + relativePath);
             }
             this.progressListener.subActivityEnded(relativePath);

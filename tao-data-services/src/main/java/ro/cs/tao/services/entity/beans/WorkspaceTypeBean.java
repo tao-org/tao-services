@@ -1,6 +1,6 @@
 package ro.cs.tao.services.entity.beans;
 
-import java.util.List;
+import java.util.Map;
 
 public class WorkspaceTypeBean {
     private int id;
@@ -9,7 +9,7 @@ public class WorkspaceTypeBean {
     private String urlPrefix;
     private boolean singleton;
     private String rootKey;
-    private List<String> parameters;
+    private Map<String, Boolean> parameters;
 
     public int getId() {
         return id;
@@ -59,11 +59,11 @@ public class WorkspaceTypeBean {
         this.singleton = singleton;
     }
 
-    public List<String> getParameters() {
+    public Map<String, Boolean> getParameters() {
         return parameters;
     }
 
-    public void setParameters(List<String> parameters) {
+    public void setParameters(Map<String, Boolean> parameters) {
         this.parameters = parameters;
     }
 }

@@ -7,9 +7,9 @@ import ro.cs.tao.SortDirection;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.WorkspaceService;
-import ro.cs.tao.topology.Workspace;
-import ro.cs.tao.topology.WorkspaceType;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.workspaces.Workspace;
+import ro.cs.tao.workspaces.WorkspaceType;
 
 import java.util.Arrays;
 import java.util.Optional;

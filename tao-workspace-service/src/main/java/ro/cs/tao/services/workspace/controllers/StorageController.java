@@ -19,7 +19,6 @@ import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.WorkspaceProvider;
-import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -31,10 +30,10 @@ import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.workspace.impl.TransferService;
 import ro.cs.tao.services.workspace.model.TransferRequest;
 import ro.cs.tao.services.workspace.model.TransferableItem;
-import ro.cs.tao.topology.Workspace;
-import ro.cs.tao.topology.WorkspaceType;
 import ro.cs.tao.utils.Crypto;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.workspaces.Workspace;
+import ro.cs.tao.workspaces.WorkspaceType;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -51,8 +50,10 @@ import java.util.TreeMap;
 import java.util.zip.ZipOutputStream;
 
 @Controller
-@RequestMapping("/files")
+@RequestMapping("/files/")
 public class StorageController extends DataEntityController<EOProduct, String, ProductService> {
+
+    private static final String tokenJSON = "{ \"protocol\":\"%s\", \"fileName\":%s, \"folder\":%s, \"user\":\"%s\" }";
 
     @Autowired
     private StorageService<MultipartFile, FileSystemResource> fileStorageService;
@@ -71,7 +72,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *
      * @param filter    Filter to be applied on key names
      */
-    @RequestMapping(value = "/config", method = RequestMethod.GET, produces = "application/json")
+    @GetMapping(value = "config", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getConfiguration(@RequestParam("filter") String filter) {
         if (filter == null || filter.trim().isEmpty()) {
             return handleException(new IllegalAccessException("[filter] Value required"));
@@ -90,7 +91,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     /**
      * Lists the content of the user local workspace.
      */
-    @RequestMapping(value = "/local/", method = RequestMethod.GET, produces = "application/json")
+    @GetMapping(value = "local/", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> list() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -108,21 +109,16 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param relativeFolder    The folder relative to the root of the workspace
      * @param lastItem          [Optional] The last retrieved item to start from
      */
-    @RequestMapping(value = "/local", method = RequestMethod.GET, produces = "application/json")
+    @GetMapping(value = "local", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam("folder") String relativeFolder,
                                                    @RequestParam(name = "last", required = false) String lastItem) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            final String currentUser = currentUser();
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
-                responseEntity = prepareResult(fileStorageService.listUserWorkspace(currentUser));
+                responseEntity = prepareResult(fileStorageService.listUserWorkspace(currentUser()));
             } else {
-                Path relativePath = Paths.get(relativeFolder);
-                if (relativePath.getName(0).toString().equals(currentUser)) {
-                    relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
-                }
-                final Path lastPath = lastItem != null ? Paths.get(lastItem) : null;
-                responseEntity = prepareResult(fileStorageService.listFiles(SessionStore.currentContext().getWorkspace().resolve(relativeFolder), null, lastPath));
+                final Workspace workspace = getCurrentUserLocalWorkspace();
+                responseEntity = prepareResult(fileStorageService.listFiles(workspace, relativeFolder, null, lastItem));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -134,7 +130,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * Lists the files uploaded by the user in his/her workspace.
      * These files should be found in the 'files' workspace folder.
      */
-    @RequestMapping(value = "/local/uploaded/", method = RequestMethod.GET, produces = "application/json")
+    @GetMapping(value = "local/uploaded/", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -151,31 +147,16 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param folder        The folder into which the file will be uploaded
      * @param description   A description of the file
      */
-    @RequestMapping(value = "/upload/", method = RequestMethod.POST, produces = "application/json")
+    @PostMapping(value = "upload/", produces = "application/json")
     public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile file,
                                         @RequestParam("folder") String folder,
                                         @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            fileStorageService.storeUserFile(file, folder, description);
+            final Workspace workspace = getCurrentUserLocalWorkspace();
+            fileStorageService.storeUserFile(file, workspace, folder, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
-            responseEntity = handleException(ex);
-        }
-        return responseEntity;
-    }
-    /**
-     * Deletes a file from the user workspace
-     *
-     * @param fileName      The name of the file to be deleted
-     */
-    @RequestMapping(value = "/delete/", method = RequestMethod.DELETE, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("fileName") String fileName) {
-        ResponseEntity<ServiceResponse<?>> responseEntity;
-        try {
-            fileStorageService.remove(fileName);
-            responseEntity = prepareResult("Delete succeeded", ResponseStatus.SUCCEEDED);
-        } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
         return responseEntity;
@@ -186,13 +167,14 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param source        The source file (or product folder)
      * @param destination   The destination folder
      */
-    @RequestMapping(value = "/move/", method = RequestMethod.POST, produces = "application/json")
+    @PostMapping(value = "move/", produces = "application/json")
     @Deprecated
     public ResponseEntity<ServiceResponse<?>> move(@RequestParam("source") String source,
                                                    @RequestParam("destination") String destination) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            fileStorageService.move(source, destination);
+            final Workspace workspace = getCurrentUserLocalWorkspace();
+            fileStorageService.move(workspace, source, destination);
             responseEntity = prepareResult("The file has been moved successfully", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -204,7 +186,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *
      * @param workflowId    The workflow identifier
      */
-    @RequestMapping(value = "/output", method = RequestMethod.GET, produces = "application/json")
+    @GetMapping(value = "output", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listOutputs(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -221,7 +203,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     /**
      * Lists the content of the public (shared) workspace
      */
-    @RequestMapping(value = "/public/", method = RequestMethod.GET, produces = "application/json")
+    @GetMapping(value = "public/", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listPublic() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -233,31 +215,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return responseEntity;
     }
     /**
-     * Lists the content of the given folder from the public workspace
-     * @param relativeFolder    The folder
-     */
-    @RequestMapping(value = "/public", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> listPublic(@RequestParam("folder") String relativeFolder) {
-        ResponseEntity<ServiceResponse<?>> responseEntity;
-        try {
-            if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
-                responseEntity = prepareResult(fileStorageService.listPublicWorkspace());
-            } else {
-                if (relativeFolder.startsWith("public")) {
-                    relativeFolder = relativeFolder.substring(relativeFolder.indexOf('/') + 1);
-                }
-                responseEntity = prepareResult(fileStorageService.listFiles(Paths.get(SystemVariable.SHARED_WORKSPACE.value(), relativeFolder), null, null));
-            }
-        } catch (IOException ex) {
-            responseEntity = handleException(ex);
-        }
-
-        return responseEntity;
-    }
-    /**
      * Lists the uploaded files that are visible to all users.
      */
-    @RequestMapping(value = "/public/uploaded/", method = RequestMethod.GET, produces = "application/json")
+    @GetMapping(value = "public/uploaded/", produces = "application/json")
     public ResponseEntity<?> listPublicFiles() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -273,11 +233,15 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *
      * @param folder    The name of the folder
      */
-    @RequestMapping(value = "/public/folder/", method = RequestMethod.POST, produces = "application/json")
+    @PostMapping(value = "public/folder/", produces = "application/json")
     public ResponseEntity<?> createPublicFolder(@RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            fileStorageService.createFolder(folder, false);
+            if (!isCurrentUserAdmin()) {
+                throw new AccessDeniedException("The operation is permitted only for administrators");
+            }
+            final Workspace workspace = getCurrentUserLocalWorkspace();
+            fileStorageService.createFolder(workspace, folder, false);
             responseEntity = prepareResult(String.format("Folder %s created", folder), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -290,7 +254,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param folder        The folder into which the file will be uploaded
      * @param description   A description of the file
      */
-    @RequestMapping(value = "/public/upload", method = RequestMethod.POST, produces = "application/json")
+    @PostMapping(value = "public/upload", produces = "application/json")
     public ResponseEntity<?> uploadPublic(@RequestParam("file") MultipartFile file,
                                           @RequestParam("folder") String folder,
                                           @RequestParam("desc") String description) {
@@ -299,7 +263,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (!isCurrentUserAdmin()) {
                 throw new AccessDeniedException("The operation is permitted only for administrators");
             }
-            fileStorageService.storePublicFile(file, folder, description);
+            final Workspace workspace = getCurrentUserLocalWorkspace();
+            fileStorageService.storePublicFile(file, workspace, folder, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -311,7 +276,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param folder        The folder
      * @param visibility    The new visibility
      */
-    @RequestMapping(value = "/toggle", method = RequestMethod.POST, produces = "application/json")
+    @PostMapping(value = "toggle", produces = "application/json")
     @ResponseBody
     public ResponseEntity<ServiceResponse<?>> toggleVisibility(@RequestParam("folder") String folder,
                                                                @RequestParam("visibility") Visibility visibility) {
@@ -350,31 +315,26 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param relativeFolder    The folder to start with
      * @param lastItem          [Optional] The item to start from (in case of paged results)
      */
-    @RequestMapping(value = "/browse", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> listRemote(@RequestParam("workspace") int workspaceId,
-                                                         @RequestParam("folder") String relativeFolder,
-                                                         @RequestParam(name = "last", required = false) String lastItem) {
+    @GetMapping(value = "browse", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> listWorkspace(@RequestParam("workspace") int workspaceId,
+                                                            @RequestParam(name = "folder", required = false) String relativeFolder,
+                                                            @RequestParam(name = "last", required = false) String lastItem) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            if (StringUtils.isEmpty(relativeFolder) || relativeFolder.startsWith(".")) {
-                throw new IOException("For remote files, the relative folder must begin with the bucket name");
+            if (StringUtils.isEmpty(relativeFolder)) {
+                relativeFolder = "/";
             }
-            final Workspace workspace = workspaceProvider.get(workspaceId);
-            if (workspace == null) {
-                throw new IOException("Workspace does not exist");
+            if (relativeFolder.startsWith(".") || relativeFolder.startsWith("..")) {
+                throw new IOException("Not allowed");
             }
+            final Workspace workspace = getOwnedWorkspace(workspaceId);
             if (workspace.getType() == WorkspaceType.LOCAL) {
                 return list(relativeFolder, lastItem);
             }
-            Path relativePath = Paths.get(relativeFolder);
-            if (relativePath.getName(0).toString().equals(currentUser())) {
-                relativeFolder = relativePath.getNameCount() > 1 ? relativePath.subpath(1, relativePath.getNameCount()).toString() : "";
-            }
-            StorageService service = StorageServiceFactory.getInstance(workspace);
-            final Path lastPath = lastItem != null ? Paths.get(lastItem) : null;
-            final List<FileObject> list = service.listFiles(Paths.get(relativeFolder), null, lastPath);
-            if (workspace.getParameters().get(workspace.getType().rootKey()).equals(relativeFolder) && list.isEmpty()) {
-                list.add(service.getRootObject(workspace));
+            final StorageService service = StorageServiceFactory.getInstance(workspace);
+            final List<FileObject> list = service.listFiles(workspace, relativeFolder, null, lastItem);
+            if (workspace.root().equals(relativeFolder) && list.isEmpty()) {
+                list.add(service.fakeRoot());
             }
             responseEntity = prepareResult(list);
         } catch (Exception ex) {
@@ -388,7 +348,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *
      * @param folder    The name of the folder
      */
-    @RequestMapping(value = "/folder/", method = RequestMethod.POST, produces = "application/json")
+    @PostMapping(value = "folder/", produces = "application/json")
     public ResponseEntity<?> createUserFolder(@RequestParam("workspace") int workspaceId,
                                               @RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -396,29 +356,36 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (StringUtils.isEmpty(folder) || folder.startsWith(".") || folder.startsWith("..") || folder.startsWith("/")) {
                 throw new IOException("The folder must be relative and should not start with '.' or '..'");
             }
-            final Workspace workspace = workspaceProvider.get(workspaceId);
-            if (workspace == null) {
-                throw new IOException("Workspace does not exist");
-            }
-            final String root = workspace.getParameters().get(workspace.getType().rootKey());
-            Path createdPath;
-            StorageService service;
-            if (workspace.getType() == WorkspaceType.LOCAL) {
-                service = fileStorageService;
-                if (folder.startsWith(root)) {
-                    folder = folder.replace(root + "/", "");
-                }
-            } else {
-                service = StorageServiceFactory.getInstance(workspace);
-                if (!folder.startsWith(root)) {
-                    folder = root + "/" + folder;
-                }
-            }
-            createdPath = service.createFolder(folder, true);
+            final Workspace workspace = getOwnedWorkspace(workspaceId);
+            final StorageService service = getWorkspaceService(workspace);
+            final Path createdPath = service.createFolder(workspace, folder, true);
             if (createdPath == null) {
                 throw new IOException("Folder was not created");
             }
-            responseEntity = prepareResult(String.format("Folder %s created", createdPath), ResponseStatus.SUCCEEDED);
+            responseEntity = prepareResult(String.format("Folder %s created", folder), ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
+        return responseEntity;
+    }
+    /**
+     * Deletes a file from the given user workspace
+     *
+     * @param workspaceId   The workspace identifier
+     * @param file          The name of the file or folder to be deleted
+     */
+    @DeleteMapping(produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("workspace") int workspaceId,
+                                                     @RequestParam("file") String file) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (StringUtils.isEmpty(file) || file.startsWith(".") || file.startsWith("..") || file.startsWith("/")) {
+                throw new IOException("The folder must be relative and should not start with '.' or '..'");
+            }
+            final Workspace workspace = getOwnedWorkspace(workspaceId);
+            final StorageService service = getWorkspaceService(workspace);
+            service.remove(workspace, file);
+            responseEntity = prepareResult(String.format("%s deleted", file), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
         }
@@ -431,7 +398,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param fileName  The file name (exclusive with 'folder')
      * @param folder    The folder name (exclusive with 'file')
      */
-    @RequestMapping(value = "/download/{protocol}", method = RequestMethod.GET, produces = "application/json")
+    @GetMapping(value = "/download/{protocol}", produces = "application/json")
     public ResponseEntity<?> requestDownload(@PathVariable("protocol") String protocol,
                                              @RequestParam(name = "fileName", required = false) String fileName,
                                              @RequestParam(name = "folder", required = false) String folder) {
@@ -452,12 +419,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 fileName = StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + fileName + "\"";
                 folder = StringUtilities.isNullOrEmpty(folder) ? null : "\"" + folder + "\"";
             }
-            final String json = "{ \"protocol\": \"" + protocol + "\", "
-                    + " \"fileName\": " + fileName + ", "
-                    + "\"folder\": " + folder + ", "
-                    + "\"user\":\"" + user + "\" }";
-            return prepareResult("/files/get?token=" + URLEncoder.encode(Crypto.encrypt(json, SystemPrincipal.instance().getName()),
-                                                                         "UTF8"));
+            final String json = String.format(tokenJSON, protocol, fileName, folder, user);
+            return prepareResult("/files/get?token=" + URLEncoder.encode(Crypto.encrypt(json, SystemPrincipal.instance().getName()), "UTF8"));
         } catch (Exception e) {
             return handleException(e);
         }
@@ -468,7 +431,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param token         The coded request
      * @param response      The servlet response to write to
      */
-    @RequestMapping(value = "/get", method = RequestMethod.GET, produces = "application/octet-stream")
+    @GetMapping(value = "/get", produces = "application/octet-stream")
     public void download(@RequestParam("token") String token, HttpServletResponse response) {
         try {
             final String decrypted = Crypto.decrypt(token, SystemPrincipal.instance().getName());
@@ -478,6 +441,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             final String folder = values.get("folder");
             final String user = values.get("user");
             final WorkspaceType workspaceType = WorkspaceType.fromPrefix(protocol);
+            if (workspaceType == null) {
+                throw new IllegalArgumentException("[" + protocol + "] not supported");
+            }
             final boolean isFile = StringUtilities.isNullOrEmpty(folder);
             switch (workspaceType) {
                 case LOCAL:
@@ -525,6 +491,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 case AWS:
                 case SWIFT:
                     StorageService client = StorageServiceFactory.getInstance(protocol);
+                    if (client == null) {
+                        throw new IllegalArgumentException("No client for [" + protocol + "] workspaces");
+                    }
                     final List<Workspace> userWorkspaces = workspaceProvider.getByUser(user);
                     if (userWorkspaces == null) {
                         response.sendError(HttpStatus.BAD_REQUEST.value());
@@ -572,7 +541,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *                          - an optional flag to overwrite existing files (default is not to overwrite)
      *
      */
-    @RequestMapping(value = "/transfer/", method = RequestMethod.POST, produces = "application/json")
+    @PostMapping(value = "/transfer/", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> transfer(@RequestBody TransferRequest request) {
         try {
             if (request == null) {
@@ -580,16 +549,10 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
             final String user = currentUser();
             final List<FileObject> requestedFiles = request.getFileObjects();
-            final Workspace srcWorkspace = workspaceProvider.get(request.getSourceWorkspace());
-            if (!user.equals(srcWorkspace.getUserName())) {
-                throw new IllegalArgumentException("Cannot transfer from a not-owned workspace");
-            }
-            final Workspace dstWorkspace = workspaceProvider.get(request.getDestinationWorkspace());
-            if (!user.equals(dstWorkspace.getUserName())) {
-                throw new IllegalArgumentException("Cannot transfer to a not-owned workspace");
-            }
+            final Workspace srcWorkspace = getOwnedWorkspace(request.getSourceWorkspace());
+            final Workspace dstWorkspace = getOwnedWorkspace(request.getDestinationWorkspace());
             if (dstWorkspace.isReadOnly()) {
-                throw new IllegalArgumentException("Destination is read-only");
+                throw new AccessDeniedException("Destination is read-only");
             }
             int count = 0;
             long size = 0;
@@ -597,39 +560,36 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (!dstFolder.endsWith("/")) {
                 dstFolder += "/";
             }
-            final String targetRoot = dstWorkspace.getParameters().get(dstWorkspace.getType().rootKey()) + "/";
+            final String targetRoot = dstWorkspace.root() + "/";
             String targetFolder;
             final boolean isMove = request.getMove() != null && request.getMove();
             final boolean overwriteExisting = request.getOverwrite() != null && request.getOverwrite();
             for (FileObject fileObject : requestedFiles) {
-                String root = fileObject.getRelativePath();
+                String objectPath = fileObject.getRelativePath();
                 size = fileObject.getSize();
                 targetFolder = dstFolder;
+                final int lastSlashIdx = objectPath.lastIndexOf('/', objectPath.length() - 2);
                 if (fileObject.isFolder()) {
                     // Keep only the last part of the folder path (i.e. folder name)
-                    final int idx = root.lastIndexOf('/', root.length() - 2);
-                    if (idx > 0) {
-                        targetFolder += root.substring(idx + 1);
+                    if (lastSlashIdx > 0) {
+                        targetFolder += objectPath.substring(lastSlashIdx + 1);
                     }
-                    final StorageService service = srcWorkspace.getType() == WorkspaceType.LOCAL
-                            ? fileStorageService
-                            : StorageServiceFactory.getInstance(srcWorkspace);
-                    final List<FileObject> files = service.listTree(Paths.get(fileObject.getRelativePath()));
+                    final StorageService service = getWorkspaceService(srcWorkspace);
+                    final List<FileObject> files = service.listTree(srcWorkspace, fileObject.getRelativePath());
                     final TransferableItem[] items = new TransferableItem[files.size()];
                     for (FileObject fObject : files) {
                         if (!fObject.isFolder()) {
-                            final String path = targetRoot + targetFolder + fObject.getRelativePath().replace(root, "");
-                            items[count++] = new TransferableItem(user, root, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting);
+                            final String path = targetRoot + targetFolder + fObject.getRelativePath().replace(objectPath, "");
+                            items[count++] = new TransferableItem(user, objectPath, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting);
                             //queueFile(root, fObject, srcWorkspace, dstWorkspace, path, isMove, overwriteExisting);
                             size += fObject.getSize();
                         }
                     }
                     queueFiles(items);
                 } else {
-                    String fileName = root.substring(root.lastIndexOf('/', root.length() - 2) + 1);
-                    queueFile(root, fileObject, srcWorkspace, dstWorkspace,
-                              dstWorkspace.getParameters().get(dstWorkspace.getType().rootKey())
-                                      + "/" + user + "/" + targetFolder + "/" + fileName,
+                    String fileName = objectPath.substring(lastSlashIdx + 1);
+                    queueFile(objectPath, fileObject, srcWorkspace, dstWorkspace,
+                              targetRoot + targetFolder + "/" + fileName,
                               isMove, overwriteExisting);
                     count = 1;
                 }
@@ -659,7 +619,36 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         if (!Files.exists(filePath)) {
             throw new IOException(String.format("File '%s' does not exist", filePath));
         }
-        return (FileSystemResource) this.fileStorageService.download(filePath);
+        return this.fileStorageService.download(filePath);
+    }
+
+    private Workspace getOwnedWorkspace(int workspaceId) throws IOException {
+        final Workspace workspace = workspaceProvider.get(workspaceId);
+        if (workspace == null) {
+            throw new IOException("Workspace does not exist");
+        }
+        if (!currentUser().equals(workspace.getUserName())) {
+            throw new AccessDeniedException("Operation not allowed");
+        }
+        return workspace;
+    }
+
+    private StorageService getWorkspaceService(Workspace workspace) {
+        return workspace.getType() == WorkspaceType.LOCAL
+                ? fileStorageService
+                : StorageServiceFactory.getInstance(workspace);
+    }
+
+    private Workspace getCurrentUserLocalWorkspace() {
+        return workspaceProvider.getByUser(currentUser()).stream().filter(w -> w.getType() == WorkspaceType.LOCAL).findFirst().get();
+    }
+
+    private String sanitizePath(String path) {
+        if (StringUtilities.isNullOrEmpty(path)) {
+            return "/";
+        } else {
+            return path.replace("\\", "/");
+        }
     }
 }
 

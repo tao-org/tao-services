@@ -27,10 +27,7 @@ import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.VectorData;
 import ro.cs.tao.eodata.enums.Visibility;
-import ro.cs.tao.persistence.AuxiliaryDataProvider;
-import ro.cs.tao.persistence.EOProductProvider;
-import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.persistence.VectorDataProvider;
+import ro.cs.tao.persistence.*;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
@@ -39,6 +36,8 @@ import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.workspaces.Workspace;
+import ro.cs.tao.workspaces.WorkspaceType;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,6 +66,8 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     private VectorDataProvider vectorDataProvider;
     @Autowired
     private AuxiliaryDataProvider auxiliaryDataProvider;
+    @Autowired
+    private WorkspaceProvider workspaceProvider;
 
     public FileStorageService() { }
 
@@ -76,27 +77,23 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public Path createFolder(String folderRelativePath, boolean userOnly) throws IOException {
+    public Path createFolder(Workspace workspace, String folderRelativePath, boolean userOnly) throws IOException {
         String cleanPath = StringUtils.cleanPath(folderRelativePath);
-        Path basePath = userOnly ?
-                SessionStore.currentContext().getUploadPath() : Paths.get(SystemVariable.SHARED_FILES.value());
-        Path newFolder = basePath.resolve(cleanPath);
-        return Files.createDirectories(newFolder);
+        return Files.createDirectories(Paths.get(resolve(workspace, cleanPath)));
     }
 
     @Override
-    public void storeUserFile(MultipartFile file, String relativeFolder, String description) throws Exception {
+    public void storeUserFile(MultipartFile file, Workspace workspace, String relativeFolder, String description) throws Exception {
         checkParameters(file, relativeFolder);
-        storeFile(file, SessionStore.currentContext().getUploadPath(),
-                  SessionStore.currentContext().getWorkspace(),
-                  relativeFolder, description, SessionStore.currentContext().getPrincipal());
+        storeFile(file, Paths.get(resolve(workspace, relativeFolder)),
+                  description, SessionStore.currentContext().getPrincipal());
         
         // Update user processing quota
         UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
     }
 
     @Override
-    public void storeFile(InputStream stream, long length, String relativeFolder, String description) throws Exception {
+    public void storeFile(InputStream stream, long length, Workspace workspace, String relativeFolder, String description) throws Exception {
         storeFile(stream, SessionStore.currentContext().getUploadPath().resolve(relativeFolder));
 
         // Update user processing quota
@@ -104,20 +101,19 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public void storePublicFile(MultipartFile file, String relativeFolder, String description) throws Exception {
+    public void storePublicFile(MultipartFile file, Workspace workspace, String relativeFolder, String description) throws Exception {
         checkParameters(file, relativeFolder);
-        storeFile(file, Paths.get(SystemVariable.SHARED_FILES.value()),
-                  Paths.get(SystemVariable.SHARED_WORKSPACE.value()),
-                  relativeFolder, description, SystemSessionContext.instance().getPrincipal());
+        storeFile(file, Paths.get(resolve(workspace, relativeFolder)),
+                  description, SystemSessionContext.instance().getPrincipal());
     }
 
     @Override
-    public boolean exists(String path) throws Exception {
-        return Files.exists(Paths.get(path));
+    public boolean exists(Workspace workspace, String path) throws Exception {
+        return Files.exists(Paths.get(resolve(workspace, path)));
     }
 
     @Override
-    public void remove(String fileName) throws IOException{
+    public void remove(Workspace workspace, String fileName) throws IOException{
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("Invalid argument (empty)");
         }
@@ -125,14 +121,15 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
             // This is a security check
             throw new IOException( "Cannot remove file with relative path outside user directory " + fileName);
         }
-        Path uploadPath = SessionStore.currentContext().getUploadPath();
+        /*Path uploadPath = SessionStore.currentContext().getUploadPath();
         if (fileName.equals(uploadPath.toString()) ||
                 fileName.startsWith(SystemVariable.SHARED_WORKSPACE.value()) ||
                 fileName.startsWith(SystemVariable.SHARED_FILES.value())) {
             throw new IOException( "Operation not allowed");
-        }
+        }*/
+        Path filePath = Paths.get(resolve(workspace, fileName));
         if (fileName.startsWith(SystemVariable.USER_FILES.value())) {
-            Path filePath = uploadPath.getParent().resolve(fileName);
+            //Path filePath = uploadPath.getParent().resolve(fileName);
             Files.delete(filePath);
             try {
                 auxiliaryDataProvider.delete(SessionStore.currentContext().getWorkspace().relativize(filePath).toString());
@@ -140,7 +137,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                 Logger.getLogger(FileStorageService.class.getName()).warning(String.format("File %s was not found in database", fileName));
             }
         } else { // it has to be a product folder
-            Path filePath = SessionStore.currentContext().getWorkspace().resolve(fileName);
+            //Path filePath = SessionStore.currentContext().getWorkspace().resolve(fileName);
             List<EOProduct> products = productProvider.getByLocation(filePath.toUri().toString());
             if (products == null || products.size() == 0) {
                 List<VectorData> vectorProducts = vectorDataProvider.getByLocation(filePath.toUri().toString());
@@ -158,6 +155,12 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                     } catch (PersistenceException e) {
                         throw new IOException(String.format("Failed to remove vector product %s. Reason: %s",
                                                             product.getName(), e.getMessage()));
+                    }
+                } else {
+                    if (Files.isDirectory(filePath)) {
+                        FileUtilities.deleteTree(filePath);
+                    } else {
+                        Files.delete(filePath);
                     }
                 }
             } else {
@@ -187,7 +190,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public void move(String source, String destination) throws  IOException {
+    public void move(Workspace workspace, String source, String destination) throws  IOException {
         if (source == null || source.isEmpty() || destination == null || destination.isEmpty()) {
             throw new IOException("Invalid argument (empty)");
         }
@@ -195,15 +198,9 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
             // This is a security check
             throw new IOException( "Cannot move file with relative path outside user directory " + source);
         }
-        Path uploadPath = SessionStore.currentContext().getUploadPath();
-        Path sourcePath = uploadPath.getParent().resolve(source);
-        Path destinationPath = uploadPath.getParent().resolve(destination);
-
-        if (destination.equals(uploadPath.toString()) ||
-                destination.startsWith(SystemVariable.SHARED_WORKSPACE.value()) ||
-                destination.startsWith(SystemVariable.SHARED_FILES.value())) {
-            throw new IOException( "Operation not allowed");
-        }
+        //Path uploadPath = SessionStore.currentContext().getUploadPath();
+        Path sourcePath = Paths.get(resolve(workspace, source));
+        Path destinationPath = Paths.get(resolve(workspace, destination));
         if (destination.startsWith("files")) {
             FileUtilities.move(sourcePath, destinationPath);
             try {
@@ -217,12 +214,13 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                 Logger.getLogger(FileStorageService.class.getName()).warning(String.format("File %s was not found in database", source));
             }
         } else { //it's a product
-            Path sourceLocation = SessionStore.currentContext().getWorkspace().resolve(sourcePath);
-            String destinationLocation = SessionStore.currentContext().getWorkspace().resolve(destinationPath).toUri().toString();
-            List<EOProduct> products = productProvider.getByLocation(sourceLocation.toUri().toString());
+            //Path sourceLocation = SessionStore.currentContext().getWorkspace().resolve(sourcePath);
+            //String destinationLocation = SessionStore.currentContext().getWorkspace().resolve(destinationPath).toUri().toString();
+            String destinationURI = destinationPath.toUri().toString();
+            List<EOProduct> products = productProvider.getByLocation(sourcePath.toUri().toString());
 
             if (products == null || products.size() == 0) { // we might have vector products
-                List<VectorData> vectorProducts = vectorDataProvider.getByLocation(sourceLocation.toUri().toString());
+                List<VectorData> vectorProducts = vectorDataProvider.getByLocation(sourcePath.toUri().toString());
                 if (vectorProducts.size() > 1) {
                     throw new IOException("Cannot move vector products");
                 }
@@ -233,7 +231,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                     }
                     FileUtilities.move(sourcePath, destinationPath);
                     try {
-                        product.setLocation(destinationLocation);
+                        product.setLocation(destinationURI);
                         vectorDataProvider.update(product);
                     } catch (PersistenceException | URISyntaxException e) {
                         throw new IOException(String.format("Failed to move vector product %s. Reason: %s",
@@ -250,7 +248,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                 }
                 FileUtilities.move(sourcePath, destinationPath);
                 try {
-                    product.setLocation(destinationLocation);
+                    product.setLocation(destinationURI);
                     productProvider.update(product);
                 } catch (PersistenceException | URISyntaxException e) {
                     throw new IOException(String.format("Failed to move vector product %s. Reason: %s",
@@ -263,19 +261,20 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
 
     @Override
     public List<FileObject> listPublicWorkspace() throws IOException {
-        final List<FileObject> files = new ArrayList<>();
         final String name = SystemPrincipal.instance().getName();
-        files.addAll(listProducts(name));
-        files.addAll(listUploaded(name));
-        return files;
+        //files.addAll(listProducts(name));
+        return new ArrayList<>(listUploaded(name));
     }
 
     @Override
     public List<FileObject> listUserWorkspace(String userName) throws IOException {
-        final List<FileObject> files = new ArrayList<>();
-        files.addAll(listProducts(userName));
-        files.addAll(listUploaded(userName));
-        return files;
+        final Workspace workspace = workspaceProvider.getByUser(userName)
+                                                     .stream().filter(w -> w.getType() == WorkspaceType.LOCAL)
+                                                     .findFirst().orElse(null);
+        if (workspace == null) {
+            throw new IOException("Workspace does not exist");
+        }
+        return listFiles(workspace, "/", null, null);
     }
 
     @Override
@@ -285,32 +284,30 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
 
     @Override
     public List<FileObject> listUploaded(String principalName) throws IOException {
-        final Path realRoot = SystemSessionContext.instance().getPrincipal().getName().equals(principalName) ?
-                Paths.get(SystemVariable.SHARED_FILES.value()) :
-                SessionStore.currentContext().getUploadPath();
-        return listFiles(realRoot, null, null);
+        final List<Workspace> workspaces = workspaceProvider.getByUser(principalName);
+        final Workspace localWorkspace = workspaces.stream().filter(w -> w.getType() == WorkspaceType.LOCAL).findFirst().get();
+        return listFiles(localWorkspace, "files", null, null);
     }
 
     @Override
-    public List<FileObject> listTree(Path realRoot) throws IOException {
-        return listFiles(realRoot, null, null);
+    public List<FileObject> listTree(Workspace workspace, String fromPath) throws IOException {
+        return listFiles(workspace, fromPath, null, null);
     }
 
     @Override
-    public List<FileObject> listFiles(Path realRoot, Set<Path> exclusions, Path lastItem) throws IOException {
-        final Path root = Paths.get(SystemVariable.ROOT.value()).toAbsolutePath();
-        realRoot = realRoot.toAbsolutePath();
-        final Path startPath = root.relativize(realRoot);
-        final String principalName = realRoot.getName(root.getNameCount()).toString();
-        final int depth = realRoot.getNameCount() - root.getNameCount() == 1 ? 1 : 10;
-        final List<Path> list = list(realRoot, depth);
+    public List<FileObject> listFiles(Workspace workspace, String fromPath, Set<String> exclusions, String lastItem) throws IOException {
+        final Path workspaceRoot = Paths.get(workspace.root());
+        final Path root = Paths.get(resolve(workspace, fromPath));
+        final int depth = root.getNameCount() - workspaceRoot.getNameCount() == 1 ? 1 : 10;
+        final List<Path> list = list(root, depth);
         if (exclusions != null) {
             ListIterator<Path> iterator = list.listIterator();
             int nc;
             while (iterator.hasNext()) {
                 Path current = iterator.next();
-                for (Path exc : exclusions) {
-                    nc = exc.getNameCount();
+                for (String exc : exclusions) {
+                    Path excPath = Paths.get(exc);
+                    nc = excPath.getNameCount();
                     if (current.getNameCount() < nc) {
                         continue;
                     }
@@ -322,7 +319,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
         }
         final String[] pathArray = list.stream().map(p -> p.toUri().toString()).toArray(String[]::new);
         final Map<Path, Map<String, String>> auxAttributes = new HashMap<>();
-        final List<AuxiliaryData> auxData = auxiliaryDataProvider.list(principalName, pathArray);
+        final List<AuxiliaryData> auxData = auxiliaryDataProvider.list(workspace.getUserName(), pathArray);
         for (AuxiliaryData auxiliaryData : auxData) {
             auxAttributes.put(Paths.get(URI.create(auxiliaryData.getLocation())),
                               auxiliaryData.toAttributeMap());
@@ -351,10 +348,11 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                 size = -1;
             }
             final boolean isInFiles = realPath.getNameCount() > filesNameIndex && realPath.getName(filesNameIndex).toString().equals("files");
-            final Path path = realRoot.relativize(realPath);
-            final String pathToRecord = (isInFiles ?
+            final Path path = root.relativize(realPath);
+            final String pathToRecord = path.toString().replace("\\", "/");
+            /*final String pathToRecord = (isInFiles ?
                     realPath.subpath(filesNameIndex, realPath.getNameCount()).toString() :
-                    startPath.resolve(path).toString()).replace("\\", "/");
+                    root.resolve(path).toString()).replace("\\", "/");*/
             final FileObject fileObject = new FileObject(PROTOCOL, pathToRecord, Files.isDirectory(realPath), size);
             if (isInFiles) {
                 if (auxAttributes.containsKey(realPath)) {
@@ -447,27 +445,6 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
         return files;
     }*/
 
-    private List<FileObject> listProducts(String principalName) throws IOException {
-        boolean isSystem = SystemSessionContext.instance().getPrincipal().getName().equals(principalName);
-        final Path realRoot = isSystem ? Paths.get(SystemVariable.SHARED_WORKSPACE.value()) : SessionStore.currentContext().getWorkspace();
-        final Set<Path> exclusions = new HashSet<>();
-        exclusions.add(realRoot.resolve("files").toAbsolutePath());
-        final List<FileObject> list = listFiles(realRoot, exclusions, null);
-        if (isSystem) {
-            // add products published by other users (for system account, it means all other users)
-            final List<EOProduct> products = productProvider.getOtherPublishedProducts(principalName);
-            final String publicPath = Paths.get(SystemVariable.SHARED_WORKSPACE.value()).toUri().toString();
-            final int tokensToSkip = realRoot.getNameCount();
-            if (products != null) {
-                products.removeIf(p -> p.getLocation().startsWith(publicPath));
-                for (EOProduct product : products) {
-                    list.add(fromEOProduct(product, tokensToSkip));
-                }
-            }
-        }
-        return list;
-    }
-
     private List<FileObject> getResults(Long workflowId, Long jobId) throws IOException {
         if ((workflowId == null) == (jobId == null)) {
             throw new IllegalArgumentException("Exactly one of [workflowId] or [jobId] should be passed");
@@ -534,17 +511,15 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
         }
     }
 
-    private void storeFile(MultipartFile file, Path uploadPath, Path workspacePath,
-                           String relativeFolder, String description, Principal principal) throws IOException, PersistenceException {
+    private void storeFile(MultipartFile file, Path uploadPath, String description, Principal principal) throws IOException, PersistenceException {
         if (file == null || file.getOriginalFilename() == null) {
             return;
         }
         Path filePath;
         try (InputStream inputStream = file.getInputStream()) {
-            Path userPath = uploadPath.resolve(relativeFolder);
-            Files.createDirectories(userPath);
+            Files.createDirectories(uploadPath);
             // Resolve filename when coming from IE
-            filePath = userPath.resolve(Paths.get(file.getOriginalFilename()).getFileName());
+            filePath = uploadPath.resolve(Paths.get(file.getOriginalFilename()).getFileName());
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
         String userName = principal.getName();
@@ -578,7 +553,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
 
     private List<Path> list(Path path, int depth) throws IOException {
         return Files.walk(path, depth)
-                    .filter(p -> !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
+                    .filter(p -> !p.equals(path) && !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
                     //.map(path::relativize)
                     .collect(Collectors.toList());
     }
