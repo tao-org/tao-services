@@ -110,7 +110,7 @@ public class WPSComponentController extends BaseController {
         try {
             final WPSComponent entity = wpsComponentService.findById(id);
             if (entity == null) {
-                throw new Exception("Component does not exist");
+                throw new Exception("Component '" + id + "' does not exist");
             }
             if (!currentUser().equals(entity.getOwner())) {
                 throw new IllegalArgumentException("Entity can only be deleted by its owner");

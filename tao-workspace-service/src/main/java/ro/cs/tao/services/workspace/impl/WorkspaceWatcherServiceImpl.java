@@ -232,7 +232,7 @@ public class WorkspaceWatcherServiceImpl implements WorkspaceWatcherService {
                             if (attributes.isDirectory()) {
                                 walkAndRegisterDirectories(child);
                             }
-                        } catch (NoSuchFileException ignored) {
+                        } catch (NoSuchFileException | NotDirectoryException ignored) {
                             // a file may throw this exception if it's not fully "created"
                         } catch (IOException e) {
                             logger.severe(String.format("Cannot register directory %s. Reason: %s",

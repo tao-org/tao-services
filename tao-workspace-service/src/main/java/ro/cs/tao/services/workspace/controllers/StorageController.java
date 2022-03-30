@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 @Controller
@@ -353,12 +354,14 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                               @RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            if (StringUtils.isEmpty(folder) || folder.startsWith(".") || folder.startsWith("..") || folder.startsWith("/")) {
+            if (StringUtils.isEmpty(folder) || folder.startsWith(".") || folder.startsWith("..")) {
                 throw new IOException("The folder must be relative and should not start with '.' or '..'");
             }
             final Workspace workspace = getOwnedWorkspace(workspaceId);
             final StorageService service = getWorkspaceService(workspace);
-            final Path createdPath = service.createFolder(workspace, folder, true);
+            final Path createdPath = service.createFolder(workspace,
+                                                          folder.startsWith("/") ? folder.substring(1) : folder,
+                                                          true);
             if (createdPath == null) {
                 throw new IOException("Folder was not created");
             }
@@ -497,8 +500,17 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     final List<Workspace> userWorkspaces = workspaceProvider.getByUser(user);
                     if (userWorkspaces == null) {
                         response.sendError(HttpStatus.BAD_REQUEST.value());
+                        return;
                     }
-                    final Workspace userWorkspace = userWorkspaces.stream().filter(w -> w.getType().equals(workspaceType)).findFirst().orElse(null);
+                    Workspace userWorkspace = null;
+                    final List<Workspace> workspaces = userWorkspaces.stream().filter(w -> w.getType().equals(workspaceType)).collect(Collectors.toList());
+                    if (workspaces.size() > 0) {
+                        if (workspaces.size() == 1) {
+                            userWorkspace = workspaces.get(0);
+                        } else {
+                            userWorkspace = workspaces.stream().filter(w -> fileName.startsWith(w.getParameters().get(workspaceType.rootKey()))).findFirst().orElse(null);
+                        }
+                    }
                     if (userWorkspace == null) {
                         response.sendError(HttpStatus.BAD_REQUEST.value());
                     }
