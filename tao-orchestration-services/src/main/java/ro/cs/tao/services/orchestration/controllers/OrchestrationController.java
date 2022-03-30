@@ -39,12 +39,15 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.orchestration.beans.ExecutionRequest;
+import ro.cs.tao.services.orchestration.beans.WPSExecutionRequest;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/orchestrator")
@@ -186,6 +189,24 @@ public class OrchestrationController extends BaseController {
                 }
             }
             final long jobId = orchestrationService.startExternalWorkflow(jsonGraph, container, callbackObj);
+            return jobId != -1 ?
+                    prepareResult(jobId, "Execution started") :
+                    prepareResult("Cannot start execution. See error log for details", ResponseStatus.FAILED);
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    @RequestMapping(value = "/wps", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> invokeRemoteWPS(@RequestBody WPSExecutionRequest request) {
+        try {
+            if (request == null) {
+                throw new Exception("Empty body");
+            }
+            final long jobId = orchestrationService.invokeWPS(request.getWpsId(),
+                                                              new HashMap<String, Map<String, String>>() {{
+                                                                  put(request.getWpsId(), request.getParameters());
+                                                              }});
             return jobId != -1 ?
                     prepareResult(jobId, "Execution started") :
                     prepareResult("Cannot start execution. See error log for details", ResponseStatus.FAILED);

@@ -211,6 +211,18 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         }
     }
 
+    @Override
+    public long invokeWPS(String identifier, Map<String, Map<String, String>> inputs) throws ExecutionException {
+        try {
+            final ExecutionJob job = Orchestrator.getInstance().startExecution(SessionStore.currentContext(), identifier, inputs,
+                                                                               new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(1),
+                                                                                                 SecurityContextHolder.getContext()));
+            return job != null ? job.getId() : -1;
+        } catch (Exception e) {
+            throw new ExecutionException(e);
+        }
+    }
+
     @Bean
     private ExecutorService executor() {
         return new DelegatingSecurityContextExecutorService(Executors.newSingleThreadExecutor());
