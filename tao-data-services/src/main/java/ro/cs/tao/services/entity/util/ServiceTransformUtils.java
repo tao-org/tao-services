@@ -26,9 +26,9 @@ import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.services.entity.beans.RepositoryBean;
+import ro.cs.tao.services.entity.beans.RepositoryTypeBean;
 import ro.cs.tao.services.entity.beans.WPSContainerBean;
-import ro.cs.tao.services.entity.beans.WorkspaceBean;
-import ro.cs.tao.services.entity.beans.WorkspaceTypeBean;
 import ro.cs.tao.services.model.component.DataSourceGroupInfo;
 import ro.cs.tao.services.model.component.DataSourceInfo;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
@@ -38,8 +38,8 @@ import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.utils.Crypto;
 import ro.cs.tao.workflow.WorkflowDescriptor;
-import ro.cs.tao.workspaces.Workspace;
-import ro.cs.tao.workspaces.WorkspaceType;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -116,8 +116,8 @@ public final class ServiceTransformUtils {
         return new WorkflowInfo(descriptor);
     }
 
-    public static WorkspaceTypeBean toBean(WorkspaceType type) {
-        final WorkspaceTypeBean bean = new WorkspaceTypeBean();
+    public static RepositoryTypeBean toBean(RepositoryType type) {
+        final RepositoryTypeBean bean = new RepositoryTypeBean();
         bean.setId(type.value());
         bean.setName(type.name());
         bean.setDescription(type.friendlyName());
@@ -128,8 +128,8 @@ public final class ServiceTransformUtils {
         return bean;
     }
 
-    public static Workspace fromBean(WorkspaceBean bean) {
-        final Workspace entity = new Workspace();
+    public static Repository fromBean(RepositoryBean bean) {
+        final Repository entity = new Repository();
         entity.setId(bean.getId());
         entity.setName(bean.getName());
         entity.setDescription(bean.getDescription());
@@ -137,12 +137,12 @@ public final class ServiceTransformUtils {
         entity.setUrlPrefix(bean.getUrlPrefix());
         entity.setSystem(bean.isSystem());
         entity.setReadOnly(bean.isReadOnly());
-        entity.setType(EnumUtils.getEnumConstantByName(WorkspaceType.class, bean.getType()));
+        entity.setType(EnumUtils.getEnumConstantByName(RepositoryType.class, bean.getType()));
         return entity;
     }
 
-    public static WorkspaceBean toBean(Workspace entity) {
-        final WorkspaceBean bean = new WorkspaceBean();
+    public static RepositoryBean toBean(Repository entity) {
+        final RepositoryBean bean = new RepositoryBean();
         bean.setId(entity.getId());
         bean.setName(entity.getName());
         bean.setDescription(entity.getDescription());

@@ -20,8 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.persistence.UserProvider;
-import ro.cs.tao.persistence.WorkspaceProvider;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.interfaces.AuthenticationService;
@@ -30,7 +30,7 @@ import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.FileUtilities;
-import ro.cs.tao.workspaces.Workspace;
+import ro.cs.tao.workspaces.Repository;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -56,7 +56,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private UserProvider userProvider;
 
     @Autowired
-    private WorkspaceProvider workspaceProvider;
+    private RepositoryProvider workspaceProvider;
 
     @Override
     public AuthInfo login(String userName, String password) {
@@ -70,7 +70,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             try {
                 // update user last login date
                 userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
-                final List<Workspace> list = workspaceProvider.getByUser(userName);
+                final List<Repository> list = workspaceProvider.getByUser(userName);
                 if (list == null || list.isEmpty()) {
                     userProvider.createWorkspaces(userName);
                 }

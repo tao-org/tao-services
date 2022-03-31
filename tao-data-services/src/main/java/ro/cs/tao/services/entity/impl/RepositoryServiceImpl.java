@@ -3,48 +3,48 @@ package ro.cs.tao.services.entity.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.persistence.WorkspaceProvider;
-import ro.cs.tao.services.interfaces.WorkspaceService;
-import ro.cs.tao.workspaces.Workspace;
-import ro.cs.tao.workspaces.WorkspaceType;
+import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.services.interfaces.RepositoryService;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Implementation for Workspace entity service.
+ * Implementation for Repository entity service.
  *
  * @author Cosmin Cara
  */
-@Service("workspaceService")
-public class WorkspaceServiceImpl
-        extends EntityService<Workspace> implements WorkspaceService {
+@Service("repositoryService")
+public class RepositoryServiceImpl
+        extends EntityService<Repository> implements RepositoryService {
     @Autowired
-    private WorkspaceProvider workspaceProvider;
+    private RepositoryProvider workspaceProvider;
 
     @Override
-    public Workspace findById(Integer id) {
+    public Repository findById(Integer id) {
         return workspaceProvider.get(id);
     }
 
     @Override
-    public List<Workspace> list() {
+    public List<Repository> list() {
         return workspaceProvider.list();
     }
 
     @Override
-    public List<Workspace> getByUser(String userName) {
+    public List<Repository> getByUser(String userName) {
         return workspaceProvider.getByUser(userName);
     }
 
     @Override
-    public List<Workspace> list(Iterable<Integer> ids) {
+    public List<Repository> list(Iterable<Integer> ids) {
         return workspaceProvider.list(ids);
     }
 
     @Override
-    public Workspace save(Workspace object) {
+    public Repository save(Repository object) {
         try {
             return workspaceProvider.save(object);
         } catch (PersistenceException e) {
@@ -54,8 +54,8 @@ public class WorkspaceServiceImpl
     }
 
     @Override
-    public Workspace update(Workspace object) throws PersistenceException {
-        Workspace existing = workspaceProvider.get(object.getId());
+    public Repository update(Repository object) throws PersistenceException {
+        Repository existing = workspaceProvider.get(object.getId());
         if (existing == null) {
             throw new IllegalArgumentException("Entity does not exist. Call save() instead");
         }
@@ -78,7 +78,7 @@ public class WorkspaceServiceImpl
     }
 
     @Override
-    protected void validateFields(Workspace entity, List<String> errors) {
+    protected void validateFields(Repository entity, List<String> errors) {
         String value = entity.getName();
         if (value == null || value.trim().isEmpty()) {
             errors.add("[name] cannot be empty");
@@ -87,7 +87,7 @@ public class WorkspaceServiceImpl
         if (value == null || value.trim().isEmpty()) {
             errors.add("[description] cannot be empty");
         }
-        final WorkspaceType type = entity.getType();
+        final RepositoryType type = entity.getType();
         final Map<String, Boolean> paramNames = type.getParameters();
         final Map<String, String> parameters = entity.getParameters();
         for (Map.Entry<String, Boolean> entry : paramNames.entrySet()) {

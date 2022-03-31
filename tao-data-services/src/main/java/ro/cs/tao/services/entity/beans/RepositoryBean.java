@@ -2,7 +2,7 @@ package ro.cs.tao.services.entity.beans;
 
 import java.util.LinkedHashMap;
 
-public class WorkspaceBean {
+public class RepositoryBean {
     private Integer id;
     private String name;
     private String description;

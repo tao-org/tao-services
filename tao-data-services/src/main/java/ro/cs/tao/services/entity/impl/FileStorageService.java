@@ -36,8 +36,8 @@ import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.utils.FileUtilities;
-import ro.cs.tao.workspaces.Workspace;
-import ro.cs.tao.workspaces.WorkspaceType;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,7 +67,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     @Autowired
     private AuxiliaryDataProvider auxiliaryDataProvider;
     @Autowired
-    private WorkspaceProvider workspaceProvider;
+    private RepositoryProvider repositoryProvider;
 
     public FileStorageService() { }
 
@@ -77,13 +77,13 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public Path createFolder(Workspace workspace, String folderRelativePath, boolean userOnly) throws IOException {
+    public Path createFolder(Repository workspace, String folderRelativePath, boolean userOnly) throws IOException {
         String cleanPath = StringUtils.cleanPath(folderRelativePath);
         return Files.createDirectories(Paths.get(resolve(workspace, cleanPath)));
     }
 
     @Override
-    public void storeUserFile(MultipartFile file, Workspace workspace, String relativeFolder, String description) throws Exception {
+    public void storeUserFile(MultipartFile file, Repository workspace, String relativeFolder, String description) throws Exception {
         checkParameters(file, relativeFolder);
         storeFile(file, Paths.get(resolve(workspace, relativeFolder)),
                   description, SessionStore.currentContext().getPrincipal());
@@ -93,7 +93,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public void storeFile(InputStream stream, long length, Workspace workspace, String relativeFolder, String description) throws Exception {
+    public void storeFile(InputStream stream, long length, Repository workspace, String relativeFolder, String description) throws Exception {
         storeFile(stream, SessionStore.currentContext().getUploadPath().resolve(relativeFolder));
 
         // Update user processing quota
@@ -101,19 +101,19 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public void storePublicFile(MultipartFile file, Workspace workspace, String relativeFolder, String description) throws Exception {
+    public void storePublicFile(MultipartFile file, Repository workspace, String relativeFolder, String description) throws Exception {
         checkParameters(file, relativeFolder);
         storeFile(file, Paths.get(resolve(workspace, relativeFolder)),
                   description, SystemSessionContext.instance().getPrincipal());
     }
 
     @Override
-    public boolean exists(Workspace workspace, String path) throws Exception {
+    public boolean exists(Repository workspace, String path) throws Exception {
         return Files.exists(Paths.get(resolve(workspace, path)));
     }
 
     @Override
-    public void remove(Workspace workspace, String fileName) throws IOException{
+    public void remove(Repository workspace, String fileName) throws IOException{
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("Invalid argument (empty)");
         }
@@ -190,7 +190,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public void move(Workspace workspace, String source, String destination) throws  IOException {
+    public void move(Repository workspace, String source, String destination) throws  IOException {
         if (source == null || source.isEmpty() || destination == null || destination.isEmpty()) {
             throw new IOException("Invalid argument (empty)");
         }
@@ -268,8 +268,8 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
 
     @Override
     public List<FileObject> listUserWorkspace(String userName) throws IOException {
-        final Workspace workspace = workspaceProvider.getByUser(userName)
-                                                     .stream().filter(w -> w.getType() == WorkspaceType.LOCAL)
+        final Repository workspace = repositoryProvider.getByUser(userName)
+                                                     .stream().filter(w -> w.getType() == RepositoryType.LOCAL)
                                                      .findFirst().orElse(null);
         if (workspace == null) {
             throw new IOException("Workspace does not exist");
@@ -284,18 +284,18 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
 
     @Override
     public List<FileObject> listUploaded(String principalName) throws IOException {
-        final List<Workspace> workspaces = workspaceProvider.getByUser(principalName);
-        final Workspace localWorkspace = workspaces.stream().filter(w -> w.getType() == WorkspaceType.LOCAL).findFirst().get();
+        final List<Repository> workspaces = repositoryProvider.getByUser(principalName);
+        final Repository localWorkspace = workspaces.stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
         return listFiles(localWorkspace, "files", null, null);
     }
 
     @Override
-    public List<FileObject> listTree(Workspace workspace, String fromPath) throws IOException {
+    public List<FileObject> listTree(Repository workspace, String fromPath) throws IOException {
         return listFiles(workspace, fromPath, null, null);
     }
 
     @Override
-    public List<FileObject> listFiles(Workspace workspace, String fromPath, Set<String> exclusions, String lastItem) throws IOException {
+    public List<FileObject> listFiles(Repository workspace, String fromPath, Set<String> exclusions, String lastItem) throws IOException {
         final Path workspaceRoot = Paths.get(workspace.root());
         final Path root = Paths.get(resolve(workspace, fromPath));
         final int depth = root.getNameCount() - workspaceRoot.getNameCount() == 1 ? 1 : 10;

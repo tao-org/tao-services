@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class WorkspaceHandler extends BaseLifeCycle {
+public class LocalRepositoryHandler extends BaseLifeCycle {
 
     @Override
     public int priority() {

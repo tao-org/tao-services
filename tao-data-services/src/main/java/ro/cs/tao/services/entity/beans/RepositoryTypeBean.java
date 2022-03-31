@@ -2,7 +2,7 @@ package ro.cs.tao.services.entity.beans;
 
 import java.util.Map;
 
-public class WorkspaceTypeBean {
+public class RepositoryTypeBean {
     private int id;
     private String name;
     private String description;

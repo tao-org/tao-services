@@ -13,8 +13,8 @@ import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.workspace.model.TransferableItem;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
-import ro.cs.tao.workspaces.Workspace;
-import ro.cs.tao.workspaces.WorkspaceType;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -77,12 +77,12 @@ public class UserTransferService {
                 this.progressListener = new ProgressNotifier(this.principal, item.getBatch(), Topic.TRANSFER_PROGRESS);
                 this.progressListener.started(item.getBatch());
             }
-            final Workspace srcWorkspace = item.getSourceWorkspace();
-            final StorageService sourceService = srcWorkspace.getType() == WorkspaceType.LOCAL
+            final Repository srcWorkspace = item.getSourceWorkspace();
+            final StorageService sourceService = srcWorkspace.getType() == RepositoryType.LOCAL
                     ? fileStorageService
                     : StorageServiceFactory.getInstance(srcWorkspace);
-            final Workspace dstWorkspace = item.getDestinationWorkspace();
-            final StorageService destinationService = dstWorkspace.getType() == WorkspaceType.LOCAL
+            final Repository dstWorkspace = item.getDestinationWorkspace();
+            final StorageService destinationService = dstWorkspace.getType() == RepositoryType.LOCAL
                     ? fileStorageService
                     : StorageServiceFactory.getInstance(dstWorkspace);
             destinationService.setProgressListener(this.progressListener);
