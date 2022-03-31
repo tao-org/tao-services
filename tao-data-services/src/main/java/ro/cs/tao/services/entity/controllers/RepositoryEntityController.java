@@ -6,10 +6,10 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
-import ro.cs.tao.services.interfaces.WorkspaceService;
+import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.utils.StringUtilities;
-import ro.cs.tao.workspaces.Workspace;
-import ro.cs.tao.workspaces.WorkspaceType;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -17,12 +17,12 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/workspace")
-public class WorkspaceEntityController extends DataEntityController<Workspace, Integer, WorkspaceService> {
+public class RepositoryEntityController extends DataEntityController<Repository, Integer, RepositoryService> {
 
     @RequestMapping(value = "/types/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getWorkspaceTypes() {
         try {
-            return prepareResult(Arrays.stream(WorkspaceType.values()).map(ServiceTransformUtils::toBean).collect(Collectors.toList()));
+            return prepareResult(Arrays.stream(RepositoryType.values()).map(ServiceTransformUtils::toBean).collect(Collectors.toList()));
         } catch (Exception e) {
             return handleException(e);
         }
@@ -47,7 +47,7 @@ public class WorkspaceEntityController extends DataEntityController<Workspace, I
     @Override
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") Integer id) {
         try {
-            final Workspace entity = this.service.findById(id);
+            final Repository entity = this.service.findById(id);
             if (entity == null || !entity.getUserName().equals(currentUser())) {
                 throw new IllegalArgumentException("You cannot access this workspace");
             }
@@ -58,7 +58,7 @@ public class WorkspaceEntityController extends DataEntityController<Workspace, I
     }
 
     @Override
-    public ResponseEntity<ServiceResponse<?>> save(@RequestBody Workspace entity) {
+    public ResponseEntity<ServiceResponse<?>> save(@RequestBody Repository entity) {
         try {
             entity.setUserName(currentUser());
             entity.setSystem(false);
@@ -69,7 +69,7 @@ public class WorkspaceEntityController extends DataEntityController<Workspace, I
     }
 
     @Override
-    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") Integer id, @RequestBody Workspace entity) {
+    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") Integer id, @RequestBody Repository entity) {
         try {
             if (StringUtilities.isNullOrEmpty(entity.getUserName()) ||
                 !entity.getUserName().equals(currentUser())) {

@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.services.commons.ServiceLauncher;
-import ro.cs.tao.services.interfaces.WorkspaceWatcherService;
+import ro.cs.tao.services.interfaces.RepositoryWatcherService;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -14,21 +14,21 @@ import javax.annotation.PreDestroy;
 @Configuration
 @ImportResource("classpath:tao-workspace-service-context.xml")
 @EnableWebMvc
-public class WorkspaceServicesLauncher implements ServiceLauncher {
+public class RepositoryServicesLauncher implements ServiceLauncher {
 
     @Autowired
-    WorkspaceWatcherService workspaceWatcherService;
+    RepositoryWatcherService repositoryWatcherService;
 
     public static void main(String[] args) {
-        SpringApplication.run(WorkspaceServicesLauncher.class, args);
+        SpringApplication.run(RepositoryServicesLauncher.class, args);
     }
 
     @PostConstruct
-    private void initialize() { workspaceWatcherService.startWatching(); }
+    private void initialize() { repositoryWatcherService.startWatching(); }
 
     @PreDestroy
     private void stopWatcher() {
-        workspaceWatcherService.stopWatching();
+        repositoryWatcherService.stopWatching();
     }
 
     @Override

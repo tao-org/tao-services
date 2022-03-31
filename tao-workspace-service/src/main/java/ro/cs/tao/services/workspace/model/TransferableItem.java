@@ -1,16 +1,16 @@
 package ro.cs.tao.services.workspace.model;
 
 import ro.cs.tao.services.model.FileObject;
-import ro.cs.tao.workspaces.Workspace;
+import ro.cs.tao.workspaces.Repository;
 
 import java.util.Objects;
 
 public class TransferableItem {
     private String user;
     private String batch;
-    private Workspace sourceWorkspace;
+    private Repository sourceWorkspace;
     private FileObject source;
-    private Workspace destinationWorkspace;
+    private Repository destinationRepository;
     private String destinationPath;
     private boolean move;
     private boolean force;
@@ -18,12 +18,12 @@ public class TransferableItem {
     public TransferableItem() {
     }
 
-    public TransferableItem(String user, String batch, Workspace sourceWorkspace, FileObject source, Workspace destinationWorkspace, String destinationPath, boolean move, boolean force) {
+    public TransferableItem(String user, String batch, Repository sourceWorkspace, FileObject source, Repository destinationRepository, String destinationPath, boolean move, boolean force) {
         this.user = user;
         this.batch = batch;
         this.sourceWorkspace = sourceWorkspace;
         this.source = source;
-        this.destinationWorkspace = destinationWorkspace;
+        this.destinationRepository = destinationRepository;
         this.destinationPath = destinationPath;
         this.move = move;
         this.force = force;
@@ -37,7 +37,7 @@ public class TransferableItem {
         return batch;
     }
 
-    public Workspace getSourceWorkspace() {
+    public Repository getSourceWorkspace() {
         return sourceWorkspace;
     }
 
@@ -45,8 +45,8 @@ public class TransferableItem {
         return source;
     }
 
-    public Workspace getDestinationWorkspace() {
-        return destinationWorkspace;
+    public Repository getDestinationWorkspace() {
+        return destinationRepository;
     }
 
     public String getDestinationPath() {
@@ -66,12 +66,12 @@ public class TransferableItem {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TransferableItem that = (TransferableItem) o;
-        return user.equals(that.user) && batch.equals(that.batch) && sourceWorkspace.equals(that.sourceWorkspace) && source.equals(that.source) && destinationWorkspace.equals(that.destinationWorkspace) && destinationPath.equals(that.destinationPath);
+        return user.equals(that.user) && batch.equals(that.batch) && sourceWorkspace.equals(that.sourceWorkspace) && source.equals(that.source) && destinationRepository.equals(that.destinationRepository) && destinationPath.equals(that.destinationPath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(user, batch, sourceWorkspace, source, destinationWorkspace, destinationPath);
+        return Objects.hash(user, batch, sourceWorkspace, source, destinationRepository, destinationPath);
     }
 
     @Override
