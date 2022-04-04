@@ -106,8 +106,24 @@ public class WPSClient {
             descriptor.setCardinality(0);
             descriptor.setName(title + " output");
             final DataDescriptor dataDescriptor = new DataDescriptor();
-            dataDescriptor.setFormatType(DataFormat.OTHER);
-            dataDescriptor.setFormatName(outParam.getComplexOutput().getDefault().getFormat().getMimeType());
+            final String mimeType = outParam.getComplexOutput().getDefault().getFormat().getMimeType();
+            DataFormat format;
+            switch (mimeType.toLowerCase()) {
+                case "application/json":
+                    format = DataFormat.JSON;
+                    break;
+                case "application/octet-stream":
+                    format = DataFormat.RASTER;
+                    break;
+                case "plain/text":
+                    format = DataFormat.FOLDER;
+                    break;
+                default:
+                    format = DataFormat.OTHER;
+                    break;
+            }
+            dataDescriptor.setFormatType(format);
+            dataDescriptor.setFormatName(mimeType);
             dataDescriptor.setLocation(outParam.getTitle().getValue());
             descriptor.setDataDescriptor(dataDescriptor);
             outDecriptors.add(descriptor);
