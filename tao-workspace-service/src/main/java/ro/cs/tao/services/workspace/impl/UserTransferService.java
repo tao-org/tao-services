@@ -87,7 +87,7 @@ public class UserTransferService {
                     : StorageServiceFactory.getInstance(dstWorkspace);
             destinationService.setProgressListener(this.progressListener);
             final FileObject fileObject = item.getSource();
-            final String relativePath = fileObject.getRelativePath();
+            final String relativePath = sourceService.resolve(srcWorkspace, fileObject.getRelativePath());
             this.progressListener.subActivityStarted(relativePath);
             InputStream sourceStream = null;
             try {
