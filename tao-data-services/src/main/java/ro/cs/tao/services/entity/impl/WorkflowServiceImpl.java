@@ -30,6 +30,7 @@ import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.converters.ConversionException;
 import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.datasource.param.DataSourceParameter;
+import ro.cs.tao.datasource.param.JavaType;
 import ro.cs.tao.datasource.persistence.QueryProvider;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.ExecutionJob;
@@ -846,13 +847,13 @@ public class WorkflowServiceImpl
                                     .filter(cp -> cp.getName().equals(e.getKey()))
                                     .forEach(cp -> cp.setValue(e.getValue()));
                         }
-                        componentParams.add(new Parameter("pageSize", Integer.class.getName(), String.valueOf(query.getPageSize())));
-                        componentParams.add(new Parameter("pageNumber", Integer.class.getName(), String.valueOf(query.getPageNumber())));
-                        componentParams.add(new Parameter("limit", Integer.class.getName(), String.valueOf(query.getLimit())));
+                        componentParams.add(new Parameter("pageSize", JavaType.INT.friendlyName(), String.valueOf(query.getPageSize())));
+                        componentParams.add(new Parameter("pageNumber", JavaType.INT.friendlyName(), String.valueOf(query.getPageNumber())));
+                        componentParams.add(new Parameter("limit", JavaType.INT.friendlyName(), String.valueOf(query.getLimit())));
                     } else {
-                        componentParams.add(new Parameter("pageSize", Integer.class.getName(), "25"));
-                        componentParams.add(new Parameter("pageNumber", Integer.class.getName(), "1"));
-                        componentParams.add(new Parameter("limit", Integer.class.getName(), "25"));
+                        componentParams.add(new Parameter("pageSize", JavaType.INT.friendlyName(), "25"));
+                        componentParams.add(new Parameter("pageNumber", JavaType.INT.friendlyName(), "1"));
+                        componentParams.add(new Parameter("limit", JavaType.INT.friendlyName(), "25"));
                     }
                     break;
                 case PROCESSING:
@@ -861,7 +862,8 @@ public class WorkflowServiceImpl
                     for (ParameterDescriptor descriptor : descriptors) {
                         paramType = descriptor.getDataType();
                         componentParams.add(new Parameter(descriptor.getName(),
-                                                          paramType.getName(),
+                                                          //paramType.getName(),
+                                                          descriptor.typeFriendlyName(),
                                                           !"null".equals(descriptor.getDefaultValue()) ? descriptor.getDefaultValue() : null,
                                                           paramType.isEnum() ?
                                                                   Parameter.stringValueSet(paramType.getEnumConstants()) :

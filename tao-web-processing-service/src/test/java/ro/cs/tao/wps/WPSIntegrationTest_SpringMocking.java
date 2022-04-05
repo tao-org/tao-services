@@ -137,7 +137,7 @@ public class WPSIntegrationTest_SpringMocking {
     public void testGetStatus() throws Exception {
         //preparation
         final ExecutionJob job = new ExecutionJob();
-        job.setWorkflowId(24);
+        job.setWorkflowId(24L);
         job.setExecutionStatus(ExecutionStatus.RUNNING);
 
         given(this.jobProvider.get(13L)).willReturn(job);
