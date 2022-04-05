@@ -26,11 +26,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.services.interfaces.StorageService;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,8 +44,10 @@ import java.util.Base64;
 @Controller
 @RequestMapping("/product")
 public class ProductController extends DataEntityController<EOProduct, String, ProductService> {
+
     @Autowired
-    private StorageService<MultipartFile, FileSystemResource> fileStorageService;
+    private RepositoryProvider repositoryProvider;
+
     /**
      * Retrieve a list of EOProducts given their names
      * @param nameList  The list of product names
@@ -123,6 +128,10 @@ public class ProductController extends DataEntityController<EOProduct, String, P
         if (!Files.exists(filePath)) {
             throw new IOException(String.format("File '%s' does not exist", filePath));
         }
-        return this.fileStorageService.download(filePath);
+        return getLocalRepositoryService().download(filePath);
+    }
+
+    private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService() {
+        return StorageServiceFactory.getInstance(repositoryProvider.getByUser(currentUser()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
     }
 }

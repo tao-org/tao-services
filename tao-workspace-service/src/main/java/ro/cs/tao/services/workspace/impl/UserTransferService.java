@@ -6,7 +6,6 @@ import ro.cs.tao.ProgressListener;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
-import ro.cs.tao.services.entity.impl.FileStorageService;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
@@ -14,7 +13,6 @@ import ro.cs.tao.services.workspace.model.TransferableItem;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
 import ro.cs.tao.workspaces.Repository;
-import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -40,10 +38,8 @@ public class UserTransferService {
     private ProgressListener progressListener;
     private final Logger logger;
 
-    private final FileStorageService fileStorageService;
 
-    UserTransferService(Principal user, FileStorageService fileService) {
-        this.fileStorageService = fileService;
+    UserTransferService(Principal user) {
         this.logger = Logger.getLogger(TransferService.class.getName());
         this.queue = new LinkedBlockingDeque<>();
         this.queueWorker = new BlockingQueueWorker<>(this.queue, this::processRequest);
@@ -78,42 +74,38 @@ public class UserTransferService {
                 this.progressListener.started(item.getBatch());
             }
             final Repository srcWorkspace = item.getSourceWorkspace();
-            final StorageService sourceService = srcWorkspace.getType() == RepositoryType.LOCAL
-                    ? fileStorageService
-                    : StorageServiceFactory.getInstance(srcWorkspace);
+            final StorageService sourceService = StorageServiceFactory.getInstance(srcWorkspace);
             final Repository dstWorkspace = item.getDestinationWorkspace();
-            final StorageService destinationService = dstWorkspace.getType() == RepositoryType.LOCAL
-                    ? fileStorageService
-                    : StorageServiceFactory.getInstance(dstWorkspace);
+            final StorageService destinationService = StorageServiceFactory.getInstance(dstWorkspace);
             destinationService.setProgressListener(this.progressListener);
             final FileObject fileObject = item.getSource();
-            final String relativePath = sourceService.resolve(srcWorkspace, fileObject.getRelativePath());
-            this.progressListener.subActivityStarted(relativePath);
+            final String srcPath = srcWorkspace.resolve(fileObject.getRelativePath());
+            this.progressListener.subActivityStarted(srcPath);
             InputStream sourceStream = null;
             try {
-                final Object source = sourceService.download(Paths.get(relativePath));
+                final Object source = sourceService.download(Paths.get(srcPath));
                 if (source instanceof FileSystemResource) {
                     sourceStream = ((FileSystemResource) source).getInputStream();
                 } else {
                     sourceStream = (InputStream) source;
                 }
-                logger.finest("Begin transferring file " + relativePath);
-                if (item.isForce() || !destinationService.exists(dstWorkspace, item.getDestinationPath())) {
-                    destinationService.storeFile(sourceStream, fileObject.getSize(), dstWorkspace, item.getDestinationPath(), relativePath);
+                logger.finest("Begin transferring file " + srcPath);
+                if (item.isForce() || !destinationService.exists(item.getDestinationPath())) {
+                    destinationService.storeFile(sourceStream, fileObject.getSize(), item.getDestinationPath(), srcPath);
                 } else {
-                    logger.fine(String.format("File %s exists at the destination and no overwrite flag is set", relativePath));
+                    logger.fine(String.format("File %s exists at the destination and no overwrite flag is set", srcPath));
                 }
             } finally {
                 if (sourceStream != null) {
                     sourceStream.close();
                 }
             }
-            logger.finest("End transferring file " + relativePath);
+            logger.finest("End transferring file " + srcPath);
             if (item.isMove()) {
-                sourceService.remove(srcWorkspace, relativePath);
-                logger.finest("Removed file " + relativePath);
+                sourceService.remove(fileObject.getRelativePath());
+                logger.finest("Removed file " + srcPath);
             }
-            this.progressListener.subActivityEnded(relativePath);
+            this.progressListener.subActivityEnded(srcPath);
             final TransferableItem next = this.queue.peek();
             if (next == null || !item.getBatch().equals(next.getBatch())) {
                 this.progressListener.ended();

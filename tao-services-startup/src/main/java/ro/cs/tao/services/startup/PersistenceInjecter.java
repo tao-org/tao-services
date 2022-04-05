@@ -10,6 +10,7 @@ import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.TaoLoginModule;
+import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.spi.ServiceRegistryManager;
@@ -66,6 +67,9 @@ public class PersistenceInjecter extends BaseLifeCycle {
             }
         }
         CustomAuthenticationProvider.setPersistenceManager(this.persistenceManager);
+        StorageServiceFactory.setProductProvider(this.persistenceManager.rasterData());
+        StorageServiceFactory.setVectorDataProvider(this.persistenceManager.vectorData());
+        StorageServiceFactory.setAuxiliaryDataProvider(this.persistenceManager.auxiliaryData());
     }
 
     @Override
