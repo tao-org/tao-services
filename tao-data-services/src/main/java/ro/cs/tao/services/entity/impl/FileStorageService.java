@@ -339,8 +339,9 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                     fileObject.setAttributes(auxAttributes.get(realPath));
                 }
             } else {
-                if (productAttributes.containsKey(realPath)) {
-                    currentAttributeMap = productAttributes.get(realPath);
+                final Path absPath = realPath.toAbsolutePath();
+                if (productAttributes.containsKey(absPath)) {
+                    currentAttributeMap = productAttributes.get(absPath);
                     fileObject.setProductName(currentAttributeMap.get("name"));
                     currentAttributeMap.remove("name");
                     //currentAttributeMap.remove("formatType");
@@ -350,10 +351,10 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                     currentAttributeMap.remove("sensorType");
                     currentAttributeMap.remove("size");
                     fileObject.setAttributes(currentAttributeMap);
-                } else if (productAttributes.containsKey(realPath.getParent()) && currentAttributeMap != null) {
+                } else if (productAttributes.containsKey(absPath.getParent()) && currentAttributeMap != null) {
                     fileObject.setAttributes(currentAttributeMap);
-                } else if (vectorAttributes.containsKey(realPath)) {
-                    fileObject.setAttributes(vectorAttributes.get(realPath));
+                } else if (vectorAttributes.containsKey(absPath)) {
+                    fileObject.setAttributes(vectorAttributes.get(absPath));
                 }
             }
             fileObjects.add(fileObject);
