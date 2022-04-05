@@ -16,9 +16,7 @@
 
 package ro.cs.tao.services.entity.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,17 +25,17 @@ import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.VectorData;
 import ro.cs.tao.eodata.enums.Visibility;
-import ro.cs.tao.persistence.*;
+import ro.cs.tao.persistence.AuxiliaryDataProvider;
+import ro.cs.tao.persistence.EOProductProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.VectorDataProvider;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
-import ro.cs.tao.security.SystemPrincipal;
-import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.workspaces.Repository;
-import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,20 +54,28 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-@Service("fileStorageService")
 public class FileStorageService implements StorageService<MultipartFile, FileSystemResource> {
 
     private static final String PROTOCOL = "file";
-    @Autowired
     private EOProductProvider productProvider;
-    @Autowired
     private VectorDataProvider vectorDataProvider;
-    @Autowired
     private AuxiliaryDataProvider auxiliaryDataProvider;
-    @Autowired
-    private RepositoryProvider repositoryProvider;
+
+    private Repository repository;
 
     public FileStorageService() { }
+
+    public void setProductProvider(EOProductProvider productProvider) {
+        this.productProvider = productProvider;
+    }
+
+    public void setVectorDataProvider(VectorDataProvider vectorDataProvider) {
+        this.vectorDataProvider = vectorDataProvider;
+    }
+
+    public void setAuxiliaryDataProvider(AuxiliaryDataProvider auxiliaryDataProvider) {
+        this.auxiliaryDataProvider = auxiliaryDataProvider;
+    }
 
     @Override
     public boolean isIntendedFor(String protocol) {
@@ -77,15 +83,21 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public Path createFolder(Repository workspace, String folderRelativePath, boolean userOnly) throws IOException {
-        String cleanPath = StringUtils.cleanPath(folderRelativePath);
-        return Files.createDirectories(Paths.get(resolve(workspace, cleanPath)));
+    public void associate(Repository repository) {
+        this.repository = repository;
     }
 
     @Override
-    public void storeUserFile(MultipartFile file, Repository workspace, String relativeFolder, String description) throws Exception {
+    public Path createFolder(String folderRelativePath, boolean userOnly) throws IOException {
+        String cleanPath = StringUtils.cleanPath(folderRelativePath);
+        return Files.createDirectories(Paths.get(repository().resolve(cleanPath)));
+    }
+
+    @Override
+    public void storeUserFile(MultipartFile file, String relativeFolder, String description) throws Exception {
         checkParameters(file, relativeFolder);
-        storeFile(file, Paths.get(resolve(workspace, relativeFolder)),
+        Repository repository = repository();
+        storeFile(file, Paths.get(repository.resolve(relativeFolder)),
                   description, SessionStore.currentContext().getPrincipal());
         
         // Update user processing quota
@@ -93,27 +105,19 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public void storeFile(InputStream stream, long length, Repository workspace, String relativeFolder, String description) throws Exception {
-        storeFile(stream, SessionStore.currentContext().getUploadPath().resolve(relativeFolder));
-
+    public void storeFile(InputStream stream, long length,String relativeFolder, String description) throws Exception {
+        storeFile(stream, Paths.get(repository().root()).resolve(relativeFolder));
         // Update user processing quota
         UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
     }
 
     @Override
-    public void storePublicFile(MultipartFile file, Repository workspace, String relativeFolder, String description) throws Exception {
-        checkParameters(file, relativeFolder);
-        storeFile(file, Paths.get(resolve(workspace, relativeFolder)),
-                  description, SystemSessionContext.instance().getPrincipal());
+    public boolean exists(String path) throws Exception {
+        return Files.exists(Paths.get(repository().resolve(path)));
     }
 
     @Override
-    public boolean exists(Repository workspace, String path) throws Exception {
-        return Files.exists(Paths.get(resolve(workspace, path)));
-    }
-
-    @Override
-    public void remove(Repository workspace, String fileName) throws IOException{
+    public void remove(String fileName) throws IOException{
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("Invalid argument (empty)");
         }
@@ -127,7 +131,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                 fileName.startsWith(SystemVariable.SHARED_FILES.value())) {
             throw new IOException( "Operation not allowed");
         }*/
-        Path filePath = Paths.get(resolve(workspace, fileName));
+        Path filePath = Paths.get(repository().resolve(fileName));
         if (fileName.startsWith(SystemVariable.USER_FILES.value())) {
             //Path filePath = uploadPath.getParent().resolve(fileName);
             Files.delete(filePath);
@@ -190,7 +194,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public void move(Repository workspace, String source, String destination) throws  IOException {
+    public void move(String source, String destination) throws  IOException {
         if (source == null || source.isEmpty() || destination == null || destination.isEmpty()) {
             throw new IOException("Invalid argument (empty)");
         }
@@ -198,9 +202,9 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
             // This is a security check
             throw new IOException( "Cannot move file with relative path outside user directory " + source);
         }
-        //Path uploadPath = SessionStore.currentContext().getUploadPath();
-        Path sourcePath = Paths.get(resolve(workspace, source));
-        Path destinationPath = Paths.get(resolve(workspace, destination));
+        Repository repository = repository();
+        Path sourcePath = Paths.get(repository.resolve(source));
+        Path destinationPath = Paths.get(repository.resolve(destination));
         if (destination.startsWith("files")) {
             FileUtilities.move(sourcePath, destinationPath);
             try {
@@ -260,44 +264,20 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public List<FileObject> listPublicWorkspace() throws IOException {
-        final String name = SystemPrincipal.instance().getName();
-        //files.addAll(listProducts(name));
-        return new ArrayList<>(listUploaded(name));
+    public List<FileObject> listUserWorkspace() throws IOException {
+        return listFiles("/", null, null);
     }
 
     @Override
-    public List<FileObject> listUserWorkspace(String userName) throws IOException {
-        final Repository workspace = repositoryProvider.getByUser(userName)
-                                                     .stream().filter(w -> w.getType() == RepositoryType.LOCAL)
-                                                     .findFirst().orElse(null);
-        if (workspace == null) {
-            throw new IOException("Workspace does not exist");
-        }
-        return listFiles(workspace, "/", null, null);
+    public List<FileObject> listTree(String fromPath) throws IOException {
+        return listFiles(fromPath, null, null);
     }
 
     @Override
-    public List<FileObject> listUploaded() throws IOException {
-        return listUploaded(SystemPrincipal.instance().getName());
-    }
-
-    @Override
-    public List<FileObject> listUploaded(String principalName) throws IOException {
-        final List<Repository> workspaces = repositoryProvider.getByUser(principalName);
-        final Repository localWorkspace = workspaces.stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
-        return listFiles(localWorkspace, "files", null, null);
-    }
-
-    @Override
-    public List<FileObject> listTree(Repository workspace, String fromPath) throws IOException {
-        return listFiles(workspace, fromPath, null, null);
-    }
-
-    @Override
-    public List<FileObject> listFiles(Repository workspace, String fromPath, Set<String> exclusions, String lastItem) throws IOException {
-        final Path workspaceRoot = Paths.get(workspace.root());
-        final Path root = Paths.get(resolve(workspace, fromPath));
+    public List<FileObject> listFiles(String fromPath, Set<String> exclusions, String lastItem) throws IOException {
+        Repository repository = repository();
+        final Path workspaceRoot = Paths.get(repository.root());
+        final Path root = Paths.get(repository.resolve(fromPath));
         final int depth = root.getNameCount() - workspaceRoot.getNameCount() == 1 ? 1 : 10;
         final List<Path> list = list(root, depth);
         if (exclusions != null) {
@@ -319,7 +299,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
         }
         final String[] pathArray = list.stream().map(p -> p.toUri().toString()).toArray(String[]::new);
         final Map<Path, Map<String, String>> auxAttributes = new HashMap<>();
-        final List<AuxiliaryData> auxData = auxiliaryDataProvider.list(workspace.getUserName(), pathArray);
+        final List<AuxiliaryData> auxData = auxiliaryDataProvider.list(repository.getUserName(), pathArray);
         for (AuxiliaryData auxiliaryData : auxData) {
             auxAttributes.put(Paths.get(URI.create(auxiliaryData.getLocation())),
                               auxiliaryData.toAttributeMap());
@@ -556,5 +536,12 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                     .filter(p -> !p.equals(path) && !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
                     //.map(path::relativize)
                     .collect(Collectors.toList());
+    }
+
+    private Repository repository() {
+        if (this.repository == null) {
+            throw new RuntimeException("Service has no associated repository");
+        }
+        return this.repository;
     }
 }

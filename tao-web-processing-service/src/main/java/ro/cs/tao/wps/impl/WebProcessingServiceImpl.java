@@ -25,6 +25,8 @@ import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
+import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.interfaces.WebProcessingService;
@@ -32,6 +34,7 @@ import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.workflow.WorkflowDescriptor;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -55,7 +58,8 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
     private ExecutionJobProvider jobProvider;
 
     @Autowired
-    private StorageService<MultipartFile, FileSystemResource> storageService;
+    private RepositoryProvider repositoryProvider;
+
     long justStartedJobId;
 
     @Override
@@ -109,7 +113,12 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
         if (isDevModeEnabled()) {
             return new ArrayList<>();
         }
-        return storageService.getJobResults(jobId);
+        final ExecutionJob job = jobProvider.get(jobId);
+        if (job != null) {
+            return getLocalRepositoryService(job.getUserName()).getJobResults(jobId);
+        } else {
+            return null;
+        }
     }
 
     private WorkflowInfo getWorkflowInfoSafe(long workflowId) {
@@ -174,5 +183,9 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
         public void setWorkflowInfo(WorkflowInfo workflowInfo) {
             this.workflowInfo = workflowInfo;
         }
+    }
+
+    private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService(String userName) {
+        return StorageServiceFactory.getInstance(repositoryProvider.getByUser(userName).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
     }
 }
