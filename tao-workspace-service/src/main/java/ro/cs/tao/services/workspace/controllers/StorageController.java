@@ -572,7 +572,6 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (!dstFolder.endsWith("/")) {
                 dstFolder += "/";
             }
-            final String targetRoot = dstWorkspace.root() + "/";
             String targetFolder;
             final boolean isMove = request.getMove() != null && request.getMove();
             final boolean overwriteExisting = request.getOverwrite() != null && request.getOverwrite();
@@ -588,10 +587,11 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     }
                     final StorageService service = getWorkspaceService(srcWorkspace);
                     final List<FileObject> files = service.listTree(srcWorkspace, fileObject.getRelativePath());
+                    files.forEach(f -> f.setRelativePath(f.getRelativePath().replaceFirst(srcWorkspace.root() + "/", "")));
                     final TransferableItem[] items = new TransferableItem[files.size()];
                     for (FileObject fObject : files) {
                         if (!fObject.isFolder()) {
-                            final String path = targetRoot + targetFolder + fObject.getRelativePath().replace(objectPath, "");
+                            final String path = targetFolder + fObject.getRelativePath().replace(objectPath, "");
                             items[count++] = new TransferableItem(user, objectPath, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting);
                             //queueFile(root, fObject, srcWorkspace, dstWorkspace, path, isMove, overwriteExisting);
                             size += fObject.getSize();
@@ -601,7 +601,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 } else {
                     String fileName = objectPath.substring(lastSlashIdx + 1);
                     queueFile(objectPath, fileObject, srcWorkspace, dstWorkspace,
-                              targetRoot + targetFolder + "/" + fileName,
+                              targetFolder + fileName,
                               isMove, overwriteExisting);
                     count = 1;
                 }
