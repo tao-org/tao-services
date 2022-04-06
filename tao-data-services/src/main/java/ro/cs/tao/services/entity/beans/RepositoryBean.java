@@ -3,7 +3,7 @@ package ro.cs.tao.services.entity.beans;
 import java.util.LinkedHashMap;
 
 public class RepositoryBean {
-    private Integer id;
+    private String id;
     private String name;
     private String description;
     private String urlPrefix;
@@ -13,11 +13,11 @@ public class RepositoryBean {
     private boolean readOnly;
     private LinkedHashMap<String, String> parameters;
 
-    public Integer getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
     }
 

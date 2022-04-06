@@ -43,10 +43,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
@@ -227,7 +224,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param lastItem          [Optional] The item to start from (in case of paged results)
      */
     @GetMapping(value = "browse", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> listWorkspace(@RequestParam("workspace") int workspaceId,
+    public ResponseEntity<ServiceResponse<?>> listWorkspace(@RequestParam("workspace") String workspaceId,
                                                             @RequestParam(name = "folder", required = false) String relativeFolder,
                                                             @RequestParam(name = "last", required = false) String lastItem) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -260,7 +257,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param folder    The name of the folder
      */
     @PostMapping(value = "folder/", produces = "application/json")
-    public ResponseEntity<?> createUserFolder(@RequestParam("workspace") int workspaceId,
+    public ResponseEntity<?> createUserFolder(@RequestParam("workspace") String workspaceId,
                                               @RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -286,7 +283,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param file          The name of the file or folder to be deleted
      */
     @DeleteMapping(produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("workspace") int workspaceId,
+    public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("workspace") String workspaceId,
                                                      @RequestParam("file") String file) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -493,15 +490,17 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     targetFolder += srcWorkspace.fileName(objectPath);
                     final List<FileObject> files = service.listTree(fileObject.getRelativePath());
                     files.forEach(f -> f.setRelativePath(f.getRelativePath().replaceFirst(srcWorkspace.root() + "/", "")));
-                    final TransferableItem[] items = new TransferableItem[files.size()];
+                    final List<TransferableItem> items = new ArrayList<>();
                     for (FileObject fObject : files) {
                         if (!fObject.isFolder()) {
-                            final String path = targetFolder + srcWorkspace.relativize(objectPath, fObject.getRelativePath());
-                            items[count++] = new TransferableItem(user, objectPath, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting);
+                            String path = srcWorkspace.relativize(objectPath, fObject.getRelativePath());
+                            path = targetFolder + (path.startsWith("/") ? "" : "/" + path);
+                            items.add(new TransferableItem(user, objectPath, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting));
                             size += fObject.getSize();
+                            count++;
                         }
                     }
-                    queueFiles(items);
+                    queueFiles(items.toArray(new TransferableItem[0]));
                 } else {
                     queueFile(objectPath, fileObject, srcWorkspace, dstWorkspace, targetFolder + srcWorkspace.fileName(objectPath), isMove, overwriteExisting);
                     count = 1;
@@ -535,7 +534,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return getLocalRepositoryService().download(filePath);
     }
 
-    private Repository getOwnedWorkspace(int workspaceId) throws IOException {
+    private Repository getOwnedWorkspace(String workspaceId) throws IOException {
         final Repository workspace = repositoryProvider.get(workspaceId);
         if (workspace == null) {
             throw new IOException("Workspace does not exist");

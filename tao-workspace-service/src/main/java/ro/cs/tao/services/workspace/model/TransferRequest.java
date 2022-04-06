@@ -5,26 +5,26 @@ import ro.cs.tao.services.model.FileObject;
 import java.util.List;
 
 public class TransferRequest {
-    private int sourceWorkspace;
-    private int destinationWorkspace;
+    private String sourceWorkspace;
+    private String destinationWorkspace;
     private String destinationPath;
     private Boolean move;
     private Boolean overwrite;
     private List<FileObject> fileObjects;
 
-    public int getSourceWorkspace() {
+    public String getSourceWorkspace() {
         return sourceWorkspace;
     }
 
-    public void setSourceWorkspace(int sourceWorkspace) {
+    public void setSourceWorkspace(String sourceWorkspace) {
         this.sourceWorkspace = sourceWorkspace;
     }
 
-    public int getDestinationWorkspace() {
+    public String getDestinationWorkspace() {
         return destinationWorkspace;
     }
 
-    public void setDestinationWorkspace(int destinationWorkspace) {
+    public void setDestinationWorkspace(String destinationWorkspace) {
         this.destinationWorkspace = destinationWorkspace;
     }
 

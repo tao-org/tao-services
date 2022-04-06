@@ -8,9 +8,7 @@ import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Implementation for Repository entity service.
@@ -24,13 +22,20 @@ public class RepositoryServiceImpl
     private RepositoryProvider workspaceProvider;
 
     @Override
-    public Repository findById(Integer id) {
+    public Repository findById(String id) {
         return workspaceProvider.get(id);
     }
 
     @Override
     public List<Repository> list() {
-        return workspaceProvider.list();
+        final List<Repository> list = workspaceProvider.list();
+        list.sort(new Comparator<Repository>() {
+            @Override
+            public int compare(Repository o1, Repository o2) {
+                return o1.getCreated() == null ? -1 : o1.getCreated().compareTo(o2.getCreated());
+            }
+        });
+        return list;
     }
 
     @Override
@@ -39,13 +44,16 @@ public class RepositoryServiceImpl
     }
 
     @Override
-    public List<Repository> list(Iterable<Integer> ids) {
+    public List<Repository> list(Iterable<String> ids) {
         return workspaceProvider.list(ids);
     }
 
     @Override
     public Repository save(Repository object) {
         try {
+            if (object.getId() == null) {
+                object.setId(UUID.randomUUID().toString());
+            }
             return workspaceProvider.save(object);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
@@ -71,8 +79,8 @@ public class RepositoryServiceImpl
     }
 
     @Override
-    public void delete(Integer id) throws PersistenceException {
-        if (id != null && id > 1) {
+    public void delete(String id) throws PersistenceException {
+        if (id != null) {
             workspaceProvider.delete(id);
         }
     }

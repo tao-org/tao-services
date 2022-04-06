@@ -9,6 +9,7 @@ import ro.cs.tao.workspaces.Site;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Implementation for Repository entity service.
@@ -23,7 +24,7 @@ public class SiteServiceImpl
     private SiteProvider siteProvider;
 
     @Override
-    public Site findById(Integer id) {
+    public Site findById(String id) {
         return this.siteProvider.get(id);
     }
 
@@ -33,13 +34,16 @@ public class SiteServiceImpl
     }
 
     @Override
-    public List<Site> list(Iterable<Integer> ids) {
+    public List<Site> list(Iterable<String> ids) {
         return this.siteProvider.list();
     }
 
     @Override
     public Site save(Site object) {
         try {
+            if (object.getId() ==  null) {
+                object.setId(UUID.randomUUID().toString());
+            }
             return this.siteProvider.save(object);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
@@ -62,7 +66,7 @@ public class SiteServiceImpl
     }
 
     @Override
-    public void delete(Integer id) throws PersistenceException {
+    public void delete(String id) throws PersistenceException {
         this.siteProvider.delete(id);
     }
 

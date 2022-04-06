@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/workspace")
-public class RepositoryEntityController extends DataEntityController<Repository, Integer, RepositoryService> {
+public class RepositoryEntityController extends DataEntityController<Repository, String, RepositoryService> {
 
     @RequestMapping(value = "/types/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getWorkspaceTypes() {
@@ -45,7 +45,7 @@ public class RepositoryEntityController extends DataEntityController<Repository,
     }
 
     @Override
-    public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") Integer id) {
+    public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") String id) {
         try {
             final Repository entity = this.service.findById(id);
             if (entity == null || !entity.getUserName().equals(currentUser())) {
@@ -69,7 +69,7 @@ public class RepositoryEntityController extends DataEntityController<Repository,
     }
 
     @Override
-    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") Integer id, @RequestBody Repository entity) {
+    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody Repository entity) {
         try {
             if (StringUtilities.isNullOrEmpty(entity.getUserName()) ||
                 !entity.getUserName().equals(currentUser())) {
