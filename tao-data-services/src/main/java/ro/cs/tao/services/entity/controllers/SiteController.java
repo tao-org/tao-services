@@ -17,7 +17,7 @@ import java.util.Optional;
 
 @Controller
 @RequestMapping("/site")
-public class SiteController extends DataEntityController<Site, Integer, SiteService> {
+public class SiteController extends DataEntityController<Site, String, SiteService> {
 
     @Override
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
@@ -36,7 +36,7 @@ public class SiteController extends DataEntityController<Site, Integer, SiteServ
     }
 
     @Override
-    public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") Integer id) {
+    public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") String id) {
         try {
             final Site entity = this.service.findById(id);
             if (entity == null || !entity.getUser().equals(currentUser())) {
@@ -59,7 +59,7 @@ public class SiteController extends DataEntityController<Site, Integer, SiteServ
     }
 
     @Override
-    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") Integer id, @RequestBody Site entity) {
+    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody Site entity) {
         try {
             if (StringUtilities.isNullOrEmpty(entity.getUser()) ||
                     !entity.getUser().equals(currentUser())) {

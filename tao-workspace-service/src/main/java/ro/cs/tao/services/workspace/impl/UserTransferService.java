@@ -1,6 +1,7 @@
 package ro.cs.tao.services.workspace.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.core.io.FileSystemResource;
 import ro.cs.tao.ProgressListener;
 import ro.cs.tao.component.SystemVariable;
@@ -145,7 +146,9 @@ public class UserTransferService {
             }
             final TransferableItem[] requests = queue.toArray(new TransferableItem[0]);
             try (OutputStream stream = Files.newOutputStream(this.stateFile)) {
-                new ObjectMapper().writerFor(requests.getClass()).writeValue(stream, requests);
+                final ObjectMapper mapper = new ObjectMapper();
+                mapper.registerModule(new JavaTimeModule());
+                mapper.writerFor(requests.getClass()).writeValue(stream, requests);
                 stream.flush();
             }
             logger.finest(String.format("Transfer queue state saved (%d items)", requests.length));
@@ -160,7 +163,9 @@ public class UserTransferService {
             if (Files.exists(this.stateFile)) {
                 this.queue.clear();
                 try (InputStream stream = Files.newInputStream(this.stateFile)) {
-                    final List<TransferableItem> requests = new ObjectMapper().readerForListOf(TransferableItem.class)
+                    final ObjectMapper mapper = new ObjectMapper();
+                    mapper.registerModule(new JavaTimeModule());
+                    final List<TransferableItem> requests = mapper.readerForListOf(TransferableItem.class)
                             .readValue(stream);
                     if (requests != null) {
                         this.queue.addAll(requests);

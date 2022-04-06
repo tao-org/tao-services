@@ -96,7 +96,6 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     @Override
     public void storeUserFile(MultipartFile file, String relativeFolder, String description) throws Exception {
         checkParameters(file, relativeFolder);
-        Repository repository = repository();
         storeFile(file, Paths.get(repository.resolve(relativeFolder)),
                   description, SessionStore.currentContext().getPrincipal());
         
@@ -106,7 +105,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
 
     @Override
     public void storeFile(InputStream stream, long length,String relativeFolder, String description) throws Exception {
-        storeFile(stream, Paths.get(repository().root()).resolve(relativeFolder));
+        storeFile(stream, Paths.get(repository().resolve(relativeFolder)));
         // Update user processing quota
         UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
     }
@@ -278,7 +277,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
         Repository repository = repository();
         final Path workspaceRoot = Paths.get(repository.root());
         final Path root = Paths.get(repository.resolve(fromPath));
-        final int depth = root.getNameCount() - workspaceRoot.getNameCount() == 1 ? 1 : 10;
+        final int depth = 10;//root.getNameCount() - workspaceRoot.getNameCount() == 1 ? 1 : 10;
         final List<Path> list = list(root, depth);
         if (exclusions != null) {
             ListIterator<Path> iterator = list.listIterator();
@@ -328,7 +327,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                 size = -1;
             }
             final boolean isInFiles = realPath.getNameCount() > filesNameIndex && realPath.getName(filesNameIndex).toString().equals("files");
-            final Path path = root.relativize(realPath);
+            final Path path = workspaceRoot.relativize(realPath);
             final String pathToRecord = path.toString().replace("\\", "/");
             /*final String pathToRecord = (isInFiles ?
                     realPath.subpath(filesNameIndex, realPath.getNameCount()).toString() :
