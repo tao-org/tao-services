@@ -4,10 +4,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.RepositoryService;
+import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
+import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -54,7 +57,21 @@ public class RepositoryServiceImpl
             if (object.getId() == null) {
                 object.setId(UUID.randomUUID().toString());
             }
-            return workspaceProvider.save(object);
+            Repository repository = workspaceProvider.save(object);
+            try {
+                StorageService service = StorageServiceFactory.getInstance(repository);
+                Path path = null;
+                if (service != null) {
+                    path = service.createFolder("test_write", true);
+                    if (path != null) {
+                        service.remove("test_write");
+                    }
+                }
+                repository.setReadOnly(path == null);
+            } catch (Exception e) {
+                repository.setReadOnly(true);
+            }
+            return workspaceProvider.update(repository);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
             return null;
