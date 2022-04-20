@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.BaseException;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.ComponentLink;
+import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -65,6 +66,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         if (entity == null) {
             response = prepareResult(String.format("Entity [%s] not found", id), ResponseStatus.FAILED);
         } else {
+            entity.getNodes().forEach(n -> {
+                ProcessingComponent component = componentService.findById(n.getComponentId());
+                if (component != null && n.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName()))) {
+                    n.addInfo("nodeAffinity", component.getNodeAffinity());
+                }
+            });
             response = prepareResult(entity);
         }
         return response;
