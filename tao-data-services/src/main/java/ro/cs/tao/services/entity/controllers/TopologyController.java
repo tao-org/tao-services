@@ -20,11 +20,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.Tag;
+import ro.cs.tao.component.StringIdentifiable;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,6 +59,14 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     @RequestMapping(value = "/flavors", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNodeFlavors() {
         return prepareResult(service.getNodeFlavors());
+    }
+
+    @RequestMapping(value = "/available", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getNodeAffinities() {
+        List<NodeDescription> activeNodes = service.getNodes(true);
+        List<String> names = activeNodes.stream().map(StringIdentifiable::getId).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
+        names.add(0, "Any");
+        return prepareResult(names);
     }
 
     /*@RequestMapping(path = "/{host:.+}", method = RequestMethod.GET, produces = "application/json")
