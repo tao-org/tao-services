@@ -67,9 +67,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             response = prepareResult(String.format("Entity [%s] not found", id), ResponseStatus.FAILED);
         } else {
             entity.getNodes().forEach(n -> {
-                ProcessingComponent component = componentService.findById(n.getComponentId());
-                if (component != null && n.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName()))) {
-                    n.addInfo("nodeAffinity", component.getNodeAffinity());
+                if (n.getComponentId() != null) {
+                    ProcessingComponent component = componentService.findById(n.getComponentId());
+                    if (component != null
+                            && (n.getAdditionalInfo() == null || n.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))) {
+                        n.addInfo("nodeAffinity", component.getNodeAffinity());
+                    }
                 }
             });
             response = prepareResult(entity);
