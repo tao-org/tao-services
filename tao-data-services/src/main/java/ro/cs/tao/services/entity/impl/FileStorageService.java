@@ -372,7 +372,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public FileSystemResource download(Path path) throws IOException {
+    public FileSystemResource download(String path) throws IOException {
         FileSystemResource resource = new FileSystemResource(path);
         if (resource.exists() || resource.isReadable()) {
             return resource;
@@ -382,7 +382,8 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public void streamToZip(Path root, ZipOutputStream stream) throws IOException {
+    public void streamToZip(String rootPath, ZipOutputStream stream) throws IOException {
+        Path root = Paths.get(rootPath);
         if (Files.exists(root) && Files.isDirectory(root)) {
         List<Path> paths = FileUtilities.listTree(root);
             for (Path current : paths) {
