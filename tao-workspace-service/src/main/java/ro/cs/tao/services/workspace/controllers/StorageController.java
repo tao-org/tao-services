@@ -376,7 +376,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                 response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
                                 response.setStatus(HttpServletResponse.SC_OK);
                                 try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
-                                    getLocalRepositoryService().streamToZip(path, zipOutputStream);
+                                    getLocalRepositoryService().streamToZip(path.toString(), zipOutputStream);
                                     zipOutputStream.finish();
                                 }
                             } catch (IOException ex) {
@@ -426,7 +426,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     final Path path;
                     if (isFile) {
                         path = Paths.get(fileName.replace(userWorkspace.getUrlPrefix() + "://", ""));
-                        try (InputStream stream = (InputStream) client.download(path)) {
+                        try (InputStream stream = (InputStream) client.download(path.toString())) {
                             response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                             response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
                             response.setStatus(HttpServletResponse.SC_OK);
@@ -439,7 +439,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
                         response.setStatus(HttpServletResponse.SC_OK);
                         try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
-                            client.streamToZip(path, zipOutputStream);
+                            client.streamToZip(path.toString(), zipOutputStream);
                             zipOutputStream.finish();
                         }
                     }
@@ -534,7 +534,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         if (!Files.exists(filePath)) {
             throw new IOException(String.format("File '%s' does not exist", filePath));
         }
-        return getLocalRepositoryService().download(filePath);
+        return getLocalRepositoryService().download(filePath.toString());
     }
 
     private Repository getOwnedWorkspace(String workspaceId) throws IOException {
@@ -549,7 +549,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     }
 
     private StorageService getRepositoryService(Repository workspace) {
-        return StorageServiceFactory.getInstance(workspace);
+        StorageService instance = StorageServiceFactory.getInstance(workspace);
+        instance.associate(workspace);
+        return instance;
     }
 
     private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService() {

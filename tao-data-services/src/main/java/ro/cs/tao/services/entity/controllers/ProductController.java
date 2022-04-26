@@ -128,7 +128,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
         if (!Files.exists(filePath)) {
             throw new IOException(String.format("File '%s' does not exist", filePath));
         }
-        return getLocalRepositoryService().download(filePath);
+        return getLocalRepositoryService().download(filePath.toString());
     }
 
     private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService() {
