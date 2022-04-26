@@ -398,6 +398,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     break;
                 case AWS:
                 case SWIFT:
+                case SMB:
                     StorageService client = StorageServiceFactory.getInstance(protocol);
                     if (client == null) {
                         throw new IllegalArgumentException("No client for [" + protocol + "] workspaces");
@@ -413,16 +414,18 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                         if (workspaces.size() == 1) {
                             userWorkspace = workspaces.get(0);
                         } else {
-                            userWorkspace = workspaces.stream().filter(w -> fileName.startsWith(w.getParameters().get(repositoryType.rootKey()))).findFirst().orElse(null);
+                            final String name = fileName != null ? fileName : folder;
+                            userWorkspace = workspaces.stream().filter(w -> name.startsWith(w.getParameters().get(repositoryType.rootKey()))).findFirst().orElse(null);
                         }
                     }
                     if (userWorkspace == null) {
                         response.sendError(HttpStatus.BAD_REQUEST.value());
+                        break;
                     }
                     client.associate(userWorkspace);
                     final Path path;
                     if (isFile) {
-                        path = Paths.get(fileName.replace("s3://", ""));
+                        path = Paths.get(fileName.replace(userWorkspace.getUrlPrefix() + "://", ""));
                         try (InputStream stream = (InputStream) client.download(path)) {
                             response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                             response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
@@ -431,7 +434,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                             response.flushBuffer();
                         }
                     } else {
-                        path = Paths.get(folder.replace("s3://", ""));
+                        path = Paths.get(folder.replace(userWorkspace.getUrlPrefix() + "://", ""));
                         response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
                         response.setStatus(HttpServletResponse.SC_OK);
