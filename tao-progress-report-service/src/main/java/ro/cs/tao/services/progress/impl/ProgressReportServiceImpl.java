@@ -28,12 +28,14 @@ import java.util.stream.Stream;
 
 @Service("progressReportService")
 public class ProgressReportServiceImpl extends Notifiable implements ProgressReportService {
-    private static final Pattern TOPIC_PATTERN = Topic.getCategoryPattern(Topic.PROGRESS);
+    private static final Pattern DOWNLOAD_PATTERN = Topic.getCategoryPattern(Topic.PROGRESS);
+    private static final Pattern TRANSFER_PATTERN = Topic.getCategoryPattern(Topic.TRANSFER_PROGRESS);
     private static final Map<String, TaskProgress> tasksInProgress = Collections.synchronizedMap(new LinkedHashMap<>());
     private String previousMessage;
 
     public ProgressReportServiceImpl() {
-        Messaging.subscribe(this, TOPIC_PATTERN);
+        Messaging.subscribe(this, DOWNLOAD_PATTERN);
+        Messaging.subscribe(this, TRANSFER_PATTERN);
     }
 
     @Override

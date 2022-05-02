@@ -1067,19 +1067,22 @@ public class WorkflowServiceImpl
                                 descriptorList.addAll(t.toParameter());
                             });
                             customValues.forEach(v -> {
-                                ParameterDescriptor descriptor = descriptorList.stream()
-                                        .filter(d -> d.getName().equals(v.getParameterName()))
-                                        .findFirst().orElse(null);
-                                if (descriptor == null) {
-                                    errors.add(String.format("[node.customValues.parameterName] invalid parameter name '%s'",
-                                                             v.getParameterName()));
-                                } else {
-                                    ParameterConverter converter = ConverterFactory.getInstance().create(descriptor);
-                                    try {
-                                        converter.fromString(v.getParameterValue());
-                                    } catch (ConversionException e) {
-                                        errors.add(String.format("[node.customValues.parameterValue] invalid value for parameter '%s'",
-                                                                 v.getParameterName()));
+                                // NodeAffinity is not a parameter having a descriptor, but a property of the TaoComponent class
+                                if (!"nodeAffinity".equals(v.getParameterName())) {
+                                    ParameterDescriptor descriptor = descriptorList.stream()
+                                            .filter(d -> d.getName().equals(v.getParameterName()))
+                                            .findFirst().orElse(null);
+                                    if (descriptor == null) {
+                                        errors.add(String.format("[node.customValues.parameterName] invalid parameter name '%s'",
+                                                v.getParameterName()));
+                                    } else {
+                                        ParameterConverter converter = ConverterFactory.getInstance().create(descriptor);
+                                        try {
+                                            converter.fromString(v.getParameterValue());
+                                        } catch (ConversionException e) {
+                                            errors.add(String.format("[node.customValues.parameterValue] invalid value for parameter '%s'",
+                                                    v.getParameterName()));
+                                        }
                                     }
                                 }
                             });
