@@ -21,10 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Logger;
@@ -36,6 +33,8 @@ public class UserTransferService {
     private final Principal principal;
     private Timer retryTimer;
     private final BlockingQueueWorker<TransferableItem> queueWorker;
+
+    private final Map<String, Integer> batches;
     private ProgressListener progressListener;
     private final Logger logger;
 
@@ -48,6 +47,7 @@ public class UserTransferService {
         this.stateFile = Paths.get(SystemVariable.ROOT.value()).resolve("transfer").resolve(user.getName()).resolve("transfer_queue.json");
         restoreState();
         this.queueWorker.setStatePersister(this::saveState);
+        this.batches = new HashMap<>();
         queueWorker.start();
     }
 
@@ -60,10 +60,40 @@ public class UserTransferService {
             if (requests.length == 1) {
                 this.queue.put(requests[0]);
             } else {
+                for (TransferableItem request : requests) {
+                    final Integer value = this.batches.get(request.getBatch());
+                    this.batches.put(request.getBatch(), value != null ? value + 1 : 1);
+                }
                 this.queue.addAll(Arrays.asList(requests));
             }
         } catch (InterruptedException e) {
             logger.severe(e.getMessage());
+        }
+    }
+
+    private double getBatchProgress(String batch) {
+        double value;
+        synchronized (this.batches) {
+            Integer iCount = this.batches.get(batch);
+            if (iCount == null) {
+                value = 1.0;
+            } else {
+                value = 1.0 - ((double) this.queue.stream().map(TransferableItem::getBatch).count()/iCount.doubleValue());
+            }
+        }
+        return value;
+    }
+
+    private void decrement(String batch) {
+        synchronized (this.batches) {
+            Integer value = this.batches.get(batch);
+            if (value == null) {
+                return;
+            } else if (value == 0) {
+                this.batches.remove(batch);
+            } else {
+                this.batches.put(batch, value - 1);
+            }
         }
     }
 
@@ -74,9 +104,9 @@ public class UserTransferService {
                 this.progressListener = new ProgressNotifier(this.principal, item.getBatch(), Topic.TRANSFER_PROGRESS);
                 this.progressListener.started(item.getBatch());
             }
-            final Repository srcWorkspace = item.getSourceWorkspace();
+            final Repository srcWorkspace = item.getSourceRepository();
             final StorageService sourceService = StorageServiceFactory.getInstance(srcWorkspace);
-            final Repository dstWorkspace = item.getDestinationWorkspace();
+            final Repository dstWorkspace = item.getDestinationRepository();
             final StorageService destinationService = StorageServiceFactory.getInstance(dstWorkspace);
             destinationService.setProgressListener(this.progressListener);
             final FileObject fileObject = item.getSource();
@@ -106,7 +136,9 @@ public class UserTransferService {
                 sourceService.remove(fileObject.getRelativePath());
                 logger.finest("Removed file " + srcPath);
             }
+            this.progressListener.notifyProgress(srcPath, 1.0, getBatchProgress(item.getBatch()));
             this.progressListener.subActivityEnded(srcPath);
+            decrement(item.getBatch());
             final TransferableItem next = this.queue.peek();
             if (next == null || !item.getBatch().equals(next.getBatch())) {
                 this.progressListener.ended();

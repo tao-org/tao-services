@@ -229,7 +229,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
                     if (kind == ENTRY_CREATE) { // if directory is created, and watching recursively, then register it and its sub-directories
                         try {
                             final BasicFileAttributes attributes = Files.readAttributes(child, BasicFileAttributes.class);
-                            if (attributes.isDirectory()) {
+                            if (attributes.isDirectory() || Files.isDirectory(child)) {
                                 walkAndRegisterDirectories(child);
                             }
                         } catch (NoSuchFileException | NotDirectoryException ignored) {
