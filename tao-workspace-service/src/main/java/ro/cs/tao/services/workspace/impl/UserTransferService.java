@@ -139,7 +139,7 @@ public class UserTransferService {
                 sourceService.remove(fileObject.getRelativePath());
                 logger.finest("Removed file " + srcPath);
             }
-            this.progressListener.notifyProgress(srcPath, 1.0, getBatchProgress(item.getBatch()));
+            this.progressListener.notifyProgress(srcPath, 0.99, getBatchProgress(item.getBatch()));
             this.progressListener.subActivityEnded(srcPath);
             decrement(item.getBatch());
             final TransferableItem next = this.queue.peek();
