@@ -8,7 +8,7 @@ import java.util.Objects;
 public class TransferableItem {
     private String user;
     private String batch;
-    private Repository sourceWorkspace;
+    private Repository sourceRepository;
     private FileObject source;
     private Repository destinationRepository;
     private String destinationPath;
@@ -18,10 +18,10 @@ public class TransferableItem {
     public TransferableItem() {
     }
 
-    public TransferableItem(String user, String batch, Repository sourceWorkspace, FileObject source, Repository destinationRepository, String destinationPath, boolean move, boolean force) {
+    public TransferableItem(String user, String batch, Repository sourceRepository, FileObject source, Repository destinationRepository, String destinationPath, boolean move, boolean force) {
         this.user = user;
         this.batch = batch;
-        this.sourceWorkspace = sourceWorkspace;
+        this.sourceRepository = sourceRepository;
         this.source = source;
         this.destinationRepository = destinationRepository;
         this.destinationPath = destinationPath;
@@ -37,15 +37,15 @@ public class TransferableItem {
         return batch;
     }
 
-    public Repository getSourceWorkspace() {
-        return sourceWorkspace;
+    public Repository getSourceRepository() {
+        return sourceRepository;
     }
 
     public FileObject getSource() {
         return source;
     }
 
-    public Repository getDestinationWorkspace() {
+    public Repository getDestinationRepository() {
         return destinationRepository;
     }
 
@@ -66,12 +66,12 @@ public class TransferableItem {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TransferableItem that = (TransferableItem) o;
-        return user.equals(that.user) && batch.equals(that.batch) && sourceWorkspace.equals(that.sourceWorkspace) && source.equals(that.source) && destinationRepository.equals(that.destinationRepository) && destinationPath.equals(that.destinationPath);
+        return user.equals(that.user) && batch.equals(that.batch) && sourceRepository.equals(that.sourceRepository) && source.equals(that.source) && destinationRepository.equals(that.destinationRepository) && destinationPath.equals(that.destinationPath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(user, batch, sourceWorkspace, source, destinationRepository, destinationPath);
+        return Objects.hash(user, batch, sourceRepository, source, destinationRepository, destinationPath);
     }
 
     @Override
