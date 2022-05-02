@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.core.io.FileSystemResource;
 import ro.cs.tao.ProgressListener;
 import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.services.factory.StorageServiceFactory;
@@ -35,6 +36,7 @@ public class UserTransferService {
     private final BlockingQueueWorker<TransferableItem> queueWorker;
 
     private final Map<String, Integer> batches;
+    private final boolean saveState;
     private ProgressListener progressListener;
     private final Logger logger;
 
@@ -48,6 +50,7 @@ public class UserTransferService {
         restoreState();
         this.queueWorker.setStatePersister(this::saveState);
         this.batches = new HashMap<>();
+        this.saveState = Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("allow.resumable.transfers", "false"));
         queueWorker.start();
     }
 
@@ -171,42 +174,46 @@ public class UserTransferService {
     }
 
     private void saveState(BlockingQueue<TransferableItem> queue) {
-        try {
-            Files.createDirectories(this.stateFile.getParent());
-            if (Files.exists(this.stateFile)) {
-                Files.delete(this.stateFile);
+        if (this.saveState) {
+            try {
+                Files.createDirectories(this.stateFile.getParent());
+                if (Files.exists(this.stateFile)) {
+                    Files.delete(this.stateFile);
+                }
+                final TransferableItem[] requests = queue.toArray(new TransferableItem[0]);
+                try (OutputStream stream = Files.newOutputStream(this.stateFile)) {
+                    final ObjectMapper mapper = new ObjectMapper();
+                    mapper.registerModule(new JavaTimeModule());
+                    mapper.writerFor(requests.getClass()).writeValue(stream, requests);
+                    stream.flush();
+                }
+                logger.finest(String.format("Transfer queue state saved (%d items)", requests.length));
+            } catch (Exception e) {
+                logger.severe(e.getMessage());
             }
-            final TransferableItem[] requests = queue.toArray(new TransferableItem[0]);
-            try (OutputStream stream = Files.newOutputStream(this.stateFile)) {
-                final ObjectMapper mapper = new ObjectMapper();
-                mapper.registerModule(new JavaTimeModule());
-                mapper.writerFor(requests.getClass()).writeValue(stream, requests);
-                stream.flush();
-            }
-            logger.finest(String.format("Transfer queue state saved (%d items)", requests.length));
-        } catch (Exception e) {
-            logger.severe(e.getMessage());
         }
     }
 
     private synchronized void restoreState() {
-        try {
-            Files.createDirectories(this.stateFile.getParent());
-            if (Files.exists(this.stateFile)) {
-                this.queue.clear();
-                try (InputStream stream = Files.newInputStream(this.stateFile)) {
-                    final ObjectMapper mapper = new ObjectMapper();
-                    mapper.registerModule(new JavaTimeModule());
-                    final List<TransferableItem> requests = mapper.readerForListOf(TransferableItem.class)
-                            .readValue(stream);
-                    if (requests != null) {
-                        this.queue.addAll(requests);
-                        logger.finest(String.format("Transfer queue state restored (%d items)", requests.size()));
+        if (this.saveState) {
+            try {
+                Files.createDirectories(this.stateFile.getParent());
+                if (Files.exists(this.stateFile)) {
+                    this.queue.clear();
+                    try (InputStream stream = Files.newInputStream(this.stateFile)) {
+                        final ObjectMapper mapper = new ObjectMapper();
+                        mapper.registerModule(new JavaTimeModule());
+                        final List<TransferableItem> requests = mapper.readerForListOf(TransferableItem.class)
+                                .readValue(stream);
+                        if (requests != null) {
+                            this.queue.addAll(requests);
+                            logger.finest(String.format("Transfer queue state restored (%d items)", requests.size()));
+                        }
                     }
                 }
+            } catch (Exception e) {
+                logger.severe(e.getMessage());
             }
-        } catch (Exception e) {
-            logger.severe(e.getMessage());
         }
     }
 }
