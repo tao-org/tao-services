@@ -137,13 +137,15 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         List<ExecutionTaskSummary> tasksStatus;
         for (ExecutionJob job : jobs) {
             tasksStatus = getTasksStatus(job.getId());
-            final String workflowName = tasksStatus.size() > 0 ?
-                    tasksStatus.get(0).getWorkflowName() :
-                    workflowService.getFullDescriptor(job.getWorkflowId()).getName();
             ExecutionJobSummary summary = new ExecutionJobSummary();
             summary.setJobName(job.getName());
             summary.setUser(job.getUserName());
-            summary.setWorkflowName(workflowName);
+            if (job.getWorkflowId() != null) {
+                final String workflowName = tasksStatus.size() > 0 ?
+                        tasksStatus.get(0).getWorkflowName() :
+                        workflowService.getFullDescriptor(job.getWorkflowId()).getName();
+                summary.setWorkflowName(workflowName);
+            }
             summary.setJobStatus(job.getExecutionStatus());
             summary.setJobStart(job.getStartTime());
             summary.setJobEnd(job.getEndTime());

@@ -492,7 +492,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     // Keep only the last part of the folder path (i.e. folder name)
                     targetFolder += srcWorkspace.fileName(objectPath);
                     final List<FileObject> files = service.listTree(fileObject.getRelativePath());
-                    files.forEach(f -> f.setRelativePath(f.getRelativePath().replaceFirst(srcWorkspace.root() + "/", "")));
+                    //files.forEach(f -> f.setRelativePath(f.getRelativePath().replaceFirst(srcWorkspace.root() + "/", "")));
+                    //files.forEach(f -> f.setRelativePath());
                     final List<TransferableItem> items = new ArrayList<>();
                     for (FileObject fObject : files) {
                         if (!fObject.isFolder()) {

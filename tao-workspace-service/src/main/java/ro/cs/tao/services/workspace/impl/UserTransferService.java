@@ -45,7 +45,7 @@ public class UserTransferService {
         this.queue = new LinkedBlockingDeque<>();
         this.queueWorker = new BlockingQueueWorker<>(this.queue, this::processRequest);
         this.principal = user;
-        this.stateFile = Paths.get(SystemVariable.ROOT.value()).resolve(user.getName()).resolve("transfer").resolve("transfer_queue.json");
+        this.stateFile = Paths.get(SystemVariable.ROOT.value()).resolve("transfer").resolve(user.getName()).resolve("transfer_queue.json");
         restoreState();
         this.queueWorker.setStatePersister(this::saveState);
         queueWorker.start();
@@ -84,7 +84,7 @@ public class UserTransferService {
             this.progressListener.subActivityStarted(srcPath);
             InputStream sourceStream = null;
             try {
-                final Object source = sourceService.download(Paths.get(srcPath));
+                final Object source = sourceService.download(srcPath);
                 if (source instanceof FileSystemResource) {
                     sourceStream = ((FileSystemResource) source).getInputStream();
                 } else {
