@@ -25,6 +25,8 @@ import ro.cs.tao.datasource.DownloadManager;
 import ro.cs.tao.services.commons.ControllerBase;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ProgressReportService;
+import ro.cs.tao.services.progress.impl.Filter;
+import ro.cs.tao.utils.StringUtilities;
 
 @Controller
 @RequestMapping("/progress")
@@ -36,7 +38,16 @@ public class ProgressReportController extends ControllerBase {
     @RequestMapping(value = "", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getTasksInProgress(@RequestParam(name = "category", required = false) String category,
                                                                  @RequestParam(name = "filter", required = false) String jsonFilter) {
-        return prepareResult(progressReportService.getRunningTasks(category, jsonFilter));
+        final String filter;
+        if (StringUtilities.isNullOrEmpty(jsonFilter)) {
+            Filter f = new Filter();
+            f.setName("Principal");
+            f.setValue(currentUser());
+            filter = f.toString();
+        } else {
+            filter = jsonFilter;
+        }
+        return prepareResult(progressReportService.getRunningTasks(category, filter));
     }
 
     @RequestMapping(value = "/download", method = RequestMethod.GET, produces = "application/json")

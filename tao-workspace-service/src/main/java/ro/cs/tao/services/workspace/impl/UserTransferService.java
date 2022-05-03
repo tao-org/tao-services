@@ -104,7 +104,10 @@ public class UserTransferService {
         //this.asyncCallbackWorker.execute(() -> {
         try {
             if (this.progressListener == null) {
-                this.progressListener = new ProgressNotifier(this.principal, item.getBatch(), Topic.TRANSFER_PROGRESS);
+                this.progressListener = new ProgressNotifier(this.principal, item.getBatch(),
+                        Topic.TRANSFER_PROGRESS, new HashMap<String, String>() {{
+                            put("Repository", item.getDestinationRepository().getId());
+                }});
                 this.progressListener.started(item.getBatch());
             }
             final Repository srcWorkspace = item.getSourceRepository();
@@ -140,9 +143,9 @@ public class UserTransferService {
                 sourceService.remove(fileObject.getRelativePath());
                 logger.finest("Removed file " + srcPath);
             }
-            this.progressListener.notifyProgress(srcPath, 0.99, getBatchProgress(item.getBatch()));
             this.progressListener.subActivityEnded(srcPath);
-            decrement(item.getBatch());
+            //decrement(item.getBatch());
+            this.progressListener.notifyProgress(getBatchProgress(item.getBatch()));
             final TransferableItem next = this.queue.peek();
             if (next == null || !item.getBatch().equals(next.getBatch())) {
                 this.progressListener.ended();
