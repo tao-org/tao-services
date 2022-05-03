@@ -109,9 +109,10 @@ public class UserTransferService {
             }
             final Repository srcWorkspace = item.getSourceRepository();
             final StorageService sourceService = StorageServiceFactory.getInstance(srcWorkspace);
+            sourceService.setProgressListener(this.progressListener.subProgressListener());
             final Repository dstWorkspace = item.getDestinationRepository();
             final StorageService destinationService = StorageServiceFactory.getInstance(dstWorkspace);
-            destinationService.setProgressListener(this.progressListener);
+            //destinationService.setProgressListener(this.progressListener);
             final FileObject fileObject = item.getSource();
             final String srcPath = srcWorkspace.resolve(fileObject.getRelativePath());
             this.progressListener.subActivityStarted(srcPath);
