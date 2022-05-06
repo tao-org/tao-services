@@ -315,7 +315,10 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
             vectorAttributes.put(Paths.get(URI.create(vectorData.getLocation())),
                                  vectorData.toAttributeMap());
         }
-        final List<FileObject> fileObjects = new ArrayList<>(list.size());
+        final List<FileObject> fileObjects = new ArrayList<>();
+        if (repository.isRoot(fromPath)) {
+            fileObjects.add(repositoryRootNode(repository));
+        }
         final int filesNameIndex = root.getNameCount() + 1;
         long size;
         Map<String, String> currentAttributeMap = null;

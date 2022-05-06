@@ -242,7 +242,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             final StorageService service = StorageServiceFactory.getInstance(workspace);
             final List<FileObject> list = service.listFiles(relativeFolder, null, lastItem);
             if (workspace.root().equals(relativeFolder) && list.isEmpty()) {
-                list.add(service.fakeRoot());
+                list.add(service.emptyFolderItem());
             }
             responseEntity = prepareResult(list);
         } catch (Exception ex) {

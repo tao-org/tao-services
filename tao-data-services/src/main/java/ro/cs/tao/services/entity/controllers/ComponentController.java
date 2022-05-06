@@ -169,6 +169,24 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         return responseEntity;
     }
 
+    @Override
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> get(String id) {
+        ResponseEntity<ServiceResponse<?>> response;
+        ProcessingComponent entity;
+        try {
+            entity = service.findById(id);
+            if (entity == null) {
+                response = prepareResult(String.format("Entity [%s] not found", id), ResponseStatus.FAILED);
+            } else {
+                response = prepareResult(new ProcessingComponentBean(entity));
+            }
+        } catch (Exception e) {
+            response = handleException(e);
+        }
+        return response;
+    }
+
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     @Override
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody ProcessingComponent entity) {
