@@ -277,7 +277,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
         Repository repository = repository();
         final Path workspaceRoot = Paths.get(repository.root());
         final Path root = Paths.get(repository.resolve(fromPath));
-        final int depth = 10;//root.getNameCount() - workspaceRoot.getNameCount() == 1 ? 1 : 10;
+        final int depth = 1; //10;//root.getNameCount() - workspaceRoot.getNameCount() == 1 ? 1 : 10;
         final List<Path> list = list(root, depth);
         if (exclusions != null) {
             ListIterator<Path> iterator = list.listIterator();
@@ -331,7 +331,10 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
             }
             final boolean isInFiles = realPath.getNameCount() > filesNameIndex && realPath.getName(filesNameIndex).toString().equals("files");
             final Path path = workspaceRoot.relativize(realPath);
-            final String pathToRecord = path.toString().replace("\\", "/");
+            String pathToRecord = path.toString().replace("\\", "/");
+            if (Files.isDirectory(realPath)) {
+                pathToRecord += "/";
+            }
             /*final String pathToRecord = (isInFiles ?
                     realPath.subpath(filesNameIndex, realPath.getNameCount()).toString() :
                     root.resolve(path).toString()).replace("\\", "/");*/
