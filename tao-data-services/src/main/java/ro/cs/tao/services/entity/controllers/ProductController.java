@@ -33,6 +33,7 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.services.interfaces.StorageService;
+import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.IOException;
@@ -69,11 +70,14 @@ public class ProductController extends DataEntityController<EOProduct, String, P
         if (sourceDir == null) {
             return prepareResult("Source directory not found", ResponseStatus.FAILED);
         }
-        try {
-            return prepareResult(this.service.inspect(Paths.get(sourceDir)));
-        } catch (IOException e) {
-            return handleException(e);
-        }
+        asyncExecute(() -> {
+            try {
+                this.service.inspect(getLocalRepository(), sourceDir);
+            } catch (Exception e) {
+                error("Inspection of products in %s failed. Reason: %s", sourceDir, e.getMessage());
+            }
+        });
+        return prepareResult(String.format("Inspection of %s started. Please come back later to see the status.", sourceDir), ResponseStatus.SUCCEEDED);
     }
     /**
      * Imports the products from the given source folder into the TAO workspace.
@@ -131,7 +135,11 @@ public class ProductController extends DataEntityController<EOProduct, String, P
         return getLocalRepositoryService().download(filePath.toString());
     }
 
+    private Repository getLocalRepository() {
+        return repositoryProvider.getByUser(currentUser()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
+    }
+
     private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService() {
-        return StorageServiceFactory.getInstance(repositoryProvider.getByUser(currentUser()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
+        return StorageServiceFactory.getInstance(getLocalRepository());
     }
 }

@@ -264,20 +264,20 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
 
     @Override
     public List<FileObject> listUserWorkspace() throws IOException {
-        return listFiles("/", null, null);
+        return listFiles("/", null, null, 1);
     }
 
     @Override
     public List<FileObject> listTree(String fromPath) throws IOException {
-        return listFiles(fromPath, null, null);
+        return listFiles(fromPath, null, null, 10);
     }
 
     @Override
-    public List<FileObject> listFiles(String fromPath, Set<String> exclusions, String lastItem) throws IOException {
+    public List<FileObject> listFiles(String fromPath, Set<String> exclusions, String lastItem, int depth) throws IOException {
         Repository repository = repository();
         final Path workspaceRoot = Paths.get(repository.root());
         final Path root = Paths.get(repository.resolve(fromPath));
-        final int depth = 1; //10;//root.getNameCount() - workspaceRoot.getNameCount() == 1 ? 1 : 10;
+        //final int depth = 10;//root.getNameCount() - workspaceRoot.getNameCount() == 1 ? 1 : 10;
         final List<Path> list = list(root, depth);
         if (exclusions != null) {
             ListIterator<Path> iterator = list.listIterator();
@@ -293,6 +293,9 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                     if (current.startsWith(exc)) {
                         iterator.remove();
                     }
+                }
+                if (current.endsWith(".aux.xml")) {
+                    iterator.remove();
                 }
             }
         }

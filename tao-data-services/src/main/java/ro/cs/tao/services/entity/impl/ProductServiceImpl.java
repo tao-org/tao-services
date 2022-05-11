@@ -33,7 +33,9 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.async.Parallel;
+import ro.cs.tao.workspaces.Repository;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -130,61 +132,75 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 	}
 
 	@Override
-	public List<EOProduct> inspect(Path sourcePath) throws IOException {
-		if (sourcePath == null || !Files.exists(sourcePath)) {
-			throw new IOException("Source directory not found");
+	public List<EOProduct> inspect(Repository repository, String sourcePath) throws IOException {
+		if (StringUtilities.isNullOrEmpty(sourcePath)) {
+			sourcePath = "/";
 		}
 		Set<MetadataInspector> services = ServiceRegistryManager.getInstance()
-				.getServiceRegistry(MetadataInspector.class).getServices();
+																.getServiceRegistry(MetadataInspector.class).getServices();
 		MetadataInspector inspector;
 		if (services == null) {
 			throw new IOException("No product inspector found");
 		}
 		List<EOProduct> results = new ArrayList<>();
 		try {
-			List<Path> folders = Files.walk(sourcePath, 1).collect(Collectors.toList());
-			Path publicFolder = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
-			for (Path folder : folders) {
+			Path source = Paths.get(repository.resolve(sourcePath));
+			List<Path> files = Files.walk(Paths.get(repository.resolve(sourcePath)), 1).collect(Collectors.toList());
+			files.removeIf(f -> f.equals(source));
+			Path userFolder = Paths.get(repository.root());
+			for (Path file : files) {
 				try {
-					if (Files.isDirectory(folder) && !folder.equals(sourcePath)) {
-						Path targetPath;
-						if (!folder.toString().startsWith(publicFolder.toString())) {
-							targetPath = publicFolder.resolve(folder.getFileName());
-							if (!Files.exists(targetPath)) {
-								Logger.getLogger(ProductService.class.getName())
-										.fine(String.format("Copying %s to %s", folder, publicFolder.toFile()));
-								FileUtils.copyDirectoryToDirectory(folder.toFile(), publicFolder.toFile());
-								FileUtilities.ensurePermissions(targetPath);
+					if (file.endsWith(".aux.xml")) {
+						continue;
+					}
+					Path targetPath;
+					if (!file.toString().startsWith(userFolder.toString())) {
+						targetPath = userFolder.resolve(file.getFileName());
+						if (!Files.exists(targetPath)) {
+							Logger.getLogger(ProductService.class.getName())
+									.fine(String.format("Copying %s to %s", file, userFolder.toFile()));
+							if (Files.isDirectory(file)) {
+								FileUtils.copyDirectoryToDirectory(file.toFile(), userFolder.toFile());
+							} else {
+								FileUtils.copyFile(file.toFile(), userFolder.toFile());
 							}
-						} else {
-							targetPath = folder;
+							FileUtilities.ensurePermissions(targetPath);
 						}
-						inspector = services.stream()
-								.filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath)).findFirst()
-								.orElse(services.stream()
-										.filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
-										.findFirst().orElse(null));
-						if (inspector == null) {
-							continue;
+					} else {
+						targetPath = file;
+					}
+					inspector = services.stream()
+							.filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath)).findFirst()
+							.orElse(services.stream()
+									.filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
+									.findFirst().orElse(null));
+					if (inspector == null) {
+						logger.warning("No inspector suitable found for " + file);
+						continue;
+					}
+					MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
+					if (metadata != null) {
+						EOProduct product = metadata.toProductDescriptor(targetPath);
+						product.setEntryPoint(metadata.getEntryPoint());
+						product.addReference(SessionStore.currentContext().getPrincipal().getName());
+						product.setVisibility(Visibility.PUBLIC);
+						product.setAcquisitionDate(metadata.getAquisitionDate());
+						if (metadata.getSize() != null) {
+							product.setApproximateSize(metadata.getSize());
 						}
-						MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
-						if (metadata != null) {
-							EOProduct product = metadata.toProductDescriptor(targetPath);
-							product.setEntryPoint(metadata.getEntryPoint());
-							product.addReference(SessionStore.currentContext().getPrincipal().getName());
-							product.setVisibility(Visibility.PUBLIC);
-							product.setAcquisitionDate(metadata.getAquisitionDate());
-							if (metadata.getSize() != null) {
-								product.setApproximateSize(metadata.getSize());
-							}
-							if (metadata.getProductId() != null) {
-								product.setId(metadata.getProductId());
-							}
-							results.add(product);
+						if (metadata.getProductId() != null) {
+							product.setId(metadata.getProductId());
+						}
+						product.setProductStatus(ProductStatus.PRODUCED);
+						product = productProvider.save(product);
+						results.add(product);
+						logger.fine("Inspection of " + file + " completed");
+						if (Files.isRegularFile(file)) {
+							Files.deleteIfExists(Paths.get(file + ".aux.xml"));
 						}
 					}
 				} catch (Exception e1) {
-					logger.warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
+					logger.warning(String.format("Import for %s failed. Reason: %s", file, e1.getMessage()));
 				}
 			}
 		} catch (Exception e) {
