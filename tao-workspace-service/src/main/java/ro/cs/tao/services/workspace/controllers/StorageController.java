@@ -114,7 +114,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 responseEntity = prepareResult(repositoryService.listUserWorkspace());
             } else {
                 final Repository workspace = getLocalWorkspace();
-                responseEntity = prepareResult(repositoryService.listFiles(relativeFolder, null, lastItem));
+                responseEntity = prepareResult(repositoryService.listFiles(relativeFolder, null, lastItem, 1));
             }
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -236,11 +236,11 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 throw new IOException("Not allowed");
             }
             final Repository workspace = getOwnedWorkspace(workspaceId);
-            if (workspace.getType() == RepositoryType.LOCAL) {
+            /*if (workspace.getType() == RepositoryType.LOCAL) {
                 return list(relativeFolder, lastItem);
-            }
+            }*/
             final StorageService service = StorageServiceFactory.getInstance(workspace);
-            final List<FileObject> list = service.listFiles(relativeFolder, null, lastItem);
+            final List<FileObject> list = service.listFiles(relativeFolder, null, lastItem, 1);
             if (workspace.root().equals(relativeFolder) && list.isEmpty()) {
                 list.add(service.emptyFolderItem());
             }
@@ -498,7 +498,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     for (FileObject fObject : files) {
                         if (!fObject.isFolder()) {
                             String path = srcWorkspace.relativize(objectPath, fObject.getRelativePath());
-                            path = targetFolder + (path.startsWith("/") ? "" : "/" + path);
+                            path = targetFolder + (path.startsWith("/") ? "" : (targetFolder.endsWith("/") ? "" : "/") + path);
                             items.add(new TransferableItem(user, objectPath, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting));
                             size += fObject.getSize();
                             count++;
