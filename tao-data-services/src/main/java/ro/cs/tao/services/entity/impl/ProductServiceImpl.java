@@ -31,6 +31,7 @@ import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ProductService;
+import ro.cs.tao.spi.OutputDataHandlerManager;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
@@ -192,6 +193,14 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 							product.setId(metadata.getProductId());
 						}
 						product.setProductStatus(ProductStatus.PRODUCED);
+						try {
+							Path quicklook = OutputDataHandlerManager.getInstance().applyHandlers(file);
+							if (quicklook != null) {
+								product.setQuicklookLocation(quicklook.toString());
+							}
+						} catch (Exception e) {
+							logger.warning(String.format("Unable to create quicklook for %s. Reason: %s", file, e.getMessage()));
+						}
 						product = productProvider.save(product);
 						results.add(product);
 						logger.fine("Inspection of " + file + " completed");

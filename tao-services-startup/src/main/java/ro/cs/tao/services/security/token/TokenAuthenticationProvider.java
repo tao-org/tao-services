@@ -18,10 +18,13 @@ package ro.cs.tao.services.security.token;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.jaas.JaasAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Component;
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 
 import java.util.Optional;
@@ -36,14 +39,24 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
 
     @Autowired
     private TokenManagementService tokenManagementService;
+    private String apiDevToken;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        if (this.apiDevToken == null) {
+            this.apiDevToken = ConfigurationManager.getInstance().getValue("api.token");
+        }
         Optional token = (Optional) authentication.getPrincipal();
-        if (!token.isPresent() || token.get().toString().isEmpty()) {
+        String rToken;
+        if (!token.isPresent() || (rToken = token.get().toString()).isEmpty()) {
             throw new BadCredentialsException("Invalid token");
         }
-        if (!tokenManagementService.isValid(token.get().toString())) {
+        if (rToken.equals(this.apiDevToken)) {
+            JaasAuthenticationToken authenticationToken = new JaasAuthenticationToken(SystemPrincipal.instance(), null, null);
+            authenticationToken.setAuthenticated(true);
+            return authenticationToken;
+        }
+        if (!tokenManagementService.isValid(rToken)) {
             throw new BadCredentialsException("Invalid token or token expired");
         }
         return tokenManagementService.retrieve(token.get().toString());
