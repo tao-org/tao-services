@@ -57,6 +57,9 @@ import java.util.zip.ZipOutputStream;
 public class FileStorageService implements StorageService<MultipartFile, FileSystemResource> {
 
     private static final String PROTOCOL = "file";
+    private static final Set<String> SIMPLE_PRODUCT_EXTENSIONS = new HashSet<String>() {{
+       add(".tif"); add(".nc"); add(".hd5");
+    }};
     private EOProductProvider productProvider;
     private VectorDataProvider vectorDataProvider;
     private AuxiliaryDataProvider auxiliaryDataProvider;
@@ -294,11 +297,9 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                         iterator.remove();
                     }
                 }
-                if (current.endsWith(".aux.xml")) {
-                    iterator.remove();
-                }
             }
         }
+        list.removeIf(p -> p.endsWith(".aux.xml"));
         final String[] pathArray = list.stream().map(p -> p.toUri().toString()).toArray(String[]::new);
         final Map<Path, Map<String, String>> auxAttributes = new HashMap<>();
         final List<AuxiliaryData> auxData = auxiliaryDataProvider.list(repository.getUserName(), pathArray);
@@ -309,8 +310,20 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
         final List<EOProduct> productList = productProvider.getByLocation(pathArray);
         final Map<Path, Map<String, String>> productAttributes = new HashMap<>();
         for (EOProduct product : productList) {
-            productAttributes.put(Paths.get(URI.create(product.getLocation())),
-                                  product.toAttributeMap());
+            String entryPoint = product.getEntryPoint();
+            if (entryPoint != null) {
+                int idx = entryPoint.lastIndexOf('.');
+                if (idx > 0 && SIMPLE_PRODUCT_EXTENSIONS.contains(entryPoint.substring(idx))) {
+                    productAttributes.put(Paths.get(URI.create(product.getLocation()).resolve(entryPoint)),
+                                          product.toAttributeMap());
+                } else {
+                    productAttributes.put(Paths.get(URI.create(product.getLocation())),
+                                          product.toAttributeMap());
+                }
+            } else {
+                productAttributes.put(Paths.get(URI.create(product.getLocation())),
+                                      product.toAttributeMap());
+            }
         }
         final List<VectorData> vectors = vectorDataProvider.getByLocation(pathArray);
         final Map<Path, Map<String, String>> vectorAttributes = new HashMap<>();

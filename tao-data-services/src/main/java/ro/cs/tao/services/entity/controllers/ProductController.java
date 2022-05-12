@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
-import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.quota.QuotaException;
@@ -128,7 +127,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("[fileName] cannot be null or empty");
         }
-        final Path filePath = Paths.get(SystemVariable.ROOT.value(), fileName).toAbsolutePath();
+        final Path filePath = Paths.get(getLocalRepository().resolve(fileName)).toAbsolutePath();
         if (!Files.exists(filePath)) {
             throw new IOException(String.format("File '%s' does not exist", filePath));
         }
