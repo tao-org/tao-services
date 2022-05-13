@@ -44,14 +44,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 @Controller
 @RequestMapping("/files/")
 public class StorageController extends DataEntityController<EOProduct, String, ProductService> {
 
-    private static final String tokenJSON = "{ \"protocol\":\"%s\", \"fileName\":%s, \"folder\":%s, \"user\":\"%s\" }";
+    private static final String tokenJSON = "{ \"repository\":\"%s\", \"fileName\":%s, \"folder\":%s, \"user\":\"%s\" }";
 
     @Autowired
     private EOProductProvider productProvider;
@@ -90,7 +89,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     public ResponseEntity<ServiceResponse<?>> list() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(getLocalRepositoryService().listUserWorkspace());
+            responseEntity = prepareResult(getLocalRepositoryService(currentUser()).listUserWorkspace());
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -109,11 +108,10 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                                    @RequestParam(name = "last", required = false) String lastItem) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            final StorageService repositoryService = getLocalRepositoryService();
+            final StorageService repositoryService = getLocalRepositoryService(currentUser());
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
                 responseEntity = prepareResult(repositoryService.listUserWorkspace());
             } else {
-                final Repository workspace = getLocalWorkspace();
                 responseEntity = prepareResult(repositoryService.listFiles(relativeFolder, null, lastItem, 1));
             }
         } catch (IOException ex) {
@@ -134,7 +132,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                         @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            getLocalRepositoryService().storeUserFile(file, folder, description);
+            getLocalRepositoryService(currentUser()).storeUserFile(file, folder, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -153,7 +151,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                                    @RequestParam("destination") String destination) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            getLocalRepositoryService().move(source, destination);
+            getLocalRepositoryService(currentUser()).move(source, destination);
             responseEntity = prepareResult("The file has been moved successfully", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -169,7 +167,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     public ResponseEntity<ServiceResponse<?>> listOutputs(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(getLocalRepositoryService().getWorkflowResults(workflowId));
+            responseEntity = prepareResult(getLocalRepositoryService(currentUser()).getWorkflowResults(workflowId));
         } catch (IOException ex) {
             responseEntity = handleException(ex);
         }
@@ -302,32 +300,36 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     /**
      * Requests a download url for a file or a folder from one of the user workspaces
      *
-     * @param protocol  The workspace protocol
+     * @param repositoryId  The repository identifier
      * @param fileName  The file name (exclusive with 'folder')
      * @param folder    The folder name (exclusive with 'file')
      */
-    @GetMapping(value = "/download/{protocol}", produces = "application/json")
-    public ResponseEntity<?> requestDownload(@PathVariable("protocol") String protocol,
+    @GetMapping(value = "/download/{repository}", produces = "application/json")
+    public ResponseEntity<?> requestDownload(@PathVariable("repository") String repositoryId,
                                              @RequestParam(name = "fileName", required = false) String fileName,
                                              @RequestParam(name = "folder", required = false) String folder) {
         try {
-            final RepositoryType repositoryType = RepositoryType.fromPrefix(protocol);
-            if (repositoryType == null) {
-                throw new IllegalArgumentException("[protocol] Invalid value");
+            final Repository repository = repositoryProvider.get(repositoryId);
+            if (repository == null) {
+                throw new IllegalArgumentException("[repository] Invalid value");
+            }
+            List<Repository> userRepositories = repositoryProvider.getByUser(currentUser());
+            if (userRepositories.stream().noneMatch(r -> repositoryId.equals(r.getId()))) {
+                throw new IllegalArgumentException("Operation not allowed");
             }
             final boolean isFile = StringUtilities.isNullOrEmpty(folder);
             if (!(StringUtilities.isNullOrEmpty(fileName) || isFile)) {
                 throw new IllegalArgumentException("Either [fileName] or [folder] (but not both) must be supplied");
             }
             final String user = currentUser();
-            if (repositoryType == RepositoryType.LOCAL) {
+            if (repository.getType() == RepositoryType.LOCAL) {
                 fileName = StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + (fileName.startsWith(user) ? fileName : user + "/" + fileName) + "\"";
                 folder = StringUtilities.isNullOrEmpty(folder) ? null : "\"" + (folder.startsWith(user) ? folder : user + "/" + folder) + "\"";
             } else {
                 fileName = StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + fileName + "\"";
                 folder = StringUtilities.isNullOrEmpty(folder) ? null : "\"" + folder + "\"";
             }
-            final String json = String.format(tokenJSON, protocol, fileName, folder, user);
+            final String json = String.format(tokenJSON, repositoryId, fileName, folder, user);
             return prepareResult("/files/get?token=" + URLEncoder.encode(Crypto.encrypt(json, SystemPrincipal.instance().getName()), "UTF8"));
         } catch (Exception e) {
             return handleException(e);
@@ -344,19 +346,16 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         try {
             final String decrypted = Crypto.decrypt(token, SystemPrincipal.instance().getName());
             final HashMap<String, String> values = new ObjectMapper().reader(HashMap.class).readValue(decrypted);
-            final String protocol = values.get("protocol");
+            final String repositoryId = values.get("repository");
             final String fileName = values.get("fileName");
             final String folder = values.get("folder");
             final String user = values.get("user");
-            final RepositoryType repositoryType = RepositoryType.fromPrefix(protocol);
-            if (repositoryType == null) {
-                throw new IllegalArgumentException("[" + protocol + "] not supported");
-            }
+            final Repository repository = repositoryProvider.get(repositoryId);
             final boolean isFile = StringUtilities.isNullOrEmpty(folder);
-            switch (repositoryType) {
+            switch (repository.getType()) {
                 case LOCAL:
                     if (isFile) {
-                        Resource file = loadAsResource(fileName);
+                        Resource file = loadAsResource(user, fileName);
                         response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                         response.setContentLengthLong(file.contentLength());
                         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename());
@@ -369,14 +368,14 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                             }
                         }
                     } else {
-                        final Path path = Paths.get(SystemVariable.ROOT.value(), folder);
+                        final Path path = Paths.get(repository.resolve(folder));
                         if (Files.exists(path) && Files.isDirectory(path)) {
                             try {
                                 response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                                 response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
                                 response.setStatus(HttpServletResponse.SC_OK);
                                 try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
-                                    getLocalRepositoryService().streamToZip(path.toString(), zipOutputStream);
+                                    getLocalRepositoryService(user).streamToZip(path.toString(), zipOutputStream);
                                     zipOutputStream.finish();
                                 }
                             } catch (IOException ex) {
@@ -399,33 +398,12 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 case AWS:
                 case SWIFT:
                 case SMB:
-                    StorageService client = StorageServiceFactory.getInstance(protocol);
-                    if (client == null) {
-                        throw new IllegalArgumentException("No client for [" + protocol + "] workspaces");
-                    }
-                    final List<Repository> userWorkspaces = repositoryProvider.getByUser(user);
-                    if (userWorkspaces == null) {
-                        response.sendError(HttpStatus.BAD_REQUEST.value());
-                        return;
-                    }
-                    Repository userWorkspace = null;
-                    final List<Repository> workspaces = userWorkspaces.stream().filter(w -> w.getType().equals(repositoryType)).collect(Collectors.toList());
-                    if (workspaces.size() > 0) {
-                        if (workspaces.size() == 1) {
-                            userWorkspace = workspaces.get(0);
-                        } else {
-                            final String name = fileName != null ? fileName : folder;
-                            userWorkspace = workspaces.stream().filter(w -> name.startsWith(w.getParameters().get(repositoryType.rootKey()))).findFirst().orElse(null);
-                        }
-                    }
-                    if (userWorkspace == null) {
-                        response.sendError(HttpStatus.BAD_REQUEST.value());
-                        break;
-                    }
-                    client.associate(userWorkspace);
+                    StorageService client = StorageServiceFactory.getInstance(repository.getUrlPrefix());
+                    client.associate(repository);
                     final Path path;
                     if (isFile) {
-                        path = Paths.get(fileName.replace(userWorkspace.getUrlPrefix() + "://", ""));
+                        //path = Paths.get(fileName.replace(repository.getUrlPrefix() + "://", ""));
+                        path = Paths.get(repository.resolve(fileName).replace(repository.getUrlPrefix() + "://", ""));
                         try (InputStream stream = (InputStream) client.download(path.toString())) {
                             response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                             response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
@@ -434,7 +412,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                             response.flushBuffer();
                         }
                     } else {
-                        path = Paths.get(folder.replace(userWorkspace.getUrlPrefix() + "://", ""));
+                        //path = Paths.get(folder.replace(repository.getUrlPrefix() + "://", ""));
+                        path = Paths.get(repository.resolve(folder).replace(repository.getUrlPrefix() + "://", ""));
                         response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
                         response.setStatus(HttpServletResponse.SC_OK);
@@ -527,7 +506,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         transferService.request(items);
     }
 
-    private FileSystemResource loadAsResource(String fileName) throws IOException {
+    private FileSystemResource loadAsResource(String user, String fileName) throws IOException {
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("[fileName] cannot be null or empty");
         }
@@ -535,7 +514,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         if (!Files.exists(filePath)) {
             throw new IOException(String.format("File '%s' does not exist", filePath));
         }
-        return getLocalRepositoryService().download(filePath.toString());
+        return getLocalRepositoryService(user).download(filePath.toString());
     }
 
     private Repository getOwnedWorkspace(String workspaceId) throws IOException {
@@ -555,12 +534,12 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return instance;
     }
 
-    private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService() {
-        return getRepositoryService(repositoryProvider.getByUser(currentUser()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
+    private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService(String user) {
+        return getRepositoryService(repositoryProvider.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
     }
 
-    private Repository getLocalWorkspace() {
-        return repositoryProvider.getByUser(currentUser()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
+    private Repository getLocalWorkspace(String user) {
+        return repositoryProvider.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
     }
 
     private String sanitizePath(String path) {

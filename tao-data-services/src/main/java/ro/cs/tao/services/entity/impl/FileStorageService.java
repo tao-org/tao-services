@@ -32,8 +32,8 @@ import ro.cs.tao.persistence.VectorDataProvider;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
-import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
+import ro.cs.tao.services.storage.BaseStorageService;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.workspaces.Repository;
 
@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class FileStorageService implements StorageService<MultipartFile, FileSystemResource> {
+public class FileStorageService extends BaseStorageService<MultipartFile, FileSystemResource> {
 
     private static final String PROTOCOL = "file";
     private static final Set<String> SIMPLE_PRODUCT_EXTENSIONS = new HashSet<String>() {{
@@ -64,9 +64,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     private VectorDataProvider vectorDataProvider;
     private AuxiliaryDataProvider auxiliaryDataProvider;
 
-    private Repository repository;
-
-    public FileStorageService() { }
+    public FileStorageService() { super(); }
 
     public void setProductProvider(EOProductProvider productProvider) {
         this.productProvider = productProvider;
@@ -86,11 +84,6 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     }
 
     @Override
-    public void associate(Repository repository) {
-        this.repository = repository;
-    }
-
-    @Override
     public Path createFolder(String folderRelativePath, boolean userOnly) throws IOException {
         String cleanPath = StringUtils.cleanPath(folderRelativePath);
         return Files.createDirectories(Paths.get(repository().resolve(cleanPath)));
@@ -99,7 +92,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
     @Override
     public void storeUserFile(MultipartFile file, String relativeFolder, String description) throws Exception {
         checkParameters(file, relativeFolder);
-        storeFile(file, Paths.get(repository.resolve(relativeFolder)),
+        storeFile(file, Paths.get(repository().resolve(relativeFolder)),
                   description, SessionStore.currentContext().getPrincipal());
         
         // Update user processing quota
@@ -127,12 +120,6 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
             // This is a security check
             throw new IOException( "Cannot remove file with relative path outside user directory " + fileName);
         }
-        /*Path uploadPath = SessionStore.currentContext().getUploadPath();
-        if (fileName.equals(uploadPath.toString()) ||
-                fileName.startsWith(SystemVariable.SHARED_WORKSPACE.value()) ||
-                fileName.startsWith(SystemVariable.SHARED_FILES.value())) {
-            throw new IOException( "Operation not allowed");
-        }*/
         Path filePath = Paths.get(repository().resolve(fileName));
         if (fileName.startsWith(SystemVariable.USER_FILES.value())) {
             //Path filePath = uploadPath.getParent().resolve(fileName);
@@ -220,8 +207,6 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
                 Logger.getLogger(FileStorageService.class.getName()).warning(String.format("File %s was not found in database", source));
             }
         } else { //it's a product
-            //Path sourceLocation = SessionStore.currentContext().getWorkspace().resolve(sourcePath);
-            //String destinationLocation = SessionStore.currentContext().getWorkspace().resolve(destinationPath).toUri().toString();
             String destinationURI = destinationPath.toUri().toString();
             List<EOProduct> products = productProvider.getByLocation(sourcePath.toUri().toString());
 
@@ -351,9 +336,6 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
             if (Files.isDirectory(realPath)) {
                 pathToRecord += "/";
             }
-            /*final String pathToRecord = (isInFiles ?
-                    realPath.subpath(filesNameIndex, realPath.getNameCount()).toString() :
-                    root.resolve(path).toString()).replace("\\", "/");*/
             final FileObject fileObject = new FileObject(PROTOCOL, pathToRecord, Files.isDirectory(realPath), size);
             if (isInFiles) {
                 if (auxAttributes.containsKey(realPath)) {
@@ -431,43 +413,11 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
         }
     }
 
-    /*private List<FileObject> listS3Bucket(String principalName) throws IOException {
-        final ServiceRegistry<StorageService> registry = ServiceRegistryManager.getInstance().getServiceRegistry(StorageService.class);
-        final Set<StorageService> services = registry.getServices();
-        final List<FileObject> files = new ArrayList<>();
-        try {
-            if (services != null) {
-                final StorageService service = services.stream().filter(s -> s.isIntendedFor("s3")).findFirst().orElse(null);
-                if (service != null) {
-                    files.addAll(service.listUserWorkspace(principalName));
-                }
-            }
-        } catch (IOException e) {
-            Logger.getLogger(getClass().getName()).warning(e.getMessage());
-        }
-        return files;
-    }*/
-
-    private List<FileObject> getResults(Long workflowId, Long jobId) throws IOException {
+    private List<FileObject> getResults(Long workflowId, Long jobId) {
         if ((workflowId == null) == (jobId == null)) {
             throw new IllegalArgumentException("Exactly one of [workflowId] or [jobId] should be passed");
         }
         final List<FileObject> results = new ArrayList<>();
-        /*List<FileObject> list = listProducts(SessionStore.currentContext().getPrincipal().getName());
-        if (list.size() > 0) {
-            List<String> outputKeys = workflowId != null ? persistenceManager.getJobsOutputKeys(workflowId) :
-                                                           persistenceManager.getJobOutputKeys(jobId);
-            if (outputKeys != null && outputKeys.size() > 0) {
-                Set<String> keys = new LinkedHashSet<>(outputKeys);
-                for (FileObject fileObject: list) {
-                    String stringPath = fileObject.getRelativePath();
-                    if (stringPath.indexOf('-') > 0 && stringPath.indexOf('-', stringPath.indexOf('-') + 1) > 0 &&
-                            keys.contains(stringPath.substring(0, stringPath.indexOf('-', stringPath.indexOf('-', 0) + 1)))) {
-                        results.add(fileObject);
-                    }
-                }
-            }
-        }*/
         final List<EOProduct> products = workflowId != null ?
                 productProvider.getWorkflowOutputs(workflowId) : productProvider.getJobOutputs(jobId);
         final int tokensToSkip = Paths.get(SystemVariable.ROOT.value()).getNameCount() + 1;
@@ -519,11 +469,11 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
             return;
         }
         Path filePath;
-        try (InputStream inputStream = file.getInputStream()) {
+        try (InputStream stream = wrapStream(file.getInputStream())) {
             Files.createDirectories(uploadPath);
             // Resolve filename when coming from IE
             filePath = uploadPath.resolve(Paths.get(file.getOriginalFilename()).getFileName());
-            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(stream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
         String userName = principal.getName();
         String location = filePath.toUri().toString(); //workspacePath.relativize(filePath).toString();
@@ -543,7 +493,7 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
         auxiliaryDataProvider.save(data);
     }
 
-    private void storeFile(InputStream stream, Path uploadPath) throws IOException, PersistenceException {
+    private void storeFile(InputStream stream, Path uploadPath) throws IOException {
         if (stream == null) {
             return;
         }
@@ -551,20 +501,14 @@ public class FileStorageService implements StorageService<MultipartFile, FileSys
             Files.createDirectories(uploadPath);
         }
         // Resolve filename when coming from IE
-        Files.copy(stream, uploadPath, StandardCopyOption.REPLACE_EXISTING);
+        try (InputStream inputStream = wrapStream(stream)) {
+            Files.copy(inputStream, uploadPath, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     private List<Path> list(Path path, int depth) throws IOException {
         return Files.walk(path, depth)
                     .filter(p -> !p.equals(path) && !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
-                    //.map(path::relativize)
                     .collect(Collectors.toList());
-    }
-
-    private Repository repository() {
-        if (this.repository == null) {
-            throw new RuntimeException("Service has no associated repository");
-        }
-        return this.repository;
     }
 }

@@ -110,7 +110,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
      *
      * @param fileName  The preview file name
      */
-    @RequestMapping(value = "/product/preview", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/preview", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> downloadPreview(@RequestParam("fileName") String fileName) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
