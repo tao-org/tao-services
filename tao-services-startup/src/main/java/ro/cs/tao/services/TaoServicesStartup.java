@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.component.RuntimeOptimizer;
 import ro.cs.tao.component.SystemVariable;
@@ -44,11 +45,14 @@ import ro.cs.tao.topology.docker.DockerImageInstaller;
 import ro.cs.tao.utils.FileUtilities;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -112,5 +116,57 @@ public class TaoServicesStartup extends StartupBase {
                 Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.value(), new StartupCompletedMessage());
             });
         }
+    }
+
+    @Scheduled(fixedRate = 60, timeUnit = TimeUnit.MINUTES)
+    public void cleanupPreviewCache() {
+        String sitePath = ConfigurationManager.getInstance().getValue("site.path");
+        if (sitePath == null || sitePath.isEmpty()) {
+            logger.warning("Cannot determine site path");
+            return;
+        }
+        String stringSize = ConfigurationManager.getInstance().getValue("preview.cache.size", "20MB").trim();
+        String unit = stringSize.substring(stringSize.length() - 2);
+        final long limit = Long.parseLong(stringSize.replace(unit, "").trim()) * unitSize(unit);
+        final Path cachePath = Paths.get(sitePath).resolve("previews");
+        try {
+            long size = FileUtilities.folderSize(cachePath);
+            List<Path> files = Files.list(cachePath).sorted((o1, o2) -> {
+                try {
+                    return Files.getLastModifiedTime(o2).compareTo(Files.getLastModifiedTime(o1));
+                } catch (IOException e) {
+                    return 0;
+                }
+            }).collect(Collectors.toList());
+            while (size >= limit) {
+                Path file = files.get(files.size() - 1);
+                size -= Files.size(file);
+                Files.delete(file);
+                files.remove(files.size() - 1);
+            }
+        } catch (IOException e) {
+            logger.warning("Exception encountered while cleaning up cache: " + e.getMessage());
+        }
+    }
+
+    private long unitSize(String unit) {
+        final long size;
+        switch (unit.toLowerCase()) {
+            case "kb":
+                size = 1024;
+                break;
+            case "mb":
+                size = 1024 * 1024;
+                break;
+            case "gb":
+                size = 1024 * 1024 * 1024;
+                break;
+            case "tb":
+                size = 1024L * 1024 * 1024 * 1024;
+                break;
+            default:
+                throw new IllegalArgumentException("Unit not supported");
+        }
+        return size;
     }
 }

@@ -59,19 +59,11 @@ public class UserTransferService {
      * @param requests   The request(s)
      */
     public void request(TransferableItem... requests) {
-        try {
-            if (requests.length == 1) {
-                this.queue.put(requests[0]);
-            } else {
-                for (TransferableItem request : requests) {
-                    final Integer value = this.batches.get(request.getBatch());
-                    this.batches.put(request.getBatch(), value != null ? value + 1 : 1);
-                }
-                this.queue.addAll(Arrays.asList(requests));
-            }
-        } catch (InterruptedException e) {
-            logger.severe(e.getMessage());
+        for (TransferableItem request : requests) {
+            final Integer value = this.batches.get(request.getBatch());
+            this.batches.put(request.getBatch(), value != null ? value + 1 : 1);
         }
+        this.queue.addAll(Arrays.asList(requests));
     }
 
     private double getBatchProgress(String batch) {
@@ -79,25 +71,12 @@ public class UserTransferService {
         synchronized (this.batches) {
             Integer iCount = this.batches.get(batch);
             if (iCount == null) {
-                value = 1.0;
+                value = 0.0;
             } else {
-                value = 1.0 - ((double) this.queue.stream().map(TransferableItem::getBatch).count()/iCount.doubleValue());
+                value = 1.0 - ((double) this.queue.stream().map(TransferableItem::getBatch).count() / iCount.doubleValue());
             }
         }
         return value;
-    }
-
-    private void decrement(String batch) {
-        synchronized (this.batches) {
-            Integer value = this.batches.get(batch);
-            if (value == null) {
-                return;
-            } else if (value == 0) {
-                this.batches.remove(batch);
-            } else {
-                this.batches.put(batch, value - 1);
-            }
-        }
     }
 
     private Void processRequest(TransferableItem item) {
