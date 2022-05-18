@@ -29,8 +29,8 @@ import static java.nio.file.StandardWatchEventKinds.*;
 public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
 
     private static final Logger logger = Logger.getLogger(RepositoryWatcherServiceImpl.class.getName());
-    private static final String WORKING_DIR = "working_dir";
     private static final int BOUND = 10;
+    private static final String WORKSPACE_DIR = SystemVariable.ROOT.value().substring(SystemVariable.ROOT.value().lastIndexOf('/') + 1);
 
     private BlockingQueue<String> eventsQueue;
     private WatchService watcher;
@@ -177,7 +177,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
         final StringTokenizer dirTokenizer = new StringTokenizer(path, File.separator);
         while (dirTokenizer.hasMoreElements()) {
             String nextDirectory = dirTokenizer.nextToken();
-            if (nextDirectory.equalsIgnoreCase(WORKING_DIR)) {
+            if (nextDirectory.equalsIgnoreCase(WORKSPACE_DIR)) {
                 return dirTokenizer.nextToken();
             }
         }
@@ -191,8 +191,11 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
      * @throws IOException if the folder is not found
      */
     private int getUsedSpace(String username) throws IOException {
-        final String userWorkspace = Paths.get(SystemVariable.ROOT.value()).resolve(username).toString();
-        final long usedSpace = FileUtilities.folderSize(new File(userWorkspace).toPath()) / ((long) MemoryUnit.MEGABYTE.value());
+        final Path userWorkspace = Paths.get(SystemVariable.ROOT.value()).resolve(username);
+        if (!Files.exists(userWorkspace)) {
+            return -1;
+        }
+        final long usedSpace = FileUtilities.folderSize(userWorkspace) / ((long) MemoryUnit.MEGABYTE.value());
         return Math.toIntExact(usedSpace);
     }
 

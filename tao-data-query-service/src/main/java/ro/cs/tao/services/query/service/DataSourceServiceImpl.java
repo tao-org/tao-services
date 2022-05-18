@@ -19,9 +19,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.*;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.DataSourceParameter;
+import ro.cs.tao.datasource.persistence.DataSourceConfigurationProvider;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
@@ -54,6 +56,9 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     @Autowired
     private DataSourceCredentialsProvider credentialsProvider;
+
+    @Autowired
+    private DataSourceConfigurationProvider configurationProvider;
 
     @Override
     public SortedSet<String> getSupportedSensors() {
@@ -192,7 +197,18 @@ public class DataSourceServiceImpl implements DataSourceService {
         if (products != null) {
             final DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
             dsComponent.setUserCredentials(query.getUser(), query.getPassword());
-            dsComponent.setFetchMode(mode);
+            final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(dsComponent.getId());
+            String localRepositoryRoot;
+            if (dataSourceConfiguration != null) {
+                dsComponent.setFetchMode(dataSourceConfiguration.getFetchMode());
+                localRepositoryRoot = dataSourceConfiguration.getLocalRepositoryPath();
+            } else {
+                localRepositoryRoot = ConfigurationManager.getInstance().getValue(String.format("local.%s.path", query.getSensor()));
+                if (localRepositoryRoot == null) {
+                    localRepositoryRoot = localPath;
+                }
+                dsComponent.setFetchMode(mode);
+            }
             dsComponent.setProductStatusListener(downloadListener);
             String path = SystemVariable.USER_WORKSPACE.value();
             final Set<String> existingSet = new HashSet<>(productProvider.getExistingProductNames(products.stream().map(EOProduct::getName).toArray(String[]::new)));
@@ -210,20 +226,23 @@ public class DataSourceServiceImpl implements DataSourceService {
             final int parallelism = DataSourceManager.getInstance().get(dsComponent.getSensorName(),
                                                                         dsComponent.getDataSourceName()).getMaximumAllowedTransfers();
             final Properties properties = new Properties();
-            if ((mode == FetchMode.SYMLINK || mode == FetchMode.COPY) && localPath != null) {
-                properties.put("local.archive.path.format", pathFormat);
+            if ((dsComponent.getFetchMode() == FetchMode.SYMLINK || dsComponent.getFetchMode() == FetchMode.COPY) && localRepositoryRoot != null) {
+                if (pathFormat != null) {
+                    properties.put("local.archive.path.format", pathFormat);
+                }
                 if (parallelism > 1) {
                     results = Collections.synchronizedList(new ArrayList<>());
+                    final String root = localRepositoryRoot;
                     Parallel.For(0, products.size(), parallelism, (i) -> {
                         try {
                             DataSourceComponent clone = cloneComponent(dsComponent, downloadListener);
-                            results.addAll(dsComponent.doFetch(products.subList(i, i + 1), null, path, localPath, properties));
+                            results.addAll(dsComponent.doFetch(products.subList(i, i + 1), null, path, root, properties));
                         } catch (Exception ex) {
                             logger.severe(ex.getMessage());
                         }
                     });
                 } else {
-                    results = dsComponent.doFetch(products, null, path, localPath, properties);
+                    results = dsComponent.doFetch(products, null, path, localRepositoryRoot, properties);
                 }
             } else {
                 properties.put("auto.uncompress", "true");

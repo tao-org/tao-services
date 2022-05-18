@@ -35,6 +35,8 @@ import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.TagProvider;
+import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
+import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 
 import java.security.Principal;
@@ -56,6 +58,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     private TagProvider tagProvider;
     @Autowired
     private DataSourceConfigurationProvider configurationProvider;
+
+    @Autowired
+    private SourceDescriptorRepository sourceDescriptorRepository;
+    @Autowired
+    private TargetDescriptorRepository targetDescriptorRepository;
 
     @Override
     public DataSourceComponent findById(String id) {
@@ -161,8 +168,9 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             userDSC = dataSourceComponentProvider.getQueryDataSourceComponent(queryId);
         }
         if (userDSC != null) {
-            SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
+            SourceDescriptor sourceDescriptor = userDSC.getSources().stream().filter(s -> s.getName().equals("query")).findFirst().get();
             sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
+            sourceDescriptor = sourceDescriptorRepository.save(sourceDescriptor);
             userDSC = dataSourceComponentProvider.update(userDSC);
         } else {
             DataSourceComponent systemDSC = dataSourceComponentProvider.get(sensor + "-Local Database");
@@ -189,16 +197,18 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
                     userDSC.setLabel(label != null && !label.isEmpty() ?
                             label : String.join("-", sensor, dataSource, principal.getName()) +
                             " [customized on " + time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "]");
-                    SourceDescriptor sourceDescriptor = userDSC.getSources().get(0);
+                    SourceDescriptor sourceDescriptor = userDSC.getSources().stream().filter(s -> s.getName().equals("query")).findFirst().get();
                     sourceDescriptor.setId(UUID.randomUUID().toString());
                     sourceDescriptor.setParentId(newId);
                     sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
                     sourceDescriptor.setCardinality(productNames.size());
+                    sourceDescriptor = sourceDescriptorRepository.save(sourceDescriptor);
                     TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
                     targetDescriptor.setId(UUID.randomUUID().toString());
                     targetDescriptor.setParentId(newId);
                     targetDescriptor.setCardinality(productNames.size());
                     targetDescriptor.addConstraint("Same cardinality");
+                    targetDescriptor = targetDescriptorRepository.save(targetDescriptor);
                     userDSC.setSystem(false);
                     userDSC = dataSourceComponentProvider.save(userDSC);
                     tag(userDSC.getId(), new ArrayList<String>() {{
