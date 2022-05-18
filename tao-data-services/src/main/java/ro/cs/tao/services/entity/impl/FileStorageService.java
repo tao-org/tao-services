@@ -230,13 +230,13 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                     }
                 }
             } else { // we might have raster products
-                if (products.size() > 1) {
+                /*if (products.size() > 1) {
                     throw new IOException("Cannot move raster products");
-                }
+                }*/
                 EOProduct product = products.get(0);
-                if (Visibility.PUBLIC.equals(product.getVisibility())) {
+                /*if (Visibility.PUBLIC.equals(product.getVisibility())) {
                     throw new IOException("Cannot move a public product. Please reduce its visibility first.");
-                }
+                }*/
                 FileUtilities.move(sourcePath, destinationPath);
                 try {
                     product.setLocation(destinationURI);

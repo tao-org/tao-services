@@ -98,29 +98,33 @@ public class UserTransferService {
             final FileObject fileObject = item.getSource();
             final String srcPath = srcWorkspace.resolve(fileObject.getRelativePath());
             this.progressListener.subActivityStarted(srcPath);
-            InputStream sourceStream = null;
-            try {
-                final Object source = sourceService.download(srcPath);
-                if (source instanceof FileSystemResource) {
-                    sourceStream = ((FileSystemResource) source).getInputStream();
-                } else {
-                    sourceStream = (InputStream) source;
+            if (srcWorkspace.getId().equals(dstWorkspace.getId())) {
+                destinationService.move(srcPath, item.getDestinationPath());
+            } else {
+                InputStream sourceStream = null;
+                try {
+                    final Object source = sourceService.download(srcPath);
+                    if (source instanceof FileSystemResource) {
+                        sourceStream = ((FileSystemResource) source).getInputStream();
+                    } else {
+                        sourceStream = (InputStream) source;
+                    }
+                    logger.finest("Begin transferring file " + srcPath);
+                    if (item.isForce() || !destinationService.exists(item.getDestinationPath())) {
+                        destinationService.storeFile(sourceStream, fileObject.getSize(), item.getDestinationPath(), srcPath);
+                    } else {
+                        logger.fine(String.format("File %s exists at the destination and no overwrite flag is set", srcPath));
+                    }
+                } finally {
+                    if (sourceStream != null) {
+                        sourceStream.close();
+                    }
                 }
-                logger.finest("Begin transferring file " + srcPath);
-                if (item.isForce() || !destinationService.exists(item.getDestinationPath())) {
-                    destinationService.storeFile(sourceStream, fileObject.getSize(), item.getDestinationPath(), srcPath);
-                } else {
-                    logger.fine(String.format("File %s exists at the destination and no overwrite flag is set", srcPath));
+                logger.finest("End transferring file " + srcPath);
+                if (item.isMove()) {
+                    sourceService.remove(fileObject.getRelativePath());
+                    logger.finest("Removed file " + srcPath);
                 }
-            } finally {
-                if (sourceStream != null) {
-                    sourceStream.close();
-                }
-            }
-            logger.finest("End transferring file " + srcPath);
-            if (item.isMove()) {
-                sourceService.remove(fileObject.getRelativePath());
-                logger.finest("Removed file " + srcPath);
             }
             this.progressListener.subActivityEnded(srcPath);
             //decrement(item.getBatch());
