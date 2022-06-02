@@ -68,11 +68,12 @@ public class MasterNodeUpdater extends BaseLifeCycle {
                             description.setDescription("Application container manager");
                             description.setVersion(version != null ? version : "n/a");
                             description = persistenceManager.nodes().saveServiceDescription(description);
+                            NodeServiceStatus nodeService = new NodeServiceStatus();
+                            nodeService.setServiceDescription(description);
+                            master.addServiceStatus(nodeService);
                         }
-                        NodeServiceStatus nodeService = new NodeServiceStatus();
-                        nodeService.setServiceDescription(description);
+                        NodeServiceStatus nodeService = master.getServicesStatus().stream().filter(s -> s.getServiceDescription().getName().equals("Docker")).findFirst().get();
                         nodeService.setStatus(DockerHelper.isDockerFound() ? ServiceStatus.INSTALLED : ServiceStatus.NOT_FOUND);
-                        master.addServiceStatus(nodeService);
                         // check CRM on master
                         Set<Executor> executors = ExecutionsManager.getInstance().getRegisteredExecutors();
                         Executor<?> executor = executors.stream().filter(e -> e instanceof DrmaaTaoExecutor).findFirst().orElse(null);
