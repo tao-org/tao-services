@@ -38,7 +38,7 @@ public class GroupComponentServiceImpl
 
     @Autowired
     private GroupComponentProvider componentProvider;
-    private Logger logger = Logger.getLogger(ComponentService.class.getName());
+    private final Logger logger = Logger.getLogger(ComponentService.class.getName());
 
     @Override
     public GroupComponent findById(String id) {
@@ -58,7 +58,9 @@ public class GroupComponentServiceImpl
     @Override
     public GroupComponent save(GroupComponent component) {
         try {
-            return componentProvider.save(component);
+            final GroupComponent savedComponent = componentProvider.save(component);
+            GroupComponent.cloneIndex(component, savedComponent);
+            return savedComponent;
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
             return null;
@@ -68,7 +70,9 @@ public class GroupComponentServiceImpl
     @Override
     public GroupComponent update(GroupComponent component) {
         try {
-            return componentProvider.update(component);
+            final GroupComponent updated = componentProvider.update(component);
+            GroupComponent.cloneIndex(component, updated);
+            return updated;
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
             return null;

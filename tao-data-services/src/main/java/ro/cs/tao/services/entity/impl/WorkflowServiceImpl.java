@@ -459,7 +459,7 @@ public class WorkflowServiceImpl
         }
         grpNode.setCreated(LocalDateTime.now());
         grpNode.setPreserveOutput(true);
-        grpNode = (WorkflowNodeGroupDescriptor) workflowNodeProvider.save(grpNode, workflowProvider.get(workflowId));
+        //grpNode = (WorkflowNodeGroupDescriptor) workflowNodeProvider.save(grpNode, workflowProvider.get(workflowId));
         return group(workflowId, grpNode, nodes);
     }
 
