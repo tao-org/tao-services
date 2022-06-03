@@ -1,5 +1,9 @@
 package ro.cs.tao.datasource.param;
 
+import ro.cs.tao.component.ParameterDependency;
+
+import java.util.List;
+
 public class DataSourceParameterBean {
     final DataSourceParameter parameter;
 
@@ -37,5 +41,9 @@ public class DataSourceParameterBean {
 
     public Object[] getValueSet() {
         return parameter.getValueSet();
+    }
+
+    public List<ParameterDependency> getDependencies() {
+        return parameter.getDependencies();
     }
 }
