@@ -84,6 +84,11 @@
             <artifactId>tao-workflow-library</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-viewer-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- TAO Plugins -->
         <dependency>

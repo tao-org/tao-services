@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'/>
+    <title></title>
+    <link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.4.3/css/ol.css"
+          type="text/css">
+    <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.4.3/build/ol.js"></script>
+    <style>
+    .map {
+      width: 100%;
+      height: 800px;
+    }
+    </style>
+</head>
+
+<body>
+<div id="map" class="map"></div>
+
+<script>
+    var urlParams = new URLSearchParams(window.location.search);
+    var name = urlParams.get('name');
+    function buildMap()
+    {
+        var res=this.responseText;
+        var imageProps=JSON.parse(res)
+        var layers = [
+          new ol.layer.Tile({
+            source: new ol.source.OSM(),
+          }),
+          new ol.layer.Tile({
+              source: new ol.source.XYZ({
+                  url: '/products/view/tile/?name='+name+'&z={z}&x={x}&y={-y}',
+                  minZoom: imageProps.tile_grid.min_zoom,
+                  maxZoom: imageProps.tile_grid.max_zoom
+              })
+          })
+        ];
+        var view = new ol.View({
+          center: imageProps.center,
+          zoom: 9
+        });
+        var map = new ol.Map({
+          layers: layers,
+          target: 'map',
+          view: view
+        });
+    }
+    function httpGet(theUrl)
+    {
+        var getReq = new XMLHttpRequest();
+        getReq.onload=buildMap
+        getReq.open( "GET", theUrl );
+        getReq.send();
+    }
+
+    httpGet('/products/view/info/?name='+name);
+
+
+</script>
+</body>
+
+</html>
