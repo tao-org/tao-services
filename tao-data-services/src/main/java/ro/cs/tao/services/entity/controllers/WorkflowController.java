@@ -25,6 +25,7 @@ import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.WorkflowNodeProvider;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
@@ -36,6 +37,7 @@ import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
+import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
 import ro.cs.tao.workflow.enums.Status;
 
 import java.util.ArrayList;
@@ -57,6 +59,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     @Autowired
     private DataSourceComponentService dataSourceComponentService;
+
+    @Autowired
+    private WorkflowNodeProvider workflowNodeProvider;
 
     @Override
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
@@ -179,6 +184,26 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
+    @RequestMapping(value = "/ungroup", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> ungroup(@RequestParam("groupId") long groupId) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            WorkflowNodeDescriptor descriptor = workflowNodeProvider.get(groupId);
+            if (descriptor == null) {
+                throw new IllegalArgumentException("Node does not exist");
+            }
+            if (!(descriptor instanceof WorkflowNodeGroupDescriptor)) {
+                throw new IllegalArgumentException("Node is not a group node");
+            }
+            final WorkflowNodeGroupDescriptor groupDescriptor = (WorkflowNodeGroupDescriptor) descriptor;
+            service.ungroup(groupDescriptor, false);
+            return prepareResult("Group removed", ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
+
     @RequestMapping(value = "/subworkflow", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addSubworkflow(@RequestParam("workflowId") long workflowId,
                                                              @RequestParam("subWorkflowId") long subWorkflowId,
@@ -244,6 +269,10 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                                          @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
+            WorkflowNodeGroupDescriptor groupNode = workflowNodeProvider.getGroupNode(node.getId());
+            if (groupNode != null) {
+                throw new IllegalArgumentException("Cannot delete a node that is part of a group. Ungroup first.");
+            }
             service.removeNode(workflowId, node);
             responseEntity = prepareResult(String.format("Node with id '%s' was deleted", node.getId()),
                                            ResponseStatus.SUCCEEDED);
