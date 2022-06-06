@@ -22,6 +22,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.component.RuntimeOptimizer;
 import ro.cs.tao.component.SystemVariable;
@@ -38,6 +39,7 @@ import ro.cs.tao.messaging.system.StartupCompletedMessage;
 import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.StartupBase;
+import ro.cs.tao.services.commons.TransactionalMethod;
 import ro.cs.tao.services.startup.LifeCycleProcessor;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
@@ -66,6 +68,8 @@ import java.util.stream.Collectors;
 public class TaoServicesStartup extends StartupBase {
     @Autowired
     private LifeCycleProcessor lifeCycleProcessor;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     private final static Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
     private static final Map<String, Class> plugins = new LinkedHashMap<String, Class>() {{
@@ -103,6 +107,7 @@ public class TaoServicesStartup extends StartupBase {
                 logger.severe("Cannot create required folders: " + e.getMessage());
                 System.exit(1);
             }
+            TransactionalMethod.setTransactionManager(transactionManager);
             lifeCycleProcessor.activate(() -> {
                 for (Map.Entry<String, Class> entry : plugins.entrySet()) {
                     ServiceRegistry<?> registry = ServiceRegistryManager.getInstance().getServiceRegistry(entry.getValue());
