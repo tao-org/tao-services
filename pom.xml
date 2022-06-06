@@ -32,6 +32,7 @@
         <module>tao-scheduling-service</module>
 		<module>tao-services-startup</module>
         <module>tao-workspace-service</module>
+        <module>tao-viewer-service</module>
     </modules>
 
     <properties>
