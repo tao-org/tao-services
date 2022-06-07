@@ -3,6 +3,7 @@ package ro.cs.tao.services.commons;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Callable;
 
 /**
@@ -75,7 +76,16 @@ public class TransactionalMethod<E extends Exception> {
             if (transaction != null) {
                 transactionManager.rollback(transaction);
             }
-            throw (E) e;
+            if (e.getClass().isAssignableFrom(this.exceptionType)) {
+                throw (E) e;
+            } else {
+                try {
+                    throw this.exceptionType.getConstructor(Throwable.class).newInstance(e);
+                } catch (InstantiationException | NoSuchMethodException | IllegalAccessException |
+                         InvocationTargetException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
         }
     }
 }
