@@ -184,7 +184,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
-    @RequestMapping(value = "/ungroup", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/ungroup", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> ungroup(@RequestParam("groupId") long groupId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
