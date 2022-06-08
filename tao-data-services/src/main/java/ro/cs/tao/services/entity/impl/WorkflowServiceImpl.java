@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.xml.sax.SAXException;
 import ro.cs.tao.Tag;
+import ro.cs.tao.Tuple;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
@@ -37,6 +38,8 @@ import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.persistence.*;
+import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
+import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.TransactionalMethod;
 import ro.cs.tao.services.commons.dev.MockData;
@@ -89,6 +92,10 @@ public class WorkflowServiceImpl
     private GroupComponentService groupComponentService;
     @Autowired
     private PlatformTransactionManager transactionManager;
+    @Autowired
+    private SourceDescriptorRepository sourceDescriptorRepository;
+    @Autowired
+    private TargetDescriptorRepository targetDescriptorRepository;
 
     private Logger logger = Logger.getLogger(WorkflowService.class.getName());
     //region Workflow
@@ -508,38 +515,31 @@ public class WorkflowServiceImpl
             // Step 4: transfer the incoming links of the first level nodes to the group
             for (WorkflowNodeDescriptor node : firstLevelNodes) {
                 final Set<ComponentLink> incomingLinks = node.getIncomingLinks();
-                final Set<ComponentLink> toRemove = new HashSet<>();
                 if (incomingLinks != null) {
                     for (ComponentLink link : incomingLinks) {
                         SourceDescriptor originalSource = link.getOutput();
                         SourceDescriptor groupSource = groupComponent.findDescriptor(originalSource.getId());
-                        addLink(link.getSourceNodeId(), link.getInput().getId(),
-                                updated.getId(), groupSource.getId());
-                        toRemove.add(link);
+                        link.setOutput(groupSource);
+                        /*addLink(link.getSourceNodeId(), link.getInput().getId(),
+                                updated.getId(), groupSource.getId());*/
                     }
-                }
-                for (ComponentLink link : toRemove) {
-                    removeLink(node.getId(), link);
+                    workflowNodeProvider.update(node);
                 }
             }
 
             // Step 5: transfer the outgoing links of the last level nodes to the group
-            for (WorkflowNodeDescriptor node : terminalNodes) {
-                List<WorkflowNodeDescriptor> outLinkedNodes = WorkflowUtilities.findLinkedNodes(workflow, terminalNodes);
-                for (WorkflowNodeDescriptor outNode : outLinkedNodes) {
-                    final Set<ComponentLink> incomingLinks = outNode.getIncomingLinks();
-                    final Set<ComponentLink> toRemove = new HashSet<>();
-                    for (ComponentLink link : incomingLinks) {
-                        TargetDescriptor originalTarget = link.getInput();
-                        TargetDescriptor groupTarget = groupComponent.findDescriptor(originalTarget.getId());
-                        addLink(updated.getId(), groupTarget.getId(),
-                                node.getId(), link.getOutput().getId());
-                        toRemove.add(link);
-                    }
-                    for (ComponentLink link : toRemove) {
-                        removeLink(node.getId(), link);
-                    }
+            final Set<Tuple<Tuple<Long, String>, Tuple<Long, String>>> linksToAdd = new LinkedHashSet<>();
+            final Set<WorkflowNodeDescriptor> outLinkedNodes = new LinkedHashSet<>();
+            terminalNodes.forEach(n -> outLinkedNodes.addAll(WorkflowUtilities.findLinkedNodes(workflow, terminalNodes)));
+            for (WorkflowNodeDescriptor outNode : outLinkedNodes) {
+                final Set<ComponentLink> incomingLinks = new HashSet<>(outNode.getIncomingLinks());
+                for (ComponentLink link : incomingLinks) {
+                    TargetDescriptor originalTarget = link.getInput();
+                    TargetDescriptor groupTarget = groupComponent.findDescriptor(originalTarget.getId());
+                    link.setInput(groupTarget);
+                    link.setSourceNodeId(updated.getId());
                 }
+                workflowNodeProvider.update(outNode);
             }
             return updated;
         });
@@ -582,22 +582,25 @@ public class WorkflowServiceImpl
                 if (groupLinks != null) {
                     for (ComponentLink link : groupLinks) {
                         SourceDescriptor groupSource = link.getOutput();
-                        WorkflowNodeDescriptor sourceNode = WorkflowUtilities.findGroupSourceOwner(groupSource.getId(), groupDescriptor);
-                        SourceDescriptor sourceDescriptor = WorkflowUtilities.findSourceByName(groupSource.getName(), sourceNode);
+                        WorkflowNodeDescriptor sourceNode = WorkflowUtilities.findGroupSourceOwner(groupSource, groupDescriptor);
+                        SourceDescriptor sourceDescriptor = WorkflowUtilities.findSourceById(groupSource.getReferencedSourceDescriptorId(), sourceNode);
                         if (sourceDescriptor == null) {
                             logger.warning(String.format("Cannot determine originating source descriptor [groupNode=%s, groupSource=%s, sourceNode=%s]",
                                                          groupDescriptor.getName(), groupSource.getName(), sourceNode.getName()));
                             continue;
                         }
-                        addLink(link.getSourceNodeId(), link.getInput().getId(),
+                        link.setOutput(sourceDescriptor);
+                        workflowNodeProvider.update(sourceNode);
+                        /*addLink(link.getSourceNodeId(), link.getInput().getId(),
                                 sourceNode.getId(), sourceDescriptor.getId());
-                        linksToRemove.add(link);
+                        linksToRemove.add(link);*/
                     }
+                    groupDescriptor.setIncomingLinks(null);
                 }
-                for (ComponentLink link : linksToRemove) {
+                /*for (ComponentLink link : linksToRemove) {
                     removeLink(groupDescriptor.getId(), link);
                 }
-                linksToRemove.clear();
+                linksToRemove.clear();*/
                 // Transfer the outgoing links of the group to the last level nodes
                 final List<WorkflowNodeDescriptor> linkedNodes = WorkflowUtilities.findLinkedNodes(workflow, new ArrayList<WorkflowNodeDescriptor>() {{
                     add(groupDescriptor);
@@ -607,20 +610,25 @@ public class WorkflowServiceImpl
                     incomingLinks = outNode.getIncomingLinks();
                     for (ComponentLink link : incomingLinks) {
                         TargetDescriptor groupTarget = link.getInput();
-                        WorkflowNodeDescriptor targetNode = WorkflowUtilities.findGroupTargetOwner(groupTarget.getId(), groupDescriptor);
-                        TargetDescriptor targetDescriptor = WorkflowUtilities.findTargetByName(groupTarget.getName(), targetNode);
+                        WorkflowNodeDescriptor targetNode = WorkflowUtilities.findGroupTargetOwner(groupTarget, groupDescriptor);
+                        TargetDescriptor targetDescriptor = WorkflowUtilities.findTargetById(groupTarget.getReferencedTargetDescriptorId(), targetNode);
                         if (targetDescriptor == null) {
                             logger.warning(String.format("Cannot determine originating target descriptor [groupNode=%s, groupTarget=%s, targetNode=%s]",
                                                          groupDescriptor.getName(), groupTarget.getName(), targetNode.getName()));
                             continue;
                         }
-                        addLink(targetNode.getId(), targetDescriptor.getId(),
-                                outNode.getId(), link.getOutput().getId());
+                        link.setInput(targetDescriptor);
+                        link.setSourceNodeId(targetNode.getId());
+                        targetNode.addLink(link);
+                        workflowNodeProvider.update(targetNode);
+                        /*addLink(targetNode.getId(), targetDescriptor.getId(),
+                                outNode.getId(), link.getOutput().getId());*/
                         linksToRemove.add(link);
                     }
                     for (ComponentLink link : linksToRemove) {
                         removeLink(outNode.getId(), link);
                     }
+                    workflowNodeProvider.update(outNode);
                 }
                 workflow.removeNode(groupDescriptor);
                 workflowProvider.save(workflow);
@@ -681,20 +689,20 @@ public class WorkflowServiceImpl
             for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
                 final Set<ComponentLink> links = node.getIncomingLinks();
                 if (links != null) {
-                    WorkflowNodeDescriptor clonedTarget = cloneMap.get(node.getId());
+                    WorkflowNodeDescriptor clonedNode = cloneMap.get(node.getId());
                     for (ComponentLink link : links) {
                         WorkflowNodeDescriptor clonedSource = cloneMap.get(link.getSourceNodeId());
-                        TargetDescriptor input = WorkflowUtilities.findTarget(link.getInput().getId(), clonedSource);
-                        SourceDescriptor output = WorkflowUtilities.findSource(link.getOutput().getId(), clonedTarget);
+                        TargetDescriptor input = targetDescriptorRepository.findById(link.getInput().getId()).get(); //WorkflowUtilities.findTarget(link.getInput().getId(), clonedSource);
+                        SourceDescriptor output = sourceDescriptorRepository.findById(link.getOutput().getId()).get(); //WorkflowUtilities.findSource(link.getOutput().getId(), clonedNode);
                         ComponentLink clonedLink = new ComponentLink(clonedSource.getId(), input, output);
-                        Set<ComponentLink> clonedLinks = clonedTarget.getIncomingLinks();
+                        Set<ComponentLink> clonedLinks = clonedNode.getIncomingLinks();
                         if (clonedLinks == null) {
                             clonedLinks = new HashSet<>();
                         }
                         clonedLinks.add(clonedLink);
-                        clonedTarget.setIncomingLinks(clonedLinks);
+                        clonedNode.setIncomingLinks(clonedLinks);
                     }
-                    clonedTarget = workflowNodeProvider.update(clonedTarget);
+                    clonedNode = workflowNodeProvider.update(clonedNode);
                 }
             }
             return workflowProvider.get(clone.getId());
