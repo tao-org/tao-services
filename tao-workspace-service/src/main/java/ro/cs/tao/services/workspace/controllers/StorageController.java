@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.util.Zipper;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.EOProductProvider;
@@ -496,6 +497,40 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         }
     }
     //endregion
+
+    /**
+     * Decompresses a local archive (zip or tar.gz) into a local folder
+     * @param path          The archive path
+     * @param destination   (Optional) The destination folder
+     * @return              The name of the extracted folder
+     */
+    @PostMapping(value = "/extract", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> uncompress(@RequestParam("archive") String path,
+                                                         @RequestParam(name = "folder", required = false) String destination) {
+        try {
+            if (StringUtilities.isNullOrEmpty(path)) {
+                throw new IllegalArgumentException("Not a file");
+            }
+            if (!path.toLowerCase().endsWith(".zip") && !path.toLowerCase().endsWith(".tar.gz")) {
+                throw new IllegalArgumentException("Unsupported archive type");
+            }
+            final Repository workspace = getLocalWorkspace(currentUser());
+            final String resolvedPath = workspace.resolve(path);
+            if (StringUtilities.isNullOrEmpty(destination)) {
+                destination = resolvedPath.substring(0, resolvedPath.lastIndexOf('/'));
+            }
+            final Path out;
+            if (path.toLowerCase().endsWith(".zip")) {
+                out = Zipper.decompressZip(Paths.get(resolvedPath).toAbsolutePath(), Paths.get(destination).toAbsolutePath(), false);
+            } else {
+                out = Zipper.decompressTarGz(Paths.get(resolvedPath).toAbsolutePath(), Paths.get(destination).toAbsolutePath(), false);
+            }
+            return prepareResult(out.getFileName());
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
 
     private void queueFile(String batchId, FileObject file, Repository source, Repository destination, String folder, boolean move, boolean overwrite) {
         final TransferableItem request = new TransferableItem(currentUser(), batchId, source, file, destination, folder, move, overwrite);
