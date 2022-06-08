@@ -79,25 +79,29 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
 
     @Override
     public void registerUser(String userName) {
-        final Path rootPath = Paths.get(SystemVariable.ROOT.value());
-        try {
-            Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userName));
-            walkAndRegisterDirectories(userWorkspace);
-            int usedSpace = getUsedSpace(userName);
-            updateUserInputQuota(userName, usedSpace);
-        } catch (IOException e) {
-            logger.severe(String.format("Failed to watch user workspace [user=%s, reason=%s]%n", userName, e.getMessage()));
+        if (!SystemPrincipal.instance().getName().equals(userName)) {
+            final Path rootPath = Paths.get(SystemVariable.ROOT.value());
+            try {
+                Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userName));
+                walkAndRegisterDirectories(userWorkspace);
+                int usedSpace = getUsedSpace(userName);
+                updateUserInputQuota(userName, usedSpace);
+            } catch (IOException e) {
+                logger.severe(String.format("Failed to watch user workspace [user=%s, reason=%s]%n", userName, e.getMessage()));
+            }
         }
     }
 
     @Override
     public void unregisterUser(String userName) {
-        final Path rootPath = Paths.get(SystemVariable.ROOT.value());
-        try {
-            Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userName));
-            walkAndUnregisterDirectories(userWorkspace);
-        } catch (IOException e) {
-            logger.severe(String.format("Failed to watch user workspace [user=%s, reason=%s]%n", userName, e.getMessage()));
+        if (!SystemPrincipal.instance().getName().equals(userName)) {
+            final Path rootPath = Paths.get(SystemVariable.ROOT.value());
+            try {
+                Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userName));
+                walkAndUnregisterDirectories(userWorkspace);
+            } catch (IOException e) {
+                logger.severe(String.format("Failed to watch user workspace [user=%s, reason=%s]%n", userName, e.getMessage()));
+            }
         }
     }
 
@@ -106,11 +110,13 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
      * @param userName - the username for which the update needs to be done
      */
     private void updateUserInputQuota(String userName, int usedSpace) {
-        try { // update user quota
-            userProvider.updateInputQuota(userName, usedSpace);
-            logger.finest(String.format("Input quota update [%s:%dMB]", userName, usedSpace));
-        } catch (PersistenceException e) {
-            logger.severe(e.getMessage());
+        if (!SystemPrincipal.instance().getName().equals(userName)) {
+            try { // update user quota
+                userProvider.updateInputQuota(userName, usedSpace);
+                logger.finest(String.format("Input quota update [%s:%dMB]", userName, usedSpace));
+            } catch (PersistenceException e) {
+                logger.severe(e.getMessage());
+            }
         }
     }
 
@@ -186,12 +192,15 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
 
     /**
      * Get the used space for a given user workspace
-     * @param username - name of the user
+     * @param userName - name of the user
      * @return memory in MB taken up by the current user
      * @throws IOException if the folder is not found
      */
-    private int getUsedSpace(String username) throws IOException {
-        final Path userWorkspace = Paths.get(SystemVariable.ROOT.value()).resolve(username);
+    private int getUsedSpace(String userName) throws IOException {
+        if (SystemPrincipal.instance().getName().equals(userName)) {
+            return -1;
+        }
+        final Path userWorkspace = Paths.get(SystemVariable.ROOT.value()).resolve(userName);
         if (!Files.exists(userWorkspace)) {
             return -1;
         }
@@ -271,8 +280,12 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
                 try {
                     String entry = eventsQueue.take();
                     final String userName = getUserName(entry);
-                    final int usedSpace = getUsedSpace(userName);
-                    updateUserInputQuota(userName, usedSpace);
+                    if (userName != null) {
+                        final int usedSpace = getUsedSpace(userName);
+                        updateUserInputQuota(userName, usedSpace);
+                    } else {
+                        logger.warning("Cannot determine user from entry '" + entry + "'");
+                    }
                 } catch (InterruptedException e) {
                     logger.severe(String.format("The thread %s has been interrupted. Reason: %s",
                             this.getName(), ExceptionUtils.getStackTrace(e)));
