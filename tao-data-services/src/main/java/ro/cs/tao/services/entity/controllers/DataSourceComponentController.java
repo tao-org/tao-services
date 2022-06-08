@@ -39,10 +39,7 @@ import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
-import ro.cs.tao.services.entity.beans.DataSourceGroupRequest;
-import ro.cs.tao.services.entity.beans.DataSourceNameRequest;
-import ro.cs.tao.services.entity.beans.DataSourceRequest;
-import ro.cs.tao.services.entity.beans.GroupQuery;
+import ro.cs.tao.services.entity.beans.*;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceGroupService;
@@ -262,9 +259,21 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 }
             }
             return components.size() > 0 ? prepareResult(components) : prepareResult("No component was created", ResponseStatus.FAILED);
-        } catch (PersistenceException e) {
+        } catch (PersistenceException | QuotaException e) {
             return handleException(e);
-        } catch (QuotaException e) {
+        }
+    }
+
+    @RequestMapping(value = "/productset", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> createProductSet(@RequestBody ProductSetRequest request) {
+        try {
+            List<String> productPaths;
+            if (request == null || (productPaths = request.getProductPaths()) == null || productPaths.size() == 0) {
+                throw new IllegalArgumentException("[productPaths] Body is empty");
+            }
+            final DataSourceComponent component = service.createForProductNames(productPaths, request.getLabel(), currentPrincipal());
+            return component != null ? prepareResult(component) : prepareResult("No component was created", ResponseStatus.FAILED);
+        } catch (PersistenceException e) {
             return handleException(e);
         }
     }
