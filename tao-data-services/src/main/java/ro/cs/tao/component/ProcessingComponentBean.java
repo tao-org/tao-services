@@ -2,6 +2,7 @@ package ro.cs.tao.component;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ro.cs.tao.component.enums.ComponentCategory;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.template.Template;
@@ -123,6 +124,8 @@ public class ProcessingComponentBean {
     public String getNodeAffinity() {
         return component.getNodeAffinity();
     }
+
+    public ComponentCategory getCategory() { return component.getCategory(); }
 
     @XmlElementWrapper(name = "inputs")
     public List<SourceDescriptor> getSources() {
