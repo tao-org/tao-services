@@ -256,21 +256,23 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         userDSC.setCopyright("(C) AVL Team");
         userDSC.setNodeAffinity("Any");
         LocalDateTime time = LocalDateTime.now();
-        String newId = String.join("-", "product", "set", principal.getName(),
-                                   time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+        final String newId = String.join("-", "product", "set", principal.getName(),
+                                         time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         userDSC.setId(newId);
+        userDSC.getSources().forEach(s -> s.setParentId(newId));
+        userDSC.getTargets().forEach(t ->t.setParentId(newId));
         userDSC.setLabel(label != null && !label.isEmpty() ? label : newId);
         SourceDescriptor sourceDescriptor = userDSC.getSources().stream().filter(s -> s.getName().equals(DataSourceComponent.QUERY_PARAMETER)).findFirst().get();
         sourceDescriptor.getDataDescriptor().setSensorType(SensorType.UNKNOWN);
         sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
         sourceDescriptor.setCardinality(productNames.size());
-        userDSC.addSource(sourceDescriptorRepository.save(sourceDescriptor));
+        sourceDescriptorRepository.save(sourceDescriptor);
         TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
         targetDescriptor.setId(UUID.randomUUID().toString());
         targetDescriptor.setParentId(newId);
         targetDescriptor.setCardinality(productNames.size());
         targetDescriptor.addConstraint("Same cardinality");
-        userDSC.addTarget(targetDescriptorRepository.save(targetDescriptor));
+        targetDescriptorRepository.save(targetDescriptor);
         userDSC.setSystem(false);
         userDSC = dataSourceComponentProvider.save(userDSC);
         tag(userDSC.getId(), new ArrayList<String>() {{
