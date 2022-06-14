@@ -34,6 +34,7 @@ import ro.cs.tao.datasource.DataSourceConfiguration;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
@@ -41,11 +42,12 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.*;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
-import ro.cs.tao.services.interfaces.DataSourceComponentService;
-import ro.cs.tao.services.interfaces.DataSourceGroupService;
-import ro.cs.tao.services.interfaces.ProductService;
-import ro.cs.tao.services.interfaces.QueryService;
+import ro.cs.tao.services.factory.StorageServiceFactory;
+import ro.cs.tao.services.interfaces.*;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
+import java.io.FileNotFoundException;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,6 +62,8 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     private DataSourceGroupService dataSourceGroupService;
     @Autowired
     private QueryService queryService;
+    @Autowired
+    private RepositoryProvider repositoryProvider;
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/page", method = RequestMethod.GET, produces = "application/json")
@@ -271,9 +275,16 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             if (request == null || (productPaths = request.getProductPaths()) == null || productPaths.size() == 0) {
                 throw new IllegalArgumentException("[productPaths] Body is empty");
             }
+            final StorageService repositoryService = getLocalRepositoryService();
+            final Repository localWorkspace = getLocalRepository(currentUser());
+            for (String path : productPaths) {
+                if (!repositoryService.exists(localWorkspace.resolve(path))) {
+                    throw new FileNotFoundException(path + " does not exist");
+                }
+            }
             final DataSourceComponent component = service.createForProductNames(productPaths, request.getLabel(), currentPrincipal());
             return component != null ? prepareResult(component) : prepareResult("No component was created", ResponseStatus.FAILED);
-        } catch (PersistenceException e) {
+        } catch (Exception e) {
             return handleException(e);
         }
     }
@@ -314,5 +325,19 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         } catch (PersistenceException e) {
             return handleException(e);
         }
+    }
+
+    private Repository getLocalRepository(String user) {
+        return repositoryProvider.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
+    }
+
+    private StorageService getLocalRepositoryService() {
+        Repository repository = getLocalRepository(currentUser());
+        if (repository == null) {
+            throw new RuntimeException("User [" + currentUser() + "] doesn't have a local repository");
+        }
+        StorageService instance = StorageServiceFactory.getInstance(repository);
+        instance.associate(repository);
+        return instance;
     }
 }
