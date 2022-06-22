@@ -47,6 +47,11 @@ public class RepositoryServiceImpl
     }
 
     @Override
+    public Repository getByUserAndName(String userName, String repositoryName) {
+        return workspaceProvider.getByUserAndName(userName, repositoryName);
+    }
+
+    @Override
     public List<Repository> list(Iterable<String> ids) {
         return workspaceProvider.list(ids);
     }
