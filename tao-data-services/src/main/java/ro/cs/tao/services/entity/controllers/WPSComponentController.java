@@ -14,13 +14,17 @@ import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.component.WPSComponentBean;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ContainerService;
+import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.interfaces.WPSComponentService;
+import ro.cs.tao.utils.JacksonUtil;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.workspaces.Repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,9 +36,10 @@ public class WPSComponentController extends BaseController {
 
     @Autowired
     private ContainerService containerService;
-
     @Autowired
     private WPSComponentService wpsComponentService;
+    @Autowired
+    private RepositoryService repositoryService;
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
@@ -75,7 +80,23 @@ public class WPSComponentController extends BaseController {
             if (targets != null) {
                 targets.forEach(t -> t.setParentId(component.getId()));
             }
-            return prepareResult(new WPSComponentBean(wpsComponentService.save(component)));
+            WPSComponentBean wps = new WPSComponentBean(wpsComponentService.save(component));
+            TargetDescriptor target = wps.getTargets().stream().filter(t -> t.getDataDescriptor().getFormatType() == DataFormat.JSON).findFirst().orElse(null);
+            if (target != null) {
+                final String repoName = "Output of " + wps.getId();
+                try {
+                    Repository repository = repositoryService.getByUserAndName(currentUser(), repoName);
+                    if (repository == null) {
+                        repository = JacksonUtil.fromString(target.getDataDescriptor().getLocation(), Repository.class);
+                        repository.setName(repoName);
+                        repository.setUserName(currentUser());
+                        repositoryService.save(repository);
+                    }
+                } catch (Exception e) {
+                    warn("Remote WPS operation output does not represent a valid repository descriptor [%s]", target.getDataDescriptor().getLocation());
+                }
+            }
+            return prepareResult(wps);
         } catch (Exception e) {
             return handleException(e);
         }
