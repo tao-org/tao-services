@@ -32,6 +32,7 @@ import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
+import ro.cs.tao.user.UserType;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.util.List;
@@ -70,7 +71,7 @@ public class UserController extends BaseController {
             final User userInfo = userService.getUserInfo(username);
             final ConfigurationProvider configManager = ConfigurationManager.getInstance();
             repositoryWatcherService.registerUser(username);
-            if (!userInfo.isExternal()) {
+            if (userInfo.getUserType() == UserType.INTERNAL) {
                 // internal TAO authenticated users need to set a password
                 // we need a redirect to TAO reset password page from activation email within email that hits this endpoint
                 final String passwordResetKey = UUID.randomUUID().toString();
