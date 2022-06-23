@@ -180,7 +180,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
      * @return username
      */
     private String getUserName(String path) {
-        final StringTokenizer dirTokenizer = new StringTokenizer(path, File.separator);
+        final StringTokenizer dirTokenizer = new StringTokenizer(FileUtilities.asUnixPath(path, false), File.separator);
         while (dirTokenizer.hasMoreElements()) {
             String nextDirectory = dirTokenizer.nextToken();
             if (nextDirectory.equalsIgnoreCase(WORKSPACE_DIR)) {

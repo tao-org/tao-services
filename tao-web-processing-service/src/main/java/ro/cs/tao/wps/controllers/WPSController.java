@@ -390,14 +390,14 @@ public class WPSController extends BaseController {
 
     private void writeToResponce(HttpServletResponse response, String body) {
         final PrintWriter writer;
+        response.setContentType(MediaType.APPLICATION_XML_VALUE);
+        response.setDateHeader("Date", new Date().getTime());
+        response.setHeader(HttpHeaders.TRANSFER_ENCODING, "chunked");
         try {
             writer = response.getWriter();
             writer.print(body);
         } catch (IOException ignore) {
         }
-        response.setContentType(MediaType.APPLICATION_XML_VALUE);
-        response.setDateHeader("Date", new Date().getTime());
-        response.setHeader(HttpHeaders.TRANSFER_ENCODING, "chunked");
     }
 
     private String getExceptionString(ExceptionReport exceptionReport) {
