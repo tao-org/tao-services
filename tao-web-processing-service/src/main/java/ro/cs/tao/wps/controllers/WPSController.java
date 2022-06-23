@@ -213,7 +213,10 @@ public class WPSController extends BaseController {
                     Iterator<Map.Entry<String, List<Parameter>>> iterator = parameters.entrySet().iterator();
                     List<Parameter> params = new ArrayList<>();
                     while (iterator.hasNext()) {
-                        params.addAll(iterator.next().getValue());
+                        Map.Entry<String, List<Parameter>> entry = iterator.next();
+                        List<Parameter> groupParams = entry.getValue();
+                        groupParams.forEach(p -> p.setName(entry.getKey() + "~" + p.getName()));
+                        params.addAll(groupParams);
                     }
                     component.setParameters(params.stream().map(Parameter::toParameterDescriptor).collect(Collectors.toList()));
                 }
