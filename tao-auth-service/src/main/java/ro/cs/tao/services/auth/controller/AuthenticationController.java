@@ -49,6 +49,7 @@ public class AuthenticationController extends BaseController {
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> login(@RequestParam("username") String user,
                                                     @RequestParam("password") String password) {
+        boolean success = true;
         try {
             final AuthInfo authInfo = authenticationService.login(user, password);
             if (authInfo != null && authInfo.isAuthenticated()) {
@@ -60,10 +61,18 @@ public class AuthenticationController extends BaseController {
                     return prepareResult(authInfo);
                 }
             } else {
+                success = false;
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
         } catch (Exception ex) {
+            success = false;
             return handleException(ex);
+        } finally {
+            if (success) {
+                debug("Successful login: %s", user);
+            } else {
+                warn("Login failed: %s", user);
+            }
         }
     }
 
@@ -86,17 +95,25 @@ public class AuthenticationController extends BaseController {
     @RequestMapping(value = "/refresh", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> refresh(@RequestParam(name = "user") String userName,
                                                       @RequestParam(name = "token") String refreshToken) {
+        boolean success = false;
         try {
             final Token newToken = authenticationService.getNewToken(userName, refreshToken);
             if (newToken != null) {
                 HttpHeaders headers = new HttpHeaders();
                 headers.add("Set-Cookie", "refreshToken=" + newToken.getRefreshToken() + ";Max-Age=" + newToken.getExpiresInSeconds());
+                success = true;
                 return ResponseEntity.status(HttpStatus.OK).headers(headers).body(new ServiceResponse<>(newToken));
             } else {
                 return prepareResult(null, HttpStatus.BAD_REQUEST);
             }
         } catch (Exception ex) {
             return handleException(ex);
+        } finally {
+            if (success) {
+                debug("Token refreshed for %s", userName);
+            } else {
+                warn("Token refresh failed for %s", userName);
+            }
         }
     }
 

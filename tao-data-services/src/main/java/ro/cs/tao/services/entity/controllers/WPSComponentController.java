@@ -120,7 +120,23 @@ public class WPSComponentController extends BaseController {
             }
             final WPSComponent component = entity.toComponent();
             component.setService(container);
-            return prepareResult(new WPSComponentBean(wpsComponentService.update(component)));
+            WPSComponent wps = wpsComponentService.update(component);
+            TargetDescriptor target = wps.getTargets().stream().filter(t -> t.getDataDescriptor().getFormatType() == DataFormat.JSON).findFirst().orElse(null);
+            if (target != null) {
+                final String repoName = "Output of " + wps.getId();
+                try {
+                    Repository repository = repositoryService.getByUserAndName(currentUser(), repoName);
+                    if (repository == null) {
+                        repository = JacksonUtil.fromString(target.getDataDescriptor().getLocation(), Repository.class);
+                        repository.setName(repoName);
+                        repository.setUserName(currentUser());
+                        repositoryService.save(repository);
+                    }
+                } catch (Exception e) {
+                    warn("Remote WPS operation output does not represent a valid repository descriptor [%s]", target.getDataDescriptor().getLocation());
+                }
+            }
+            return prepareResult(new WPSComponentBean(wps));
         } catch (Exception e) {
             return handleException(e);
         }
