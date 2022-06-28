@@ -14,22 +14,26 @@ import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.eo.gdal.reader.ImageInfo;
 import ro.cs.eo.gdal.reader.info.ProductInfo;
 import ro.cs.eo.gdal.service.GDALTileMapService;
-import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.services.commons.ControllerBase;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 
 @Controller
+@RequestMapping("/view")
 public class ViewerController extends ControllerBase {
 
     private final AnnotationConfigApplicationContext context;
     @Autowired
     private PersistenceManager persistenceManager;
+    @Autowired
+    private RepositoryProvider repositoryProvider;
 
     public ViewerController() {
         this.context = new AnnotationConfigApplicationContext();
@@ -37,8 +41,8 @@ public class ViewerController extends ControllerBase {
         this.context.refresh();
     }
 
-    @RequestMapping(value = "/products/view/tile/", method = RequestMethod.GET)
-    public ResponseEntity<byte[]> viewTileData(@RequestParam("name") String name,
+    @RequestMapping(value = "/tile", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> viewTileData(@RequestParam("file") String relativePath,
                                                @RequestParam("z") byte z,
                                                @RequestParam("x") int x,
                                                @RequestParam("y") int y) {
@@ -46,11 +50,9 @@ public class ViewerController extends ControllerBase {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
         try {
-            List<EOProduct> products = persistenceManager.rasterData().getProductsByNames(name);
-            if (products == null || products.size() == 0) {
-                throw new FileNotFoundException("Product not found.");
-            }
-            String path = products.get(0).getLocation();
+            final Repository localRepository = getLocalRepository();
+            final String path = localRepository.resolve(relativePath);
+            final String name = relativePath.substring(relativePath.lastIndexOf('/') + 1);
             ProductInfo productInfo = ProductInfo.getProductInfoInstance(name, path);
             byte[] data = gdalTileMapService.getGDALTile(productInfo, z, x, y);
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_PNG_VALUE);
@@ -67,18 +69,21 @@ public class ViewerController extends ControllerBase {
         }
     }
 
-    @RequestMapping(value = "/products/view/info/", method = RequestMethod.GET)
-    public ResponseEntity<String> viewTileInfo(@RequestParam("name") String name) {
+    @RequestMapping(value = "info", method = RequestMethod.GET)
+    public ResponseEntity<String> viewTileInfo(@RequestParam("relativePath") String relativePath) {
         GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
 
         try {
-            List<EOProduct> products = persistenceManager.rasterData().getProductsByNames(name);
+            /*List<EOProduct> products = persistenceManager.rasterData().getProductsByNames(name);
             if (products == null || products.size() == 0) {
                 throw new FileNotFoundException("Product not found.");
             }
-            String path = products.get(0).getLocation();
+            String path = products.get(0).getLocation();*/
+            final Repository localRepository = getLocalRepository();
+            final String path = localRepository.resolve(relativePath);
+            final String name = relativePath.substring(relativePath.lastIndexOf('/') + 1);
             ProductInfo productInfo = ProductInfo.getProductInfoInstance(name, path);
             ImageInfo imageInfo = gdalTileMapService.getGDALImageInfo(productInfo);
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
@@ -95,7 +100,7 @@ public class ViewerController extends ControllerBase {
         }
     }
 
-    @RequestMapping(value = "/products/view/map/", method = RequestMethod.GET)
+    @RequestMapping(value = "map", method = RequestMethod.GET)
     public ResponseEntity<byte[]> viewMap() {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
@@ -108,7 +113,7 @@ public class ViewerController extends ControllerBase {
         }
     }
 
-    @RequestMapping(value = "/products/view/config/set-cache-dir/", method = RequestMethod.POST)
+    @RequestMapping(value = "config", method = RequestMethod.POST)
     public ResponseEntity<String> setCacheDir(@RequestParam("cache-dir") String newCacheDir) {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
@@ -124,5 +129,9 @@ public class ViewerController extends ControllerBase {
             e.printStackTrace();
             return new ResponseEntity<>("<html><body><h1>500</h1><br/><h3>Internal server error.</h3></body></html>", headers, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private Repository getLocalRepository() {
+        return repositoryProvider.getByUser(currentUser()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
     }
 }
