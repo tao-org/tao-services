@@ -34,6 +34,7 @@ import ro.cs.tao.services.model.auth.AuthInfo;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.StringTokenizer;
 
 /**
@@ -110,7 +111,7 @@ public class AuthenticationController extends BaseController {
             return handleException(ex);
         } finally {
             if (success) {
-                debug("Token refreshed for %s", userName);
+                trace("Token refreshed for %s", userName);
             } else {
                 warn("Token refresh failed for %s", userName);
             }
@@ -124,7 +125,7 @@ public class AuthenticationController extends BaseController {
             if (st.hasMoreTokens()) {
                 String basic = st.nextToken();
                 if (basic.equalsIgnoreCase("Basic")) {
-                    String credentials = new String(Base64.decodeBase64(st.nextToken()), "UTF-8");
+                    String credentials = new String(Base64.decodeBase64(st.nextToken()), StandardCharsets.UTF_8);
                     int separatorPosition = credentials.indexOf(":");
                     if (separatorPosition != -1) {
                         username = credentials.substring(0, separatorPosition).trim();
