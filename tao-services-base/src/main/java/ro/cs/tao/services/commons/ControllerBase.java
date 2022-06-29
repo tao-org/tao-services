@@ -149,6 +149,14 @@ public abstract class ControllerBase {
         }
     }
 
+    protected void trace(String message, Object... args) {
+        if (args != null && args.length > 0) {
+            logger.finest(String.format(message, args));
+        } else {
+            logger.finest(message);
+        }
+    }
+
     protected void debug(String message, Object... args) {
         if (args != null && args.length > 0) {
             logger.fine(String.format(message, args));
