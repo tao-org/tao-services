@@ -39,6 +39,7 @@ import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
 import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
+import ro.cs.tao.services.model.component.ProductSetInfo;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
@@ -336,5 +337,25 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             throw new PersistenceException(String.format("Datasource with id '%s' not found", configuration.getId()));
         }
         this.configurationProvider.save(configuration);
+    }
+
+    @Override
+    public List<DataSourceComponent> getProductSets(String userName) throws PersistenceException {
+        return this.dataSourceComponentProvider.getProductSets(userName);
+    }
+
+    @Override
+    public DataSourceComponent updateProductSet(ProductSetInfo productSet) throws PersistenceException {
+        DataSourceComponent component = this.dataSourceComponentProvider.get(productSet.getId());
+        component.setLabel(productSet.getLabel());
+        component.setDescription(productSet.getDescription());
+        component.setTags(productSet.getTags());
+        SourceDescriptor descriptor = component.getSources().stream().filter(s -> DataSourceComponent.QUERY_PARAMETER.equals(s.getName())).findFirst().orElse(null);
+        if (descriptor != null) {
+            List<String> products = productSet.getProducts();
+            descriptor.getDataDescriptor().setLocation(products != null ? String.join(",", products) : null);
+            this.sourceDescriptorRepository.save(descriptor);
+        }
+        return this.dataSourceComponentProvider.update(component);
     }
 }

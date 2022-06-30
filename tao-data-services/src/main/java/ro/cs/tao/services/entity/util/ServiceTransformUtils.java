@@ -29,10 +29,7 @@ import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.services.entity.beans.RepositoryBean;
 import ro.cs.tao.services.entity.beans.RepositoryTypeBean;
 import ro.cs.tao.services.entity.beans.WPSContainerBean;
-import ro.cs.tao.services.model.component.DataSourceGroupInfo;
-import ro.cs.tao.services.model.component.DataSourceInfo;
-import ro.cs.tao.services.model.component.ProcessingComponentInfo;
-import ro.cs.tao.services.model.component.WPSComponentInfo;
+import ro.cs.tao.services.model.component.*;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
@@ -92,6 +89,16 @@ public final class ServiceTransformUtils {
         final List<DataSourceInfo> results = new ArrayList<>();
         for (DataSourceComponent component : components) {
             results.add(new DataSourceInfo(component));
+        }
+        return results;
+    }
+
+    public static List<ProductSetInfo> toProductSetInfos(final List<DataSourceComponent> components) {
+        final List<ProductSetInfo> results = new ArrayList<>();
+        if (components != null) {
+            for (DataSourceComponent component : components) {
+                results.add(new ProductSetInfo(component));
+            }
         }
         return results;
     }
