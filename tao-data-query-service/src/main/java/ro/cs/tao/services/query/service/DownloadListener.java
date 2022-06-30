@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.datasource.ProductStatusListener;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.quota.QuotaException;
@@ -27,9 +29,12 @@ public class DownloadListener implements ProductStatusListener {
     	
         try {
         	// check input quota before download
-        	if (product.getRefs() != null && !product.getRefs().contains(principal.getName()) && !UserQuotaManager.getInstance().checkUserInputQuota(principal, product.getApproximateSize())) {
-        		// do not allow for the download to start
-        		return false;
+        	if (product.getRefs() != null && !product.getRefs().contains(principal.getName())) {
+        		// do not allow for the download to start if quota exceeded
+                if (!UserQuotaManager.getInstance().checkUserInputQuota(principal, product.getApproximateSize())) {
+                    Messaging.send(principal, Topic.WARNING.getCategory(), "Quota exceeded");
+                    return false;
+                }
         	}
     	
         	// check if the product already exists

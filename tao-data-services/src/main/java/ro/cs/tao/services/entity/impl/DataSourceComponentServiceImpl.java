@@ -215,7 +215,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
                         }
                         userDSC.addSource(sourceDescriptorRepository.save(sourceDescriptor));
                     }
-                    TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
+                    TargetDescriptor targetDescriptor = targets.get(0);
                     targetDescriptor.setId(UUID.randomUUID().toString());
                     targetDescriptor.setParentId(newId);
                     targetDescriptor.setCardinality(productNames.size());
