@@ -44,6 +44,7 @@ import ro.cs.tao.services.entity.beans.*;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.*;
+import ro.cs.tao.services.model.component.ProductSetInfo;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
@@ -323,6 +324,34 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             service.saveConfiguration(configuration);
             return prepareResult("Succeeded", ResponseStatus.SUCCEEDED);
         } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/productset", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> listProductSets() {
+        try {
+            return prepareResult(ServiceTransformUtils.toProductSetInfos(this.service.getProductSets(currentUser())));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/productset", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> updateProductSet(@RequestBody ProductSetInfo productSet) {
+        try {
+            return prepareResult(new ProductSetInfo(this.service.updateProductSet(productSet)));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/productset", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> listProductSets(@RequestParam("id") String id) {
+        try {
+            this.service.delete(id);
+            return prepareResult(id, ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
             return handleException(e);
         }
     }
