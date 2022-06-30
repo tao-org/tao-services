@@ -19,10 +19,7 @@ package ro.cs.tao.services.entity.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
@@ -337,6 +334,15 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
+    @RequestMapping(value = "/productset/{id}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getProductSet(@PathVariable("id") String id) {
+        try {
+            return prepareResult(new ProductSetInfo(this.service.findById(id)));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
     @RequestMapping(value = "/productset", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateProductSet(@RequestBody ProductSetInfo productSet) {
         try {
@@ -346,8 +352,8 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/productset", method = RequestMethod.DELETE, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> listProductSets(@RequestParam("id") String id) {
+    @RequestMapping(value = "/productset/{id}", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> listProductSets(@PathVariable("id") String id) {
         try {
             this.service.delete(id);
             return prepareResult(id, ResponseStatus.SUCCEEDED);
