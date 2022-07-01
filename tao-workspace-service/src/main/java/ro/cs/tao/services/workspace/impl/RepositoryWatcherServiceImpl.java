@@ -13,7 +13,6 @@ import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.FileUtilities;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.*;
@@ -30,7 +29,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
 
     private static final Logger logger = Logger.getLogger(RepositoryWatcherServiceImpl.class.getName());
     private static final int BOUND = 10;
-    private static final String WORKSPACE_DIR = FileUtilities.asUnixPath(SystemVariable.ROOT.value().substring(SystemVariable.ROOT.value().lastIndexOf('/') + 1), false);
+    private static final String WORKSPACE_DIR = SystemVariable.ROOT.value().substring(SystemVariable.ROOT.value().lastIndexOf('/') + 1).replace("\\", "/");
 
     private BlockingQueue<String> eventsQueue;
     private WatchService watcher;
@@ -180,7 +179,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
      * @return username
      */
     private String getUserName(String path) {
-        final StringTokenizer dirTokenizer = new StringTokenizer(FileUtilities.asUnixPath(path, false), File.separator);
+        final StringTokenizer dirTokenizer = new StringTokenizer(path.replace("\\", "/"), "/");
         while (dirTokenizer.hasMoreElements()) {
             String nextDirectory = dirTokenizer.nextToken();
             if (nextDirectory.equalsIgnoreCase(WORKSPACE_DIR)) {
