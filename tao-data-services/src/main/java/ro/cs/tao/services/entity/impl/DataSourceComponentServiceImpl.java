@@ -35,12 +35,15 @@ import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.SensorType;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
 import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.model.component.ProductSetInfo;
+import ro.cs.tao.workspaces.Repository;
 
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -60,6 +63,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     private TagProvider tagProvider;
     @Autowired
     private DataSourceConfigurationProvider configurationProvider;
+    @Autowired
+    private RepositoryProvider repositoryProvider;
 
     @Autowired
     private SourceDescriptorRepository sourceDescriptorRepository;
@@ -169,9 +174,12 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         if (queryId != null) {
             userDSC = dataSourceComponentProvider.getQueryDataSourceComponent(queryId);
         }
+        final Repository repository = this.repositoryProvider.getByUserAndName(principal.getName(), "LOCAL");
         if (userDSC != null) {
             SourceDescriptor sourceDescriptor = userDSC.getSources().stream().filter(s -> s.getName().equals("query")).findFirst().get();
-            sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
+            sourceDescriptor.getDataDescriptor().setLocation(productNames.stream()
+                                                                         .map(n -> Paths.get(repository.resolve(n)).toUri().toString())
+                                                                         .collect(Collectors.joining(",")));
             sourceDescriptor = sourceDescriptorRepository.save(sourceDescriptor);
             userDSC = dataSourceComponentProvider.update(userDSC);
         } else {
@@ -249,6 +257,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         if (principal == null) {
             throw new IllegalArgumentException("Invalid principal (null)");
         }
+        final Repository repository = this.repositoryProvider.getByUserAndName(principal.getName(), "LOCAL");
         DataSourceComponent userDSC = new DataSourceComponent("n/a", "Local");
         userDSC.setFetchMode(FetchMode.OVERWRITE);
         userDSC.setVersion("1.0");
@@ -261,11 +270,13 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
                                          time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         userDSC.setId(newId);
         userDSC.getSources().forEach(s -> s.setParentId(newId));
-        userDSC.getTargets().forEach(t ->t.setParentId(newId));
+        userDSC.getTargets().forEach(t -> t.setParentId(newId));
         userDSC.setLabel(label != null && !label.isEmpty() ? label : newId);
         SourceDescriptor sourceDescriptor = userDSC.getSources().stream().filter(s -> s.getName().equals(DataSourceComponent.QUERY_PARAMETER)).findFirst().get();
         sourceDescriptor.getDataDescriptor().setSensorType(SensorType.UNKNOWN);
-        sourceDescriptor.getDataDescriptor().setLocation(String.join(",", productNames));
+        sourceDescriptor.getDataDescriptor().setLocation(productNames.stream()
+                                                                     .map(n -> Paths.get(repository.resolve(n)).toUri().toString())
+                                                                     .collect(Collectors.joining(",")));
         sourceDescriptor.setCardinality(productNames.size());
         sourceDescriptorRepository.save(sourceDescriptor);
         TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
