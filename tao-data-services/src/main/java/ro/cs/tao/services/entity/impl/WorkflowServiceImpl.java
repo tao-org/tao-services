@@ -149,6 +149,11 @@ public class WorkflowServiceImpl
     }
 
     @Override
+    public List<WorkflowInfo> getUserVisibleWorkflows(String user) {
+        return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listUserVisible(user));
+    }
+
+    @Override
     public WorkflowInfo getWorkflowInfo(long workflowId) {
         return ServiceTransformUtils.toWorkflowInfo(workflowProvider.get(workflowId));
     }
