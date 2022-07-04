@@ -29,11 +29,16 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
 
     private static final Logger logger = Logger.getLogger(RepositoryWatcherServiceImpl.class.getName());
     private static final int BOUND = 10;
-    private static final String WORKSPACE_DIR = SystemVariable.ROOT.value().substring(SystemVariable.ROOT.value().lastIndexOf('/') + 1).replace("\\", "/");
+    private static final String WORKSPACE_DIR;
 
     private BlockingQueue<String> eventsQueue;
     private WatchService watcher;
     private Map<WatchKey, Path> keys;
+
+    static {
+        String root = SystemVariable.ROOT.value().replace("\\", "/");
+        WORKSPACE_DIR = root.substring(root.lastIndexOf('/') + 1);
+    }
 
     @Autowired
     private UserProvider userProvider;
