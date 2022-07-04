@@ -20,6 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.BaseException;
+import ro.cs.tao.Sort;
+import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.component.ProcessingComponent;
@@ -40,10 +42,7 @@ import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
 import ro.cs.tao.workflow.enums.Status;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -62,6 +61,20 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     @Autowired
     private WorkflowNodeProvider workflowNodeProvider;
+
+    @Override
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
+                                                   @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
+                                                   @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
+                                                   @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
+        if (pageNumber.isPresent() && sortByField.isPresent()) {
+            Sort sort = new Sort().withField(sortByField.get(), sortDirection.orElse(SortDirection.ASC));
+            return prepareResult(service.list(pageNumber, pageSize, sort));
+        } else {
+            return prepareResult(service.getUserVisibleWorkflows(currentUser()));
+        }
+    }
 
     @Override
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
@@ -166,6 +179,10 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         try {
             // until UI exposes this, default preserveOutput to true;
             node.setPreserveOutput(true);
+            final ProcessingComponent component = componentService.findById(node.getComponentId());
+            if (component != null && (node.getAdditionalInfo() == null || node.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))) {
+                node.addInfo("nodeAffinity", component.getNodeAffinity());
+            }
             responseEntity = prepareResult(service.addNode(workflowId, node));
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
