@@ -127,7 +127,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
 
     @Override
     public void delete(String id) throws PersistenceException {
-        throw new UnsupportedOperationException("Data source components cannot be deleted");
+        if (id.startsWith("product-set-")) {
+            dataSourceComponentProvider.delete(id);
+        } else {
+            throw new UnsupportedOperationException("Data source components cannot be deleted");
+        }
     }
 
     @Override
