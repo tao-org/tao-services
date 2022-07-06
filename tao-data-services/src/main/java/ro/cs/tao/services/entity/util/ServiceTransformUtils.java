@@ -93,11 +93,11 @@ public final class ServiceTransformUtils {
         return results;
     }
 
-    public static List<ProductSetInfo> toProductSetInfos(final List<DataSourceComponent> components) {
+    public static List<ProductSetInfo> toProductSetInfos(final List<DataSourceComponent> components, String user) {
         final List<ProductSetInfo> results = new ArrayList<>();
         if (components != null) {
             for (DataSourceComponent component : components) {
-                results.add(new ProductSetInfo(component));
+                results.add(new ProductSetInfo(component, user));
             }
         }
         return results;
