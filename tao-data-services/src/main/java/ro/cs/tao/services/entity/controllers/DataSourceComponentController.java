@@ -328,7 +328,8 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     @RequestMapping(value = "/productset", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listProductSets() {
         try {
-            return prepareResult(ServiceTransformUtils.toProductSetInfos(this.service.getProductSets(currentUser())));
+            final String user = currentUser();
+            return prepareResult(ServiceTransformUtils.toProductSetInfos(this.service.getProductSets(user), user));
         } catch (Exception e) {
             return handleException(e);
         }
@@ -337,7 +338,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     @RequestMapping(value = "/productset/{id}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getProductSet(@PathVariable("id") String id) {
         try {
-            return prepareResult(new ProductSetInfo(this.service.findById(id)));
+            return prepareResult(new ProductSetInfo(this.service.findById(id), currentUser()));
         } catch (Exception e) {
             return handleException(e);
         }
@@ -346,7 +347,11 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     @RequestMapping(value = "/productset", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateProductSet(@RequestBody ProductSetInfo productSet) {
         try {
-            return prepareResult(new ProductSetInfo(this.service.updateProductSet(productSet)));
+            if (productSet.getProducts() != null) {
+                Repository localRepository = getLocalRepository(currentUser());
+                productSet.getProducts().forEach(localRepository::resolve);
+            }
+            return prepareResult(new ProductSetInfo(this.service.updateProductSet(productSet), currentUser()));
         } catch (Exception e) {
             return handleException(e);
         }
