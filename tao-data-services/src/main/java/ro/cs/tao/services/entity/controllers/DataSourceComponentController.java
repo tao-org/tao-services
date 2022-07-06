@@ -353,7 +353,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     }
 
     @RequestMapping(value = "/productset/{id}", method = RequestMethod.DELETE, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> listProductSets(@PathVariable("id") String id) {
+    public ResponseEntity<ServiceResponse<?>> deleteProductSet(@PathVariable("id") String id) {
         try {
             this.service.delete(id);
             return prepareResult(id, ResponseStatus.SUCCEEDED);

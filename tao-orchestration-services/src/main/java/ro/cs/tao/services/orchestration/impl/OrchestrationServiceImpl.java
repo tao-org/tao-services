@@ -64,9 +64,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public long startWorkflow(long workflowId, String description, Map<String, Map<String, String>> inputs) throws ExecutionException {
-        final ExecutionJob job = Orchestrator.getInstance().startWorkflow(SessionStore.currentContext(), workflowId, description, inputs,
-                                                                                   new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
-                                                                                                                                SecurityContextHolder.getContext()));
+        ensureUserExecutor(2);
+        final ExecutionJob job = Orchestrator.getInstance().startWorkflow(SessionStore.currentContext(), workflowId, description, inputs);
         return job != null ? job.getId() : -1;
     }
 
@@ -90,9 +89,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public ExecutionJob createJobExternal(long workflowId, String jobName, Map<String, Map<String, String>> inputs) throws ExecutionException {
-        return Orchestrator.getInstance().createJob(SessionStore.currentContext(), workflowId, jobName, inputs,
-                                                    new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(1),
-                                                                                                 SecurityContextHolder.getContext()));
+        ensureUserExecutor(1);
+        return Orchestrator.getInstance().createJob(SessionStore.currentContext(), workflowId, jobName, inputs);
     }
 
     @Override
@@ -241,5 +239,15 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 return new DelegatingSecurityContextRunnable(runnable, SecurityContextHolder.getContext());
             }
         });
+    }
+
+    private void ensureUserExecutor(int numThreads) {
+        final Orchestrator orchestrator = Orchestrator.getInstance();
+        final String user = SessionStore.currentContext().getPrincipal().getName();
+        if (!orchestrator.getUserExecutors().containsKey(SessionStore.currentContext().getPrincipal().getName())) {
+            orchestrator.getUserExecutors().put(user,
+                                                new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(numThreads),
+                                                                                             SecurityContextHolder.getContext()));
+        }
     }
 }

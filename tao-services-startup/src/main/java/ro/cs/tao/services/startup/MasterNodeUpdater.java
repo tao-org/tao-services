@@ -5,7 +5,7 @@ import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.execution.ExecutionsManager;
 import ro.cs.tao.execution.Executor;
-import ro.cs.tao.execution.drmaa.DrmaaTaoExecutor;
+import ro.cs.tao.execution.drmaa.DRMAAExecutor;
 import ro.cs.tao.execution.monitor.OSRuntimeInfo;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
 import ro.cs.tao.topology.*;
@@ -76,9 +76,9 @@ public class MasterNodeUpdater extends BaseLifeCycle {
                         nodeService.setStatus(DockerHelper.isDockerFound() ? ServiceStatus.INSTALLED : ServiceStatus.NOT_FOUND);
                         // check CRM on master
                         Set<Executor> executors = ExecutionsManager.getInstance().getRegisteredExecutors();
-                        Executor<?> executor = executors.stream().filter(e -> e instanceof DrmaaTaoExecutor).findFirst().orElse(null);
+                        Executor<?> executor = executors.stream().filter(e -> e instanceof DRMAAExecutor).findFirst().orElse(null);
                         if (executor != null) {
-                            DrmaaTaoExecutor taoExecutor = (DrmaaTaoExecutor) executor;
+                            DRMAAExecutor taoExecutor = (DRMAAExecutor) executor;
                             nodeService = new NodeServiceStatus();
                             name = taoExecutor.getDRMName();
                             version = taoExecutor.getDRMVersion();

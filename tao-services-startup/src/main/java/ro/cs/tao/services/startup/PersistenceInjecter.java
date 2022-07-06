@@ -2,11 +2,12 @@ package ro.cs.tao.services.startup;
 
 import ro.cs.tao.execution.Executor;
 import ro.cs.tao.execution.TaskStatusListener;
-import ro.cs.tao.execution.drmaa.DrmaaTaoExecutor;
+import ro.cs.tao.execution.drmaa.DRMAAExecutor;
 import ro.cs.tao.execution.local.NullExecutor;
 import ro.cs.tao.execution.local.QueryExecutor;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.execution.wps.WPSExecutor;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.security.SessionStore;
@@ -15,9 +16,11 @@ import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.utils.ExceptionUtils;
 
 import javax.security.auth.spi.LoginModule;
 import java.util.Set;
+import java.util.logging.Logger;
 
 //import ro.cs.tao.execution.wps.WPSExecutor;
 
@@ -31,19 +34,25 @@ public class PersistenceInjecter extends BaseLifeCycle {
     @Override
     public void onStartUp() {
         Executor.addStatusListener(new TaskStatusListener() {
+            final Logger logger = Logger.getLogger(TaskStatusListener.class.getName());
             @Override
             public void taskStatusChanged(ExecutionTask task, ExecutionStatus status) {
                 try {
-                    persistenceManager.tasks().updateStatus(task, status);
+                    if (task.getExecutionStatus() != status) {
+                        StackTraceElement element = Thread.currentThread().getStackTrace()[2];
+                        persistenceManager.tasks().updateStatus(task, status, "From " + element.getClassName() + ":" + element.getMethodName());
+                        logger.fine("Task " + TaskUtilities.getTaskName(task) + " changed to " + status);
+                    }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.severe(ExceptionUtils.getStackTrace(logger, e));
                 }
             }
 
             @Override
             public void taskChanged(ExecutionTask task) {
                 try {
-                    persistenceManager.tasks().update(task);
+                    task = persistenceManager.tasks().update(task);
+                    logger.fine("Task " + TaskUtilities.getTaskName(task) + " updated (status is " + task.getExecutionStatus() + ")");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -52,8 +61,8 @@ public class PersistenceInjecter extends BaseLifeCycle {
         QueryExecutor.setProductProvider(persistenceManager.rasterData());
         QueryExecutor.setWorkflowProvider(persistenceManager.workflows());
         QueryExecutor.setDataSourceConfigurationProvider(persistenceManager.dataSourceConfigurationProvider());
-        DrmaaTaoExecutor.setTaskProvider(persistenceManager.tasks());
-        DrmaaTaoExecutor.setContainerProvider(persistenceManager.containers());
+        DRMAAExecutor.setTaskProvider(persistenceManager.tasks());
+        DRMAAExecutor.setContainerProvider(persistenceManager.containers());
         WPSExecutor.setTaskProvider(persistenceManager.tasks());
         WPSExecutor.setJobProvider(persistenceManager.jobs());
         WPSExecutor.setAuthenticationProvider(persistenceManager.wpsAuthentication());

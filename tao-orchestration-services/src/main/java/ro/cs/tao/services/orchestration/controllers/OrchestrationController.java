@@ -61,8 +61,8 @@ public class OrchestrationController extends BaseController {
         ResponseEntity<ServiceResponse<?>> response;
         try {
         	final long jobID = orchestrationService.startWorkflow(request.getWorkflowId(),
-                    request.getName(),
-                    request.getParameters());
+                                                                  request.getName(),
+                                                                  request.getParameters());
         	if (jobID != -1) {
                 response = prepareResult(jobID, "Execution started");
         	} else {
