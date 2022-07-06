@@ -41,7 +41,6 @@ import ro.cs.tao.persistence.*;
 import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
 import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.security.SessionStore;
-import ro.cs.tao.services.commons.TransactionalMethod;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;

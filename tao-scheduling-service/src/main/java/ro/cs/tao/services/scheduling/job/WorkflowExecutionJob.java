@@ -130,13 +130,15 @@ public class WorkflowExecutionJob extends AbstractJob {
 		// send a new execution to the orchestrator
 		final long workflowId = dataMap.getLongValue(WORKFLOW_ID_KEY);
 		final String description = dataMap.getString(DESCRIPTION_KEY);
-		
-		
-		final ExecutionJob job = Orchestrator.getInstance().startWorkflow(context, workflowId, description,
-																		  new HashMap<>(inputs),
-																		  new DelegatingSecurityContextExecutorService(
-																		  		Executors.newFixedThreadPool(2),
-																				SecurityContextHolder.getContext()));
+
+		final Orchestrator orchestrator = Orchestrator.getInstance();
+		final String user = SessionStore.currentContext().getPrincipal().getName();
+		if (!orchestrator.getUserExecutors().containsKey(SessionStore.currentContext().getPrincipal().getName())) {
+			orchestrator.getUserExecutors().put(user,
+												new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
+																							 SecurityContextHolder.getContext()));
+		}
+		final ExecutionJob job = orchestrator.startWorkflow(context, workflowId, description, new HashMap<>(inputs));
 		
 		// save the job id to the job details map
 		if (job != null) {
