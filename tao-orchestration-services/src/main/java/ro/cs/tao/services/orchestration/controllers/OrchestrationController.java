@@ -203,9 +203,24 @@ public class OrchestrationController extends BaseController {
             if (request == null) {
                 throw new Exception("Empty body");
             }
+            final Map<String, String> parameters = request.getParameters();
+            if (parameters != null) {
+                if (parameters.containsKey("startDate")) {
+                    parameters.put("service~startDate", parameters.get("startDate"));
+                    parameters.remove("startDate");
+                }
+                if (parameters.containsKey("endDate")) {
+                    parameters.put("service~endDate", parameters.get("endDate"));
+                    parameters.remove("endDate");
+                }
+                if (parameters.containsKey("footprint")) {
+                    parameters.put("service~footprint", parameters.get("footprint"));
+                    parameters.remove("footprint");
+                }
+            }
             final long jobId = orchestrationService.invokeWPS(request.getWpsId(),
                                                               new HashMap<String, Map<String, String>>() {{
-                                                                  put(request.getWpsId(), request.getParameters());
+                                                                  put(request.getWpsId(), parameters);
                                                               }});
             return jobId != -1 ?
                     prepareResult(jobId, "Execution started") :
