@@ -109,7 +109,7 @@ public class AdministrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/users/{username}", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/users/{username}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateUserInfo(@RequestBody User updatedUserInfo) {
         if (updatedUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
