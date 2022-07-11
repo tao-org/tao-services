@@ -51,6 +51,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -507,8 +508,9 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     private List<Path> list(Path path, int depth) throws IOException {
-        return Files.walk(path, depth)
-                    .filter(p -> !p.equals(path) && !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
-                    .collect(Collectors.toList());
+        try (Stream<Path> stream = Files.walk(path, depth)) {
+            return stream.filter(p -> !p.equals(path) && !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
+                         .collect(Collectors.toList());
+        }
     }
 }

@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Controller
 @RequestMapping("/utilities")
@@ -96,18 +97,21 @@ public class UtilityConroller extends BaseController {
     }
 
     private Path getFile(Path cachePath, String url, String productName, String userName, String pwd) throws IOException {
-        Path file = Files.list(cachePath).filter(f -> f.getFileName().toString().startsWith(productName)).findFirst().orElse(null);
-        if (file == null) {
-            URL checkUrl = new URL(url);
-            Credentials credentials = null;
-            if (!StringUtilities.isNullOrEmpty(userName) && !StringUtilities.isNullOrEmpty(pwd)) {
-                credentials = new UsernamePasswordCredentials(userName, pwd);
+        Path file;
+        try(Stream<Path> stream = Files.list(cachePath)) {
+            file = stream.filter(f -> f.getFileName().toString().startsWith(productName)).findFirst().orElse(null);
+            if (file == null) {
+                URL checkUrl = new URL(url);
+                Credentials credentials = null;
+                if (!StringUtilities.isNullOrEmpty(userName) && !StringUtilities.isNullOrEmpty(pwd)) {
+                    credentials = new UsernamePasswordCredentials(userName, pwd);
+                }
+                NetStreamResponse response = NetUtils.getResponseAsStream(url, credentials);
+                String extension = response.getName() != null ?
+                                   response.getName().substring(response.getName().lastIndexOf('.')) : ".jpg";
+                file = cachePath.resolve(productName + extension);
+                Files.write(file, response.getStream(), StandardOpenOption.CREATE);
             }
-            NetStreamResponse response = NetUtils.getResponseAsStream(url, credentials);
-            String extension = response.getName() != null ?
-                    response.getName().substring(response.getName().lastIndexOf('.')) : ".jpg";
-            file = cachePath.resolve(productName + extension);
-            Files.write(file, response.getStream(), StandardOpenOption.CREATE);
         }
         return file;
     }

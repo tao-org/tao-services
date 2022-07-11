@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Cosmin Cara
@@ -136,18 +137,20 @@ public class TaoServicesStartup extends StartupBase {
         final Path cachePath = Paths.get(sitePath).resolve("previews");
         try {
             long size = FileUtilities.folderSize(cachePath);
-            List<Path> files = Files.list(cachePath).sorted((o1, o2) -> {
-                try {
-                    return Files.getLastModifiedTime(o2).compareTo(Files.getLastModifiedTime(o1));
-                } catch (IOException e) {
-                    return 0;
+            try (Stream<Path> stream = Files.list(cachePath)) {
+                List<Path> files = stream.sorted((o1, o2) -> {
+                    try {
+                        return Files.getLastModifiedTime(o2).compareTo(Files.getLastModifiedTime(o1));
+                    } catch (IOException e) {
+                        return 0;
+                    }
+                }).collect(Collectors.toList());
+                while (size >= limit) {
+                    Path file = files.get(files.size() - 1);
+                    size -= Files.size(file);
+                    Files.delete(file);
+                    files.remove(files.size() - 1);
                 }
-            }).collect(Collectors.toList());
-            while (size >= limit) {
-                Path file = files.get(files.size() - 1);
-                size -= Files.size(file);
-                Files.delete(file);
-                files.remove(files.size() - 1);
             }
         } catch (IOException e) {
             logger.warning("Exception encountered while cleaning up cache: " + e.getMessage());

@@ -51,6 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service("productService")
 public class ProductServiceImpl extends EntityService<EOProduct> implements ProductService {
@@ -144,9 +145,9 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 			throw new IOException("No product inspector found");
 		}
 		List<EOProduct> results = new ArrayList<>();
-		try {
-			Path source = Paths.get(repository.resolve(sourcePath));
-			List<Path> files = Files.walk(Paths.get(repository.resolve(sourcePath)), 1).collect(Collectors.toList());
+		Path source = Paths.get(repository.resolve(sourcePath));
+		try (Stream<Path> stream = Files.walk(Paths.get(repository.resolve(sourcePath)), 1)){
+			List<Path> files = stream.collect(Collectors.toList());
 			files.removeIf(f -> f.equals(source));
 			Path userFolder = Paths.get(repository.root());
 			for (Path file : files) {
@@ -256,9 +257,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		final Object lock = new Object();
 		final AtomicBoolean firstFail = new AtomicBoolean(true);
 		final Principal principal = SessionStore.currentContext().getPrincipal();
-		final List<String> skippedProducts = new ArrayList<String>();
-		try {
-			List<Path> folders = Files.walk(srcPath, 1).collect(Collectors.toList());
+		try (Stream<Path> stream = Files.walk(srcPath, 1)) {
+			List<Path> folders = stream.collect(Collectors.toList());
 			Path publicFolder = Paths.get(SystemVariable.USER_WORKSPACE.value());
 			Parallel.For(0, folders.size(), (idx) -> {
 				Path folder = folders.get(idx);
