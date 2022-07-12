@@ -531,6 +531,30 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         }
     }
 
+    @GetMapping(value = "/read", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> readAsText(@RequestParam("repositoryId") String repositoryId,
+                                                         @RequestParam("file") String file,
+                                                         @RequestParam(required = false, name = "lines") Integer lines,
+                                                         @RequestParam(required = false, name = "skip") Integer skipLines) {
+        try {
+            if (StringUtilities.isNullOrEmpty(file)) {
+                throw new IllegalArgumentException("Not a file");
+            }
+            final Repository repository = repositoryProvider.get(repositoryId);
+            if (repository == null) {
+                throw new IllegalArgumentException("Invalid repository");
+            }
+            final StorageService storageService = getRepositoryService(repository);
+            final int nLines = lines != null ? lines : 30;
+            final int nSkip = skipLines != null ? skipLines : 0;
+            return prepareResult(storageService.readAsText(storageService.download(repository.bucketName()
+                                                                                           + "/" +
+                                                                                           repository.relativizeToBucket(file)),
+                                                           nLines, nSkip));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
 
     private void queueFile(String batchId, FileObject file, Repository source, Repository destination, String folder, boolean move, boolean overwrite) {
         final TransferableItem request = new TransferableItem(currentUser(), batchId, source, file, destination, folder, move, overwrite);
