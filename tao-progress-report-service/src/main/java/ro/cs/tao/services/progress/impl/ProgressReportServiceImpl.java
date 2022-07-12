@@ -87,7 +87,9 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
         } else if (message instanceof ActivityProgress) {
             ActivityProgress casted = (ActivityProgress) message;
             taskName = casted.getTaskName();
-            tasksInProgress.put(taskName, new TaskProgress(taskName, category, casted.getProgress()));
+            taskProgress = new TaskProgress(taskName, category, casted.getProgress());
+            taskProgress.setInfo(casted.getItems());
+            tasksInProgress.put(taskName, taskProgress);
         }
     }
 

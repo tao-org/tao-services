@@ -16,7 +16,7 @@ public class Sen2CorProductInfo implements ProductInfo {
     private static final String[] BANDS_SUFFIXES = {"B02_10m", "B03_10m", "B04_10m"};
     private static final int[] BANDS_INDEXES = {1};
     private static final Integer PIXELS_MIN_SCALE = 0;
-    private static final Integer PIXELS_MAX_SCALE = 22270;
+    private static final Integer PIXELS_MAX_SCALE = 32767;
     private static final Integer BANDS_NO_DATA_VALUE = 0;
 
     private final String productName;

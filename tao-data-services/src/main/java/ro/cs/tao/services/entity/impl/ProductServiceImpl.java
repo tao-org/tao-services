@@ -19,12 +19,15 @@ package ro.cs.tao.services.entity.impl;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.ProgressListener;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
+import ro.cs.tao.messaging.ProgressNotifier;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.quota.QuotaException;
@@ -44,6 +47,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -144,12 +148,22 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		if (services == null) {
 			throw new IOException("No product inspector found");
 		}
+		logger.fine("Inspection of " + sourcePath + " starting");
 		List<EOProduct> results = new ArrayList<>();
 		Path source = Paths.get(repository.resolve(sourcePath));
+		final ProgressListener progressListener = new ProgressNotifier(SessionStore.currentContext().getPrincipal(),
+																	   sourcePath,
+																	   Topic.TRANSFER_PROGRESS,
+																	   new HashMap<String, String>() {{
+																		   put("Repository", repository.getId());
+																	   }});
 		try (Stream<Path> stream = Files.walk(Paths.get(repository.resolve(sourcePath)), 1)){
 			List<Path> files = stream.collect(Collectors.toList());
 			files.removeIf(f -> f.equals(source));
 			Path userFolder = Paths.get(repository.root());
+			final double size = files.size();
+			int count = 1;
+			progressListener.started(sourcePath);
 			for (Path file : files) {
 				try {
 					if (file.endsWith(".aux.xml")) {
@@ -171,6 +185,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 					} else {
 						targetPath = file;
 					}
+					List<EOProduct> list = productProvider.getByLocation(targetPath.toAbsolutePath().toUri().toString());
+					EOProduct product = null;
 					inspector = services.stream()
 							.filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath)).findFirst()
 							.orElse(services.stream()
@@ -180,20 +196,26 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 						logger.warning("No inspector suitable found for " + file);
 						continue;
 					}
-					MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
-					if (metadata != null) {
-						EOProduct product = metadata.toProductDescriptor(targetPath);
-						product.setEntryPoint(metadata.getEntryPoint());
-						product.addReference(SessionStore.currentContext().getPrincipal().getName());
-						product.setVisibility(Visibility.PUBLIC);
-						product.setAcquisitionDate(metadata.getAquisitionDate());
-						if (metadata.getSize() != null) {
-							product.setApproximateSize(metadata.getSize());
+					if (list.size() == 0) {
+						MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
+						if (metadata != null) {
+							product = metadata.toProductDescriptor(targetPath);
+							product.setEntryPoint(metadata.getEntryPoint());
+							product.addReference(SessionStore.currentContext().getPrincipal().getName());
+							product.setVisibility(Visibility.PUBLIC);
+							product.setAcquisitionDate(metadata.getAquisitionDate());
+							if (metadata.getSize() != null) {
+								product.setApproximateSize(metadata.getSize());
+							}
+							if (metadata.getProductId() != null) {
+								product.setId(metadata.getProductId());
+							}
+							product.setProductStatus(ProductStatus.PRODUCED);
 						}
-						if (metadata.getProductId() != null) {
-							product.setId(metadata.getProductId());
-						}
-						product.setProductStatus(ProductStatus.PRODUCED);
+					} else {
+						product = list.get(0);
+					}
+					if (product != null) {
 						try {
 							Path quicklook = OutputDataHandlerManager.getInstance().applyHandlers(file);
 							if (quicklook != null) {
@@ -204,7 +226,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 						}
 						product = productProvider.save(product);
 						results.add(product);
-						logger.fine("Inspection of " + file + " completed");
+						logger.finest("Inspection of " + file + " completed");
 						if (Files.isRegularFile(file)) {
 							Files.deleteIfExists(Paths.get(file + ".aux.xml"));
 						}
@@ -212,9 +234,13 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 				} catch (Exception e1) {
 					logger.warning(String.format("Import for %s failed. Reason: %s", file, e1.getMessage()));
 				}
+				progressListener.notifyProgress((double) count++ / size);
 			}
 		} catch (Exception e) {
 			throw new IOException(e);
+		} finally {
+			progressListener.ended();
+			logger.fine("Inspection of " + sourcePath + " completed");
 		}
 		return results;
 	}

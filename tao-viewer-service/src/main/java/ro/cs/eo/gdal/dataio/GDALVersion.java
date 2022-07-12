@@ -1,5 +1,7 @@
 package ro.cs.eo.gdal.dataio;
 
+import ro.cs.tao.component.SystemVariable;
+
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Path;
@@ -27,7 +29,7 @@ public enum GDALVersion {
     private static final String GDALINFIO_EXECUTABLE_NAME = "gdalinfo";
     private static final String GDAL_INFO_CMD = GDALINFIO_EXECUTABLE_NAME + " --version";
 
-    private static final String SNAP_PREFS_DIR=".snap/auxdata";
+    private static final String SNAP_PREFS_DIR="auxdata";
 
     private static final Logger logger = Logger.getLogger(GDALVersion.class.getName());
 
@@ -285,7 +287,7 @@ public enum GDALVersion {
      * @return the root directory path for install this version
      */
     private static Path getAuxDataPath(){
-        return Paths.get(System.getProperty("user.home")).resolve(SNAP_PREFS_DIR);
+        return Paths.get(SystemVariable.ROOT.value()).getParent().resolve(SNAP_PREFS_DIR);
     }
 
     /**

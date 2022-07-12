@@ -28,6 +28,8 @@ import ro.cs.tao.services.interfaces.ProgressReportService;
 import ro.cs.tao.services.progress.impl.Filter;
 import ro.cs.tao.utils.StringUtilities;
 
+import java.util.Base64;
+
 @Controller
 @RequestMapping("/progress")
 public class ProgressReportController extends ControllerBase {
@@ -45,7 +47,7 @@ public class ProgressReportController extends ControllerBase {
             f.setValue(currentUser());
             filter = f.toString();
         } else {
-            filter = jsonFilter;
+            filter = new String(Base64.getDecoder().decode(jsonFilter));
         }
         return prepareResult(progressReportService.getRunningTasks(category, filter));
     }
