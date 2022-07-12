@@ -44,8 +44,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.Principal;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -321,13 +324,18 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         }
         final int filesNameIndex = root.getNameCount() + 1;
         long size;
+        LocalDateTime lastModified;
         Map<String, String> currentAttributeMap = null;
         for (Path realPath : list) {
             //Path realPath = realRoot.resolve(path);
             try {
-                size = Files.size(realPath);
+                BasicFileAttributes attributes = Files.readAttributes(realPath, BasicFileAttributes.class);
+                size = attributes.size();
+                lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(attributes.lastModifiedTime().toMillis()),
+                                                       ZoneId.systemDefault());
             } catch (IOException e) {
                 size = -1;
+                lastModified = null;
             }
             final boolean isInFiles = realPath.getNameCount() > filesNameIndex && realPath.getName(filesNameIndex).toString().equals("files");
             final Path path = workspaceRoot.relativize(realPath);
@@ -336,6 +344,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                 pathToRecord += "/";
             }
             final FileObject fileObject = new FileObject(PROTOCOL, pathToRecord, Files.isDirectory(realPath), size);
+            fileObject.setLastModified(lastModified);
             if (isInFiles) {
                 if (auxAttributes.containsKey(realPath)) {
                     fileObject.setAttributes(auxAttributes.get(realPath));
