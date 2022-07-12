@@ -37,9 +37,7 @@ import ro.cs.tao.services.storage.BaseStorageService;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.workspaces.Repository;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -411,6 +409,14 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
             }
         } else {
             throw new IOException("Not a folder");
+        }
+    }
+
+    @Override
+    public String readAsText(FileSystemResource resource, int lines, int skipLines) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));
+             Stream<String> stream = reader.lines()) {
+            return stream.skip(skipLines).limit(lines).collect(Collectors.joining());
         }
     }
 
