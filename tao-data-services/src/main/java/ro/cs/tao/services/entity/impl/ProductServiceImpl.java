@@ -26,6 +26,8 @@ import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
+import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.EOProductProvider;
@@ -151,7 +153,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		logger.fine("Inspection of " + sourcePath + " starting");
 		List<EOProduct> results = new ArrayList<>();
 		Path source = Paths.get(repository.resolve(sourcePath));
-		final ProgressListener progressListener = new ProgressNotifier(SessionStore.currentContext().getPrincipal(),
+		Principal principal = SessionStore.currentContext().getPrincipal();
+		final ProgressListener progressListener = new ProgressNotifier(principal,
 																	   sourcePath,
 																	   Topic.TRANSFER_PROGRESS,
 																	   new HashMap<String, String>() {{
@@ -201,7 +204,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 						if (metadata != null) {
 							product = metadata.toProductDescriptor(targetPath);
 							product.setEntryPoint(metadata.getEntryPoint());
-							product.addReference(SessionStore.currentContext().getPrincipal().getName());
+							product.addReference(principal.getName());
 							product.setVisibility(Visibility.PUBLIC);
 							product.setAcquisitionDate(metadata.getAquisitionDate());
 							if (metadata.getSize() != null) {
@@ -241,6 +244,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		} finally {
 			progressListener.ended();
 			logger.fine("Inspection of " + sourcePath + " completed");
+			Messaging.send(principal, Topic.INFORMATION.getCategory(), Message.create(principal.getName(), ProductService.class.getName(), "Inspection operation found " + results.size() + " products"));
 		}
 		return results;
 	}

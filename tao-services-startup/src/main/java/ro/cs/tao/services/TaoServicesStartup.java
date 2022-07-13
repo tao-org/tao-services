@@ -41,10 +41,12 @@ import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.StartupBase;
 import ro.cs.tao.services.startup.LifeCycleProcessor;
+import ro.cs.tao.spi.OutputDataHandlerManager;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.utils.executors.FileProcessFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -117,6 +119,7 @@ public class TaoServicesStartup extends StartupBase {
                                               entry.getKey(), instances.stream().map(i -> i.getClass().getSimpleName())
                                                       .sorted().collect(Collectors.joining(","))));
                 }
+                OutputDataHandlerManager.getInstance().setFileProcessFactory(FileProcessFactory.createLocal());
                 final String url = cfgManager.getValue("tao.services.base");
                 logger.info(String.format("Web interface is accessible at %s", url));
                 Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.value(), new StartupCompletedMessage());

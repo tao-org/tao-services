@@ -91,8 +91,8 @@ public class TileReader {
             resolutions.append(resolution);
         }
         resolutions.append("]");
-
-        final Dataset gdalDataset = GDAL.open(productInfo.getProductBandsPaths()[0], GDALConst.gaReadonly());
+        String path = Paths.get(productInfo.getProductBandsPaths()[0]).toAbsolutePath().toString();
+        final Dataset gdalDataset = GDAL.open(path, GDALConst.gaReadonly());
         if (gdalDataset == null) {
             throw new IllegalStateException("Fail to open Dataset for file: " + productFilePath);
         }
@@ -105,11 +105,23 @@ public class TileReader {
 
     private static double[] translateImagePointToMercatorPoint(Dataset imageDataset, double x, double y) {
         final SpatialReference sourceSpatialReference = new SpatialReference();
-        if (imageDataset.getProjectionRef().isEmpty()) {
+        String projectionRef = imageDataset.getProjectionRef();
+        if (projectionRef.isEmpty()) {
             throw new IllegalArgumentException("Missing Geo-localisation data from dataset.");
         }
-        if (!GDALConstConstants.ceNone().equals(sourceSpatialReference.importFromWkt(imageDataset.getProjectionRef()))) {
-            throw new IllegalStateException("Unable to import Spatial Reference " + imageDataset.getProjectionRef() + " from WKT.");
+        /*if (projectionRef.contains("PROJCS")) {
+            WKTReader reader = new WKTReader();
+            Geometry geometry = null;
+            try {
+                geometry = reader.read(projectionRef);
+                WKTWriter2 writer = new WKTWriter2();
+                projectionRef = writer.write(geometry);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }*/
+        if (!GDALConstConstants.ceNone().equals(sourceSpatialReference.importFromWkt(projectionRef))) {
+            throw new IllegalStateException("Unable to import Spatial Reference " + projectionRef + " from WKT.");
         }
         if (destReference == null) {
             destReference = new SpatialReference();
@@ -122,7 +134,7 @@ public class TileReader {
             throw new RuntimeException("Cannot obtain coordinateTransformation");
         }
         final double[] mercatorPoint;
-        if (!sourceSpatialReference.getJniSpatialReferenceInstance().toString().contains("WGS 84")) {
+        if (!projectionRef.contains("WGS 84")) {
             mercatorPoint = coordinateTransformation.transformPoint(y, x);
         } else {
             mercatorPoint = coordinateTransformation.transformPoint(x, y);
@@ -167,7 +179,7 @@ public class TileReader {
         final List<Dataset> gdalDatasets = new ArrayList<>();
         final String[] productBandsPaths = productInfo.getProductBandsPaths();
         for (String productBandsPath : productBandsPaths) {
-            final Dataset gdalDataset = GDAL.open(productBandsPath, GDALConst.gaReadonly());
+            final Dataset gdalDataset = GDAL.open(Paths.get(productBandsPath).toAbsolutePath().toString(), GDALConst.gaReadonly());
             if (gdalDataset == null) {
                 throw new IllegalStateException("Fail to open Dataset for file: " + productBandsPath);
             }
