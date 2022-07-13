@@ -7,10 +7,10 @@ import java.nio.file.Paths;
 
 public class SingleBandProductInfo implements ProductInfo {
 
-    private static final int[] BANDS_INDEXES = {1};
+    private static final int[] BANDS_INDEXES = {0};
     private static final Integer PIXELS_MIN_SCALE = 0;
     private static final Integer PIXELS_MAX_SCALE = 5000;
-    private static final Integer BANDS_NO_DATA_VALUE = -10000;
+    private static final Integer BANDS_NO_DATA_VALUE = 0;
 
     private final String productName;
     private final String productPath;
@@ -59,6 +59,11 @@ public class SingleBandProductInfo implements ProductInfo {
     @Override
     public Integer getProductBandsNoDataValue() {
         return BANDS_NO_DATA_VALUE;
+    }
+
+    @Override
+    public boolean isMultiBandProduct() {
+        return false;
     }
 
     @Override
