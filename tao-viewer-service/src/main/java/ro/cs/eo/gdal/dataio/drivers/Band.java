@@ -149,6 +149,14 @@ public class Band {
         GDALReflection.callGDALLibraryMethod(CLASS_NAME, "GetScale", null, this.jniBandInstance, new Class[]{Double[].class}, new Object[]{val});
     }
 
+    public void getMinimum(Double[] val) {
+        GDALReflection.callGDALLibraryMethod(CLASS_NAME, "GetMinimum", null, this.jniBandInstance, new Class[]{Double[].class}, new Object[]{val});
+    }
+
+    public void getMaximum(Double[] val) {
+        GDALReflection.callGDALLibraryMethod(CLASS_NAME, "GetMaximum", null, this.jniBandInstance, new Class[]{Double[].class}, new Object[]{val});
+    }
+
     /**
      * Calls the JNI GDAL Band class GetUnitType() method
      *

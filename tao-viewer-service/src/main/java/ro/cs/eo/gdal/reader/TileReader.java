@@ -286,10 +286,15 @@ public class TileReader {
         translateOptions.add(String.valueOf(config.tileHeight));
         translateOptions.add("-a_srs");
         translateOptions.add("EPSG:" + config.tileGrid.projectionCode);
-        if (productInfo.getProductBandsPixelsMinScale() != null && productInfo.getProductBandsPixelsMaxScale() != null) {
+        Double[] val = new Double[1];
+        gdalDataset.getRasterBand(1).getMinimum(val);
+        Double minVal = val[0] != null ? val[0] : productInfo.getProductBandsPixelsMinScale();
+        gdalDataset.getRasterBand(1).getMaximum(val);
+        Double maxVal = val[0] != null ? val[0] : productInfo.getProductBandsPixelsMaxScale();
+        if (minVal != null && maxVal != null) {
             translateOptions.add("-scale");
-            translateOptions.add(String.valueOf(productInfo.getProductBandsPixelsMinScale()));
-            translateOptions.add(String.valueOf(productInfo.getProductBandsPixelsMaxScale()));
+            translateOptions.add(String.valueOf(minVal));
+            translateOptions.add(String.valueOf(maxVal));
         }
         if (!gdalDataset.getRasterBand(1).getDataType().equals(GDALConstConstants.gdtByte())) {
             translateOptions.add("-ot");
