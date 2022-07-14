@@ -26,7 +26,6 @@ import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
-import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
@@ -48,10 +47,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -61,6 +57,9 @@ import java.util.stream.Stream;
 
 @Service("productService")
 public class ProductServiceImpl extends EntityService<EOProduct> implements ProductService {
+	private static final Set<String> inspectionExclusions = new HashSet<String>() {{
+		add(".aux.xml"); add(".png"); add(".jpg");
+	}};
 
 	@Autowired
 	private EOProductProvider productProvider;
@@ -244,7 +243,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		} finally {
 			progressListener.ended();
 			logger.fine("Inspection of " + sourcePath + " completed");
-			Messaging.send(principal, Topic.INFORMATION.getCategory(), Message.create(principal.getName(), ProductService.class.getName(), "Inspection operation found " + results.size() + " products"));
+			Messaging.send(principal, Topic.INFORMATION.getCategory(), "Inspection of " + sourcePath + " found " + results.size() + " products");
 		}
 		return results;
 	}

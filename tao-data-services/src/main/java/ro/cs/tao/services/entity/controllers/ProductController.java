@@ -76,7 +76,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
                 error("Inspection of products in %s failed. Reason: %s", sourceDir, e.getMessage());
             }
         });
-        return prepareResult(String.format("Inspection of %s started. Please come back later to see the status.", sourceDir), ResponseStatus.SUCCEEDED);
+        return prepareResult(String.format("Inspection of %s started", sourceDir), ResponseStatus.SUCCEEDED);
     }
     /**
      * Imports the products from the given source folder into the TAO workspace.
