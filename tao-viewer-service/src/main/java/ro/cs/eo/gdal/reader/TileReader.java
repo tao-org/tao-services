@@ -109,17 +109,6 @@ public class TileReader {
         if (projectionRef.isEmpty()) {
             throw new IllegalArgumentException("Missing Geo-localisation data from dataset.");
         }
-        /*if (projectionRef.contains("PROJCS")) {
-            WKTReader reader = new WKTReader();
-            Geometry geometry = null;
-            try {
-                geometry = reader.read(projectionRef);
-                WKTWriter2 writer = new WKTWriter2();
-                projectionRef = writer.write(geometry);
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-        }*/
         if (!GDALConstConstants.ceNone().equals(sourceSpatialReference.importFromWkt(projectionRef))) {
             throw new IllegalStateException("Unable to import Spatial Reference " + projectionRef + " from WKT.");
         }
