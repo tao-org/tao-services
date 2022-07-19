@@ -262,7 +262,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             throw new IllegalArgumentException("Invalid principal (null)");
         }
         final Repository repository = this.repositoryProvider.getByUserAndName(principal.getName(), "LOCAL");
-        DataSourceComponent userDSC = new DataSourceComponent("n/a", "Local");
+        List<EOProduct> products = this.productProvider.getProductsByNames(productNames.toArray(new String[0]));
+        final String sensor = products != null && products.size() == productNames.size()
+                              && products.stream().map(EOProduct::getProductType).distinct().count() == 1
+                ? products.get(0).getProductType() : "n/a";
+        DataSourceComponent userDSC = new DataSourceComponent(sensor, "Local");
         userDSC.setFetchMode(FetchMode.OVERWRITE);
         userDSC.setVersion("1.0");
         userDSC.setDescription(label + " (local product set)");
