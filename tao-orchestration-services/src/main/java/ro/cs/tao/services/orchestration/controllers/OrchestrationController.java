@@ -92,11 +92,11 @@ public class OrchestrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/stop/{id}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> stop(@PathVariable("id") long workflowId) {
+    @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> stop(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            orchestrationService.stopJob(workflowId);
+            orchestrationService.stopJob(jobId);
             response = prepareResult("Execution stopped", ResponseStatus.SUCCEEDED);
         } catch (ExecutionException ex) {
             response = handleException(ex);
@@ -104,11 +104,11 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
-    @RequestMapping(value = "/pause/{id}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> pause(@PathVariable("id") long workflowId) {
+    @RequestMapping(value = "/pause", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> pause(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            orchestrationService.pauseJob(workflowId);
+            orchestrationService.pauseJob(jobId);
             response = prepareResult("Execution suspended", ResponseStatus.SUCCEEDED);
         } catch (ExecutionException ex) {
             response = handleException(ex);
@@ -116,11 +116,11 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
-    @RequestMapping(value = "/resume/{id}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> resume(@PathVariable("id") long workflowId) {
+    @RequestMapping(value = "/resume", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> resume(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            orchestrationService.resumeJob(workflowId);
+            orchestrationService.resumeJob(jobId);
             response = prepareResult("Execution resumed", ResponseStatus.SUCCEEDED);
         } catch (ExecutionException ex) {
             response = handleException(ex);
@@ -163,6 +163,16 @@ public class OrchestrationController extends BaseController {
             summaries = new ArrayList<>();
         }
         return prepareResult(summaries);
+    }
+
+    @RequestMapping(value = "/history", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> clearJobsHistory() {
+        try {
+            orchestrationService.clearJobHistory(currentUser());
+            return prepareResult("Job history deleted", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
 
     @RequestMapping(value = "/process", method = RequestMethod.POST, produces = "application/json")
