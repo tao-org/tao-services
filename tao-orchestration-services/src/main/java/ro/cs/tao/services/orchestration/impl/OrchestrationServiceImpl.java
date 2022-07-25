@@ -187,6 +187,17 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
+    public void clearJobHistory(String userName) throws PersistenceException {
+        final Set<ExecutionStatus> statuses = new HashSet<>();
+        Collections.addAll(statuses, ExecutionStatus.SUSPENDED, ExecutionStatus.DONE,
+                           ExecutionStatus.FAILED, ExecutionStatus.CANCELLED);
+        final List<ExecutionJob> jobs = jobProvider.list(userName, statuses);
+        for (ExecutionJob job : jobs) {
+            jobProvider.delete(job);
+        }
+    }
+
+    @Override
     public long startExternalWorkflow(String jsonGraph, String container, EndpointDescriptor callback) throws ExecutionException {
         final Set<ExternalGraphConverter> services = ServiceRegistryManager.getInstance().getServiceRegistry(ExternalGraphConverter.class).getServices();
         if (services == null || services.isEmpty()) {
