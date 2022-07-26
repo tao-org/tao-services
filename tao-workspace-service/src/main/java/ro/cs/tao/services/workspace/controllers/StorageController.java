@@ -291,7 +291,10 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
             final Repository workspace = getOwnedWorkspace(workspaceId);
             final StorageService service = getRepositoryService(workspace);
-            service.remove(file);
+            String[] list = file.split(",");
+            for (String f : list) {
+                service.remove(f);
+            }
             responseEntity = prepareResult(String.format("%s deleted", file), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);

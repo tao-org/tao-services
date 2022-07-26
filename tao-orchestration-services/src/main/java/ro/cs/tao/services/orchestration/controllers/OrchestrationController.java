@@ -116,12 +116,23 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
-    @RequestMapping(value = "/resume", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/resume", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> resume(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
             orchestrationService.resumeJob(jobId);
             response = prepareResult("Execution resumed", ResponseStatus.SUCCEEDED);
+        } catch (ExecutionException ex) {
+            response = handleException(ex);
+        }
+        return response;
+    }
+
+    @RequestMapping(value = "/purge", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> purgeJobs() {
+        ResponseEntity<ServiceResponse<?>> response;
+        try {
+            response = prepareResult(orchestrationService.purgeJobs(currentUser()));
         } catch (ExecutionException ex) {
             response = handleException(ex);
         }
