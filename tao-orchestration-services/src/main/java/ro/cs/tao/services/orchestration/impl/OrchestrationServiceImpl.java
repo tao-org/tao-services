@@ -109,6 +109,11 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
+    public int purgeJobs(String user) throws ExecutionException {
+        return Orchestrator.getInstance().purgeJobs(user);
+    }
+
+    @Override
     public List<ExecutionTaskSummary> getRunningTasks(String userName) {
         final List<ExecutionTaskSummary> summaries = new ArrayList<>();
         final Set<ExecutionStatus> statuses = new HashSet<>();
