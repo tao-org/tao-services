@@ -149,7 +149,7 @@ public class TileReader {
     }
 
     private static boolean tileInsideImage(Extent imageExtent, Extent tileExtent) {
-        return Math.max(tileExtent.xmin, imageExtent.xmin) < Math.min(tileExtent.xmax, imageExtent.xmax) &&
+        return Math.max(tileExtent.xmin, imageExtent.xmin) < Math.min(tileExtent.xmax, imageExtent.xmax) ||
                Math.max(tileExtent.ymin, imageExtent.ymin) < Math.min(tileExtent.ymax, imageExtent.ymax);
     }
 
