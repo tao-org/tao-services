@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.eo.gdal.reader.ImageInfo;
-import ro.cs.eo.gdal.reader.info.ProductInfo;
+import ro.cs.eo.gdal.reader.info.ProductDescriptor;
+import ro.cs.eo.gdal.reader.info.ProductDescriptorFactory;
 import ro.cs.eo.gdal.service.GDALTileMapService;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.RepositoryProvider;
@@ -52,9 +53,8 @@ public class ViewerController extends ControllerBase {
         try {
             final Repository localRepository = getLocalRepository();
             final String path = localRepository.resolve(relativePath);
-            final String name = relativePath.substring(relativePath.lastIndexOf('/') + 1);
-            ProductInfo productInfo = ProductInfo.getProductInfoInstance(name, path);
-            byte[] data = gdalTileMapService.getGDALTile(productInfo, z, x, y);
+            ProductDescriptor productDescriptor = ProductDescriptorFactory.getDescriptor(Paths.get(path));
+            byte[] data = gdalTileMapService.getGDALTile(productDescriptor, z, x, y);
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_PNG_VALUE);
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
         } catch (IndexOutOfBoundsException e) {
@@ -84,8 +84,8 @@ public class ViewerController extends ControllerBase {
             final Repository localRepository = getLocalRepository();
             final String path = localRepository.resolve(relativePath);
             final String name = relativePath.substring(relativePath.lastIndexOf('/') + 1);
-            ProductInfo productInfo = ProductInfo.getProductInfoInstance(name, path);
-            ImageInfo imageInfo = gdalTileMapService.getGDALImageInfo(productInfo);
+            ProductDescriptor productDescriptor = ProductDescriptorFactory.getDescriptor(Paths.get(path));
+            ImageInfo imageInfo = gdalTileMapService.getGDALImageInfo(productDescriptor);
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
             return new ResponseEntity<>(imageInfo.toJson(), headers, HttpStatus.OK);
         } catch (FileNotFoundException e) {

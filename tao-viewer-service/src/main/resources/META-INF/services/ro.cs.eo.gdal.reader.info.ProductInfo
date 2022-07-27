@@ -1,9 +1,0 @@
-ro.cs.eo.gdal.reader.info.SingleBandProductInfo
-ro.cs.eo.gdal.reader.info.landsat.L8Maja3ProductInfo
-ro.cs.eo.gdal.reader.info.landsat.L8Maja4ProductInfo
-ro.cs.eo.gdal.reader.info.sentinel.S2MajaProductInfo
-ro.cs.eo.gdal.reader.info.sentinel.Sen2AgriL3BProductInfo
-ro.cs.eo.gdal.reader.info.sentinel.Sen2CorProductInfo
-ro.cs.eo.gdal.reader.info.sentinel.S1BackscatterProductInfo
-ro.cs.eo.gdal.reader.info.sentinel.S1CoherenceProductInfo
-ro.cs.eo.gdal.reader.info.sentinel.S2L2MaskedProducInfo
