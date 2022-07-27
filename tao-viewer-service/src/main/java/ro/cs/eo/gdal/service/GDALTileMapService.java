@@ -5,7 +5,7 @@ import ro.cs.eo.gdal.dataio.GDALTileCache;
 import ro.cs.eo.gdal.dataio.Keys;
 import ro.cs.eo.gdal.reader.ImageInfo;
 import ro.cs.eo.gdal.reader.TileReader;
-import ro.cs.eo.gdal.reader.info.ProductInfo;
+import ro.cs.eo.gdal.reader.info.ProductDescriptor;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 
@@ -36,13 +36,13 @@ public class GDALTileMapService {
         this.gdalTileCache.setCacheDirPath(cacheDirPath);
     }
 
-    public byte[] getGDALTile(ProductInfo productInfo, byte z, int x, int y) throws FileNotFoundException {
+    public byte[] getGDALTile(ProductDescriptor productDescriptor, byte z, int x, int y) throws FileNotFoundException {
         try {
-            final Path sourceLocalFilePath = Paths.get(productInfo.getProductPath());
+            final Path sourceLocalFilePath = productDescriptor.getProductPath();
             if (Files.exists(sourceLocalFilePath)) {
                 final String imageFileName = sourceLocalFilePath.getFileName().toString().replaceAll(regEx, "$1");
                 Path tileFilePath = this.gdalTileCache.getTilePath(imageFileName, x, y, z);
-                this.tileReader.computeTile(productInfo, tileFilePath, x, y, z);
+                this.tileReader.computeTile(productDescriptor, tileFilePath, x, y, z);
                 return Files.readAllBytes(tileFilePath);
             } else {
                 throw new FileNotFoundException("Product path not exists.");
@@ -54,13 +54,13 @@ public class GDALTileMapService {
         }
     }
 
-    public synchronized ImageInfo getGDALImageInfo(ProductInfo productInfo) throws FileNotFoundException {
+    public synchronized ImageInfo getGDALImageInfo(ProductDescriptor productDescriptor) throws FileNotFoundException {
         try {
-            final Path sourceLocalFilePath = Paths.get(productInfo.getProductPath());
+            final Path sourceLocalFilePath = productDescriptor.getProductPath();
             if (!Files.exists(sourceLocalFilePath)) {
                 throw new FileNotFoundException("Product path not exists.");
             }
-            return this.tileReader.getInfo(productInfo);
+            return this.tileReader.getInfo(productDescriptor);
         } catch (FileNotFoundException e) {
             throw e;
         } catch (Exception ex) {
