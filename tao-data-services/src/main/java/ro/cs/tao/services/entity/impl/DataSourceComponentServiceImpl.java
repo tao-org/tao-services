@@ -373,7 +373,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         if (descriptor != null) {
             List<String> products = productSet.getProducts();
             descriptor.getDataDescriptor().setLocation(products != null ? String.join(",", products) : null);
+            descriptor.setCardinality(products != null ? products.size() : 1);
             this.sourceDescriptorRepository.save(descriptor);
+            TargetDescriptor targetDescriptor = component.getTargets().stream().filter(t -> DataSourceComponent.RESULTS_PARAMETER.equals(t.getName())).findFirst().get();
+            targetDescriptor.setCardinality(descriptor.getCardinality());
+            this.targetDescriptorRepository.save(targetDescriptor);
         }
         return this.dataSourceComponentProvider.update(component);
     }

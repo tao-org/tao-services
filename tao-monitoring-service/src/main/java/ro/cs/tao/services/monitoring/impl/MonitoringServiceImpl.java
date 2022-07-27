@@ -123,7 +123,12 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     @Override
     public List<Notification> getLiveNotifications() {
         final MessageConverter converter = new MessageConverter();
-        return getLastMessages().stream().map(converter::to).collect(Collectors.toList());
+        List<Notification> notifications = new ArrayList<>();
+        try {
+            notifications = getLastMessages().stream().map(converter::to).collect(Collectors.toList());
+        } catch (Exception e){
+        }
+        return notifications;
     }
 
     @Override
