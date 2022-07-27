@@ -1,5 +1,6 @@
 package ro.cs.eo.gdal.reader.info;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -12,6 +13,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ProductDescriptorFactory {
+    private static final TypeReference<Set<FormatDescriptor>> JSON_FORMAT_DESCRIPTOR_TYPE_REFERENCE = new TypeReference<Set<FormatDescriptor>>(){};
     private static final ProductDescriptorFactory instance;
     private final Set<FormatDescriptor> descriptors;
 
@@ -36,7 +38,7 @@ public class ProductDescriptorFactory {
     private ProductDescriptorFactory() throws IOException {
         this.descriptors = new HashSet<>();
         try (InputStream inputStream = ProductDescriptorFactory.class.getResourceAsStream("descriptors.json")) {
-            this.descriptors.addAll(new ObjectMapper().readValue(inputStream, this.descriptors.getClass()));
+            this.descriptors.addAll(new ObjectMapper().readValue(inputStream, JSON_FORMAT_DESCRIPTOR_TYPE_REFERENCE));
         }
     }
 }
