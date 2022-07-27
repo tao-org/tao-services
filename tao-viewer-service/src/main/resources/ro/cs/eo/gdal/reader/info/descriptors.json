@@ -154,7 +154,7 @@
   },
   {
     "namePatterns": [
-      "[A-Za-z0-9_-]+\\.(tif|TIF|tiff|TIFF"
+      "[A-Za-z0-9_-]+\\.(tif|TIF|tiff|TIFF)"
     ],
     "bands": [
       {
