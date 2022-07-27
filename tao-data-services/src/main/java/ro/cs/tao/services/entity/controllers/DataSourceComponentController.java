@@ -347,9 +347,10 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     @RequestMapping(value = "/productset", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateProductSet(@RequestBody ProductSetInfo productSet) {
         try {
-            if (productSet.getProducts() != null) {
+            List<String> products = productSet.getProducts();
+            if (products != null) {
                 Repository localRepository = getLocalRepository(currentUser());
-                productSet.getProducts().forEach(localRepository::resolve);
+                products.replaceAll(localRepository::resolve);
             }
             return prepareResult(new ProductSetInfo(this.service.updateProductSet(productSet), currentUser()));
         } catch (Exception e) {
