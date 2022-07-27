@@ -25,14 +25,19 @@ public class ProductDescriptorFactory {
         }
     }
 
-    public static ProductDescriptor getDescriptor(Path path) throws IOException {
+    public static ProductDescriptor getDescriptor(Path path) {
         List<FormatDescriptor> descriptors = instance.descriptors.stream().filter(d -> d.matches(path.toString())).collect(Collectors.toList());
         if (descriptors.size() > 0) {
             descriptors.sort(Comparator.comparingInt(FormatDescriptor::getPriority));
-            return new ProductDescriptor(descriptors.get(0), path);
-        } else {
-            return null;
+            for (FormatDescriptor descriptor : descriptors) {
+                try {
+                    return new ProductDescriptor(descriptor, path);
+                } catch (Exception ignored) {
+                    //skip
+                }
+            }
         }
+        throw new IllegalArgumentException("Unknown format for product: " + path.getFileName().toString());
     }
 
     private ProductDescriptorFactory() throws IOException {
