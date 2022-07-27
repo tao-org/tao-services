@@ -125,7 +125,10 @@ public class GDAL {
         for (int i = 0; i < objectListCount.length; i++) {
             Array.set(objectListCountJni, i, objectListCount[i].getJniDatasetInstance());
         }
-        Object jniDatasetInstance = GDALReflection.callGDALLibraryMethod(CLASS_NAME, "Warp", Object.class, null, new Class[]{dest.getClass(), objectListCountJni.getClass(), warpAppOptions.getJniWarpOptionsInstance().getClass()}, new Object[]{dest, objectListCountJni, warpAppOptions.getJniWarpOptionsInstance()});
+        Object jniDatasetInstance;
+        synchronized (GDAL.class) {
+            jniDatasetInstance = GDALReflection.callGDALLibraryMethod(CLASS_NAME, "Warp", Object.class, null, new Class[]{dest.getClass(), objectListCountJni.getClass(), warpAppOptions.getJniWarpOptionsInstance().getClass()}, new Object[]{dest, objectListCountJni, warpAppOptions.getJniWarpOptionsInstance()});
+        }
         if (jniDatasetInstance != null) {
             return new Dataset(jniDatasetInstance);
         }
