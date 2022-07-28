@@ -172,6 +172,11 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
+    public void deleteAll(String userName) {
+        messageProvider.clear(userName);
+    }
+
+    @Override
     public Map<String, Boolean> getNodesOnlineStatus() {
         Map<String, Boolean> statuses = new HashMap<>();
         List<NodeDescription> nodes = TopologyManager.getInstance().listNodes();

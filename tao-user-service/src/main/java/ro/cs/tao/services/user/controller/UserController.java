@@ -27,14 +27,19 @@ import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.interfaces.RepositoryWatcherService;
 import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
 import ro.cs.tao.user.UserType;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
@@ -53,6 +58,9 @@ public class UserController extends BaseController {
 
     @Autowired
     private RepositoryWatcherService repositoryWatcherService;
+
+    @Autowired
+    private RepositoryService repositoryService;
 
     @RequestMapping(value = "/groups/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getGroups() {
@@ -122,6 +130,10 @@ public class UserController extends BaseController {
         try {
             final User userInfo = userService.getUserInfo(username);
             if (userInfo != null) {
+                if (userInfo.getActualInputQuota() == -1) {
+                    Repository repository = getLocalRepository(currentUser());
+                    userInfo.setActualInputQuota((int) (FileUtilities.folderSize(Paths.get(repository.root())) >> 20));
+                }
                 return prepareResult(userInfo);
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -177,5 +189,9 @@ public class UserController extends BaseController {
         } catch (Exception ex) {
             return handleException(ex);
         }
+    }
+
+    private Repository getLocalRepository(String user) {
+        return repositoryService.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
     }
 }
