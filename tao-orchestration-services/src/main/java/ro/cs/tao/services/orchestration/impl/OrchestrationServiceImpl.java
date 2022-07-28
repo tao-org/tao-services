@@ -27,10 +27,7 @@ import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.ExecutionConfiguration;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
-import ro.cs.tao.execution.model.ExecutionJob;
-import ro.cs.tao.execution.model.ExecutionJobSummary;
-import ro.cs.tao.execution.model.ExecutionStatus;
-import ro.cs.tao.execution.model.ExecutionTaskSummary;
+import ro.cs.tao.execution.model.*;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.orchestration.Orchestrator;
@@ -198,6 +195,11 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                            ExecutionStatus.FAILED, ExecutionStatus.CANCELLED);
         final List<ExecutionJob> jobs = jobProvider.list(userName, statuses);
         for (ExecutionJob job : jobs) {
+            List<ExecutionTask> tasks = job.getTasks();
+            for (ExecutionTask task : tasks) {
+                taskProvider.delete(task);
+            }
+            job.setTasks(null);
             jobProvider.delete(job);
         }
     }

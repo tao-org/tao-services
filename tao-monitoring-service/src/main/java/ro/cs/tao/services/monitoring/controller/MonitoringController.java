@@ -86,6 +86,16 @@ public class MonitoringController extends BaseController {
         return prepareResult(monitoringService.acknowledgeNotification(notifications));
     }
 
+    @RequestMapping(value = "/notification/clear", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> clearNotifications() {
+        try {
+            monitoringService.deleteAll(currentUser());
+            return prepareResult("Operaiton succeeded", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
     @RequestMapping(value = "/status", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNodesOnlineStatus() {
         return prepareResult(monitoringService.getNodesOnlineStatus());
