@@ -260,7 +260,12 @@ public class TileReader {
         final Vector<String> translateOptions = new Vector<>();
         translateOptions.add("-strict");
         translateOptions.add("-a_nodata");
-        //translateOptions.add("none");
+        if (gdalDataset.getRasterCount() > 3) {
+            for (int i = 1; i <= 3; i++) {
+                translateOptions.add("-b");
+                translateOptions.add(String.valueOf(i));
+            }
+        }
         translateOptions.add(String.valueOf(productDescriptor.getNoDataValue()));
         translateOptions.add("-projwin_srs");
         translateOptions.add("EPSG:" + config.tileGrid.projectionCode);
