@@ -12,12 +12,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import ro.cs.eo.gdal.reader.ImageInfo;
+import ro.cs.eo.gdal.reader.info.FormatDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptorFactory;
 import ro.cs.eo.gdal.service.GDALTileMapService;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.services.commons.ControllerBase;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.utils.Triple;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
@@ -25,10 +29,14 @@ import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/view")
 public class ViewerController extends ControllerBase {
+
+    private static final Map<String, Triple<Integer, Integer, Integer>> customScales = new HashMap<>();
 
     private final AnnotationConfigApplicationContext context;
     @Autowired
@@ -40,6 +48,14 @@ public class ViewerController extends ControllerBase {
         this.context = new AnnotationConfigApplicationContext();
         this.context.scan("ro.cs.eo.gdal.service");
         this.context.refresh();
+    }
+
+    @RequestMapping(value = "/scale", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> changeScale(@RequestParam("min") int min,
+                                                          @RequestParam("max") int max,
+                                                          @RequestParam("nodata") int noData) {
+        customScales.put(currentUser(), new Triple<>(min, max, noData));
+        return prepareResult("New scale set", ResponseStatus.SUCCEEDED);
     }
 
     @RequestMapping(value = "/tile", method = RequestMethod.GET)
@@ -54,6 +70,13 @@ public class ViewerController extends ControllerBase {
             final Repository localRepository = getLocalRepository();
             final String path = localRepository.resolve(relativePath);
             ProductDescriptor productDescriptor = ProductDescriptorFactory.getDescriptor(Paths.get(path));
+            final Triple<Integer, Integer, Integer> override = customScales.get(currentUser());
+            if (override != null) {
+                FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
+                formatDescriptor.setPixelMinScale(override.getKeyOne());
+                formatDescriptor.setPixelMaxScale(override.getKeyTwo());
+                formatDescriptor.setNoDataValue(override.getKeyThree());
+            }
             byte[] data = gdalTileMapService.getGDALTile(productDescriptor, z, x, y);
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_PNG_VALUE);
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
@@ -85,6 +108,13 @@ public class ViewerController extends ControllerBase {
             final String path = localRepository.resolve(relativePath);
             final String name = relativePath.substring(relativePath.lastIndexOf('/') + 1);
             ProductDescriptor productDescriptor = ProductDescriptorFactory.getDescriptor(Paths.get(path));
+            final Triple<Integer, Integer, Integer> override = customScales.get(currentUser());
+            if (override != null) {
+                FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
+                formatDescriptor.setPixelMinScale(override.getKeyOne());
+                formatDescriptor.setPixelMaxScale(override.getKeyTwo());
+                formatDescriptor.setNoDataValue(override.getKeyThree());
+            }
             ImageInfo imageInfo = gdalTileMapService.getGDALImageInfo(productDescriptor);
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
             return new ResponseEntity<>(imageInfo.toJson(), headers, HttpStatus.OK);

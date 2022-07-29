@@ -48,8 +48,8 @@
       }
     ],
     "pixelMinScale": 0,
-    "pixelMaxScale": 16384,
-    "noDataValue": 0,
+    "pixelMaxScale": 16383,
+    "noDataValue": -10000,
     "priority": 1
   },
   {
@@ -86,7 +86,7 @@
       }
     ],
     "pixelMinScale": 0,
-    "pixelMaxScale": 5000,
+    "pixelMaxScale": 16383,
     "noDataValue": -10000,
     "priority": 1
   },
@@ -109,8 +109,8 @@
       }
     ],
     "pixelMinScale": 0,
-    "pixelMaxScale": 22270,
-    "noDataValue": 0,
+    "pixelMaxScale": 8191,
+    "noDataValue": -10000,
     "priority": 1
   },
   {
@@ -133,7 +133,7 @@
       }
     ],
     "pixelMinScale": 0,
-    "pixelMaxScale": 5000,
+    "pixelMaxScale": 8191,
     "noDataValue": -10000,
     "priority": 1
   },
@@ -163,7 +163,7 @@
       }
     ],
     "pixelMinScale": 0,
-    "pixelMaxScale": 5000,
+    "pixelMaxScale": 16383,
     "noDataValue": 0,
     "priority": 2
   }
