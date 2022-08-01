@@ -88,8 +88,8 @@ public final class GDALTileCache {
         }
     }
 
-    public Path getTilePath(String imageFileName, int x, int y, byte z){
-        return this.cacheDirPath.resolve(imageFileName).resolve("" + z).resolve("" + x).resolve(y + ".PNG");
+    public Path getTilePath(String imageFileName, int x, int y, byte z, int pixelMinScale, int pixelMaxScale){
+        return this.cacheDirPath.resolve(imageFileName).resolve("" + z).resolve("" + x).resolve(y + "-" + pixelMinScale + "_" + pixelMaxScale + ".PNG");
     }
 
 
