@@ -41,7 +41,7 @@ public class GDALTileMapService {
             final Path sourceLocalFilePath = productDescriptor.getProductPath();
             if (Files.exists(sourceLocalFilePath)) {
                 final String imageFileName = sourceLocalFilePath.getFileName().toString().replaceAll(regEx, "$1");
-                Path tileFilePath = this.gdalTileCache.getTilePath(imageFileName, x, y, z);
+                Path tileFilePath = this.gdalTileCache.getTilePath(imageFileName, x, y, z, productDescriptor.getPixelMinScale(), productDescriptor.getPixelMaxScale());
                 this.tileReader.computeTile(productDescriptor, tileFilePath, x, y, z);
                 return Files.readAllBytes(tileFilePath);
             } else {
