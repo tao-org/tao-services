@@ -21,6 +21,7 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.persistence.NodeProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.services.interfaces.TopologyService;
@@ -45,6 +46,8 @@ public class TopologyServiceImpl
 
     @Autowired
     private TagProvider tagProvider;
+    @Autowired
+    private NodeProvider nodeProvider;
 
     @Override
     public List<NodeFlavor> getNodeFlavors() {
@@ -72,7 +75,7 @@ public class TopologyServiceImpl
 
     @Override
     public List<NodeDescription> getNodes(boolean active) {
-        return list().stream().filter(n -> n.getActive() != null && n.getActive() == active).collect(Collectors.toList());
+        return nodeProvider.list(active);
     }
 
     @Override
