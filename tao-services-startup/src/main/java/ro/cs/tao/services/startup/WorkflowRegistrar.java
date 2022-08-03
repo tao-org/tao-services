@@ -22,7 +22,7 @@ public class WorkflowRegistrar extends BaseLifeCycle {
         } else {
             for (WorkflowBuilder workflow : services) {
                 try {
-                    WorkflowDescriptor descriptor = workflow.createWorkflowDescriptor();
+                    WorkflowDescriptor descriptor = workflow.createSystemWorkflowDescriptor();
                     if (descriptor != null) {
                         logger.finest(String.format("Registration completed for workflow %s", workflow.getName()));
                     } else {
