@@ -94,7 +94,7 @@ public class TileReader {
         String path = productDescriptor.getBandPaths()[0].toAbsolutePath().toString();
         final Dataset gdalDataset = GDAL.open(path, GDALConst.gaReadonly());
         if (gdalDataset == null) {
-            throw new IllegalStateException("Fail to open Dataset for file: " + productFilePath);
+            throw new IllegalStateException("Fail to open Dataset for file: " + productFilePath + ". " + GDAL.getLastErrorMsg());
         }
         final Extent imageExtent = computeImageExtent(gdalDataset);
         deleteDataset(gdalDataset, false);
@@ -110,14 +110,14 @@ public class TileReader {
             throw new IllegalArgumentException("Missing Geo-localisation data from dataset.");
         }
         if (!GDALConstConstants.ceNone().equals(sourceSpatialReference.importFromWkt(projectionRef))) {
-            throw new IllegalStateException("Unable to import Spatial Reference " + projectionRef + " from WKT.");
+            throw new IllegalStateException("Unable to import Spatial Reference " + projectionRef + " from WKT. " + GDAL.getLastErrorMsg());
         }
         if (destReference == null) {
             synchronized (TileReader.class) {
                 destReference = new SpatialReference();
                 final int statusCode = destReference.importFromEPSG(3857);
                 if (!GDALConstConstants.ceNone().equals(statusCode) || destReference.getJniSpatialReferenceInstance().toString().isEmpty()) {
-                    throw new IllegalStateException("Unable to import Spatial Reference from EPSG:3857!");
+                    throw new IllegalStateException("Unable to import Spatial Reference from EPSG:3857! " + GDAL.getLastErrorMsg());
                 }
             }
         }
@@ -173,7 +173,7 @@ public class TileReader {
         for (Path productBandsPath : productBandsPaths) {
             final Dataset gdalDataset = GDAL.open(productBandsPath.toAbsolutePath().toString(), GDALConst.gaReadonly());
             if (gdalDataset == null) {
-                throw new IllegalStateException("Fail to open Dataset for file: " + productBandsPath);
+                throw new IllegalStateException("Fail to open Dataset for file: " + productBandsPath + ". " + GDAL.getLastErrorMsg());
             }
             final Extent imageExtent = computeImageExtent(gdalDataset);
             if (tileInsideImage(imageExtent, tileExtent)) {
