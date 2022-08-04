@@ -1,6 +1,7 @@
 package ro.cs.eo.gdal.dataio;
 
 import org.esa.s2tbx.jni.EnvironmentVariables;
+import ro.cs.eo.gdal.dataio.drivers.OSR;
 import ro.cs.tao.utils.NativeLibraryUtils;
 
 import java.io.File;
@@ -180,20 +181,14 @@ import java.util.logging.Logger;
         }
         NativeLibraryUtils.registerNativePaths(gdalDistributionRootFolderPath);
 
-        String pathEnvironment = EnvironmentVariables.getEnvironmentVariable("PATH");
-        boolean foundBinFolderInPath = findFolderInPathEnvironment(gdalDistributionRootFolderPath, pathEnvironment);
-        if (!foundBinFolderInPath) {
-            StringBuilder newPathValue = new StringBuilder();
-            newPathValue.append("PATH")
-                    .append("=")
-                    .append(gdalDistributionRootFolderPath.toString())
-                    .append(File.pathSeparator)
-                    .append(pathEnvironment);
-            if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Set the PATH environment variable on Windows with '" + newPathValue.toString() + "'.");
-            }
-            EnvironmentVariables.setEnvironmentVariable(newPathValue.toString());
+        StringBuilder newPathValue = new StringBuilder();
+        newPathValue.append("PATH")
+                .append("=")
+                .append(gdalDistributionRootFolderPath.toString());
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "Set the PATH environment variable on Windows with '" + newPathValue.toString() + "'.");
         }
+        EnvironmentVariables.setEnvironmentVariable(newPathValue.toString());
 
         Path gdalDataFolderPath = gdalDistributionRootFolderPath.resolve("gdal-data");
         StringBuilder gdalDataValue = new StringBuilder();
@@ -213,15 +208,6 @@ import java.util.logging.Logger;
             logger.log(Level.FINE, "Set the GDAL_DATA environment variable on Windows with '" + gdalPluginsValue.toString() + "'.");
         }
         EnvironmentVariables.setEnvironmentVariable(gdalPluginsValue.toString());
-        Path projDataFolderPath = gdalDistributionRootFolderPath.resolve("projlib");
-        StringBuilder projDataValue = new StringBuilder();
-        projDataValue.append("PROJ_LIB")
-                .append("=")
-                .append(projDataFolderPath.toString());
-        if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Set the PROJ_LIB environment variable on Windows with '" + projDataValue.toString() + "'.");
-        }
-        EnvironmentVariables.setEnvironmentVariable(projDataValue.toString());
         String gdalPamValue = "GDAL_PAM_ENABLED=NO";
         if (logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "Set the GDAL_PAM_ENABLED environment variable on Windows with 'NO'.");
@@ -263,6 +249,17 @@ import java.util.logging.Logger;
             installJNI(gdalVersion);
         } else {
             installDistribution(gdalVersion);
+        }
+    }
+
+    /**
+     * Setups the GDAL Proj Lib path to correctly load the proj.db from internal distribution
+     *
+     * @param gdalVersion the GDAL version to be setup
+     */
+    static void setupProj(GDALVersion gdalVersion){
+        if (!gdalVersion.isJni()) {
+            OSR.setPROJSearchPath(gdalVersion.getZipFilePath().getParent().resolve("projlib").toString());
         }
     }
 }
