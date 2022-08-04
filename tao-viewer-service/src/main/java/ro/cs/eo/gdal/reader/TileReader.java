@@ -113,9 +113,12 @@ public class TileReader {
             throw new IllegalStateException("Unable to import Spatial Reference " + projectionRef + " from WKT.");
         }
         if (destReference == null) {
-            destReference = new SpatialReference();
-            if (!GDALConstConstants.ceNone().equals(destReference.importFromEPSG(3857))) {
-                throw new IllegalStateException("Unable to import Spatial Reference from EPSG:3857!");
+            synchronized (TileReader.class) {
+                destReference = new SpatialReference();
+                final int statusCode = destReference.importFromEPSG(3857);
+                if (!GDALConstConstants.ceNone().equals(statusCode) || destReference.getJniSpatialReferenceInstance().toString().isEmpty()) {
+                    throw new IllegalStateException("Unable to import Spatial Reference from EPSG:3857!");
+                }
             }
         }
         final CoordinateTransformation coordinateTransformation = CoordinateTransformation.createCoordinateTransformation(sourceSpatialReference, destReference);
