@@ -50,6 +50,7 @@ public final class GDALLoader {
                 this.gdalVersionLoader = new URLClassLoader(new URL[]{this.gdalVersion.getJNILibraryFilePath().toUri().toURL()}, GDALLoader.class.getClassLoader());
                 this.gdalIsInitialized = true;
                 initDrivers();
+                GDALDistributionInstaller.setupProj(gdalVersion);
                 Path gdalDistributionBinFolderPath = Paths.get(this.gdalVersion.getLocation());
                 GDALInstallInfo.INSTANCE.setLocations(gdalDistributionBinFolderPath);
             } catch (Throwable ex) {
