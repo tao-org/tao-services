@@ -548,7 +548,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 throw new IllegalArgumentException("Invalid repository");
             }
             final StorageService storageService = getRepositoryService(repository);
-            final int nLines = lines != null ? lines : 30;
+            final int nLines = lines != null ? lines : -1;
             final int nSkip = skipLines != null ? skipLines : 0;
             return prepareResult(storageService.readAsText(storageService.download(repository.bucketName()
                                                                                            + "/" +
