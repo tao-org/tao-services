@@ -425,7 +425,9 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     public String readAsText(FileSystemResource resource, int lines, int skipLines) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));
              Stream<String> stream = reader.lines()) {
-            return stream.skip(skipLines).limit(lines).collect(Collectors.joining());
+            return lines > 0
+                   ? stream.skip(skipLines).limit(lines).collect(Collectors.joining())
+                   : stream.collect(Collectors.joining());
         }
     }
 
