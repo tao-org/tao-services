@@ -426,8 +426,8 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));
              Stream<String> stream = reader.lines()) {
             return lines > 0
-                   ? stream.skip(skipLines).limit(lines).collect(Collectors.joining())
-                   : stream.collect(Collectors.joining());
+                   ? stream.skip(skipLines).limit(lines).collect(Collectors.joining("\n"))
+                   : stream.collect(Collectors.joining("\n"));
         }
     }
 
