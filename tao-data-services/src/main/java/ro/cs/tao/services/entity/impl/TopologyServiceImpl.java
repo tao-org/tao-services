@@ -49,6 +49,10 @@ public class TopologyServiceImpl
     @Autowired
     private NodeProvider nodeProvider;
 
+    public boolean isExternalProviderAvailable() {
+        return topologyManager().isExternalProviderAvailable();
+    }
+
     @Override
     public List<NodeFlavor> getNodeFlavors() {
         return topologyManager().listNodeFlavors();
