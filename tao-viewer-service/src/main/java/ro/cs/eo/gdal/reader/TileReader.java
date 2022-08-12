@@ -41,14 +41,8 @@ public class TileReader {
                 gdalDatasets = prepareDatasets(productDescriptor, tileExtent);
                 vrtDataset = buildVRTDataset(productDescriptor, gdalDatasets);
                 final String tmpFileName = "/vsimem/" + System.currentTimeMillis() + ".tif";
-                if (productDescriptor.getFormatDescriptor().multiRaster()) {
-                    warpDataset = buildWarpedDataset(productDescriptor, config, tileExtent, vrtDataset, tmpFileName);
-                    translateDataset = buildTranslatedDataset(productDescriptor, warpDataset, tileFilePath.toString());
-                } else {
-                    /*translateDataset = buildTranslatedDataset(productDescriptor, this.config, tileExtent, vrtDataset, tmpFileName);
-                    warpDataset = buildWarpedDataset(productDescriptor, this.config, tileExtent, translateDataset, tileFilePath.toString());*/
-                    translateDataset = buildTranslatedDataset(productDescriptor, config, tileExtent, vrtDataset, tileFilePath.toString());
-                }
+                warpDataset = buildWarpedDataset(productDescriptor, config, tileExtent, vrtDataset, tmpFileName);
+                translateDataset = buildTranslatedDataset(productDescriptor, warpDataset, tileFilePath.toString());
                 if (this.gdalTileCache.isCacheEnabled()){
                     final long tileSize = Files.size(tileFilePath);
                     this.gdalTileCache.putTile(String.valueOf(tileFilePath), tileSize);
@@ -248,50 +242,6 @@ public class TileReader {
             translateOptions.add("Byte");
         }
         final Dataset translateDataset = GDAL.translate(tileFilePath, warpDataset, new TranslateOptions(translateOptions));
-        if (translateDataset == null) {
-            throw new IllegalStateException("Fail to translate dataset. " + GDAL.getLastErrorMsg());
-        }
-        return translateDataset;
-    }
-
-    private static Dataset buildTranslatedDataset(ProductDescriptor productDescriptor, Config config, Extent tileExtent, Dataset gdalDataset, String tileFilePath) {
-        final Vector<String> translateOptions = new Vector<>();
-        translateOptions.add("-strict");
-        translateOptions.add("-a_nodata");
-        if (gdalDataset.getRasterCount() > 3) {
-            for (int i = 1; i <= 3; i++) {
-                translateOptions.add("-b");
-                translateOptions.add(String.valueOf(i));
-            }
-        }
-        translateOptions.add(String.valueOf(productDescriptor.getNoDataValue()));
-        translateOptions.add("-projwin_srs");
-        translateOptions.add("EPSG:" + config.tileGrid.projectionCode);
-        translateOptions.add("-projwin");
-        // Warning: map axes are not the same as image axes: (ulx uly) -> (xmin, ymax)
-        translateOptions.add(String.valueOf(tileExtent.xmin));
-        translateOptions.add(String.valueOf(tileExtent.ymax));
-        translateOptions.add(String.valueOf(tileExtent.xmax));
-        translateOptions.add(String.valueOf(tileExtent.ymin));
-        translateOptions.add("-outsize");
-        translateOptions.add(String.valueOf(config.tileWidth));
-        translateOptions.add(String.valueOf(config.tileHeight));
-        translateOptions.add("-a_srs");
-        translateOptions.add("EPSG:" + config.tileGrid.projectionCode);
-        Double[] val = new Double[1];
-        gdalDataset.getRasterBand(1).getMinimum(val);
-        Double minVal = val[0] != null ? val[0] : productDescriptor.getPixelMinScale();
-        gdalDataset.getRasterBand(1).getMaximum(val);
-        Double maxVal = val[0] != null ? val[0] : productDescriptor.getPixelMaxScale();
-        translateOptions.add("-scale");
-        translateOptions.add(String.valueOf(minVal));
-        translateOptions.add(String.valueOf(maxVal));
-        if (!gdalDataset.getRasterBand(1).getDataType().equals(GDALConstConstants.gdtByte())) {
-            translateOptions.add("-ot");
-            translateOptions.add("Byte");
-        }
-
-        final Dataset translateDataset = GDAL.translate(tileFilePath, gdalDataset, new TranslateOptions(translateOptions));
         if (translateDataset == null) {
             throw new IllegalStateException("Fail to translate dataset. " + GDAL.getLastErrorMsg());
         }

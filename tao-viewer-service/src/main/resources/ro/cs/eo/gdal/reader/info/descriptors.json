@@ -163,7 +163,7 @@
       }
     ],
     "pixelMinScale": 0,
-    "pixelMaxScale": 16383,
+    "pixelMaxScale": 256,
     "noDataValue": 0,
     "priority": 2
   }
