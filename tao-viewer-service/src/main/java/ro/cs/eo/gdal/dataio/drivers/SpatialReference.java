@@ -74,7 +74,7 @@ public class SpatialReference {
         return GDALReflection.callGDALLibraryMethod(CLASS_NAME, "GetAuthorityCode", String.class, this.jniSpatialReferenceInstance, new Class[]{String.class}, new Object[]{target_key});
     }
 
-    public void SetAxisMappingStrategy(Integer strategy) {
-        GDALReflection.callGDALLibraryMethod(CLASS_NAME, "SetAxisMappingStrategy(", Void.class, this.jniSpatialReferenceInstance, new Class[] { Integer.class }, new Object[] { strategy });
+    public void setAxisMappingStrategy(int strategy) {
+        GDALReflection.callGDALLibraryMethod(CLASS_NAME, "SetAxisMappingStrategy", Void.class, this.jniSpatialReferenceInstance, new Class[] { int.class }, new Object[] { strategy });
     }
 }

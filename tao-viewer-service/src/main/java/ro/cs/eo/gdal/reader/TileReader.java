@@ -112,6 +112,7 @@ public class TileReader {
         if (!GDALConstConstants.ceNone().equals(sourceSpatialReference.importFromWkt(projectionRef))) {
             throw new IllegalStateException("Unable to import Spatial Reference " + projectionRef + " from WKT. " + GDAL.getLastErrorMsg());
         }
+        sourceSpatialReference.setAxisMappingStrategy(0);
         if (destReference == null) {
             synchronized (TileReader.class) {
                 destReference = new SpatialReference();
@@ -125,13 +126,7 @@ public class TileReader {
         if (coordinateTransformation == null) {
             throw new RuntimeException("Cannot obtain coordinateTransformation");
         }
-        final double[] mercatorPoint;
-        if (!projectionRef.contains("WGS 84")) {
-            mercatorPoint = coordinateTransformation.transformPoint(y, x);
-        } else {
-            mercatorPoint = coordinateTransformation.transformPoint(x, y);
-        }
-        return mercatorPoint;
+        return coordinateTransformation.transformPoint(x, y);
     }
 
     private static Extent computeImageExtent(Dataset gdalDataset) {
