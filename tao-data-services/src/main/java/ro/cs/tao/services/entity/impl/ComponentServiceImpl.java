@@ -231,7 +231,14 @@ public class ComponentServiceImpl
         if (value == null || value.trim().isEmpty()) {
             errors.add("[containerId] cannot be empty");
         } else {
-            if ((container = containerProvider.get(value)) == null) {
+            container = containerProvider.get(value);
+            if (container == null) {
+                container = containerProvider.getByName(value);
+                if (container != null) {
+                    entity.setContainerId(container.getId());
+                }
+            }
+            if (container == null) {
                 errors.add("[containerId] points to a non-existing container");
             }
         }
