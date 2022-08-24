@@ -74,7 +74,8 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody T entity) {
         final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
-        if (validationResponse.getBody().getStatus() == ResponseStatus.SUCCEEDED) {
+        ServiceResponse<?> body = validationResponse.getBody();
+        if (body != null && body.getStatus() == ResponseStatus.SUCCEEDED) {
             entity = service.save(entity);
             return prepareResult(entity);
         } else {
@@ -85,7 +86,8 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") K id, @RequestBody T entity) {
         final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
-        if (validationResponse.getBody().getStatus() == ResponseStatus.SUCCEEDED) {
+        ServiceResponse<?> body = validationResponse.getBody();
+        if (body != null && body.getStatus() == ResponseStatus.SUCCEEDED) {
             try {
                 return prepareResult(service.update(entity));
             } catch (PersistenceException e) {
