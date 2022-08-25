@@ -181,10 +181,13 @@ import java.util.logging.Logger;
         }
         NativeLibraryUtils.registerNativePaths(gdalDistributionRootFolderPath);
 
+        String pathEnvironment = EnvironmentVariables.getEnvironmentVariable("PATH");
         StringBuilder newPathValue = new StringBuilder();
         newPathValue.append("PATH")
                 .append("=")
-                .append(gdalDistributionRootFolderPath.toString());
+                .append(gdalDistributionRootFolderPath.toString())
+                .append(File.pathSeparator)
+                .append(pathEnvironment);
         if (logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "Set the PATH environment variable on Windows with '" + newPathValue.toString() + "'.");
         }
