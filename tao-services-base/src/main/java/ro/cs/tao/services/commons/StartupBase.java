@@ -25,6 +25,7 @@ import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
 import ro.cs.tao.services.commons.config.FileProcessor;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.utils.executors.Executor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -71,6 +72,8 @@ public abstract class StartupBase implements ApplicationListener {
         configurationProvider.setConfigurationFolder(configDirectory);
         configurationProvider.setScriptsFolder(scriptsDirectory);
         configurationProvider.putAll(allProperties);
+        configurationProvider.setSystemEnvironment(System.getenv());
+        Executor.setEnvironment(System.getenv());
         StringBuilder builder = new StringBuilder();
         builder.append("Active logging levels: ");
         allProperties.entrySet().stream()

@@ -145,4 +145,6 @@ public class ProcessingComponentBean {
     public boolean hasDescriptor(String id) {
         return component.hasDescriptor(id);
     }
+
+    public boolean getManagedOutput() { return component.isOutputManaged(); }
 }
