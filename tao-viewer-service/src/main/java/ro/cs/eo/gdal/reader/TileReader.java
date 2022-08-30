@@ -4,21 +4,41 @@ import ro.cs.eo.gdal.dataio.GDALTileCache;
 import ro.cs.eo.gdal.dataio.drivers.*;
 import ro.cs.eo.gdal.reader.info.FormatDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
+import ro.cs.tao.Tuple;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
+import java.time.LocalDateTime;
+import java.util.*;
 
 public class TileReader {
     private static SpatialReference destReference;
     private static final Config config;
+    private static final Map<Path, Tuple<double[], LocalDateTime>> scaleCache;
+    private static final Timer evictor;
     private final GDALTileCache gdalTileCache;
 
     static {
         config = Config.getWebMercatorConfig();
+        scaleCache = Collections.synchronizedMap(new HashMap<>());
+        evictor = new Timer();
+        evictor.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                final LocalDateTime reference = LocalDateTime.now().minusHours(1);
+                scaleCache.entrySet().removeIf(pathTupleEntry -> pathTupleEntry.getValue().getKeyTwo().isBefore(reference));
+            }
+        }, 3600000, 3600000);
+    }
+
+    public static void setScale(Path file, double[] minMax) {
+        scaleCache.put(file, new Tuple<>(minMax, LocalDateTime.now()));
+    }
+
+    public static double[] getScale(Path file) {
+        Tuple<double[], LocalDateTime> tuple = scaleCache.get(file);
+        return tuple != null ? tuple.getKeyOne() : null;
     }
 
     public TileReader(GDALTileCache gdalTileCache) {
@@ -179,9 +199,9 @@ public class TileReader {
     }
 
     private static Dataset buildVRTDataset(ProductDescriptor productDescriptor, Dataset[] gdalDatasets) {
-        if (gdalDatasets.length == 1) {
+        /*if (gdalDatasets.length == 1) {
             return gdalDatasets[0];
-        }
+        }*/
         final Vector<String> vrtOptions = new Vector<>();
         for (FormatDescriptor.Band band : productDescriptor.getFormatDescriptor().getBands()) {
             vrtOptions.add("-b");
@@ -232,12 +252,36 @@ public class TileReader {
 
     private static Dataset buildTranslatedDataset(ProductDescriptor productDescriptor, Dataset warpDataset, String tileFilePath) {
         Vector<String> translateOptions = new Vector<>();
-        if (productDescriptor.getPixelMinScale() != null && productDescriptor.getPixelMaxScale() != null) {
-            translateOptions.add("-scale");
-            translateOptions.add(String.valueOf(productDescriptor.getPixelMinScale()));
-            translateOptions.add(String.valueOf(productDescriptor.getPixelMaxScale()));
+        double min, max;
+        translateOptions.add("-scale");
+        Band rasterBand = warpDataset.getRasterBand(1);
+        if (productDescriptor.getFormatDescriptor().getPriority() == 1 &&
+                productDescriptor.getPixelMinScale() != null && productDescriptor.getPixelMaxScale() != null) {
+            min = productDescriptor.getPixelMinScale();
+            max = productDescriptor.getPixelMaxScale();
+        } else {
+            if (!scaleCache.containsKey(productDescriptor.getProductPath())) {
+                Double[] val = new Double[2];
+                rasterBand.getMinimum(val);
+                if (val[0] != null) {
+                    min = val[0];
+                    rasterBand.getMaximum(val);
+                    max = val[0];
+                } else {
+                    double[] vals = new double[2];
+                    rasterBand.computeMinMax(vals);
+                    min = vals[0];
+                    max = vals[1];
+                }
+                scaleCache.put(productDescriptor.getProductPath(), new Tuple<>(new double[] { min, max}, LocalDateTime.now()));
+            }
+            double[] doubles = scaleCache.get(productDescriptor.getProductPath()).getKeyOne();
+            min = doubles[0];
+            max = doubles[1];
         }
-        if (!GDALConstConstants.gdtByte().equals(warpDataset.getRasterBand(1).getDataType())) {
+        translateOptions.add(String.valueOf(min));
+        translateOptions.add(String.valueOf(max));
+        if (!GDALConstConstants.gdtByte().equals(rasterBand.getDataType())) {
             translateOptions.add("-ot");
             translateOptions.add("Byte");
         }

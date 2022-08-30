@@ -157,6 +157,10 @@ public class Band {
         GDALReflection.callGDALLibraryMethod(CLASS_NAME, "GetMaximum", null, this.jniBandInstance, new Class[]{Double[].class}, new Object[]{val});
     }
 
+    public void computeMinMax(double[] val) {
+        GDALReflection.callGDALLibraryMethod(CLASS_NAME, "ComputeRasterMinMax", null, this.jniBandInstance, new Class[]{double[].class, int.class}, new Object[]{val, 1});
+    }
+
     /**
      * Calls the JNI GDAL Band class GetUnitType() method
      *
