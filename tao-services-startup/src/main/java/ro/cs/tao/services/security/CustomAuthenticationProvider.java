@@ -50,6 +50,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     private final TokenManagementService tokenService;
 
+    private final TokenProvider localTokenProvider;
+
     public static PersistenceManager persistenceManager;
 
     public CustomAuthenticationProvider(TokenManagementService tokenMngService) {
@@ -60,6 +62,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             // Keycloak settings are present
             this.tokenService.setTokenProvider(new KeycloakClient());
         }
+        this.localTokenProvider = new TokenProvider() { };
     }
 
     public static void setPersistenceManager(PersistenceManager manager) { persistenceManager = manager; }
@@ -91,7 +94,9 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             Token userToken = tokenService.getUserToken(userName);
             if (userToken == null) {
                 logger.finest(String.format("No previous token for user %s, generating a new one", userName));
-                userToken = tokenService.generateNewToken(userName, user.getPassword());
+                userToken = !"admin".equals(userName)
+                            ? tokenService.generateNewToken(userName, user.getPassword())
+                            : localTokenProvider.newToken(userName, user.getPassword());
                 tokenService.store(userToken, authenticationWithToken);
                 logger.finest(String.format("Stored token %s for user %s", userToken.getToken(), userName));
             } else if (tokenService.retrieve(userToken.getToken()) == null) {
