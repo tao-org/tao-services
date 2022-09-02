@@ -40,10 +40,7 @@ import ro.cs.tao.workspaces.Repository;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.Principal;
 import java.time.Instant;
@@ -525,7 +522,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     private List<Path> list(Path path, int depth) throws IOException {
-        try (Stream<Path> stream = Files.walk(path, depth)) {
+        try (Stream<Path> stream = Files.walk(path, depth, FileVisitOption.FOLLOW_LINKS)) {
             return stream.filter(p -> !p.equals(path) && !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
                          .collect(Collectors.toList());
         }
