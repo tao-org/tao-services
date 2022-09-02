@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.cs.tao.Tag;
-import ro.cs.tao.Tuple;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
@@ -21,6 +20,7 @@ import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceGroupService;
+import ro.cs.tao.utils.Tuple;
 
 import java.security.Principal;
 import java.time.LocalDateTime;

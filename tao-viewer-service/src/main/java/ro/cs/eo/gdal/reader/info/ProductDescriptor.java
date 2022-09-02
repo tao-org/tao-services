@@ -1,6 +1,7 @@
 package ro.cs.eo.gdal.reader.info;
 
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -46,7 +47,7 @@ public class ProductDescriptor {
     private void initialize() throws IOException {
         List<FormatDescriptor.Band> expectedBands = this.formatDescriptor.getBands();
         if (this.formatDescriptor.multiRaster()) {
-            try (Stream<Path> stream = Files.walk(productPath)) {
+            try (Stream<Path> stream = Files.walk(productPath, FileVisitOption.FOLLOW_LINKS)) {
                 String subfolderPattern = this.formatDescriptor.getSubfolderPattern();
                 List<Path> files;
                 if (subfolderPattern != null) {
@@ -54,7 +55,7 @@ public class ProductDescriptor {
                     if (path == null) {
                         throw new IOException("Expected subfolder not found");
                     }
-                    try (Stream<Path> substream = Files.walk(path)) {
+                    try (Stream<Path> substream = Files.walk(path, FileVisitOption.FOLLOW_LINKS)) {
                         files = substream.collect(Collectors.toList());
                     }
                 } else {
@@ -73,13 +74,13 @@ public class ProductDescriptor {
         } else if (Files.isDirectory(this.productPath)) {
             FormatDescriptor.Band band = expectedBands.get(0);
             String subfolderPattern = this.formatDescriptor.getSubfolderPattern();
-            try (Stream<Path> stream = Files.walk(productPath)) {
+            try (Stream<Path> stream = Files.walk(productPath, FileVisitOption.FOLLOW_LINKS)) {
                 if (subfolderPattern != null) {
                     Path path = stream.filter(f -> Pattern.compile(subfolderPattern).matcher(f.getFileName().toString()).matches()).findFirst().orElse(null);
                     if (path == null) {
                         throw new IOException("Expected subfolder not found");
                     }
-                    try (Stream<Path> substream = Files.walk(path)) {
+                    try (Stream<Path> substream = Files.walk(path, FileVisitOption.FOLLOW_LINKS)) {
                         Path bandFile = substream.filter(f -> band.matches(f.getFileName().toString())).findFirst().orElse(null);
                         if (bandFile == null) {
                             throw new IOException("Expected band not found");

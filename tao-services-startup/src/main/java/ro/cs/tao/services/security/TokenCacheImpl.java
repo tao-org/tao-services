@@ -1,9 +1,9 @@
 package ro.cs.tao.services.security;
 
 import org.springframework.security.core.Authentication;
-import ro.cs.tao.Tuple;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.security.TokenCache;
+import ro.cs.tao.utils.Tuple;
 
 import java.util.HashMap;
 import java.util.Iterator;

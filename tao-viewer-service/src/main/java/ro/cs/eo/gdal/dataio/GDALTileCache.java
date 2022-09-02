@@ -3,6 +3,7 @@ package ro.cs.eo.gdal.dataio;
 import ro.cs.tao.utils.FileUtilities;
 
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,7 +63,7 @@ public final class GDALTileCache {
 
     private void loadCache() {
         if (Files.exists(this.cacheDirPath)) {
-            try (Stream<Path> paths = Files.walk(this.cacheDirPath)) {
+            try (Stream<Path> paths = Files.walk(this.cacheDirPath, FileVisitOption.FOLLOW_LINKS)) {
                 paths.filter(Files::isRegularFile).forEach(tilePath -> {
                     try {
                         final long fileSize = Files.size(tilePath);

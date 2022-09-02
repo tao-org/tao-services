@@ -4,7 +4,7 @@ import ro.cs.eo.gdal.dataio.GDALTileCache;
 import ro.cs.eo.gdal.dataio.drivers.*;
 import ro.cs.eo.gdal.reader.info.FormatDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
-import ro.cs.tao.Tuple;
+import ro.cs.tao.utils.Tuple;
 
 import java.io.IOException;
 import java.nio.file.Files;

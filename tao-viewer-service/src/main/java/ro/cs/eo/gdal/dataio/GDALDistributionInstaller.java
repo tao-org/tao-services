@@ -262,7 +262,7 @@ import java.util.logging.Logger;
      */
     static void setupProj(GDALVersion gdalVersion){
         if (!gdalVersion.isJni()) {
-            OSR.setPROJSearchPath(gdalVersion.getZipFilePath().getParent().resolve("projlib").toString());
+            OSR.setPROJSearchPath(gdalVersion.getZipFilePath().getParent().resolve("share").resolve("proj").toString());
         }
     }
 }
