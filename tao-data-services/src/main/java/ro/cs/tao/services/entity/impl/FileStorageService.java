@@ -524,7 +524,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     private List<Path> list(Path path, int depth) throws IOException {
         try (Stream<Path> stream = Files.walk(path, depth, FileVisitOption.FOLLOW_LINKS)) {
             return stream.filter(p -> !p.equals(path) && !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
-                         .collect(Collectors.toList());
+                    .sorted().collect(Collectors.toList());
         }
     }
 }
