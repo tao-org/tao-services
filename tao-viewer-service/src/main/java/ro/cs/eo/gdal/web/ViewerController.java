@@ -49,8 +49,7 @@ public class ViewerController extends ControllerBase {
     @RequestMapping(value = "/scale", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> changeScale(@RequestParam("file") String relativePath,
                                                           @RequestParam("min") double min,
-                                                          @RequestParam("max") double max,
-                                                          @RequestParam("nodata") int noData) {
+                                                          @RequestParam("max") double max) {
         final Repository localRepository = getLocalRepository();
         final String path = localRepository.resolve(relativePath);
         TileReader.setScale(Paths.get(path), new double[] { min, max });
@@ -70,7 +69,7 @@ public class ViewerController extends ControllerBase {
             final String path = localRepository.resolve(relativePath);
             ProductDescriptor productDescriptor = ProductDescriptorFactory.getDescriptor(Paths.get(path));
             double[] scale = TileReader.getScale(Paths.get(path));
-            if (scale != null) {
+            if (scale != null && scale.length == 2) {
                 FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
                 formatDescriptor.setPixelMinScale((int) scale[0]);
                 formatDescriptor.setPixelMaxScale((int) scale[1]);

@@ -4,7 +4,7 @@ import ro.cs.eo.gdal.dataio.GDALTileCache;
 import ro.cs.eo.gdal.dataio.drivers.*;
 import ro.cs.eo.gdal.reader.info.FormatDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
-import ro.cs.tao.utils.Tuple;
+import ro.cs.tao.utils.Triple;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,7 +15,7 @@ import java.util.*;
 public class TileReader {
     private static SpatialReference destReference;
     private static final Config config;
-    private static final Map<Path, Tuple<double[], LocalDateTime>> scaleCache;
+    private static final Map<Path, Triple<Extent, double[], LocalDateTime>> scaleCache;
     private static final Timer evictor;
     private final GDALTileCache gdalTileCache;
 
@@ -27,18 +27,21 @@ public class TileReader {
             @Override
             public void run() {
                 final LocalDateTime reference = LocalDateTime.now().minusHours(1);
-                scaleCache.entrySet().removeIf(pathTupleEntry -> pathTupleEntry.getValue().getKeyTwo().isBefore(reference));
+                scaleCache.entrySet().removeIf(entry -> entry.getValue().getKeyThree().isBefore(reference));
             }
         }, 3600000, 3600000);
     }
 
     public static void setScale(Path file, double[] minMax) {
-        scaleCache.put(file, new Tuple<>(minMax, LocalDateTime.now()));
+        Triple<Extent, double[], LocalDateTime> triple = scaleCache.get(file);
+        if (triple != null) {
+            scaleCache.replace(file, new Triple<>(triple.getKeyOne(), minMax, LocalDateTime.now()));
+        }
     }
 
     public static double[] getScale(Path file) {
-        Tuple<double[], LocalDateTime> tuple = scaleCache.get(file);
-        return tuple != null ? tuple.getKeyOne() : null;
+        Triple<Extent, double[], LocalDateTime> triple = scaleCache.get(file);
+        return triple != null ? triple.getKeyTwo() : null;
     }
 
     public TileReader(GDALTileCache gdalTileCache) {
@@ -46,28 +49,28 @@ public class TileReader {
     }
 
     public void computeTile(ProductDescriptor productDescriptor, Path tileFilePath, int x, int y, byte z) throws IOException {
-        GDAL.useExceptions();
         Dataset[] gdalDatasets = null;
         Dataset vrtDataset = null;
         Dataset warpDataset = null;
         Dataset translateDataset = null;
         try {
-            if (!Files.exists(tileFilePath)) {
-                Files.createDirectories(tileFilePath.getParent());
-                if (config.reverseY) {
-                    y = (1 << z) - 1 - y;
-                }
-                final Extent tileExtent = config.tileGrid.tileExtent(x, y, z);
-                gdalDatasets = prepareDatasets(productDescriptor, tileExtent);
-                vrtDataset = buildVRTDataset(productDescriptor, gdalDatasets);
-                final String tmpFileName = "/vsimem/" + System.currentTimeMillis() + ".tif";
-                warpDataset = buildWarpedDataset(productDescriptor, config, tileExtent, vrtDataset, tmpFileName);
-                translateDataset = buildTranslatedDataset(productDescriptor, warpDataset, tileFilePath.toString());
-                if (this.gdalTileCache.isCacheEnabled()){
-                    final long tileSize = Files.size(tileFilePath);
-                    this.gdalTileCache.putTile(String.valueOf(tileFilePath), tileSize);
-                }
+            GDAL.useExceptions();
+            //if (!Files.exists(tileFilePath)) {
+            Files.createDirectories(tileFilePath.getParent());
+            if (config.reverseY) {
+                y = (1 << z) - 1 - y;
             }
+            final Extent tileExtent = config.tileGrid.tileExtent(x, y, z);
+            gdalDatasets = prepareDatasets(productDescriptor, tileExtent);
+            vrtDataset = buildVRTDataset(productDescriptor, gdalDatasets);
+            final String tmpFileName = "/vsimem/" + System.currentTimeMillis() + ".tif";
+            warpDataset = buildWarpedDataset(productDescriptor, tileExtent, vrtDataset, tmpFileName);
+            translateDataset = buildTranslatedDataset(productDescriptor, warpDataset, tileFilePath.toString());
+            if (this.gdalTileCache.isCacheEnabled()){
+                final long tileSize = Files.size(tileFilePath);
+                this.gdalTileCache.putTile(tileFilePath, tileSize);
+            }
+            //}
         } finally {
             if (gdalDatasets != null) {
                 for (Dataset gdalDataset : gdalDatasets) {
@@ -87,7 +90,6 @@ public class TileReader {
     }
 
     public ImageInfo getInfo(ProductDescriptor productDescriptor) {
-        GDAL.useExceptions();
         final Path productFilePath = productDescriptor.getProductPath();
         final String name = productFilePath.getFileName().toString();
         final String projectionCode = "EPSG:" + config.tileGrid.projectionCode;
@@ -179,13 +181,17 @@ public class TileReader {
     private static Dataset[] prepareDatasets(ProductDescriptor productDescriptor, Extent tileExtent) {
         final List<Dataset> gdalDatasets = new ArrayList<>();
         final Path[] productBandsPaths = productDescriptor.getBandPaths();
+        final Path productPath = productDescriptor.getProductPath();
         for (Path productBandsPath : productBandsPaths) {
             final Dataset gdalDataset = GDAL.open(productBandsPath.toAbsolutePath().toString(), GDALConst.gaReadonly());
             if (gdalDataset == null) {
                 throw new IllegalStateException("Fail to open Dataset for file: " + productBandsPath + ". " + GDAL.getLastErrorMsg());
             }
-            final Extent imageExtent = computeImageExtent(gdalDataset);
-            if (tileInsideImage(imageExtent, tileExtent)) {
+            if (!scaleCache.containsKey(productPath)) {
+                scaleCache.put(productPath, new Triple<>(computeImageExtent(gdalDataset), new double[0], LocalDateTime.now()));
+            }
+            final Triple<Extent, double[], LocalDateTime> triple = scaleCache.get(productPath);
+            if (tileInsideImage(triple.getKeyOne(), tileExtent)) {
                 gdalDatasets.add(gdalDataset);
             } else {
                 deleteDataset(gdalDataset, false);
@@ -203,11 +209,12 @@ public class TileReader {
             return gdalDatasets[0];
         }*/
         final Vector<String> vrtOptions = new Vector<>();
-        for (FormatDescriptor.Band band : productDescriptor.getFormatDescriptor().getBands()) {
+        FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
+        for (FormatDescriptor.Band band : formatDescriptor.getBands()) {
             vrtOptions.add("-b");
             vrtOptions.add(String.valueOf(band.getIndexInRaster()));
         }
-        if (gdalDatasets.length > 1 && productDescriptor.getFormatDescriptor().multiRaster()) {
+        if (gdalDatasets.length > 1 && formatDescriptor.multiRaster()) {
             vrtOptions.add("-separate");
         }
         final String tempVrtFileName = "/vsimem/" + System.currentTimeMillis() + ".vrt";
@@ -218,18 +225,18 @@ public class TileReader {
         return vrtDataset;
     }
 
-    private static Dataset buildWarpedDataset(ProductDescriptor productDescriptor, Config config, Extent tileExtent, Dataset gdalDataset, String tileFilePath) {
+    private static Dataset buildWarpedDataset(ProductDescriptor productDescriptor, Extent tileExtent, Dataset gdalDataset, String tileFilePath) {
         final Vector<String> warpOptions = new Vector<>();
         warpOptions.add("-t_srs");
-        warpOptions.add("EPSG:" + config.tileGrid.projectionCode);
+        warpOptions.add("EPSG:" + TileReader.config.tileGrid.projectionCode);
         warpOptions.add("-te");
         warpOptions.add(String.valueOf(tileExtent.xmin));
         warpOptions.add(String.valueOf(tileExtent.ymin));
         warpOptions.add(String.valueOf(tileExtent.xmax));
         warpOptions.add(String.valueOf(tileExtent.ymax));
         warpOptions.add("-ts");
-        warpOptions.add(String.valueOf(config.tileWidth));
-        warpOptions.add(String.valueOf(config.tileHeight));
+        warpOptions.add(String.valueOf(TileReader.config.tileWidth));
+        warpOptions.add(String.valueOf(TileReader.config.tileHeight));
         //warpOptions.add("-tap");
         if (productDescriptor.getNoDataValue() != null) {
             warpOptions.add("-srcnodata");
@@ -251,17 +258,19 @@ public class TileReader {
     }
 
     private static Dataset buildTranslatedDataset(ProductDescriptor productDescriptor, Dataset warpDataset, String tileFilePath) {
-        Vector<String> translateOptions = new Vector<>();
+        final Vector<String> translateOptions = new Vector<>();
         double min, max;
         translateOptions.add("-scale");
-        Band rasterBand = warpDataset.getRasterBand(1);
+        final Band rasterBand = warpDataset.getRasterBand(1);
+        final Path productPath = productDescriptor.getProductPath();
         if (productDescriptor.getFormatDescriptor().getPriority() == 1 &&
                 productDescriptor.getPixelMinScale() != null && productDescriptor.getPixelMaxScale() != null &&
                 productDescriptor.getPixelMinScale() != 0 && productDescriptor.getPixelMaxScale() != 0) {
             min = productDescriptor.getPixelMinScale();
             max = productDescriptor.getPixelMaxScale();
         } else {
-            if (!scaleCache.containsKey(productDescriptor.getProductPath())) {
+            Triple<Extent, double[], LocalDateTime> triple = scaleCache.get(productPath);
+            if (triple.getKeyTwo().length == 0) {
                 Double[] val = new Double[2];
                 rasterBand.getMinimum(val);
                 if (val[0] != null) {
@@ -274,16 +283,16 @@ public class TileReader {
                     min = vals[0];
                     max = vals[1];
                 }
-                scaleCache.put(productDescriptor.getProductPath(), new Tuple<>(new double[] { min, max}, LocalDateTime.now()));
+                triple = new Triple<>(triple.getKeyOne(), new double[] {min, max }, LocalDateTime.now());
+                scaleCache.put(productPath, triple);
             }
-            double[] doubles = scaleCache.get(productDescriptor.getProductPath()).getKeyOne();
-            min = doubles[0];
-            max = doubles[1];
+            min = triple.getKeyTwo()[0];
+            max = triple.getKeyTwo()[1];
         }
         translateOptions.add(String.valueOf(min));
         translateOptions.add(String.valueOf(max));
-        translateOptions.add("-a_scale");
-        translateOptions.add("none");
+        /*translateOptions.add("-a_scale");
+        translateOptions.add("none");*/
         if (!GDALConstConstants.gdtByte().equals(rasterBand.getDataType())) {
             translateOptions.add("-ot");
             translateOptions.add("Byte");

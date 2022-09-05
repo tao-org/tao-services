@@ -42,7 +42,9 @@ public class GDALTileMapService {
             if (Files.exists(sourceLocalFilePath)) {
                 final String imageFileName = sourceLocalFilePath.getFileName().toString().replaceAll(regEx, "$1");
                 Path tileFilePath = this.gdalTileCache.getTilePath(imageFileName, x, y, z, productDescriptor.getPixelMinScale(), productDescriptor.getPixelMaxScale());
-                this.tileReader.computeTile(productDescriptor, tileFilePath, x, y, z);
+                if (Files.notExists(tileFilePath)) {
+                    this.tileReader.computeTile(productDescriptor, tileFilePath, x, y, z);
+                }
                 return Files.readAllBytes(tileFilePath);
             } else {
                 throw new FileNotFoundException("Product path not exists.");
