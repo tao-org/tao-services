@@ -256,7 +256,8 @@ public class TileReader {
         translateOptions.add("-scale");
         Band rasterBand = warpDataset.getRasterBand(1);
         if (productDescriptor.getFormatDescriptor().getPriority() == 1 &&
-                productDescriptor.getPixelMinScale() != null && productDescriptor.getPixelMaxScale() != null) {
+                productDescriptor.getPixelMinScale() != null && productDescriptor.getPixelMaxScale() != null &&
+                productDescriptor.getPixelMinScale() != 0 && productDescriptor.getPixelMaxScale() != 0) {
             min = productDescriptor.getPixelMinScale();
             max = productDescriptor.getPixelMaxScale();
         } else {
@@ -281,6 +282,8 @@ public class TileReader {
         }
         translateOptions.add(String.valueOf(min));
         translateOptions.add(String.valueOf(max));
+        translateOptions.add("-a_scale");
+        translateOptions.add("none");
         if (!GDALConstConstants.gdtByte().equals(rasterBand.getDataType())) {
             translateOptions.add("-ot");
             translateOptions.add("Byte");
