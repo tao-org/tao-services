@@ -2,7 +2,7 @@ package ro.cs.tao.services.startup;
 
 import ro.cs.eo.gdal.dataio.GDALLoader;
 
-public class ViewerInitializer extends BaseLifeCycle {
+public class GDALInitializer extends BaseLifeCycle {
     @Override
     public int priority() {
         return 12;
@@ -12,9 +12,9 @@ public class ViewerInitializer extends BaseLifeCycle {
     public void onStartUp() {
         try {
             GDALLoader.getInstance().initGDAL();
-            logger.fine("GDAL viewer initialized");
+            logger.fine("GDAL binaries initialized");
         } catch (Throwable error) {
-            logger.warning("GDAL viewer cannot be initialized [cause: " + error.getMessage() + "]");
+            logger.warning("GDAL binaries cannot be initialized [cause: " + error.getMessage() + "]");
         }
     }
 
