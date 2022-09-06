@@ -27,8 +27,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.session.web.http.HeaderHttpSessionStrategy;
-import org.springframework.session.web.http.HttpSessionStrategy;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -97,11 +95,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
+    /*@Bean
     public HttpSessionStrategy httpSessionStrategy() {
         return new HeaderHttpSessionStrategy();
     }
-
+*/
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         final CorsConfiguration configuration = new CorsConfiguration();
