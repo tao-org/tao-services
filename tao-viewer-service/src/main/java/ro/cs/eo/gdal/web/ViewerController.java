@@ -46,6 +46,13 @@ public class ViewerController extends ControllerBase {
         this.context.refresh();
     }
 
+    @RequestMapping(value = "/scale", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getScale(@RequestParam("file") String relativePath) {
+        final Repository localRepository = getLocalRepository();
+        final String path = localRepository.resolve(relativePath);
+        return prepareResult(TileReader.getScale(Paths.get(path)));
+    }
+
     @RequestMapping(value = "/scale", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> changeScale(@RequestParam("file") String relativePath,
                                                           @RequestParam("min") double min,
@@ -63,7 +70,6 @@ public class ViewerController extends ControllerBase {
                                                @RequestParam("y") int y) {
         GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
         HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
         try {
             final Repository localRepository = getLocalRepository();
             final String path = localRepository.resolve(relativePath);
@@ -78,15 +84,20 @@ public class ViewerController extends ControllerBase {
             }
             byte[] data = gdalTileMapService.getGDALTile(productDescriptor, z, x, y);
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_PNG_VALUE);
+            headers.add(HttpHeaders.CACHE_CONTROL, "max-age=60");
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
         } catch (IndexOutOfBoundsException e) {
+            headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
             return new ResponseEntity<>(("<html><body><h1>" + e.getMessage() + "</h1><br/><h3>Try again.</h3></body></html>").getBytes(), headers, HttpStatus.NOT_FOUND);
         } catch (FileNotFoundException e) {
+            headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
             return new ResponseEntity<>(("<html><body><h1>" + e.getMessage() + "</h1></body></html>").getBytes(), headers, HttpStatus.NOT_FOUND);
         } catch(IllegalArgumentException e){
+            headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
             return new ResponseEntity<>(("<html><body><h1>" + e.getMessage() + "</h1><br/><h3>Try another product.</h3></body></html>").getBytes(), headers, HttpStatus.NOT_ACCEPTABLE);
         } catch (Exception e) {
             e.printStackTrace();
+            headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
             return new ResponseEntity<>(("<html><body><h1>500</h1><br/><h3>Internal server error.</h3></body></html>").getBytes(), headers, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -108,7 +119,7 @@ public class ViewerController extends ControllerBase {
             final String name = relativePath.substring(relativePath.lastIndexOf('/') + 1);
             ProductDescriptor productDescriptor = ProductDescriptorFactory.getDescriptor(Paths.get(path));
             double[] scale = TileReader.getScale(Paths.get(path));
-            if (scale != null) {
+            if (scale != null && scale.length == 2) {
                 FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
                 formatDescriptor.setPixelMinScale((int) scale[0]);
                 formatDescriptor.setPixelMaxScale((int) scale[1]);
