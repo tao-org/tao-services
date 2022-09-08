@@ -55,10 +55,11 @@ public class AuthenticationFilter extends GenericFilterBean {
     private static final Logger logger = Logger.getLogger(AuthenticationFilter.class.getName());
     private static volatile boolean systemInitialised = false;
     private final AuthenticationManager authenticationManager;
+    private final SystemMessageReceiver receiver;
 
     public AuthenticationFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
-        SystemMessageReceiver receiver = new SystemMessageReceiver();
+        this.receiver = new SystemMessageReceiver();
     }
 
     @Override
@@ -80,7 +81,7 @@ public class AuthenticationFilter extends GenericFilterBean {
                 wrapper.putHeader("Authorization", "Basic " + new String(Base64.encodeBase64((username + ":" + password).getBytes(StandardCharsets.US_ASCII))));
                 request = wrapper;
             } else if (token.isPresent()) {
-                processTokenAuthentication(token);
+                processTokenAuthentication(token.get(), request);
             } else {
                 if (isExcludedResource(httpRequest, resourcePath)) {
                     SecurityContextHolder.getContext().setAuthentication(new SystemAuthentication());
@@ -108,22 +109,15 @@ public class AuthenticationFilter extends GenericFilterBean {
 
     }
 
-    private void processTokenAuthentication(Optional<String> token) {
-        Authentication resultOfAuthentication = tryToAuthenticateWithToken(token);
-        SecurityContextHolder.getContext().setAuthentication(resultOfAuthentication);
-    }
-
-    private Authentication tryToAuthenticateWithToken(Optional<String> token) {
-        PreAuthenticatedAuthenticationToken requestAuthentication = new PreAuthenticatedAuthenticationToken(token, null);
-        return tryToAuthenticate(requestAuthentication);
-    }
-
-    private Authentication tryToAuthenticate(Authentication requestAuthentication) {
-        Authentication responseAuthentication = authenticationManager.authenticate(requestAuthentication);
+    private void processTokenAuthentication(String token, ServletRequest request) {
+        final PreAuthenticatedAuthenticationToken requestAuthentication = new PreAuthenticatedAuthenticationToken(token, null);
+        final Authentication responseAuthentication = authenticationManager.authenticate(requestAuthentication);
         if (responseAuthentication == null || !responseAuthentication.isAuthenticated()) {
+            logger.warning(String.format("Authentication request [ip: %s, token: %s] failed",
+                                         request.getRemoteAddr(), token));
             throw new InternalAuthenticationServiceException("Unable to authenticate user");
         }
-        return responseAuthentication;
+        SecurityContextHolder.getContext().setAuthentication(responseAuthentication);
     }
 
     private boolean postToAuthenticate(HttpServletRequest httpRequest, String resourcePath) {

@@ -33,6 +33,7 @@ import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
 import ro.cs.tao.utils.StringUtilities;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.StringTokenizer;
@@ -95,8 +96,10 @@ public class AuthenticationController extends BaseController {
 
     @RequestMapping(value = "/refresh", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> refresh(@RequestParam(name = "user") String userName,
-                                                      @RequestParam(name = "token") String refreshToken) {
+                                                      @RequestParam(name = "token") String refreshToken,
+                                                      HttpServletRequest request) {
         boolean success = false;
+        final String remoteAddr = request.getRemoteAddr();
         try {
             final Token newToken = authenticationService.getNewToken(userName, refreshToken);
             if (newToken != null) {
@@ -108,12 +111,13 @@ public class AuthenticationController extends BaseController {
                 return prepareResult(null, HttpStatus.BAD_REQUEST);
             }
         } catch (Exception ex) {
-            return handleException(ex);
+            //return handleException(ex);
+            return prepareResult(ex.getMessage(), ResponseStatus.FAILED);
         } finally {
             if (success) {
-                trace("Token refreshed for %s", userName);
+                trace("Token refreshed [user: %s, addr: %s]", userName, remoteAddr);
             } else {
-                warn("Token refresh failed for %s", userName);
+                warn("Token refresh failed [user: %s, addr: %s]", userName);
             }
         }
     }

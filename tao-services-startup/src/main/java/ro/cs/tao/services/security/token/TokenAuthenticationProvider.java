@@ -27,8 +27,6 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 
-import java.util.Optional;
-
 /**
  *
  * @author Oana H.
@@ -46,20 +44,19 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
         if (this.apiDevToken == null) {
             this.apiDevToken = ConfigurationManager.getInstance().getValue("api.token");
         }
-        Optional token = (Optional) authentication.getPrincipal();
-        String rToken;
-        if (!token.isPresent() || (rToken = token.get().toString()).isEmpty()) {
+        String token = (String) authentication.getPrincipal();
+        if (token == null || token.length() == 0) {
             throw new BadCredentialsException("Invalid token");
         }
-        if (rToken.equals(this.apiDevToken)) {
+        if (token.equals(this.apiDevToken)) {
             JaasAuthenticationToken authenticationToken = new JaasAuthenticationToken(SystemPrincipal.instance(), null, null);
             authenticationToken.setAuthenticated(true);
             return authenticationToken;
         }
-        if (!tokenManagementService.isValid(rToken)) {
+        if (!tokenManagementService.isValid(token)) {
             throw new BadCredentialsException("Invalid token or token expired");
         }
-        return tokenManagementService.retrieve(token.get().toString());
+        return tokenManagementService.retrieve(token);
     }
 
     @Override
