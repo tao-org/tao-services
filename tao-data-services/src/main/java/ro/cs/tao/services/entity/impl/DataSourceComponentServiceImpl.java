@@ -209,8 +209,10 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
                     userDSC.setSources(null);
                     userDSC.setTargets(null);
                     LocalDateTime time = LocalDateTime.now();
-                    String newId = String.join("-", sensor, dataSource, principal.getName(),
-                            time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+                    /*String newId = String.join("-", sensor, dataSource, principal.getName(),
+                            time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));*/
+                    final String newId = String.join("-", "product", "set", principal.getName(),
+                                                     time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
                     userDSC.setId(newId);
                     userDSC.setLabel(label != null && !label.isEmpty() ?
                             label : String.join("-", sensor, dataSource, principal.getName()) +

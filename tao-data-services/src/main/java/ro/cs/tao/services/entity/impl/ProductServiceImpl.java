@@ -58,7 +58,7 @@ import java.util.stream.Stream;
 @Service("productService")
 public class ProductServiceImpl extends EntityService<EOProduct> implements ProductService {
 	private static final Set<String> inspectionExclusions = new HashSet<String>() {{
-		add(".aux.xml"); add(".png"); add(".jpg");
+		add(".aux.xml"); add(".png"); add(".jpg"); add(".log");
 	}};
 
 	@Autowired
@@ -168,7 +168,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 			progressListener.started(sourcePath);
 			for (Path file : files) {
 				try {
-					if (file.endsWith(".aux.xml")) {
+					if (inspectionExclusions.stream().anyMatch(file::endsWith)) {
 						continue;
 					}
 					Path targetPath;
