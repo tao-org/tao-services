@@ -19,7 +19,6 @@ package ro.cs.tao.services.entity.impl;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.ProgressListener;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
@@ -40,6 +39,7 @@ import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.async.Parallel;
+import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.Repository;
 
 import java.io.IOException;

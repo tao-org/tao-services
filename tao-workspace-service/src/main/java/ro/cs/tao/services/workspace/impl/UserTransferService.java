@@ -3,7 +3,6 @@ package ro.cs.tao.services.workspace.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.core.io.FileSystemResource;
-import ro.cs.tao.ProgressListener;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.messaging.ProgressNotifier;
@@ -14,6 +13,7 @@ import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.workspace.model.TransferableItem;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
+import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.Repository;
 
 import java.io.InputStream;
