@@ -309,7 +309,7 @@ public class WorkflowServiceImpl
     @Override
     public void updateNodesPositions(long workflowId, Map<Long, float[]> positions) throws PersistenceException {
         if (positions != null && positions.size() > 0) {
-            List<WorkflowNodeDescriptor> nodes = workflowNodeProvider.list(positions.keySet());
+            /*List<WorkflowNodeDescriptor> nodes = workflowNodeProvider.list(positions.keySet());
             for (WorkflowNodeDescriptor node : nodes) {
                 if (!node.getWorkflow().getId().equals(workflowId)) {
                     throw new PersistenceException(String.format("Node with id '%s' doesn't belong to workflow with id '%s'",
@@ -323,6 +323,9 @@ public class WorkflowServiceImpl
                 node.setxCoord(coordinates[0]);
                 node.setyCoord(coordinates[1]);
                 workflowNodeProvider.update(node);
+            }*/
+            for (Map.Entry<Long, float[]> entry : positions.entrySet()) {
+                workflowNodeProvider.updatePosition(entry.getKey(), entry.getValue());
             }
         }
     }
