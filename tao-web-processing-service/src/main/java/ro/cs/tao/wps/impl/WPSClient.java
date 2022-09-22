@@ -10,6 +10,7 @@ import ro.cs.tao.component.DataDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.WPSAuthentication;
 import ro.cs.tao.datasource.beans.Parameter;
+import ro.cs.tao.datasource.param.JavaType;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
@@ -81,6 +82,15 @@ public class WPSClient {
             Parameter param = new Parameter();
             final String pId = parameter.getIdentifier().getValue();
             param.setType(parameter.getLiteralData().getDataType().getValue());
+            String value = parameter.getLiteralData().getDefaultValue();
+            if (JavaType.BOOLEAN.friendlyName().equals(param.getType())) {
+                if ("0".equals(value)) {
+                    value = "false";
+                } else if ("1".equals(value)) {
+                    value = "true";
+                }
+            }
+            param.setValue(value);
             if (pId.contains("~")) {
                 final String[] tokens = pId.split("~");
                 if (!parameters.containsKey(tokens[0])) {
