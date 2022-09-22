@@ -200,13 +200,23 @@ public class WPSController extends BaseController {
                 if (StringUtils.isEmpty(capability)) {
                     throw new IllegalArgumentException("[capability] Must supply a value");
                 }
+                Container container = containerService.listByType(ContainerType.WPS).stream()
+                                                      .filter(c -> endpoint.equals(c.getApplicationPath()))
+                                                      .findFirst().orElse(null);
+                if (container == null) {
+                    throw new IllegalArgumentException("WPS service not previously registered");
+                }
                 final WebProcessingService.ProcessInfo<WorkflowInfo, TargetDescriptor> processInfo = client.describeProcess(capability);
                 WPSComponent component = new WPSComponent();
                 component.setId(endpoint + "~" + capability);
+                component.setService(container);
+                component.setCapabilityName(capability);
                 component.setLabel(processInfo.getCapabilityInfo().getName());
+                component.setDescription(processInfo.getCapabilityInfo().getPath());
                 component.setRemoteAddress(endpoint);
                 component.setVisibility(ProcessingComponentVisibility.USER);
-                component.setOwner(processInfo.getCapabilityInfo().getUserName());
+                //component.setOwner(processInfo.getCapabilityInfo().getUserName());
+                component.setOwner(currentUser());
                 component.setVersion("WPS 1.0");
                 final Map<String, List<Parameter>> parameters = processInfo.getParameters();
                 if (parameters.size() > 0) {
