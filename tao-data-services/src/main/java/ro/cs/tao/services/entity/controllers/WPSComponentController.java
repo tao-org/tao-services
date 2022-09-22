@@ -15,7 +15,6 @@ import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.component.WPSComponentBean;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.enums.DataFormat;
-import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -64,7 +63,7 @@ public class WPSComponentController extends BaseController {
                 throw new IllegalArgumentException("Emtpy body");
             }
             if (entity.getOwner() == null || entity.getOwner().isEmpty()) {
-                entity.setOwner(SessionStore.currentContext().getPrincipal().getName());
+                entity.setOwner(currentUser());
             }
             final Container container = containerService.findById(entity.getServiceId());
             if (container == null) {
