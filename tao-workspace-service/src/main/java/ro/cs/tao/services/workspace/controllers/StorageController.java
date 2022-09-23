@@ -32,7 +32,10 @@ import ro.cs.tao.services.workspace.impl.TransferService;
 import ro.cs.tao.services.workspace.model.TransferRequest;
 import ro.cs.tao.services.workspace.model.TransferableItem;
 import ro.cs.tao.utils.Crypto;
+import ro.cs.tao.utils.HashedBlockingQueue;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.utils.Tuple;
+import ro.cs.tao.utils.executors.BlockingQueueWorker;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
@@ -45,6 +48,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.function.Function;
+import java.util.logging.Logger;
 import java.util.zip.ZipOutputStream;
 
 @Controller
@@ -61,6 +67,14 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
     @Autowired
     private TransferService transferService;
+
+    private static final BlockingQueue<Tuple<Repository, String>> deletionQueue;
+
+    static {
+        deletionQueue = new HashedBlockingQueue<>(Tuple::getKeyTwo);
+        BlockingQueueWorker<Tuple<Repository, String>> queueWorker = new BlockingQueueWorker<>(deletionQueue, new DeleteOperation(), 1, "delete-worker");
+        queueWorker.start();
+    }
 
     /**
      * List all configuration keys.
@@ -235,11 +249,10 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 throw new IOException("Not allowed");
             }
             final Repository workspace = getOwnedWorkspace(workspaceId);
-            /*if (workspace.getType() == RepositoryType.LOCAL) {
-                return list(relativeFolder, lastItem);
-            }*/
             final StorageService service = StorageServiceFactory.getInstance(workspace);
             final List<FileObject> list = service.listFiles(relativeFolder, null, lastItem, 1);
+            // remove items that were submitted to the deletion queue but not yet deleted
+            list.removeIf(f -> deletionQueue.contains(f.getRelativePath()));
             if (workspace.root().equals(relativeFolder) && list.isEmpty()) {
                 list.add(service.emptyFolderItem());
             }
@@ -290,12 +303,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 throw new IOException("The folder must be relative and should not start with '.' or '..'");
             }
             final Repository workspace = getOwnedWorkspace(workspaceId);
-            final StorageService service = getRepositoryService(workspace);
-            String[] list = file.split(",");
-            for (String f : list) {
-                service.remove(f);
-            }
-            responseEntity = prepareResult(String.format("%s deleted", file), ResponseStatus.SUCCEEDED);
+            deletionQueue.put(new Tuple<>(workspace, file));
+            responseEntity = prepareResult(String.format("%s marked for deletion", file), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
         }
@@ -590,7 +599,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return workspace;
     }
 
-    private StorageService getRepositoryService(Repository workspace) {
+    private static StorageService getRepositoryService(Repository workspace) {
         StorageService instance = StorageServiceFactory.getInstance(workspace);
         instance.associate(workspace);
         return instance;
@@ -609,6 +618,23 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             return "/";
         } else {
             return path.replace("\\", "/");
+        }
+    }
+
+    private static class DeleteOperation implements Function<Tuple<Repository, String>, Void> {
+
+        @Override
+        public Void apply(Tuple<Repository, String> item) {
+            final StorageService service = getRepositoryService(item.getKeyOne());
+            String[] list = item.getKeyTwo().split(",");
+            for (String f : list) {
+                try {
+                    service.remove(f);
+                } catch (IOException e) {
+                    Logger.getLogger(StorageController.class.getName()).warning(e.getMessage());
+                }
+            }
+            return null;
         }
     }
 }
