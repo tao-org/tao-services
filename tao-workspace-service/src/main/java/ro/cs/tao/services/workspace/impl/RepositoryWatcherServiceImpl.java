@@ -4,7 +4,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.SystemVariable;
-import ro.cs.tao.execution.monitor.MemoryUnit;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.SystemPrincipal;
@@ -12,6 +11,7 @@ import ro.cs.tao.services.interfaces.RepositoryWatcherService;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.utils.executors.MemoryUnit;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -208,7 +208,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
         if (!Files.exists(userWorkspace)) {
             return -1;
         }
-        final long usedSpace = FileUtilities.folderSize(userWorkspace) / ((long) MemoryUnit.MEGABYTE.value());
+        final long usedSpace = FileUtilities.folderSize(userWorkspace) / MemoryUnit.MB.value();
         return Math.toIntExact(usedSpace);
     }
 

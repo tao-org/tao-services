@@ -8,6 +8,7 @@ import ro.cs.eo.gdal.reader.TileReader;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.utils.executors.MemoryUnit;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
@@ -26,7 +27,7 @@ public class GDALTileMapService {
         ConfigurationProvider config = ConfigurationManager.getInstance();
         final boolean cacheEnabled = Boolean.parseBoolean(config.getValue(Keys.CONFIG_CACHE_ENABLED_KEY, "false"));
         final Path path = Paths.get(System.getProperty("user.home")).resolve(config.getValue(Keys.CONFIG_CACHE_DIR_KEY, ".eds/cache/"));
-        final int size = Integer.parseInt(config.getValue(Keys.CONFIG_CACHE_SIZE_KEY, "1024"));
+        final int size = Integer.parseInt(config.getValue(Keys.CONFIG_CACHE_SIZE_KEY, String.valueOf(MemoryUnit.KB.value())));
         final boolean cacheClearAtStartup = Boolean.parseBoolean(config.getValue(Keys.CONFIG_CACHE_CLEAR_AT_STARTUP_KEY, "false"));
         this.gdalTileCache = new GDALTileCache(cacheEnabled, path, size, cacheClearAtStartup);
         this.tileReader = new TileReader(this.gdalTileCache);

@@ -1,6 +1,7 @@
 package ro.cs.tao.services.commons.config;
 
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.utils.executors.MemoryUnit;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -23,7 +24,7 @@ public interface FileProcessor {
             for (Map.Entry<String, String> entry : map.entrySet()) {
                 final Path configFile = configDirectory.resolve(entry.getKey());
                 if (!Files.exists(configFile)) {
-                    byte[] buffer = new byte[1024];
+                    byte[] buffer = new byte[MemoryUnit.KB.value().intValue()];
                     try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream(entry.getValue()));
                          OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile))) {
                         int read;
