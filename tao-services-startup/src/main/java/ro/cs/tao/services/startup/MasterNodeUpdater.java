@@ -10,6 +10,7 @@ import ro.cs.tao.execution.monitor.OSRuntimeInfo;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
 import ro.cs.tao.topology.*;
 import ro.cs.tao.utils.DockerHelper;
+import ro.cs.tao.utils.executors.MemoryUnit;
 
 import java.net.InetAddress;
 import java.util.List;
@@ -51,7 +52,7 @@ public class MasterNodeUpdater extends BaseLifeCycle {
                     master.setServicesStatus(node.getServicesStatus());
                     final NodeFlavor masterFlavor = persistenceManager.nodeFlavors().getMasterFlavor();
                     masterFlavor.setCpu(processors);
-                    masterFlavor.setMemory((int) inspector.getTotalMemoryMB() / 1024);
+                    masterFlavor.setMemory((int) (inspector.getTotalMemoryMB() / MemoryUnit.KB.value()));
                     masterFlavor.setDisk((int) inspector.getTotalDiskGB());
                     master.setFlavor(masterFlavor);
                     master.setActive(true);

@@ -47,6 +47,7 @@ import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.executors.FileProcessFactory;
+import ro.cs.tao.utils.executors.MemoryUnit;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -161,23 +162,10 @@ public class TaoServicesStartup extends StartupBase {
     }
 
     private long unitSize(String unit) {
-        final long size;
-        switch (unit.toLowerCase()) {
-            case "kb":
-                size = 1024;
-                break;
-            case "mb":
-                size = 1024 * 1024;
-                break;
-            case "gb":
-                size = 1024 * 1024 * 1024;
-                break;
-            case "tb":
-                size = 1024L * 1024 * 1024 * 1024;
-                break;
-            default:
-                throw new IllegalArgumentException("Unit not supported");
+        try {
+            return MemoryUnit.getEnumConstantByName(unit).value();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Unit not supported");
         }
-        return size;
     }
 }
