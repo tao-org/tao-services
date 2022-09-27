@@ -17,7 +17,6 @@ import ro.cs.eo.gdal.reader.info.FormatDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptorFactory;
 import ro.cs.eo.gdal.service.GDALTileMapService;
-import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.services.commons.ControllerBase;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -35,8 +34,7 @@ import java.nio.file.Paths;
 public class ViewerController extends ControllerBase {
 
     private final AnnotationConfigApplicationContext context;
-    @Autowired
-    private PersistenceManager persistenceManager;
+
     @Autowired
     private RepositoryProvider repositoryProvider;
 
