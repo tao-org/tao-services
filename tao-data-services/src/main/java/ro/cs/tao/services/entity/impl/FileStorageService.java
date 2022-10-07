@@ -38,7 +38,6 @@ import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.workspaces.Repository;
 
 import java.io.*;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -288,7 +287,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         final Map<Path, Map<String, String>> auxAttributes = new HashMap<>();
         final List<AuxiliaryData> auxData = auxiliaryDataProvider.list(repository.getUserName(), pathArray);
         for (AuxiliaryData auxiliaryData : auxData) {
-            auxAttributes.put(Paths.get(URI.create(auxiliaryData.getLocation())),
+            auxAttributes.put(FileUtilities.toPath(auxiliaryData.getLocation()),
                               auxiliaryData.toAttributeMap());
         }
         final List<EOProduct> productList = productProvider.getByLocation(pathArray);
@@ -298,21 +297,21 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
             if (entryPoint != null) {
                 int idx = entryPoint.lastIndexOf('.');
                 if (idx > 0 && SIMPLE_PRODUCT_EXTENSIONS.contains(entryPoint.substring(idx))) {
-                    productAttributes.put(Paths.get(URI.create(product.getLocation()).resolve(entryPoint)),
+                    productAttributes.put(FileUtilities.toPath(product.getLocation()).resolve(entryPoint),
                                           product.toAttributeMap());
                 } else {
-                    productAttributes.put(Paths.get(URI.create(product.getLocation())),
+                    productAttributes.put(FileUtilities.toPath(product.getLocation()),
                                           product.toAttributeMap());
                 }
             } else {
-                productAttributes.put(Paths.get(URI.create(product.getLocation())),
+                productAttributes.put(FileUtilities.toPath(product.getLocation()),
                                       product.toAttributeMap());
             }
         }
         final List<VectorData> vectors = vectorDataProvider.getByLocation(pathArray);
         final Map<Path, Map<String, String>> vectorAttributes = new HashMap<>();
         for (VectorData vectorData : vectors) {
-            vectorAttributes.put(Paths.get(URI.create(vectorData.getLocation())),
+            vectorAttributes.put(FileUtilities.toPath(vectorData.getLocation()),
                                  vectorData.toAttributeMap());
         }
         final List<FileObject> fileObjects = new ArrayList<>();
@@ -443,7 +442,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     private FileObject fromEOProduct(EOProduct product, int tokensToSkip) {
-        final Path productPath = Paths.get(URI.create(product.getLocation()));
+        final Path productPath = FileUtilities.toPath(product.getLocation());
         Path relativePath = productPath.getName(tokensToSkip);
         for (int i = 0; i < productPath.getNameCount(); i++) {
             if (i > tokensToSkip) {
