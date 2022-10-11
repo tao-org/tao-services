@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.execution.ExecutionException;
+import ro.cs.tao.execution.ExecutionsManager;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionJobSummary;
@@ -165,6 +166,11 @@ public class OrchestrationController extends BaseController {
             summaries = new ArrayList<>();
         }
         return prepareResult(summaries);
+    }
+
+    @RequestMapping(value = "/{jobId}/output", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getJobOutput(@PathVariable("jobId") long jobId) {
+        return prepareResult(ExecutionsManager.getInstance().getJobOutput(jobId));
     }
 
     @RequestMapping(value = "/history", method = RequestMethod.GET, produces = "application/json")
