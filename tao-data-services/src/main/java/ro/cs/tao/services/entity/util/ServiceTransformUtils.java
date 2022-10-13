@@ -33,7 +33,6 @@ import ro.cs.tao.services.model.component.*;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
-import ro.cs.tao.utils.Crypto;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
@@ -178,7 +177,8 @@ public final class ServiceTransformUtils {
         if (authentication != null) {
             bean.setAuthType(authentication.getType());
             bean.setUser(authentication.getUser());
-            bean.setPassword(Crypto.decrypt(authentication.getPassword(), authentication.getUser()));
+            //bean.setPassword(Crypto.decrypt(authentication.getPassword(), authentication.getUser()));
+            bean.setPassword(authentication.getPassword());
             bean.setLoginUrl(authentication.getLoginUrl());
             bean.setAuthHeader(authentication.getAuthHeader());
         }
@@ -207,9 +207,10 @@ public final class ServiceTransformUtils {
         if (bean.getAuthType() != null) {
             entity.setType(bean.getAuthType());
             entity.setUser(bean.getUser());
-            if (entity.getUser() != null) {
+            /*if (entity.getUser() != null) {
                 entity.setPassword(Crypto.encrypt(bean.getPassword(), bean.getUser()));
-            }
+            }*/
+            entity.setPassword(bean.getPassword());
             entity.setLoginUrl(bean.getLoginUrl());
             entity.setAuthHeader(bean.getAuthHeader());
         } else {
