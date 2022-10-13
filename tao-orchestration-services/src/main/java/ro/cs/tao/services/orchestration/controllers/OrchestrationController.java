@@ -244,6 +244,30 @@ public class OrchestrationController extends BaseController {
                     parameters.put("service~footprint", parameters.get("footprint"));
                     parameters.remove("footprint");
                 }
+                if (parameters.containsKey("userId")) {
+                    parameters.put("service~userId", parameters.get("userId"));
+                    parameters.remove("userId");
+                }
+                if (parameters.containsKey("name")) {
+                    parameters.put("service~name", parameters.get("name"));
+                    parameters.remove("name");
+                }
+                if (parameters.containsKey("additionalSupport")) {
+                    parameters.put("service~additionalSupport", parameters.get("additionalSupport"));
+                    parameters.remove("additionalSupport");
+                }
+                if (parameters.containsKey("additionalDataSpecification")) {
+                    parameters.put("service~additionalDataSpecification", parameters.get("additionalDataSpecification"));
+                    parameters.remove("additionalDataSpecification");
+                }
+                if (parameters.containsKey("observationData")) {
+                    parameters.put("service~observationData", parameters.get("observationData"));
+                    parameters.remove("observationData");
+                }
+                if (parameters.containsKey("availability")) {
+                    parameters.put("service~availability", parameters.get("availability"));
+                    parameters.remove("availability");
+                }
             }
             final long jobId = orchestrationService.invokeWPS(request.getWpsId(),
                                                               new HashMap<String, Map<String, String>>() {{
