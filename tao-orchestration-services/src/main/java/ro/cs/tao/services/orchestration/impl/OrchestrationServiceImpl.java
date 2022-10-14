@@ -184,7 +184,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             summaries.add(summary);
         }
         // Sort by end timestamp descending (newest first)
-        summaries.sort((o1, o2) -> o2.getJobEnd() != null ? -1 : o2.getJobEnd().compareTo(o1.getJobEnd()));
+        summaries.sort((o1, o2) -> o2.getJobEnd() != null ? o2.getJobEnd().compareTo(o1.getJobEnd()) : -1);
         return summaries;
     }
 
