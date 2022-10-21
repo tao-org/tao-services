@@ -11,7 +11,10 @@ import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import java.nio.file.Path;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Implementation for Repository entity service.
@@ -32,12 +35,7 @@ public class RepositoryServiceImpl
     @Override
     public List<Repository> list() {
         final List<Repository> list = workspaceProvider.list();
-        list.sort(new Comparator<Repository>() {
-            @Override
-            public int compare(Repository o1, Repository o2) {
-                return o1.getCreated() == null ? -1 : o1.getCreated().compareTo(o2.getCreated());
-            }
-        });
+        list.sort((o1, o2) -> o1.getCreated() == null ? -1 : o1.getCreated().compareTo(o2.getCreated()));
         return list;
     }
 

@@ -27,6 +27,7 @@ import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.services.entity.beans.RepositoryBean;
+import ro.cs.tao.services.entity.beans.RepositoryTemplateBean;
 import ro.cs.tao.services.entity.beans.RepositoryTypeBean;
 import ro.cs.tao.services.entity.beans.WPSContainerBean;
 import ro.cs.tao.services.model.component.*;
@@ -35,6 +36,7 @@ import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryTemplate;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import java.util.ArrayList;
@@ -158,6 +160,29 @@ public final class ServiceTransformUtils {
         bean.setRootKey(entity.getType().rootKey());
         bean.setReadOnly(entity.isReadOnly());
         bean.setSystem(entity.isSystem());
+        return bean;
+    }
+
+    public static RepositoryTemplate fromBean(RepositoryTemplateBean bean) {
+        final RepositoryTemplate entity = new RepositoryTemplate();
+        entity.setId(bean.getId());
+        entity.setName(bean.getName());
+        entity.setDescription(bean.getDescription());
+        entity.setParameters(bean.getParameters());
+        entity.setUrlPrefix(bean.getUrlPrefix());
+        entity.setType(EnumUtils.getEnumConstantByName(RepositoryType.class, bean.getType()));
+        return entity;
+    }
+
+    public static RepositoryTemplateBean toBean(RepositoryTemplate entity) {
+        final RepositoryTemplateBean bean = new RepositoryTemplateBean();
+        bean.setId(entity.getId());
+        bean.setName(entity.getName());
+        bean.setDescription(entity.getDescription());
+        bean.setParameters(entity.getParameters());
+        bean.setUrlPrefix(entity.getUrlPrefix());
+        bean.setType(entity.getType().name());
+        bean.setRootKey(entity.getType().rootKey());
         return bean;
     }
 
