@@ -559,9 +559,12 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             final StorageService storageService = getRepositoryService(repository);
             final int nLines = lines != null ? lines : 20;
             final int nSkip = skipLines != null ? skipLines : 0;
-            return prepareResult(storageService.readAsText(storageService.download(repository.bucketName()
-                                                                                           + "/" +
-                                                                                           repository.relativizeToBucket(file)),
+            String bucketName = repository.bucketName();
+            String bucketRelative = repository.relativizeToBucket(file);
+            return prepareResult(storageService.readAsText(storageService.download(bucketName
+                                                                                   + (bucketRelative.startsWith("/") || bucketRelative.startsWith(repository.getUrlPrefix())
+                                                                                      ? "" : "/")
+                                                                                   + bucketRelative),
                                                            nLines, nSkip));
         } catch (Exception e) {
             return handleException(e);
