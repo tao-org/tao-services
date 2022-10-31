@@ -9,6 +9,7 @@ import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import ro.cs.tao.configuration.ConfigurationManager;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -33,6 +34,7 @@ public abstract class ServletConfiguration {
                     logger.info(String.format("%s version: %s", entry.getKey(), entry.getValue()));
                 }
             }
+            logger.info("Java version: " + System.getProperty("java.version"));
             logger.info("Using server port " + port);
             container.setPort(port);
         });
@@ -75,6 +77,17 @@ public abstract class ServletConfiguration {
                         entries.put("TAO Services", attributes.getValue("Version") + " (" + attributes.getValue("Build-Time") + ")");
                     }
                 }
+            }
+            try (DataInputStream inputStream = new DataInputStream(getClass().getProtectionDomain().getCodeSource().getLocation().openStream())) {
+                int magic = inputStream.readInt();
+                if (magic != 0xcafebabe) {
+                    System.err.println("Not a valid class");
+                }
+                inputStream.skipBytes(1);
+                byte minor = inputStream.readByte();
+                inputStream.skipBytes(1);
+                int major = inputStream.readByte();
+                entries.put("Compiler", major + "." + minor);
             }
         } catch (IOException ignored) {
         }
