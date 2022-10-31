@@ -844,8 +844,10 @@ public class WorkflowServiceImpl
                             DataSourceManager.getInstance().getSupportedParameters(dataSourceComponent.getSensorName(),
                                                                                    dataSourceComponent.getDataSourceName());
                     if (params != null) {
-                        final SourceDescriptor querySource = dataSourceComponent.getSources().stream()
-                                                                                .filter(s -> s.getName().equals("query")).findFirst().orElse(null);
+                        final SourceDescriptor querySource = dataSourceComponent.getSources()
+                                                                                .stream()
+                                                                                .filter(s -> s.getName().equals(DataSourceComponent.QUERY_PARAMETER))
+                                                                                .findFirst().orElse(null);
                         for (Map.Entry<String, DataSourceParameter> entry : params.entrySet()) {
                             DataSourceParameter descriptor = entry.getValue();
                             paramType = descriptor.getType();
@@ -871,23 +873,34 @@ public class WorkflowServiceImpl
                             }
                         }
                     }
-                    Query query = queryProvider.get(SessionStore.currentContext().getPrincipal().getName(),
-                                                    dataSourceComponent.getSensorName(),
-                                                    dataSourceComponent.getDataSourceName(),
-                                                    node.getId());
-                    if (query != null) {
-                        for (Map.Entry<String, String> e : query.getValues().entrySet()) {
-                            componentParams.stream()
-                                    .filter(cp -> cp.getName().equals(e.getKey()))
-                                    .forEach(cp -> cp.setValue(e.getValue()));
+                    if (dataSourceComponent.getId().startsWith("product-set")) {
+                        final SourceDescriptor querySource = dataSourceComponent.getSources()
+                                                                                .stream()
+                                                                                .filter(s -> s.getName().equals(DataSourceComponent.QUERY_PARAMETER))
+                                                                                .findFirst().orElse(null);
+                        DataDescriptor dataDescriptor = querySource.getDataDescriptor();
+                        if (dataDescriptor != null) {
+                            componentParams.add(new Parameter(DataSourceComponent.QUERY_PARAMETER, JavaType.STRING_ARRAY.friendlyName(), dataDescriptor.getLocation()));
                         }
-                        componentParams.add(new Parameter("pageSize", JavaType.INT.friendlyName(), String.valueOf(query.getPageSize())));
-                        componentParams.add(new Parameter("pageNumber", JavaType.INT.friendlyName(), String.valueOf(query.getPageNumber())));
-                        componentParams.add(new Parameter("limit", JavaType.INT.friendlyName(), String.valueOf(query.getLimit())));
                     } else {
-                        componentParams.add(new Parameter("pageSize", JavaType.INT.friendlyName(), "25"));
-                        componentParams.add(new Parameter("pageNumber", JavaType.INT.friendlyName(), "1"));
-                        componentParams.add(new Parameter("limit", JavaType.INT.friendlyName(), "25"));
+                        Query query = queryProvider.get(SessionStore.currentContext().getPrincipal().getName(),
+                                                        dataSourceComponent.getSensorName(),
+                                                        dataSourceComponent.getDataSourceName(),
+                                                        node.getId());
+                        if (query != null) {
+                            for (Map.Entry<String, String> e : query.getValues().entrySet()) {
+                                componentParams.stream()
+                                               .filter(cp -> cp.getName().equals(e.getKey()))
+                                               .forEach(cp -> cp.setValue(e.getValue()));
+                            }
+                            componentParams.add(new Parameter("pageSize", JavaType.INT.friendlyName(), String.valueOf(query.getPageSize())));
+                            componentParams.add(new Parameter("pageNumber", JavaType.INT.friendlyName(), String.valueOf(query.getPageNumber())));
+                            componentParams.add(new Parameter("limit", JavaType.INT.friendlyName(), String.valueOf(query.getLimit())));
+                        } else {
+                            componentParams.add(new Parameter("pageSize", JavaType.INT.friendlyName(), "25"));
+                            componentParams.add(new Parameter("pageNumber", JavaType.INT.friendlyName(), "1"));
+                            componentParams.add(new Parameter("limit", JavaType.INT.friendlyName(), "25"));
+                        }
                     }
                     break;
                 case PROCESSING:
