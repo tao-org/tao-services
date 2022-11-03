@@ -49,13 +49,14 @@ public class DataSourceIndexingService {
     private static final int fixedDelayMinutes = 1440;
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    @PostConstruct
+    // TODO: remove comment marks for PostContruct and Scheduled annotations
+    //@PostConstruct
     public void onIndexingDataSourcesStartup() {
         logger.info(String.format("Startup indexing data sources task with %s delay and %s interval", delayMinutes, fixedDelayMinutes));
         readPropFiles();
     }
 
-    @Scheduled(fixedDelay = fixedDelayMinutes, initialDelay = delayMinutes, timeUnit = TimeUnit.MINUTES)
+   // @Scheduled(fixedDelay = fixedDelayMinutes, initialDelay = delayMinutes, timeUnit = TimeUnit.MINUTES)
     public void scheduleIndexingDataSources() {
         logger.info("Indexing data sources");
         DatabaseSource source = new DatabaseSource();
