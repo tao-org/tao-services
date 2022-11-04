@@ -363,7 +363,7 @@ public class DataSourceIndexingService {
                     Matcher matcher = acquisitionDatePattern.matcher(prod.getName());
                     if (matcher.find()) {
                         //check if the found number seqence is a valid date YYYYMMDD
-                        if (Pattern.compile("(\\d{4})([0]\\d{1}|[1][0-2])(\\d{2})").matcher(matcher.group(2)).find()) {
+                        if (Pattern.compile("(\\d{4})([0]\\d{1}|[1][0-2])([0][1-9]|[1-2]\\d{1}|3[0-1])").matcher(matcher.group(2)).find()) {
                             LocalDate foundDate = DateUtils.parseDate(matcher.group(2));
                             LocalDateTime acquisitionDateTime = LocalDateTime.of(foundDate.getYear(), foundDate.getMonth(), foundDate.getDayOfMonth(), 0, 0, 0);
                             acquisitionDate = acquisitionDateTime;

@@ -739,106 +739,106 @@
 				"productType":["L1TP", "L1GT", "L1GS"]
 			},
 			"ECOSTRESS-BGEO":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"ECOSTRESS-LTSE":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"ECOSTRESS-L1BRAD":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"ECOSTRESS-L1BMAPRAD":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"ECOSTRESS-CLOUD":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"ECOSTRESS-ESIPTJPL":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"ECOSTRESS-L3ETALEXIU":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"ECOSTRESS-ETPTJPL":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"ECOSTRESS-ANCQA":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"ECOSTRESS-L4ESIALEXIU":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"ECOSTRESS-ESI":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"ECOSTRESS-WUE":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"Hyperion":{
 				
 			},
 			"MODIS-VI1":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"MODIS-VI2":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"MODIS-VI3":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"VIIRS":{
 				
 			},
 			"MODIS-LAI-8":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"MODIS-LAI-4":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"MODIS-LTSE-1":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"MODIS-LTSE-8":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"MODIS-VI-16-500":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"MODIS-VI-16-250":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"MODIS-BURN-M":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"MODIS-FIRE-8":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			},
 			"MODIS-FIRE-1":{
-				"earthDataUsername":"",
-				"earthDataPassword":""
+				"earthDataUsername":"vnetoiu",
+				"earthDataPassword":"ASF_x2019."
 			}
 		}
 	},
