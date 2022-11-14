@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 import static ro.cs.tao.serialization.JsonMapper.JSON_INDEXED_DATA_SOURCE_REFERENCE;
 
 /**
- * Used for indexing existing datasources. Starts with a delay of 1 minute (delayMimutes) and it will pe run once a day
+ * Used for indexing existing data sources. Starts with a delay of 1 minute (delayMinutes) and it will pe run once a day
  *
  * @author dstefanescu
  */
@@ -52,7 +52,7 @@ public class DataSourceIndexingService {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     // TODO: remove comment marks for PostContruct and Scheduled annotations
-    //@PostConstruct
+    // @PostConstruct
     public void onIndexingDataSourcesStartup() {
         logger.info(String.format("Startup indexing data sources task with %s delay and %s interval", delayMinutes, fixedDelayMinutes));
         readPropFiles();
@@ -111,7 +111,7 @@ public class DataSourceIndexingService {
                         if (coveragePeriod != null) {
                             int fromYear = Integer.parseInt(coveragePeriod.get("from"));
                             int toYear = coveragePeriod.get("to") != null ? Integer.parseInt(coveragePeriod.get("to")) : today.getYear();
-                            LocalDateTime beginDate = LocalDateTime.of(fromYear, 1, 1, 0, 0, 0);
+                            LocalDateTime beginDate;
                             LocalDateTime endDate = LocalDateTime.of(toYear, 12, 31, 23, 59, 59);
                             logger.info(String.format("Starting %s - %s", dataSource.getId(), key));
 
@@ -315,8 +315,7 @@ public class DataSourceIndexingService {
             if (parametersToIterate.size() > 0) {
                 for (Map.Entry<String, ArrayList<String>> entity : parametersToIterate.entrySet()) {
                     for (String entityValue : entity.getValue()) {
-                        DataQuery tempQuery = null;
-                        tempQuery = query.clone();
+                        DataQuery tempQuery = query.clone();
                         tempQuery.addParameter(entity.getKey(), entityValue);
                         queryList.add(tempQuery);
                     }
@@ -368,15 +367,8 @@ public class DataSourceIndexingService {
         final String classLocation = getClass().getClassLoader().getResource(fileName).toURI().toString();
 
         Path rPath;
-        FileSystem fileSystem = null;
-        try {
-            rPath = Paths.get(URI.create(classLocation));
-            return new String(Files.readAllBytes(rPath));
-        } finally {
-            if (fileSystem != null) {
-                fileSystem.close();
-            }
-        }
+        rPath = Paths.get(URI.create(classLocation));
+        return new String(Files.readAllBytes(rPath));
     }
 
     private boolean addProductsBatch(PreparedStatement stmt, List<EOProduct> productList, int fromYear, int toYear) {
@@ -389,13 +381,12 @@ public class DataSourceIndexingService {
                 if (acquisitionDate == null) {
                     Matcher matcher = acquisitionDatePattern.matcher(prod.getName());
                     if (matcher.find()) {
-                        //check if the found number seqence is a valid date YYYYMMDD
-                        if (Pattern.compile("(\\d{4})([0]\\d{1}|[1][0-2])([0][1-9]|[1-2]\\d{1}|3[0-1])").matcher(matcher.group(2)).find()) {
+                        //check if the found number sequence is a valid date YYYYMMDD
+                        if (Pattern.compile("(\\d{4})(0\\d|1[0-2])(0[1-9]|[1-2]\\d|3[0-1])").matcher(matcher.group(2)).find()) {
                             LocalDate foundDate = DateUtils.parseDate(matcher.group(2));
                             // fromYear and toYear are used to ensure that the extracted year is correct
                             if (foundDate.getYear() >= fromYear && foundDate.getYear() <= toYear) {
-                                LocalDateTime acquisitionDateTime = LocalDateTime.of(foundDate.getYear(), foundDate.getMonth(), foundDate.getDayOfMonth(), 0, 0, 0);
-                                acquisitionDate = acquisitionDateTime;
+                                acquisitionDate = LocalDateTime.of(foundDate.getYear(), foundDate.getMonth(), foundDate.getDayOfMonth(), 0, 0, 0);
                             }
                         }
                     }
@@ -412,10 +403,7 @@ public class DataSourceIndexingService {
                 logger.info(String.format("Product [%s] was not added to batch. [%s]", prod.getName(), e.getMessage()));
             }
         }
-        if (prodInBatch == 0) {
-            return true;
-        }
-        return false;
+        return prodInBatch == 0;
     }
 
     private Map<String, String> retrieveTemporalCoverageBounds(String temporalCoverage) {
