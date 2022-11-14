@@ -700,12 +700,11 @@
 	"Alaska Satellite Facility":{
 		"authentication": {
 			"user": "vnetoiu",
-			"password": "ASF_x2019."
+			"password": "ASF_x2019"
 		},
 		"paramsPrefix":"productType",
 		"sensor":{
 			"Sentinel1":{
-				"footprint": "POLYGON ((-180 -90, -180 90, 180 90, 180 -90, -180 -90))",
 				"productType":["METADATA_GRD", "GRD_HS", "GRD_HD", "GRD_MS", "GRD_MD", "GRD_FS", "GRD_FD", "SLC", "RAW", "OCN", "METADATA_RAW", "METADATA", "METADATA_SLC", "THUMBNAIL"]
 			},
 			"ALOS":{
@@ -740,105 +739,105 @@
 			},
 			"ECOSTRESS-BGEO":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"ECOSTRESS-LTSE":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"ECOSTRESS-L1BRAD":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"ECOSTRESS-L1BMAPRAD":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"ECOSTRESS-CLOUD":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"ECOSTRESS-ESIPTJPL":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"ECOSTRESS-L3ETALEXIU":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"ECOSTRESS-ETPTJPL":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"ECOSTRESS-ANCQA":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"ECOSTRESS-L4ESIALEXIU":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"ECOSTRESS-ESI":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"ECOSTRESS-WUE":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"Hyperion":{
 				
 			},
 			"MODIS-VI1":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"MODIS-VI2":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"MODIS-VI3":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"VIIRS":{
 				
 			},
 			"MODIS-LAI-8":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"MODIS-LAI-4":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"MODIS-LTSE-1":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"MODIS-LTSE-8":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"MODIS-VI-16-500":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"MODIS-VI-16-250":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"MODIS-BURN-M":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"MODIS-FIRE-8":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			},
 			"MODIS-FIRE-1":{
 				"earthDataUsername":"vnetoiu",
-				"earthDataPassword":"ASF_x2019."
+				"earthDataPassword":"ASF_x2019"
 			}
 		}
 	},
