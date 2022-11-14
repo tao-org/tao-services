@@ -69,17 +69,23 @@ public class DataSourceController extends BaseController {
 
     private static final Pattern s2TilePattern = Pattern.compile("\\d{2}\\w{3}");
     private static final Pattern l8TilePattern = Pattern.compile("\\d{6}");
+    private static final List<DataSourceDescriptorBean> cachedDataSources = new ArrayList<>();
 
     @Autowired
     private DataSourceService dataSourceService;
 
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getRegisteredSources() {
-        List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
-        if (instances == null) {
-            instances = new ArrayList<>();
+        if (cachedDataSources.isEmpty()) {
+            synchronized (cachedDataSources) {
+                List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
+                if (instances == null) {
+                    instances = new ArrayList<>();
+                }
+                cachedDataSources.addAll(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()));
+            }
         }
-        return prepareResult(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()), 60);
+        return prepareResult(cachedDataSources, 60);
     }
 
     @RequestMapping(value = "/summary", method = RequestMethod.GET, produces = "application/json")
