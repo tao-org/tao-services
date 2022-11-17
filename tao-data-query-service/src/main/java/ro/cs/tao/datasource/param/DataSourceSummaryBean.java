@@ -33,4 +33,22 @@ public class DataSourceSummaryBean {
         return descriptor.getSpatialCoverage();
     }
 
+    public String getMission() { return descriptor.getMission(); }
+
+    public String getDataSourceLabel() {
+        final String sensor = descriptor.getSensor();
+        return sensor.indexOf('(') > 0 ?
+                descriptor.getDataSourceName() + " " + sensor.substring(sensor.indexOf('(')) :
+                sensor.substring(sensor.lastIndexOf('-') + 1).length() > 2 ?
+                        descriptor.getDataSourceName() + " " + sensor.substring(sensor.lastIndexOf('-') + 1) :
+                        descriptor.getDataSourceName();
+    }
+
+    public String getUser() {
+        return descriptor.getUser();
+    }
+
+    public String getPwd() {
+        return descriptor.getPwd();
+    }
 }
