@@ -307,7 +307,6 @@ public class DataSourceController extends BaseController {
         }
     }
 
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/fetch", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doFetch(@RequestBody FetchRequest request) {
         try {

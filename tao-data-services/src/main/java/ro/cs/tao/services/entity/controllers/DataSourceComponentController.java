@@ -235,8 +235,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 long addedQuota = 0;
                 if (prods != null && prods.size() > 0) {
                 	// check if, by adding the selected products, the quota will not be reached
-                    for (EOProduct p: prods)
-                    {
+                    for (EOProduct p: prods) {
                     	if (p.getRefs().contains(currentUser.getName()) || 
                     		(p.getProductStatus() != ProductStatus.DOWNLOADED && p.getProductStatus() != ProductStatus.DOWNLOADING)) {
                     		// product already attached to the user or not yet downloaded.
@@ -247,8 +246,8 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                     	if (!UserQuotaManager.getInstance().checkUserInputQuota(currentUser, addedQuota)) 
                     	{
                     		// by adding this product to the user the quota will be reached
-                    		throw new QuotaException("Cannot create query because you have reached your input quota! "
-                    				+ "Please remove some of your products to continue.");
+                    		throw new QuotaException("Cannot create query because you have reached your input quota! " +
+                                                             "Please remove some of your products to continue.");
                     	}
                     	
                     	// attach the product to the current user

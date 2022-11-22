@@ -236,7 +236,7 @@ public class DataSourceServiceImpl implements DataSourceService {
                     Parallel.For(0, products.size(), parallelism, (i) -> {
                         try {
                             DataSourceComponent clone = cloneComponent(dsComponent, downloadListener);
-                            results.addAll(dsComponent.doFetch(products.subList(i, i + 1), null, path, root, properties));
+                            results.addAll(clone.doFetch(products.subList(i, i + 1), null, path, root, properties));
                         } catch (Exception ex) {
                             logger.severe(ex.getMessage());
                         }
