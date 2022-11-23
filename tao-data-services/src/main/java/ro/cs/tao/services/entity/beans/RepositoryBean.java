@@ -11,6 +11,7 @@ public class RepositoryBean {
     private String type;
     private boolean system;
     private boolean readOnly;
+    private boolean editable;
     private LinkedHashMap<String, String> parameters;
 
     public String getId() {
@@ -75,6 +76,14 @@ public class RepositoryBean {
 
     public void setReadOnly(boolean readOnly) {
         this.readOnly = readOnly;
+    }
+
+    public boolean isEditable() {
+        return editable;
+    }
+
+    public void setEditable(boolean editable) {
+        this.editable = editable;
     }
 
     public LinkedHashMap<String, String> getParameters() {

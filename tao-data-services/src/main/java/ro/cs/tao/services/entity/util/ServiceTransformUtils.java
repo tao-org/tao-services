@@ -145,6 +145,7 @@ public final class ServiceTransformUtils {
         entity.setUrlPrefix(bean.getUrlPrefix());
         entity.setSystem(bean.isSystem());
         entity.setReadOnly(bean.isReadOnly());
+        entity.setEditable(bean.isEditable());
         entity.setType(EnumUtils.getEnumConstantByName(RepositoryType.class, bean.getType()));
         return entity;
     }
@@ -160,6 +161,7 @@ public final class ServiceTransformUtils {
         bean.setRootKey(entity.getType().rootKey());
         bean.setReadOnly(entity.isReadOnly());
         bean.setSystem(entity.isSystem());
+        bean.setEditable(entity.isEditable());
         return bean;
     }
 
