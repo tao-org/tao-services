@@ -218,7 +218,11 @@ public class DataSourceServiceImpl implements DataSourceService {
                 product.setProductStatus(ProductStatus.QUERIED);
                 product.addReference(query.getUser());
                 try {
-                    productProvider.save(product);
+                    if (productProvider.exists(product.getId())) {
+                        productProvider.update(product);
+                    } else {
+                        productProvider.save(product);
+                    }
                 } catch (PersistenceException e) {
                     logger.warning(String.format("Cannot persist product %s. Reason: %s",product.getName(), e.getMessage()));
                 }

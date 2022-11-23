@@ -31,21 +31,29 @@ import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.Polygon2D;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
+import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.products.landsat.Landsat8TileExtent;
 import ro.cs.tao.products.sentinels.Sentinel2TileExtent;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.factory.StorageServiceFactory;
+import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceService;
+import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.query.beans.FetchRequest;
 import ro.cs.tao.services.query.beans.TileRequest;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.awt.geom.Path2D;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -73,6 +81,11 @@ public class DataSourceController extends BaseController {
 
     @Autowired
     private DataSourceService dataSourceService;
+    @Autowired
+    private DataSourceComponentService dataSourceComponentService;
+    @Autowired
+    private RepositoryProvider repositoryProvider;
+
 
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getRegisteredSources() {
@@ -320,6 +333,27 @@ public class DataSourceController extends BaseController {
             if (results == null) {
                 results = new ArrayList<>();
             }
+            List<String> productPaths = results.stream().map(EOProduct::getLocation).collect(Collectors.toList());
+            if (productPaths.size() > 0) {
+                try {
+                    final StorageService repositoryService = getLocalRepositoryService();
+                    final Repository localWorkspace = getLocalRepository(currentUser());
+                    for (int i = 0; i < productPaths.size(); i++) {
+                        String path = FileUtilities.toUnixPath(productPaths.get(i));
+                        if (!path.startsWith("/")) {
+                            path = localWorkspace.resolve(path);
+                            if (!repositoryService.exists(path)) {
+                                throw new FileNotFoundException(path + " does not exist");
+                            }
+                        }
+                        productPaths.set(i, path);
+                    }
+                    final String label = request.getQuery() != null ? request.getQuery().getLabel() : results.get(0).getProductType();
+                    dataSourceComponentService.createForProductNames(productPaths, label, currentPrincipal());
+                } catch(Exception e){
+                    warn(e.getMessage());
+                }
+            }
             return prepareResult(results);
         } catch (Exception ex) {
             return handleException(ex);
@@ -348,5 +382,19 @@ public class DataSourceController extends BaseController {
         } else {
             return prepareResult("No metadata inspector found", ResponseStatus.FAILED);
         }
+    }
+
+    private Repository getLocalRepository(String user) {
+        return repositoryProvider.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
+    }
+
+    private StorageService getLocalRepositoryService() {
+        Repository repository = getLocalRepository(currentUser());
+        if (repository == null) {
+            throw new RuntimeException("User [" + currentUser() + "] doesn't have a local repository");
+        }
+        StorageService instance = StorageServiceFactory.getInstance(repository);
+        instance.associate(repository);
+        return instance;
     }
 }

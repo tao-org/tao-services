@@ -299,7 +299,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         targetDescriptorRepository.save(targetDescriptor);
         userDSC.setSystem(false);
         userDSC = dataSourceComponentProvider.save(userDSC);
-        tag(userDSC.getId(), new ArrayList<String>() {{
+        tag(userDSC.getId(), new ArrayList<>() {{
             add(label);
         }});
         return userDSC;
