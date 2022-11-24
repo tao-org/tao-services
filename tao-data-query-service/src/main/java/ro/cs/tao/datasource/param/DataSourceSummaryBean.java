@@ -43,12 +43,4 @@ public class DataSourceSummaryBean {
                         descriptor.getDataSourceName() + " " + sensor.substring(sensor.lastIndexOf('-') + 1) :
                         descriptor.getDataSourceName();
     }
-
-    public String getUser() {
-        return descriptor.getUser();
-    }
-
-    public String getPwd() {
-        return descriptor.getPwd();
-    }
 }

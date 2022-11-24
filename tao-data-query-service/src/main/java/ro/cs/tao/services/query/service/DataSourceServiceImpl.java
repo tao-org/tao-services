@@ -277,4 +277,11 @@ public class DataSourceServiceImpl implements DataSourceService {
         clone.setProductStatusListener(listener);
         return clone;
     }
+
+    @Override
+    public DataSourceCredentials getDataSourceCredentials(String dataSource) {
+        final List<DataSourceCredentials> userCredentials = credentialsProvider.getByUser(SessionStore.currentContext().getPrincipal().getName());
+        final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(dataSource)).findFirst().orElse(null);
+        return dsCreds;
+    }
 }
