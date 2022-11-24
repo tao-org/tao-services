@@ -23,6 +23,7 @@ import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.component.Variable;
 import ro.cs.tao.datasource.DataQuery;
 import ro.cs.tao.datasource.DataSource;
+import ro.cs.tao.datasource.DataSourceCredentials;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.*;
@@ -141,6 +142,7 @@ public class DataSourceController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> getSupportedParameters(@PathVariable("name") String sensorName,
                                                                      @PathVariable("source") String dataSourceClassName) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
+        DataSourceCredentials dsCreds = dataSourceService.getDataSourceCredentials(dataSourceClassName);
         if (params == null) {
             params = new ArrayList<>();
         }
@@ -148,7 +150,7 @@ public class DataSourceController extends BaseController {
         for (int i = 0; i < count; i++) {
             params.get(i).setOrder(i + 1);
         }
-        return prepareResult(params.stream().map(DataSourceParameterBean::new).collect(Collectors.toList()));
+        return prepareResult(new DataSourceInfoBean(params.stream().map(DataSourceParameterBean::new).collect(Collectors.toList()),dsCreds));
     }
 
     @RequestMapping(value = "/footprint", method = RequestMethod.GET, produces = "application/json")
