@@ -66,6 +66,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -324,42 +325,44 @@ public class DataSourceController extends BaseController {
 
     @RequestMapping(value = "/fetch", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doFetch(@RequestBody FetchRequest request) {
-        try {
-            List<EOProduct> results;
-            if (request.getLocalPath() != null && request.getPathFormat() != null) {
-                results = dataSourceService.fetch(request.getQuery(), request.getProducts(),
-                                                  request.getMode(), request.getLocalPath(), request.getPathFormat());
-            } else {
-                results = dataSourceService.fetch(request.getQuery(), request.getProducts(), request.getMode(), null, null);
-            }
-            if (results == null) {
-                results = new ArrayList<>();
-            }
-            List<String> productPaths = results.stream().map(EOProduct::getLocation).collect(Collectors.toList());
-            if (productPaths.size() > 0) {
-                try {
-                    final StorageService repositoryService = getLocalRepositoryService();
-                    final Repository localWorkspace = getLocalRepository(currentUser());
-                    for (int i = 0; i < productPaths.size(); i++) {
-                        String path = FileUtilities.toUnixPath(productPaths.get(i));
-                        if (!path.startsWith("/")) {
-                            path = localWorkspace.resolve(path);
-                            if (!repositoryService.exists(path)) {
-                                throw new FileNotFoundException(path + " does not exist");
-                            }
-                        }
-                        productPaths.set(i, path);
-                    }
-                    final String label = request.getQuery() != null ? request.getQuery().getLabel() : results.get(0).getProductType();
-                    dataSourceComponentService.createForProductNames(productPaths, label, currentPrincipal());
-                } catch(Exception e){
-                    warn(e.getMessage());
+        asyncExecute(() -> {
+            try {
+                List<EOProduct> results;
+                if (request.getLocalPath() != null && request.getPathFormat() != null) {
+                    results = dataSourceService.fetch(request.getQuery(), request.getProducts(),
+                                                      request.getMode(), request.getLocalPath(), request.getPathFormat());
+                } else {
+                    results = dataSourceService.fetch(request.getQuery(), request.getProducts(), request.getMode(), null, null);
                 }
+                if (results == null) {
+                    results = new ArrayList<>();
+                }
+                List<String> productPaths = results.stream().map(EOProduct::getLocation).collect(Collectors.toList());
+                if (productPaths.size() > 0) {
+                    try {
+                        final StorageService repositoryService = getLocalRepositoryService();
+                        final Repository localWorkspace = getLocalRepository(currentUser());
+                        for (int i = 0; i < productPaths.size(); i++) {
+                            String path = FileUtilities.toUnixPath(productPaths.get(i));
+                            if (!path.startsWith("/")) {
+                                path = localWorkspace.resolve(path);
+                                if (!repositoryService.exists(path)) {
+                                    throw new FileNotFoundException(path + " does not exist");
+                                }
+                            }
+                            productPaths.set(i, path);
+                        }
+                        final String label = request.getQuery() != null ? request.getQuery().getLabel() : results.get(0).getProductType();
+                        dataSourceComponentService.createForProductNames(productPaths, label, currentPrincipal());
+                    } catch (Exception e) {
+                        warn(e.getMessage());
+                    }
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(getClass().getName()).warning(ex.getMessage());
             }
-            return prepareResult(results);
-        } catch (Exception ex) {
-            return handleException(ex);
-        }
+        });
+        return prepareResult("Download queued", ResponseStatus.SUCCEEDED);
     }
 
     @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
