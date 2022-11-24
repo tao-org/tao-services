@@ -52,13 +52,13 @@ public class DataSourceIndexingService {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     // TODO: remove comment marks for PostContruct and Scheduled annotations
-    // @PostConstruct
+    @PostConstruct
     public void onIndexingDataSourcesStartup() {
         logger.info(String.format("Startup indexing data sources task with %s delay and %s interval", delayMinutes, fixedDelayMinutes));
         readPropFiles();
     }
 
-    // @Scheduled(fixedDelay = fixedDelayMinutes, initialDelay = delayMinutes, timeUnit = TimeUnit.MINUTES)
+    @Scheduled(fixedDelay = fixedDelayMinutes, initialDelay = delayMinutes, timeUnit = TimeUnit.MINUTES)
     public void scheduleIndexingDataSources() {
         logger.info("Indexing data sources");
         DatabaseSource source = new DatabaseSource();
@@ -167,6 +167,7 @@ public class DataSourceIndexingService {
                                                 setQueryPeriod(q, supportedParams, beginDate, endDate);
                                                 logger.info(String.format("%s time period %s - %s", paramKey, beginDate, endDate));
                                                 q.setPageNumber(pageNumber);
+                                                q.setQueryDelay(5000);
                                                 while ((page = q.execute()).size() > 0) {
                                                     try (Connection sqlConnection = source.getConnection();
                                                          PreparedStatement stmtDsProps = sqlConnection.prepareStatement(insertIndexedDsStatement);
@@ -365,7 +366,6 @@ public class DataSourceIndexingService {
 
     private String readDescriptor(String fileName) throws IOException, URISyntaxException {
         final String classLocation = getClass().getClassLoader().getResource(fileName).toURI().toString();
-
         Path rPath;
         rPath = Paths.get(URI.create(classLocation));
         return new String(Files.readAllBytes(rPath));
