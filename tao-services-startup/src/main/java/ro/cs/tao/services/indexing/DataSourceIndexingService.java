@@ -2,6 +2,8 @@ package ro.cs.tao.services.indexing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.simple.JSONObject;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.simplify.DouglasPeuckerSimplifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.datasource.*;
@@ -12,6 +14,7 @@ import ro.cs.tao.datasource.param.IndexedDataSourceParameter;
 import ro.cs.tao.datasource.param.QueryParameter;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.Polygon2D;
+import ro.cs.tao.serialization.GeometryAdapter;
 import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.utils.DateUtils;
 
@@ -52,13 +55,13 @@ public class DataSourceIndexingService {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     // TODO: remove comment marks for PostContruct and Scheduled annotations
-    @PostConstruct
+    //@PostConstruct
     public void onIndexingDataSourcesStartup() {
         logger.info(String.format("Startup indexing data sources task with %s delay and %s interval", delayMinutes, fixedDelayMinutes));
         readPropFiles();
     }
 
-    @Scheduled(fixedDelay = fixedDelayMinutes, initialDelay = delayMinutes, timeUnit = TimeUnit.MINUTES)
+    //@Scheduled(fixedDelay = fixedDelayMinutes, initialDelay = delayMinutes, timeUnit = TimeUnit.MINUTES)
     public void scheduleIndexingDataSources() {
         logger.info("Indexing data sources");
         DatabaseSource source = new DatabaseSource();
@@ -79,6 +82,7 @@ public class DataSourceIndexingService {
                 String updateDsParamsStatement = "UPDATE product.data_sources_index SET params=?,last_run=? WHERE data_source_name=? AND sensor_name=?";
 
                 dataSource.getSensorTypes().forEach((key, value) -> {
+                    //if(key.toString().equalsIgnoreCase("Envisat (MER)")) {
                     List<IndexedDataSourceDescriptor> existingDataSources = new ArrayList<>();
                     try (Connection sqlConnection = source.getConnection();
                          PreparedStatement stmt = sqlConnection.prepareStatement("SELECT * FROM product.data_sources_index WHERE data_source_name='" + dataSource.getId() +
@@ -102,8 +106,8 @@ public class DataSourceIndexingService {
                     } catch (Exception e) {
                         logger.warning(String.format("Unable to retrieve %s - %s in data_sources_index table [%s]", dataSource.getId(), key.toString(), e.getMessage()));
                     }
-
-                    if (existingDataSources.size() == 0 || existingDataSources.get(0).getToYear() >= today.getYear()) {
+                    boolean unfinised = existingDataSources.stream().filter(e -> e.getParameters().entrySet().stream().filter(p -> p.getValue() != null).count() > 0).count() > 0;
+                    if (existingDataSources.size() == 0 || existingDataSources.get(0).getToYear() >= today.getYear() || unfinised) {
                         LinkedHashMap<String, String> parameters = (existingDataSources.size() > 0 && existingDataSources.get(0).getParameters() != null) ? existingDataSources.get(0).getParameters() : new LinkedHashMap<>();
                         JSONObject parametersJson = new JSONObject();
                         parametersJson.putAll(parameters);
@@ -286,6 +290,7 @@ public class DataSourceIndexingService {
                             }
                         }
                     }
+                //}
                 });
             }
         }
@@ -392,8 +397,21 @@ public class DataSourceIndexingService {
                     }
                 }
                 //when footprint is not set, set it to whole globe
+                if(footprint.toLowerCase().contains("multipolygon")) {
+                    System.out.println("***" + prod.getName());
+                }
                 if (footprint == null) {
                     footprint = "POLYGON ((-180 -90, -180 90, 180 90, 180 -90, -180 -90))";
+                }else {
+                    Polygon2D polygon2D = Polygon2D.fromWKT(footprint);
+                    if (polygon2D != null && polygon2D.getNumPoints() > 0) {
+                        if (polygon2D.getNumPoints() < 100) {
+                            footprint = polygon2D.toWKT();
+                        } else {
+                            Geometry siplyfiedPoligon = DouglasPeuckerSimplifier.simplify(new GeometryAdapter().marshal(footprint), 1);
+                            footprint = new GeometryAdapter().unmarshal(siplyfiedPoligon);
+                        }
+                    }
                 }
                 stmt.setObject(3, acquisitionDate);
                 stmt.setString(2, footprint);
