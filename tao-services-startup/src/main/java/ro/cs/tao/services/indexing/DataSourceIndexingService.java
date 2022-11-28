@@ -82,7 +82,6 @@ public class DataSourceIndexingService {
                 String updateDsParamsStatement = "UPDATE product.data_sources_index SET params=?,last_run=? WHERE data_source_name=? AND sensor_name=?";
 
                 dataSource.getSensorTypes().forEach((key, value) -> {
-                    //if(key.toString().equalsIgnoreCase("Envisat (MER)")) {
                     List<IndexedDataSourceDescriptor> existingDataSources = new ArrayList<>();
                     try (Connection sqlConnection = source.getConnection();
                          PreparedStatement stmt = sqlConnection.prepareStatement("SELECT * FROM product.data_sources_index WHERE data_source_name='" + dataSource.getId() +
@@ -106,7 +105,7 @@ public class DataSourceIndexingService {
                     } catch (Exception e) {
                         logger.warning(String.format("Unable to retrieve %s - %s in data_sources_index table [%s]", dataSource.getId(), key.toString(), e.getMessage()));
                     }
-                    boolean unfinised = existingDataSources.stream().filter(e -> e.getParameters().entrySet().stream().filter(p -> p.getValue() != null).count() > 0).count() > 0;
+                    boolean unfinised = existingDataSources.stream().filter(e -> e.getParameters() == null ? true : e.getParameters().entrySet().stream().filter(p -> p.getValue() != null).count() > 0).count() > 0;
                     if (existingDataSources.size() == 0 || existingDataSources.get(0).getToYear() >= today.getYear() || unfinised) {
                         LinkedHashMap<String, String> parameters = (existingDataSources.size() > 0 && existingDataSources.get(0).getParameters() != null) ? existingDataSources.get(0).getParameters() : new LinkedHashMap<>();
                         JSONObject parametersJson = new JSONObject();
@@ -290,7 +289,6 @@ public class DataSourceIndexingService {
                             }
                         }
                     }
-                //}
                 });
             }
         }
@@ -397,13 +395,11 @@ public class DataSourceIndexingService {
                     }
                 }
                 //when footprint is not set, set it to whole globe
-                if(footprint.toLowerCase().contains("multipolygon")) {
-                    System.out.println("***" + prod.getName());
-                }
                 if (footprint == null) {
                     footprint = "POLYGON ((-180 -90, -180 90, 180 90, 180 -90, -180 -90))";
-                }else {
+                } else {
                     Polygon2D polygon2D = Polygon2D.fromWKT(footprint);
+                    // simplify polygon if has has more than 100 points
                     if (polygon2D != null && polygon2D.getNumPoints() > 0) {
                         if (polygon2D.getNumPoints() < 100) {
                             footprint = polygon2D.toWKT();
