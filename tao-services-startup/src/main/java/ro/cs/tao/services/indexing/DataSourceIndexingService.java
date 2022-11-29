@@ -250,7 +250,7 @@ public class DataSourceIndexingService {
                                             }
                                             setQueryPeriod(q, supportedParams, beginDate, endDate);
                                             logger.info(String.format("%s time period %s - %s", paramKey, beginDate, endDate));
-                                            q.setMaxResults(1000);
+                                            q.setMaxResults(2000);
                                             List<EOProduct> productList = q.execute();
                                             if (productList.size() > 0) {
                                                 try (Connection sqlConnection = source.getConnection();
