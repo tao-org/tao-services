@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import ro.cs.tao.TaoEnum;
 import ro.cs.tao.eodata.Projection;
 import ro.cs.tao.eodata.sorting.Association;
+import ro.cs.tao.eodata.sorting.DataFilter;
 import ro.cs.tao.eodata.sorting.DataSorter;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ConfigurationService;
@@ -41,6 +42,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
 
     private WeakReference<List<String>> sorters;
     private WeakReference<List<String[]>> groupers;
+    private WeakReference<List<String[]>> filters;
     private WeakReference<Map<String, List<KeyValuePair>>> enums;
 
     @RequestMapping(value = "/enums", method = RequestMethod.GET, produces = "application/json")
@@ -96,6 +98,25 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
             this.groupers = new WeakReference<>(descriptions);
         }
         return prepareResult(this.groupers.get());
+    }
+
+    @RequestMapping(value = "/filters", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getAvailableFilters() {
+        if (this.filters == null || this.filters.get() == null) {
+            List<String[]> descriptions = new ArrayList<>();
+            Reflections reflections = new Reflections("ro.cs.tao");
+            Set<Class<? extends DataFilter>> filters = reflections.getSubTypesOf(DataFilter.class);
+            for (Class<? extends DataFilter> filterClass : filters) {
+                try {
+                    descriptions.add(filterClass.newInstance().description());
+                } catch (InstantiationException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+            descriptions.sort(Comparator.comparing(o -> o[0]));
+            this.filters = new WeakReference<>(descriptions);
+        }
+        return prepareResult(this.filters.get());
     }
 
     @RequestMapping(value = "/projection/", method = RequestMethod.GET, produces = "application/json")
