@@ -385,7 +385,7 @@ public class DataSourceIndexingService {
                     Matcher matcher = acquisitionDatePattern.matcher(prod.getName());
                     if (matcher.find()) {
                         //check if the found number sequence is a valid date YYYYMMDD
-                        if (Pattern.compile("(\\d{4})(0\\d|1[0-2])(0[1-9]|[1-2]\\d|3[0-1])").matcher(matcher.group(2)).find()) {
+                        if (Pattern.compile("(\\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2]\\d|3[0-1])").matcher(matcher.group(2)).find()) {
                             LocalDate foundDate = DateUtils.parseDate(matcher.group(2));
                             // fromYear and toYear are used to ensure that the extracted year is correct
                             if (foundDate.getYear() >= fromYear && foundDate.getYear() <= toYear) {
