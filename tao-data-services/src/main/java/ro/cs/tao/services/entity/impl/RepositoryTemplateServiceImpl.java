@@ -66,7 +66,9 @@ public class RepositoryTemplateServiceImpl
 
     @Override
     public void delete(String id) throws PersistenceException {
-
+        if (id != null) {
+            repositoryTemplateProvider.delete(id);
+        }
     }
 
     @Override
