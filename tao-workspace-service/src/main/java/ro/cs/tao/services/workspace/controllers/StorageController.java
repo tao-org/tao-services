@@ -408,15 +408,19 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                         }
                     }
                     break;
-                case AWS:
-                case SWIFT:
-                case SMB:
+                default:
                     StorageService client = StorageServiceFactory.getInstance(repository.getUrlPrefix());
                     client.associate(repository);
                     final Path path;
                     if (isFile) {
                         //path = Paths.get(fileName.replace(repository.getUrlPrefix() + "://", ""));
-                        path = Paths.get(repository.resolve(fileName).replace(repository.getUrlPrefix() + "://", ""));
+                        String strPath = repository.resolve(fileName);
+                        if (repository.getType() == RepositoryType.FTP || repository.getType() == RepositoryType.FTPS) {
+                            strPath = strPath.replace(repository.root(), "");
+                        } else {
+                            strPath = strPath.replace(repository.getUrlPrefix() + "://", "");
+                        }
+                        path = Paths.get(strPath);
                         try (InputStream stream = (InputStream) client.download(path.toString())) {
                             response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                             response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
