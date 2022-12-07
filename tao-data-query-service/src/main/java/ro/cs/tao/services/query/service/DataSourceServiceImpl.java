@@ -38,6 +38,9 @@ import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.utils.Crypto;
 import ro.cs.tao.utils.async.Parallel;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -188,7 +191,9 @@ public class DataSourceServiceImpl implements DataSourceService {
                 e.printStackTrace();
             }
         }
-        return Query.toDataQuery(queryObject).execute();
+        final DataQuery dataQuery = Query.toDataQuery(queryObject);
+        dataQuery.setQueryDelay(1);
+        return dataQuery.execute();
     }
 
     @Override
@@ -215,7 +220,20 @@ public class DataSourceServiceImpl implements DataSourceService {
                 dsComponent.setFetchMode(mode);
             }
             dsComponent.setProductStatusListener(downloadListener);
+            boolean createSubfolder = Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("fetch.products.in.subfolders", "true"));
             String path = SystemVariable.USER_WORKSPACE.value();
+            if (createSubfolder) {
+                String subfolder = StringUtils.replaceEach(query.getLabel(),
+                                                           new String[] { "/", "<", ">", "\\", "|", ":", "&", ";", " ", "?", "*" },
+                                                           new String[] { "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_" });
+                Path pPath = Paths.get(path).resolve(subfolder);
+                try {
+                    Files.createDirectories(pPath);
+                    path = pPath.toString();
+                } catch (Exception e) {
+                    Logger.getLogger(DataSourceService.class.getName()).warning("Cannot create folder " + pPath);
+                }
+            }
             final Set<String> existingSet = new HashSet<>(productProvider.getExistingProductNames(products.stream().map(EOProduct::getName).toArray(String[]::new)));
             products.removeIf(p -> existingSet.contains(p.getName()) && mode != FetchMode.RESUME);
             final Logger logger = Logger.getLogger(DataSourceService.class.getName());
@@ -234,6 +252,7 @@ public class DataSourceServiceImpl implements DataSourceService {
             }
             final int parallelism = DataSourceManager.getInstance().get(dsComponent.getSensorName(),
                                                                         dsComponent.getDataSourceName()).getMaximumAllowedTransfers();
+            final String finalPath = path;
             if ((dsComponent.getFetchMode() == FetchMode.SYMLINK || dsComponent.getFetchMode() == FetchMode.COPY) && localRepositoryRoot != null) {
                 if (pathFormat != null) {
                     properties.put("local.archive.path.format", pathFormat);
@@ -244,7 +263,7 @@ public class DataSourceServiceImpl implements DataSourceService {
                     Parallel.For(0, products.size(), parallelism, (i) -> {
                         try {
                             DataSourceComponent clone = cloneComponent(dsComponent, downloadListener);
-                            results.addAll(clone.doFetch(products.subList(i, i + 1), null, path, root, properties));
+                            results.addAll(clone.doFetch(products.subList(i, i + 1), null, finalPath, root, properties));
                         } catch (Exception ex) {
                             logger.severe(ex.getMessage());
                         }
@@ -259,7 +278,7 @@ public class DataSourceServiceImpl implements DataSourceService {
                     Parallel.For(0, products.size(), parallelism, (i) -> {
                         try {
                             DataSourceComponent clone = cloneComponent(dsComponent, downloadListener);
-                            results.addAll(clone.doFetch(products.subList(i, i + 1), null, path, null, properties));
+                            results.addAll(clone.doFetch(products.subList(i, i + 1), null, finalPath, null, properties));
                         } catch (Exception ex) {
                             logger.severe(ex.getMessage());
                         }
