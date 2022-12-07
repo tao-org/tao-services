@@ -153,8 +153,9 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             summary.setTaskSummaries(tasksStatus);
             summaries.add(summary);
         }
-        // Sort by start timestamp descending (newest first)
-        summaries.sort((o1, o2) -> o2.getJobStart().compareTo(o1.getJobStart()));
+        // Sort by status (running first, pending next) and start timestamp descending (the newest first)
+        summaries.sort(((Comparator<ExecutionJobSummary>) (o1, o2) -> o2.getJobStatus().value().compareTo(o1.getJobStatus().value()))
+                               .thenComparing((o1, o2) -> o2.getJobStart().compareTo(o1.getJobStart())));
         return summaries;
     }
 
