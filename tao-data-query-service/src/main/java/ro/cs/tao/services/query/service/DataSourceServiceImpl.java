@@ -199,9 +199,14 @@ public class DataSourceServiceImpl implements DataSourceService {
             dsComponent.setUserCredentials(query.getUser(), query.getPassword());
             final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(dsComponent.getId());
             String localRepositoryRoot;
+            final Properties properties = new Properties();
             if (dataSourceConfiguration != null) {
                 dsComponent.setFetchMode(dataSourceConfiguration.getFetchMode());
                 localRepositoryRoot = dataSourceConfiguration.getLocalRepositoryPath();
+                Map<String, String> parameters = dataSourceConfiguration.getParameters();
+                if (parameters != null) {
+                    properties.putAll(parameters);
+                }
             } else {
                 localRepositoryRoot = ConfigurationManager.getInstance().getValue(String.format("local.%s.path", query.getSensor()));
                 if (localRepositoryRoot == null) {
@@ -229,7 +234,6 @@ public class DataSourceServiceImpl implements DataSourceService {
             }
             final int parallelism = DataSourceManager.getInstance().get(dsComponent.getSensorName(),
                                                                         dsComponent.getDataSourceName()).getMaximumAllowedTransfers();
-            final Properties properties = new Properties();
             if ((dsComponent.getFetchMode() == FetchMode.SYMLINK || dsComponent.getFetchMode() == FetchMode.COPY) && localRepositoryRoot != null) {
                 if (pathFormat != null) {
                     properties.put("local.archive.path.format", pathFormat);
