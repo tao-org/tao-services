@@ -32,6 +32,8 @@ import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.Polygon2D;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.products.landsat.Landsat8TileExtent;
 import ro.cs.tao.products.sentinels.Sentinel2TileExtent;
@@ -354,6 +356,7 @@ public class DataSourceController extends BaseController {
                         }
                         final String label = request.getQuery() != null ? request.getQuery().getLabel() : results.get(0).getProductType();
                         dataSourceComponentService.createForProductNames(productPaths, label, currentPrincipal());
+                        Messaging.send(currentUser(), Topic.INFORMATION.getCategory(), "Product set [" + label + "] was added to the user workspace");
                     } catch (Exception e) {
                         warn(e.getMessage());
                     }
