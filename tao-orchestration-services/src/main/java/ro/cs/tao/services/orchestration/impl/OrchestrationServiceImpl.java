@@ -155,6 +155,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         }
         // Sort by status (running first, pending next) and start timestamp descending (the newest first)
         summaries.sort(((Comparator<ExecutionJobSummary>) (o1, o2) -> o2.getJobStatus().value().compareTo(o1.getJobStatus().value()))
+                               .thenComparing((o1, o2) -> Long.compare(o2.getTaskSummaries().stream().filter(t -> t.getTaskStatus() == ExecutionStatus.RUNNING).count(),
+                                                                       o1.getTaskSummaries().stream().filter(t -> t.getTaskStatus() == ExecutionStatus.RUNNING).count()))
                                .thenComparing((o1, o2) -> o2.getJobStart().compareTo(o1.getJobStart())));
         return summaries;
     }
@@ -185,7 +187,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             summaries.add(summary);
         }
         // Sort by end timestamp descending (newest first)
-        summaries.sort((o1, o2) -> o2.getJobEnd() != null ? o2.getJobEnd().compareTo(o1.getJobEnd()) : -1);
+        summaries.sort((o1, o2) -> o2.getJobEnd() != null && o1.getJobEnd() != null ? o2.getJobEnd().compareTo(o1.getJobEnd()) : -1);
         return summaries;
     }
 

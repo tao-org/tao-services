@@ -36,11 +36,11 @@ public class PersistenceInjecter extends BaseLifeCycle {
         Executor.addStatusListener(new TaskStatusListener() {
             final Logger logger = Logger.getLogger(TaskStatusListener.class.getName());
             @Override
-            public void taskStatusChanged(ExecutionTask task, ExecutionStatus status) {
+            public void taskStatusChanged(ExecutionTask task, ExecutionStatus status, String reason) {
                 try {
                     //if (task.getExecutionStatus() != status) {
                         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
-                        persistenceManager.tasks().updateStatus(task, status, "From " + element.getClassName() + ":" + element.getMethodName());
+                        persistenceManager.tasks().updateStatus(task, status, reason);
                         logger.fine("Task " + TaskUtilities.getTaskName(task) + " changed to " + status);
                     //}
                 } catch (Exception e) {
