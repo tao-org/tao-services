@@ -16,6 +16,7 @@
 
 package ro.cs.tao.services.entity.impl;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
@@ -61,6 +62,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     private EOProductProvider productProvider;
     private VectorDataProvider vectorDataProvider;
     private AuxiliaryDataProvider auxiliaryDataProvider;
+    private final Logger logger = Logger.getLogger(FileStorageService.class.getName());
 
     public FileStorageService() { super(); }
 
@@ -127,51 +129,50 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
             } catch (Exception e) {
                 Logger.getLogger(FileStorageService.class.getName()).warning(String.format("File %s was not found in database", fileName));
             }
-        } else { // it has to be a product folder
-            //Path filePath = SessionStore.currentContext().getWorkspace().resolve(fileName);
-            List<EOProduct> products = productProvider.getByLocation(filePath.toUri().toString());
-            if (products == null || products.size() == 0) {
-                List<VectorData> vectorProducts = vectorDataProvider.getByLocation(filePath.toUri().toString());
-                if (vectorProducts.size() > 1) {
-                    throw new IOException("Cannot remove vector products");
-                }
-                if (vectorProducts.size() == 1) {
-                    VectorData product = vectorProducts.get(0);
-                    if (Visibility.PUBLIC.equals(product.getVisibility())) {
-                        throw new IOException("Cannot remove a public product. Please reduce its visibility first.");
-                    }
-                    FileUtilities.deleteTree(filePath);
+        } else {
+            // Maybe it's linked to a raster product
+            final List<EOProduct> products = productProvider.getByLocation(filePath.toUri().toString());
+            if (products != null && products.size() > 0) {
+                for (EOProduct product : products) {
                     try {
-                        vectorDataProvider.delete(product);
+                        productProvider.delete(product);
                     } catch (PersistenceException e) {
-                        throw new IOException(String.format("Failed to remove vector product %s. Reason: %s",
-                                                            product.getName(), e.getMessage()));
-                    }
-                } else {
-                    if (Files.isDirectory(filePath)) {
-                        FileUtilities.deleteTree(filePath);
-                    } else {
-                        Files.delete(filePath);
+                        logger.warning(String.format("Failed to remove raster product %s. Reason: %s",
+                                                     product.getName(), e.getMessage()));
                     }
                 }
             } else {
-                if (products.size() > 1) {
-                    throw new IOException("Cannot remove raster products");
-                }
-                EOProduct product = products.get(0);
-                if (Visibility.PUBLIC.equals(product.getVisibility())) {
-                    throw new IOException("Cannot remove a public product. Please reduce its visibility first.");
-                }
-                FileUtilities.deleteTree(filePath);
-                try {
-                    productProvider.delete(product);
-                } catch (PersistenceException e) {
-                    throw new IOException(String.format("Failed to remove raster product %s. Reason: %s",
-                                                        product.getName(), e.getMessage()));
+                // If not, maybe it's linked to a vector product
+                final List<VectorData> vectorProducts = vectorDataProvider.getByLocation(filePath.toUri().toString());
+                if (vectorProducts != null && vectorProducts.size() > 0) {
+                    for (VectorData product : vectorProducts) {
+                        try {
+                            vectorDataProvider.delete(product);
+                        } catch (PersistenceException e) {
+                            logger.warning(String.format("Failed to remove vector product %s. Reason: %s",
+                                                         product.getName(), e.getMessage()));
+                        }
+                    }
+                } else {
+                    // If not, maybe it's linked to an auxiliary file
+                    AuxiliaryData data = auxiliaryDataProvider.getByLocation(filePath.toUri().toString());
+                    if (data != null) {
+                        try {
+                            auxiliaryDataProvider.delete(data);
+                        } catch (PersistenceException e) {
+                            logger.warning(String.format("Failed to remove auxiliary data %s. Reason: %s",
+                                                         data.getLocation(), e.getMessage()));
+                        }
+                    }
                 }
             }
+
+            if (Files.isDirectory(filePath)) {
+                deleteFolder(filePath);
+            } else {
+                Files.delete(filePath);
+            }
         }
-        
         try {
 			// update user's processing quota
 			UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
@@ -244,7 +245,6 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                             product.getName(), e.getMessage()));
                 }
             }
-            //TODO: no need to update the user quota, right?
         }
     }
 
@@ -524,6 +524,14 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         try (Stream<Path> stream = Files.walk(path, depth, FileVisitOption.FOLLOW_LINKS)) {
             return stream.filter(p -> !p.equals(path) && !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
                     .sorted().collect(Collectors.toList());
+        }
+    }
+
+    private void deleteFolder(Path folder) throws IOException {
+        if (SystemUtils.IS_OS_LINUX) {
+            FileUtilities.deleteTreeUnix(folder);
+        } else {
+            FileUtilities.deleteTree(folder);
         }
     }
 }
