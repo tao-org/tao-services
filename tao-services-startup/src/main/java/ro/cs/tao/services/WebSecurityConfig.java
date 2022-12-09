@@ -16,6 +16,7 @@
 package ro.cs.tao.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -24,9 +25,12 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -52,9 +56,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
 
     @Autowired
     private AuthenticationEntryPoint entryPoint;
-
-    /*@Autowired
-    private TaoUserDetailsService userDetailsService;*/
 
     @Autowired
     private TokenAuthenticationProvider tokenProvider;
@@ -95,11 +96,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
         return new BCryptPasswordEncoder();
     }
 
-    /*@Bean
-    public HttpSessionStrategy httpSessionStrategy() {
-        return new HeaderHttpSessionStrategy();
-    }
-*/
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         final CorsConfiguration configuration = new CorsConfiguration();
@@ -119,11 +115,23 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
         return source;
     }
 
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
+    public ServletListenerRegistrationBean<HttpSessionEventPublisher> httpSessionEventPublisher() {
+        return new ServletListenerRegistrationBean<HttpSessionEventPublisher>(new HttpSessionEventPublisher());
+    }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-          .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+          .sessionManagement()
+                .maximumSessions(1).sessionRegistry(sessionRegistry())
+                .and()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
           .and()
           .headers().frameOptions().sameOrigin()
           .and()

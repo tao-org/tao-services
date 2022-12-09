@@ -29,12 +29,13 @@ import ro.cs.tao.user.UserStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Oana H.
  */
 @Service("adminService")
-public class AdministrationServiceImpl implements AdministrationService{
+public class AdministrationServiceImpl implements AdministrationService {
 
     @Autowired
     private UserProvider userProvider;
@@ -68,6 +69,11 @@ public class AdministrationServiceImpl implements AdministrationService{
     @Override
     public List<User> getAdministrators() {
         return userProvider.listAdministrators();
+    }
+
+    @Override
+    public List<User> getUsers(Set<String> userNames) {
+        return userProvider.listUsers(userNames);
     }
 
     @Override

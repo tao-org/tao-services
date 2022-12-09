@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
@@ -36,6 +38,12 @@ import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.mail.MailSender;
 
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * @author Oana H.
  */
@@ -48,6 +56,9 @@ public class AdministrationController extends BaseController {
 
     @Autowired
     private TokenManagementService tokenService;
+
+    @Autowired
+    private SessionRegistry sessionRegistry;
 
     @RequestMapping(value = "/users", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addNewUser(@RequestBody User newUserInfo) {
@@ -85,6 +96,23 @@ public class AdministrationController extends BaseController {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         return prepareResult(adminService.findUsersByStatus(activationStatus));
+    }
+
+    @RequestMapping(value = "/users/logged", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> findLoggedUsers() {
+        final List<Object> principals = sessionRegistry.getAllPrincipals();
+        final Set<String> names = new HashSet<>();
+        final List<User> users = new ArrayList<>();
+        for (Object principal : principals) {
+            List<SessionInformation> sessions = sessionRegistry.getAllSessions(principal, false);
+            if (!sessions.isEmpty()) {
+                names.add(((Principal) principal).getName());
+            }
+        }
+        if (!names.isEmpty()) {
+            users.addAll(adminService.getUsers(names));
+        }
+        return prepareResult(users);
     }
 
     @RequestMapping(value = "/users/groups", method = RequestMethod.GET, produces = "application/json")
