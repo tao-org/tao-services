@@ -5,13 +5,18 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.beans.RepositoryBean;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
+import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.RepositoryService;
+import ro.cs.tao.services.interfaces.StorageService;
+import ro.cs.tao.services.model.ItemAction;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -51,7 +56,13 @@ public class RepositoryEntityController extends DataEntityController<Repository,
             if (entity == null || !entity.getUserName().equals(currentUser())) {
                 throw new IllegalArgumentException("You cannot access this workspace");
             }
-            return prepareResult(ServiceTransformUtils.toBean(entity));
+            final RepositoryBean bean = ServiceTransformUtils.toBean(entity);
+            final StorageService storageService = StorageServiceFactory.getInstance(entity);
+            List<ItemAction> actions = storageService.getRegisteredActions();
+            if (actions != null) {
+                bean.setActions(actions.stream().map(ItemAction::name).collect(Collectors.toList()));
+            }
+            return prepareResult(bean);
         } catch (Exception e) {
             return handleException(e);
         }
