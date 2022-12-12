@@ -28,6 +28,7 @@ import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
+import ro.cs.tao.services.model.ItemAction;
 import ro.cs.tao.services.workspace.impl.TransferService;
 import ro.cs.tao.services.workspace.model.TransferRequest;
 import ro.cs.tao.services.workspace.model.TransferableItem;
@@ -570,6 +571,40 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                                                                       ? "" : "/")
                                                                                    + bucketRelative),
                                                            nLines, nSkip));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    /**
+     * Executes an action on the selected file
+     * @param action        The action name
+     * @param file          The file onto which to perform the action
+     * @return              A message indicating if the action was performed or not
+     */
+    @PostMapping(value = "/action", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> doAction(@RequestParam("action") String action,
+                                                       @RequestParam(name = "file") String file) {
+        try {
+            if (StringUtilities.isNullOrEmpty(file)) {
+                throw new IllegalArgumentException("Not a file");
+            }
+            final Repository workspace = getLocalWorkspace(currentUser());
+            final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(currentUser());
+            final List<ItemAction> actions = repositoryService.getRegisteredActions();
+            if (actions != null) {
+                final ItemAction itemAction = actions.stream().filter(a -> a.name().equals(action)).findFirst().orElse(null);
+                if (itemAction != null) {
+                    final String resolvedPath = workspace.resolve(file);
+                    try {
+                        itemAction.doAction(Paths.get(resolvedPath));
+                        return prepareResult(actions + " completed", ResponseStatus.SUCCEEDED);
+                    } catch (Exception e) {
+                        return handleException(e);
+                    }
+                }
+            }
+            return prepareResult("No action to perform", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
         }

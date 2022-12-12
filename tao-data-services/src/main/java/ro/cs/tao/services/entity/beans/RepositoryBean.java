@@ -1,6 +1,7 @@
 package ro.cs.tao.services.entity.beans;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 
 public class RepositoryBean {
     private String id;
@@ -13,6 +14,7 @@ public class RepositoryBean {
     private boolean readOnly;
     private boolean editable;
     private LinkedHashMap<String, String> parameters;
+    private List<String> actions;
 
     public String getId() {
         return id;
@@ -92,5 +94,13 @@ public class RepositoryBean {
 
     public void setParameters(LinkedHashMap<String, String> parameters) {
         this.parameters = parameters;
+    }
+
+    public List<String> getActions() {
+        return actions;
+    }
+
+    public void setActions(List<String> actions) {
+        this.actions = actions;
     }
 }
