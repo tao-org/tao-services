@@ -15,6 +15,8 @@
  */
 package ro.cs.tao.services.query.controller;
 
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.io.WKTReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -165,27 +167,55 @@ public class DataSourceController extends BaseController {
             if (StringUtilities.isNullOrEmpty(tile)) {
                 throw new IllegalArgumentException("Empty parameter [tile]");
             }
-            if ("sentinel2".equalsIgnoreCase(satellite) || "sentinel-2".equalsIgnoreCase(satellite) || "s2".equalsIgnoreCase(satellite)) {
-                if (!s2TilePattern.matcher(tile).matches()) {
-                    throw new IllegalArgumentException(String.format("[%s] is not a valid UTM tile", tile));
-                } else {
-                    Path2D.Double tileExtent = Sentinel2TileExtent.getInstance().getTileExtent(tile);
-                    return tileExtent == null ?
-                            prepareResult(String.format("[%s] is not found", tile), ResponseStatus.FAILED) :
-                            prepareResult(Polygon2D.fromPath2D(tileExtent).toWKT());
-                }
-            } else if ("landsat8".equalsIgnoreCase(satellite) || "landsat-8".equalsIgnoreCase(satellite) || "l8".equalsIgnoreCase(satellite)) {
-                if (!l8TilePattern.matcher(tile).matches()) {
-                    throw new IllegalArgumentException(String.format("[%s] is not a valid Landsat-8 path row", tile));
-                } else {
-                    Path2D.Double tileExtent = Landsat8TileExtent.getInstance().getTileExtent(tile);
-                    return tileExtent == null ?
-                            prepareResult(String.format("[%s] is not found", tile), ResponseStatus.FAILED) :
-                            prepareResult(Polygon2D.fromPath2D(tileExtent).toWKT());
-                }
+            final List<String> tiles = new ArrayList<>();
+            if (tile.indexOf(',') > 0) { // we have a list of tiles
+                tiles.addAll(Arrays.asList(tile.split(",")));
             } else {
-                throw new IllegalArgumentException("Satellite not supported");
+                tiles.add(tile);
             }
+            final WKTReader reader = new WKTReader();
+            Geometry geometry = null;
+            for (String oneTile : tiles) {
+                oneTile = oneTile.trim();
+                if ("sentinel2".equalsIgnoreCase(satellite) || "sentinel-2".equalsIgnoreCase(satellite) || "s2".equalsIgnoreCase(satellite)) {
+                    if (!s2TilePattern.matcher(oneTile).matches()) {
+                        throw new IllegalArgumentException(String.format("[%s] is not a valid UTM tile", oneTile));
+                    } else {
+                        Path2D.Double tileExtent = Sentinel2TileExtent.getInstance().getTileExtent(oneTile);
+                        if (tileExtent == null) {
+                            throw new Exception(String.format("[%s] is not found", oneTile));
+                        }
+                        if (geometry == null) {
+                            geometry = reader.read(Polygon2D.fromPath2D(tileExtent).toWKT());
+                        } else {
+                            geometry = geometry.union(reader.read(Polygon2D.fromPath2D(tileExtent).toWKT()));
+                        }
+                    }
+                } else if ("landsat8".equalsIgnoreCase(satellite) || "landsat-8".equalsIgnoreCase(satellite) || "l8".equalsIgnoreCase(satellite)) {
+                    if (!l8TilePattern.matcher(oneTile).matches()) {
+                        throw new IllegalArgumentException(String.format("[%s] is not a valid Landsat-8 path row", oneTile));
+                    } else {
+                        Path2D.Double tileExtent = Landsat8TileExtent.getInstance().getTileExtent(oneTile);
+                        if (tileExtent == null) {
+                            throw new Exception(String.format("[%s] is not found", oneTile));
+                        }
+                        if (geometry == null) {
+                            geometry = reader.read(Polygon2D.fromPath2D(tileExtent).toWKT());
+                        } else {
+                            geometry = geometry.union(reader.read(Polygon2D.fromPath2D(tileExtent).toWKT()));
+                        }
+                    }
+                } else {
+                    throw new IllegalArgumentException("Satellite not supported");
+                }
+            }
+            final String wkt;
+            if (geometry != null) {
+                wkt = geometry.toText().replace("POLYGON ", "POLYGON");
+            } else {
+                wkt = null;
+            }
+            return prepareResult(wkt);
         } catch (Exception e) {
             return handleException(e);
         }
