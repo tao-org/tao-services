@@ -4,6 +4,7 @@ import ro.cs.tao.services.model.ItemAction;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.workspaces.RepositoryType;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class CopyAction implements ItemAction {
@@ -18,7 +19,8 @@ public class CopyAction implements ItemAction {
     }
 
     @Override
-    public void doAction(Path item, Path destination) throws Exception {
+    public Path doAction(Path item, Path destination) throws Exception {
         FileUtilities.copy(item, destination);
+        return Files.isDirectory(destination) ? destination.resolve(item.getFileName()) : destination;
     }
 }
