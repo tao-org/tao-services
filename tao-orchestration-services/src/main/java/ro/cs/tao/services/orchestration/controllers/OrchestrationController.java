@@ -26,10 +26,8 @@ import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.ExecutionsManager;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
-import ro.cs.tao.execution.model.ExecutionJob;
-import ro.cs.tao.execution.model.ExecutionJobSummary;
-import ro.cs.tao.execution.model.ExecutionStatus;
-import ro.cs.tao.execution.model.ExecutionTaskSummary;
+import ro.cs.tao.execution.model.*;
+import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
@@ -49,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/orchestrator")
@@ -56,6 +55,8 @@ public class OrchestrationController extends BaseController {
 
     @Autowired
     private OrchestratorService orchestrationService;
+    @Autowired
+    private ExecutionJobProvider executionJobManager;
 
     @RequestMapping(value = "/start", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> start(@RequestBody ExecutionRequest request) {
@@ -170,7 +171,18 @@ public class OrchestrationController extends BaseController {
 
     @RequestMapping(value = "/{jobId}/output", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getJobOutput(@PathVariable("jobId") long jobId) {
-        return prepareResult(ExecutionsManager.getInstance().getJobOutput(jobId));
+        ExecutionJob job = executionJobManager.get(jobId);
+        String output;
+        if (job == null) {
+            output = null;
+        } else {
+            if (job.getExecutionStatus() != ExecutionStatus.RUNNING) {
+                output = job.orderedTasks().stream().map(ExecutionTask::getLog).collect(Collectors.joining("\n-----\n"));
+            } else {
+                output = ExecutionsManager.getInstance().getJobOutput(jobId);
+            }
+        }
+        return prepareResult(output);
     }
 
     @RequestMapping(value = "/history", method = RequestMethod.GET, produces = "application/json")
