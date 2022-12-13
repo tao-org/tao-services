@@ -19,11 +19,12 @@ public class DeleteAction implements ItemAction {
     }
 
     @Override
-    public void doAction(Path item) throws Exception {
+    public Path doAction(Path item) throws Exception {
         if (Files.isDirectory(item)) {
             FileUtilities.deleteTree(item);
         } else {
             Files.delete(item);
         }
+        return item;
     }
 }
