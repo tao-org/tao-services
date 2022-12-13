@@ -317,7 +317,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     @RequestMapping(value = "/config", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody DataSourceConfiguration configuration) {
         try {
-            service.saveConfiguration(configuration);
+            service.updateConfiguration(configuration);
             return prepareResult("Succeeded", ResponseStatus.SUCCEEDED);
         } catch (PersistenceException e) {
             return handleException(e);
