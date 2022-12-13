@@ -129,9 +129,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     protected void configure(HttpSecurity http) throws Exception {
         http
           .sessionManagement()
-                .maximumSessions(1).sessionRegistry(sessionRegistry())
+                .maximumSessions(2).maxSessionsPreventsLogin(false).sessionRegistry(sessionRegistry())
                 .and()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
           .and()
           .headers().frameOptions().sameOrigin()
           .and()

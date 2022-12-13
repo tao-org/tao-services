@@ -60,7 +60,7 @@ public class RepositoryEntityController extends DataEntityController<Repository,
             final StorageService storageService = StorageServiceFactory.getInstance(entity);
             List<ItemAction> actions = storageService.getRegisteredActions();
             if (actions != null) {
-                bean.setActions(actions.stream().map(ItemAction::name).collect(Collectors.toList()));
+                bean.setActions(actions.stream().map(ItemAction::name).sorted().collect(Collectors.toList()));
             }
             return prepareResult(bean);
         } catch (Exception e) {

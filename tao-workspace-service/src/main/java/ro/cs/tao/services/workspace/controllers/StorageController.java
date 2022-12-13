@@ -18,6 +18,8 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.util.Zipper;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.security.SystemPrincipal;
@@ -50,6 +52,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.zip.ZipOutputStream;
@@ -579,35 +582,54 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     /**
      * Executes an action on the selected file
      * @param action        The action name
-     * @param file          The file onto which to perform the action
+     * @param item          The file onto which to perform the action
+     * @param destination   (Optional) The destination of the action result
      * @return              A message indicating if the action was performed or not
      */
     @PostMapping(value = "/action", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doAction(@RequestParam("action") String action,
-                                                       @RequestParam(name = "file") String file) {
-        try {
-            if (StringUtilities.isNullOrEmpty(file)) {
+                                                       @RequestParam(name = "item") String item,
+                                                       @RequestParam(name = "destination", required = false) String destination) {
+        final String successMessage = String.format("%s [%s] completed", action, item);
+        final BiConsumer<Exception, String> callback = (e, s) -> {
+            String topic;
+            String message;
+            if (e == null) {
+                topic = Topic.INFORMATION.getCategory();
+                message = s;
+            } else {
+                topic = Topic.WARNING.getCategory();
+                message = e.getMessage();
+            }
+
+            Messaging.send(currentUser(), topic, message);
+        };
+        asyncExecute(() -> {
+            if (StringUtilities.isNullOrEmpty(item)) {
                 throw new IllegalArgumentException("Not a file");
             }
+            final boolean oneArg = StringUtilities.isNullOrEmpty(destination);
             final Repository workspace = getLocalWorkspace(currentUser());
             final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(currentUser());
             final List<ItemAction> actions = repositoryService.getRegisteredActions();
             if (actions != null) {
                 final ItemAction itemAction = actions.stream().filter(a -> a.name().equals(action)).findFirst().orElse(null);
                 if (itemAction != null) {
-                    final String resolvedPath = workspace.resolve(file);
+                    final Path resolvedPath = Paths.get(workspace.resolve(item));
                     try {
-                        itemAction.doAction(Paths.get(resolvedPath));
-                        return prepareResult(actions + " completed", ResponseStatus.SUCCEEDED);
+                        if (oneArg) {
+                            itemAction.doAction(resolvedPath);
+                        } else {
+                            final String destPath = workspace.resolve(destination);
+                            itemAction.doAction(resolvedPath, Paths.get(destPath));
+                        }
                     } catch (Exception e) {
-                        return handleException(e);
+                        throw new RuntimeException(e);
                     }
                 }
             }
-            return prepareResult("No action to perform", ResponseStatus.SUCCEEDED);
-        } catch (Exception e) {
-            return handleException(e);
-        }
+        }, successMessage, callback);
+        return prepareResult(action + " started", ResponseStatus.SUCCEEDED);
     }
 
     private void queueFile(String batchId, FileObject file, Repository source, Repository destination, String folder, boolean move, boolean overwrite) {
