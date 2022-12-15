@@ -83,7 +83,7 @@ public class DataSourceServiceImpl implements DataSourceService {
         final DataSourceManager dataSourceManager = DataSourceManager.getInstance();
         final Set<DataSource<?, ?>> dataSources = dataSourceManager.getRegisteredDataSources();
         for (DataSource<?, ?> dataSource : dataSources) {
-            instances.put(dataSource.defaultId(), dataSource.getSupportedSensors());
+            instances.put(dataSource.getId(), dataSource.getSupportedSensors());
         }
         return instances;
     }
