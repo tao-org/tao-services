@@ -362,6 +362,14 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         this.configurationProvider.save(configuration);
     }
 
+    public void updateConfiguration(DataSourceConfiguration configuration) throws PersistenceException {
+        final DataSourceComponent entity = findById(configuration.getId());
+        if (entity == null) {
+            throw new PersistenceException(String.format("Datasource with id '%s' not found", configuration.getId()));
+        }
+        this.configurationProvider.update(configuration);
+    }
+
     @Override
     public List<DataSourceComponent> getProductSets(String userName) throws PersistenceException {
         return this.dataSourceComponentProvider.getProductSets(userName);
