@@ -1,7 +1,7 @@
 package ro.cs.tao.wps;
 
 import org.geotools.ows.ServiceException;
-import ro.cs.tao.component.WPSAuthentication;
+import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.component.enums.AuthenticationType;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Container;
@@ -14,7 +14,7 @@ public class WPSClientTest {
 
     public static void main(String[] args) throws ServiceException, IOException {
         ConfigurationManager.getInstance().setValue("workspace.location", "/");
-        WPSAuthentication auth = new WPSAuthentication();
+        WebServiceAuthentication auth = new WebServiceAuthentication();
         auth.setLoginUrl("http://192.168.61.18:8280/login");
         auth.setAuthHeader("X-Auth-Token");
         auth.setUser("test");

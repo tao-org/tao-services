@@ -2,40 +2,40 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.component.WPSAuthentication;
+import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.WPSAuthenticationProvider;
-import ro.cs.tao.services.interfaces.WPSAuthenticationService;
+import ro.cs.tao.services.interfaces.WebServiceAuthenticationService;
 
 import java.util.List;
 import java.util.logging.Logger;
 
 @Service("wpsAuthenticationService")
-public class WPSAuthenticationServiceImpl
-        extends EntityService<WPSAuthentication> implements WPSAuthenticationService {
+public class WebServiceAuthenticationServiceImpl
+        extends EntityService<WebServiceAuthentication> implements WebServiceAuthenticationService {
 
     @Autowired
     private WPSAuthenticationProvider wpsAuthenticationProvider;
 
-    private Logger logger = Logger.getLogger(WPSAuthenticationService.class.getName());
+    private Logger logger = Logger.getLogger(WebServiceAuthenticationService.class.getName());
 
     @Override
-    public WPSAuthentication findById(String id) {
+    public WebServiceAuthentication findById(String id) {
         return wpsAuthenticationProvider.get(id);
     }
 
     @Override
-    public List<WPSAuthentication> list() {
+    public List<WebServiceAuthentication> list() {
         return wpsAuthenticationProvider.list();
     }
 
     @Override
-    public List<WPSAuthentication> list(Iterable<String> ids) {
+    public List<WebServiceAuthentication> list(Iterable<String> ids) {
         return wpsAuthenticationProvider.list(ids);
     }
 
     @Override
-    public WPSAuthentication save(WPSAuthentication object) {
+    public WebServiceAuthentication save(WebServiceAuthentication object) {
         try {
             return wpsAuthenticationProvider.save(object);
         } catch (PersistenceException e) {
@@ -45,7 +45,7 @@ public class WPSAuthenticationServiceImpl
     }
 
     @Override
-    public WPSAuthentication update(WPSAuthentication object) throws PersistenceException {
+    public WebServiceAuthentication update(WebServiceAuthentication object) throws PersistenceException {
         return wpsAuthenticationProvider.update(object);
     }
 
@@ -55,7 +55,7 @@ public class WPSAuthenticationServiceImpl
     }
 
     @Override
-    protected void validateFields(WPSAuthentication entity, List<String> errors) {
+    protected void validateFields(WebServiceAuthentication entity, List<String> errors) {
         String value = entity.getId();
         if (value == null || value.trim().isEmpty()) {
             errors.add("[id] cannot be empty");

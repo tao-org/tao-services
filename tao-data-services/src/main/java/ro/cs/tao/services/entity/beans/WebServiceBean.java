@@ -7,7 +7,7 @@ import ro.cs.tao.docker.ContainerType;
 import java.util.List;
 import java.util.Set;
 
-public class WPSContainerBean {
+public class WebServiceBean {
     private String id;
     private String name;
     private String description;
@@ -25,7 +25,7 @@ public class WPSContainerBean {
     private String loginUrl;
     private String authHeader;
 
-    public WPSContainerBean() {
+    public WebServiceBean() {
     }
 
     public String getId() {

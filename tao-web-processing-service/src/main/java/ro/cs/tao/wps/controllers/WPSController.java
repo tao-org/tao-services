@@ -34,9 +34,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.TargetDescriptor;
-import ro.cs.tao.component.WPSAuthentication;
 import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.component.WPSComponentBean;
+import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.Container;
@@ -45,7 +45,7 @@ import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
-import ro.cs.tao.services.entity.beans.WPSContainerBean;
+import ro.cs.tao.services.entity.beans.WebServiceBean;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.*;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
@@ -77,7 +77,7 @@ public class WPSController extends BaseController {
     @Autowired
     private ContainerService containerService;
     @Autowired
-    private WPSAuthenticationService wpsAuthenticationService;
+    private WebServiceAuthenticationService webServiceAuthenticationService;
     @Autowired
     private WPSComponentService wpsComponentService;
     @Autowired
@@ -87,10 +87,10 @@ public class WPSController extends BaseController {
     public ResponseEntity<?> list() {
         try {
             final List<Container> containers = containerService.listByType(ContainerType.WPS);
-            final List<WPSContainerBean> results = new ArrayList<>();
+            final List<WebServiceBean> results = new ArrayList<>();
             for (Container container : containers) {
                 results.add(ServiceTransformUtils.toBean(container,
-                                                         wpsAuthenticationService.findById(container.getId())));
+                                                         webServiceAuthenticationService.findById(container.getId())));
             }
             return prepareResult(results);
         } catch (Exception e) {
@@ -102,7 +102,7 @@ public class WPSController extends BaseController {
     public ResponseEntity<?> getById(@PathVariable("id") String id) {
         try {
             final Container container = containerService.findById(id);
-            final WPSAuthentication auth = wpsAuthenticationService.findById(id);
+            final WebServiceAuthentication auth = webServiceAuthenticationService.findById(id);
             return prepareResult(ServiceTransformUtils.toBean(container, auth));
         } catch (Exception e) {
             return handleException(e);
@@ -110,7 +110,7 @@ public class WPSController extends BaseController {
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<?> save(@RequestBody WPSContainerBean bean) {
+    public ResponseEntity<?> save(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
                 throw new IllegalArgumentException("Empty body");
@@ -125,10 +125,10 @@ public class WPSController extends BaseController {
             if (StringUtilities.isNullOrEmpty(container.getId())) {
                 container.setId(UUID.randomUUID().toString());
             }
-            WPSAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
+            WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
             container = containerService.save(container);
             auth.setId(container.getId());
-            auth = wpsAuthenticationService.save(auth);
+            auth = webServiceAuthenticationService.save(auth);
             return prepareResult(ServiceTransformUtils.toBean(container, auth));
         } catch (Exception e) {
             return handleException(e);
@@ -136,7 +136,7 @@ public class WPSController extends BaseController {
     }
 
     @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
-    public ResponseEntity<?> update(@RequestBody WPSContainerBean bean) {
+    public ResponseEntity<?> update(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
                 throw new IllegalArgumentException("Empty body");
@@ -151,9 +151,9 @@ public class WPSController extends BaseController {
             if (container.getTag() == null) {
                 container.setTag("WPS");
             }
-            WPSAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
+            WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
             container = containerService.update(container);
-            auth = wpsAuthenticationService.update(auth);
+            auth = webServiceAuthenticationService.update(auth);
             return prepareResult(ServiceTransformUtils.toBean(container, auth));
         } catch (Exception e) {
             return handleException(e);
@@ -164,7 +164,7 @@ public class WPSController extends BaseController {
     public ResponseEntity<?> delete(@PathVariable("id") String id) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            wpsAuthenticationService.delete(id);
+            webServiceAuthenticationService.delete(id);
             containerService.delete(id);
             responseEntity = prepareResult("Entity deleted", ResponseStatus.SUCCEEDED);
         } catch (PersistenceException e) {
@@ -188,7 +188,7 @@ public class WPSController extends BaseController {
             if (!allowedRequests.contains(requestType)) {
                 throw new IllegalArgumentException("[request] Unsupported value");
             }
-            final WPSAuthentication auth = new ObjectMapper().readerFor(WPSAuthentication.class).readValue(authentication);
+            final WebServiceAuthentication auth = new ObjectMapper().readerFor(WebServiceAuthentication.class).readValue(authentication);
             final WPSClient client = new WPSClient(endpoint, auth, currentPrincipal());
             if ("GetCapabilities".equalsIgnoreCase(requestType)) {
                 Container capabilities = client.getCapabilities();
