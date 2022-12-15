@@ -25,9 +25,6 @@ import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.datasource.persistence.DataSourceConfigurationProvider;
 import ro.cs.tao.datasource.remote.FetchMode;
-import ro.cs.tao.docker.Application;
-import ro.cs.tao.docker.Container;
-import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.SensorType;
@@ -48,7 +45,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -73,29 +69,12 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     @Override
     public SortedSet<String> getSupportedSensors() {
-        SortedSet<String> sensors = DataSourceManager.getInstance().getSupportedSensors();
-        // Inspect if there are any STAC services and add their collections
-        List<Container> stacServices = containerProvider.getByType(ContainerType.STAC);
-        if (stacServices != null) {
-            for (Container service : stacServices) {
-                sensors.addAll(service.getApplications().stream().map(Application::getName).collect(Collectors.toSet()));
-            }
-        }
-        return sensors;
+        return DataSourceManager.getInstance().getSupportedSensors();
     }
 
     @Override
     public List<String> getDatasourcesForSensor(String sensorName) {
-        List<String> dsNames = DataSourceManager.getInstance().getNames(sensorName);
-        // Inspect if there are any STAC services and add them
-        List<Container> stacServices = containerProvider.getByType(ContainerType.STAC);
-        if (stacServices != null) {
-            if (dsNames == null) {
-                dsNames = new ArrayList<>();
-            }
-            dsNames.addAll(stacServices.stream().map(Container::getName).collect(Collectors.toList()));
-        }
-        return dsNames;
+        return DataSourceManager.getInstance().getNames(sensorName);
     }
 
     @Override
@@ -105,13 +84,6 @@ public class DataSourceServiceImpl implements DataSourceService {
         final Set<DataSource<?, ?>> dataSources = dataSourceManager.getRegisteredDataSources();
         for (DataSource<?, ?> dataSource : dataSources) {
             instances.put(dataSource.defaultId(), dataSource.getSupportedSensors());
-        }
-        // Inspect if there are any STAC services and add them
-        List<Container> stacServices = containerProvider.getByType(ContainerType.STAC);
-        if (stacServices != null) {
-            for (Container service : stacServices) {
-                instances.put(service.getName(), service.getApplications().stream().map(Application::getName).toArray(String[]::new));
-            }
         }
         return instances;
     }
