@@ -8,7 +8,7 @@ import org.geotools.data.wps.response.DescribeProcessResponse;
 import org.geotools.ows.ServiceException;
 import ro.cs.tao.component.DataDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
-import ro.cs.tao.component.WPSAuthentication;
+import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.datasource.param.JavaType;
 import ro.cs.tao.docker.Application;
@@ -28,10 +28,10 @@ import java.util.*;
 
 public class WPSClient {
     private final String url;
-    private final WPSAuthentication authentication;
+    private final WebServiceAuthentication authentication;
     private final Principal currentPrincipal;
 
-    public WPSClient(String url, WPSAuthentication authentication, Principal principal) {
+    public WPSClient(String url, WebServiceAuthentication authentication, Principal principal) {
         this.url = url;
         this.authentication = authentication;
         this.currentPrincipal = principal;

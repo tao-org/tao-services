@@ -17,8 +17,8 @@ package ro.cs.tao.services.entity.util;
 
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.ProcessingComponent;
-import ro.cs.tao.component.WPSAuthentication;
 import ro.cs.tao.component.WPSComponent;
+import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.component.enums.AuthenticationType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
@@ -29,7 +29,7 @@ import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.services.entity.beans.RepositoryBean;
 import ro.cs.tao.services.entity.beans.RepositoryTemplateBean;
 import ro.cs.tao.services.entity.beans.RepositoryTypeBean;
-import ro.cs.tao.services.entity.beans.WPSContainerBean;
+import ro.cs.tao.services.entity.beans.WebServiceBean;
 import ro.cs.tao.services.model.component.*;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
@@ -188,8 +188,8 @@ public final class ServiceTransformUtils {
         return bean;
     }
 
-    public static WPSContainerBean toBean(Container container, WPSAuthentication authentication) {
-        final WPSContainerBean bean = new WPSContainerBean();
+    public static WebServiceBean toBean(Container container, WebServiceAuthentication authentication) {
+        final WebServiceBean bean = new WebServiceBean();
         bean.setId(container.getId());
         bean.setName(container.getName());
         bean.setDescription(container.getDescription());
@@ -212,7 +212,7 @@ public final class ServiceTransformUtils {
         return bean;
     }
 
-    public static Container getContainerPart(WPSContainerBean bean) {
+    public static Container getContainerPart(WebServiceBean bean) {
         final Container entity = new Container();
         entity.setId(bean.getId());
         entity.setName(bean.getName());
@@ -228,8 +228,8 @@ public final class ServiceTransformUtils {
         return entity;
     }
 
-    public static WPSAuthentication getAuthenticationPart(WPSContainerBean bean) {
-        final WPSAuthentication entity = new WPSAuthentication();
+    public static WebServiceAuthentication getAuthenticationPart(WebServiceBean bean) {
+        final WebServiceAuthentication entity = new WebServiceAuthentication();
         entity.setId(bean.getId());
         if (bean.getAuthType() != null) {
             entity.setType(bean.getAuthType());

@@ -63,6 +63,16 @@
             <artifactId>tao-openstack</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-stac-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-datasources-stac</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- for testing -->
         <dependency>
