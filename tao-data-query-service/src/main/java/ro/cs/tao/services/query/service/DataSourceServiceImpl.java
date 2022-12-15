@@ -25,9 +25,13 @@ import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.datasource.persistence.DataSourceConfigurationProvider;
 import ro.cs.tao.datasource.remote.FetchMode;
+import ro.cs.tao.docker.Application;
+import ro.cs.tao.docker.Container;
+import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.SensorType;
+import ro.cs.tao.persistence.ContainerProvider;
 import ro.cs.tao.persistence.DataSourceCredentialsProvider;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.PersistenceException;
@@ -44,6 +48,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -63,14 +68,34 @@ public class DataSourceServiceImpl implements DataSourceService {
     @Autowired
     private DataSourceConfigurationProvider configurationProvider;
 
+    @Autowired
+    private ContainerProvider containerProvider;
+
     @Override
     public SortedSet<String> getSupportedSensors() {
-        return DataSourceManager.getInstance().getSupportedSensors();
+        SortedSet<String> sensors = DataSourceManager.getInstance().getSupportedSensors();
+        // Inspect if there are any STAC services and add their collections
+        List<Container> stacServices = containerProvider.getByType(ContainerType.STAC);
+        if (stacServices != null) {
+            for (Container service : stacServices) {
+                sensors.addAll(service.getApplications().stream().map(Application::getName).collect(Collectors.toSet()));
+            }
+        }
+        return sensors;
     }
 
     @Override
     public List<String> getDatasourcesForSensor(String sensorName) {
-        return DataSourceManager.getInstance().getNames(sensorName);
+        List<String> dsNames = DataSourceManager.getInstance().getNames(sensorName);
+        // Inspect if there are any STAC services and add them
+        List<Container> stacServices = containerProvider.getByType(ContainerType.STAC);
+        if (stacServices != null) {
+            if (dsNames == null) {
+                dsNames = new ArrayList<>();
+            }
+            dsNames.addAll(stacServices.stream().map(Container::getName).collect(Collectors.toList()));
+        }
+        return dsNames;
     }
 
     @Override
@@ -81,6 +106,13 @@ public class DataSourceServiceImpl implements DataSourceService {
         for (DataSource<?, ?> dataSource : dataSources) {
             instances.put(dataSource.defaultId(), dataSource.getSupportedSensors());
         }
+        // Inspect if there are any STAC services and add them
+        List<Container> stacServices = containerProvider.getByType(ContainerType.STAC);
+        if (stacServices != null) {
+            for (Container service : stacServices) {
+                instances.put(service.getName(), service.getApplications().stream().map(Application::getName).toArray(String[]::new));
+            }
+        }
         return instances;
     }
 
@@ -88,10 +120,12 @@ public class DataSourceServiceImpl implements DataSourceService {
     public List<DataSourceDescriptor> getDatasourceInstances() {
         List<DataSourceDescriptor> instances = new ArrayList<>();
         final DataSourceManager dataSourceManager = DataSourceManager.getInstance();
-        final SortedSet<String> sensors = dataSourceManager.getSupportedSensors();
+        //final SortedSet<String> sensors = dataSourceManager.getSupportedSensors();
+        final SortedSet<String> sensors = getSupportedSensors();
         final List<DataSourceCredentials> userCredentials = credentialsProvider.getByUser(SessionStore.currentContext().getPrincipal().getName());
         for (String sensor : sensors) {
-            dataSourceManager.getNames(sensor).forEach(n -> {
+            //dataSourceManager.getNames(sensor).forEach(n -> {
+            getDatasourcesForSensor(sensor).forEach(n -> {
                 if (!"Local Database".equals(n)) {
                     Map<String, CollectionDescription> sensorTypes = dataSourceManager.get(sensor, n).getSensorTypes();
                     if (sensorTypes != null) {

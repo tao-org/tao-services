@@ -9,7 +9,9 @@ import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.datasource.DataSourceComponent;
+import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.remote.FetchMode;
+import ro.cs.tao.datasource.stac.STACSource;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
@@ -75,6 +77,7 @@ public class STACServiceController extends BaseController {
             auth = webServiceAuthenticationService.save(auth);
             final List<Application> applications = container.getApplications();
             if (applications != null) { // Create the corresponding data sources
+                DataSourceManager.getInstance().registerDataSource(new STACSource(container.getName()));
                 for (Application application : applications) {
                     DataSourceComponent component = new DataSourceComponent(container.getName(), application.getName());
                     component.setSystem(false);
@@ -144,7 +147,9 @@ public class STACServiceController extends BaseController {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             webServiceAuthenticationService.delete(id);
+            Container service = containerService.findById(id);
             containerService.delete(id);
+            DataSourceManager.getInstance().unregisterDataSource(service.getName());
             responseEntity = prepareResult("STAC service deleted", ResponseStatus.SUCCEEDED);
         } catch (PersistenceException e) {
             responseEntity = handleException(e);

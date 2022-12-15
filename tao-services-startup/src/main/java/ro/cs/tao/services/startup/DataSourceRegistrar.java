@@ -6,6 +6,9 @@ import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.remote.FetchMode;
+import ro.cs.tao.datasource.stac.STACSource;
+import ro.cs.tao.docker.Container;
+import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.persistence.PersistenceException;
 
 import java.util.ArrayList;
@@ -93,6 +96,13 @@ public class DataSourceRegistrar extends BaseLifeCycle {
             if (existing.size() > 0) {
                 logger.warning(String.format("There are %s data source components in the database that have not been found: %s",
                                              existing.size(), String.join(",", existing)));
+            }
+            final List<Container> stacServices = persistenceManager.containers().getByType(ContainerType.STAC);
+            if (stacServices != null && stacServices.size() > 0) {
+                for (Container service : stacServices) {
+                    DataSourceManager.getInstance().registerDataSource(new STACSource(service.getName()));
+                }
+                logger.finest(String.format("Registered %s STAC services", stacServices.size()));
             }
         }
     }
