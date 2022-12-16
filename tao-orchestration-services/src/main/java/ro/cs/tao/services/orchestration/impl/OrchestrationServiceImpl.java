@@ -178,6 +178,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                         workflowService.getFullDescriptor(job.getWorkflowId()).getName();
                 summary.setWorkflowName(workflowName);
             }
+            summary.setId(job.getId());
             summary.setJobName(job.getName());
             summary.setUser(job.getUserName());
             summary.setJobStatus(job.getExecutionStatus());
