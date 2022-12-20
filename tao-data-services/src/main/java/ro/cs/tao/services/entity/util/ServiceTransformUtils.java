@@ -193,7 +193,7 @@ public final class ServiceTransformUtils {
         bean.setId(container.getId());
         bean.setName(container.getName());
         bean.setDescription(container.getDescription());
-        bean.setType(ContainerType.WPS);
+        bean.setType(container.getType());
         bean.setApplicationPath(container.getApplicationPath());
         bean.setLogo(container.getLogo());
         bean.setApplications(container.getApplications());
@@ -217,7 +217,7 @@ public final class ServiceTransformUtils {
         entity.setId(bean.getId());
         entity.setName(bean.getName());
         entity.setDescription(bean.getDescription());
-        entity.setType(ContainerType.WPS);
+        entity.setType(bean.getType());
         entity.setApplicationPath(bean.getApplicationPath());
         entity.setLogo(bean.getLogo());
         entity.setApplications(bean.getApplications());

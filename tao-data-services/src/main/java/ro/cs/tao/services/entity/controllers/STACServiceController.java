@@ -35,6 +35,7 @@ import ro.cs.tao.utils.StringUtilities;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -179,7 +180,11 @@ public class STACServiceController extends BaseController {
                     applications.add(application);
                 }
             }
-            return prepareResult(applications);
+            final Container container = new Container();
+            container.setName("STAC Service");
+            container.setType(ContainerType.STAC);
+            container.setApplications(applications);
+            return prepareResult(container);
         } catch (Exception e) {
             return handleException(e);
         }

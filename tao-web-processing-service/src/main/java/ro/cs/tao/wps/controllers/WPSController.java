@@ -83,10 +83,15 @@ public class WPSController extends BaseController {
     @Autowired
     private WorkflowService workflowService;
 
-    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<?> list() {
+    @RequestMapping(value = {"/list","/list/{type}"}, method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> list(@PathVariable(required = false) String type) {
         try {
-            final List<Container> containers = containerService.listByType(ContainerType.WPS);
+            ContainerType containerType = ContainerType.WPS;
+            if (type != null && type.equalsIgnoreCase("STAC")) {
+                containerType = ContainerType.STAC;
+            }
+
+            final List<Container> containers = containerService.listByType(containerType);
             final List<WebServiceBean> results = new ArrayList<>();
             for (Container container : containers) {
                 results.add(ServiceTransformUtils.toBean(container,
