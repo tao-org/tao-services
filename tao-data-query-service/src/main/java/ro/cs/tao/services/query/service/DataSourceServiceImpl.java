@@ -100,7 +100,8 @@ public class DataSourceServiceImpl implements DataSourceService {
             //dataSourceManager.getNames(sensor).forEach(n -> {
             getDatasourcesForSensor(sensor).forEach(n -> {
                 if (!"Local Database".equals(n)) {
-                    Map<String, CollectionDescription> sensorTypes = dataSourceManager.get(sensor, n).getSensorTypes();
+                    DataSource<?, ?> dataSource = dataSourceManager.get(sensor, n);
+                    Map<String, CollectionDescription> sensorTypes = dataSource.getSensorTypes();
                     if (sensorTypes != null) {
                         final Map<String, DataSourceParameter> parameters = dataSourceManager.getSupportedParameters(sensor, n);
                         CollectionDescription cd = sensorTypes.get(sensor);
@@ -115,10 +116,10 @@ public class DataSourceServiceImpl implements DataSourceService {
                             }
                             descriptor = new DataSourceDescriptor(mission, sensor, n, cd.getSensorType().friendlyName(),
                                                                   cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
-                                                                  parameters);
+                                                                  parameters, dataSource.requiresAuthentication());
                         } else {
                             descriptor = new DataSourceDescriptor("n/a", sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
-                                                                  parameters);
+                                                                  parameters, dataSource.requiresAuthentication());
                         }
                         instances.add(descriptor);
                         //final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(sensor + "-" + n)).findFirst().orElse(null);
