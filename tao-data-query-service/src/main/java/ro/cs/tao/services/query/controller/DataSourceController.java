@@ -95,16 +95,17 @@ public class DataSourceController extends BaseController {
 
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getRegisteredSources() {
-        if (cachedDataSources.isEmpty()) {
-            synchronized (cachedDataSources) {
-                List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
-                if (instances == null) {
-                    instances = new ArrayList<>();
-                }
-                cachedDataSources.addAll(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()));
-            }
+        //if (cachedDataSources.isEmpty()) {
+        //    synchronized (cachedDataSources) {
+        List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
+        if (instances == null) {
+            instances = new ArrayList<>();
         }
-        return prepareResult(cachedDataSources, 60);
+                //cachedDataSources.addAll(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()));
+        return prepareResult(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()));
+        //    }
+        //}
+        //return prepareResult(cachedDataSources, 60);
     }
 
     @RequestMapping(value = "/summary", method = RequestMethod.GET, produces = "application/json")

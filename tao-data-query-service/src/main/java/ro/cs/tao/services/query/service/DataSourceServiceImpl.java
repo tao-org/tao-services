@@ -118,7 +118,7 @@ public class DataSourceServiceImpl implements DataSourceService {
                                                                   cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
                                                                   parameters, dataSource.requiresAuthentication());
                         } else {
-                            descriptor = new DataSourceDescriptor("n/a", sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
+                            descriptor = new DataSourceDescriptor(sensor, sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
                                                                   parameters, dataSource.requiresAuthentication());
                         }
                         instances.add(descriptor);
