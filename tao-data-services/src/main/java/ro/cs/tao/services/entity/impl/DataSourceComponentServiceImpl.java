@@ -77,6 +77,16 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
+    public List<DataSourceComponent> getBySource(String dataSourceName) throws PersistenceException {
+        return dataSourceComponentProvider.getBySource(dataSourceName);
+    }
+
+    @Override
+    public List<DataSourceComponent> getBySourceAndSensor(String dataSourceName, String sensor) throws PersistenceException {
+        return dataSourceComponentProvider.getBySourceAndSensor(dataSourceName, sensor);
+    }
+
+    @Override
     public List<DataSourceComponent> list() {
         return dataSourceComponentProvider.list();
     }
@@ -127,7 +137,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
 
     @Override
     public void delete(String id) throws PersistenceException {
-        if (id.startsWith("product-set-")) {
+        if (id.startsWith("product-set-") || id.startsWith("stac-service-")) {
             dataSourceComponentProvider.delete(id);
         } else {
             throw new UnsupportedOperationException("Data source components cannot be deleted");

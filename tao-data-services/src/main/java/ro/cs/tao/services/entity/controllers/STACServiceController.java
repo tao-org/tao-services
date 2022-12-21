@@ -35,7 +35,6 @@ import ro.cs.tao.utils.StringUtilities;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -80,7 +79,7 @@ public class STACServiceController extends BaseController {
             if (applications != null) { // Create the corresponding data sources
                 DataSourceManager.getInstance().registerDataSource(new STACSource(container.getName()));
                 for (Application application : applications) {
-                    DataSourceComponent component = new DataSourceComponent(container.getName(), application.getName());
+                    DataSourceComponent component = new DataSourceComponent(application.getPath(), container.getName());
                     component.setSystem(false);
                     component.setUserName(currentUser());
                     component.setFetchMode(FetchMode.OVERWRITE);
@@ -89,7 +88,7 @@ public class STACServiceController extends BaseController {
                     component.setAuthors("AVL Team");
                     component.setCopyright("(C) AVL Team");
                     component.setNodeAffinity("Any");
-                    final String newId = String.join("-", "stac", "service", currentUser(), UUID.randomUUID().toString());
+                    final String newId = String.join("-", "stac", "service", container.getName(), application.getPath(), currentUser());
                     component.setId(newId);
                     component.getSources().forEach(s -> s.setParentId(newId));
                     component.getTargets().forEach(t -> t.setParentId(newId));
@@ -109,7 +108,7 @@ public class STACServiceController extends BaseController {
                         add(bean.getName());
                     }});
                     logger.info(String.format("STAC Data source component for [%s, %s] created",
-                                              bean.getName(), application.getName()));
+                                              bean.getName(), application.getPath()));
                 }
             }
             return prepareResult(ServiceTransformUtils.toBean(container, auth));
@@ -137,6 +136,50 @@ public class STACServiceController extends BaseController {
             WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
             container = containerService.update(container);
             auth = webServiceAuthenticationService.update(auth);
+            List<DataSourceComponent> existing = dataSourceComponentService.getBySource(container.getName());
+            if (existing != null) {
+                for (DataSourceComponent component : existing) {
+                    dataSourceComponentService.delete(component.getId());
+                }
+            }
+            final List<Application> applications = container.getApplications();
+            if (applications != null && applications.size() > 0) { // Create the corresponding data sources
+                DataSourceManager.getInstance().registerDataSource(new STACSource(container.getName()));
+                for (Application application : applications) {
+                    DataSourceComponent component = new DataSourceComponent(application.getPath(), container.getName());
+                    component.setSystem(false);
+                    component.setUserName(currentUser());
+                    component.setFetchMode(FetchMode.OVERWRITE);
+                    component.setVersion("1.0");
+                    component.setDescription(bean.getDescription());
+                    component.setAuthors("AVL Team");
+                    component.setCopyright("(C) AVL Team");
+                    component.setNodeAffinity("Any");
+                    final String newId = String.join("-", "stac", "service", container.getName(), application.getPath(), currentUser());
+                    component.setId(newId);
+                    component.getSources().forEach(s -> s.setParentId(newId));
+                    component.getTargets().forEach(t -> t.setParentId(newId));
+                    component.setLabel(bean.getName() + ", collection " + application.getName());
+                    SourceDescriptor sourceDescriptor = component.getSources().stream().filter(s -> s.getName().equals(DataSourceComponent.QUERY_PARAMETER)).findFirst().get();
+                    sourceDescriptor.getDataDescriptor().setSensorType(SensorType.UNKNOWN);
+                    sourceDescriptor.setCardinality(0);
+                    sourceDescriptorRepository.save(sourceDescriptor);
+                    TargetDescriptor targetDescriptor = component.getTargets().get(0);
+                    targetDescriptor.setId(UUID.randomUUID().toString());
+                    targetDescriptor.setParentId(newId);
+                    targetDescriptor.setCardinality(0);
+                    targetDescriptor.addConstraint("Same cardinality");
+                    targetDescriptorRepository.save(targetDescriptor);
+                    component = dataSourceComponentService.save(component);
+                    dataSourceComponentService.tag(component.getId(), new ArrayList<>() {{
+                        add(bean.getName());
+                    }});
+                    logger.info(String.format("STAC Data source component for [%s, %s] created",
+                                              bean.getName(), application.getPath()));
+                }
+            } else {
+                DataSourceManager.getInstance().unregisterDataSource(container.getName());
+            }
             return prepareResult(ServiceTransformUtils.toBean(container, auth));
         } catch (Exception e) {
             return handleException(e);
@@ -150,6 +193,12 @@ public class STACServiceController extends BaseController {
             webServiceAuthenticationService.delete(id);
             Container service = containerService.findById(id);
             containerService.delete(id);
+            List<DataSourceComponent> existing = dataSourceComponentService.getBySource(service.getName());
+            if (existing != null) {
+                for (DataSourceComponent component : existing) {
+                    dataSourceComponentService.delete(component.getId());
+                }
+            }
             DataSourceManager.getInstance().unregisterDataSource(service.getName());
             responseEntity = prepareResult("STAC service deleted", ResponseStatus.SUCCEEDED);
         } catch (PersistenceException e) {
