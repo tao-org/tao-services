@@ -37,6 +37,7 @@ import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.utils.Crypto;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.async.Parallel;
 
 import java.nio.file.Files;
@@ -207,6 +208,9 @@ public class DataSourceServiceImpl implements DataSourceService {
         final List<EOProduct> results;
         if (products != null) {
             final DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
+            if (!StringUtilities.isNullOrEmpty(query.getUserId())) {
+                dsComponent.setPrincipal(query::getUserId);
+            }
             dsComponent.setUserCredentials(query.getUser(), query.getPassword());
             final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(dsComponent.getId());
             String localRepositoryRoot;

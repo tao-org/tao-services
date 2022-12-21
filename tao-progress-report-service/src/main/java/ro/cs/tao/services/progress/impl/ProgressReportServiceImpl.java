@@ -70,7 +70,7 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
             final TaskProgress existingProgress = tasksInProgress.get(taskName);
             if (existingProgress != null) {
                 double mainProgress = existingProgress.getProgress();
-                if (1.0 - mainProgress < 0.00001) {
+                if (1.0 - mainProgress < 0.001) {
                     tasksInProgress.remove(taskName);
                 } else {
                     taskProgress = new TaskProgress(taskName, category, mainProgress, casted.getSubTaskName(), 1.0);
@@ -81,9 +81,17 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
         } else if (message instanceof SubActivityProgress) {
             SubActivityProgress casted = (SubActivityProgress) message;
             taskName = casted.getTaskName();
-            taskProgress = new TaskProgress(taskName, category, casted.getTaskProgress(), casted.getSubTaskName(), casted.getSubTaskProgress());
-            taskProgress.setInfo(message.getItems());
-            tasksInProgress.put(taskName, taskProgress);
+            final TaskProgress existingProgress = tasksInProgress.get(taskName);
+            if (existingProgress != null) {
+                double mainProgress = existingProgress.getProgress();
+                if (casted.getSubTaskProgress() == 1.0 && (1.0 - mainProgress < 0.001)) {
+                    tasksInProgress.remove(taskName);
+                } else {
+                    taskProgress = new TaskProgress(taskName, category, casted.getTaskProgress(), casted.getSubTaskName(), casted.getSubTaskProgress());
+                    taskProgress.setInfo(message.getItems());
+                    tasksInProgress.put(taskName, taskProgress);
+                }
+            }
         } else if (message instanceof ActivityProgress) {
             ActivityProgress casted = (ActivityProgress) message;
             taskName = casted.getTaskName();
