@@ -360,11 +360,15 @@ public class DataSourceController extends BaseController {
         asyncExecute(() -> {
             try {
                 List<EOProduct> results;
+                Query query = request.getQuery();
+                if (StringUtilities.isNullOrEmpty(query.getUserId())) {
+                    query.setUserId(currentUser());
+                }
                 if (request.getLocalPath() != null && request.getPathFormat() != null) {
-                    results = dataSourceService.fetch(request.getQuery(), request.getProducts(),
+                    results = dataSourceService.fetch(query, request.getProducts(),
                                                       request.getMode(), request.getLocalPath(), request.getPathFormat());
                 } else {
-                    results = dataSourceService.fetch(request.getQuery(), request.getProducts(), request.getMode(), null, null);
+                    results = dataSourceService.fetch(query, request.getProducts(), request.getMode(), null, null);
                 }
                 if (results == null) {
                     results = new ArrayList<>();
@@ -384,7 +388,7 @@ public class DataSourceController extends BaseController {
                             }
                             productPaths.set(i, path);
                         }
-                        final String label = request.getQuery() != null ? request.getQuery().getLabel() : results.get(0).getProductType();
+                        final String label = StringUtilities.isNullOrEmpty(query.getLabel()) ? results.get(0).getProductType() : query.getLabel();
                         dataSourceComponentService.createForProductNames(productPaths, label, currentPrincipal());
                         Messaging.send(currentUser(), Topic.INFORMATION.getCategory(), "Product set [" + label + "] was added to the user workspace");
                     } catch (Exception e) {

@@ -52,7 +52,12 @@ public class ProgressReportController extends ControllerBase {
         return prepareResult(progressReportService.getRunningTasks(category, filter));
     }
 
-    @RequestMapping(value = "/download", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/download/statistics", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getGlobalDownloadStatus() {
+        return prepareResult(DownloadManager.getOverallStatus());
+    }
+
+    @RequestMapping(value = "/download/statistics/detail", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getDownloadStatus() {
         return prepareResult(DownloadManager.getCurrentStatus());
     }

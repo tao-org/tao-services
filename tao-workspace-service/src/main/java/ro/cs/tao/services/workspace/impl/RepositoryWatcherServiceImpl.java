@@ -223,6 +223,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
                 WatchKey key;
                 try { // wait for key to be signalled
                     key = watcher.take();
+                    Thread.sleep(5000);
                 } catch (InterruptedException x) {
                     logger.finest("Workspace service interrupted");
                     return;
