@@ -55,7 +55,7 @@ public class WorkflowExecutionJob extends AbstractJob {
 		final Authentication userAuthentication = (Authentication) dataMap.get(AbstractJob.USER_AUTHENTICATION_KEY);
 		SessionContext context = new SessionContext() {
             @Override
-            protected Principal setPrincipal() {
+            public Principal setPrincipal(Principal principal) {
                 return userAuthentication;
             }
 
