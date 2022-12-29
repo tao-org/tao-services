@@ -11,6 +11,7 @@ public class TransferRequest {
     private Boolean move;
     private Boolean overwrite;
     private List<FileObject> fileObjects;
+    private String filter;
 
     public String getSourceWorkspace() {
         return sourceWorkspace;
@@ -58,5 +59,13 @@ public class TransferRequest {
 
     public void setFileObjects(List<FileObject> objects) {
         this.fileObjects = objects;
+    }
+
+    public String getFilter() {
+        return filter;
+    }
+
+    public void setFilter(String filter) {
+        this.filter = filter;
     }
 }
