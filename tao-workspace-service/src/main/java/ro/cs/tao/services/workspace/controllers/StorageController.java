@@ -55,6 +55,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.zip.ZipOutputStream;
 
 @Controller
@@ -484,6 +485,14 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             final boolean isMove = request.getMove() != null && request.getMove();
             final boolean overwriteExisting = request.getOverwrite() != null && request.getOverwrite();
             final StorageService service = getRepositoryService(srcWorkspace);
+            Pattern pattern = null;
+            if (request.getFilter() != null) {
+                try {
+                    pattern = Pattern.compile(request.getFilter());
+                } catch (Throwable t) {
+                    Logger.getLogger(StorageController.class.getName()).warning(t.getMessage());
+                }
+            }
             for (FileObject fileObject : requestedFiles) {
                 String objectPath = fileObject.getRelativePath();
                 size = fileObject.getSize();
@@ -492,16 +501,16 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     // Keep only the last part of the folder path (i.e. folder name)
                     targetFolder += srcWorkspace.fileName(objectPath);
                     final List<FileObject> files = service.listTree(fileObject.getRelativePath());
-                    //files.forEach(f -> f.setRelativePath(f.getRelativePath().replaceFirst(srcWorkspace.root() + "/", "")));
-                    //files.forEach(f -> f.setRelativePath());
                     final List<TransferableItem> items = new ArrayList<>();
                     for (FileObject fObject : files) {
                         if (!fObject.isFolder()) {
                             String path = srcWorkspace.relativize(objectPath, fObject.getRelativePath());
                             path = targetFolder + (path.startsWith("/") ? "" : (targetFolder.endsWith("/") ? "" : "/") + path);
-                            items.add(new TransferableItem(user, objectPath, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting));
-                            size += fObject.getSize();
-                            count++;
+                            if (pattern == null || pattern.matcher(path).find()) {
+                                items.add(new TransferableItem(user, objectPath, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting));
+                                size += fObject.getSize();
+                                count++;
+                            }
                         }
                     }
                     queueFiles(items.toArray(new TransferableItem[0]));
