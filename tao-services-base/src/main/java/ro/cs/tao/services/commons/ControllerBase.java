@@ -31,9 +31,11 @@ import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.utils.ExceptionUtils;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 @CrossOrigin(origins = {"http://localhost", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082"})
@@ -57,6 +59,49 @@ public abstract class ControllerBase {
         error(ExceptionUtils.getStackTrace(logger, e));
     }
 
+    protected <T> Future<?> asyncExecute(Callable<T> runnable, Consumer<T> successCallback, Consumer<Exception> errorCallback) {
+        synchronized (sharedLock) {
+            if (this.executorService == null) {
+                executorService = new ThreadPoolTaskExecutor() {
+                    @Override
+                    public void execute(Runnable task) {
+                        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                        super.execute(() -> {
+                            try {
+                                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                                context.setAuthentication(authentication);
+                                SecurityContextHolder.setContext(context);
+                                task.run();
+                            } finally {
+                                SecurityContextHolder.clearContext();
+                            }
+                        });
+                    }
+                };
+                executorService.setThreadGroupName("controller-async");
+                int processors = Runtime.getRuntime().availableProcessors();
+                executorService.setCorePoolSize(Math.min(processors / 2, 4));
+                executorService.setMaxPoolSize(executorService.getCorePoolSize() * 2);
+                executorService.setQueueCapacity(25);
+                executorService.initialize();
+            }
+        }
+        return executorService.submit(() -> {
+            try {
+                final T result = runnable.call();
+                if (successCallback != null) {
+                    successCallback.accept(result);
+                }
+            } catch (Exception ex) {
+                if (errorCallback != null) {
+                    errorCallback.accept(ex);
+                } else {
+                    onUnhandledException(ex);
+                }
+            }
+        });
+    }
+
     protected Future<?> asyncExecute(Runnable runnable, String successMessage, BiConsumer<Exception, String> callback) {
         synchronized (sharedLock) {
             if (this.executorService == null) {
@@ -78,8 +123,8 @@ public abstract class ControllerBase {
                 };
                 executorService.setThreadGroupName("controller-async");
                 int processors = Runtime.getRuntime().availableProcessors();
-                executorService.setCorePoolSize(Math.min(processors / 2, 2));
-                executorService.setMaxPoolSize(processors * 2);
+                executorService.setCorePoolSize(Math.min(processors / 2, 4));
+                executorService.setMaxPoolSize(executorService.getCorePoolSize() * 2);
                 executorService.setQueueCapacity(25);
                 executorService.initialize();
             }

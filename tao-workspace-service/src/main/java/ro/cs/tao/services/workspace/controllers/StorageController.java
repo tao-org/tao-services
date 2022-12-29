@@ -316,6 +316,33 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return responseEntity;
     }
     /**
+     * Deletes a list of files from the given user workspace
+     *
+     * @param workspaceId   The workspace identifier
+     * @param files         The name of the files or folders to be deleted
+     */
+    @DeleteMapping(produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("workspace") String workspaceId,
+                                                     @RequestParam("files") List<String> files) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (files == null || files.isEmpty()) {
+                throw new IOException("Empty list");
+            }
+            final Repository workspace = getOwnedWorkspace(workspaceId);
+            for (String file : files) {
+                if (StringUtils.isEmpty(file) || file.startsWith(".") || file.startsWith("..") || file.startsWith("/")) {
+                    throw new IOException("The path must be relative and should not start with '.' or '..' [" + file + "]");
+                }
+                deletionQueue.put(new Tuple<>(workspace, file));
+            }
+            responseEntity = prepareResult(String.format("%d items marked for deletion", files.size()), ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
+        return responseEntity;
+    }
+    /**
      * Requests a download url for a file or a folder from one of the user workspaces
      *
      * @param repositoryId  The repository identifier
@@ -460,15 +487,16 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *                          - the list of file objects to transfer
      *                          - an optional flag to move or copy the files (default is copy)
      *                          - an optional flag to overwrite existing files (default is not to overwrite)
+     *                          - an optional filter (regex) for matching remote items
      *
      */
     @PostMapping(value = "/transfer/", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> transfer(@RequestBody TransferRequest request) {
-        try {
+        final String currentUser = currentUser();
+        asyncExecute(() -> {
             if (request == null) {
                 throw new IllegalArgumentException("Empty body");
             }
-            final String user = currentUser();
             final List<FileObject> requestedFiles = request.getFileObjects();
             final Repository srcWorkspace = getOwnedWorkspace(request.getSourceWorkspace());
             final Repository dstWorkspace = getOwnedWorkspace(request.getDestinationWorkspace());
@@ -507,7 +535,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                             String path = srcWorkspace.relativize(objectPath, fObject.getRelativePath());
                             path = targetFolder + (path.startsWith("/") ? "" : (targetFolder.endsWith("/") ? "" : "/") + path);
                             if (pattern == null || pattern.matcher(path).find()) {
-                                items.add(new TransferableItem(user, objectPath, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting));
+                                items.add(new TransferableItem(currentUser, objectPath, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting));
                                 size += fObject.getSize();
                                 count++;
                             }
@@ -519,11 +547,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     count = 1;
                 }
             }
-            return prepareResult(String.format("Transfer queued (%d files, %d bytes)", count, size),
-                                 ResponseStatus.SUCCEEDED);
-        } catch (Exception e) {
-            return handleException(e);
-        }
+            return String.format("Transfer queued (%d files, %d bytes)", count, size);
+        }, message -> Messaging.send(currentUser, Topic.INFORMATION.getCategory(), message), null);
+        return prepareResult("Analysing remote items", ResponseStatus.SUCCEEDED);
     }
     //endregion
 
