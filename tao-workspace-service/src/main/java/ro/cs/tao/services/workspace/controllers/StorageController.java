@@ -294,49 +294,25 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return responseEntity;
     }
     /**
-     * Deletes a file from the given user workspace
+     * Deletes one or more files from the given user workspace
      *
      * @param workspaceId   The workspace identifier
-     * @param file          The name of the file or folder to be deleted
+     * @param file          The name of the file(s) or folder(s) to be deleted
      */
     @DeleteMapping(produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("workspace") String workspaceId,
                                                      @RequestParam("file") String file) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            if (StringUtils.isEmpty(file) || file.startsWith(".") || file.startsWith("..") || file.startsWith("/")) {
-                throw new IOException("The folder must be relative and should not start with '.' or '..'");
-            }
+            String[] files = file.split(",");
             final Repository workspace = getOwnedWorkspace(workspaceId);
-            deletionQueue.put(new Tuple<>(workspace, file));
-            responseEntity = prepareResult(String.format("%s marked for deletion", file), ResponseStatus.SUCCEEDED);
-        } catch (Exception ex) {
-            responseEntity = handleException(ex);
-        }
-        return responseEntity;
-    }
-    /**
-     * Deletes a list of files from the given user workspace
-     *
-     * @param workspaceId   The workspace identifier
-     * @param files         The name of the files or folders to be deleted
-     */
-    @DeleteMapping(produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("workspace") String workspaceId,
-                                                     @RequestParam("files") List<String> files) {
-        ResponseEntity<ServiceResponse<?>> responseEntity;
-        try {
-            if (files == null || files.isEmpty()) {
-                throw new IOException("Empty list");
-            }
-            final Repository workspace = getOwnedWorkspace(workspaceId);
-            for (String file : files) {
-                if (StringUtils.isEmpty(file) || file.startsWith(".") || file.startsWith("..") || file.startsWith("/")) {
-                    throw new IOException("The path must be relative and should not start with '.' or '..' [" + file + "]");
+            for (String f : files) {
+                if (StringUtils.isEmpty(f) || f.startsWith(".") || f.startsWith("..") || f.startsWith("/")) {
+                    throw new IOException("The path must be relative and should not start with '.' or '..' [" + f + "]");
                 }
-                deletionQueue.put(new Tuple<>(workspace, file));
+                deletionQueue.put(new Tuple<>(workspace, f));
             }
-            responseEntity = prepareResult(String.format("%d items marked for deletion", files.size()), ResponseStatus.SUCCEEDED);
+            responseEntity = prepareResult(String.format("%d items marked for deletion", files.length), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
         }
