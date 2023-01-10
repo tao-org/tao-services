@@ -15,6 +15,7 @@ import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -38,14 +39,43 @@ public class RepositoryEntityController extends DataEntityController<Repository,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
                                                    @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
+        final List<RepositoryBean> repositories = new ArrayList<>();
         if (!(pageNumber.isPresent() || pageSize.isPresent() || sortByField.isPresent() || sortDirection.isPresent())) {
             try {
-                return prepareResult(this.service.getByUser(currentUser()).stream().map(ServiceTransformUtils::toBean).collect(Collectors.toList()));
+                List<Repository> userRepositories = this.service.getByUser(currentUser());
+                for (Repository repository : userRepositories) {
+                    final RepositoryBean bean = ServiceTransformUtils.toBean(repository);
+                    final StorageService storageService = StorageServiceFactory.getInstance(repository);
+                    List<ItemAction> actions = storageService.getRegisteredActions();
+                    if (actions != null) {
+                        bean.setActions(actions.stream().map(ItemAction::name).sorted().collect(Collectors.toList()));
+                    }
+                    repositories.add(bean);
+                }
+                return prepareResult(repositories);
             } catch (Exception e) {
                 return handleException(e);
             }
         } else{
-            return prepareResult(this.service.list().stream().map(ServiceTransformUtils::toBean).collect(Collectors.toList()));
+            final List<Repository> list = this.service.list();
+            final int pNo = pageNumber.orElse(0);
+            final int pSize = pageSize.orElse(list.size());
+            final int start = pNo * pSize;
+            final int end = Math.min((pNo + 1) * pSize, list.size());
+            for (Repository repository : list.subList(start, end)) {
+                final RepositoryBean bean = ServiceTransformUtils.toBean(repository);
+                final StorageService storageService = StorageServiceFactory.getInstance(repository);
+                List<ItemAction> actions = storageService.getRegisteredActions();
+                if (actions != null) {
+                    bean.setActions(actions.stream().map(ItemAction::name).sorted().collect(Collectors.toList()));
+                }
+                repositories.add(bean);
+            }
+            if (sortByField.isPresent() || sortDirection.isPresent()) {
+                final boolean asc = sortDirection.orElse(SortDirection.ASC).equals(SortDirection.ASC);
+                repositories.sort((o1, o2) -> asc ? o1.getName().compareTo(o2.getName()) : o2.getName().compareTo(o1.getName()));
+            }
+            return prepareResult(repositories);
         }
     }
 
