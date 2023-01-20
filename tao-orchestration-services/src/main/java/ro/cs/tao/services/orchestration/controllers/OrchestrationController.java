@@ -194,6 +194,15 @@ public class OrchestrationController extends BaseController {
         return prepareResult(summaries);
     }
 
+    @RequestMapping(value = "/history/{user}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getJobsHistoryForUser(@PathVariable("user") String userName) {
+        List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(userName);
+        if (summaries == null) {
+            summaries = new ArrayList<>();
+        }
+        return prepareResult(summaries);
+    }
+
     @RequestMapping(value = "/history", method = RequestMethod.DELETE, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> clearJobsHistory() {
         try {

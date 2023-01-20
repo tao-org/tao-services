@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Oana H.
@@ -100,15 +101,9 @@ public class AdministrationController extends BaseController {
 
     @RequestMapping(value = "/users/logged", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> findLoggedUsers() {
-        final List<Object> principals = sessionRegistry.getAllPrincipals();
         final Set<String> names = new HashSet<>();
         final List<User> users = new ArrayList<>();
-        for (Object principal : principals) {
-            List<SessionInformation> sessions = sessionRegistry.getAllSessions(principal, false);
-            if (!sessions.isEmpty()) {
-                names.add(((Principal) principal).getName());
-            }
-        }
+        names.addAll(sessionRegistry.getAllPrincipals().stream().filter(u->!sessionRegistry.getAllSessions(u, false).isEmpty()).map(Object::toString).collect(Collectors.toList()));
         if (!names.isEmpty()) {
             users.addAll(adminService.getUsers(names));
         }
