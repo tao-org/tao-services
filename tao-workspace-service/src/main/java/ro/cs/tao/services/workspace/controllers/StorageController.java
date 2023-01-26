@@ -602,6 +602,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                                        @RequestParam(name = "item") String item,
                                                        @RequestParam(name = "destination", required = false) String destination) {
         final String successMessage = String.format("%s [%s] completed", action, item);
+        final String user = currentUser();
         final BiConsumer<Exception, String> callback = (e, s) -> {
             String topic;
             String message;
@@ -613,15 +614,15 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 message = e.getMessage();
             }
 
-            Messaging.send(currentUser(), topic, message);
+            Messaging.send(user, topic, message);
         };
         asyncExecute(() -> {
             if (StringUtilities.isNullOrEmpty(item)) {
                 throw new IllegalArgumentException("Not a file");
             }
             final boolean oneArg = StringUtilities.isNullOrEmpty(destination);
-            final Repository workspace = getLocalWorkspace(currentUser());
-            final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(currentUser());
+            final Repository workspace = getLocalWorkspace(user);
+            final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(user);
             final List<ItemAction> actions = repositoryService.getRegisteredActions();
             if (actions != null) {
                 final ItemAction itemAction = actions.stream().filter(a -> a.name().equals(action)).findFirst().orElse(null);
