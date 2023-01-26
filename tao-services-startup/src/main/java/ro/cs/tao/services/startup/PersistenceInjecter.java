@@ -13,16 +13,16 @@ import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.TaoLoginModule;
 import ro.cs.tao.services.factory.StorageServiceFactory;
+import ro.cs.tao.services.model.ItemAction;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.SpringSessionProvider;
+import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.ExceptionUtils;
 
 import javax.security.auth.spi.LoginModule;
 import java.util.Set;
 import java.util.logging.Logger;
-
-//import ro.cs.tao.execution.wps.WPSExecutor;
 
 public class PersistenceInjecter extends BaseLifeCycle {
 
@@ -83,6 +83,11 @@ public class PersistenceInjecter extends BaseLifeCycle {
         StorageServiceFactory.setProductProvider(this.persistenceManager.rasterData());
         StorageServiceFactory.setVectorDataProvider(this.persistenceManager.vectorData());
         StorageServiceFactory.setAuxiliaryDataProvider(this.persistenceManager.auxiliaryData());
+        ServiceRegistry<ItemAction> registry = ServiceRegistryManager.getInstance().getServiceRegistry(ItemAction.class);
+        Set<ItemAction> services = registry.getServices();
+        for (ItemAction action : services) {
+            action.setProductProvider(this.persistenceManager.rasterData());
+        }
     }
 
     @Override
