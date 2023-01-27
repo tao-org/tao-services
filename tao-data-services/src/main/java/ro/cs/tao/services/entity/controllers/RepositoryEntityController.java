@@ -15,10 +15,7 @@ import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -49,7 +46,7 @@ public class RepositoryEntityController extends DataEntityController<Repository,
                     List<ItemAction> actions = storageService.getRegisteredActions();
                     if (actions != null) {
                         bean.setActions(actions.stream().map(a -> new RepositoryBean.Action(a.name(), a.supportedFiles()))
-                                               .sorted().collect(Collectors.toList()));
+                                               .sorted(Comparator.comparing(RepositoryBean.Action::getName)).collect(Collectors.toList()));
                     }
                     repositories.add(bean);
                 }
@@ -69,7 +66,7 @@ public class RepositoryEntityController extends DataEntityController<Repository,
                 List<ItemAction> actions = storageService.getRegisteredActions();
                 if (actions != null) {
                     bean.setActions(actions.stream().map(a -> new RepositoryBean.Action(a.name(), a.supportedFiles()))
-                                           .sorted().collect(Collectors.toList()));
+                                           .sorted(Comparator.comparing(RepositoryBean.Action::getName)).collect(Collectors.toList()));
                 }
                 repositories.add(bean);
             }
@@ -93,7 +90,7 @@ public class RepositoryEntityController extends DataEntityController<Repository,
             List<ItemAction> actions = storageService.getRegisteredActions();
             if (actions != null) {
                 bean.setActions(actions.stream().map(a -> new RepositoryBean.Action(a.name(), a.supportedFiles()))
-                                       .sorted().collect(Collectors.toList()));
+                                       .sorted(Comparator.comparing(RepositoryBean.Action::getName)).collect(Collectors.toList()));
             }
             return prepareResult(bean);
         } catch (Exception e) {
