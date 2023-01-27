@@ -24,7 +24,7 @@ public class ZipAction implements ItemAction {
         if (item == null || !Files.exists(item)) {
             throw new IllegalArgumentException("[item] Invalid");
         }
-        final String targetFileName = FileUtilities.getFilenameWithoutExtension(item) + ".zip";
+        final String targetFileName = FileUtilities.getFilenameWithoutExtension(item);
         Zipper.compress(item, targetFileName, false);
         return item.getParent().resolve(targetFileName);
     }
