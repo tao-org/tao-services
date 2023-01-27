@@ -14,7 +14,7 @@ public class RepositoryBean {
     private boolean readOnly;
     private boolean editable;
     private LinkedHashMap<String, String> parameters;
-    private List<String> actions;
+    private List<Action> actions;
 
     public String getId() {
         return id;
@@ -96,11 +96,40 @@ public class RepositoryBean {
         this.parameters = parameters;
     }
 
-    public List<String> getActions() {
+    public List<Action> getActions() {
         return actions;
     }
 
-    public void setActions(List<String> actions) {
+    public void setActions(List<Action> actions) {
         this.actions = actions;
+    }
+
+    public static class Action {
+        private String name;
+        private String[] filters;
+
+        public Action() {
+        }
+
+        public Action(String name, String[] filters) {
+            this.name = name;
+            this.filters = filters;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String[] getFilters() {
+            return filters;
+        }
+
+        public void setFilters(String[] filters) {
+            this.filters = filters;
+        }
     }
 }
