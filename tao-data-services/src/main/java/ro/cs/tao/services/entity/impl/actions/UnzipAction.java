@@ -13,6 +13,11 @@ public class UnzipAction implements ItemAction {
     }
 
     @Override
+    public String[] supportedFiles() {
+        return new String[] { ".zip" };
+    }
+
+    @Override
     public boolean isIntendedFor(RepositoryType repositoryType) {
         return repositoryType == RepositoryType.LOCAL;
     }

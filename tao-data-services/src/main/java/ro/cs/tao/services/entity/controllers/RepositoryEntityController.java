@@ -48,7 +48,8 @@ public class RepositoryEntityController extends DataEntityController<Repository,
                     final StorageService storageService = StorageServiceFactory.getInstance(repository);
                     List<ItemAction> actions = storageService.getRegisteredActions();
                     if (actions != null) {
-                        bean.setActions(actions.stream().map(ItemAction::name).sorted().collect(Collectors.toList()));
+                        bean.setActions(actions.stream().map(a -> new RepositoryBean.Action(a.name(), a.supportedFiles()))
+                                               .sorted().collect(Collectors.toList()));
                     }
                     repositories.add(bean);
                 }
@@ -67,7 +68,8 @@ public class RepositoryEntityController extends DataEntityController<Repository,
                 final StorageService storageService = StorageServiceFactory.getInstance(repository);
                 List<ItemAction> actions = storageService.getRegisteredActions();
                 if (actions != null) {
-                    bean.setActions(actions.stream().map(ItemAction::name).sorted().collect(Collectors.toList()));
+                    bean.setActions(actions.stream().map(a -> new RepositoryBean.Action(a.name(), a.supportedFiles()))
+                                           .sorted().collect(Collectors.toList()));
                 }
                 repositories.add(bean);
             }
@@ -90,7 +92,8 @@ public class RepositoryEntityController extends DataEntityController<Repository,
             final StorageService storageService = StorageServiceFactory.getInstance(entity);
             List<ItemAction> actions = storageService.getRegisteredActions();
             if (actions != null) {
-                bean.setActions(actions.stream().map(ItemAction::name).sorted().collect(Collectors.toList()));
+                bean.setActions(actions.stream().map(a -> new RepositoryBean.Action(a.name(), a.supportedFiles()))
+                                       .sorted().collect(Collectors.toList()));
             }
             return prepareResult(bean);
         } catch (Exception e) {
