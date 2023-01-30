@@ -16,7 +16,11 @@
 
 package ro.cs.tao.services;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.commons.WebConfiguration;
@@ -27,6 +31,17 @@ import java.nio.file.Paths;
 @EnableWebMvc
 @Configuration
 public class WebConfig extends WebConfiguration {
+
+    @Override
+    public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
+        configurer.setDefaultTimeout(-1);
+        configurer.setTaskExecutor(asyncExecutor());
+    }
+
+    @Bean
+    public AsyncTaskExecutor asyncExecutor() {
+        return new SimpleAsyncTaskExecutor();
+    }
 
     @Override
     protected String siteURIPath() {
