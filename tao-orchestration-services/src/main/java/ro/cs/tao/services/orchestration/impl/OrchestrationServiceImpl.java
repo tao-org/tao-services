@@ -46,6 +46,7 @@ import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @Service("orchestrationService")
 public class OrchestrationServiceImpl implements OrchestratorService {
@@ -117,7 +118,16 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
         final List<ExecutionJob> jobs = jobProvider.list(userName, statuses);
         for (ExecutionJob job : jobs) {
-            summaries.addAll(getTasksStatus(job.getId()));
+            List<ExecutionTaskSummary> taskList = getTasksStatus(job.getId());
+            List<ExecutionTaskSummary> runningTasks = taskList.stream().filter(e -> statuses.contains(e.getTaskStatus())).findAny().stream().collect(Collectors.toList());
+            for (ExecutionTaskSummary summary: runningTasks) {
+                ExecutionTask task = job.getTasks().stream().filter(t -> t.getId() == summary.getTaskId()).findFirst().get();
+                summary.setUserName(job.getUserName());
+                summary.setUsedCPU(task.getUsedCPU());
+                summary.setUsedRAM(task.getUsedRAM());
+                summary.setCommand(task.getCommand());
+            }
+            summaries.addAll(runningTasks);
         }
         return summaries;
     }
