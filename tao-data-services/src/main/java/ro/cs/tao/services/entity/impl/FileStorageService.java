@@ -56,7 +56,7 @@ import java.util.zip.ZipOutputStream;
 public class FileStorageService extends BaseStorageService<MultipartFile, FileSystemResource> {
 
     private static final String PROTOCOL = "file";
-    private static final Set<String> SIMPLE_PRODUCT_EXTENSIONS = new HashSet<String>() {{
+    private static final Set<String> SIMPLE_PRODUCT_EXTENSIONS = new HashSet<>() {{
        add(".tif"); add(".nc"); add(".hd5");
     }};
     private EOProductProvider productProvider;
@@ -370,12 +370,12 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     @Override
-    public List<FileObject> getJobResults(long jobId) throws IOException {
+    public List<FileObject> getJobResults(long jobId) {
         return getResults(null, jobId);
     }
 
     @Override
-    public List<FileObject> getWorkflowResults(long workflowId) throws IOException {
+    public List<FileObject> getWorkflowResults(long workflowId) {
         return getResults(workflowId, null);
     }
 
@@ -401,7 +401,9 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                     entry.setSize(Files.size(current));
                     entry.setTime(System.currentTimeMillis());
                     stream.putNextEntry(entry);
-                    StreamUtils.copy(Files.newInputStream(current), stream);
+                    try (InputStream inputStream = Files.newInputStream(current)) {
+                        StreamUtils.copy(inputStream, stream);
+                    }
                     stream.closeEntry();
                 } else {
                     if (!current.equals(root)) {
