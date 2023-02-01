@@ -1,5 +1,6 @@
 package ro.cs.tao.services.startup;
 
+import ro.cs.tao.execution.drmaa.DRMAAExecutor;
 import ro.cs.tao.orchestration.Orchestrator;
 
 public class OrchestratorInitializer extends BaseLifeCycle {
@@ -8,7 +9,9 @@ public class OrchestratorInitializer extends BaseLifeCycle {
 
     @Override
     public void onStartUp() {
-        Orchestrator.getInstance().start();
+        final Orchestrator orchestrator = Orchestrator.getInstance();
+        DRMAAExecutor.setApplicationId(orchestrator.getId());
+        orchestrator.start();
     }
 
     @Override
