@@ -160,6 +160,15 @@ public class OrchestrationController extends BaseController {
         return prepareResult(summaries);
     }
 
+    @RequestMapping(value = "/running/jobs/{user}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getRunningJobsForUser(@PathVariable("user") String userName) {
+        List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs(userName);
+        if (summaries == null) {
+            summaries = new ArrayList<>();
+        }
+        return prepareResult(summaries);
+    }
+
     @RequestMapping(value = "/{jobId}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getJobTaskStatuses(@PathVariable("jobId") long jobId) {
         List<ExecutionTaskSummary> summaries = orchestrationService.getTasksStatus(jobId);

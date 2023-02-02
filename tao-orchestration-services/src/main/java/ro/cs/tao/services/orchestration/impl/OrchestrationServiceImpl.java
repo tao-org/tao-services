@@ -123,6 +123,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             for (ExecutionTaskSummary summary: runningTasks) {
                 ExecutionTask task = job.getTasks().stream().filter(t -> t.getId() == summary.getTaskId()).findFirst().get();
                 summary.setUserName(job.getUserName());
+                summary.setComponentType(task instanceof DataSourceExecutionTask ? "ds" : "exec");
+                summary.setJobName(task.getJob().getName());
                 summary.setUsedCPU(task.getUsedCPU());
                 summary.setUsedRAM(task.getUsedRAM());
                 summary.setCommand(task.getCommand());
