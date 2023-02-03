@@ -194,28 +194,19 @@ public class OrchestrationController extends BaseController {
         return prepareResult(output);
     }
 
-    @RequestMapping(value = "/history", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getJobsHistory() {
-        List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(isCurrentUserAdmin() ? null : currentUser());
+    @RequestMapping(value = {"/history","/history/{user}"}, method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getJobsHistory(@PathVariable("user") String userName) {
+        List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(userName != null ? userName : (isCurrentUserAdmin() ? null : currentUser()));
         if (summaries == null) {
             summaries = new ArrayList<>();
         }
         return prepareResult(summaries);
     }
 
-    @RequestMapping(value = "/history/{user}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getJobsHistoryForUser(@PathVariable("user") String userName) {
-        List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(userName);
-        if (summaries == null) {
-            summaries = new ArrayList<>();
-        }
-        return prepareResult(summaries);
-    }
-
-    @RequestMapping(value = "/history", method = RequestMethod.DELETE, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> clearJobsHistory() {
+    @RequestMapping(value = {"/history", "/history/{user}"}, method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> clearJobsHistory(@PathVariable("user") String userName) {
         try {
-            orchestrationService.clearJobHistory(currentUser());
+            orchestrationService.clearJobHistory(userName != null ? userName : currentUser());
             return prepareResult("Job history deleted", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
