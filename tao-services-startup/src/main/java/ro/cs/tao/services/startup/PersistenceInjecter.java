@@ -7,7 +7,6 @@ import ro.cs.tao.execution.local.NullExecutor;
 import ro.cs.tao.execution.local.QueryExecutor;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
-import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.execution.wps.WPSExecutor;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.security.SessionStore;
@@ -38,11 +37,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
             @Override
             public void taskStatusChanged(ExecutionTask task, ExecutionStatus status, String reason) {
                 try {
-                    //if (task.getExecutionStatus() != status) {
-                        StackTraceElement element = Thread.currentThread().getStackTrace()[2];
-                        persistenceManager.tasks().updateStatus(task, status, reason);
-                        logger.fine("Task " + TaskUtilities.getTaskName(task) + " changed to " + status);
-                    //}
+                    persistenceManager.tasks().updateStatus(task, status, reason);
                 } catch (Exception e) {
                     logger.severe(ExceptionUtils.getStackTrace(logger, e));
                 }
@@ -52,7 +47,6 @@ public class PersistenceInjecter extends BaseLifeCycle {
             public void taskChanged(ExecutionTask task) {
                 try {
                     task = persistenceManager.tasks().update(task);
-                    logger.fine("Task " + TaskUtilities.getTaskName(task) + " updated (status is " + task.getExecutionStatus() + ")");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
