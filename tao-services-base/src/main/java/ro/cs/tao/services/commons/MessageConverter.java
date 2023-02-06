@@ -46,7 +46,8 @@ public class MessageConverter implements Converter<Message, Notification> {
         String user = value.getUser();
         String msg = value.getData();
         String topic = value.getTopic();
-        Notification notification = new Notification(value.getId() ,calendar, user, value.getItem(Message.SOURCE_KEY), topic, msg);
+        final long id = value.getId() != null ? value.getId() : calendar.getTimeInMillis();
+        Notification notification = new Notification(id ,calendar, user, value.getItem(Message.SOURCE_KEY), topic, msg);
         notification.setRead(value.isRead());
         return notification;
     }
