@@ -19,6 +19,7 @@ import ro.cs.tao.datasource.util.Zipper;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.RepositoryProvider;
@@ -39,6 +40,7 @@ import ro.cs.tao.utils.HashedBlockingQueue;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.Tuple;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
+import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
@@ -629,6 +631,14 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 if (itemAction != null) {
                     final Path resolvedPath = Paths.get(workspace.resolve(item));
                     try {
+                        final ProgressListener listener = new ProgressNotifier(currentPrincipal(),
+                                                                               this,
+                                                                               Topic.TRANSFER_PROGRESS,
+                                                                               new HashMap<>() {{
+                                                                                   put("Repository", workspace.getId());
+                                                                            }});
+                        itemAction.setActionUser(user);
+                        itemAction.setProgressListener(listener);
                         if (oneArg) {
                             itemAction.doAction(resolvedPath);
                         } else {
