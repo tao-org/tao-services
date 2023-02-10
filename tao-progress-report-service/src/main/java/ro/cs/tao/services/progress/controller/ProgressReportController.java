@@ -39,15 +39,20 @@ public class ProgressReportController extends ControllerBase {
 
     @RequestMapping(value = "", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getTasksInProgress(@RequestParam(name = "category", required = false) String category,
+                                                                 @RequestParam(name = "userName", required = false) String userName,
                                                                  @RequestParam(name = "filter", required = false) String jsonFilter) {
         final String filter;
-        if (StringUtilities.isNullOrEmpty(jsonFilter)) {
-            Filter f = new Filter();
-            f.setName("Principal");
-            f.setValue(currentUser());
-            filter = f.toString();
+        if (!StringUtilities.isNullOrEmpty(userName)) {
+            if (StringUtilities.isNullOrEmpty(jsonFilter)) {
+                Filter f = new Filter();
+                f.setName("Principal");
+                f.setValue(userName);
+                filter = f.toString();
+            } else {
+                filter = new String(Base64.getDecoder().decode(jsonFilter));
+            }
         } else {
-            filter = new String(Base64.getDecoder().decode(jsonFilter));
+            filter = null;
         }
         return prepareResult(progressReportService.getRunningTasks(category, filter));
     }
