@@ -36,6 +36,7 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.storage.BaseStorageService;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 
 import java.io.*;
@@ -243,6 +244,72 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                 } catch (PersistenceException | URISyntaxException e) {
                     throw new IOException(String.format("Failed to move vector product %s. Reason: %s",
                             product.getName(), e.getMessage()));
+                }
+            }
+        }
+    }
+
+    @Override
+    public void rename(String source, String newName) throws IOException {
+        if (StringUtilities.isNullOrEmpty(source) || StringUtilities.isNullOrEmpty(newName)) {
+            throw new IOException("Invalid argument (empty)");
+        }
+        if (newName.contains("/")) {
+            throw new IOException("Invalid new name");
+        }
+        Repository repository = repository();
+        Path sourcePath = Paths.get(repository.resolve(source));
+        Path destinationPath = sourcePath.getParent().resolve(newName);
+        if (source.startsWith("files")) {
+            FileUtilities.move(sourcePath, destinationPath);
+            try {
+                Path workspaceCurrentUser = SessionStore.currentContext().getWorkspace();
+                AuxiliaryData auxiliaryData = auxiliaryDataProvider.getByLocation(sourcePath.toUri().toString());
+                if (auxiliaryData != null) {
+                    auxiliaryData.setLocation(workspaceCurrentUser.resolve(destinationPath).toUri().toString());
+                    auxiliaryDataProvider.update(auxiliaryData);
+                }
+            } catch (Exception e) {
+                Logger.getLogger(FileStorageService.class.getName()).warning(String.format("File %s was not found in database", source));
+            }
+        } else { //it's a product
+            String destinationURI = destinationPath.toUri().toString();
+            List<EOProduct> products = productProvider.getByLocation(sourcePath.toUri().toString());
+
+            if (products == null || products.size() == 0) { // we might have vector products
+                List<VectorData> vectorProducts = vectorDataProvider.getByLocation(sourcePath.toUri().toString());
+                /*if (vectorProducts.size() > 1) {
+                    throw new IOException("Cannot move vector products");
+                }*/
+                if (vectorProducts.size() == 1) {
+                    VectorData product = vectorProducts.get(0);
+                    /*if (Visibility.PUBLIC.equals(product.getVisibility())) {
+                        throw new IOException("Cannot move a public product. Please reduce its visibility first.");
+                    }*/
+                    FileUtilities.move(sourcePath, destinationPath);
+                    try {
+                        product.setLocation(destinationURI);
+                        vectorDataProvider.update(product);
+                    } catch (PersistenceException | URISyntaxException e) {
+                        throw new IOException(String.format("Failed to move vector product %s. Reason: %s",
+                                                            product.getName(), e.getMessage()));
+                    }
+                }
+            } else { // we might have raster products
+                /*if (products.size() > 1) {
+                    throw new IOException("Cannot move raster products");
+                }*/
+                EOProduct product = products.get(0);
+                /*if (Visibility.PUBLIC.equals(product.getVisibility())) {
+                    throw new IOException("Cannot move a public product. Please reduce its visibility first.");
+                }*/
+                FileUtilities.move(sourcePath, destinationPath);
+                try {
+                    product.setLocation(destinationURI);
+                    productProvider.update(product);
+                } catch (PersistenceException | URISyntaxException e) {
+                    throw new IOException(String.format("Failed to move vector product %s. Reason: %s",
+                                                        product.getName(), e.getMessage()));
                 }
             }
         }

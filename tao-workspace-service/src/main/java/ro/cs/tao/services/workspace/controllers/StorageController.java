@@ -654,6 +654,44 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return prepareResult(action + " started", ResponseStatus.SUCCEEDED);
     }
 
+    /**
+     * Renames a file or a folder
+     * @param item          The file or folder to rename
+     * @param newName       The new name
+     * @return              A message indicating if the action was performed or not
+     */
+    @PostMapping(value = "/rename", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> rename(@RequestParam(name = "item") String item,
+                                                     @RequestParam(name = "name") String newName) {
+        final String successMessage = String.format("Renaming [%s] completed", item);
+        final String user = currentUser();
+        final BiConsumer<Exception, String> callback = (e, s) -> {
+            String topic;
+            String message;
+            if (e == null) {
+                topic = Topic.INFORMATION.getCategory();
+                message = s;
+            } else {
+                topic = Topic.WARNING.getCategory();
+                message = e.getMessage();
+            }
+
+            Messaging.send(user, topic, message);
+        };
+        asyncExecute(() -> {
+            if (StringUtilities.isNullOrEmpty(item)) {
+                throw new IllegalArgumentException("Not a file");
+            }
+            final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(user);
+            try {
+                repositoryService.rename(item, newName);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, successMessage, callback);
+        return prepareResult(String.format("Renaming %s started", item), ResponseStatus.SUCCEEDED);
+    }
+
     private void queueFile(String batchId, FileObject file, Repository source, Repository destination, String folder, boolean move, boolean overwrite) {
         final TransferableItem request = new TransferableItem(currentUser(), batchId, source, file, destination, folder, move, overwrite);
         transferService.request(request);
