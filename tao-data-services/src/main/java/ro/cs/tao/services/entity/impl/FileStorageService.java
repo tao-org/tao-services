@@ -228,6 +228,8 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                         throw new IOException(String.format("Failed to move vector product %s. Reason: %s",
                                 product.getName(), e.getMessage()));
                     }
+                } else {
+                    FileUtilities.move(sourcePath, destinationPath);
                 }
             } else { // we might have raster products
                 /*if (products.size() > 1) {
@@ -261,7 +263,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         Path sourcePath = Paths.get(repository.resolve(source));
         Path destinationPath = sourcePath.getParent().resolve(newName);
         if (source.startsWith("files")) {
-            FileUtilities.move(sourcePath, destinationPath);
+            FileUtilities.rename(sourcePath, newName);
             try {
                 Path workspaceCurrentUser = SessionStore.currentContext().getWorkspace();
                 AuxiliaryData auxiliaryData = auxiliaryDataProvider.getByLocation(sourcePath.toUri().toString());
@@ -286,7 +288,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                     /*if (Visibility.PUBLIC.equals(product.getVisibility())) {
                         throw new IOException("Cannot move a public product. Please reduce its visibility first.");
                     }*/
-                    FileUtilities.move(sourcePath, destinationPath);
+                    FileUtilities.rename(sourcePath, newName);
                     try {
                         product.setLocation(destinationURI);
                         vectorDataProvider.update(product);
@@ -294,6 +296,8 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                         throw new IOException(String.format("Failed to move vector product %s. Reason: %s",
                                                             product.getName(), e.getMessage()));
                     }
+                } else {
+                    FileUtilities.rename(sourcePath, newName);
                 }
             } else { // we might have raster products
                 /*if (products.size() > 1) {
@@ -303,7 +307,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                 /*if (Visibility.PUBLIC.equals(product.getVisibility())) {
                     throw new IOException("Cannot move a public product. Please reduce its visibility first.");
                 }*/
-                FileUtilities.move(sourcePath, destinationPath);
+                FileUtilities.rename(sourcePath, newName);
                 try {
                     product.setLocation(destinationURI);
                     productProvider.update(product);
