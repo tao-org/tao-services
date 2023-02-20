@@ -274,7 +274,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             throw new IllegalArgumentException("Invalid principal (null)");
         }
         final Repository repository = this.repositoryProvider.getByUserAndName(principal.getName(), "LOCAL");
-        List<EOProduct> products = this.productProvider.getProductsByNames(productNames.toArray(new String[0]));
+        List<EOProduct> products = this.productProvider.getProductsByNames(productNames.stream()
+                                                                                       .map(p -> {
+                                                                                           int idx = p.lastIndexOf("/");
+                                                                                           return idx > 0 ? p.substring(idx + 1) : p;
+                                                                                       }).toArray(String[]::new));
         final String sensor = products != null && products.size() == productNames.size()
                               && products.stream().map(EOProduct::getProductType).distinct().count() == 1
                 ? products.get(0).getProductType() : "n/a";
