@@ -23,6 +23,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.ExecutionsManager;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
@@ -37,7 +38,6 @@ import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.OrchestratorService;
-import ro.cs.tao.services.orchestration.beans.ExecutionRequest;
 import ro.cs.tao.services.orchestration.beans.WPSExecutionRequest;
 import ro.cs.tao.utils.StringUtilities;
 
@@ -62,9 +62,7 @@ public class OrchestrationController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> start(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-        	final long jobID = orchestrationService.startWorkflow(request.getWorkflowId(),
-                                                                  request.getName(),
-                                                                  request.getParameters());
+        	final long jobID = orchestrationService.startWorkflow(request);
         	if (jobID != -1) {
                 response = prepareResult(jobID, "Execution started");
         	} else {
@@ -253,17 +251,17 @@ public class OrchestrationController extends BaseController {
             }
             final Map<String, String> parameters = request.getParameters();
             if (parameters != null) {
-                if (parameters.containsKey("startDate")) {
-                    parameters.put("service~startDate", parameters.get("startDate"));
-                    parameters.remove("startDate");
+                if (parameters.containsKey(CommonParameterNames.START_DATE)) {
+                    parameters.put("service~startDate", parameters.get(CommonParameterNames.START_DATE));
+                    parameters.remove(CommonParameterNames.START_DATE);
                 }
-                if (parameters.containsKey("endDate")) {
-                    parameters.put("service~endDate", parameters.get("endDate"));
-                    parameters.remove("endDate");
+                if (parameters.containsKey(CommonParameterNames.END_DATE)) {
+                    parameters.put("service~endDate", parameters.get(CommonParameterNames.END_DATE));
+                    parameters.remove(CommonParameterNames.END_DATE);
                 }
-                if (parameters.containsKey("footprint")) {
-                    parameters.put("service~footprint", parameters.get("footprint"));
-                    parameters.remove("footprint");
+                if (parameters.containsKey(CommonParameterNames.FOOTPRINT)) {
+                    parameters.put("service~footprint", parameters.get(CommonParameterNames.FOOTPRINT));
+                    parameters.remove(CommonParameterNames.FOOTPRINT);
                 }
                 if (parameters.containsKey("userId")) {
                     parameters.put("service~userId", parameters.get("userId"));
