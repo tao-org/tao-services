@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.ExecutionRequest;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.persistence.RepositoryProvider;
@@ -87,7 +88,12 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
             WorkflowDescriptor descriptor = workflowService.findById(workflowId);
             if (descriptor != null) {
                 String jobName = descriptor.getName() + " via WPS on " + LocalDateTime.now().format(DateTimeFormatter.ISO_TIME);
-                result = orchestratorService.startWorkflow(workflowId, jobName, parameters);
+                final ExecutionRequest request = new ExecutionRequest();
+                request.setWorkflowId(workflowId);
+                request.setName(jobName);
+                request.setLabel(jobName);
+                request.setParameters(parameters);
+                result = orchestratorService.startWorkflow(request);
             }
         } catch (Exception e) {
             Logger.getLogger(WebProcessingService.class.getName()).severe(e.getMessage());

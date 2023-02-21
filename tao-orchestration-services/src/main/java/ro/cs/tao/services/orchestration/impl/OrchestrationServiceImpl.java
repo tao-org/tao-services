@@ -61,9 +61,9 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     private WorkflowService workflowService;
 
     @Override
-    public long startWorkflow(long workflowId, String description, Map<String, Map<String, String>> inputs) throws ExecutionException {
+    public long startWorkflow(ExecutionRequest request) throws ExecutionException {
         ensureUserExecutor(2);
-        final ExecutionJob job = Orchestrator.getInstance().startWorkflow(SessionStore.currentContext(), workflowId, description, inputs);
+        final ExecutionJob job = Orchestrator.getInstance().startWorkflow(SessionStore.currentContext(), request);
         return job != null ? job.getId() : -1;
     }
 
@@ -239,8 +239,6 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                                                                                       workflowDescriptor.getId(),
                                                                                       workflowDescriptor.getName(),
                                                                                       null,
-                                                                                      new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
-                                                                                                                                   SecurityContextHolder.getContext()),
                                                                                       callback);
             return job != null ? job.getId() : -1;
         } catch (Exception e) {

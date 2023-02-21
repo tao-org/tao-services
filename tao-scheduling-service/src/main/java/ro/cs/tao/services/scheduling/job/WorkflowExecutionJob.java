@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.ExecutionRequest;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
@@ -138,7 +139,12 @@ public class WorkflowExecutionJob extends AbstractJob {
 												new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
 																							 SecurityContextHolder.getContext()));
 		}
-		final ExecutionJob job = orchestrator.startWorkflow(context, workflowId, description, new HashMap<>(inputs));
+		final ExecutionRequest request = new ExecutionRequest();
+		request.setWorkflowId(workflowId);
+		request.setName(description);
+		request.setLabel(description);
+		request.setParameters(new HashMap<>(inputs));
+		final ExecutionJob job = orchestrator.startWorkflow(context, request);
 		
 		// save the job id to the job details map
 		if (job != null) {
