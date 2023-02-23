@@ -45,6 +45,6 @@ public class WebConfig extends WebConfiguration {
     protected String sitePrefix() { return "/ui"; }
 
     @Override
-    protected String defaultPage() { return "login.html"; }
+    protected String defaultPage() { return "sap.html"; }//return "login.html"; }
 
 }
