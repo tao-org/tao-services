@@ -22,6 +22,7 @@ import org.springframework.security.concurrent.DelegatingSecurityContextExecutor
 import org.springframework.security.concurrent.DelegatingSecurityContextRunnable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.ExecutionConfiguration;
@@ -86,9 +87,12 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public ExecutionJob createJobExternal(long workflowId, String jobName, Map<String, Map<String, String>> inputs) throws ExecutionException {
+    public ExecutionJob createJobExternal(ExecutionRequest request) throws ExecutionException {
         ensureUserExecutor(1);
-        return Orchestrator.getInstance().createJob(SessionStore.currentContext(), workflowId, jobName, inputs);
+        JobType type = EnumUtils.getEnumConstantByName(JobType.class, request.getJobType());
+        return Orchestrator.getInstance().createJob(SessionStore.currentContext(),
+                                                    request.getWorkflowId(), request.getName(),
+                                                    request.getParameters(), type);
     }
 
     @Override

@@ -22,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
-import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.ExecutionsManager;
@@ -41,8 +40,6 @@ import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.orchestration.beans.WPSExecutionRequest;
 import ro.cs.tao.utils.StringUtilities;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -304,13 +301,12 @@ public class OrchestrationController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> createJobTemplate(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            final ExecutionJob job = orchestrationService.createJobExternal(request.getWorkflowId(),
-                                                                                    request.getName(), request.getParameters());
+            final ExecutionJob job = orchestrationService.createJobExternal(request);
             if (job == null) {
                 throw new ExecutionException("Failed to create JSON");
             }
-            final Path jsonPath = Paths.get(SystemVariable.USER_FILES.value(), job.getId().toString() + ".json");
-            response = prepareResult(jsonPath, "The JSON model for the job should be available in the path",
+            response = prepareResult(job.getJobOutputPath(),
+                                     "The script model for the job should be available in the path",
                                      ResponseStatus.SUCCEEDED, HttpStatus.OK);
         } catch (ExecutionException ex) {
             response = handleException(ex);
