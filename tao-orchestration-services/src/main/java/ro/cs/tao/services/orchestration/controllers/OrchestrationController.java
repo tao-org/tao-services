@@ -16,6 +16,7 @@
 
 package ro.cs.tao.services.orchestration.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/orchestrator")
+@Tag(name = "Orchestration", description = "Operations related to workflow execution")
 public class OrchestrationController extends BaseController {
 
     @Autowired
@@ -54,6 +56,11 @@ public class OrchestrationController extends BaseController {
     @Autowired
     private ExecutionJobProvider executionJobManager;
 
+    /**
+     * Starts the execution of a workflow
+     * @param request   Structure containing the workflow identifier, parameters, job type and name
+     * @see JobType
+     */
     @RequestMapping(value = "/start", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> start(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
@@ -70,6 +77,10 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
+    /**
+     * Returns the available parameters for a workflow
+     * @param workflowId    The workflow identifier
+     */
     @RequestMapping(value = "/parameters/{id}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getWorkflowParameters(@PathVariable("id") long workflowId) {
         try {
@@ -79,6 +90,10 @@ public class OrchestrationController extends BaseController {
         }
     }
 
+    /**
+     * Returns the outputs of a workflow execution (a workflow can have more than one execution)
+     * @param workflowId    The workflow identifier
+     */
     @RequestMapping(value = "/outputs/{id}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getWorkflowOutputs(@PathVariable("id") long workflowId) {
         try {
@@ -88,6 +103,10 @@ public class OrchestrationController extends BaseController {
         }
     }
 
+    /**
+     * Stops a running job
+     * @param jobId The job identifier
+     */
     @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> stop(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
@@ -100,6 +119,10 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
+    /**
+     * Pauses a running job
+     * @param jobId The job identifier
+     */
     @RequestMapping(value = "/pause", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> pause(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
@@ -112,6 +135,10 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
+    /**
+     * Resumes to execution a paused job
+     * @param jobId The job identifier
+     */
     @RequestMapping(value = "/resume", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> resume(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
@@ -124,6 +151,9 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
+    /**
+     * Removes all pending jobs of the current user
+     */
     @RequestMapping(value = "/purge", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> purgeJobs() {
         ResponseEntity<ServiceResponse<?>> response;
@@ -135,6 +165,9 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
+    /**
+     * Returns the running tasks (steps of a job) of the current user
+     */
     @RequestMapping(value = "/running/tasks", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getRunningTasks() {
         List<ExecutionTaskSummary> tasks =
@@ -145,6 +178,10 @@ public class OrchestrationController extends BaseController {
         return prepareResult(tasks);
     }
 
+    /**
+     * Returns the running jobs of the current user.
+     * If the user is in the admin group, returns all the running jobs.
+     */
     @RequestMapping(value = "/running/jobs", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getRunningJobs() {
         List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs(isCurrentUserAdmin() ? null : currentUser());
@@ -154,8 +191,16 @@ public class OrchestrationController extends BaseController {
         return prepareResult(summaries);
     }
 
+    /**
+     * Returns the running jobs opf a specific user.
+     * Only an administrator can call perform this operation.
+     * @param userName  The user account name
+     */
     @RequestMapping(value = "/running/jobs/{user}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getRunningJobsForUser(@PathVariable("user") String userName) {
+        if (!currentUser().equals(userName) && !isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
         List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs(userName);
         if (summaries == null) {
             summaries = new ArrayList<>();
@@ -163,6 +208,10 @@ public class OrchestrationController extends BaseController {
         return prepareResult(summaries);
     }
 
+    /**
+     * Returns the summaries of tasks of a job
+     * @param jobId The job identifier
+     */
     @RequestMapping(value = "/{jobId}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getJobTaskStatuses(@PathVariable("jobId") long jobId) {
         List<ExecutionTaskSummary> summaries = orchestrationService.getTasksStatus(jobId);
@@ -172,6 +221,10 @@ public class OrchestrationController extends BaseController {
         return prepareResult(summaries);
     }
 
+    /**
+     * Returns the outputs of a job
+     * @param jobId The job identifier
+     */
     @RequestMapping(value = "/{jobId}/output", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getJobOutput(@PathVariable("jobId") long jobId) {
         ExecutionJob job = executionJobManager.get(jobId);
@@ -188,6 +241,13 @@ public class OrchestrationController extends BaseController {
         return prepareResult(output);
     }
 
+    /**
+     * Returns the summaries of finished jobs of a user.
+     * If the user is not specified:
+     *  - for an administrator it returns the summaries of all finished jobs
+     *  - for a user it returns the summaries of all his/her finished jobs
+     * @param userName  The user account name
+     */
     @RequestMapping(value = {"/history","/history/{user}"}, method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getJobsHistory(@PathVariable("user") String userName) {
         List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(userName != null ? userName : (isCurrentUserAdmin() ? null : currentUser()));
@@ -197,8 +257,16 @@ public class OrchestrationController extends BaseController {
         return prepareResult(summaries);
     }
 
+    /**
+     * Clears the job history for a user.
+     * If the user is not specified it clears the jobs of the current user
+     * @param userName  The user account name
+     */
     @RequestMapping(value = {"/history", "/history/{user}"}, method = RequestMethod.DELETE, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> clearJobsHistory(@PathVariable("user") String userName) {
+        if (!currentUser().equals(userName) && !isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
         try {
             orchestrationService.clearJobHistory(userName != null ? userName : currentUser());
             return prepareResult("Job history deleted", ResponseStatus.SUCCEEDED);
@@ -239,6 +307,10 @@ public class OrchestrationController extends BaseController {
         }
     }
 
+    /**
+     * Performs a remote Web Processing Service invocation.
+     * @param request   The invocation parameters
+     */
     @RequestMapping(value = "/wps", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> invokeRemoteWPS(@RequestBody WPSExecutionRequest request) {
         try {
@@ -296,6 +368,12 @@ public class OrchestrationController extends BaseController {
         }
     }
 
+    /**
+     * Exports a workflow execution to a specified format.
+     * The workflow is not actually executed, but its execution is simulated so that inputs and outputs of tasks
+     * are properly computed.
+     * @param request   The export request
+     */
     @RequestMapping(value = "/createJob", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> createJobTemplate(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
@@ -313,6 +391,13 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
+    /**
+     * Callback to signal the status change of a task.
+     * This is intended to be used by external systems calling TAO.
+     * @param taskId    The task identifier
+     * @param status    The new task status
+     * @param message   (optional) A message associated with the status change
+     */
     @RequestMapping(value = "/statusChanged", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> taskStatusChanged(@RequestParam("taskId") long taskId,
                                                             @RequestParam("status") String status,

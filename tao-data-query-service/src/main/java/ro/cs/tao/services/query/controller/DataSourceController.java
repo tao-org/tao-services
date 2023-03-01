@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.query.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.io.WKTReader;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,6 +79,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/query")
+@Tag(name = "Product search", description = "Operations related to product search and download")
 public class DataSourceController extends BaseController {
 
     private static final Pattern s2TilePattern = Pattern.compile("\\d{2}\\w{3}");
@@ -91,7 +93,9 @@ public class DataSourceController extends BaseController {
     @Autowired
     private RepositoryProvider repositoryProvider;
 
-
+    /**
+     * Lists the available data sources
+     */
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getRegisteredSources() {
         //if (cachedDataSources.isEmpty()) {
@@ -107,6 +111,9 @@ public class DataSourceController extends BaseController {
         //return prepareResult(cachedDataSources, 60);
     }
 
+    /**
+     * Lists the short description of the available data sources
+     */
     @RequestMapping(value = "/summary", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getRegisteredSourcesSummary() {
         List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
@@ -116,6 +123,9 @@ public class DataSourceController extends BaseController {
         return prepareResult(instances.stream().map(DataSourceSummaryBean::new).collect(Collectors.toList()));
     }
 
+    /**
+     * Lists the registered providers (e.g. USGS) and the collections available from them
+     */
     @RequestMapping(value = "/providers", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getProviders() {
         Map<String, String[]> providers = dataSourceService.getDataSourceProviders();
@@ -125,6 +135,9 @@ public class DataSourceController extends BaseController {
         return prepareResult(providers);
     }
 
+    /**
+     * Lists the registered sensors (or collections)
+     */
     @RequestMapping(value = "/sensor/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getSupportedSensors() {
         Set<String> sensors = dataSourceService.getSupportedSensors();
@@ -134,6 +147,10 @@ public class DataSourceController extends BaseController {
         return prepareResult(sensors);
     }
 
+    /**
+     * Lists the data sources that provide the given sensor or collection
+     * @param sensorName    The sensor (or collection) name
+     */
     @RequestMapping(value = "/sensor/{name}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getDatasourcesForSensor(@PathVariable("name") String sensorName) {
         List<String> sources = dataSourceService.getDatasourcesForSensor(sensorName);
@@ -143,11 +160,16 @@ public class DataSourceController extends BaseController {
         return prepareResult(sources);
     }
 
+    /**
+     * Returns the parameters supported for the given sensor (or collection) by the given data source
+     * @param sensorName        The sensor (or collection) name
+     * @param dataSourceName   The name of the data source
+     */
     @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getSupportedParameters(@PathVariable("name") String sensorName,
-                                                                     @PathVariable("source") String dataSourceClassName) {
-        List<DataSourceParameter> params = dataSourceService.getSupportedParameters(sensorName, dataSourceClassName);
-        DataSourceCredentials dsCreds = dataSourceService.getDataSourceCredentials(dataSourceClassName);
+                                                                     @PathVariable("source") String dataSourceName) {
+        List<DataSourceParameter> params = dataSourceService.getSupportedParameters(sensorName, dataSourceName);
+        DataSourceCredentials dsCreds = dataSourceService.getDataSourceCredentials(dataSourceName);
         if (params == null) {
             params = new ArrayList<>();
         }
@@ -158,6 +180,11 @@ public class DataSourceController extends BaseController {
         return prepareResult(new DataSourceInfoBean(params.stream().map(DataSourceParameterBean::new).collect(Collectors.toList()),dsCreds));
     }
 
+    /**
+     * Returns the WKT footprint (in WGS84) of the given tile product.
+     * @param satellite The satellite. Supported values are 'sentinel2' and 'landsat8'
+     * @param tile  The tile identifier (for Landsat-8, this is the path and row)
+     */
     @RequestMapping(value = "/footprint", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getTileFootprint(@RequestParam("satellite") String satellite, @RequestParam("tile") String tile) {
         try {
@@ -221,6 +248,10 @@ public class DataSourceController extends BaseController {
         }
     }
 
+    /**
+     * Returns a list of product tiles that intersect an area of interest.
+     * @param request   A structure containing: the area of interest (as WKT), the satellite (supported values: 'sentinel2', 'landsat8')
+     */
     @RequestMapping(value = "/tiles", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public ResponseEntity<ServiceResponse<?>> getTilesForFootprint(@RequestBody TileRequest request) {
         try {
@@ -271,6 +302,10 @@ public class DataSourceController extends BaseController {
         }
     }
 
+    /**
+     * Returns the number of products that match the search criteria.
+     * @param query The search critera
+     */
     @RequestMapping(value = "/count", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doCount(@RequestBody Query query) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
@@ -324,6 +359,11 @@ public class DataSourceController extends BaseController {
         }
     }
 
+    /**
+     * Performs a search on a given data source and returns a list of results.
+     * @param mode  The return mode: 'list' (only the product names) or 'details'
+     * @param query The search criteria
+     */
     @RequestMapping(value = "/exec", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doQuery(@RequestParam(name = "mode", required = false) String mode,
                                                       @RequestBody Query query) {
@@ -355,6 +395,10 @@ public class DataSourceController extends BaseController {
         }
     }
 
+    /**
+     * Retrieves the products given in the request.
+     * @param request   The request structure
+     */
     @RequestMapping(value = "/fetch", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doFetch(@RequestBody FetchRequest request) {
         asyncExecute(() -> {
@@ -402,6 +446,11 @@ public class DataSourceController extends BaseController {
         return prepareResult("Download queued", ResponseStatus.SUCCEEDED);
     }
 
+    /**
+     * Finds all the supported products in a path.
+     * A product, besides the files constituting it, holds additional metadata in the TAO database.
+     * @param productPath   The path to inspect, relative to the user workspace
+     */
     @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> inspect(@RequestParam("path") String productPath) {
         Set<MetadataInspector> services = ServiceRegistryManager.getInstance()
