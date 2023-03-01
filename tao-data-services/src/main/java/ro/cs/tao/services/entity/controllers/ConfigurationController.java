@@ -17,9 +17,9 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.reflections.Reflections;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.TaoEnum;
 import ro.cs.tao.eodata.Projection;
 import ro.cs.tao.eodata.sorting.Association;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 /**
  * @author Cosmin Cara
  */
-@Controller
+@RestController
 @RequestMapping("/config")
 public class ConfigurationController extends DataEntityController<KeyValuePair, String, ConfigurationService> {
 

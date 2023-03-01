@@ -19,7 +19,6 @@ package ro.cs.tao.services.orchestration.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.datasource.param.CommonParameterNames;
@@ -46,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Controller
+@RestController
 @RequestMapping("/orchestrator")
 public class OrchestrationController extends BaseController {
 

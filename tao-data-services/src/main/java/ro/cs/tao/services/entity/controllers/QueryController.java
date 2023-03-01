@@ -19,7 +19,6 @@ package ro.cs.tao.services.entity.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.datasource.beans.Query;
@@ -32,7 +31,7 @@ import ro.cs.tao.services.interfaces.QueryService;
 import java.util.List;
 import java.util.Optional;
 
-@Controller
+@RestController
 @RequestMapping("/datasource/query")
 public class QueryController extends BaseController {
 

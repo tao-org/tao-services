@@ -17,10 +17,10 @@ package ro.cs.tao.services.progress.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.datasource.DownloadManager;
 import ro.cs.tao.services.commons.ControllerBase;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -30,7 +30,7 @@ import ro.cs.tao.utils.StringUtilities;
 
 import java.util.Base64;
 
-@Controller
+@RestController
 @RequestMapping("/progress")
 public class ProgressReportController extends ControllerBase {
 

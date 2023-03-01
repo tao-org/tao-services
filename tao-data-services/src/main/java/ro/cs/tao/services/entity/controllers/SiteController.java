@@ -1,11 +1,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -15,7 +11,7 @@ import ro.cs.tao.workspaces.Site;
 
 import java.util.Optional;
 
-@Controller
+@RestController
 @RequestMapping("/site")
 public class SiteController extends DataEntityController<Site, String, SiteService> {
 

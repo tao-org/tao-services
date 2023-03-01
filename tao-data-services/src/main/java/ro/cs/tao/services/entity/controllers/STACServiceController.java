@@ -3,7 +3,6 @@ package ro.cs.tao.services.entity.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
@@ -39,7 +38,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-@Controller
+@RestController
 @RequestMapping("/stac")
 public class STACServiceController extends BaseController {
     @Autowired

@@ -1,7 +1,6 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -18,7 +17,7 @@ import ro.cs.tao.workspaces.RepositoryType;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Controller
+@RestController
 @RequestMapping("/workspace")
 public class RepositoryEntityController extends DataEntityController<Repository, String, RepositoryService> {
 

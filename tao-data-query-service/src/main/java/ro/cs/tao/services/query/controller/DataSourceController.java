@@ -19,7 +19,6 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.io.WKTReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.component.Variable;
@@ -77,7 +76,7 @@ import java.util.stream.Collectors;
 /**
  * @author Cosmin Cara
  */
-@Controller
+@RestController
 @RequestMapping("/query")
 public class DataSourceController extends BaseController {
 

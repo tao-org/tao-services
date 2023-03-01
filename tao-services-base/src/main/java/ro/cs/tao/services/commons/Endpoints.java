@@ -17,7 +17,6 @@
 package ro.cs.tao.services.commons;
 
 import org.reflections.Reflections;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.Method;
@@ -52,7 +51,7 @@ public class Endpoints {
     public static Set<String> endpoints(String packagePrefix) {
         if (endpointList == null) {
             endpointList = new HashSet<>();
-            Set<Class<?>> controllers = new Reflections(packagePrefix).getTypesAnnotatedWith(Controller.class);
+            Set<Class<?>> controllers = new Reflections(packagePrefix).getTypesAnnotatedWith(RestController.class);
             for (Class<?> controller : controllers) {
                 String path;
                 RequestMapping annotation = controller.getAnnotation(RequestMapping.class);

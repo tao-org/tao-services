@@ -17,13 +17,9 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.component.*;
@@ -59,9 +55,11 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 /**
+ * Groups all API operations related to Docker containers
+ *
  * @author Cosmin Cara
  */
-@Controller
+@RestController
 @RequestMapping("/docker")
 public class ContainerController extends DataEntityController<Container, String, ContainerService> {
 
@@ -72,6 +70,14 @@ public class ContainerController extends DataEntityController<Container, String,
     @Autowired
     private ProcessingComponentProvider processingComponentProvider;
 
+    /**
+     * Lists the docker images available on the system.
+     *
+     * @param pageNumber    (optional) The page number of the result set
+     * @param pageSize      (optiona) The page size
+     * @param sortByField   (optional) The name of the field used for sorting
+     * @param sortDirection (optional) The sort direction
+     */
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
@@ -85,6 +91,11 @@ public class ContainerController extends DataEntityController<Container, String,
         return prepareResult(objects);
     }
 
+    /**
+     * Lists the formats defined for a container.
+     *
+     * @param containerId   The container identifier
+     */
     @RequestMapping(value = "/formats", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getFormats(@RequestParam("containerId") String containerId) {
         try {
@@ -100,6 +111,11 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
+    /**
+     * Uploads the files necessary to build a new Docker image
+     *
+     * @param request   The structure containing the necessary information
+     */
     @RequestMapping(value = "/upload", method = RequestMethod.POST, consumes = "multipart/form-data", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> upload(HttpServletRequest servletRequest,
                                                      @ModelAttribute ContainerUploadRequest request,
@@ -194,6 +210,10 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
+    /**
+     * Pulls a Docker image to the local repository
+     * @param image     The name of the Docker image
+     */
     @RequestMapping(value = "/pull", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> pullFromHub(@RequestParam("image") String image) {
         try {
@@ -203,6 +223,11 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
+    /**
+     * Registers a Docker image with TAO.
+     *
+     * @param request   The structure containing the necessary information
+     */
     @RequestMapping(value = "/register", method = RequestMethod.POST, consumes = "multipart/form-data", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> upload(HttpServletRequest servletRequest,
                                                      @ModelAttribute ContainerRequest request,
