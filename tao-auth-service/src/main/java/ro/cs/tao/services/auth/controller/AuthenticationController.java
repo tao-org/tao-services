@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.auth.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -39,11 +40,17 @@ import java.util.StringTokenizer;
  */
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Authentication", description = "Operations related to user authentication")
 public class AuthenticationController extends BaseController {
 
     @Autowired
     private AuthenticationService authenticationService;
 
+    /**
+     * Logs in a user
+     * @param user      The user account
+     * @param password  The user password
+     */
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> login(@RequestParam("username") String user,
                                                     @RequestParam("password") String password) {
@@ -74,6 +81,10 @@ public class AuthenticationController extends BaseController {
         }
     }
 
+    /**
+     * Logs out a user
+     * @param authToken The authentication token
+     */
     @RequestMapping(value = "/logout", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> logout(@RequestHeader("X-Auth-Token") String authToken) {
         if (StringUtilities.isNullOrEmpty(authToken)) {
@@ -90,6 +101,11 @@ public class AuthenticationController extends BaseController {
         }
     }
 
+    /**
+     * Refreshes the authentication token for a user
+     * @param userName      The user login
+     * @param refreshToken  The refresh token to be used
+     */
     @RequestMapping(value = "/refresh", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> refresh(@RequestParam(name = "user") String userName,
                                                       @RequestParam(name = "token") String refreshToken,

@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.progress.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,11 +33,18 @@ import java.util.Base64;
 
 @RestController
 @RequestMapping("/progress")
+@Tag(name = "Progress", description = "Reports the progress of lengthy operations")
 public class ProgressReportController extends ControllerBase {
 
     @Autowired
     private ProgressReportService progressReportService;
 
+    /**
+     * Returns details about running tasks.
+     * @param category  The task category
+     * @param userName  The user account name
+     * @param jsonFilter    Additional filter
+     */
     @RequestMapping(value = "", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getTasksInProgress(@RequestParam(name = "category", required = false) String category,
                                                                  @RequestParam(name = "userName", required = false) String userName,
@@ -57,11 +65,16 @@ public class ProgressReportController extends ControllerBase {
         return prepareResult(progressReportService.getRunningTasks(category, filter));
     }
 
+    /**
+     * Returns statistics about downloads
+     */
     @RequestMapping(value = "/download/statistics", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getGlobalDownloadStatus() {
         return prepareResult(DownloadManager.getOverallStatus());
     }
-
+    /**
+     * Returns information about the current downloads
+     */
     @RequestMapping(value = "/download/statistics/detail", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getDownloadStatus() {
         return prepareResult(DownloadManager.getCurrentStatus());
