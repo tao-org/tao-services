@@ -18,7 +18,6 @@ package ro.cs.tao.services.entity.controllers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
@@ -46,7 +45,7 @@ import java.util.stream.Collectors;
 /**
  * @author Cosmin Cara
  */
-@Controller
+@RestController
 @RequestMapping("/component")
 public class ComponentController extends DataEntityController<ProcessingComponent, String, ComponentService> {
 

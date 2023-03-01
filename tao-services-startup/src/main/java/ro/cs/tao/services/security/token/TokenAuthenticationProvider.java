@@ -49,9 +49,7 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
             throw new BadCredentialsException("Invalid token");
         }
         if (token.equals(this.apiDevToken)) {
-            JaasAuthenticationToken authenticationToken = new JaasAuthenticationToken(SystemPrincipal.instance(), null, null);
-            authenticationToken.setAuthenticated(true);
-            return authenticationToken;
+            return new JaasAuthenticationToken(SystemPrincipal.instance(), token, null, null);
         }
         if (!tokenManagementService.isValid(token)) {
             throw new BadCredentialsException("Invalid token or token expired");

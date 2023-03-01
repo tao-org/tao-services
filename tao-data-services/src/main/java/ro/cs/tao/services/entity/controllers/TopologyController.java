@@ -16,9 +16,9 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.StringIdentifiable;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 /**
  * @author Cosmin Cara
  */
-@Controller
+@RestController
 @RequestMapping("/topology")
 public class TopologyController extends DataEntityController<NodeDescription, String, TopologyService> {
 

@@ -1,7 +1,7 @@
 package ro.cs.tao.services.monitoring.controller;
 
 import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Notifiable;
 import ro.cs.tao.messaging.Topic;
@@ -11,7 +11,7 @@ import ro.cs.tao.services.commons.Notification;
 
 import java.util.List;
 
-@Controller
+@RestController
 public class PushController extends BaseController {
     private final Receiver receiver = new Receiver(this);
     private final MessageConverter converter = new MessageConverter();

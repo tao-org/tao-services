@@ -40,6 +40,10 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
     @Autowired
     protected S service;
 
+    /**
+     * Returns the details of the entity
+     * @param id    The entity identifier
+     */
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") K id) {
         ResponseEntity<ServiceResponse<?>> response;
@@ -70,7 +74,10 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
             return prepareResult(service.list());
         }
     }
-
+    /**
+     * Creates a new entity.
+     * If values of the entity fields are not correct, the response will contain which values were faulty.
+     */
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody T entity) {
         final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
@@ -82,7 +89,10 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
             return validationResponse;
         }
     }
-
+    /**
+     * Updates an existing entity.
+     * If values of the entity fields are not correct, the response will contain which values were faulty.
+     */
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") K id, @RequestBody T entity) {
         final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
@@ -98,7 +108,11 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
         }
 
     }
-
+    /**
+     * Associates one or more tags to an entity.
+     * @param id    The entity identifier
+     * @param tags  The list of tags to be associated
+     */
     @RequestMapping(value = "/{id:.+}/tag", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> tag(@PathVariable("id") K id, @RequestBody List<String> tags) {
         try {
@@ -107,7 +121,11 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
             return handleException(e);
         }
     }
-
+    /**
+     * Dissociates one or more tags from an entity.
+     * @param id    The entity identifier
+     * @param tags  The list of tags to be removed
+     */
     @RequestMapping(value = "/{id:.+}/untag", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> untag(@PathVariable("id") K id, @RequestBody List<String> tags) {
         try {
@@ -117,6 +135,10 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
         }
     }
 
+    /**
+     * Deletes an entity
+     * @param id    The entity identifier
+     */
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE)
     public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") K id) {
         ResponseEntity<ServiceResponse<?>> response;
