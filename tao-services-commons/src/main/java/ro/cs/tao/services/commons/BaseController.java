@@ -19,15 +19,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import ro.cs.tao.persistence.AuditProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.AdministrationService;
+import ro.cs.tao.user.LogEvent;
 import ro.cs.tao.user.User;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +42,7 @@ public abstract class BaseController extends ControllerBase {
     private static final Set<String> admins;
     private static final Timer groupRefreshTimer;
     private static AdministrationService administrationService;
+    private static AuditProvider auditProvider;
 
     static {
         groupRefreshTimer = new Timer(true);
@@ -65,6 +71,15 @@ public abstract class BaseController extends ControllerBase {
         }
     }
 
+    @Autowired
+    public final void setAuditProvider(AuditProvider provider) {
+        if (auditProvider == null) {
+            synchronized (admins) {
+                auditProvider = provider;
+            }
+        }
+    }
+
     protected String currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication.getName();
@@ -76,5 +91,13 @@ public abstract class BaseController extends ControllerBase {
 
     protected boolean isCurrentUserAdmin() {
         return admins.contains(SessionStore.currentContext().getPrincipal().getName());
+    }
+
+    protected void record(String event) {
+        try {
+            auditProvider.save(new LogEvent(LocalDateTime.now(), currentUser(), event));
+        } catch (PersistenceException e) {
+            Logger.getLogger(getClass().getName()).warning(e.getMessage());
+        }
     }
 }
