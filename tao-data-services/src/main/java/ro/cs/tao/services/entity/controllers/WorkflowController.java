@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/workflow")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Workflows", description = "Operations related to workflows")
 public class WorkflowController extends DataEntityController<WorkflowDescriptor, Long, WorkflowService> {
 
     @Autowired
@@ -61,6 +62,14 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     @Autowired
     private WorkflowNodeProvider workflowNodeProvider;
 
+    /**
+     * Lists the workflows that are visible to the current user, optionally specifying the pagination of results.
+     *
+     * @param pageNumber    (optional) The page number
+     * @param pageSize      (optional) The page size
+     * @param sortByField   (optional) The field to sort on
+     * @param sortDirection (optional) The sort direction
+     */
     @Override
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
@@ -75,6 +84,10 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
     }
 
+    /**
+     * Returns the descriptor of a workflow
+     * @param id    The workflow identifier
+     */
     @Override
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") Long id) {
@@ -97,26 +110,45 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return response;
     }
 
+    /**
+     * Lists all the user workflows having a given status.
+     * @param status    The workflow status (@see {@link Status})
+     */
     @RequestMapping(value = "/status/{status}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByStatus(@PathVariable("status") Status status) {
         return prepareResult(service.getUserWorkflowsByStatus(currentUser(), status));
     }
 
+    /**
+     * Lists all the published user workflows by visibility
+     * @param visibility    The workflow visibiliti (@see {@link Visibility})
+     *
+     */
     @RequestMapping(value = "/visibility/{visibility}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByVisibility(@PathVariable("visibility") Visibility visibility) {
         return prepareResult(service.getUserPublishedWorkflowsByVisibility(currentUser(), visibility));
     }
 
+    /**
+     * List all the workflows published by users other than the current user.
+     */
     @RequestMapping(value = "/public", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getOtherPublicWorkflows() {
         return prepareResult(service.getOtherPublicWorkflows(currentUser()));
     }
 
+    /**
+     * List all the published workflows.
+     */
     @RequestMapping(value = "/public/all", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getPublicWorkflows() {
         return prepareResult(service.getPublicWorkflows());
     }
 
+    /**
+     * Duplicates a workflow, creating a new one with the same nodes and parameters.
+     * @param workflowId    The identifier of the workflow to be duplicated
+     */
     @RequestMapping(value = "/clone", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> cloneWorkflow(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -124,6 +156,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         try {
             if (source != null ) {
                 responseEntity = prepareResult(service.clone(source));
+                record("Cloned workflow " + workflowId);
             } else {
                 responseEntity = prepareResult("Workflow not found", ResponseStatus.FAILED);
             }
@@ -133,6 +166,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
+    /**
+     * List all the tags attached to workflows.
+     */
     @RequestMapping(value = "/tags", method = RequestMethod.GET)
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getWorkflowTags();
@@ -142,6 +178,10 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 
+    /**
+     * Creates a workflow based on a pre-defined one.
+     * @param name  The name of the pre-defined workflow
+     */
     @RequestMapping(value = "/init", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> initializeSampleWorkflows(@RequestParam(name = "name", required = false) String name) {
         ServiceRegistry<WorkflowBuilder> registry = ServiceRegistryManager.getInstance().getServiceRegistry(WorkflowBuilder.class);
@@ -171,6 +211,11 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
     }
 
+    /**
+     * Adds a node to a workflow
+     * @param workflowId    The workflow identifier
+     * @param node          The new node
+     */
     @RequestMapping(value = "/node", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addNode(@RequestParam("workflowId") long workflowId,
                                                       @RequestBody WorkflowNodeDescriptor node) {
@@ -183,23 +228,34 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                 node.addInfo("nodeAffinity", component.getNodeAffinity());
             }
             responseEntity = prepareResult(service.addNode(workflowId, node));
+            record("Node " + node.getName() + " added to workflow " + workflowId);
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
         return responseEntity;
     }
 
+    /**
+     * Creates a group of nodes in a workflow
+     * @param request   Structure containing the workflow identifier, the group name and the identifiers of nodes to be
+     *                  grouped
+     */
     @RequestMapping(value = "/group", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addGroup(@RequestBody WorkflowGroupNodeRequest request) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.group(request.getWorkflowId(), request.getGroupNodeName(), request.getGroupNodeIds()));
+            record("Node group " + request.getGroupNodeName() + " added to workflow " + request.getWorkflowId());
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
         return responseEntity;
     }
 
+    /**
+     * Removes a group of nodes and replaces it with the contained nodes.
+     * @param groupId   The group identifier
+     */
     @RequestMapping(value = "/ungroup", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> ungroup(@RequestParam("groupId") long groupId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -213,13 +269,21 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             }
             final WorkflowNodeGroupDescriptor groupDescriptor = (WorkflowNodeGroupDescriptor) descriptor;
             service.ungroup(groupDescriptor, false);
-            return prepareResult("Group removed", ResponseStatus.SUCCEEDED);
+            responseEntity = prepareResult("Group removed", ResponseStatus.SUCCEEDED);
+            record("Group " + groupId + " removed");
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
         return responseEntity;
     }
 
+    /**
+     * Inserts a workflow as a subworkflow of another workflow
+     * @param workflowId        The identifier of the workflow in which to insert
+     * @param subWorkflowId     The identifier of the workflow to be inserted
+     * @param keepDataSources   Flag to indicate if to keep or not the sources of the workflow to be inserted
+     *
+     */
     @RequestMapping(value = "/subworkflow", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addSubworkflow(@RequestParam("workflowId") long workflowId,
                                                              @RequestParam("subWorkflowId") long subWorkflowId,
@@ -243,30 +307,47 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
+    /**
+     * Updates the information of a node
+     * @param workflowId    The identifier of the parent workflow
+     * @param node          The node to be updated
+     */
     @RequestMapping(value = "/node", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateNode(@RequestParam("workflowId") long workflowId,
                                                          @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.updateNode(workflowId, node));
+            record("Node " + node + " in workflow " + workflowId + " modified");
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
         return responseEntity;
     }
 
+    /**
+     * Updates several nodes at once.
+     * @param workflowId    The identifier of the parent workflow
+     * @param nodes         The nodes to be updated
+     */
     @RequestMapping(value = "/nodes", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateNodes(@RequestParam("workflowId") long workflowId,
                                                           @RequestBody List<WorkflowNodeDescriptor> nodes) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.updateNodes(workflowId, nodes));
+            record("Nodes " + nodes.stream().map(WorkflowNodeDescriptor::getName).collect(Collectors.joining(",")) + " in workflow " + workflowId + " modified");
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
         return responseEntity;
     }
 
+    /**
+     * Updates only the positions (coordinates) on the design canvas of one or more nodes.
+     * @param workflowId    The identifier of the parent workflow
+     * @param positions     The new positions for each node identifier
+     */
     @RequestMapping(value = "/positions", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateNodesPositions(@RequestParam("workflowId") long workflowId,
                                                                    @RequestBody Map<Long, float[]> positions) {
@@ -280,6 +361,11 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
+    /**
+     * Removes a node from a workflow
+     * @param workflowId    The identifier of the parent workflow
+     * @param node          The node to be removed
+     */
     @RequestMapping(value = "/node", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> removeNode(@RequestParam("workflowId") long workflowId,
                                                          @RequestBody WorkflowNodeDescriptor node) {
@@ -292,12 +378,20 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             service.removeNode(workflowId, node);
             responseEntity = prepareResult(String.format("Node with id '%s' was deleted", node.getId()),
                                            ResponseStatus.SUCCEEDED);
+            record("Node " + node.getName() + " from workflow " + workflowId + " deleted");
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
         return responseEntity;
     }
 
+    /**
+     * Creates a link between two nodes
+     * @param sourceNodeId      The identifier of the source node (from where the link is coming)
+     * @param sourceTargetId    The identifier of the output of the source node
+     * @param targetNodeId      The identifier of the target node (where the link is going to)
+     * @param targetSourceId    The identifier of the input of the target node
+     */
     @RequestMapping(value = "/link", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addLink(@RequestParam("sourceNodeId") long sourceNodeId,
                                                       @RequestParam("sourceTargetId") String sourceTargetId,
@@ -308,6 +402,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             WorkflowNodeDescriptor descriptor = service.addLink(sourceNodeId, sourceTargetId, targetNodeId, targetSourceId);
             if (descriptor != null) {
                 responseEntity = prepareResult(descriptor);
+                record(String.format("Link between nodes %d(target %s) and %d(source %s) created",
+                                     sourceNodeId, sourceTargetId, targetNodeId, targetSourceId));
             } else {
                 responseEntity = prepareResult("Could not add link", ResponseStatus.FAILED);
             }
@@ -317,18 +413,31 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
+    /**
+     * Removes a link from a workflow
+     * @param nodeId    The identifier of the node in whose incoming links collection the link is
+     * @param link      The link to be removed
+     */
     @RequestMapping(value = "/link", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> removeLink(@RequestParam("nodeId") long nodeId,
                                                          @RequestBody ComponentLink link) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.removeLink(nodeId, link));
+            record(String.format("Link between nodes %d(target %s) and %d(source %s) removed",
+                                 link.getSourceNodeId(), link.getInput().getId(),
+                                 nodeId, link.getOutput().getId()));
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
         return responseEntity;
     }
 
+    /**
+     * Lists the jobs that were executed using this workflow descriptor.
+     * @param workflowId    The workflow identifier
+     *
+     */
     @RequestMapping(value = "/{workflowId}/executions", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getWorkflowExecutions(@PathVariable("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -340,6 +449,11 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
+    /**
+     * Returns the details of a job
+     * @param executionId   The job identifier
+     *
+     */
     @RequestMapping(value = "/{workflowId}/executions/{executionId}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getWorkflowExecutionTasks(@PathVariable("executionId") long executionId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -351,6 +465,10 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return responseEntity;
     }
 
+    /**
+     * Converts a graph done in SNAP to a TAO workflow, provided that TAO has a SNAP container
+     * @param graphXml  The SNAP graph
+     */
     @RequestMapping(value = "/import/snap", method = RequestMethod.POST, consumes = "text/xml", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> importSnapGraph(@RequestBody String graphXml) {
         ResponseEntity<ServiceResponse<?>> responseEntity;

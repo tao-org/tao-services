@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
@@ -61,6 +62,7 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/docker")
+@Tag(name = "Containers", description = "Operations related to docker containers")
 public class ContainerController extends DataEntityController<Container, String, ContainerService> {
 
     @Autowired
