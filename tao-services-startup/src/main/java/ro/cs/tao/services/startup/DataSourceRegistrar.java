@@ -100,7 +100,9 @@ public class DataSourceRegistrar extends BaseLifeCycle {
             final List<Container> stacServices = persistenceManager.containers().getByType(ContainerType.STAC);
             if (stacServices != null && stacServices.size() > 0) {
                 for (Container service : stacServices) {
-                    DataSourceManager.getInstance().registerDataSource(new STACSource(service.getName()));
+                    final STACSource stacSource = new STACSource(service.getName());
+                    stacSource.setConfigurationProvider(persistenceManager.dataSourceConfigurationProvider());
+                    DataSourceManager.getInstance().registerDataSource(stacSource);
                 }
                 logger.finest(String.format("Registered %s STAC services", stacServices.size()));
             }
