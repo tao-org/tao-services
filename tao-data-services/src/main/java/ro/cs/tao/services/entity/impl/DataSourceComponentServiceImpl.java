@@ -307,7 +307,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         targetDescriptor.setId(UUID.randomUUID().toString());
         targetDescriptor.setParentId(newId);
         targetDescriptor.setCardinality(productNames.size());
-        targetDescriptor.addConstraint("Same cardinality");
+        //targetDescriptor.addConstraint("Same cardinality");
         targetDescriptorRepository.save(targetDescriptor);
         userDSC.setSystem(false);
         userDSC = dataSourceComponentProvider.save(userDSC);
