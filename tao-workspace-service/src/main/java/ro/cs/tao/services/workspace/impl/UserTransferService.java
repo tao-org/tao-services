@@ -91,12 +91,18 @@ public class UserTransferService {
             }
             final Repository srcWorkspace = item.getSourceRepository();
             final StorageService sourceService = StorageServiceFactory.getInstance(srcWorkspace);
-            sourceService.setProgressListener(this.progressListener.subProgressListener());
+            ProgressListener listener = this.progressListener.subProgressListener() != null
+                                        ? this.progressListener.subProgressListener()
+                                        : this.progressListener;
+            sourceService.setProgressListener(listener);
             final Repository dstWorkspace = item.getDestinationRepository();
             final StorageService destinationService = StorageServiceFactory.getInstance(dstWorkspace);
             //destinationService.setProgressListener(this.progressListener);
             final FileObject fileObject = item.getSource();
-            final String srcPath = srcWorkspace.resolve(fileObject.getRelativePath());
+            String srcPath = fileObject.getAttributes().get("remotePath");
+            if (srcPath == null || !srcPath.startsWith("http")) {
+                srcPath = srcWorkspace.resolve(fileObject.getRelativePath());
+            }
             this.progressListener.subActivityStarted(srcPath);
             if (srcWorkspace.getId().equals(dstWorkspace.getId())) {
                 destinationService.move(srcPath, item.getDestinationPath());
