@@ -33,6 +33,7 @@
 		<module>tao-services-startup</module>
         <module>tao-workspace-service</module>
         <module>tao-viewer-service</module>
+        <module>tao-services-kit</module>
     </modules>
 
     <properties>
@@ -194,7 +195,7 @@
                     <executions>
                         <execution>
                             <id>copy-libs</id>
-                            <phase>package</phase>
+                            <phase>deploy</phase>
                             <goals>
                                 <goal>copy-dependencies</goal>
                             </goals>
@@ -203,14 +204,14 @@
                                 <excludeGroupIds>ro.cs.tao</excludeGroupIds>
                                 <overWriteReleases>false</overWriteReleases>
                                 <overWriteSnapshots>true</overWriteSnapshots>
-                                <outputDirectory>../../tao-core/tao-core-kit/target/tao-core-${project.version}/tao-core/lib</outputDirectory>
-                                <excludeArtifactIds>commons-lang:commons-lang:jar:2.4,org.apache.httpcomponents:httpclient:jar:4.5.13,org.apache.httpcomponents:httpcore:jar:4.4.13,com.fasterxml.jackson.core:jackson-core:jar:2.13.2,com.fasterxml.jackson.core:jackson-databind:jar:2.14.1,com.fasterxml.jackson.core:jackson-databind:jar:2.14.1,com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.14.0,com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:jar:2.12.3,com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:jar:2.12.3,com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:jar:2.12.3,com.fasterxml.jackson.module:jackson-module-jaxb-annotations:jar:2.12.3,jakarta.activation:jakarta.activation-api:jar:1.2.1,jakarta.annotation:jakarta.annotation-api:jar:1.3.4,jakarta.xml.bind:jakarta.xml.bind-api:jar:2.3.2,javax.activation:javax.activation-api:jar:1.2.0,com.vividsolutions:jts-core:jar:1.14.0,com.sun.istack:istack-commons-runtime:jar:3.0.7,org.glassfish.jaxb:jaxb-runtime:jar:2.3.1,org.reactivestreams:reactive-streams:jar:1.0.0,org.glassfish.jaxb:txw2:jar:2.3.1,org.jboss.logging:jboss-logging:jar:3.4.1.Final,com.googlecode.json-simple:json-simple:jar:1.1,com.google.code.findbugs:jsr305:jar:2.0.0,org.locationtech.jts:jts-core:jar:1.18.2,com.mchange:mchange-commons-java:jar:0.2.11,javax.servlet:servlet-api:jar:2.4,org.slf4j:slf4j-api:jar:1.7.7,org.slf4j:slf4j-api:jar:1.7.2*,org.slf4j:slf4j-api:jar:1.7.32,org.slf4j:slf4j-api:jar:1.7.33,org.yaml:snakeyaml:jar:1.30</excludeArtifactIds>
+                                <outputDirectory>../tao-services-kit/target/tao-services-${project.version}/tao/lib</outputDirectory>
+                                <excludeArtifactIds>commons-lang:commons-lang:jar:2.4,org.apache.httpcomponents:httpclient:jar:4.5.13,org.apache.httpcomponents:httpcore:jar:4.4.13,com.fasterxml.jackson.core:jackson-core:jar:2.13.2,com.fasterxml.jackson.core:jackson-databind:jar:2.14.1,com.fasterxml.jackson.core:jackson-databind:jar:2.14.1,com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.14.0,com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:jar:2.12.3,com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:jar:2.12.3,com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:jar:2.12.3,com.fasterxml.jackson.module:jackson-module-jaxb-annotations:jar:2.12.3,jakarta.activation:jakarta.activation-api:jar:1.2.1,jakarta.annotation:jakarta.annotation-api:jar:1.3.4,jakarta.xml.bind:jakarta.xml.bind-api:jar:2.3.2,javax.activation:javax.activation-api:jar:1.2.0,com.vividsolutions:jts-core:jar:1.14.0,com.sun.istack:istack-commons-runtime:jar:3.0.7,org.glassfish.jaxb:jaxb-runtime:jar:2.3.1,org.reactivestreams:reactive-streams:jar:1.0.0,org.glassfish.jaxb:txw2:jar:2.3.1,org.jboss.logging:jboss-logging:jar:3.4.1.Final,com.googlecode.json-simple:json-simple:jar:1.1,com.google.code.findbugs:jsr305:jar:2.0.0,org.locationtech.jts:jts-core:jar:1.18.2,com.mchange:mchange-commons-java:jar:0.2.11,javax.servlet:servlet-api:jar:2.4,org.slf4j:slf4j-api:jar:1.7.7,org.slf4j:slf4j-api:jar:1.7.2*,org.yaml:snakeyaml:jar:1.30</excludeArtifactIds>
                                 <overWriteIfNewer>true</overWriteIfNewer>
                             </configuration>
                         </execution>
                         <execution>
                             <id>copy-artifacts</id>
-                            <phase>install</phase>
+                            <phase>deploy</phase>
                             <goals>
                                 <goal>copy</goal>
                             </goals>
@@ -224,7 +225,7 @@
                                 </artifactItems>
                                 <overWriteReleases>true</overWriteReleases>
                                 <overWriteSnapshots>true</overWriteSnapshots>
-                                <outputDirectory>../../tao-core/tao-core-kit/target/tao-core-${project.version}/tao-core/services</outputDirectory>
+                                <outputDirectory>../tao-services-kit/target/tao-services-${project.version}/tao/services</outputDirectory>
                             </configuration>
                         </execution>
                     </executions>
