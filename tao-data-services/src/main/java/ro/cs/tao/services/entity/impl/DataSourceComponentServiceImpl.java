@@ -392,6 +392,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         DataSourceComponent component = this.dataSourceComponentProvider.get(productSet.getId());
         component.setLabel(productSet.getLabel());
         component.setDescription(productSet.getDescription());
+        component.setSensorName(productSet.getType());
         component.setTags(productSet.getTags());
         SourceDescriptor descriptor = component.getSources().stream().filter(s -> DataSourceComponent.QUERY_PARAMETER.equals(s.getName())).findFirst().orElse(null);
         if (descriptor != null) {
