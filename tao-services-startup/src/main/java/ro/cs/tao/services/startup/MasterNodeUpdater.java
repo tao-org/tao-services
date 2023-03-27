@@ -15,6 +15,7 @@ import ro.cs.tao.utils.executors.MemoryUnit;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 public class MasterNodeUpdater extends BaseLifeCycle {
 
@@ -100,6 +101,10 @@ public class MasterNodeUpdater extends BaseLifeCycle {
                     persistenceManager.nodes().save(master);
                     persistenceManager.nodes().delete(node.getId());
                     logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
+                }
+                if (master.getAppId() == null) {
+                    master.setAppId(UUID.randomUUID().toString());
+                    persistenceManager.nodes().update(master);
                 }
                 TopologyManager.setMasterNode(master);
                 TopologyManager manager = TopologyManager.getInstance();
