@@ -77,49 +77,12 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public long startWorkflow(ExecutionRequest request) throws ExecutionException {
-        final Map<String, Long> inputs = request.getInputs();
         ExecutionRequest modified = request;
-        if (inputs != null) {
-            try {
-                // These inputs are not yet connected to the level 1 nodes, we need to create the nodes and the links
-                final WorkflowDescriptor workflow = workflowService.findById(request.getWorkflowId());
-                // Create a cloned workflow
-                final WorkflowDescriptor clone = workflowService.clone(workflow);
-                clone.setName(request.getName());
-                final Set<Long> ids = new HashSet<>();
-                for (Map.Entry<String, Long> entry : inputs.entrySet()) {
-                    // For each input create a node
-                    final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(entry.getKey());
-                    final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
-                    final WorkflowNodeDescriptor targetNode = nodeProvider.get(entry.getValue());
-                    final TaoComponent targetComponent = TaskUtilities.getComponentFor(targetNode);
-                    final String targetSourceId = targetComponent.getSources().get(0).getId();
-                    WorkflowNodeDescriptor node = new WorkflowNodeDescriptor();
-                    node.setWorkflow(clone);
-                    node.setName(sourceComponent.getDataSourceName());
-                    node.setComponentId(entry.getKey());
-                    node.setComponentType(ComponentType.DATASOURCE);
-                    node.setPreserveOutput(true);
-                    node.setCreated(LocalDateTime.now());
-                    node.setLevel(0);
-                    node = workflowService.addNode(clone.getId(), node);
-                    // and add a link from this new node to the given target source
-                    workflowService.addLink(node.getId(), sourceTargetId, targetNode.getId(), targetSourceId);
-                    ids.add(node.getId());
-                }
-                // Increment the level of the other nodes
-                clone.getNodes().forEach(n -> {
-                    if (!ids.contains(n.getId())) {
-                        n.setLevel(n.getLevel() + 1);
-                    }
-                });
-                workflowService.update(clone);
-                // Create a new request for the cloned workflow
-                modified = new ExecutionRequest(request);
-                modified.setWorkflowId(clone.getId());
-            } catch (PersistenceException e) {
-                throw new ExecutionException("Could not create cloned workflow. Reason: " + e.getMessage());
-            }
+        long id;
+        if ((id = checkCloneWorkflow(request)) > 0) {
+            // Create a new request for the cloned workflow
+            modified = new ExecutionRequest(request);
+            modified.setWorkflowId(id);
         }
         ensureUserExecutor(2);
         final ExecutionJob job = Orchestrator.getInstance().startWorkflow(SessionStore.currentContext(), modified);
@@ -145,7 +108,14 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public ExecutionJob createJobExternal(ExecutionRequest request) throws ExecutionException {
+    public ExecutionJob scriptJob(ExecutionRequest request) throws ExecutionException {
+        ExecutionRequest modified = request;
+        long id;
+        if ((id = checkCloneWorkflow(request)) > 0) {
+            // Create a new request for the cloned workflow
+            modified = new ExecutionRequest(request);
+            modified.setWorkflowId(id);
+        }
         ensureUserExecutor(1);
         JobType type = EnumUtils.getEnumConstantByName(JobType.class, request.getJobType());
         return Orchestrator.getInstance().createJob(SessionStore.currentContext(),
@@ -343,5 +313,50 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                                                 new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(numThreads),
                                                                                              SecurityContextHolder.getContext()));
         }
+    }
+
+    private long checkCloneWorkflow(ExecutionRequest request) {
+        final Map<String, Long> inputs = request.getInputs();
+        if (inputs != null) {
+            try {
+                // These inputs are not yet connected to the level 1 nodes, we need to create the nodes and the links
+                final WorkflowDescriptor workflow = workflowService.findById(request.getWorkflowId());
+                // Create a cloned workflow
+                final WorkflowDescriptor clone = workflowService.clone(workflow);
+                clone.setName(request.getName());
+                final Set<Long> ids = new HashSet<>();
+                for (Map.Entry<String, Long> entry : inputs.entrySet()) {
+                    // For each input create a node
+                    final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(entry.getKey());
+                    final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
+                    final WorkflowNodeDescriptor targetNode = nodeProvider.get(entry.getValue());
+                    final TaoComponent targetComponent = TaskUtilities.getComponentFor(targetNode);
+                    final String targetSourceId = targetComponent.getSources().get(0).getId();
+                    WorkflowNodeDescriptor node = new WorkflowNodeDescriptor();
+                    node.setWorkflow(clone);
+                    node.setName(sourceComponent.getDataSourceName());
+                    node.setComponentId(entry.getKey());
+                    node.setComponentType(ComponentType.DATASOURCE);
+                    node.setPreserveOutput(true);
+                    node.setCreated(LocalDateTime.now());
+                    node.setLevel(0);
+                    node = workflowService.addNode(clone.getId(), node);
+                    // and add a link from this new node to the given target source
+                    workflowService.addLink(node.getId(), sourceTargetId, targetNode.getId(), targetSourceId);
+                    ids.add(node.getId());
+                }
+                // Increment the level of the other nodes
+                clone.getNodes().forEach(n -> {
+                    if (!ids.contains(n.getId())) {
+                        n.setLevel(n.getLevel() + 1);
+                    }
+                });
+                workflowService.update(clone);
+                return clone.getId();
+            } catch (PersistenceException e) {
+                throw new ExecutionException("Could not create cloned workflow. Reason: " + e.getMessage());
+            }
+        }
+        return 0;
     }
 }

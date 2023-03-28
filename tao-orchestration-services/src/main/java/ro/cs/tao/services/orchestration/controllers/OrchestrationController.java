@@ -374,11 +374,11 @@ public class OrchestrationController extends BaseController {
      * are properly computed.
      * @param request   The export request
      */
-    @RequestMapping(value = "/createJob", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> createJobTemplate(@RequestBody ExecutionRequest request) {
+    @RequestMapping(value = "/script", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> scriptJob(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            final ExecutionJob job = orchestrationService.createJobExternal(request);
+            final ExecutionJob job = orchestrationService.scriptJob(request);
             if (job == null) {
                 throw new ExecutionException("Failed to create JSON");
             }
