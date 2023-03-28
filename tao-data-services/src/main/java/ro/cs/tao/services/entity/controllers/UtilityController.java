@@ -15,24 +15,22 @@ import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.async.Parallel;
 
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/utilities")
-public class UtilityConroller extends BaseController {
+public class UtilityController extends BaseController {
 
     @RequestMapping(value = "/tunnel/get", method = RequestMethod.GET)
     public ResponseEntity<?> get(@RequestParam("url") String url,
                                  @RequestParam("name") String productName,
-                                 @RequestParam(name = "user", required = false) Optional<String> user,
-                                 @RequestParam(name = "password", required = false) Optional<String> password) {
+                                 @RequestParam(name = "user", required = false) String user,
+                                 @RequestParam(name = "password", required = false) String password) {
         ResponseEntity<?> serviceResponse;
         try {
             String sitePath = ConfigurationManager.getInstance().getValue("site.path");
@@ -43,7 +41,7 @@ public class UtilityConroller extends BaseController {
             if (!Files.exists(cachePath)) {
                 Files.createDirectories(cachePath);
             }
-            Path file = getFile(cachePath, url, productName, user.orElse(null), password.orElse(null));
+            Path file = getFile(cachePath, url, productName, user, password);
             if (file == null) {
                 throw new IOException("File could not be downloaded");
             }
@@ -94,19 +92,19 @@ public class UtilityConroller extends BaseController {
 
     private Path getFile(Path cachePath, String url, String productName, String userName, String pwd) throws IOException {
         Path file;
-        try(Stream<Path> stream = Files.list(cachePath)) {
+        try (Stream<Path> stream = Files.list(cachePath)) {
             file = stream.filter(f -> f.getFileName().toString().startsWith(productName)).findFirst().orElse(null);
             if (file == null) {
-                URL checkUrl = new URL(url);
                 Credentials credentials = null;
                 if (!StringUtilities.isNullOrEmpty(userName) && !StringUtilities.isNullOrEmpty(pwd)) {
                     credentials = new UsernamePasswordCredentials(userName, pwd);
                 }
-                NetStreamResponse response = NetUtils.getResponseAsStream(url, credentials);
-                String extension = response.getName() != null ?
-                                   response.getName().substring(response.getName().lastIndexOf('.')) : ".jpg";
-                file = cachePath.resolve(productName + extension);
-                Files.write(file, response.getStream(), StandardOpenOption.CREATE);
+                try (NetStreamResponse response = NetUtils.getResponseAsStream(url, credentials)) {
+                    String extension = response.getName() != null ?
+                                       response.getName().substring(response.getName().lastIndexOf('.')) : ".jpg";
+                    file = cachePath.resolve(productName + extension);
+                    Files.write(file, response.getStream(), StandardOpenOption.CREATE);
+                }
             }
         }
         return file;
