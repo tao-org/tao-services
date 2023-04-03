@@ -316,7 +316,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     private long checkCloneWorkflow(ExecutionRequest request) {
-        final Map<String, Long> inputs = request.getInputs();
+        final Map<Long, String> inputs = request.getInputs();
         if (inputs != null) {
             try {
                 // These inputs are not yet connected to the level 1 nodes, we need to create the nodes and the links
@@ -325,22 +325,28 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 final WorkflowDescriptor clone = workflowService.clone(workflow);
                 clone.setName(request.getName());
                 final Set<Long> ids = new HashSet<>();
-                for (Map.Entry<String, Long> entry : inputs.entrySet()) {
+                for (Map.Entry<Long, String> entry : inputs.entrySet()) {
                     // For each input create a node
-                    final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(entry.getKey());
+                    final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(entry.getValue());
                     final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
-                    final WorkflowNodeDescriptor targetNode = nodeProvider.findClonedNode(clone.getId(), entry.getValue());
+                    final WorkflowNodeDescriptor targetNode = nodeProvider.findClonedNode(clone.getId(), entry.getKey());
                     final TaoComponent targetComponent = TaskUtilities.getComponentFor(targetNode);
                     final String targetSourceId = targetComponent.getSources().get(0).getId();
-                    WorkflowNodeDescriptor node = new WorkflowNodeDescriptor();
-                    node.setWorkflow(clone);
-                    node.setName(sourceComponent.getDataSourceName());
-                    node.setComponentId(entry.getKey());
-                    node.setComponentType(ComponentType.DATASOURCE);
-                    node.setPreserveOutput(true);
-                    node.setCreated(LocalDateTime.now());
-                    node.setLevel(0);
-                    node = workflowService.addNode(clone.getId(), node);
+                    WorkflowNodeDescriptor node;
+                    final List<WorkflowNodeDescriptor> descriptors = nodeProvider.listByComponentId(clone.getId(), entry.getValue());
+                    if (descriptors == null || descriptors.isEmpty()) {
+                        node = new WorkflowNodeDescriptor();
+                        node.setWorkflow(clone);
+                        node.setName(sourceComponent.getDataSourceName());
+                        node.setComponentId(entry.getValue());
+                        node.setComponentType(ComponentType.DATASOURCE);
+                        node.setPreserveOutput(true);
+                        node.setCreated(LocalDateTime.now());
+                        node.setLevel(0);
+                        node = workflowService.addNode(clone.getId(), node);
+                    } else {
+                        node = descriptors.get(0);
+                    }
                     // and add a link from this new node to the given target source
                     workflowService.addLink(node.getId(), sourceTargetId, targetNode.getId(), targetSourceId);
                     ids.add(node.getId());
