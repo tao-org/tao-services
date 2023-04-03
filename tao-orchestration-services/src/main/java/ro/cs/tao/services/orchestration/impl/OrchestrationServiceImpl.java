@@ -329,7 +329,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                     // For each input create a node
                     final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(entry.getKey());
                     final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
-                    final WorkflowNodeDescriptor targetNode = nodeProvider.get(entry.getValue());
+                    final WorkflowNodeDescriptor targetNode = nodeProvider.findClonedNode(clone.getId(), entry.getValue());
                     final TaoComponent targetComponent = TaskUtilities.getComponentFor(targetNode);
                     final String targetSourceId = targetComponent.getSources().get(0).getId();
                     WorkflowNodeDescriptor node = new WorkflowNodeDescriptor();

@@ -668,6 +668,7 @@ public class WorkflowServiceImpl
                                                     ? new WorkflowNodeGroupDescriptor()
                                                     : new WorkflowNodeDescriptor();
                 clonedNode.setWorkflow(clone);
+                clonedNode.setCreatedFromNodeId(node.getId());
                 clonedNode.setName(node.getName());
                 clonedNode.setxCoord(node.getxCoord());
                 clonedNode.setyCoord(node.getyCoord());
@@ -743,6 +744,7 @@ public class WorkflowServiceImpl
                 clonedNode.setPreserveOutput(node.getPreserveOutput());
                 clonedNode.setBehavior(node.getBehavior());
                 clonedNode.setLevel(node.getLevel());
+                clonedNode.setCreatedFromNodeId(node.getId());
                 List<ParameterValue> customValues = node.getCustomValues();
                 if (customValues != null) {
                     clonedNode.setCustomValues(new ArrayList<>(customValues));
