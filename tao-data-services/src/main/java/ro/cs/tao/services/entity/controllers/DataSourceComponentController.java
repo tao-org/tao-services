@@ -255,7 +255,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                     	
                     }
                 	
-                    components.add(service.createForProductNames(names, entry.getKey(), dataSource, null, request.getLabel(), currentUser));
+                    components.add(service.createForLocations(names, entry.getKey(), dataSource, null, request.getLabel(), currentUser));
                 }
             }
             return components.size() > 0 ? prepareResult(components) : prepareResult("No component was created", ResponseStatus.FAILED);
@@ -278,7 +278,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                     throw new FileNotFoundException(path + " does not exist");
                 }
             }
-            final DataSourceComponent component = service.createForProductNames(productPaths, request.getLabel(), currentPrincipal());
+            final DataSourceComponent component = service.createForLocations(productPaths, request.getLabel(), currentPrincipal());
             return component != null ? prepareResult(component) : prepareResult("No component was created", ResponseStatus.FAILED);
         } catch (Exception e) {
             return handleException(e);
