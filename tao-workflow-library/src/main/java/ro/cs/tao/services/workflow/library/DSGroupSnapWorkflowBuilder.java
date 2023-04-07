@@ -31,20 +31,20 @@ public class DSGroupSnapWorkflowBuilder extends WorkflowBuilderBase {
         List<String> productNames = new ArrayList<>();
         productNames.add("S2A_MSIL1C_20170731T093041_N0205_R136_T34TFR_20170731T093607");
         DataSourceComponent dataSourceComponent1 =
-                dataSourceComponentService.createForProductNames(productNames,
-                                                                 "Sentinel2", "Scientific Data Hub", null,
-                                                                 "Sample data source 1",
-                                                                 principal);
+                dataSourceComponentService.createForLocations(productNames,
+                                                              "Sentinel2", "Scientific Data Hub", null,
+                                                              "Sample data source 1",
+                                                              principal);
         productNames.clear();
         productNames.add("S2A_MSIL1C_20180716T093041_N0206_R136_T34TFR_20180716T114051");
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ignored) { }
         DataSourceComponent dataSourceComponent2 =
-                dataSourceComponentService.createForProductNames(productNames,
-                                                                 "Sentinel2", "Scientific Data Hub", null,
-                                                                 "Sample data source 2",
-                                                                 principal);
+                dataSourceComponentService.createForLocations(productNames,
+                                                              "Sentinel2", "Scientific Data Hub", null,
+                                                              "Sample data source 2",
+                                                              principal);
         DataSourceComponentGroup group = new DataSourceComponentGroup();
         group.setId("Data Source Group " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         group.setUserName(principal.getName());

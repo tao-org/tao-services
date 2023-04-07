@@ -166,12 +166,12 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             }
             nameList.add(product.getName());
         }
-        return createForProductNames(nameList, productType, dataSource, queryId, label, principal);
+        return createForLocations(nameList, productType, dataSource, queryId, label, principal);
     }
 
     @Override
-    public DataSourceComponent createForProductNames(List<String> productNames, String sensor, String dataSource,
-                                                     Long queryId, String label, Principal principal) throws PersistenceException {
+    public DataSourceComponent createForLocations(List<String> productNames, String sensor, String dataSource,
+                                                  Long queryId, String label, Principal principal) throws PersistenceException {
         if (productNames == null || productNames.isEmpty()) {
             throw new IllegalArgumentException("Product list is empty");
         }
@@ -266,20 +266,16 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
-    public DataSourceComponent createForProductNames(List<String> productNames, String label, Principal principal) throws PersistenceException {
-        if (productNames == null || productNames.isEmpty()) {
+    public DataSourceComponent createForLocations(List<String> productPaths, String label, Principal principal) throws PersistenceException {
+        if (productPaths == null || productPaths.isEmpty()) {
             throw new IllegalArgumentException("Product list is empty");
         }
         if (principal == null) {
             throw new IllegalArgumentException("Invalid principal (null)");
         }
         final Repository repository = this.repositoryProvider.getByUserAndName(principal.getName(), "LOCAL");
-        List<EOProduct> products = this.productProvider.getProductsByNames(productNames.stream()
-                                                                                       .map(p -> {
-                                                                                           int idx = p.lastIndexOf("/");
-                                                                                           return idx > 0 ? p.substring(idx + 1) : p;
-                                                                                       }).toArray(String[]::new));
-        final String sensor = products != null && products.size() == productNames.size()
+        List<EOProduct> products = this.productProvider.getByLocation(productPaths.toArray(new String[0]));
+        final String sensor = products != null && products.size() == productPaths.size()
                               && products.stream().map(EOProduct::getProductType).distinct().count() == 1
                 ? products.get(0).getProductType() : "n/a";
         DataSourceComponent userDSC = new DataSourceComponent(sensor, "Local");
@@ -298,15 +294,15 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         userDSC.setLabel(label != null && !label.isEmpty() ? label : newId);
         SourceDescriptor sourceDescriptor = userDSC.getSources().stream().filter(s -> s.getName().equals(DataSourceComponent.QUERY_PARAMETER)).findFirst().get();
         sourceDescriptor.getDataDescriptor().setSensorType(SensorType.UNKNOWN);
-        sourceDescriptor.getDataDescriptor().setLocation(productNames.stream()
+        sourceDescriptor.getDataDescriptor().setLocation(productPaths.stream()
                                                                      .map(n -> Paths.get(repository.resolve(n)).toUri().toString())
                                                                      .collect(Collectors.joining(",")));
-        sourceDescriptor.setCardinality(productNames.size());
+        sourceDescriptor.setCardinality(productPaths.size());
         sourceDescriptorRepository.save(sourceDescriptor);
         TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
         targetDescriptor.setId(UUID.randomUUID().toString());
         targetDescriptor.setParentId(newId);
-        targetDescriptor.setCardinality(productNames.size());
+        targetDescriptor.setCardinality(productPaths.size());
         //targetDescriptor.addConstraint("Same cardinality");
         targetDescriptorRepository.save(targetDescriptor);
         userDSC.setSystem(false);

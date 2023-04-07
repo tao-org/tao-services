@@ -239,9 +239,9 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
 
     private Query addQueryToGroup(DataSourceComponentGroup group, Query query, List<EOProduct> products) throws PersistenceException {
         DataSourceComponent component =
-                dataSourceComponentService.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
-                                                                 query.getSensor(), query.getDataSource(), query.getId(), query.getLabel(),
-                                                                 SessionStore.currentContext().getPrincipal());
+                dataSourceComponentService.createForLocations(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
+                                                              query.getSensor(), query.getDataSource(), query.getId(), query.getLabel(),
+                                                              SessionStore.currentContext().getPrincipal());
         products = updateProducts(component.getId(), products, null);
         ProductPersister persister = new ProductPersister();
         persister.handle(products);
