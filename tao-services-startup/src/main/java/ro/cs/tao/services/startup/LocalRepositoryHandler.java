@@ -11,6 +11,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+/**
+ * Ensures the existence of local user folders.
+ */
 public class LocalRepositoryHandler extends BaseLifeCycle {
 
     @Override

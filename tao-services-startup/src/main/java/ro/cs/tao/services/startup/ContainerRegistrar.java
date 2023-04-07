@@ -13,6 +13,9 @@ import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Registers the available docker plugins/containers.
+ */
 public class ContainerRegistrar extends BaseLifeCycle {
     @Override
     public int priority() {

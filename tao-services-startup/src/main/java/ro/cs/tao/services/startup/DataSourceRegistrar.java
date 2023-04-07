@@ -17,6 +17,9 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 
+/**
+ * Registers the data sources that were not previously registered.
+ */
 public class DataSourceRegistrar extends BaseLifeCycle {
 
     @Override

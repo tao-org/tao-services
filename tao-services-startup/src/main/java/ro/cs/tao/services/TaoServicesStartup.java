@@ -41,6 +41,7 @@ import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.StartupBase;
 import ro.cs.tao.services.startup.LifeCycleProcessor;
+import ro.cs.tao.services.startup.LifeCycleProcessorListener;
 import ro.cs.tao.spi.OutputDataHandlerManager;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
@@ -69,7 +70,7 @@ import java.util.stream.Stream;
 @SpringBootApplication
 @EnableScheduling
 @EnableWebMvc
-public class TaoServicesStartup extends StartupBase {
+public class TaoServicesStartup extends StartupBase implements LifeCycleProcessorListener {
     @Autowired
     private LifeCycleProcessor lifeCycleProcessor;
     @Autowired
@@ -112,20 +113,23 @@ public class TaoServicesStartup extends StartupBase {
                 System.exit(1);
             }
             TransactionalMethod.setTransactionManager(transactionManager);
-            lifeCycleProcessor.activate(() -> {
-                for (Map.Entry<String, Class> entry : plugins.entrySet()) {
-                    ServiceRegistry<?> registry = ServiceRegistryManager.getInstance().getServiceRegistry(entry.getValue());
-                    Set<?> instances = registry.getServices();
-                    logger.info(String.format("Installed %s: %s",
-                                              entry.getKey(), instances.stream().map(i -> i.getClass().getSimpleName())
-                                                      .sorted().collect(Collectors.joining(","))));
-                }
-                OutputDataHandlerManager.getInstance().setFileProcessFactory(FileProcessFactory.createLocal());
-                final String url = cfgManager.getValue("tao.services.base");
-                logger.info(String.format("Web interface is accessible at %s", url));
-                Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.value(), new StartupCompletedMessage());
-            });
+            lifeCycleProcessor.activate(this);
         }
+    }
+
+    @Override
+    public void activationCompleted() {
+        for (Map.Entry<String, Class> entry : plugins.entrySet()) {
+            ServiceRegistry<?> registry = ServiceRegistryManager.getInstance().getServiceRegistry(entry.getValue());
+            Set<?> instances = registry.getServices();
+            logger.info(String.format("Installed %s: %s",
+                                      entry.getKey(), instances.stream().map(i -> i.getClass().getSimpleName())
+                                                               .sorted().collect(Collectors.joining(","))));
+        }
+        OutputDataHandlerManager.getInstance().setFileProcessFactory(FileProcessFactory.createLocal());
+        final String url = ConfigurationManager.getInstance().getValue("tao.services.base");
+        logger.info(String.format("Web interface is accessible at %s", url));
+        Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.value(), new StartupCompletedMessage());
     }
 
     @Scheduled(fixedRate = 60, timeUnit = TimeUnit.MINUTES)
