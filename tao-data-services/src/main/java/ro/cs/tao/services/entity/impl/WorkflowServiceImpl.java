@@ -32,10 +32,14 @@ import ro.cs.tao.datasource.converters.ConversionException;
 import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.datasource.param.JavaType;
+import ro.cs.tao.datasource.persistence.DataSourceComponentProvider;
 import ro.cs.tao.datasource.persistence.QueryProvider;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
+import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
+import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.persistence.*;
 import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
 import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
@@ -83,6 +87,10 @@ public class WorkflowServiceImpl
     private QueryProvider queryProvider;
     @Autowired
     private ExecutionJobProvider jobProvider;
+    @Autowired
+    private ExecutionTaskProvider taskProvider;
+    @Autowired
+    private DataSourceComponentProvider dataSourceComponentProvider;
     @Autowired
     private ProcessingComponentProvider componentProvider;
     @Autowired
@@ -715,6 +723,90 @@ public class WorkflowServiceImpl
             }
             return workflowProvider.get(clone.getId());
         });
+    }
+
+    @Override
+    public WorkflowDescriptor createTemporaryWorkflow(long fromWorkflowId, String name, Map<Long, String> linksToAdd) throws PersistenceException {
+        WorkflowDescriptor clone = null;
+        if (linksToAdd != null) {
+            // These inputs are not yet connected to the level 1 nodes, we need to create the nodes and the links
+            final WorkflowDescriptor workflow = findById(fromWorkflowId);
+            // Create a cloned workflow
+            clone = clone(workflow);
+            clone.setName(name);
+            clone.setCreatedFromWorkflowId(fromWorkflowId);
+            final Set<Long> ids = new HashSet<>();
+            for (Map.Entry<Long, String> entry : linksToAdd.entrySet()) {
+                // For each input create a node
+                final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(entry.getValue());
+                final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
+                final WorkflowNodeDescriptor targetNode = workflowNodeProvider.findClonedNode(clone.getId(), entry.getKey());
+                final TaoComponent targetComponent = TaskUtilities.getComponentFor(targetNode);
+                final String targetSourceId = targetComponent.getSources().get(0).getId();
+                WorkflowNodeDescriptor node;
+                final List<WorkflowNodeDescriptor> descriptors = workflowNodeProvider.listByComponentId(clone.getId(), entry.getValue());
+                if (descriptors == null || descriptors.isEmpty()) {
+                    node = new WorkflowNodeDescriptor();
+                    node.setWorkflow(clone);
+                    node.setName(sourceComponent.getDataSourceName());
+                    node.setComponentId(entry.getValue());
+                    node.setComponentType(ComponentType.DATASOURCE);
+                    node.setPreserveOutput(true);
+                    node.setCreated(LocalDateTime.now());
+                    node.setLevel(0);
+                    node = addNode(clone.getId(), node);
+                } else {
+                    node = descriptors.get(0);
+                }
+                // and add a link from this new node to the given target source
+                addLink(node.getId(), sourceTargetId, targetNode.getId(), targetSourceId);
+                ids.add(node.getId());
+            }
+            // Increment the level of the other nodes
+            clone.getNodes().forEach(n -> {
+                if (!ids.contains(n.getId())) {
+                    n.setLevel(n.getLevel() + 1);
+                }
+            });
+            clone = update(clone);
+        }
+        return clone;
+    }
+
+    @Override
+    public void deleteTemporaryWorkflow(long workflowId) throws PersistenceException {
+        WorkflowDescriptor workflow = findById(workflowId);
+        if (workflow != null) {
+            final List<ExecutionJob> jobs = jobProvider.listByWorkflow(workflowId);
+            if (jobs != null) {
+                final List<WorkflowNodeDescriptor> nodes = workflow.getNodes();
+                final Map<Long, Long> idMap = new HashMap<>();
+                long originalWorkflowId = 0;
+                for (WorkflowNodeDescriptor node : nodes) {
+                    if (originalWorkflowId == 0 && node.getCreatedFromNodeId() != null) {
+                        final WorkflowDescriptor original = workflowProvider.getByNodeId(node.getCreatedFromNodeId());
+                        if (original == null) {
+                            throw new PersistenceException("Cannot find the original workflow");
+                        }
+                        originalWorkflowId = original.getId();
+                    }
+                    idMap.put(node.getId(), node.getCreatedFromNodeId());
+                }
+                for (ExecutionJob job : jobs) {
+                    final List<ExecutionTask> tasks = job.getTasks();
+                    for (ExecutionTask task : tasks) {
+                        final Long originalId = idMap.get(task.getWorkflowNodeId());
+                        if (originalId != null) {
+                            task.setWorkflowNodeId(originalId);
+                            taskProvider.update(task);
+                        }
+                    }
+                    job.setWorkflowId(originalWorkflowId);
+                    jobProvider.update(job);
+                }
+            }
+            workflowProvider.delete(workflow);
+        }
     }
 
     @Override

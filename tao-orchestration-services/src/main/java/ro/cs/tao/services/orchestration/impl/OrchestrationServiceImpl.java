@@ -23,9 +23,7 @@ import org.springframework.security.concurrent.DelegatingSecurityContextRunnable
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.EnumUtils;
-import ro.cs.tao.component.TaoComponent;
 import ro.cs.tao.component.TargetDescriptor;
-import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.datasource.persistence.DataSourceComponentProvider;
 import ro.cs.tao.docker.ExecutionConfiguration;
@@ -34,7 +32,6 @@ import ro.cs.tao.execution.callback.EndpointDescriptor;
 import ro.cs.tao.execution.model.*;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
-import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
@@ -47,11 +44,8 @@ import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.workflow.ExternalGraphConverter;
 import ro.cs.tao.workflow.WorkflowDescriptor;
-import ro.cs.tao.workflow.WorkflowNodeDescriptor;
-import ro.cs.tao.workflow.enums.ComponentType;
 
 import javax.annotation.PostConstruct;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -79,7 +73,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     public long startWorkflow(ExecutionRequest request) throws ExecutionException {
         ExecutionRequest modified = request;
         long id;
-        if ((id = checkCloneWorkflow(request)) > 0) {
+        if ((id = tryCreateTemporaryWorkflow(request)) > 0) {
             // Create a new request for the cloned workflow
             modified = new ExecutionRequest(request);
             modified.setWorkflowId(id);
@@ -111,7 +105,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     public ExecutionJob scriptJob(ExecutionRequest request) throws ExecutionException {
         ExecutionRequest modified = request;
         long id;
-        if ((id = checkCloneWorkflow(request)) > 0) {
+        if ((id = tryCreateTemporaryWorkflow(request)) > 0) {
             // Create a new request for the cloned workflow
             modified = new ExecutionRequest(request);
             modified.setWorkflowId(id);
@@ -315,50 +309,14 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         }
     }
 
-    private long checkCloneWorkflow(ExecutionRequest request) {
+    private long tryCreateTemporaryWorkflow(ExecutionRequest request) {
         final Map<Long, String> inputs = request.getInputs();
         if (inputs != null) {
             try {
-                // These inputs are not yet connected to the level 1 nodes, we need to create the nodes and the links
-                final WorkflowDescriptor workflow = workflowService.findById(request.getWorkflowId());
-                // Create a cloned workflow
-                final WorkflowDescriptor clone = workflowService.clone(workflow);
-                clone.setName(request.getName());
-                final Set<Long> ids = new HashSet<>();
-                for (Map.Entry<Long, String> entry : inputs.entrySet()) {
-                    // For each input create a node
-                    final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(entry.getValue());
-                    final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
-                    final WorkflowNodeDescriptor targetNode = nodeProvider.findClonedNode(clone.getId(), entry.getKey());
-                    final TaoComponent targetComponent = TaskUtilities.getComponentFor(targetNode);
-                    final String targetSourceId = targetComponent.getSources().get(0).getId();
-                    WorkflowNodeDescriptor node;
-                    final List<WorkflowNodeDescriptor> descriptors = nodeProvider.listByComponentId(clone.getId(), entry.getValue());
-                    if (descriptors == null || descriptors.isEmpty()) {
-                        node = new WorkflowNodeDescriptor();
-                        node.setWorkflow(clone);
-                        node.setName(sourceComponent.getDataSourceName());
-                        node.setComponentId(entry.getValue());
-                        node.setComponentType(ComponentType.DATASOURCE);
-                        node.setPreserveOutput(true);
-                        node.setCreated(LocalDateTime.now());
-                        node.setLevel(0);
-                        node = workflowService.addNode(clone.getId(), node);
-                    } else {
-                        node = descriptors.get(0);
-                    }
-                    // and add a link from this new node to the given target source
-                    workflowService.addLink(node.getId(), sourceTargetId, targetNode.getId(), targetSourceId);
-                    ids.add(node.getId());
-                }
-                // Increment the level of the other nodes
-                clone.getNodes().forEach(n -> {
-                    if (!ids.contains(n.getId())) {
-                        n.setLevel(n.getLevel() + 1);
-                    }
-                });
-                workflowService.update(clone);
-                return clone.getId();
+                WorkflowDescriptor clone = workflowService.createTemporaryWorkflow(request.getWorkflowId(),
+                                                                                   request.getName(),
+                                                                                   request.getInputs());
+                return clone != null ? clone.getId() : 0;
             } catch (PersistenceException e) {
                 throw new ExecutionException("Could not create cloned workflow. Reason: " + e.getMessage());
             }
