@@ -311,7 +311,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     private long tryCreateTemporaryWorkflow(ExecutionRequest request) {
         final Map<Long, String> inputs = request.getInputs();
-        if (inputs != null) {
+        if (inputs != null && !inputs.isEmpty()) {
             try {
                 WorkflowDescriptor clone = workflowService.createTemporaryWorkflow(request.getWorkflowId(),
                                                                                    request.getName(),
