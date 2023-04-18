@@ -641,8 +641,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                         if (oneArg) {
                             itemAction.doAction(resolvedPath);
                         } else {
-                            final String destPath = workspace.resolve(destination);
-                            itemAction.doAction(resolvedPath, Paths.get(destPath));
+                            //final String destPath = workspace.resolve(destination);
+                            //itemAction.doAction(resolvedPath, Paths.get(destPath));
+                            itemAction.doAction(Paths.get(item), Paths.get(destination));
                         }
                     } catch (Exception e) {
                         throw new RuntimeException(e);
