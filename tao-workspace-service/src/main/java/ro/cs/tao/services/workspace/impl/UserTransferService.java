@@ -99,8 +99,13 @@ public class UserTransferService {
             final StorageService destinationService = StorageServiceFactory.getInstance(dstWorkspace);
             //destinationService.setProgressListener(this.progressListener);
             final FileObject fileObject = item.getSource();
-            String srcPath = fileObject.getAttributes().get("remotePath");
-            if (srcPath == null || !srcPath.startsWith("http")) {
+            final Map<String, String> attributes = fileObject.getAttributes();
+            String srcPath;
+            if (attributes != null && (srcPath = attributes.get("remotePath")) != null) {
+                if (!srcPath.startsWith("http")) {
+                    srcPath = srcWorkspace.resolve(fileObject.getRelativePath());
+                }
+            } else {
                 srcPath = srcWorkspace.resolve(fileObject.getRelativePath());
             }
             this.progressListener.subActivityStarted(srcPath);
