@@ -40,10 +40,7 @@ import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.orchestration.beans.WPSExecutionRequest;
 import ro.cs.tao.utils.StringUtilities;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -192,7 +189,7 @@ public class OrchestrationController extends BaseController {
     }
 
     /**
-     * Returns the running jobs opf a specific user.
+     * Returns the running jobs of a specific user.
      * Only an administrator can call perform this operation.
      * @param userName  The user account name
      */
@@ -206,6 +203,53 @@ public class OrchestrationController extends BaseController {
             summaries = new ArrayList<>();
         }
         return prepareResult(summaries);
+    }
+
+    /**
+     * Returns the queued jobs for all the users (only if the current user is an admin)
+     */
+    @RequestMapping(value = "/queued/jobs", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getQueuedJobs() {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        Map<String, Queue<ExecutionJobSummary>> summaries = orchestrationService.getQueuedJobs();
+        if (summaries == null) {
+            summaries = new HashMap<>();
+        }
+        return prepareResult(summaries);
+    }
+
+    /**
+     * Returns the queued jobs of a specific user.
+     * @param userName  The user account name
+     */
+    @RequestMapping(value = "/queued/jobs/{user}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getQueuedJobsForUser(@PathVariable("user") String userName) {
+        if (!currentUser().equals(userName) && !isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        Queue<ExecutionJobSummary> summaries = orchestrationService.getQueuedJobs(userName);
+        if (summaries == null) {
+            summaries = new ArrayDeque<>();
+        }
+        return prepareResult(summaries);
+    }
+
+    @RequestMapping(value = "/queued/jobs", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> moveJobInQueue(@RequestParam("user") String userName,
+                                                             @RequestParam("jobId") long jobId,
+                                                             @RequestParam("moveUp") boolean moveUp) {
+        if (!currentUser().equals(userName) && !isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        if (moveUp) {
+            orchestrationService.moveJobUp(userName, jobId);
+        } else {
+            orchestrationService.moveJobDown(userName, jobId);
+        }
+        return prepareResult(String.format("Job %d moved %s one position in queue", jobId, moveUp ? "up" : "down"),
+                             ResponseStatus.SUCCEEDED);
     }
 
     /**
