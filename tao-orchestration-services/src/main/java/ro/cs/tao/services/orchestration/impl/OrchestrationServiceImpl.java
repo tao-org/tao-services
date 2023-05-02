@@ -231,6 +231,63 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
+    public Map<String, Queue<ExecutionJobSummary>> getQueuedJobs() {
+        final Map<String, Queue<Long>> jobs = Orchestrator.getInstance().getQueuedJobs();
+        final Map<String, Queue<ExecutionJobSummary>> results = new LinkedHashMap<>();
+        for (Map.Entry<String, Queue<Long>> entry : jobs.entrySet()) {
+            results.put(entry.getKey(), new ArrayDeque<>());
+            final List<ExecutionJob> list = jobProvider.list(entry.getValue());
+            for (ExecutionJob job : list) {
+                ExecutionJobSummary summary = new ExecutionJobSummary();
+                summary.setId(job.getId());
+                summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
+                summary.setJobName(job.getName());
+                summary.setUser(job.getUserName());
+                summary.setJobStatus(job.getExecutionStatus());
+                summary.setJobStart(job.getStartTime());
+                summary.setJobEnd(job.getEndTime());
+                results.get(entry.getKey()).offer(summary);
+            }
+        }
+        return results;
+    }
+
+    @Override
+    public Queue<ExecutionJobSummary> getQueuedJobs(String userName) {
+        final List<Long> jobs = Orchestrator.getInstance().getUserQueuedJobs(userName);
+        final Queue<ExecutionJobSummary> results = new ArrayDeque<>();
+        final List<ExecutionJob> list = jobProvider.list(jobs);
+        for (ExecutionJob job : list) {
+            ExecutionJobSummary summary = new ExecutionJobSummary();
+            summary.setId(job.getId());
+            summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
+            summary.setJobName(job.getName());
+            summary.setUser(job.getUserName());
+            summary.setJobStatus(job.getExecutionStatus());
+            summary.setJobStart(job.getStartTime());
+            summary.setJobEnd(job.getEndTime());
+            results.offer(summary);
+        }
+        return results;
+    }
+
+    @Override
+    public void moveJobUp(String userName, long jobId) {
+        Orchestrator.getInstance().moveJobToHead(userName, jobId);
+    }
+
+    @Override
+    public void moveJobDown(String userName, long jobId) {
+        Orchestrator.getInstance().moveJobToTail(userName, jobId);
+    }
+
+    @Override
+    public void deleteJobFromQueue(String userName, long jobId) throws PersistenceException {
+        Orchestrator.getInstance().removeJob(userName, jobId);
+        jobProvider.delete(jobId);
+    }
+
+    @Override
     public void clearJobHistory(String userName) throws PersistenceException {
         final Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.SUSPENDED, ExecutionStatus.DONE,
@@ -315,7 +372,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             try {
                 WorkflowDescriptor clone = workflowService.createTemporaryWorkflow(request.getWorkflowId(),
                                                                                    request.getName(),
-                                                                                   request.getInputs());
+                                                                                   inputs);
                 return clone != null ? clone.getId() : 0;
             } catch (PersistenceException e) {
                 throw new ExecutionException("Could not create cloned workflow. Reason: " + e.getMessage());
