@@ -209,15 +209,23 @@ public class OrchestrationController extends BaseController {
      * Returns the queued jobs for all the users (only if the current user is an admin)
      */
     @RequestMapping(value = "/queued/jobs", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getQueuedJobs() {
+    public ResponseEntity<ServiceResponse<?>> getQueuedJobs(@RequestParam(name = "grouped", required = false) Boolean grouped) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
-        Map<String, Queue<ExecutionJobSummary>> summaries = orchestrationService.getQueuedJobs();
-        if (summaries == null) {
-            summaries = new HashMap<>();
+        if (grouped != null && grouped) {
+            Map<String, Queue<ExecutionJobSummary>> summaries = orchestrationService.getQueuedUserJobs();
+            if (summaries == null) {
+                summaries = new HashMap<>();
+            }
+            return prepareResult(summaries);
+        } else {
+            Queue<ExecutionJobSummary> summaries = orchestrationService.getQueuedJobs();
+            if (summaries == null) {
+                summaries = new ArrayDeque<>();
+            }
+            return prepareResult(summaries);
         }
-        return prepareResult(summaries);
     }
 
     /**
@@ -237,16 +245,16 @@ public class OrchestrationController extends BaseController {
     }
 
     @RequestMapping(value = "/queued/jobs", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> moveJobInQueue(@RequestParam("user") String userName,
+    public ResponseEntity<ServiceResponse<?>> moveJobInQueue(@RequestParam(name = "user", required = false) String userName,
                                                              @RequestParam("jobId") long jobId,
                                                              @RequestParam("moveUp") boolean moveUp) {
         if (!currentUser().equals(userName) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         if (moveUp) {
-            orchestrationService.moveJobUp(userName, jobId);
+            orchestrationService.moveJobUp(jobId, userName);
         } else {
-            orchestrationService.moveJobDown(userName, jobId);
+            orchestrationService.moveJobDown(jobId, userName);
         }
         return prepareResult(String.format("Job %d moved %s one position in queue", jobId, moveUp ? "up" : "down"),
                              ResponseStatus.SUCCEEDED);

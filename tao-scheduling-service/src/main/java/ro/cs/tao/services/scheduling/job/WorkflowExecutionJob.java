@@ -3,7 +3,6 @@ package ro.cs.tao.services.scheduling.job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.PersistJobDataAfterExecution;
-import org.springframework.security.concurrent.DelegatingSecurityContextExecutorService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Executors;
 
 /**
  * @author Lucian Barbulescu
@@ -133,12 +131,6 @@ public class WorkflowExecutionJob extends AbstractJob {
 		final String description = dataMap.getString(DESCRIPTION_KEY);
 
 		final Orchestrator orchestrator = Orchestrator.getInstance();
-		final String user = SessionStore.currentContext().getPrincipal().getName();
-		if (!orchestrator.getUserExecutors().containsKey(SessionStore.currentContext().getPrincipal().getName())) {
-			orchestrator.getUserExecutors().put(user,
-												new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(2),
-																							 SecurityContextHolder.getContext()));
-		}
 		final ExecutionRequest request = new ExecutionRequest();
 		request.setWorkflowId(workflowId);
 		request.setName(description);
