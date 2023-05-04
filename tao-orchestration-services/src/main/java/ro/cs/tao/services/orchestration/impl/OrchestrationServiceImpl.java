@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
-import ro.cs.tao.datasource.persistence.DataSourceComponentProvider;
 import ro.cs.tao.docker.ExecutionConfiguration;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
@@ -36,12 +35,12 @@ import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
 import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.persistence.WorkflowNodeProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.utils.Tuple;
 import ro.cs.tao.workflow.ExternalGraphConverter;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 
@@ -63,12 +62,6 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Autowired
     private WorkflowService workflowService;
 
-    @Autowired
-    private WorkflowNodeProvider nodeProvider;
-
-    @Autowired
-    private DataSourceComponentProvider dataSourceComponentProvider;
-
     @Override
     public long startWorkflow(ExecutionRequest request) throws ExecutionException {
         ExecutionRequest modified = request;
@@ -78,7 +71,6 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             modified = new ExecutionRequest(request);
             modified.setWorkflowId(id);
         }
-        ensureUserExecutor(2);
         final ExecutionJob job = Orchestrator.getInstance().startWorkflow(SessionStore.currentContext(), modified);
         return job != null ? job.getId() : -1;
     }
@@ -110,7 +102,6 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             modified = new ExecutionRequest(request);
             modified.setWorkflowId(id);
         }
-        ensureUserExecutor(1);
         JobType type = EnumUtils.getEnumConstantByName(JobType.class, request.getJobType());
         return Orchestrator.getInstance().createJob(SessionStore.currentContext(),
                                                     request.getWorkflowId(), request.getName(),
@@ -231,10 +222,10 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public Map<String, Queue<ExecutionJobSummary>> getQueuedJobs() {
-        final Map<String, Queue<Long>> jobs = Orchestrator.getInstance().getQueuedJobs();
+    public Map<String, Queue<ExecutionJobSummary>> getQueuedUserJobs() {
+        final Map<String, List<Long>> jobs = Orchestrator.getInstance().getQueuedJobs();
         final Map<String, Queue<ExecutionJobSummary>> results = new LinkedHashMap<>();
-        for (Map.Entry<String, Queue<Long>> entry : jobs.entrySet()) {
+        for (Map.Entry<String, List<Long>> entry : jobs.entrySet()) {
             results.put(entry.getKey(), new ArrayDeque<>());
             final List<ExecutionJob> list = jobProvider.list(entry.getValue());
             for (ExecutionJob job : list) {
@@ -248,6 +239,25 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 summary.setJobEnd(job.getEndTime());
                 results.get(entry.getKey()).offer(summary);
             }
+        }
+        return results;
+    }
+
+    @Override
+    public Queue<ExecutionJobSummary> getQueuedJobs() {
+        final Queue<Tuple<Long, String>> jobs = Orchestrator.getInstance().getAllJobs();
+        final Queue<ExecutionJobSummary> results = new ArrayDeque<>();
+        for (Tuple<Long, String> entry : jobs) {
+            final ExecutionJob job = jobProvider.get(entry.getKeyOne());
+            ExecutionJobSummary summary = new ExecutionJobSummary();
+            summary.setId(job.getId());
+            summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
+            summary.setJobName(job.getName());
+            summary.setUser(job.getUserName());
+            summary.setJobStatus(job.getExecutionStatus());
+            summary.setJobStart(job.getStartTime());
+            summary.setJobEnd(job.getEndTime());
+            results.offer(summary);
         }
         return results;
     }
@@ -272,13 +282,21 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public void moveJobUp(String userName, long jobId) {
-        Orchestrator.getInstance().moveJobToHead(userName, jobId);
+    public void moveJobUp(long jobId, String userName) {
+        if (userName == null || userName.isBlank()) {
+            Orchestrator.getInstance().moveJobToHead(jobId);
+        } else {
+            Orchestrator.getInstance().moveJobToHead(userName, jobId);
+        }
     }
 
     @Override
-    public void moveJobDown(String userName, long jobId) {
-        Orchestrator.getInstance().moveJobToTail(userName, jobId);
+    public void moveJobDown(long jobId, String userName) {
+        if (userName == null || userName.isBlank()) {
+            Orchestrator.getInstance().moveJobToTail(jobId);
+        } else {
+            Orchestrator.getInstance().moveJobToTail(userName, jobId);
+        }
     }
 
     @Override
@@ -332,9 +350,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Override
     public long invokeWPS(String identifier, Map<String, Map<String, String>> inputs) throws ExecutionException {
         try {
-            final ExecutionJob job = Orchestrator.getInstance().startExecution(SessionStore.currentContext(), identifier, inputs,
-                                                                               new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(1),
-                                                                                                 SecurityContextHolder.getContext()));
+            final ExecutionJob job = Orchestrator.getInstance().startExecution(SessionStore.currentContext(), identifier, inputs);
             return job != null ? job.getId() : -1;
         } catch (Exception e) {
             throw new ExecutionException(e);
@@ -354,16 +370,6 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 return new DelegatingSecurityContextRunnable(runnable, SecurityContextHolder.getContext());
             }
         });
-    }
-
-    private void ensureUserExecutor(int numThreads) {
-        final Orchestrator orchestrator = Orchestrator.getInstance();
-        final String user = SessionStore.currentContext().getPrincipal().getName();
-        if (!orchestrator.getUserExecutors().containsKey(SessionStore.currentContext().getPrincipal().getName())) {
-            orchestrator.getUserExecutors().put(user,
-                                                new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(numThreads),
-                                                                                             SecurityContextHolder.getContext()));
-        }
     }
 
     private long tryCreateTemporaryWorkflow(ExecutionRequest request) {
