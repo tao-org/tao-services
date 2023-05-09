@@ -17,25 +17,21 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.SortDirection;
 import ro.cs.tao.datasource.beans.Query;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.QueryService;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@Controller
+@RestController
 @RequestMapping("/datasource/query")
 public class QueryController extends BaseController {
 
@@ -82,13 +78,8 @@ public class QueryController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> getAllQueries(@RequestParam("page") int pageNumber,
                                                             @RequestParam("pageSize") int size,
                                                             @RequestParam("sort") String sortDirection) {
-        Sort.Direction sort = Enum.valueOf(Sort.Direction.class, sortDirection);
-        PageRequest page = PageRequest.of(pageNumber, size, Sort.by(sort));
-        List<Query> queries = new ArrayList<>();
-        Page<Query> queryPage = queryService.getAllQueries(page);
-        if (queryPage != null) {
-            queries.addAll(queryPage.getContent());
-        }
+        SortDirection sort = Enum.valueOf(SortDirection.class, sortDirection);
+        List<Query> queries = queryService.getQueries(pageNumber, size, ro.cs.tao.Sort.by("id", sort));
         return prepareResult(queries);
     }
 

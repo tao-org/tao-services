@@ -1,0 +1,170 @@
+[
+  {
+    "namePatterns": [
+      "SEN4CAP_L2A_S\\d{1,3}_V\\d{8}T\\d{6}_\\d{8}T\\d{6}_V[HV]_\\d{3}_(S1_L2A_)?(\\d{2}\\w{3}_)?AMP|S1[AB]_L2_BCK_\\d{8}T\\d{6}_(\\d{8}T\\d{6}_)?V[HV]_\\d{3}_\\d{2}\\w{3}"
+    ],
+    "bands": [
+      {
+        "indexInRaster": 1,
+        "pattern": null
+      }
+    ],
+    "pixelMinScale": 0,
+    "pixelMaxScale": 100,
+    "noDataValue": 0,
+    "priority": 1
+  },
+  {
+    "namePatterns": [
+      "SEN4CAP_L2A_S\\d{1,3}_V\\d{8}T\\d{6}_\\d{8}T\\d{6}_V[HV]_\\d{3}_(S1_L2A_)?(\\d{2}\\w{3}_)?COHE|S1[AB]_L2_COH_\\d{8}T\\d{6}_(\\d{8}T\\d{6}_)?V[HV]_\\d{3}_\\d{2}\\w{3}"
+    ],
+    "bands": [
+      {
+        "indexInRaster": 1,
+        "pattern": null
+      }
+    ],
+    "pixelMinScale": 0,
+    "pixelMaxScale": 1,
+    "noDataValue": 0,
+    "priority": 1
+  },
+  {
+    "namePatterns": [
+      "L[CO]0[1-9]_L[12]\\w{2}_\\d{6}_\\d{8}_\\d{8}_0[12]_(RT|T1|T2)"
+    ],
+    "bands": [
+      {
+        "indexInRaster": 1,
+        "pattern": "B4"
+      },
+      {
+        "indexInRaster": 1,
+        "pattern": "B3"
+      },
+      {
+        "indexInRaster": 1,
+        "pattern": "B2"
+      }
+    ],
+    "pixelMinScale": 0,
+    "pixelMaxScale": 16383,
+    "noDataValue": -10000,
+    "priority": 1
+  },
+  {
+    "namePatterns": [
+      "LT0[1-9]_L[12]\\w{2}_\\d{6}_\\d{8}_\\d{8}_0[12]_(RT|T1|T2)"
+    ],
+    "bands": [
+      {
+        "indexInRaster": 1,
+        "pattern": "B10"
+      }
+    ],
+    "pixelMinScale": 0,
+    "pixelMaxScale": 16384,
+    "noDataValue": 0,
+    "priority": 1
+  },
+  {
+    "namePatterns": [
+      "LC08_L2A"
+    ],
+    "bands": [
+      {
+        "indexInRaster": 4,
+        "pattern": "FRE"
+      },
+      {
+        "indexInRaster": 3,
+        "pattern": "FRE"
+      },
+      {
+        "indexInRaster": 2,
+        "pattern": "FRE"
+      }
+    ],
+    "pixelMinScale": 0,
+    "pixelMaxScale": 16383,
+    "noDataValue": -10000,
+    "priority": 1
+  },
+  {
+    "namePatterns": [
+      "S2[ABCD]_MSIL2A_\\d{8}T\\d{6}_N\\d{4}_R\\d{3}_T\\d{2}\\w{3}_\\d{8}T\\d{6}.SAFE"
+    ],
+    "bands": [
+      {
+        "indexInRaster": 1,
+        "pattern": "B04_10m"
+      },
+      {
+        "indexInRaster": 1,
+        "pattern": "B03_10m"
+      },
+      {
+        "indexInRaster": 1,
+        "pattern": "B02_10m"
+      }
+    ],
+    "pixelMinScale": 0,
+    "pixelMaxScale": 8191,
+    "noDataValue": -10000,
+    "priority": 1
+  },
+  {
+    "namePatterns": [
+      "S2[ABCD]_MSIL2A_(\\d{8})T\\d{6}_N\\d{4}_R\\d{3}_T(\\d{2}\\w{3})_\\d{8}T\\d{6}.SAFE"
+    ],
+    "subfolderPattern": "SENTINEL2[A-D]_%s-\\d{6}-\\d{3}_L2A_T%s.*",
+    "bands": [
+      {
+        "indexInRaster": 1,
+        "pattern": "FRE_B4"
+      },
+      {
+        "indexInRaster": 1,
+        "pattern": "FRE_B3"
+      },
+      {
+        "indexInRaster": 1,
+        "pattern": "FRE_B2"
+      }
+    ],
+    "pixelMinScale": 0,
+    "pixelMaxScale": 8191,
+    "noDataValue": -10000,
+    "priority": 1
+  },
+  {
+    "namePatterns": [
+      "S2[ABCD]_MSIL2AMSK_\\d{8}T\\d{6}_N\\d{4}_R\\d{3}_T\\d{2}\\w{3}_\\d{8}T\\d{6}.SAFE"
+    ],
+    "bands": [
+      {
+        "indexInRaster": 1,
+        "pattern": "_10M"
+      }
+    ],
+    "pixelMinScale": 0,
+    "pixelMaxScale": 22270,
+    "noDataValue": -10000,
+    "priority": 1
+  },
+  {
+    "namePatterns": [
+      "[A-Za-z0-9_-]+\\.(tif|TIF|tiff|TIFF)"
+    ],
+    "bands": [
+      {
+        "indexInRaster": 1,
+        "pattern": null
+      }
+    ],
+    "pixelMinScale": 0,
+    "pixelMaxScale": 256,
+    "noDataValue": 0,
+    "priority": 2
+  }
+]

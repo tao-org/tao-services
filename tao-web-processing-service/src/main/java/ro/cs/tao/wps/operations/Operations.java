@@ -5,8 +5,8 @@ import com.bc.wps.api.schema.*;
 import com.bc.wps.api.utils.CapabilitiesBuilder;
 import com.bc.wps.api.utils.WpsTypeConverter;
 import org.springframework.web.util.UriComponentsBuilder;
-import ro.cs.tao.configuration.TaoConfigurationProvider;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.wps.controllers.WPSController;
@@ -143,18 +143,22 @@ public class Operations {
         Languages languages = new Languages();
 
         Languages.Default defaultLanguage = new Languages.Default();
-        defaultLanguage.setLanguage(getPropertyValue("wps.default.lang"));
+        defaultLanguage.setLanguage(getPropertyValue("wps.default.lang", "en"));
         languages.setDefault(defaultLanguage);
 
         LanguagesType languageType = new LanguagesType();
-        languageType.getLanguage().add(0, getPropertyValue("wps.supported.lang"));
+        languageType.getLanguage().add(0, getPropertyValue("wps.supported.lang", "en"));
         languages.setSupported(languageType);
 
         return languages;
     }
 
     private String getPropertyValue(String name) {
-        return TaoConfigurationProvider.getInstance().getValue(name);
+        return ConfigurationManager.getInstance().getValue(name);
+    }
+
+    private String getPropertyValue(String name, String defaultValue) {
+        return ConfigurationManager.getInstance().getValue(name, defaultValue);
     }
 
     private DCP getPostDcp(String serviceUrl) {

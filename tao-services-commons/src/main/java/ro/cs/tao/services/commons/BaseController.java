@@ -19,36 +19,65 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import ro.cs.tao.persistence.AuditProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.AdministrationService;
+import ro.cs.tao.user.LogEvent;
 import ro.cs.tao.user.User;
 
+import java.security.Principal;
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
  */
-public class BaseController extends ControllerBase {
-    private static Set<String> admins;
+public abstract class BaseController extends ControllerBase {
+    private static final Set<String> admins;
     private static final Timer groupRefreshTimer;
-    @Autowired
     private static AdministrationService administrationService;
+    private static AuditProvider auditProvider;
 
     static {
         groupRefreshTimer = new Timer(true);
+        admins = new HashSet<>();
         groupRefreshTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                admins = administrationService.getAdministrators().stream().map(User::getUsername).collect(Collectors.toSet());
+                if (administrationService != null) {
+                    admins.clear();
+                    admins.addAll(administrationService.getAdministrators().stream().map(User::getUsername).collect(Collectors.toSet()));
+                }
             }
-        }, 0, 10000);
+        }, 10000, 10000);
     }
 
     public static ServletUriComponentsBuilder currentURL() {
         return ServletUriComponentsBuilder.fromCurrentRequestUri();
+    }
+
+    @Autowired
+    public final void setAdministrationService(AdministrationService service) {
+        if (administrationService == null) {
+            synchronized (admins) {
+                administrationService = service;
+            }
+        }
+    }
+
+    @Autowired
+    public final void setAuditProvider(AuditProvider provider) {
+        if (auditProvider == null) {
+            synchronized (admins) {
+                auditProvider = provider;
+            }
+        }
     }
 
     protected String currentUser() {
@@ -56,7 +85,19 @@ public class BaseController extends ControllerBase {
         return authentication.getName();
     }
 
+    protected Principal currentPrincipal() {
+        return SessionStore.currentContext().getPrincipal();
+    }
+
     protected boolean isCurrentUserAdmin() {
         return admins.contains(SessionStore.currentContext().getPrincipal().getName());
+    }
+
+    protected void record(String event) {
+        try {
+            auditProvider.save(new LogEvent(LocalDateTime.now(), currentUser(), event));
+        } catch (PersistenceException e) {
+            Logger.getLogger(getClass().getName()).warning(e.getMessage());
+        }
     }
 }

@@ -72,7 +72,7 @@ public class BCWpsServiceInstanceImpl_GetStatusTest {
         //preparation
         final ExecutionJob executionJob = new ExecutionJob();
         executionJob.setExecutionStatus(ExecutionStatus.UNDETERMINED);
-        executionJob.setWorkflowId(456);
+        executionJob.setWorkflowId(456L);
         when(taoWebProcessingServiceMock.getStatus(123)).thenReturn(executionJob);
         final WebProcessingServiceImpl.ProcessInfoImpl processInfo = new WebProcessingServiceImpl.ProcessInfoImpl();
         final WorkflowDescriptor workflowDescriptor = new WorkflowDescriptor();

@@ -25,37 +25,44 @@ import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.eodata.metadata.DecodeStatus;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.ProgressNotifier;
+import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.persistence.EOProductProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ProductService;
+import ro.cs.tao.spi.OutputDataHandlerManager;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.async.Parallel;
+import ro.cs.tao.utils.executors.monitoring.ProgressListener;
+import ro.cs.tao.workspaces.Repository;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
-import java.sql.Date;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service("productService")
 public class ProductServiceImpl extends EntityService<EOProduct> implements ProductService {
+	private static final Set<String> inspectionExclusions = new HashSet<String>() {{
+		add(".aux.xml"); add(".png"); add(".jpg"); add(".log");
+	}};
 
 	@Autowired
-	private PersistenceManager persistenceManager;
+	private EOProductProvider productProvider;
 
 	@Override
 	protected void validateFields(EOProduct entity, List<String> errors) {
@@ -64,14 +71,14 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
 	@Override
 	public EOProduct findById(String id) {
-		return persistenceManager.getEOProduct(id);
+		return productProvider.get(id);
 	}
 
 	@Override
 	public List<EOProduct> list() {
 		List<EOProduct> products = null;
 		try {
-			products = persistenceManager.getEOProducts();
+			products = productProvider.list();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -80,113 +87,163 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
 	@Override
 	public List<EOProduct> list(Iterable<String> ids) {
-		return persistenceManager.getEOProducts(ids);
+		return productProvider.list(ids);
 	}
 
 	@Override
 	public List<EOProduct> getByNames(String... names) {
-		return persistenceManager.getProductsByNames(names);
+		return productProvider.getProductsByNames(names);
 	}
 
 	@Override
 	public EOProduct save(EOProduct object) {
 		try {
-			return persistenceManager.saveEOProduct(object);
+			return productProvider.save(object);
 		} catch (PersistenceException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			return null;
 		}
 	}
 
 	@Override
 	public EOProduct update(EOProduct object) throws PersistenceException {
-		return persistenceManager.saveEOProduct(object);
+		return productProvider.save(object);
 	}
 
 	@Override
 	public void delete(String id) {
-		persistenceManager.removeProduct(id);
+		try {
+			productProvider.delete(id);
+		} catch (PersistenceException e) {
+			logger.severe(e.getMessage());
+		}
 	}
 
 	@Override
 	public void delete(EOProduct product) {
-		persistenceManager.remove(product);
+		try {
+			productProvider.delete(product);
+		} catch (PersistenceException e) {
+			logger.severe(e.getMessage());
+		}
 	}
 
 	@Override
 	public int countAdditionalProductReferences(String componentId, String name) {
-		return persistenceManager.getOtherProductReferences(componentId, name);
+		return productProvider.countOtherProductReferences(componentId, name);
 	}
 
 	@Override
 	public void deleteIfNotReferenced(String refererComponentId, String productName) {
-		persistenceManager.deleteIfNotReferenced(refererComponentId, productName);
+		productProvider.deleteIfNotReferenced(refererComponentId, productName);
 	}
 
 	@Override
-	public List<EOProduct> inspect(Path sourcePath) throws IOException {
-		if (sourcePath == null || !Files.exists(sourcePath)) {
-			throw new IOException("Source directory not found");
+	public List<EOProduct> inspect(Repository repository, String sourcePath) throws IOException {
+		if (StringUtilities.isNullOrEmpty(sourcePath)) {
+			sourcePath = "/";
 		}
 		Set<MetadataInspector> services = ServiceRegistryManager.getInstance()
-				.getServiceRegistry(MetadataInspector.class).getServices();
+																.getServiceRegistry(MetadataInspector.class).getServices();
 		MetadataInspector inspector;
 		if (services == null) {
 			throw new IOException("No product inspector found");
 		}
+		logger.fine("Inspection of " + sourcePath + " starting");
 		List<EOProduct> results = new ArrayList<>();
-		try {
-			List<Path> folders = Files.walk(sourcePath, 1).collect(Collectors.toList());
-			Path publicFolder = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
-			for (Path folder : folders) {
+		Path source = Paths.get(repository.resolve(sourcePath));
+		Principal principal = SessionStore.currentContext().getPrincipal();
+		final ProgressListener progressListener = new ProgressNotifier(principal,
+																	   sourcePath,
+																	   Topic.TRANSFER_PROGRESS,
+																	   new HashMap<String, String>() {{
+																		   put("Repository", repository.getId());
+																	   }});
+		try (Stream<Path> stream = Files.walk(Paths.get(repository.resolve(sourcePath)), 1)){
+			List<Path> files = stream.collect(Collectors.toList());
+			files.removeIf(f -> f.equals(source));
+			Path userFolder = Paths.get(repository.root());
+			final double size = files.size();
+			int count = 1;
+			progressListener.started(sourcePath);
+			for (Path file : files) {
 				try {
-					if (Files.isDirectory(folder) && !folder.equals(sourcePath)) {
-						Path targetPath;
-						if (!folder.toString().startsWith(publicFolder.toString())) {
-							targetPath = publicFolder.resolve(folder.getFileName());
-							if (!Files.exists(targetPath)) {
-								Logger.getLogger(ProductService.class.getName())
-										.fine(String.format("Copying %s to %s", folder, publicFolder.toFile()));
-								FileUtils.copyDirectoryToDirectory(folder.toFile(), publicFolder.toFile());
-								FileUtilities.ensurePermissions(targetPath);
+					if (inspectionExclusions.stream().anyMatch(file::endsWith)) {
+						continue;
+					}
+					Path targetPath;
+					if (!file.toString().startsWith(userFolder.toString())) {
+						targetPath = userFolder.resolve(file.getFileName());
+						if (!Files.exists(targetPath)) {
+							Logger.getLogger(ProductService.class.getName())
+									.fine(String.format("Copying %s to %s", file, userFolder.toFile()));
+							if (Files.isDirectory(file)) {
+								FileUtils.copyDirectoryToDirectory(file.toFile(), userFolder.toFile());
+							} else {
+								FileUtils.copyFile(file.toFile(), userFolder.toFile());
 							}
-						} else {
-							targetPath = folder;
+							FileUtilities.ensurePermissions(targetPath);
 						}
-						inspector = services.stream()
-								.filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath)).findFirst()
-								.orElse(services.stream()
-										.filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
-										.findFirst().orElse(null));
-						if (inspector == null) {
-							continue;
-						}
+					} else {
+						targetPath = file;
+					}
+					List<EOProduct> list = productProvider.getByLocation(targetPath.toAbsolutePath().toUri().toString());
+					EOProduct product = null;
+					inspector = services.stream()
+							.filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath)).findFirst()
+							.orElse(services.stream()
+									.filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
+									.findFirst().orElse(null));
+					if (inspector == null) {
+						logger.warning("No inspector suitable found for " + file);
+						continue;
+					}
+					if (list.size() == 0) {
 						MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
 						if (metadata != null) {
-							EOProduct product = metadata.toProductDescriptor(targetPath);
+							product = metadata.toProductDescriptor(targetPath);
 							product.setEntryPoint(metadata.getEntryPoint());
-							product.addReference(SessionStore.currentContext().getPrincipal().getName());
+							product.addReference(principal.getName());
 							product.setVisibility(Visibility.PUBLIC);
-							if (metadata.getAquisitionDate() != null) {
-								product.setAcquisitionDate(Date
-										.from(metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
-							}
+							product.setAcquisitionDate(metadata.getAquisitionDate());
 							if (metadata.getSize() != null) {
 								product.setApproximateSize(metadata.getSize());
 							}
 							if (metadata.getProductId() != null) {
 								product.setId(metadata.getProductId());
 							}
-							results.add(product);
+							product.setProductStatus(ProductStatus.PRODUCED);
+						}
+					} else {
+						product = list.get(0);
+					}
+					if (product != null) {
+						try {
+							Path quicklook = OutputDataHandlerManager.getInstance().applyHandlers(file);
+							if (quicklook != null) {
+								product.setQuicklookLocation(quicklook.toString());
+							}
+						} catch (Exception e) {
+							logger.warning(String.format("Unable to create quicklook for %s. Reason: %s", file, e.getMessage()));
+						}
+						product = productProvider.save(product);
+						results.add(product);
+						logger.finest("Inspection of " + file + " completed");
+						if (Files.isRegularFile(file)) {
+							Files.deleteIfExists(Paths.get(file + ".aux.xml"));
 						}
 					}
 				} catch (Exception e1) {
-					Logger.getLogger(ProductService.class.getName())
-							.warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
+					logger.warning(String.format("Import for %s failed. Reason: %s", file, e1.getMessage()));
 				}
+				progressListener.notifyProgress((double) count++ / size);
 			}
 		} catch (Exception e) {
 			throw new IOException(e);
+		} finally {
+			progressListener.ended();
+			logger.fine("Inspection of " + sourcePath + " completed");
+			Messaging.send(principal, Topic.INFORMATION.getCategory(), "Inspection of " + sourcePath + " found " + results.size() + " products");
 		}
 		return results;
 	}
@@ -202,11 +259,11 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 			try {
 				product.setProductStatus(ProductStatus.DOWNLOADED);
 				product.addReference(principal.getName());
-				persistenceManager.saveEOProduct(product);
+				productProvider.save(product);
 				UserQuotaManager.getInstance().updateUserInputQuota(principal);
 				count++;
 			} catch (PersistenceException | QuotaException e) {
-				e.printStackTrace();
+				logger.severe(e.getMessage());
 			}
 		}
 		return count;
@@ -229,10 +286,9 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		final Object lock = new Object();
 		final AtomicBoolean firstFail = new AtomicBoolean(true);
 		final Principal principal = SessionStore.currentContext().getPrincipal();
-		final List<String> skippedProducts = new ArrayList<String>();
-		try {
-			List<Path> folders = Files.walk(srcPath, 1).collect(Collectors.toList());
-			Path publicFolder = Paths.get(SystemVariable.SHARED_WORKSPACE.value());
+		try (Stream<Path> stream = Files.walk(srcPath, 1)) {
+			List<Path> folders = stream.collect(Collectors.toList());
+			Path publicFolder = Paths.get(SystemVariable.USER_WORKSPACE.value());
 			Parallel.For(0, folders.size(), (idx) -> {
 				Path folder = folders.get(idx);
 				try {
@@ -285,14 +341,11 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 							if (metadata.getProductId() != null) {
 								product.setId(metadata.getProductId());
 							}
-							EOProduct existing = persistenceManager.getEOProduct(product.getId());
+							EOProduct existing = productProvider.get(product.getId());
 							if (existing == null) {
 								product.setEntryPoint(metadata.getEntryPoint());
 								product.setVisibility(Visibility.PUBLIC);
-								if (metadata.getAquisitionDate() != null) {
-									product.setAcquisitionDate(Date.from(
-											metadata.getAquisitionDate().atZone(ZoneId.systemDefault()).toInstant()));
-								}
+								product.setAcquisitionDate(metadata.getAquisitionDate());
 								if (metadata.getSize() != null) {
 									product.setApproximateSize(metadata.getSize());
 								}
@@ -301,17 +354,15 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 							}
 							product.setProductStatus(ProductStatus.DOWNLOADED);
 							product.addReference(SessionStore.currentContext().getPrincipal().getName());
-							persistenceManager.saveEOProduct(product);
+							productProvider.save(product);
 							count.getAndIncrement();
 
 						} else {
-							Logger.getLogger(ProductService.class.getName())
-									.info(String.format("Skipping %s. Reason: unable to read metadata", targetPath));
+							logger.info(String.format("Skipping %s. Reason: unable to read metadata", targetPath));
 						}
 					}
 				} catch (Exception e1) {
-					Logger.getLogger(ProductService.class.getName())
-							.warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
+					logger.warning(String.format("Import for %s failed. Reason: %s", folder, e1.getMessage()));
 				}
 			});
 		} catch (Exception e) {
@@ -322,10 +373,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
 		if (skipped.get() != 0) {
 			// throw am exception to force an error response sent to the user
-			QuotaException ex = new QuotaException(String.format(
-					"Not all products found were imported because you have reached your input quota! "
-					+ "Imported products: %d, Skipped products: %d", count.get(), skipped.get()));
-			throw ex;
+			throw new QuotaException(String.format("Not all products found were imported because you have reached your input quota! "
+														   + "Imported products: %d, Skipped products: %d", count.get(), skipped.get()));
 		}
 
 		return count.get();
@@ -333,6 +382,6 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
 	@Override
 	public List<String> checkExisting(String... names) {
-		return persistenceManager.getExistingProductNames(names);
+		return productProvider.getExistingProductNames(names);
 	}
 }

@@ -21,12 +21,14 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.docker.Container;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.NodeProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
-import ro.cs.tao.topology.NodeType;
+import ro.cs.tao.topology.NodeFlavor;
 import ro.cs.tao.topology.TopologyManager;
+import ro.cs.tao.topology.docker.DockerManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,16 +45,27 @@ public class TopologyServiceImpl
         implements TopologyService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private TagProvider tagProvider;
+    @Autowired
+    private NodeProvider nodeProvider;
+
+    public boolean isExternalProviderAvailable() {
+        return topologyManager().isExternalProviderAvailable();
+    }
+
+    @Override
+    public List<NodeFlavor> getNodeFlavors() {
+        return topologyManager().listNodeFlavors();
+    }
 
     @Override
     public NodeDescription findById(String hostName) {
-       return TopologyManager.getInstance().get(hostName);
+       return topologyManager().getNode(hostName);
     }
 
     @Override
     public List<NodeDescription> list() {
-       return TopologyManager.getInstance().list();
+        return topologyManager().listNodes();
     }
 
     @Override
@@ -66,58 +79,68 @@ public class TopologyServiceImpl
 
     @Override
     public List<NodeDescription> getNodes(boolean active) {
-        return persistenceManager.getNodes(active);
+        return nodeProvider.list(active);
     }
 
     @Override
-    public List<NodeDescription> getNodes(NodeType nodeType) {
-        return persistenceManager.getNodesByType(nodeType);
+    public List<NodeDescription> getNodes(NodeFlavor nodeFlavor) {
+        return list().stream().filter(n -> nodeFlavor.equals(n.getFlavor())).collect(Collectors.toList());
     }
 
     @Override
     public NodeDescription save(NodeDescription node) {
-        tagType(node);
         List<String> nodeTags = node.getTags();
         if (nodeTags != null) {
-            if (!nodeTags.contains(node.getNodeType().friendlyName())) {
-                nodeTags.add(node.getNodeType().friendlyName());
+            if (!nodeTags.contains(node.getFlavor().getId())) {
+                nodeTags.add(node.getFlavor().getId());
             }
-            Set<String> existingTags = persistenceManager.getNodeTags().stream().map(Tag::getText).collect(Collectors.toSet());
+            Set<String> existingTags = tagProvider.list(TagType.TOPOLOGY_NODE).stream().map(Tag::getText).collect(Collectors.toSet());
             for (String value : nodeTags) {
                 if (!existingTags.contains(value)) {
-                    persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
+                    try {
+                        tagProvider.save(new Tag(TagType.TOPOLOGY_NODE, value));
+                    } catch (PersistenceException e) {
+                        logger.severe(e.getMessage());
+                    }
                 }
             }
         }
-        TopologyManager.getInstance().add(node);
+        topologyManager().addNode(node);
         return node;
     }
 
     @Override
     public NodeDescription update(NodeDescription node) {
         NodeDescription existing = findById(node.getId());
-        if (existing != null && existing.getNodeType() != node.getNodeType()) {
-            tagType(node);
+        if (existing != null && !existing.getFlavor().equals(node.getFlavor())) {
             List<String> nodeTags = node.getTags();
             if (nodeTags != null) {
-                if (!nodeTags.contains(node.getNodeType().friendlyName())) {
-                    nodeTags.add(node.getNodeType().friendlyName());
+                if (node.getFlavor() != null) {
+                    if (!nodeTags.contains(node.getFlavor().getId())) {
+                        nodeTags.add(node.getFlavor().getId());
+                    }
+                } else {
+                    node.setFlavor(existing.getFlavor());
                 }
-                Set<String> existingTags = persistenceManager.getNodeTags().stream().map(Tag::getText).collect(Collectors.toSet());
+                Set<String> existingTags = tagProvider.list(TagType.TOPOLOGY_NODE).stream().map(Tag::getText).collect(Collectors.toSet());
                 for (String value : nodeTags) {
                     if (!existingTags.contains(value)) {
-                        persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
+                        try {
+                            tagProvider.save(new Tag(TagType.TOPOLOGY_NODE, value));
+                        } catch (PersistenceException e) {
+                            logger.severe(e.getMessage());
+                        }
                     }
                 }
             }
         }
-        TopologyManager.getInstance().update(node);
+        topologyManager().updateNode(node);
         return node;
     }
 
     @Override
     public void delete(String hostName) {
-        TopologyManager.getInstance().remove(hostName);
+        topologyManager().removeNode(hostName);
     }
 
     @Override
@@ -127,11 +150,11 @@ public class TopologyServiceImpl
             throw new PersistenceException(String.format("Node with id '%s' not found", id));
         }
         if (tags != null && tags.size() > 0) {
-            Set<String> existingTags = persistenceManager.getNodeTags().stream()
+            Set<String> existingTags = tagProvider.list(TagType.TOPOLOGY_NODE).stream()
                     .map(Tag::getText).collect(Collectors.toSet());
             for (String value : tags) {
                 if (!existingTags.contains(value)) {
-                    persistenceManager.saveTag(new Tag(TagType.TOPOLOGY_NODE, value));
+                    tagProvider.save(new Tag(TagType.TOPOLOGY_NODE, value));
                 }
             }
             entity.setTags(tags);
@@ -141,7 +164,7 @@ public class TopologyServiceImpl
     }
 
     @Override
-    public NodeDescription untag(String id, List<String> tags) throws PersistenceException {
+    public NodeDescription unTag(String id, List<String> tags) throws PersistenceException {
         NodeDescription entity = findById(id);
         if (entity == null) {
             throw new PersistenceException(String.format("Node with id '%s' not found", id));
@@ -153,7 +176,6 @@ public class TopologyServiceImpl
                     entityTags.remove(value);
                 }
                 entity.setTags(entityTags);
-                //return update(entity);
             }
         }
         return entity;
@@ -161,12 +183,12 @@ public class TopologyServiceImpl
 
     @Override
     public List<Container> getDockerImages() {
-        return TopologyManager.getInstance().getAvailableDockerImages();
+        return DockerManager.getAvailableDockerImages();
     }
 
     @Override
     public List<Tag> getNodeTags() {
-        return persistenceManager.getNodeTags();
+        return tagProvider.list(TagType.TOPOLOGY_NODE);
     }
 
     @Override
@@ -183,32 +205,26 @@ public class TopologyServiceImpl
         if (value == null || value.trim().isEmpty()) {
             errors.add("[password] cannot be empty");
         }
-        if (object.getProcessorCount() <= 0) {
-            errors.add("[processorCount] cannot be empty");
-        }
-        if (object.getMemorySizeGB() <= 0) {
-            errors.add("[memorySize] cannot be empty");
-        }
-        if (object.getDiskSpaceSizeGB() <= 0) {
-            errors.add("[diskSpace] cannot be empty");
+        final NodeFlavor flavor = object.getFlavor();
+        if (TopologyManager.getInstance().isExternalProviderAvailable()) {
+            if (flavor == null) {
+                errors.add("[flavor] cannot be null");
+            } else {
+                if (flavor.getCpu() <= 0) {
+                    errors.add("[flavor.cpu] cannot be less than 1");
+                }
+                if (flavor.getMemory() <= 0) {
+                    errors.add("[flavor.memory] cannot be less than 1");
+                }
+                if (flavor.getDisk() <= 0) {
+                    errors.add("[flavor.disk] cannot be less than 1");
+                }
+                if (Float.compare(flavor.getRxtxFactor(), 0.0f) <= 0) {
+                    errors.add("[flavor.rxtxFactor] must be positive");
+                }
+            }
         }
     }
 
-    private NodeDescription tagType(NodeDescription node) {
-        NodeType nodeType = node.getNodeType();
-        if (nodeType == null) {
-            int processors = node.getProcessorCount();
-            if (processors <= 4) {
-                nodeType = NodeType.S;
-            } else if (processors <= 8) {
-                nodeType = NodeType.M;
-            } else if (processors <= 16) {
-                nodeType = NodeType.L;
-            } else {
-                nodeType = NodeType.XL;
-            }
-            node.setNodeType(nodeType);
-        }
-        return node;
-    }
+    private TopologyManager topologyManager() { return TopologyManager.getInstance(); }
 }

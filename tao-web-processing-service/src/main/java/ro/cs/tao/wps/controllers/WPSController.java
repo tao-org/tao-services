@@ -25,34 +25,225 @@ import com.bc.wps.api.schema.*;
 import com.bc.wps.exceptions.InvalidRequestException;
 import com.bc.wps.responses.ExceptionResponse;
 import com.bc.wps.utilities.JaxbHelper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.component.TargetDescriptor;
+import ro.cs.tao.component.WPSComponent;
+import ro.cs.tao.component.WPSComponentBean;
+import ro.cs.tao.component.WebServiceAuthentication;
+import ro.cs.tao.component.enums.ProcessingComponentVisibility;
+import ro.cs.tao.datasource.beans.Parameter;
+import ro.cs.tao.docker.Container;
+import ro.cs.tao.docker.ContainerType;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.beans.WebServiceBean;
+import ro.cs.tao.services.entity.util.ServiceTransformUtils;
+import ro.cs.tao.services.interfaces.*;
+import ro.cs.tao.services.model.workflow.WorkflowInfo;
+import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.wps.impl.WPSClient;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBException;
 import java.io.*;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
-@Controller
+@RestController
 @RequestMapping("/wps")
 public class WPSController extends BaseController {
+
+    private final static Set<String> allowedRequests = new HashSet<String>() {{
+        add("GetCapabilities"); add("DescribeProcess");
+    }};
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     @Autowired
     private WpsServiceInstance wpsServiceInstance;
+    @Autowired
+    private ContainerService containerService;
+    @Autowired
+    private WebServiceAuthenticationService webServiceAuthenticationService;
+    @Autowired
+    private WPSComponentService wpsComponentService;
+    @Autowired
+    private WorkflowService workflowService;
+
+    @RequestMapping(value = {"/list","/list/{type}"}, method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> list(@PathVariable(required = false) String type) {
+        try {
+            ContainerType containerType = ContainerType.WPS;
+            if (type != null && type.equalsIgnoreCase("STAC")) {
+                containerType = ContainerType.STAC;
+            }
+
+            final List<Container> containers = containerService.listByType(containerType);
+            final List<WebServiceBean> results = new ArrayList<>();
+            for (Container container : containers) {
+                results.add(ServiceTransformUtils.toBean(container,
+                                                         webServiceAuthenticationService.findById(container.getId())));
+            }
+            return prepareResult(results);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> getById(@PathVariable("id") String id) {
+        try {
+            final Container container = containerService.findById(id);
+            final WebServiceAuthentication auth = webServiceAuthenticationService.findById(id);
+            return prepareResult(ServiceTransformUtils.toBean(container, auth));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> save(@RequestBody WebServiceBean bean) {
+        try {
+            if (bean == null) {
+                throw new IllegalArgumentException("Empty body");
+            }
+            if (bean.getType() != ContainerType.WPS) {
+                throw new IllegalArgumentException("Wrong container type");
+            }
+            if (StringUtilities.isNullOrEmpty(bean.getId())) {
+                bean.setId(UUID.randomUUID().toString());
+            }
+            Container container = ServiceTransformUtils.getContainerPart(bean);
+            if (StringUtilities.isNullOrEmpty(container.getId())) {
+                container.setId(UUID.randomUUID().toString());
+            }
+            WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
+            container = containerService.save(container);
+            auth.setId(container.getId());
+            auth = webServiceAuthenticationService.save(auth);
+            return prepareResult(ServiceTransformUtils.toBean(container, auth));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<?> update(@RequestBody WebServiceBean bean) {
+        try {
+            if (bean == null) {
+                throw new IllegalArgumentException("Empty body");
+            }
+            if (bean.getType() != ContainerType.WPS) {
+                throw new IllegalArgumentException("Wrong container type");
+            }
+            if (StringUtilities.isNullOrEmpty(bean.getId())) {
+                throw new IllegalArgumentException("Wrong HTTP verb");
+            }
+            Container container = ServiceTransformUtils.getContainerPart(bean);
+            if (container.getTag() == null) {
+                container.setTag("WPS");
+            }
+            WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
+            container = containerService.update(container);
+            auth = webServiceAuthenticationService.update(auth);
+            return prepareResult(ServiceTransformUtils.toBean(container, auth));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<?> delete(@PathVariable("id") String id) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            webServiceAuthenticationService.delete(id);
+            containerService.delete(id);
+            responseEntity = prepareResult("Entity deleted", ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
+
+    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<?> inspectRemote(@RequestParam(name = "request") String requestType,
+                                           @RequestParam(name = "remoteAddress") String endpoint,
+                                           @RequestParam(name = "capability", required = false) String capability,
+                                           @RequestParam(name = "authentication", required = false) String authentication,
+                                           @RequestParam(name = "save", required = false) Boolean save) {
+        try {
+            try {
+                final URL url = new URL(endpoint);
+            } catch (MalformedURLException mex) {
+                throw new InvalidRequestException("[remoteAddress] Malformed URL", mex);
+            }
+            if (!allowedRequests.contains(requestType)) {
+                throw new IllegalArgumentException("[request] Unsupported value");
+            }
+            final WebServiceAuthentication auth = new ObjectMapper().readerFor(WebServiceAuthentication.class).readValue(authentication);
+            final WPSClient client = new WPSClient(endpoint, auth, currentPrincipal());
+            if ("GetCapabilities".equalsIgnoreCase(requestType)) {
+                Container capabilities = client.getCapabilities();
+                if (Boolean.TRUE.equals(save)) {
+                    capabilities = containerService.save(capabilities);
+                }
+                return prepareResult(capabilities);
+            } else {
+                if (StringUtils.isEmpty(capability)) {
+                    throw new IllegalArgumentException("[capability] Must supply a value");
+                }
+                Container container = containerService.listByType(ContainerType.WPS).stream()
+                                                      .filter(c -> endpoint.equals(c.getApplicationPath()))
+                                                      .findFirst().orElse(null);
+                if (container == null) {
+                    throw new IllegalArgumentException("WPS service not previously registered");
+                }
+                final WebProcessingService.ProcessInfo<WorkflowInfo, TargetDescriptor> processInfo = client.describeProcess(capability);
+                WPSComponent component = new WPSComponent();
+                component.setId(endpoint + "~" + capability);
+                component.setService(container);
+                component.setCapabilityName(capability);
+                component.setLabel(processInfo.getCapabilityInfo().getName());
+                component.setDescription(processInfo.getCapabilityInfo().getPath());
+                component.setRemoteAddress(endpoint);
+                component.setVisibility(ProcessingComponentVisibility.USER);
+                //component.setOwner(processInfo.getCapabilityInfo().getUserName());
+                component.setOwner(currentUser());
+                component.setVersion("WPS 1.0");
+                final Map<String, List<Parameter>> parameters = processInfo.getParameters();
+                if (parameters.size() > 0) {
+                    Iterator<Map.Entry<String, List<Parameter>>> iterator = parameters.entrySet().iterator();
+                    List<Parameter> params = new ArrayList<>();
+                    while (iterator.hasNext()) {
+                        Map.Entry<String, List<Parameter>> entry = iterator.next();
+                        List<Parameter> groupParams = entry.getValue();
+                        groupParams.forEach(p -> p.setName(entry.getKey() + "~" + p.getName()));
+                        params.addAll(groupParams);
+                    }
+                    component.setParameters(params.stream().map(Parameter::toParameterDescriptor).collect(Collectors.toList()));
+                }
+                component.setTargets(processInfo.getOutputs());
+                if (Boolean.TRUE.equals(save)) {
+                    component = wpsComponentService.save(component);
+                }
+                return prepareResult(new WPSComponentBean(component));
+            }
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
 
     @RequestMapping(params = {"service=WPS", "request=GetCapabilities"}, method = RequestMethod.GET)
     public ResponseEntity<?> capabilities(HttpServletRequest request, HttpServletResponse response) {
@@ -216,14 +407,14 @@ public class WPSController extends BaseController {
 
     private void writeToResponce(HttpServletResponse response, String body) {
         final PrintWriter writer;
+        response.setContentType(MediaType.APPLICATION_XML_VALUE);
+        response.setDateHeader("Date", new Date().getTime());
+        response.setHeader(HttpHeaders.TRANSFER_ENCODING, "chunked");
         try {
             writer = response.getWriter();
             writer.print(body);
         } catch (IOException ignore) {
         }
-        response.setContentType(MediaType.APPLICATION_XML_VALUE);
-        response.setDateHeader("Date", new Date().getTime());
-        response.setHeader(HttpHeaders.TRANSFER_ENCODING, "chunked");
     }
 
     private String getExceptionString(ExceptionReport exceptionReport) {

@@ -1,10 +1,13 @@
 package ro.cs.tao.services.workflow.library;
 
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.eodata.enums.Visibility;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
+import ro.cs.tao.workflow.enums.Status;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +16,15 @@ public class GTCSigma0WorkflowBuilder extends WorkflowBuilderBase {
 
     @Override
     public String getName() { return "Geocoded Terrain Corrected Sigma0"; }
+
+    @Override
+    public WorkflowDescriptor createSystemWorkflowDescriptor() throws PersistenceException {
+        WorkflowDescriptor descriptor = createWorkflowDescriptor();
+        descriptor.setVisibility(Visibility.PUBLIC);
+        descriptor.setStatus(Status.PUBLISHED);
+        descriptor.setUserName(SystemPrincipal.instance().getName());
+        return persistenceManager.workflows().update(descriptor);
+    }
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {

@@ -1,5 +1,6 @@
 package ro.cs.tao.services.commons;
 
+import javassist.bytecode.ClassFile;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +21,14 @@ import java.util.jar.Manifest;
 import java.util.logging.Logger;
 
 public abstract class ServletConfiguration {
+
+    private static final Map<String, String> javaVersions = new HashMap<String, String>() {{
+        put("45.0", "1.0"); put("45.3", "1.1"); put("46.0", "1.2"); put("47.0", "1.3"); put("48.0", "1.4");
+        put("49.0", "5"); put("50.0", "6"); put("51.0", "7"); put("52.0", "8"); put("53.0", "9");
+        put("54.0", "10"); put("55.0", "11"); put("56.0", "12"); put("57.0", "13"); put("58.0", "14");
+        put("59.0", "15"); put("60.0", "16"); put("61.0", "17"); put("62.0", "18"); put("63.0", "19");
+        put("64.0", "20");
+    }};
 
     @Bean
     public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> containerCustomizer() {
@@ -54,8 +63,6 @@ public abstract class ServletConfiguration {
         return taskExecutor;
     }
 
-    protected String name() { return null; }
-
     protected Map<String, String> versionInfo() {
         final Map<String, String> version = readManifest();
         if (version.size() == 0) {
@@ -73,15 +80,13 @@ public abstract class ServletConfiguration {
                     Manifest manifest = new Manifest(inputStream);
                     Attributes attributes = manifest.getMainAttributes();
                     String value = attributes.getValue("Bundle-Name");
-                    if (value != null) {
-                        if (value.startsWith("TAO")) {
-                            entries.put("TAO Services", attributes.getValue("Version") + " (" + attributes.getValue("Build-Time") + ")");
-                        } else if (name() != null && value.startsWith(name())) {
-                            entries.put(name() + " Services", attributes.getValue("Version") + " (" + attributes.getValue("Build-Time") + ")");
-                        }
+                    if (value != null && value.startsWith("TAO")) {
+                        entries.put("TAO Services", attributes.getValue("Version") + " (" + attributes.getValue("Build-Time") + ")");
                     }
                 }
             }
+            ClassFile classFile = new ClassFile(false, getClass().getName(), null);
+            entries.put("Compiler", javaVersions.get(classFile.getMajorVersion() + "." + classFile.getMinorVersion()));
         } catch (IOException ignored) {
         }
         return entries;

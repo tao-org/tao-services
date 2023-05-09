@@ -18,7 +18,7 @@ package ro.cs.tao.services;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import ro.cs.tao.configuration.TaoConfigurationProvider;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.commons.WebConfiguration;
 
 import java.nio.file.Path;
@@ -30,14 +30,14 @@ public class WebConfig extends WebConfiguration {
 
     @Override
     protected String siteURIPath() {
-        final String siteBase = TaoConfigurationProvider.getInstance().getValue("site.location", "static");
+        final String siteBase = ConfigurationManager.getInstance().getValue("site.location", "static");
         Path sitePath = Paths.get(siteBase);
         if (!sitePath.isAbsolute()) {
             sitePath = TaoServicesStartup.homeDirectory().resolve(siteBase).toAbsolutePath();
         }
-        TaoConfigurationProvider.getInstance().setValue("site.path", sitePath.toString());
+        ConfigurationManager.getInstance().setValue("site.path", sitePath.toString());
         final String siteURI = sitePath.toUri().toString();
-        TaoConfigurationProvider.getInstance().setValue("site.url", siteURI);
+        ConfigurationManager.getInstance().setValue("site.url", siteURI);
         return siteURI;
     }
 
@@ -45,6 +45,6 @@ public class WebConfig extends WebConfiguration {
     protected String sitePrefix() { return "/ui"; }
 
     @Override
-    protected String defaultPage() { return "login.html"; }
+    protected String defaultPage() { return "sap.html"; }//return "login.html"; }
 
 }

@@ -15,10 +15,10 @@
  */
 package ro.cs.tao.services.progress.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.messaging.*;
 import ro.cs.tao.messaging.progress.*;
+import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.services.interfaces.ProgressReportService;
 
 import java.util.*;
@@ -28,33 +28,35 @@ import java.util.stream.Stream;
 
 @Service("progressReportService")
 public class ProgressReportServiceImpl extends Notifiable implements ProgressReportService {
-    private static final Pattern TOPIC_PATTERN = Topic.getCategoryPattern(Topic.PROGRESS);
+    private static final Pattern DOWNLOAD_PATTERN = Topic.getCategoryPattern(Topic.PROGRESS);
+    private static final Pattern TRANSFER_PATTERN = Topic.getCategoryPattern(Topic.TRANSFER_PROGRESS);
     private static final Map<String, TaskProgress> tasksInProgress = Collections.synchronizedMap(new LinkedHashMap<>());
     private String previousMessage;
 
     public ProgressReportServiceImpl() {
-        Messaging.subscribe(this, TOPIC_PATTERN);
+        Messaging.subscribe(this, DOWNLOAD_PATTERN);
+        Messaging.subscribe(this, TRANSFER_PATTERN);
     }
 
     @Override
     protected void onMessageReceived(Message message) {
-        final String contents = message.getItem(Message.PAYLOAD_KEY);
+        final String contents = message.getData();
         if (!Objects.equals(contents, this.previousMessage)) {
-            logger.fine(contents);
+            logger.finest(contents);
             this.previousMessage = contents;
         }
         String taskName;
         final String category = message.getTopic();
         TaskProgress taskProgress;
-        if (message instanceof ActivityStartMessage) {
-            taskName = ((ActivityStartMessage) message).getTaskName();
+        if (message instanceof ActivityStart) {
+            taskName = ((ActivityStart) message).getTaskName();
             taskProgress = new TaskProgress(taskName, category, 0);
             taskProgress.setInfo(message.getItems());
             tasksInProgress.put(taskName, taskProgress);
-        } else if (message instanceof ActivityEndMessage) {
-            tasksInProgress.remove(((ActivityEndMessage) message).getTaskName());
-        } else if (message instanceof SubActivityStartMessage) {
-            SubActivityStartMessage casted = (SubActivityStartMessage) message;
+        } else if (message instanceof ActivityEnd) {
+            tasksInProgress.remove(((ActivityEnd) message).getTaskName());
+        } else if (message instanceof SubActivityStart) {
+            SubActivityStart casted = (SubActivityStart) message;
             taskName = casted.getTaskName();
             if (tasksInProgress.containsKey(taskName)) {
                 double mainProgress = tasksInProgress.get(taskName).getProgress();
@@ -62,26 +64,43 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
                 taskProgress.setInfo(message.getItems());
                 tasksInProgress.put(taskName, taskProgress);
             }
-        } else if (message instanceof SubActivityEndMessage) {
-            SubActivityEndMessage casted = (SubActivityEndMessage) message;
+        } else if (message instanceof SubActivityEnd) {
+            SubActivityEnd casted = (SubActivityEnd) message;
             taskName = casted.getTaskName();
             final TaskProgress existingProgress = tasksInProgress.get(taskName);
             if (existingProgress != null) {
                 double mainProgress = existingProgress.getProgress();
-                taskProgress = new TaskProgress(taskName, category, mainProgress, casted.getSubTaskName(), 100.0);
-                taskProgress.setInfo(message.getItems());
-                tasksInProgress.put(taskName, taskProgress);
+                if (1.0 - mainProgress < 0.001) {
+                    tasksInProgress.remove(taskName);
+                } else {
+                    taskProgress = new TaskProgress(taskName, category, mainProgress, casted.getSubTaskName(), 1.0);
+                    taskProgress.setInfo(message.getItems());
+                    tasksInProgress.put(taskName, taskProgress);
+                }
             }
-        } else if (message instanceof SubActivityProgressMessage) {
-            SubActivityProgressMessage casted = (SubActivityProgressMessage) message;
+        } else if (message instanceof SubActivityProgress) {
+            SubActivityProgress casted = (SubActivityProgress) message;
             taskName = casted.getTaskName();
-            taskProgress = new TaskProgress(taskName, category, casted.getTaskProgress(), casted.getSubTaskName(), casted.getSubTaskProgress());
-            taskProgress.setInfo(message.getItems());
+            final TaskProgress existingProgress = tasksInProgress.get(taskName);
+            if (existingProgress != null) {
+                double mainProgress = existingProgress.getProgress();
+                if (casted.getSubTaskProgress() == 1.0 && (1.0 - mainProgress < 0.001)) {
+                    tasksInProgress.remove(taskName);
+                } else {
+                    taskProgress = new TaskProgress(taskName, category, casted.getTaskProgress(), casted.getSubTaskName(), casted.getSubTaskProgress());
+                    taskProgress.setInfo(message.getItems());
+                    tasksInProgress.put(taskName, taskProgress);
+                }
+            }
+        } else if (message instanceof ActivityProgress) {
+            ActivityProgress casted = (ActivityProgress) message;
+            taskName = casted.getTaskName();
+            taskProgress = new TaskProgress(taskName, category, casted.getProgress());
+            taskProgress.setInfo(casted.getItems());
+            if (message instanceof DownloadProgress) {
+                taskProgress.addInfo("speed", ((DownloadProgress) message).getTransferSpeedMB());
+            }
             tasksInProgress.put(taskName, taskProgress);
-        } else if (message instanceof ActivityProgressMessage) {
-            ActivityProgressMessage casted = (ActivityProgressMessage) message;
-            taskName = casted.getTaskName();
-            tasksInProgress.put(taskName, new TaskProgress(taskName, category, casted.getProgress()));
         }
     }
 
@@ -90,7 +109,7 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
         Filter filter = null;
         if (jsonFilter != null) {
             try {
-                filter = new ObjectMapper().readerFor(Filter.class).readValue(jsonFilter);
+                filter = JsonMapper.instance().readerFor(Filter.class).readValue(jsonFilter);
             } catch (Exception e) {
                 logger.warning(String.format("Invalid filter [%s]", e.getMessage()));
             }

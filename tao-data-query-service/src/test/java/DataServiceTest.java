@@ -2,7 +2,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.Assert;
-import ro.cs.tao.configuration.TaoConfigurationProvider;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataQuery;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.param.QueryParameter;
@@ -12,9 +12,7 @@ import ro.cs.tao.eodata.Polygon2D;
 import java.net.URI;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -57,10 +55,8 @@ public class DataServiceTest {
          */
         DataSourceComponent component = new DataSourceComponent("Sentinel2", "Amazon Web Services");
         final DataQuery query = component.createQuery();
-        QueryParameter<Date> begin = query.createParameter("beginPosition", Date.class);
-        begin.setValue(Date.from(LocalDateTime.now().minusDays(15)
-                                         .atZone(ZoneId.systemDefault())
-                                         .toInstant()));
+        QueryParameter<LocalDateTime> begin = query.createParameter("beginPosition", LocalDateTime.class);
+        begin.setValue(LocalDateTime.now().minusDays(15));
         query.addParameter(begin);
         Polygon2D aoi = new Polygon2D();
         aoi.append(20.738296999999992, 43.85597175445727);
@@ -100,10 +96,8 @@ public class DataServiceTest {
 
         DataSourceComponent component = new DataSourceComponent("Landsat8", "Amazon Web Services");
         final DataQuery query = component.createQuery();
-        QueryParameter<Date> begin = query.createParameter("sensingStart", Date.class);
-        begin.setValue(Date.from(LocalDateTime.now().minusDays(20)
-                                         .atZone(ZoneId.systemDefault())
-                                         .toInstant()));
+        QueryParameter<LocalDateTime> begin = query.createParameter("sensingStart", LocalDateTime.class);
+        begin.setValue(LocalDateTime.now().minusDays(20));
         query.addParameter(begin);
         Polygon2D aoi = new Polygon2D();
         aoi.append(-9.9866909768, 23.4186029838);
@@ -126,7 +120,7 @@ public class DataServiceTest {
         DataSourceComponent component = new DataSourceComponent("Sentinel2", "Amazon Web Services");
         List<EOProduct> entry = new ArrayList<>();
         entry.add(this.testS2Result);
-        String folder = TaoConfigurationProvider.getInstance().getValue("product.location");
+        String folder = ConfigurationManager.getInstance().getValue("products.location");
         List<EOProduct> result = component.doFetch(entry, null, folder);
         Assert.notNull(result, "Unexpected result");
         Assert.notEmpty(result, "The list should have contained one result");
@@ -144,7 +138,7 @@ public class DataServiceTest {
         DataSourceComponent component = new DataSourceComponent("Landsat8", "Amazon Web Services");
         List<EOProduct> entry = new ArrayList<>();
         entry.add(this.testL8Result);
-        String folder = TaoConfigurationProvider.getInstance().getValue("product.location");
+        String folder = ConfigurationManager.getInstance().getValue("products.location");
         List<EOProduct> result = component.doFetch(entry, null, folder);
         Assert.notNull(result, "Unexpected result");
         Assert.notEmpty(result, "The list should have contained one result");

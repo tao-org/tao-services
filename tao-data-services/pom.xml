@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tao-services</artifactId>
         <groupId>ro.cs.tao</groupId>
-        <version>1.0.4.0</version>
+        <version>1.4.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -51,6 +51,26 @@
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-gdalinfo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-zarr-metadata</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-openstack</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-stac-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-datasources-stac</artifactId>
             <version>${project.version}</version>
         </dependency>
 

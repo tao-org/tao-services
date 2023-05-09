@@ -19,8 +19,8 @@ package ro.cs.tao.services.entity.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.GroupComponent;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.GroupComponentProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.GroupComponentService;
 
@@ -37,42 +37,30 @@ public class GroupComponentServiceImpl
         implements GroupComponentService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
-    private Logger logger = Logger.getLogger(ComponentService.class.getName());
+    private GroupComponentProvider componentProvider;
+    private final Logger logger = Logger.getLogger(ComponentService.class.getName());
 
     @Override
     public GroupComponent findById(String id) {
-        GroupComponent component = null;
-        component = persistenceManager.getGroupComponentById(id);
-        return component;
+        return componentProvider.get(id);
     }
 
     @Override
     public List<GroupComponent> list() {
-        List<GroupComponent> components = null;
-        try {
-            components = persistenceManager.getGroupComponents();
-        } catch (Exception e) {
-            logger.severe(e.getMessage());
-        }
-        return components;
+        return componentProvider.list();
     }
 
     @Override
     public List<GroupComponent> list(Iterable<String> ids) {
-        List<GroupComponent> components = null;
-        try {
-            components = persistenceManager.getGroupComponents(ids);
-        } catch (Exception e) {
-            logger.severe(e.getMessage());
-        }
-        return components;
+        return componentProvider.list(ids);
     }
 
     @Override
     public GroupComponent save(GroupComponent component) {
         try {
-            return persistenceManager.saveGroupComponent(component);
+            final GroupComponent savedComponent = componentProvider.save(component);
+            GroupComponent.cloneIndex(component, savedComponent);
+            return savedComponent;
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
             return null;
@@ -82,7 +70,9 @@ public class GroupComponentServiceImpl
     @Override
     public GroupComponent update(GroupComponent component) {
         try {
-            return persistenceManager.updateGroupComponent(component);
+            final GroupComponent updated = componentProvider.update(component);
+            GroupComponent.cloneIndex(component, updated);
+            return updated;
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
             return null;
@@ -93,7 +83,7 @@ public class GroupComponentServiceImpl
     public void delete(String id) {
         if (id != null) {
             try {
-                persistenceManager.deleteGroupComponent(id);
+                componentProvider.delete(id);
             } catch (PersistenceException e) {
                 logger.severe(e.getMessage());
             }

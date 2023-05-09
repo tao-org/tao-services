@@ -17,7 +17,6 @@
 package ro.cs.tao.services.commons;
 
 import org.reflections.Reflections;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.Method;
@@ -26,7 +25,9 @@ import java.util.Set;
 
 public class Endpoints {
     public static final String LOGIN_ENDPOINT = "/auth/login";
+    public static final String REFRESH_ENDPOINT = "/auth/refresh";
     public static final String LOGIN_ENDPOINT_METHOD = "POST";
+    public static final String DOWNLOAD_ENDPOINT = "/files/get";
     public static final String LOGOUT_ENDPOINT = "/auth/logout";
     public static final String ADMIN_SERVICE_PATH_EXPRESSION = "/admin/**/*";
     //public static final String USER_SERVICE_PATH_EXPRESSION = "/user/**/*";
@@ -45,52 +46,56 @@ public class Endpoints {
     public static final String ORCHESTRATOR_SERVICE_PATH_EXPRESSION = "/orchestrator/**/*";
     public static final String API_PATH_EXPRESSION = "/api/**/*";
     public static final String GLOBAL_PATH_EXPRESSION = "/**/*";
+    private static Set<String> endpointList;
 
-    public static String[] endpoints() {
-        Set<String> list = new HashSet<>();
-        Set<Class<?>> controllers = new Reflections("ro.cs.tao").getTypesAnnotatedWith(Controller.class);
-        for (Class<?> controller : controllers) {
-            String path;
-            RequestMapping annotation = controller.getAnnotation(RequestMapping.class);
-            if (annotation.value().length > 0) {
-                path = annotation.value()[0];
-                if (!"/user".equals(path)) {
-                    Method[] methods = controller.getDeclaredMethods();
-                    for (Method method : methods) {
-                        RequestMapping mapping = method.getAnnotation(RequestMapping.class);
-                        if (mapping != null &&  mapping.value().length > 0) {
-                            path += mapping.value()[0];
-                        } else {
-                            GetMapping getMapping = method.getAnnotation(GetMapping.class);
-                            if (getMapping != null && getMapping.value().length > 0) {
-                                path += getMapping.value()[0];
+    public static Set<String> endpoints(String packagePrefix) {
+        if (endpointList == null) {
+            endpointList = new HashSet<>();
+            Set<Class<?>> controllers = new Reflections(packagePrefix).getTypesAnnotatedWith(RestController.class);
+            for (Class<?> controller : controllers) {
+                String path;
+                RequestMapping annotation = controller.getAnnotation(RequestMapping.class);
+                if (annotation != null && annotation.value().length > 0) {
+                    path = annotation.value()[0];
+                    if (!"/user".equals(path)) {
+                        Method[] methods = controller.getDeclaredMethods();
+                        for (Method method : methods) {
+                            RequestMapping mapping = method.getAnnotation(RequestMapping.class);
+                            if (mapping != null && mapping.value().length > 0) {
+                                path += mapping.value()[0];
                             } else {
-                                PostMapping postMapping = method.getAnnotation(PostMapping.class);
-                                if (postMapping != null && postMapping.value().length > 0) {
-                                    path += postMapping.value()[0];
+                                GetMapping getMapping = method.getAnnotation(GetMapping.class);
+                                if (getMapping != null && getMapping.value().length > 0) {
+                                    path += getMapping.value()[0];
                                 } else {
-                                    PutMapping putMapping = method.getAnnotation(PutMapping.class);
-                                    if (putMapping != null && putMapping.value().length > 0) {
-                                        path += putMapping.value()[0];
+                                    PostMapping postMapping = method.getAnnotation(PostMapping.class);
+                                    if (postMapping != null && postMapping.value().length > 0) {
+                                        path += postMapping.value()[0];
                                     } else {
-                                        DeleteMapping deleteMapping = method.getAnnotation(DeleteMapping.class);
-                                        if (deleteMapping != null && deleteMapping.value().length > 0) {
-                                            path += deleteMapping.value()[0];
+                                        PutMapping putMapping = method.getAnnotation(PutMapping.class);
+                                        if (putMapping != null && putMapping.value().length > 0) {
+                                            path += putMapping.value()[0];
+                                        } else {
+                                            DeleteMapping deleteMapping = method.getAnnotation(DeleteMapping.class);
+                                            if (deleteMapping != null && deleteMapping.value().length > 0) {
+                                                path += deleteMapping.value()[0];
+                                            }
                                         }
                                     }
                                 }
                             }
+                            endpointList.add(generalizePath(path));
                         }
-                        list.add(generalizePath(path));
+                    } else {
+                        // "/user/activate/{username}", "/user/reset/{username}"  should remain free (accessed from activation email)
+                        endpointList.add(path + "/*");
                     }
-                } else {
-                    // "/user/activate/{username}", "/user/reset/{username}"  should remain free (accessed from activation email)
-                    list.add(path + "/*");
-                }
 
+                }
             }
+            endpointList.remove(REFRESH_ENDPOINT);
         }
-        return list.toArray(new String[0]);
+        return endpointList;
     }
 
     private static String generalizePath(String path) {

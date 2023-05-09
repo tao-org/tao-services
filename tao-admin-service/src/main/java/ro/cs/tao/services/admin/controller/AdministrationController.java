@@ -15,13 +15,15 @@
  */
 package ro.cs.tao.services.admin.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.web.bind.annotation.*;
-import ro.cs.tao.configuration.TaoConfigurationProvider;
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.services.admin.mail.Constants;
 import ro.cs.tao.services.auth.token.TokenManagementService;
@@ -35,11 +37,18 @@ import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.mail.MailSender;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /**
  * @author Oana H.
  */
-@Controller
+@RestController
 @RequestMapping("/admin")
+@Tag(name = "User management", description = "Admin operations related to user management")
 public class AdministrationController extends BaseController {
 
     @Autowired
@@ -48,8 +57,18 @@ public class AdministrationController extends BaseController {
     @Autowired
     private TokenManagementService tokenService;
 
+    @Autowired
+    private SessionRegistry sessionRegistry;
+
+    /**
+     * Creates a new user
+     * @param newUserInfo   The user account information
+     */
     @RequestMapping(value = "/users", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> addNewUser(@RequestBody User newUserInfo) {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
         if (newUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
@@ -58,7 +77,7 @@ public class AdministrationController extends BaseController {
             if (userInfo != null) {
                 //send email with activation link
                 final MailSender mailSender = new MailSender();
-                final TaoConfigurationProvider configManager = TaoConfigurationProvider.getInstance();
+                final ConfigurationProvider configManager = ConfigurationManager.getInstance();
                 final String activationEndpointUrl = configManager.getValue("tao.services.base") + "/user/activate/" + userInfo.getUsername();
                 final String userFullName = userInfo.getFirstName() + " " + userInfo.getLastName();
                 final String activationEmailContent = constructEmailContentForAccountActivation(userFullName, activationEndpointUrl);
@@ -75,24 +94,64 @@ public class AdministrationController extends BaseController {
 
     @RequestMapping(value = "/users/unicity", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getAllUsersUnicityInfo() {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
         return prepareResult(adminService.getAllUsersUnicityInfo());
     }
 
+    /**
+     * Lists user accounts by their status
+     * @param activationStatus  The user status
+     */
     @RequestMapping(value = "/users", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> findUsersByStatus(@RequestParam("status") UserStatus activationStatus) {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
         if (activationStatus == null) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         return prepareResult(adminService.findUsersByStatus(activationStatus));
     }
 
+    /**
+     * Lists the currently logged-in users
+     */
+    @RequestMapping(value = "/users/logged", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> findLoggedUsers() {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        final Set<String> names = new HashSet<>();
+        final List<User> users = new ArrayList<>();
+        names.addAll(sessionRegistry.getAllPrincipals().stream().filter(u->!sessionRegistry.getAllSessions(u, false).isEmpty()).map(Object::toString).collect(Collectors.toList()));
+        if (!names.isEmpty()) {
+            users.addAll(adminService.getUsers(names));
+        }
+        return prepareResult(users);
+    }
+
+    /**
+     * Lists the existing user groups
+     */
     @RequestMapping(value = "/users/groups", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getGroups() {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
         return prepareResult(adminService.getGroups());
     }
 
+    /**
+     * Returns the detail of a user account
+     * @param username  The user account name
+     */
     @RequestMapping(value = "/users/{username}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("username") String username) {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
         if (StringUtilities.isNullOrEmpty(username)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -108,8 +167,15 @@ public class AdministrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/users/{username}", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    /**
+     * Updates the user account information
+     * @param updatedUserInfo   The user account information
+     */
+    @RequestMapping(value = "/users/{username}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateUserInfo(@RequestBody User updatedUserInfo) {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
         if (updatedUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
@@ -134,8 +200,16 @@ public class AdministrationController extends BaseController {
         }
     }
 
+    /**
+     * Disables a user account
+     * @param username  The user account name
+     * @param additionalDisableActions  Additional actions to be performed
+     */
     @RequestMapping(value = "/users/{username}/disable", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> disableUser(@PathVariable("username") String username, @RequestBody DisableUserInfo additionalDisableActions) {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
         if (StringUtilities.isNullOrEmpty(username) || additionalDisableActions == null) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -148,8 +222,15 @@ public class AdministrationController extends BaseController {
         }
     }
 
+    /**
+     * Deletes a user account
+     * @param username  The user account name
+     */
     @RequestMapping(value = "/users/{username}", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("username") String username) {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
         if (StringUtilities.isNullOrEmpty(username)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }

@@ -20,6 +20,7 @@ import org.springframework.security.core.GrantedAuthority;
 
 import javax.security.auth.login.LoginContext;
 import java.util.List;
+import java.util.Objects;
 
 /**
  *
@@ -41,5 +42,17 @@ public class AuthenticationWithToken extends JaasAuthenticationToken {
 
     public String getToken() {
         return (String)getDetails();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof AuthenticationWithToken) &&
+                Objects.equals(getPrincipal(), ((AuthenticationWithToken) obj).getPrincipal()) &&
+                Objects.equals(getCredentials(), ((AuthenticationWithToken) obj).getCredentials());
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }
