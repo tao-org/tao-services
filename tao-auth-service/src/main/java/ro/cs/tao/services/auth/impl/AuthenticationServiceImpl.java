@@ -15,24 +15,28 @@
  */
 package ro.cs.tao.services.auth.impl;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.configuration.TaoConfigurationProvider;
-import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.security.Token;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
-import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.workspaces.Repository;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -49,39 +53,46 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private TokenManagementService tokenService;
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private UserProvider userProvider;
+
+    @Autowired
+    private RepositoryProvider workspaceProvider;
 
     @Override
-    public AuthInfo login(String username) {
-        logger.fine("Logged in (" + username + ")...");
-        // if arrived here, this means that the JAAS login was successful
+    public AuthInfo login(String userName, String password) {
 
-        String authenticationToken = tokenService.getUserToken(username);
-        logger.finest("Token " + authenticationToken);
+        Token authenticationToken = tokenService.getUserToken(userName);
+        logger.finest("Token " + authenticationToken.getToken());
 
         // check if user is still active in TAO
-        final User user = persistenceManager.findUserByUsername(username);
+        final User user = userProvider.getByName(userName);
         if (user != null && user.getStatus() == UserStatus.ACTIVE) {
-            // update user last login date
-            persistenceManager.updateUserLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
             try {
-                Path path = Paths.get(TaoConfigurationProvider.getInstance().getValue("workspace.location")).resolve(username);
+                // update user last login date
+                userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
+                final List<Repository> list = workspaceProvider.getByUser(userName);
+                if (list == null || list.isEmpty()) {
+                    userProvider.createWorkspaces(userName);
+                }
+                Path path = Paths.get(SystemVariable.ROOT.value()).resolve(userName);
                 FileUtilities.ensureExists(path);
                 FileUtilities.ensureExists(path.resolve("files"));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
-                                            username, ExceptionUtils.getStackTrace(logger, e)));
+                                            userName, ExceptionUtils.getStackTrace(e)));
             }
             // retrieve user groups and send them as profiles
-            return new AuthInfo(true, authenticationToken, persistenceManager.getUserGroups(username).stream().map(Group::getName).collect(Collectors.toList()));
+            return new AuthInfo(true, authenticationToken.getToken(),
+                                authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
+                                user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
         }
         // unauthorized
-        return new AuthInfo(false, null, null);
+        return new AuthInfo(false, null, null, -1, null);
     }
 
     @Override
     public boolean logout(String authToken) {
-        if (tokenService.contains(authToken)) {
+        if (tokenService.isValid(authToken)) {
             final String username = tokenService.retrieve(authToken).getPrincipal().toString();
             logger.finest("Logging out (" + username + ")...");
             tokenService.removeUserTokens(username);
@@ -91,5 +102,29 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             logger.finest("Invalid auth token received at logout: " + authToken);
             return false;
         }
+    }
+
+    @Override
+    public Token getNewToken(String userName, String refreshToken) {
+        final User user = userProvider.getByName(userName);
+        if (user != null && user.getStatus() == UserStatus.ACTIVE) {
+            Token authenticationToken = tokenService.getUserToken(userName);
+            if (authenticationToken == null) {
+                authenticationToken = tokenService.getFromRefreshToken(refreshToken);
+            }
+            if (authenticationToken != null) {
+                final String refreshTokenOriginal = authenticationToken.getRefreshToken();
+                if (refreshToken.equals(refreshTokenOriginal)) {
+                    final Token token = tokenService.generateNewToken(refreshToken);
+                    if (token != null) {
+                        final Authentication authentication = tokenService.retrieveFromRefreshToken(refreshToken);
+                        tokenService.removeUserTokens(userName);
+                        tokenService.store(token, authentication);
+                        return token;
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

@@ -18,41 +18,38 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
-import ro.cs.tao.Tuple;
 import ro.cs.tao.component.Variable;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
+import ro.cs.tao.datasource.DataSourceConfiguration;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
-import ro.cs.tao.services.entity.beans.DataSourceGroupRequest;
-import ro.cs.tao.services.entity.beans.DataSourceNameRequest;
-import ro.cs.tao.services.entity.beans.DataSourceRequest;
-import ro.cs.tao.services.entity.beans.GroupQuery;
+import ro.cs.tao.services.entity.beans.*;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
-import ro.cs.tao.services.interfaces.DataSourceComponentService;
-import ro.cs.tao.services.interfaces.DataSourceGroupService;
-import ro.cs.tao.services.interfaces.ProductService;
-import ro.cs.tao.services.interfaces.QueryService;
+import ro.cs.tao.services.factory.StorageServiceFactory;
+import ro.cs.tao.services.interfaces.*;
+import ro.cs.tao.services.model.component.ProductSetInfo;
+import ro.cs.tao.utils.Tuple;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
+import java.io.FileNotFoundException;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Controller
+@RestController
 @RequestMapping("/datasource")
 public class DataSourceComponentController extends DataEntityController<DataSourceComponent, String, DataSourceComponentService>{
 
@@ -62,6 +59,8 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     private DataSourceGroupService dataSourceGroupService;
     @Autowired
     private QueryService queryService;
+    @Autowired
+    private RepositoryProvider repositoryProvider;
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/page", method = RequestMethod.GET, produces = "application/json")
@@ -235,8 +234,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 long addedQuota = 0;
                 if (prods != null && prods.size() > 0) {
                 	// check if, by adding the selected products, the quota will not be reached
-                    for (EOProduct p: prods)
-                    {
+                    for (EOProduct p: prods) {
                     	if (p.getRefs().contains(currentUser.getName()) || 
                     		(p.getProductStatus() != ProductStatus.DOWNLOADED && p.getProductStatus() != ProductStatus.DOWNLOADING)) {
                     		// product already attached to the user or not yet downloaded.
@@ -247,8 +245,8 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                     	if (!UserQuotaManager.getInstance().checkUserInputQuota(currentUser, addedQuota)) 
                     	{
                     		// by adding this product to the user the quota will be reached
-                    		throw new QuotaException("Cannot create query because you have reached your input quota! "
-                    				+ "Please remove some of your products to continue.");
+                    		throw new QuotaException("Cannot create query because you have reached your input quota! " +
+                                                             "Please remove some of your products to continue.");
                     	}
                     	
                     	// attach the product to the current user
@@ -257,13 +255,32 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                     	
                     }
                 	
-                    components.add(service.createForProductNames(names, entry.getKey(), dataSource, null, request.getLabel(), currentUser));
+                    components.add(service.createForLocations(names, entry.getKey(), dataSource, null, request.getLabel(), currentUser));
                 }
             }
             return components.size() > 0 ? prepareResult(components) : prepareResult("No component was created", ResponseStatus.FAILED);
-        } catch (PersistenceException e) {
+        } catch (PersistenceException | QuotaException e) {
             return handleException(e);
-        } catch (QuotaException e) {
+        }
+    }
+
+    @RequestMapping(value = "/productset", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> createProductSet(@RequestBody ProductSetRequest request) {
+        try {
+            List<String> productPaths;
+            if (request == null || (productPaths = request.getProductPaths()) == null || productPaths.size() == 0) {
+                throw new IllegalArgumentException("[productPaths] Body is empty");
+            }
+            final StorageService repositoryService = getLocalRepositoryService();
+            final Repository localWorkspace = getLocalRepository(currentUser());
+            for (String path : productPaths) {
+                if (!repositoryService.exists(localWorkspace.resolve(path))) {
+                    throw new FileNotFoundException(path + " does not exist");
+                }
+            }
+            final DataSourceComponent component = service.createForLocations(productPaths, request.getLabel(), currentPrincipal());
+            return component != null ? prepareResult(component) : prepareResult("No component was created", ResponseStatus.FAILED);
+        } catch (Exception e) {
             return handleException(e);
         }
     }
@@ -275,5 +292,91 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             objects = new ArrayList<>();
         }
         return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
+    }
+
+    @RequestMapping(value = "/config", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getConfiguration(@RequestParam("dataSourceId") String dataSourceId) {
+        try {
+            return prepareResult(service.getConfiguration(dataSourceId));
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/config", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> saveConfiguration(@RequestBody DataSourceConfiguration configuration) {
+        try {
+            service.saveConfiguration(configuration);
+            return prepareResult("Succeeded", ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/config", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> update(@RequestBody DataSourceConfiguration configuration) {
+        try {
+            service.updateConfiguration(configuration);
+            return prepareResult("Succeeded", ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/productset", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> listProductSets() {
+        try {
+            final String user = currentUser();
+            return prepareResult(ServiceTransformUtils.toProductSetInfos(this.service.getProductSets(user), user));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/productset/{id}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getProductSet(@PathVariable("id") String id) {
+        try {
+            return prepareResult(new ProductSetInfo(this.service.findById(id), currentUser()));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/productset", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> updateProductSet(@RequestBody ProductSetInfo productSet) {
+        try {
+            List<String> products = productSet.getProducts();
+            if (products != null) {
+                Repository localRepository = getLocalRepository(currentUser());
+                products.replaceAll(localRepository::resolve);
+            }
+            return prepareResult(new ProductSetInfo(this.service.updateProductSet(productSet), currentUser()));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/productset/{id}", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> deleteProductSet(@PathVariable("id") String id) {
+        try {
+            this.service.delete(id);
+            return prepareResult(id, ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    private Repository getLocalRepository(String user) {
+        return repositoryProvider.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
+    }
+
+    private StorageService getLocalRepositoryService() {
+        Repository repository = getLocalRepository(currentUser());
+        if (repository == null) {
+            throw new RuntimeException("User [" + currentUser() + "] doesn't have a local repository");
+        }
+        StorageService instance = StorageServiceFactory.getInstance(repository);
+        instance.associate(repository);
+        return instance;
     }
 }

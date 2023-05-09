@@ -18,12 +18,17 @@ package ro.cs.tao.services.config;
 
 import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class TaoConfigurationFileProcessor implements ConfigurationFileProcessor {
 
     @Override
-    public String getFileName() { return "tao.properties"; }
-
-    @Override
-    public String getFileResourceLocation() { return "/ro/cs/tao/configuration/tao.properties"; }
+    public Map<String, String> getFileMap() {
+        return new HashMap<String, String>() {{
+            put("application.properties", "/config/spring.properties");
+            put("tao.properties", "/ro/cs/tao/configuration/tao.properties");
+        }};
+    }
 
 }

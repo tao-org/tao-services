@@ -6,10 +6,11 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.enums.Visibility;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.ComponentService;
+import ro.cs.tao.services.interfaces.DataSourceComponentService;
+import ro.cs.tao.services.interfaces.QueryService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.utils.WorkflowUtilities;
 import ro.cs.tao.workflow.WorkflowDescriptor;
@@ -24,8 +25,9 @@ import java.util.Map;
 
 public class WorkflowBuildHelper {
 
-    private static PersistenceManager persistenceManager;
     private static WorkflowService workflowService;
+    private static DataSourceComponentService dataSourceService;
+    private static QueryService queryService;
     private static ComponentService componentService;
     private static final float xOrigin = 300;
     private static final float yOrigin = 150;
@@ -35,7 +37,7 @@ public class WorkflowBuildHelper {
     private WorkflowDescriptor workflow;
 
     public WorkflowBuildHelper(String workflowName) throws PersistenceException {
-        this.workflow = persistenceManager.getWorkflowDescriptor(workflowName);
+        this.workflow = workflowService.getDescriptor(workflowName);
         if (this.workflow == null) {
             this.workflow = new WorkflowDescriptor();
         }
@@ -45,19 +47,23 @@ public class WorkflowBuildHelper {
         this.workflow.setActive(true);
         this.workflow.setUserName(SessionStore.currentContext().getPrincipal().getName());
         this.workflow.setVisibility(Visibility.PRIVATE);
-        this.workflow = persistenceManager.saveWorkflowDescriptor(this.workflow);
+        this.workflow = workflowService.save(this.workflow);
     }
 
-    public static void setPersistenceManager(PersistenceManager persistenceManager) {
-        WorkflowBuildHelper.persistenceManager = persistenceManager;
-    }
-
-    public static void setWorkflowService(WorkflowService workflowService) {
-        WorkflowBuildHelper.workflowService = workflowService;
+    public static void setWorkflowService(WorkflowService service) {
+        WorkflowBuildHelper.workflowService = service;
     }
 
     public static void setComponentService(ComponentService componentService) {
         WorkflowBuildHelper.componentService = componentService;
+    }
+
+    public static void setDataSourceService(DataSourceComponentService dataSourceService) {
+        WorkflowBuildHelper.dataSourceService = dataSourceService;
+    }
+
+    public static void setQueryService(QueryService queryService) {
+        WorkflowBuildHelper.queryService = queryService;
     }
 
     public WorkflowDescriptor getWorkflow() { return workflow; }
@@ -65,7 +71,7 @@ public class WorkflowBuildHelper {
     public WorkflowNodeDescriptor addSource(String name, String sensor, String dataSource, Map<String, String> values) throws PersistenceException {
         String componentId = sensor + "-" + dataSource;
         DataSourceComponent dataSourceComponent;
-        dataSourceComponent = persistenceManager.getDataSourceInstance(componentId);
+        dataSourceComponent = dataSourceService.findById(componentId);
         if (dataSourceComponent == null) {
             dataSourceComponent = new DataSourceComponent(sensor, dataSource);
             dataSourceComponent.setFetchMode(FetchMode.OVERWRITE);
@@ -75,7 +81,7 @@ public class WorkflowBuildHelper {
             dataSourceComponent.setAuthors("TAO Team");
             dataSourceComponent.setCopyright("(C) TAO Team");
             dataSourceComponent.setNodeAffinity("Any");
-            persistenceManager.saveDataSourceComponent(dataSourceComponent);
+            dataSourceService.save(dataSourceComponent);
         }
         WorkflowNodeDescriptor dsNode = addNode(name, dataSourceComponent.getId(), ComponentType.DATASOURCE, null, null, null, null);
         Query dsQuery = new Query();
@@ -102,7 +108,7 @@ public class WorkflowBuildHelper {
         }
         dsQuery.setValues(values);
         dsQuery.setWorkflowNodeId(dsNode.getId());
-        persistenceManager.saveQuery(dsQuery);
+        queryService.save(dsQuery);
         return dsNode;
     }
 

@@ -2,7 +2,7 @@ package ro.cs.tao.services.commons.update;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.configuration.TaoConfigurationProvider;
+import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.utils.NetStreamResponse;
 import ro.cs.tao.utils.NetUtils;
 
@@ -27,7 +27,7 @@ public class UpdateChecker {
     public static void initialize() {
         if (instance == null) {
             final Logger localLogger = Logger.getLogger(UpdateChecker.class.getName());
-            final TaoConfigurationProvider cfgManager = (TaoConfigurationProvider) ConfigurationManager.getInstance();
+            final ConfigurationProvider cfgManager = ConfigurationManager.getInstance();
             ShutdownHook.register(cfgManager.getApplicationHome());
             final String url = cfgManager.getValue("update.repository.url");
             if (url == null) {
@@ -49,7 +49,7 @@ public class UpdateChecker {
         Timer timer = new Timer("Update check", true);
         timer.scheduleAtFixedRate(new UpdateCheckJob(), atStartup ? 0 : frequency, frequency);
         try {
-            Path path = TaoConfigurationProvider.getInstance().getApplicationHome().resolve("update").resolve("checksums.md5");
+            Path path = ConfigurationManager.getInstance().getApplicationHome().resolve("update").resolve("checksums.md5");
             this.localChecksums = readChecksums(Files.readAllLines(path));
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
@@ -113,7 +113,7 @@ public class UpdateChecker {
         int changes = 0;
         final Map<String, List<String>> differences = computeKeyDifferences(this.localChecksums, remoteFiles);
         if (differences.values().size() > 0) {
-            final Path targetPath = TaoConfigurationProvider.getInstance().getApplicationHome();
+            final Path targetPath = ConfigurationManager.getInstance().getApplicationHome();
             List<String> files = differences.get(UPDATE);
             int updated = 0;
             for (String entry : files) {
@@ -155,7 +155,7 @@ public class UpdateChecker {
 
         @Override
         public void run() {
-            final Path targetPath = TaoConfigurationProvider.getInstance().getApplicationHome();
+            final Path targetPath = ConfigurationManager.getInstance().getApplicationHome();
             try {
                 Path checksumFile = downloadFile("checksums.md5",
                                                  targetPath.resolve("update").resolve("checksums.md5"),

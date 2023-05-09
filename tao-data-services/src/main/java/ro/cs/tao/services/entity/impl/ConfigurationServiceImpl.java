@@ -16,7 +16,7 @@
 package ro.cs.tao.services.entity.impl;
 
 import org.springframework.stereotype.Service;
-import ro.cs.tao.configuration.TaoConfigurationProvider;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.interfaces.ConfigurationService;
 import ro.cs.tao.services.model.KeyValuePair;
 
@@ -36,13 +36,13 @@ public class ConfigurationServiceImpl
 
     @Override
     public KeyValuePair findById(String id) {
-        final String value = TaoConfigurationProvider.getInstance().getValue(id);
+        final String value = ConfigurationManager.getInstance().getValue(id);
         return value != null ? new KeyValuePair(id, value) : null;
     }
 
     @Override
     public List<KeyValuePair> list() {
-        final Map<String, String> properties = TaoConfigurationProvider.getInstance().getAll();
+        final Map<String, String> properties = ConfigurationManager.getInstance().getAll();
         List<KeyValuePair> result = null;
         if (properties != null) {
             result = properties.entrySet().stream()
@@ -54,7 +54,7 @@ public class ConfigurationServiceImpl
 
     @Override
     public List<KeyValuePair> list(Iterable<String> ids) {
-        final Map<String, String> properties = TaoConfigurationProvider.getInstance().getAll();
+        final Map<String, String> properties = ConfigurationManager.getInstance().getAll();
         List<KeyValuePair> result = null;
         if (properties != null) {
             Set<String> identifiers = StreamSupport.stream(ids.spliterator(), false).collect(Collectors.toSet());

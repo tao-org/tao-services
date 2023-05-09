@@ -19,26 +19,33 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import ro.cs.tao.configuration.TaoConfigurationProvider;
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.interfaces.RepositoryService;
+import ro.cs.tao.services.interfaces.RepositoryWatcherService;
 import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
+import ro.cs.tao.user.UserType;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
 /**
  * @author Oana H.
  */
-@Controller
+@RestController
 @RequestMapping("/user")
 public class UserController extends BaseController {
 
@@ -47,6 +54,17 @@ public class UserController extends BaseController {
 
     @Autowired
     private TokenManagementService tokenService;
+
+    @Autowired
+    private RepositoryWatcherService repositoryWatcherService;
+
+    @Autowired
+    private RepositoryService repositoryService;
+
+    @RequestMapping(value = "/groups/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getGroups() {
+        return prepareResult(userService.getGroups());
+    }
 
     @RequestMapping(value = "/activate/{username}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> activate(@PathVariable("username") String username) {
@@ -58,8 +76,9 @@ public class UserController extends BaseController {
 
             // we need to know if the user is TAO internal or external
             final User userInfo = userService.getUserInfo(username);
-
-            if (!userInfo.isExternal()) {
+            final ConfigurationProvider configManager = ConfigurationManager.getInstance();
+            repositoryWatcherService.registerUser(username);
+            if (userInfo.getUserType() == UserType.INTERNAL) {
                 // internal TAO authenticated users need to set a password
                 // we need a redirect to TAO reset password page from activation email within email that hits this endpoint
                 final String passwordResetKey = UUID.randomUUID().toString();
@@ -67,7 +86,7 @@ public class UserController extends BaseController {
                 userInfo.setPasswordResetKey(passwordResetKey);
                 userService.updateUserInfo(userInfo);
 
-                final TaoConfigurationProvider configManager = TaoConfigurationProvider.getInstance();
+
                 final String passwordResetUIUrl = configManager.getValue("tao.ui.base") + configManager.getValue("tao.ui.password.reset") + "?rk=" + passwordResetKey;
                 HttpHeaders headers = new HttpHeaders();
                 headers.add("Location", passwordResetUIUrl);
@@ -76,7 +95,6 @@ public class UserController extends BaseController {
             else {
                 // external authenticated users have already a password in the external authentication mechanism
                 // redirect to TAO login page from activation email within email that hits this endpoint
-                final TaoConfigurationProvider configManager = TaoConfigurationProvider.getInstance();
                 final String loginUIUrl = configManager.getValue("tao.ui.base") + configManager.getValue("tao.ui.login");
                 HttpHeaders headers = new HttpHeaders();
                 headers.add("Location", loginUIUrl);
@@ -111,6 +129,10 @@ public class UserController extends BaseController {
         try {
             final User userInfo = userService.getUserInfo(username);
             if (userInfo != null) {
+                if (userInfo.getActualInputQuota() == -1) {
+                    Repository repository = getLocalRepository(currentUser());
+                    userInfo.setActualInputQuota((int) (FileUtilities.folderSize(Paths.get(repository.root())) >> 20));
+                }
                 return prepareResult(userInfo);
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -157,19 +179,18 @@ public class UserController extends BaseController {
 
     @RequestMapping(value = "/prefs", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> removeUserPreferences(@RequestBody List<String> userPrefsKeysToDelete, @RequestHeader("X-Auth-Token") String authToken) {
-        if (userPrefsKeysToDelete == null || userPrefsKeysToDelete.isEmpty() || StringUtilities.isNullOrEmpty(authToken)) {
-            return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
+        if (StringUtilities.isNullOrEmpty(authToken)) {
+            return prepareResult("Invalid token!", ResponseStatus.FAILED);
         }
         try {
             final String username = tokenService.retrieve(authToken).getPrincipal().toString();
-            final List<UserPreference> userUpdatedPrefs = userService.removeUserPreferences(username, userPrefsKeysToDelete);
-            if (userUpdatedPrefs != null && !userUpdatedPrefs.isEmpty()) {
-                return prepareResult(userUpdatedPrefs);
-            } else {
-                return prepareResult(null, HttpStatus.UNAUTHORIZED);
-            }
+            return prepareResult(userService.removeUserPreferences(username, userPrefsKeysToDelete));
         } catch (Exception ex) {
             return handleException(ex);
         }
+    }
+
+    private Repository getLocalRepository(String user) {
+        return repositoryService.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
     }
 }

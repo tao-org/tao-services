@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tao-services</artifactId>
         <groupId>ro.cs.tao</groupId>
-        <version>1.0.4.0</version>
+        <version>1.4.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -52,12 +52,22 @@
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-datasources-fedeo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
             <artifactId>tao-datasources-eocat</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-datasources-fedeo</artifactId>
+            <artifactId>tao-datasources-earthdata</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-datasources-lsa</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

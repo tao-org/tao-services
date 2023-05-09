@@ -15,18 +15,29 @@
  */
 package ro.cs.tao.services.entity.util;
 
+import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.WPSComponent;
+import ro.cs.tao.component.WebServiceAuthentication;
+import ro.cs.tao.component.enums.AuthenticationType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
+import ro.cs.tao.docker.Container;
+import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
-import ro.cs.tao.services.model.component.DataSourceGroupInfo;
-import ro.cs.tao.services.model.component.DataSourceInfo;
-import ro.cs.tao.services.model.component.ProcessingComponentInfo;
+import ro.cs.tao.services.entity.beans.RepositoryBean;
+import ro.cs.tao.services.entity.beans.RepositoryTemplateBean;
+import ro.cs.tao.services.entity.beans.RepositoryTypeBean;
+import ro.cs.tao.services.entity.beans.WebServiceBean;
+import ro.cs.tao.services.model.component.*;
 import ro.cs.tao.services.model.execution.ExecutionJobInfo;
 import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.workflow.WorkflowDescriptor;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryTemplate;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,10 +78,28 @@ public final class ServiceTransformUtils {
         return results;
     }
 
+    public static List<WPSComponentInfo> toWPSComponentInfos(final List<WPSComponent> components) {
+        final List<WPSComponentInfo> results = new ArrayList<>();
+        for (WPSComponent component : components) {
+            results.add(new WPSComponentInfo(component));
+        }
+        return results;
+    }
+
     public static List<DataSourceInfo> toDataSourceInfos(final List<DataSourceComponent> components) {
         final List<DataSourceInfo> results = new ArrayList<>();
         for (DataSourceComponent component : components) {
             results.add(new DataSourceInfo(component));
+        }
+        return results;
+    }
+
+    public static List<ProductSetInfo> toProductSetInfos(final List<DataSourceComponent> components, String user) {
+        final List<ProductSetInfo> results = new ArrayList<>();
+        if (components != null) {
+            for (DataSourceComponent component : components) {
+                results.add(new ProductSetInfo(component, user));
+            }
         }
         return results;
     }
@@ -95,4 +124,125 @@ public final class ServiceTransformUtils {
         return new WorkflowInfo(descriptor);
     }
 
+    public static RepositoryTypeBean toBean(RepositoryType type) {
+        final RepositoryTypeBean bean = new RepositoryTypeBean();
+        bean.setId(type.value());
+        bean.setName(type.name());
+        bean.setDescription(type.friendlyName());
+        bean.setUrlPrefix(type.prefix());
+        bean.setRootKey(type.rootKey());
+        bean.setSingleton(type.singleton());
+        bean.setParameters(type.getParameters());
+        return bean;
+    }
+
+    public static Repository fromBean(RepositoryBean bean) {
+        final Repository entity = new Repository();
+        entity.setId(bean.getId());
+        entity.setName(bean.getName());
+        entity.setDescription(bean.getDescription());
+        entity.setParameters(bean.getParameters());
+        entity.setUrlPrefix(bean.getUrlPrefix());
+        entity.setSystem(bean.isSystem());
+        entity.setReadOnly(bean.isReadOnly());
+        entity.setEditable(bean.isEditable());
+        entity.setType(EnumUtils.getEnumConstantByName(RepositoryType.class, bean.getType()));
+        return entity;
+    }
+
+    public static RepositoryBean toBean(Repository entity) {
+        final RepositoryBean bean = new RepositoryBean();
+        bean.setId(entity.getId());
+        bean.setName(entity.getName());
+        bean.setDescription(entity.getDescription());
+        bean.setParameters(entity.getParameters());
+        bean.setUrlPrefix(entity.getUrlPrefix());
+        bean.setType(entity.getType().name());
+        bean.setRootKey(entity.getType().rootKey());
+        bean.setReadOnly(entity.isReadOnly());
+        bean.setSystem(entity.isSystem());
+        bean.setEditable(entity.isEditable());
+        return bean;
+    }
+
+    public static RepositoryTemplate fromBean(RepositoryTemplateBean bean) {
+        final RepositoryTemplate entity = new RepositoryTemplate();
+        entity.setId(bean.getId());
+        entity.setName(bean.getName());
+        entity.setDescription(bean.getDescription());
+        entity.setParameters(bean.getParameters());
+        entity.setUrlPrefix(bean.getUrlPrefix());
+        entity.setType(EnumUtils.getEnumConstantByName(RepositoryType.class, bean.getType()));
+        return entity;
+    }
+
+    public static RepositoryTemplateBean toBean(RepositoryTemplate entity) {
+        final RepositoryTemplateBean bean = new RepositoryTemplateBean();
+        bean.setId(entity.getId());
+        bean.setName(entity.getName());
+        bean.setDescription(entity.getDescription());
+        bean.setParameters(entity.getParameters());
+        bean.setUrlPrefix(entity.getUrlPrefix());
+        bean.setType(entity.getType().name());
+        bean.setRootKey(entity.getType().rootKey());
+        return bean;
+    }
+
+    public static WebServiceBean toBean(Container container, WebServiceAuthentication authentication) {
+        final WebServiceBean bean = new WebServiceBean();
+        bean.setId(container.getId());
+        bean.setName(container.getName());
+        bean.setDescription(container.getDescription());
+        bean.setType(container.getType());
+        bean.setApplicationPath(container.getApplicationPath());
+        bean.setLogo(container.getLogo());
+        bean.setApplications(container.getApplications());
+        bean.setFormat(container.getFormat());
+        bean.setCommonParameters(container.getCommonParameters());
+        bean.setFormatNameParameter(container.getFormatNameParameter());
+        bean.setTag(container.getTag());
+        if (authentication != null) {
+            bean.setAuthType(authentication.getType());
+            bean.setUser(authentication.getUser());
+            //bean.setPassword(Crypto.decrypt(authentication.getPassword(), authentication.getUser()));
+            bean.setPassword(authentication.getPassword());
+            bean.setLoginUrl(authentication.getLoginUrl());
+            bean.setAuthHeader(authentication.getAuthHeader());
+        }
+        return bean;
+    }
+
+    public static Container getContainerPart(WebServiceBean bean) {
+        final Container entity = new Container();
+        entity.setId(bean.getId());
+        entity.setName(bean.getName());
+        entity.setDescription(bean.getDescription());
+        entity.setType(bean.getType());
+        entity.setApplicationPath(bean.getApplicationPath());
+        entity.setLogo(bean.getLogo());
+        entity.setApplications(bean.getApplications());
+        entity.setTag(bean.getTag());
+        entity.setFormat(bean.getFormat());
+        entity.setCommonParameters(bean.getCommonParameters());
+        entity.setFormatNameParameter(bean.getFormatNameParameter());
+        return entity;
+    }
+
+    public static WebServiceAuthentication getAuthenticationPart(WebServiceBean bean) {
+        final WebServiceAuthentication entity = new WebServiceAuthentication();
+        entity.setId(bean.getId());
+        if (bean.getAuthType() != null) {
+            entity.setType(bean.getAuthType());
+            entity.setUser(bean.getUser());
+            /*if (entity.getUser() != null) {
+                entity.setPassword(Crypto.encrypt(bean.getPassword(), bean.getUser()));
+            }*/
+            entity.setPassword(bean.getPassword());
+            entity.setLoginUrl(bean.getLoginUrl());
+            entity.setAuthHeader(bean.getAuthHeader());
+        } else {
+            entity.setType(AuthenticationType.NONE);
+        }
+        return entity;
+    }
 }

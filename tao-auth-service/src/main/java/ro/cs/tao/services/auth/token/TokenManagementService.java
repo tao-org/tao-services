@@ -15,87 +15,85 @@
  */
 package ro.cs.tao.services.auth.token;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
-import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import ro.cs.tao.security.Token;
+import ro.cs.tao.security.TokenCache;
+import ro.cs.tao.security.TokenProvider;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
  * @author Oana H.
  */
 @Component
-@Scope(value = "singleton")
+//@Scope(value = "singleton")
 public class TokenManagementService {
-    private static final Logger logger = Logger.getLogger(TokenManagementService.class.getName());
-    private static final Cache authTokenCache = CacheManager.getInstance().getCache("authTokenCache");
-    public static final int ONE_HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
+    private static final int REFRESH_INTERVAL = 300; // seconds
+    private final Logger logger = Logger.getLogger(TokenManagementService.class.getName());
+    private TokenCache tokenCache = new TokenCache() { };
+    private TokenProvider tokenProvider = new TokenProvider() { };
 
-    @Scheduled(fixedRate = ONE_HOUR_IN_MILLISECONDS)
+    public void setTokenProvider(TokenProvider provider) {
+        this.tokenProvider = provider;
+    }
+
+    public void setTokenCache(TokenCache tokenCache) {
+        this.tokenCache = tokenCache;
+    }
+
+    @Scheduled(fixedRate = REFRESH_INTERVAL, timeUnit = TimeUnit.SECONDS)
     public void evictExpiredTokens() {
         logger.finest("Evicting expired tokens...");
-        authTokenCache.evictExpiredElements();
+        tokenCache.evictExpired();
     }
 
-    public String generateNewToken() {
-        return UUID.randomUUID().toString();
+    public Token generateNewToken(String user, String password) {
+        return tokenProvider.newToken(user, password);
     }
 
-    public void store(String token, Authentication authentication) {
-        // when storing a new token for a user, make sure to delete existing alive tokens for the same user, if any
-        final String username = authentication.getPrincipal().toString();
-        //removeUserTokens(username);
-
-        // store the new token
-        authTokenCache.put(new Element(token, authentication));
+    public Token generateNewToken(String refreshToken) {
+        return tokenProvider.newToken(refreshToken);
     }
 
-    public boolean contains(String token) {
-        return authTokenCache.get(token) != null;
+    public void store(Token token, Authentication authentication) {
+        tokenCache.put(token, authentication);
+    }
+
+    public boolean isValid(String token) {
+        final Authentication authentication = tokenCache.getAuthentication(token);
+        if (authentication != null && authentication.isAuthenticated()) {
+            return true;
+        } else {
+            final Token fullToken = tokenCache.getFullToken(token);
+            if (fullToken != null) {
+                return true;
+            } else {
+                return tokenProvider.validate(token);
+            }
+        }
     }
 
     public Authentication retrieve(String token) {
-        return (Authentication) authTokenCache.get(token).getObjectValue();
+        return tokenCache.getAuthentication(token);
     }
 
-    public String getUserToken(String username) {
-        List<String> tokens = new ArrayList<>();
-        for (Object key : authTokenCache.getKeys()) {
-            Element element = authTokenCache.get(key);
-            if (element != null && ((Authentication) element.getObjectValue()).getPrincipal().toString().equals(username)) {
-                tokens.add(key.toString());
-            }
-        }
-        logger.fine("User " + username + " has the token(s): " + tokens.toString());
-
-        for (Object key : authTokenCache.getKeys()) {
-            Element element = authTokenCache.get(key);
-            if (element != null && ((Authentication) element.getObjectValue()).getPrincipal().toString().equals(username)) {
-                return key.toString();
-            }
-        }
-        return null;
+    public Authentication retrieveFromRefreshToken(String token) {
+        return tokenCache.getPreviousAuthentication(token);
     }
 
-    public void removeUserTokens(String username) {
-        List<String> tokens = new ArrayList<>();
-        for (Object key : authTokenCache.getKeys()) {
-            Element element = authTokenCache.get(key);
-            if (element != null && ((Authentication) element.getObjectValue()).getPrincipal().toString().equals(username)) {
-                tokens.add(key.toString());
-            }
-        }
-        logger.fine("User " + username + " had the token(s): " + tokens.toString());
-
-        for (String token : tokens) {
-            authTokenCache.remove(token);
-        }
+    public Token getUserToken(String user) {
+        return tokenCache.getToken(user);
     }
+
+    public Token getFromRefreshToken(String refreshToken) {
+        return tokenCache.getFromRefreshToken(refreshToken);
+    }
+
+    public void removeUserTokens(String user) {
+        tokenCache.remove(user);
+    }
+
 }

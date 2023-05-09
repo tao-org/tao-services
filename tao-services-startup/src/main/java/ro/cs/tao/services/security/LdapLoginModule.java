@@ -16,149 +16,52 @@
 package ro.cs.tao.services.security;
 
 import ro.cs.tao.ldap.TaoLdapClient;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.security.AuthenticationMode;
+import ro.cs.tao.security.TaoLoginModule;
+import ro.cs.tao.user.Group;
+import ro.cs.tao.user.User;
 
-import javax.security.auth.Subject;
-import javax.security.auth.callback.*;
-import javax.security.auth.login.FailedLoginException;
-import javax.security.auth.login.LoginException;
-import javax.security.auth.spi.LoginModule;
-import java.io.IOException;
-import java.util.Map;
-import java.util.logging.Logger;
+import java.util.List;
+import java.util.stream.Collectors;
 
-public class LdapLoginModule implements LoginModule {
+public class LdapLoginModule extends TaoLoginModule {
 
-    private static final Logger logger = Logger.getLogger(LdapLoginModule.class.getName());
-
-    private UserPrincipal userPrincipal;
-    private Subject subject;
-    private CallbackHandler callbackHandler;
-    private Map sharedState;
-    private Map options;
-    private boolean succeeded = false;
-    private boolean commitSucceeded = false;
-    private String username;
-    private String password;
-
-    public TaoLdapClient ldapClient;
+    private final TaoLdapClient ldapClient;
 
     public LdapLoginModule() {
+        super();
         ldapClient = new TaoLdapClient();
     }
 
     @Override
-    public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState,
-                           Map<String, ?> options) {
-
-        this.subject = subject;
-        this.callbackHandler = callbackHandler;
-        this.sharedState = sharedState;
-        this.options = options;
-
-        succeeded = false;
+    protected AuthenticationMode intendedFor() {
+        return AuthenticationMode.LDAP;
     }
 
     @Override
-    public boolean login() throws LoginException {
-        if (callbackHandler == null) {
-            throw new LoginException("CallbackHandler null!");
-        }
-
-        Callback[] callbacks = new Callback[2];
-        callbacks[0] = new NameCallback("name:");
-        callbacks[1] = new PasswordCallback("password:", false);
-
-        try {
-            // call callback handler
-            callbackHandler.handle(callbacks);
-        } catch (IOException e) {
-            throw new LoginException("IOException calling handle on callbackHandler : " + e.getMessage());
-        } catch (UnsupportedCallbackException e) {
-            throw new LoginException("UnsupportedCallbackException calling handle on callbackHandler : " + e.getMessage());
-        }
-
-        NameCallback nameCallback = (NameCallback) callbacks[0];
-        PasswordCallback passwordCallback = (PasswordCallback) callbacks[1];
-
-        username = nameCallback.getName();
-        password = new String(passwordCallback.getPassword());
-
-        // verify the username and password
-        if (ldapClient.checkLoginCredentials(username, password)) {
-            logger.fine("LDAP Login Module - Successful login!");
-            succeeded = true;
-            return succeeded;
-
-        } else {
-            logger.fine("LDAP Login Module - Invalid login credentials");
-            succeeded = false;
-
-            username = null;
-            password = null;
-
-            throw new FailedLoginException("Invalid login credentials.");
-        }
-    }
-
-    /**
-     * This method is called if the LoginContext's overall authentication succeeded
-     * (the relevant REQUIRED, REQUISITE, SUFFICIENT and OPTIONAL LoginModules succeeded).
-     * @return true if this LoginModule's own login and commit attempts succeeded, or false otherwise.
-     * @throws LoginException
-     */
-    @Override
-    public boolean commit() throws LoginException {
-        if (succeeded == false) {
-            return false;
-        } else {
-            // add a Principal (authenticated identity) to the Subject
-
-            // assume the user we authenticated is the SamplePrincipal
-            userPrincipal = new UserPrincipal(username);
-            if (!subject.getPrincipals().contains(userPrincipal))
-                subject.getPrincipals().add(userPrincipal);
-
-            // erase username and password values
-            username = null;
-            password = null;
-
-            commitSucceeded = true;
-            return true;
-        }
-    }
+    protected boolean shouldEncryptPassword() { return false; }
 
     @Override
-    public boolean logout() throws LoginException {
-        subject.getPrincipals().remove(userPrincipal);
-        succeeded = false;
-        succeeded = commitSucceeded;
-        username = null;
-        password = null;
-        userPrincipal = null;
-        return true;
-    }
-
-    /**
-     * This method is called if the LoginContext's overall authentication failed.
-     * (the relevant REQUIRED, REQUISITE, SUFFICIENT and OPTIONAL LoginModules did not succeed).
-     * @return false if this LoginModule's own login and/or commit attempts failed, and true otherwise.
-     * @throws LoginException if the abort fails
-     */
-    @Override
-    public boolean abort() throws LoginException {
-        if (succeeded == false) {
-            return false;
-        } else if (commitSucceeded == false) {
-            // login succeeded but overall authentication failed
-            succeeded = false;
-            username = null;
-            password = null;
-            userPrincipal = null;
-        } else {
-            // overall authentication succeeded and commit succeeded, but someone else's commit failed
-            logout();
+    protected User loginImpl(String user, String password) {
+        if (userProvider == null) {
+            throw new RuntimeException("[userProvider] not set");
         }
-        return true;
+        User userEntity = ldapClient.checkLoginCredentials(username, password);
+        if (userEntity != null) {
+            final User existing = userProvider.getByName(user);
+            if (existing == null) {
+                try {
+                    final List<Group> groups = userProvider.listGroups().stream().filter(g -> "USER".equalsIgnoreCase(g.getName())).collect(Collectors.toList());
+                    userEntity.setGroups(groups);
+                    userProvider.save(userEntity);
+                } catch (PersistenceException e) {
+                    logger.severe(String.format("Cannot persist user '%s'. Reason: %s", user, e.getMessage()));
+                }
+            } else {
+                userEntity = existing;
+            }
+        }
+        return userEntity;
     }
-
 }

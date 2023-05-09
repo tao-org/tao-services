@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tao-services</artifactId>
         <groupId>ro.cs.tao</groupId>
-        <version>1.0.4.0</version>
+        <version>1.4.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -20,27 +20,13 @@
     <dependencies>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-data-query-service</artifactId>
+            <artifactId>tao-config</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- TAO Services -->
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-monitoring-service</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-data-services</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-progress-report-service</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-orchestration-services</artifactId>
+            <artifactId>tao-admin-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -50,19 +36,66 @@
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-data-query-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-data-services</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-workspace-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-monitoring-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-orchestration-services</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-progress-report-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-scheduling-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
             <artifactId>tao-user-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-admin-service</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <!--<dependency>
-            <groupId>ro.cs.tao</groupId>
             <artifactId>tao-web-processing-service</artifactId>
             <version>${project.version}</version>
-        </dependency>-->
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-workflow-library</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-viewer-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- TAO Plugins -->
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-datasources-asf</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-ldap</artifactId>
@@ -70,7 +103,17 @@
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-docker-snap</artifactId>
+            <artifactId>tao-keycloak</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-docker-enmap</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-docker-gdal</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -85,10 +128,15 @@
         </dependency>
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-docker-gdal</artifactId>
+            <artifactId>tao-docker-snap</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-docker-zarr</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!--<dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-drmaa-slurm</artifactId>
             <version>${project.version}</version>
@@ -97,43 +145,55 @@
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-drmaa-torque</artifactId>
             <version>${project.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-workflow-library</artifactId>
+            <artifactId>tao-openstack</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>ro.cs.tao</groupId>
             <artifactId>tao-quota-database</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-scheduling-service</artifactId>
+            <artifactId>tao-executor-wps</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>ro.cs.tao</groupId>
-            <artifactId>tao-datasources-asf</artifactId>
+            <artifactId>tao-workspace-aws</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-jul</artifactId>
-            <version>2.11.1</version>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-workspace-smb</artifactId>
+            <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-workspace-stac</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!--<dependency>
+            <groupId>ro.cs.tao</groupId>
+            <artifactId>tao-integration-sen2agri</artifactId>
+            <version>${project.version}</version>
+        </dependency>-->
 
+        <!-- Other dependencies -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-            <version>${spring.version}</version>
+            <version>5.7.3</version>
+            <!--<version>5.3.2.RELEASE</version>-->
         </dependency>
-
+        <!--<dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-messaging</artifactId>
+            <version>5.7.3</version>
+        </dependency>-->
     </dependencies>
 
     <build>
@@ -154,7 +214,7 @@
             </plugin>-->
 
             <!-- Plugin for building the jar, from the classes directory -->
-            <plugin>
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <executions>
@@ -166,7 +226,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-install-plugin</artifactId>

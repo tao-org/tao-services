@@ -17,13 +17,17 @@
 package ro.cs.tao.wps.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.ExecutionRequest;
 import ro.cs.tao.execution.model.ExecutionStatus;
-import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.execution.persistence.ExecutionJobProvider;
+import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.interfaces.WebProcessingService;
@@ -31,6 +35,7 @@ import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.workflow.WorkflowDescriptor;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -42,7 +47,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 @Service("webProcessingService")
-public class WebProcessingServiceImpl implements WebProcessingService {
+public class WebProcessingServiceImpl implements WebProcessingService<WorkflowInfo, TargetDescriptor> {
 
     @Autowired
     private WorkflowService workflowService;
@@ -51,10 +56,11 @@ public class WebProcessingServiceImpl implements WebProcessingService {
     private OrchestratorService orchestratorService;
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private ExecutionJobProvider jobProvider;
 
     @Autowired
-    private StorageService<MultipartFile> storageService;
+    private RepositoryProvider repositoryProvider;
+
     long justStartedJobId;
 
     @Override
@@ -82,7 +88,12 @@ public class WebProcessingServiceImpl implements WebProcessingService {
             WorkflowDescriptor descriptor = workflowService.findById(workflowId);
             if (descriptor != null) {
                 String jobName = descriptor.getName() + " via WPS on " + LocalDateTime.now().format(DateTimeFormatter.ISO_TIME);
-                result = orchestratorService.startWorkflow(workflowId, jobName, parameters);
+                final ExecutionRequest request = new ExecutionRequest();
+                request.setWorkflowId(workflowId);
+                request.setName(jobName);
+                request.setLabel(jobName);
+                request.setParameters(parameters);
+                result = orchestratorService.startWorkflow(request);
             }
         } catch (Exception e) {
             Logger.getLogger(WebProcessingService.class.getName()).severe(e.getMessage());
@@ -100,7 +111,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
                 return executionJob;
             }
         }
-        return persistenceManager.getJobById(jobId);
+        return jobProvider.get(jobId);
     }
 
     @Override
@@ -108,7 +119,12 @@ public class WebProcessingServiceImpl implements WebProcessingService {
         if (isDevModeEnabled()) {
             return new ArrayList<>();
         }
-        return storageService.getJobResults(jobId);
+        final ExecutionJob job = jobProvider.get(jobId);
+        if (job != null) {
+            return getLocalRepositoryService(job.getUserName()).getJobResults(jobId);
+        } else {
+            return null;
+        }
     }
 
     private WorkflowInfo getWorkflowInfoSafe(long workflowId) {
@@ -141,7 +157,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
         }
     }
 
-    public static class ProcessInfoImpl implements ProcessInfo {
+    public static class ProcessInfoImpl implements ProcessInfo<WorkflowInfo, TargetDescriptor> {
 
         private Map<String, List<Parameter>> parameters;
         private List<TargetDescriptor> outputs;
@@ -152,7 +168,7 @@ public class WebProcessingServiceImpl implements WebProcessingService {
             return parameters;
         }
 
-        void setParameters(Map<String, List<Parameter>> parameters) {
+        public void setParameters(Map<String, List<Parameter>> parameters) {
             this.parameters = parameters;
         }
 
@@ -161,17 +177,21 @@ public class WebProcessingServiceImpl implements WebProcessingService {
             return outputs;
         }
 
-        void setOutputs(List<TargetDescriptor> outputs) {
+        public void setOutputs(List<TargetDescriptor> outputs) {
             this.outputs = outputs;
         }
 
         @Override
-        public WorkflowInfo getWorkflowInfo() {
+        public WorkflowInfo getCapabilityInfo() {
             return workflowInfo;
         }
 
-        void setWorkflowInfo(WorkflowInfo workflowInfo) {
+        public void setWorkflowInfo(WorkflowInfo workflowInfo) {
             this.workflowInfo = workflowInfo;
         }
+    }
+
+    private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService(String userName) {
+        return StorageServiceFactory.getInstance(repositoryProvider.getByUser(userName).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
     }
 }

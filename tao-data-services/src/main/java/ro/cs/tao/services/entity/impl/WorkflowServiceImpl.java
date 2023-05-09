@@ -17,6 +17,7 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.xml.sax.SAXException;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.*;
@@ -28,11 +29,20 @@ import ro.cs.tao.datasource.DataSourceManager;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.converters.ConversionException;
+import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.datasource.param.DataSourceParameter;
+import ro.cs.tao.datasource.param.JavaType;
+import ro.cs.tao.datasource.persistence.DataSourceComponentProvider;
+import ro.cs.tao.datasource.persistence.QueryProvider;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.execution.model.ExecutionJob;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.execution.persistence.ExecutionJobProvider;
+import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
+import ro.cs.tao.execution.util.TaskUtilities;
+import ro.cs.tao.persistence.*;
+import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
+import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
@@ -44,6 +54,7 @@ import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.services.utils.WorkflowUtilities;
 import ro.cs.tao.snap.xml.GraphParser;
+import ro.cs.tao.utils.Tuple;
 import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
@@ -67,66 +78,96 @@ public class WorkflowServiceImpl
         extends EntityService<WorkflowDescriptor> implements WorkflowService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private WorkflowProvider workflowProvider;
+    @Autowired
+    private WorkflowNodeProvider workflowNodeProvider;
+    @Autowired
+    private TagProvider tagProvider;
+    @Autowired
+    private QueryProvider queryProvider;
+    @Autowired
+    private ExecutionJobProvider jobProvider;
+    @Autowired
+    private ExecutionTaskProvider taskProvider;
+    @Autowired
+    private DataSourceComponentProvider dataSourceComponentProvider;
+    @Autowired
+    private ProcessingComponentProvider componentProvider;
     @Autowired
     private ComponentService componentService;
     @Autowired
     private GroupComponentService groupComponentService;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+    @Autowired
+    private SourceDescriptorRepository sourceDescriptorRepository;
+    @Autowired
+    private TargetDescriptorRepository targetDescriptorRepository;
 
     private Logger logger = Logger.getLogger(WorkflowService.class.getName());
     //region Workflow
     @Override
     public WorkflowDescriptor findById(Long id) {
-        return persistenceManager.getWorkflowDescriptor(id);
+        return workflowProvider.get(id);
     }
 
     @Override
     public WorkflowDescriptor getFullDescriptor(Long id) {
-        return persistenceManager.getFullWorkflowDescriptor(id);
+        return workflowProvider.loadWorkflowDescriptor(id);
+    }
+
+    @Override
+    public WorkflowDescriptor getDescriptor(String name) {
+        return workflowProvider.getByName(name);
     }
 
     @Override
     public List<WorkflowDescriptor> list() {
-        return persistenceManager.getAllWorkflows();
+        return workflowProvider.list();
     }
 
     @Override
     public List<WorkflowDescriptor> list(Iterable<Long> ids) {
-        return persistenceManager.getWorkflows(ids);
+        return workflowProvider.list(ids);
     }
 
     @Override
     public List<WorkflowInfo> getUserWorkflowsByStatus(String user, Status status) {
-        return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getUserWorkflowsByStatus(user, status.value()));
+        return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listUserWorkflowsByStatus(user, status.value()));
     }
 
     @Override
     public List<WorkflowInfo> getUserPublishedWorkflowsByVisibility(String user, Visibility visibility) {
-        return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getUserPublishedWorkflowsByVisibility(user, visibility.value()));
+        return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listUserPublishedWorkflowsByVisibility(user, visibility.value()));
     }
 
     @Override
     public List<WorkflowInfo> getOtherPublicWorkflows(String user) {
-        return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getOtherPublicWorkflows(user));
+        return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listOtherPublicWorkflows(user));
     }
 
     @Override
     public List<WorkflowInfo> getPublicWorkflows() {
         if (!isDevModeEnabled()) {
-            return ServiceTransformUtils.toWorkflowInfos(persistenceManager.getPublicWorkflows());
+            return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listPublic());
         } else {
             return ServiceTransformUtils.toWorkflowInfos(MockData.getMockWorkflows());
         }
     }
 
     @Override
+    public List<WorkflowInfo> getUserVisibleWorkflows(String user) {
+        return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listUserVisible(user));
+    }
+
+    @Override
     public WorkflowInfo getWorkflowInfo(long workflowId) {
-        return ServiceTransformUtils.toWorkflowInfo(persistenceManager.getWorkflowDescriptor(workflowId));
+        return ServiceTransformUtils.toWorkflowInfo(workflowProvider.get(workflowId));
     }
 
     @Override
     public List<Tag> getWorkflowTags() {
-        return persistenceManager.getWorkflowTags();
+        return tagProvider.list(TagType.WORKFLOW);
     }
 
     @Override
@@ -140,7 +181,7 @@ public class WorkflowServiceImpl
             validate(object);
             try {
                 //addTagsIfNew(object);
-                return persistenceManager.saveWorkflowDescriptor(object);
+                return workflowProvider.save(object);
             } catch (PersistenceException e) {
                 logger.severe(e.getMessage());
                 return null;
@@ -151,7 +192,7 @@ public class WorkflowServiceImpl
 
     @Override
     public WorkflowDescriptor update(WorkflowDescriptor object) throws PersistenceException {
-        WorkflowDescriptor existing = persistenceManager.getWorkflowDescriptor(object.getId());
+        WorkflowDescriptor existing = workflowProvider.get(object.getId());
         existing.setName(object.getName());
         existing.setPath(object.getPath());
         existing.setStatus(object.getStatus());
@@ -162,7 +203,7 @@ public class WorkflowServiceImpl
         existing.setZoom(object.getZoom());
         existing.setTags(object.getTags());
         //addTagsIfNew(object);
-        return persistenceManager.updateWorkflowDescriptor(existing);
+        return workflowProvider.update(existing);
     }
 
     @Override
@@ -181,9 +222,15 @@ public class WorkflowServiceImpl
             throw new PersistenceException(String.format("Workflow with id '%s' not found", id));
         }
         if (tags != null && tags.size() > 0) {
-            Set<String> existingTags = persistenceManager.getWorkflowTags().stream()
+            Set<String> existingTags = tagProvider.list(TagType.WORKFLOW).stream()
                     .map(Tag::getText).collect(Collectors.toSet());
-            tags.stream().filter(t -> !existingTags.contains(t)).forEach(t -> persistenceManager.saveTag(new Tag(TagType.WORKFLOW, t)));
+            tags.stream().filter(t -> !existingTags.contains(t)).forEach(t -> {
+                try {
+                    tagProvider.save(new Tag(TagType.WORKFLOW, t));
+                } catch (PersistenceException e) {
+                    e.printStackTrace();
+                }
+            });
             entity.setTags(tags);
             return update(entity);
         }
@@ -191,7 +238,7 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public WorkflowDescriptor untag(Long id, List<String> tags) throws PersistenceException {
+    public WorkflowDescriptor unTag(Long id, List<String> tags) throws PersistenceException {
         WorkflowDescriptor entity = findById(id);
         if (entity == null) {
             throw new PersistenceException(String.format("Workflow with id '%s' not found", id));
@@ -217,7 +264,7 @@ public class WorkflowServiceImpl
             throw new PersistenceException(String.format("Node [id:%s, name:%s] is not a new node",
                                                          nodeDescriptor.getId(), nodeDescriptor.getName()));
         }
-        WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        WorkflowDescriptor workflow = workflowProvider.get(workflowId);
         if (workflow == null) {
             throw new PersistenceException("Node is not attached to an existing workflow");
         }
@@ -228,7 +275,7 @@ public class WorkflowServiceImpl
             throw new PersistenceException(String.format("Node contains errors: [%s]",
                                                          String.join(",", validationErrors)));
         }
-        return persistenceManager.saveWorkflowNodeDescriptor(nodeDescriptor, workflow);
+        return workflowNodeProvider.save(nodeDescriptor, workflow);
     }
 
     @Override
@@ -240,7 +287,7 @@ public class WorkflowServiceImpl
             throw new PersistenceException(String.format("Node [name:%s] is not an existing node",
                                                          nodeDescriptor.getName()));
         }
-        WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        WorkflowDescriptor workflow = workflowProvider.get(workflowId);
         if (workflow == null) {
             throw new PersistenceException("Node is not attached to an existing workflow");
         }
@@ -252,7 +299,7 @@ public class WorkflowServiceImpl
             throw new PersistenceException(String.format("Node contains errors: [%s]",
                                                          String.join(",", validationErrors)));
         }
-        return persistenceManager.updateWorkflowNodeDescriptor(nodeDescriptor);
+        return workflowNodeProvider.update(nodeDescriptor);
     }
 
     @Override
@@ -270,7 +317,7 @@ public class WorkflowServiceImpl
     @Override
     public void updateNodesPositions(long workflowId, Map<Long, float[]> positions) throws PersistenceException {
         if (positions != null && positions.size() > 0) {
-            List<WorkflowNodeDescriptor> nodes = persistenceManager.getWorkflowNodesById(positions.keySet().toArray(new Long[0]));
+            /*List<WorkflowNodeDescriptor> nodes = workflowNodeProvider.list(positions.keySet());
             for (WorkflowNodeDescriptor node : nodes) {
                 if (!node.getWorkflow().getId().equals(workflowId)) {
                     throw new PersistenceException(String.format("Node with id '%s' doesn't belong to workflow with id '%s'",
@@ -283,7 +330,10 @@ public class WorkflowServiceImpl
                 }
                 node.setxCoord(coordinates[0]);
                 node.setyCoord(coordinates[1]);
-                persistenceManager.updateWorkflowNodeDescriptor(node);
+                workflowNodeProvider.update(node);
+            }*/
+            for (Map.Entry<Long, float[]> entry : positions.entrySet()) {
+                workflowNodeProvider.updatePosition(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -297,7 +347,7 @@ public class WorkflowServiceImpl
             throw new PersistenceException(String.format("Node [name:%s] is not an existing node",
                                                          nodeDescriptor.getName()));
         }
-        WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        WorkflowDescriptor workflow = workflowProvider.get(workflowId);
         if (workflow == null) {
             throw new PersistenceException("Node is not attached to an existing workflow");
         }
@@ -323,23 +373,23 @@ public class WorkflowServiceImpl
                 for (ComponentLink link : incomingLinks) {
                     child.removeLink(link);
                 }
-                persistenceManager.updateWorkflowNodeDescriptor(child);
+                workflowNodeProvider.update(child);
             }
         }
-        persistenceManager.updateWorkflowNodeDescriptor(nodeDescriptor);
+        workflowNodeProvider.update(nodeDescriptor);
 
         if (ComponentType.DATASOURCE.equals(nodeDescriptor.getComponentType())) {
             DataSourceComponent component = (DataSourceComponent) WorkflowUtilities.findComponent(nodeDescriptor);
-            Query query = persistenceManager.getQuery(SessionStore.currentContext().getPrincipal().getName(),
-                                                      component.getSensorName(), component.getDataSourceName(),
-                                                      nodeDescriptor.getId());
+            Query query = queryProvider.get(SessionStore.currentContext().getPrincipal().getName(),
+                                            component.getSensorName(), component.getDataSourceName(),
+                                            nodeDescriptor.getId());
             if (query != null) {
-                persistenceManager.removeQuery(query);
+                queryProvider.delete(query);
             }
         }
 
         workflow.removeNode(nodeDescriptor);
-        persistenceManager.updateWorkflowDescriptor(workflow);
+        workflowProvider.update(workflow);
     }
     //endregion
     //region Links
@@ -349,8 +399,8 @@ public class WorkflowServiceImpl
         if (sourceTargetId == null || targetSourceId == null || sourceNodeId == 0 || targetNodeId == 0) {
             throw new PersistenceException("Invalid link data");
         }
-        WorkflowNodeDescriptor sourceNode = persistenceManager.getWorkflowNodeById(sourceNodeId);
-        WorkflowNodeDescriptor targetNode = persistenceManager.getWorkflowNodeById(targetNodeId);
+        WorkflowNodeDescriptor sourceNode = workflowNodeProvider.get(sourceNodeId);
+        WorkflowNodeDescriptor targetNode = workflowNodeProvider.get(targetNodeId);
         if (targetNode == null) {
             throw new PersistenceException("Target node does not exist");
         }
@@ -372,8 +422,8 @@ public class WorkflowServiceImpl
             throw new PersistenceException(String.format("Source descriptor [%s] not found in target component %s",
                                                          targetSourceId, targetComponent.getId()));
         }
-        WorkflowNodeGroupDescriptor sourceGroupNode = persistenceManager.getGroupNode(sourceNodeId);
-        WorkflowNodeGroupDescriptor targetGroupNode = persistenceManager.getGroupNode(targetNodeId);
+        WorkflowNodeGroupDescriptor sourceGroupNode = workflowNodeProvider.getGroupNode(sourceNodeId);
+        WorkflowNodeGroupDescriptor targetGroupNode = workflowNodeProvider.getGroupNode(targetNodeId);
         if (sourceGroupNode != null && targetGroupNode == null) {
             // link from a node inside a group to a node outside the group
             return addLinkToOutsideNode(targetNodeId, linkInput, linkOutput, sourceGroupNode, sourceNode);
@@ -413,12 +463,12 @@ public class WorkflowServiceImpl
         if (link.getOutput() == null) {
             throw new PersistenceException("Invalid link output");
         }
-        WorkflowNodeDescriptor node = persistenceManager.getWorkflowNodeById(nodeId);
+        WorkflowNodeDescriptor node = workflowNodeProvider.get(nodeId);
         if (node == null) {
             throw new PersistenceException("Parent node does not exist");
         }
         node.getIncomingLinks().removeIf(l -> l.equals(link));
-        return persistenceManager.updateWorkflowNodeDescriptor(node);
+        return workflowNodeProvider.update(node);
     }
     //endregion
     //region Groups
@@ -435,13 +485,13 @@ public class WorkflowServiceImpl
         }
         grpNode.setCreated(LocalDateTime.now());
         grpNode.setPreserveOutput(true);
-        grpNode = (WorkflowNodeGroupDescriptor) persistenceManager.saveWorkflowNodeDescriptor(grpNode, persistenceManager.getWorkflowDescriptor(workflowId));
+        //grpNode = (WorkflowNodeGroupDescriptor) workflowNodeProvider.save(grpNode, workflowProvider.get(workflowId));
         return group(workflowId, grpNode, nodes);
     }
 
     @Override
     public WorkflowNodeDescriptor group(long workflowId, String groupName, Long[] nodeIds) throws PersistenceException {
-        return group(workflowId, groupName, persistenceManager.getWorkflowNodesById(nodeIds));
+        return group(workflowId, groupName, workflowNodeProvider.list(Arrays.asList(nodeIds)));
     }
 
     @Override
@@ -449,75 +499,70 @@ public class WorkflowServiceImpl
         if (nodes == null || nodes.size() == 0) {
             throw new PersistenceException("Empty node group");
         }
-        // Step 1: determine nodes that don't have incoming links or have links only from nodes outside the node list
-        final List<WorkflowNodeDescriptor> firstLevelNodes = WorkflowUtilities.findFirstLevel(nodes);
-        final List<SourceDescriptor> sources = new ArrayList<>();
-        for (WorkflowNodeDescriptor node : firstLevelNodes) {
-            final ProcessingComponent component = componentService.findById(node.getComponentId());
-            sources.addAll(component.getSources());
-        }
-        // Step 2: determine nodes that don't have outgoing links (i.e. not referred by other nodes) or have links only to nodes outside the node list
-        final List<WorkflowNodeDescriptor> terminalNodes = WorkflowUtilities.findTerminals(nodes);
-        final List<TargetDescriptor> targets = new ArrayList<>();
-        for (WorkflowNodeDescriptor node : terminalNodes) {
-            final ProcessingComponent component = componentService.findById(node.getComponentId());
-            targets.addAll(component.getTargets());
-        }
-        // Step 3: create the group component and add nodes to the node group
-        GroupComponent groupComponent = GroupComponent.create(sources, targets);
-        groupComponent = groupComponentService.save(groupComponent);
-        groupDescriptor.setComponentId(groupComponent.getId());
-        groupDescriptor.setComponentType(ComponentType.GROUP);
-        WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
-        for (WorkflowNodeDescriptor node : nodes) {
-            groupDescriptor.addNode(node);
-        }
-        final int level = firstLevelNodes.stream().min(Comparator.comparingInt(WorkflowNodeDescriptor::getLevel)).get().getLevel();
-        groupDescriptor.setLevel(level);
-        groupDescriptor = (WorkflowNodeGroupDescriptor) persistenceManager.saveWorkflowNodeDescriptor(groupDescriptor, workflow);
+        return TransactionalMethod.withExceptionType(PersistenceException.class).execute(() -> {
+            // Step 1: determine nodes that don't have incoming links or have links only from nodes outside the node list
+            final List<WorkflowNodeDescriptor> firstLevelNodes = WorkflowUtilities.findFirstLevel(nodes);
+            final List<SourceDescriptor> sources = new ArrayList<>();
+            for (WorkflowNodeDescriptor node : firstLevelNodes) {
+                final ProcessingComponent component = componentService.findById(node.getComponentId());
+                sources.addAll(component.getSources());
+            }
+            // Step 2: determine nodes that don't have outgoing links (i.e. not referred by other nodes) or have links only to nodes outside the node list
+            final List<WorkflowNodeDescriptor> terminalNodes = WorkflowUtilities.findTerminals(nodes);
+            final List<TargetDescriptor> targets = new ArrayList<>();
+            for (WorkflowNodeDescriptor node : terminalNodes) {
+                final ProcessingComponent component = componentService.findById(node.getComponentId());
+                targets.addAll(component.getTargets());
+            }
+            // Step 3: create the group component and add nodes to the node group
+            GroupComponent groupComponent = GroupComponent.create(sources, targets);
+            groupComponent = groupComponentService.save(groupComponent);
+            groupDescriptor.setComponentId(groupComponent.getId());
+            groupDescriptor.setComponentType(ComponentType.GROUP);
+            WorkflowDescriptor workflow = workflowProvider.get(workflowId);
+            for (WorkflowNodeDescriptor node : nodes) {
+                groupDescriptor.addNode(node);
+            }
+            final int level = firstLevelNodes.stream().min(Comparator.comparingInt(WorkflowNodeDescriptor::getLevel)).get().getLevel();
+            groupDescriptor.setLevel(level);
+            WorkflowNodeGroupDescriptor updated = (WorkflowNodeGroupDescriptor) workflowNodeProvider.save(groupDescriptor, workflow);
 
-        // Step 4: transfer the incoming links of the first level nodes to the group
-        for (WorkflowNodeDescriptor node : firstLevelNodes) {
-            final Set<ComponentLink> incomingLinks = node.getIncomingLinks();
-            final Set<ComponentLink> toRemove = new HashSet<>();
-            if (incomingLinks != null) {
-                for (ComponentLink link : incomingLinks) {
-                    SourceDescriptor originalSource = link.getOutput();
-                    SourceDescriptor groupSource = groupComponent.findDescriptor(originalSource.getId());
-                    addLink(link.getSourceNodeId(), link.getInput().getId(),
-                            groupDescriptor.getId(), groupSource.getId());
-                    toRemove.add(link);
+            // Step 4: transfer the incoming links of the first level nodes to the group
+            for (WorkflowNodeDescriptor node : firstLevelNodes) {
+                final Set<ComponentLink> incomingLinks = node.getIncomingLinks();
+                if (incomingLinks != null) {
+                    for (ComponentLink link : incomingLinks) {
+                        SourceDescriptor originalSource = link.getOutput();
+                        SourceDescriptor groupSource = groupComponent.findDescriptor(originalSource.getId());
+                        link.setOutput(groupSource);
+                        /*addLink(link.getSourceNodeId(), link.getInput().getId(),
+                                updated.getId(), groupSource.getId());*/
+                    }
+                    workflowNodeProvider.update(node);
                 }
             }
-            for (ComponentLink link : toRemove) {
-                removeLink(node.getId(), link);
-            }
-        }
 
-        // Step 5: transfer the outgoing links of the last level nodes to the group
-        for (WorkflowNodeDescriptor node : terminalNodes) {
-            List<WorkflowNodeDescriptor> outLinkedNodes = WorkflowUtilities.findLinkedNodes(workflow, terminalNodes);
+            // Step 5: transfer the outgoing links of the last level nodes to the group
+            final Set<Tuple<Tuple<Long, String>, Tuple<Long, String>>> linksToAdd = new LinkedHashSet<>();
+            final Set<WorkflowNodeDescriptor> outLinkedNodes = new LinkedHashSet<>();
+            terminalNodes.forEach(n -> outLinkedNodes.addAll(WorkflowUtilities.findLinkedNodes(workflow, terminalNodes)));
             for (WorkflowNodeDescriptor outNode : outLinkedNodes) {
-                final Set<ComponentLink> incomingLinks = outNode.getIncomingLinks();
-                final Set<ComponentLink> toRemove = new HashSet<>();
+                final Set<ComponentLink> incomingLinks = new HashSet<>(outNode.getIncomingLinks());
                 for (ComponentLink link : incomingLinks) {
                     TargetDescriptor originalTarget = link.getInput();
                     TargetDescriptor groupTarget = groupComponent.findDescriptor(originalTarget.getId());
-                    addLink(groupDescriptor.getId(), groupTarget.getId(),
-                            node.getId(), link.getOutput().getId());
-                    toRemove.add(link);
+                    link.setInput(groupTarget);
+                    link.setSourceNodeId(updated.getId());
                 }
-                for (ComponentLink link : toRemove) {
-                    removeLink(node.getId(), link);
-                }
+                workflowNodeProvider.update(outNode);
             }
-        }
-        return groupDescriptor;
+            return updated;
+        });
     }
 
     @Override
     public WorkflowNodeDescriptor updateGroup(WorkflowNodeGroupDescriptor groupDescriptor) throws PersistenceException {
-        return persistenceManager.updateWorkflowNodeDescriptor(groupDescriptor);
+        return workflowNodeProvider.update(groupDescriptor);
     }
 
     @Override
@@ -525,73 +570,87 @@ public class WorkflowServiceImpl
         if (groupDescriptor == null) {
             throw new PersistenceException("groupDescriptor [null]");
         }
-        final List<WorkflowNodeDescriptor> nodes = groupDescriptor.getNodes();
-        final WorkflowDescriptor workflow = groupDescriptor.getWorkflow();
-        final Set<ComponentLink> linksToRemove = new HashSet<>();
-        if (removeChildren) {
-            if (workflow != null) {
+        TransactionalMethod.withExceptionType(PersistenceException.class).execute(() -> {
+            final List<WorkflowNodeDescriptor> nodes = Collections.unmodifiableList(groupDescriptor.getNodes());
+            final WorkflowDescriptor workflow = groupDescriptor.getWorkflow();
+            final Set<ComponentLink> linksToRemove = new HashSet<>();
+            if (removeChildren) {
+                if (workflow != null) {
+                    for (WorkflowNodeDescriptor node : nodes) {
+                        Set<ComponentLink> links = node.getIncomingLinks();
+                        if (links != null) {
+                            linksToRemove.addAll(links);
+                        }
+                        groupDescriptor.removeNode(node);
+                        workflow.removeNode(node);
+                    }
+                    workflowNodeProvider.update(groupDescriptor);
+                    workflow.removeNode(groupDescriptor);
+                    workflowProvider.update(workflow);
+                }
+            } else {
                 for (WorkflowNodeDescriptor node : nodes) {
-                    Set<ComponentLink> links = node.getIncomingLinks();
-                    if (links != null) {
-                        linksToRemove.addAll(links);
-                    }
                     groupDescriptor.removeNode(node);
-                    workflow.removeNode(node);
                 }
-                persistenceManager.updateWorkflowNodeDescriptor(groupDescriptor);
+                // Transfer the incoming links of the group to the first level nodes
+                final Set<ComponentLink> groupLinks = groupDescriptor.getIncomingLinks();
+                if (groupLinks != null) {
+                    for (ComponentLink link : groupLinks) {
+                        SourceDescriptor groupSource = link.getOutput();
+                        WorkflowNodeDescriptor sourceNode = WorkflowUtilities.findGroupSourceOwner(groupSource, groupDescriptor);
+                        SourceDescriptor sourceDescriptor = WorkflowUtilities.findSourceById(groupSource.getReferencedSourceDescriptorId(), sourceNode);
+                        if (sourceDescriptor == null) {
+                            logger.warning(String.format("Cannot determine originating source descriptor [groupNode=%s, groupSource=%s, sourceNode=%s]",
+                                                         groupDescriptor.getName(), groupSource.getName(), sourceNode.getName()));
+                            continue;
+                        }
+                        link.setOutput(sourceDescriptor);
+                        workflowNodeProvider.update(sourceNode);
+                        /*addLink(link.getSourceNodeId(), link.getInput().getId(),
+                                sourceNode.getId(), sourceDescriptor.getId());
+                        linksToRemove.add(link);*/
+                    }
+                    groupDescriptor.setIncomingLinks(null);
+                }
+                /*for (ComponentLink link : linksToRemove) {
+                    removeLink(groupDescriptor.getId(), link);
+                }
+                linksToRemove.clear();*/
+                // Transfer the outgoing links of the group to the last level nodes
+                final List<WorkflowNodeDescriptor> linkedNodes = WorkflowUtilities.findLinkedNodes(workflow, new ArrayList<WorkflowNodeDescriptor>() {{
+                    add(groupDescriptor);
+                }});
+                Set<ComponentLink> incomingLinks;
+                for (WorkflowNodeDescriptor outNode : linkedNodes) {
+                    incomingLinks = outNode.getIncomingLinks();
+                    for (ComponentLink link : incomingLinks) {
+                        TargetDescriptor groupTarget = link.getInput();
+                        WorkflowNodeDescriptor targetNode = WorkflowUtilities.findGroupTargetOwner(groupTarget, groupDescriptor);
+                        TargetDescriptor targetDescriptor = WorkflowUtilities.findTargetById(groupTarget.getReferencedTargetDescriptorId(), targetNode);
+                        if (targetDescriptor == null) {
+                            logger.warning(String.format("Cannot determine originating target descriptor [groupNode=%s, groupTarget=%s, targetNode=%s]",
+                                                         groupDescriptor.getName(), groupTarget.getName(), targetNode.getName()));
+                            continue;
+                        }
+                        link.setInput(targetDescriptor);
+                        link.setSourceNodeId(targetNode.getId());
+                        targetNode.addLink(link);
+                        workflowNodeProvider.update(targetNode);
+                        /*addLink(targetNode.getId(), targetDescriptor.getId(),
+                                outNode.getId(), link.getOutput().getId());*/
+                        linksToRemove.add(link);
+                    }
+                    for (ComponentLink link : linksToRemove) {
+                        removeLink(outNode.getId(), link);
+                    }
+                    workflowNodeProvider.update(outNode);
+                }
                 workflow.removeNode(groupDescriptor);
-                persistenceManager.updateWorkflowDescriptor(workflow);
+                workflowProvider.save(workflow);
+                workflowNodeProvider.delete(groupDescriptor.getId());
             }
-        } else {
-            for (WorkflowNodeDescriptor node : nodes) {
-                groupDescriptor.removeNode(node);
-            }
-            // Transfer the incoming links of the group to the first level nodes
-            final Set<ComponentLink> groupLinks = groupDescriptor.getIncomingLinks();
-            if (groupLinks != null) {
-                for (ComponentLink link : groupLinks) {
-                    SourceDescriptor groupSource = link.getOutput();
-                    WorkflowNodeDescriptor sourceNode = WorkflowUtilities.findGroupSourceOwner(groupSource.getId(), groupDescriptor);
-                    SourceDescriptor sourceDescriptor = WorkflowUtilities.findSourceByName(groupSource.getName(), sourceNode);
-                    if (sourceDescriptor == null) {
-                        logger.warning(String.format("Cannot determine originating source descriptor [groupNode=%s, groupSource=%s, sourceNode=%s]",
-                                                     groupDescriptor.getName(), groupSource.getName(), sourceNode.getName()));
-                        continue;
-                    }
-                    addLink(link.getSourceNodeId(), link.getInput().getId(),
-                            sourceNode.getId(), sourceDescriptor.getId());
-                    linksToRemove.add(link);
-                }
-            }
-            for (ComponentLink link : linksToRemove) {
-                removeLink(groupDescriptor.getId(), link);
-            }
-            linksToRemove.clear();
-            // Transfer the outgoing links of the group to the last level nodes
-            final List<WorkflowNodeDescriptor> linkedNodes = WorkflowUtilities.findLinkedNodes(workflow, new ArrayList<WorkflowNodeDescriptor>() {{
-                add(groupDescriptor);
-            }});
-            Set<ComponentLink> incomingLinks;
-            for (WorkflowNodeDescriptor outNode : linkedNodes) {
-                incomingLinks = outNode.getIncomingLinks();
-                for (ComponentLink link : incomingLinks) {
-                    TargetDescriptor groupTarget = link.getInput();
-                    WorkflowNodeDescriptor targetNode = WorkflowUtilities.findGroupTargetOwner(groupTarget.getId(), groupDescriptor);
-                    TargetDescriptor targetDescriptor = WorkflowUtilities.findTargetByName(groupTarget.getName(), targetNode);
-                    if (targetDescriptor == null) {
-                        logger.warning(String.format("Cannot determine originating target descriptor [groupNode=%s, groupTarget=%s, targetNode=%s]",
-                                                     groupDescriptor.getName(), groupTarget.getName(), targetNode.getName()));
-                        continue;
-                    }
-                    addLink(targetNode.getId(), targetDescriptor.getId(),
-                            outNode.getId(), link.getOutput().getId());
-                    linksToRemove.add(link);
-                }
-                for (ComponentLink link : linksToRemove) {
-                    removeLink(outNode.getId(), link);
-                }
-            }
-        }
+            return null;
+        });
     }
     //endregion
     //region Clone and import
@@ -600,135 +659,226 @@ public class WorkflowServiceImpl
         if (workflow == null) {
             return null;
         }
-        WorkflowDescriptor clone = new WorkflowDescriptor();
-        clone.setName(workflow.getName() + " - " + String.valueOf(System.currentTimeMillis()));
-        clone.setStatus(Status.DRAFT);
-        clone.setCreated(LocalDateTime.now());
-        clone.setActive(workflow.isActive());
-        clone.setUserName(SessionStore.currentContext().getPrincipal().getName());
-        clone.setVisibility(Visibility.PRIVATE);
-        clone = persistenceManager.saveWorkflowDescriptor(clone);
-        // key: old id, value: new node
-        final Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
-        final List<WorkflowNodeDescriptor> workflowNodeDescriptors = workflow.orderNodes(workflow.getNodes(), null);
-        for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
-            WorkflowNodeDescriptor clonedNode = node instanceof WorkflowNodeGroupDescriptor ?
-                    new WorkflowNodeGroupDescriptor() : new WorkflowNodeDescriptor();
-            clonedNode.setWorkflow(clone);
-            clonedNode.setName(node.getName());
-            clonedNode.setxCoord(node.getxCoord());
-            clonedNode.setyCoord(node.getyCoord());
-            clonedNode.setComponentId(node.getComponentId());
-            clonedNode.setComponentType(node.getComponentType());
-            clonedNode.setCreated(LocalDateTime.now());
-            clonedNode.setPreserveOutput(node.getPreserveOutput());
-            clonedNode.setBehavior(node.getBehavior());
-            clonedNode.setLevel(node.getLevel());
-            List<ParameterValue> customValues = node.getCustomValues();
-            if (customValues != null) {
-                clonedNode.setCustomValues(new ArrayList<>(customValues));
-            }
-            clonedNode = addNode(clone.getId(), clonedNode);
-            cloneMap.put(node.getId(), clonedNode);
-            //clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
-        }
-        for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
-            if (node instanceof WorkflowNodeGroupDescriptor) {
-                WorkflowNodeGroupDescriptor clonedNode = (WorkflowNodeGroupDescriptor) cloneMap.get(node.getId());
-                ((WorkflowNodeGroupDescriptor) node).getOrderedNodes()
-                                                    .forEach(n -> clonedNode.addNode(cloneMap.get(n.getId())));
-                persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
-            }
-        }
-        for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
-            final Set<ComponentLink> links = node.getIncomingLinks();
-            if (links != null) {
-                WorkflowNodeDescriptor clonedTarget = cloneMap.get(node.getId());
-                for (ComponentLink link : links) {
-                    WorkflowNodeDescriptor clonedSource = cloneMap.get(link.getSourceNodeId());
-                    TargetDescriptor input = WorkflowUtilities.findTarget(link.getInput().getId(), clonedSource);
-                    SourceDescriptor output = WorkflowUtilities.findSource(link.getOutput().getId(), clonedTarget);
-                    ComponentLink clonedLink = new ComponentLink(clonedSource.getId(), input, output);
-                    Set<ComponentLink> clonedLinks = clonedTarget.getIncomingLinks();
-                    if (clonedLinks == null) {
-                        clonedLinks = new HashSet<>();
-                    }
-                    clonedLinks.add(clonedLink);
-                    clonedTarget.setIncomingLinks(clonedLinks);
+        return TransactionalMethod.withExceptionType(PersistenceException.class).execute(() -> {
+            WorkflowDescriptor clone = new WorkflowDescriptor();
+            clone.setName(workflow.getName() + " - " + System.currentTimeMillis());
+            clone.setStatus(Status.DRAFT);
+            clone.setCreated(LocalDateTime.now());
+            clone.setActive(workflow.isActive());
+            clone.setUserName(SessionStore.currentContext().getPrincipal().getName());
+            clone.setVisibility(Visibility.PRIVATE);
+            clone = workflowProvider.save(clone);
+            // key: old id, value: new node
+            final Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
+            final List<WorkflowNodeDescriptor> workflowNodeDescriptors = workflow.orderNodes(workflow.getNodes(), null);
+            for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
+                WorkflowNodeDescriptor clonedNode = node instanceof WorkflowNodeGroupDescriptor
+                                                    ? new WorkflowNodeGroupDescriptor()
+                                                    : new WorkflowNodeDescriptor();
+                clonedNode.setWorkflow(clone);
+                clonedNode.setCreatedFromNodeId(node.getId());
+                clonedNode.setName(node.getName());
+                clonedNode.setxCoord(node.getxCoord());
+                clonedNode.setyCoord(node.getyCoord());
+                clonedNode.setComponentId(node.getComponentId());
+                clonedNode.setComponentType(node.getComponentType());
+                clonedNode.setCreated(LocalDateTime.now());
+                clonedNode.setPreserveOutput(node.getPreserveOutput());
+                clonedNode.setBehavior(node.getBehavior());
+                clonedNode.setLevel(node.getLevel());
+                List<ParameterValue> customValues = node.getCustomValues();
+                if (customValues != null) {
+                    clonedNode.setCustomValues(new ArrayList<>(customValues));
                 }
-                clonedTarget = persistenceManager.updateWorkflowNodeDescriptor(clonedTarget);
+                clonedNode = addNode(clone.getId(), clonedNode);
+                cloneMap.put(node.getId(), clonedNode);
+                //clonedNode = persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
             }
+            for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
+                if (node instanceof WorkflowNodeGroupDescriptor) {
+                    WorkflowNodeGroupDescriptor clonedNode = (WorkflowNodeGroupDescriptor) cloneMap.get(node.getId());
+                    ((WorkflowNodeGroupDescriptor) node).getOrderedNodes()
+                                                        .forEach(n -> clonedNode.addNode(cloneMap.get(n.getId())));
+                    workflowNodeProvider.update(clonedNode);
+                }
+            }
+            for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
+                final Set<ComponentLink> links = node.getIncomingLinks();
+                if (links != null) {
+                    WorkflowNodeDescriptor clonedNode = cloneMap.get(node.getId());
+                    for (ComponentLink link : links) {
+                        WorkflowNodeDescriptor clonedSource = cloneMap.get(link.getSourceNodeId());
+                        TargetDescriptor input = targetDescriptorRepository.findById(link.getInput().getId()).get(); //WorkflowUtilities.findTarget(link.getInput().getId(), clonedSource);
+                        SourceDescriptor output = sourceDescriptorRepository.findById(link.getOutput().getId()).get(); //WorkflowUtilities.findSource(link.getOutput().getId(), clonedNode);
+                        ComponentLink clonedLink = new ComponentLink(clonedSource.getId(), input, output);
+                        Set<ComponentLink> clonedLinks = clonedNode.getIncomingLinks();
+                        if (clonedLinks == null) {
+                            clonedLinks = new HashSet<>();
+                        }
+                        clonedLinks.add(clonedLink);
+                        clonedNode.setIncomingLinks(clonedLinks);
+                    }
+                    clonedNode = workflowNodeProvider.update(clonedNode);
+                }
+            }
+            return workflowProvider.get(clone.getId());
+        });
+    }
+
+    @Override
+    public WorkflowDescriptor createTemporaryWorkflow(long fromWorkflowId, String name, Map<Long, String> linksToAdd) throws PersistenceException {
+        WorkflowDescriptor clone = null;
+        if (linksToAdd != null) {
+            // These inputs are not yet connected to the level 1 nodes, we need to create the nodes and the links
+            final WorkflowDescriptor workflow = findById(fromWorkflowId);
+            // Create a cloned workflow
+            clone = clone(workflow);
+            clone.setName(name);
+            clone.setCreatedFromWorkflowId(fromWorkflowId);
+            final Set<Long> ids = new HashSet<>();
+            for (Map.Entry<Long, String> entry : linksToAdd.entrySet()) {
+                // For each input create a node
+                final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(entry.getValue());
+                final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
+                final WorkflowNodeDescriptor targetNode = workflowNodeProvider.findClonedNode(clone.getId(), entry.getKey());
+                final TaoComponent targetComponent = TaskUtilities.getComponentFor(targetNode);
+                final String targetSourceId = targetComponent.getSources().get(0).getId();
+                WorkflowNodeDescriptor node;
+                final List<WorkflowNodeDescriptor> descriptors = workflowNodeProvider.listByComponentId(clone.getId(), entry.getValue());
+                if (descriptors == null || descriptors.isEmpty()) {
+                    node = new WorkflowNodeDescriptor();
+                    node.setWorkflow(clone);
+                    node.setName(sourceComponent.getDataSourceName());
+                    node.setComponentId(entry.getValue());
+                    node.setComponentType(ComponentType.DATASOURCE);
+                    node.setPreserveOutput(true);
+                    node.setCreated(LocalDateTime.now());
+                    node.setLevel(0);
+                    node = addNode(clone.getId(), node);
+                } else {
+                    node = descriptors.get(0);
+                }
+                // and add a link from this new node to the given target source
+                addLink(node.getId(), sourceTargetId, targetNode.getId(), targetSourceId);
+                ids.add(node.getId());
+            }
+            // Increment the level of the other nodes
+            clone.getNodes().forEach(n -> {
+                if (!ids.contains(n.getId())) {
+                    n.setLevel(n.getLevel() + 1);
+                }
+            });
+            clone = update(clone);
         }
-        return persistenceManager.getWorkflowDescriptor(clone.getId());
+        return clone;
+    }
+
+    @Override
+    public void deleteTemporaryWorkflow(long workflowId) throws PersistenceException {
+        WorkflowDescriptor workflow = findById(workflowId);
+        if (workflow != null) {
+            final List<ExecutionJob> jobs = jobProvider.listByWorkflow(workflowId);
+            if (jobs != null) {
+                final List<WorkflowNodeDescriptor> nodes = workflow.getNodes();
+                final Map<Long, Long> idMap = new HashMap<>();
+                long originalWorkflowId = 0;
+                for (WorkflowNodeDescriptor node : nodes) {
+                    if (originalWorkflowId == 0 && node.getCreatedFromNodeId() != null) {
+                        final WorkflowDescriptor original = workflowProvider.getByNodeId(node.getCreatedFromNodeId());
+                        if (original == null) {
+                            throw new PersistenceException("Cannot find the original workflow");
+                        }
+                        originalWorkflowId = original.getId();
+                    }
+                    idMap.put(node.getId(), node.getCreatedFromNodeId());
+                }
+                for (ExecutionJob job : jobs) {
+                    final List<ExecutionTask> tasks = job.getTasks();
+                    for (ExecutionTask task : tasks) {
+                        final Long originalId = idMap.get(task.getWorkflowNodeId());
+                        if (originalId != null) {
+                            task.setWorkflowNodeId(originalId);
+                            taskProvider.update(task);
+                        }
+                    }
+                    job.setWorkflowId(originalWorkflowId);
+                    jobProvider.update(job);
+                }
+            }
+            workflowProvider.delete(workflow);
+        }
     }
 
     @Override
     public WorkflowDescriptor importWorkflowNodes(WorkflowDescriptor master,
                                                   WorkflowDescriptor subWorkflow,
                                                   boolean keepDataSources) throws PersistenceException {
-        final Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
-        final List<WorkflowNodeDescriptor> nodesToExport = subWorkflow.getOrderedNodes();
-        final Set<Long> excludedIds = new HashSet<>();
-        for (WorkflowNodeDescriptor node : nodesToExport) {
-            // Data sources are not imported
-            if (!keepDataSources && ComponentType.DATASOURCE.equals(node.getComponentType())) {
-                excludedIds.add(node.getId());
-                continue;
-            }
-            // create a clone of each source node
-            WorkflowNodeDescriptor clonedNode = node instanceof WorkflowNodeGroupDescriptor ?
-                    new WorkflowNodeGroupDescriptor() : new WorkflowNodeDescriptor();
-            clonedNode.setWorkflow(master);
-            clonedNode.setName(node.getName());
-            clonedNode.setxCoord(node.getxCoord());
-            clonedNode.setyCoord(node.getyCoord());
-            clonedNode.setComponentId(node.getComponentId());
-            clonedNode.setComponentType(node.getComponentType());
-            clonedNode.setCreated(LocalDateTime.now());
-            clonedNode.setPreserveOutput(node.getPreserveOutput());
-            clonedNode.setBehavior(node.getBehavior());
-            clonedNode.setLevel(node.getLevel());
-            List<ParameterValue> customValues = node.getCustomValues();
-            if (customValues != null) {
-                clonedNode.setCustomValues(new ArrayList<>(customValues));
-            }
-            clonedNode = addNode(master.getId(), clonedNode);
-            cloneMap.put(node.getId(), clonedNode);
-        }
-        // regroup target nodes according to source groups, if any
-        for (WorkflowNodeDescriptor node : nodesToExport) {
-            if (node instanceof WorkflowNodeGroupDescriptor) {
-                WorkflowNodeGroupDescriptor clonedNode = (WorkflowNodeGroupDescriptor) cloneMap.get(node.getId());
-                ((WorkflowNodeGroupDescriptor) node).getOrderedNodes()
-                        .forEach(n -> clonedNode.addNode(cloneMap.get(n.getId())));
-                persistenceManager.updateWorkflowNodeDescriptor(clonedNode);
-            }
-        }
-        // re-create links for target nodes based on source node links
-        for (WorkflowNodeDescriptor node : nodesToExport) {
-            final Set<ComponentLink> links = node.getIncomingLinks();
-            if (links != null) {
-                WorkflowNodeDescriptor clonedTarget = cloneMap.get(node.getId());
-                for (ComponentLink link : links) {
-                    if (!excludedIds.contains(link.getSourceNodeId())) {
-                        WorkflowNodeDescriptor clonedSource = cloneMap.get(link.getSourceNodeId());
-                        TargetDescriptor input = WorkflowUtilities.findTarget(link.getInput().getId(), clonedSource);
-                        SourceDescriptor output = WorkflowUtilities.findSource(link.getOutput().getId(), clonedTarget);
-                        ComponentLink clonedLink = new ComponentLink(clonedSource.getId(), input, output);
-                        Set<ComponentLink> clonedLinks = clonedTarget.getIncomingLinks();
-                        if (clonedLinks == null) {
-                            clonedLinks = new HashSet<>();
-                        }
-                        clonedLinks.add(clonedLink);
-                        clonedTarget.setIncomingLinks(clonedLinks);
-                    }
+        return TransactionalMethod.withExceptionType(PersistenceException.class).execute(() -> {
+            final Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
+            final List<WorkflowNodeDescriptor> nodesToExport = subWorkflow.getOrderedNodes();
+            final Set<Long> excludedIds = new HashSet<>();
+            for (WorkflowNodeDescriptor node : nodesToExport) {
+                // Data sources are not imported
+                if (!keepDataSources && ComponentType.DATASOURCE.equals(node.getComponentType())) {
+                    excludedIds.add(node.getId());
+                    continue;
                 }
-                persistenceManager.updateWorkflowNodeDescriptor(clonedTarget);
+                // create a clone of each source node
+                WorkflowNodeDescriptor clonedNode = node instanceof WorkflowNodeGroupDescriptor ?
+                                                    new WorkflowNodeGroupDescriptor() : new WorkflowNodeDescriptor();
+                clonedNode.setWorkflow(master);
+                clonedNode.setName(node.getName());
+                clonedNode.setxCoord(node.getxCoord());
+                clonedNode.setyCoord(node.getyCoord());
+                clonedNode.setComponentId(node.getComponentId());
+                clonedNode.setComponentType(node.getComponentType());
+                clonedNode.setCreated(LocalDateTime.now());
+                clonedNode.setPreserveOutput(node.getPreserveOutput());
+                clonedNode.setBehavior(node.getBehavior());
+                clonedNode.setLevel(node.getLevel());
+                clonedNode.setCreatedFromNodeId(node.getId());
+                List<ParameterValue> customValues = node.getCustomValues();
+                if (customValues != null) {
+                    clonedNode.setCustomValues(new ArrayList<>(customValues));
+                }
+                clonedNode = addNode(master.getId(), clonedNode);
+                cloneMap.put(node.getId(), clonedNode);
             }
-        }
-        // finally, create a group to hold the cloned sub-workflow
-        group(master.getId(), subWorkflow.getName(), cloneMap.values().stream().map(WorkflowNodeDescriptor::getId).toArray(Long[]::new));
-        return persistenceManager.getWorkflowDescriptor(master.getId());
+            // regroup target nodes according to source groups, if any
+            for (WorkflowNodeDescriptor node : nodesToExport) {
+                if (node instanceof WorkflowNodeGroupDescriptor) {
+                    WorkflowNodeGroupDescriptor clonedNode = (WorkflowNodeGroupDescriptor) cloneMap.get(node.getId());
+                    ((WorkflowNodeGroupDescriptor) node).getOrderedNodes()
+                                                        .forEach(n -> clonedNode.addNode(cloneMap.get(n.getId())));
+                    workflowNodeProvider.update(clonedNode);
+                }
+            }
+            // re-create links for target nodes based on source node links
+            for (WorkflowNodeDescriptor node : nodesToExport) {
+                final Set<ComponentLink> links = node.getIncomingLinks();
+                if (links != null) {
+                    WorkflowNodeDescriptor clonedTarget = cloneMap.get(node.getId());
+                    for (ComponentLink link : links) {
+                        if (!excludedIds.contains(link.getSourceNodeId())) {
+                            WorkflowNodeDescriptor clonedSource = cloneMap.get(link.getSourceNodeId());
+                            TargetDescriptor input = WorkflowUtilities.findTarget(link.getInput().getId(), clonedSource);
+                            SourceDescriptor output = WorkflowUtilities.findSource(link.getOutput().getId(), clonedTarget);
+                            ComponentLink clonedLink = new ComponentLink(clonedSource.getId(), input, output);
+                            Set<ComponentLink> clonedLinks = clonedTarget.getIncomingLinks();
+                            if (clonedLinks == null) {
+                                clonedLinks = new HashSet<>();
+                            }
+                            clonedLinks.add(clonedLink);
+                            clonedTarget.setIncomingLinks(clonedLinks);
+                        }
+                    }
+                    workflowNodeProvider.update(clonedTarget);
+                }
+            }
+            // finally, create a group to hold the cloned sub-workflow
+            group(master.getId(), subWorkflow.getName(), cloneMap.values().stream().map(WorkflowNodeDescriptor::getId).toArray(Long[]::new));
+            return workflowProvider.get(master.getId());
+        });
     }
     //endregion
     @Override
@@ -747,16 +897,16 @@ public class WorkflowServiceImpl
 
     @Override
     public List<ExecutionJobInfo> getWorkflowExecutions(long workflowId) throws PersistenceException {
-        final WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        final WorkflowDescriptor workflow = workflowProvider.get(workflowId);
         if (workflow == null) {
             throw new PersistenceException("There is no workflow having the given identifier " + String.valueOf(workflowId));
         }
-        return ServiceTransformUtils.toJobInfos(persistenceManager.getJobs(workflowId));
+        return ServiceTransformUtils.toJobInfos(jobProvider.listByWorkflow(workflowId));
     }
 
     @Override
     public List<ExecutionTaskInfo> getWorkflowExecutionTasks(long executionJobId) throws PersistenceException {
-        final ExecutionJob workflowExecution = persistenceManager.getJobById(executionJobId);
+        final ExecutionJob workflowExecution = jobProvider.get(executionJobId);
         if (workflowExecution == null) {
             throw new PersistenceException("There is no workflow execution having the given identifier " + String.valueOf(executionJobId));
         }
@@ -766,7 +916,7 @@ public class WorkflowServiceImpl
     @Override
     public Map<String, List<Parameter>> getWorkflowParameters(long workflowId) throws PersistenceException {
         Map<String, List<Parameter>> parameters = new LinkedHashMap<>();
-        WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        WorkflowDescriptor workflow = workflowProvider.get(workflowId);
         if (workflow == null) {
             throw new IllegalArgumentException(String.format("Non-existent workflow with id '%s'", workflowId));
         }
@@ -780,40 +930,71 @@ public class WorkflowServiceImpl
             ComponentType componentType = node.getComponentType();
             TaoComponent component = WorkflowUtilities.findComponent(node);
             List<Parameter> componentParams = new ArrayList<>();
-            Class paramType;
+            Class<?> paramType;
             switch (componentType) {
                 case DATASOURCE:
                     DataSourceComponent dataSourceComponent = (DataSourceComponent) component;
                     Map<String, DataSourceParameter> params =
                             DataSourceManager.getInstance().getSupportedParameters(dataSourceComponent.getSensorName(),
                                                                                    dataSourceComponent.getDataSourceName());
-                    for (Map.Entry<String, DataSourceParameter> entry : params.entrySet()) {
-                        DataSourceParameter descriptor = entry.getValue();
-                        paramType = descriptor.getType();
-                        componentParams.add(new Parameter(entry.getKey(),
-                                                          paramType.getName(),
-                                                          descriptor.getDefaultValue() != null ? String.valueOf(descriptor.getDefaultValue()) : null,
-                                                          paramType.isEnum() ?
+                    if (params != null) {
+                        final SourceDescriptor querySource = dataSourceComponent.getSources()
+                                                                                .stream()
+                                                                                .filter(s -> s.getName().equals(DataSourceComponent.QUERY_PARAMETER))
+                                                                                .findFirst().orElse(null);
+                        for (Map.Entry<String, DataSourceParameter> entry : params.entrySet()) {
+                            DataSourceParameter descriptor = entry.getValue();
+                            paramType = descriptor.getType();
+                            final String paramName = entry.getKey();
+                            if (!(CommonParameterNames.PRODUCT.equals(paramName) && querySource != null)) {
+                                componentParams.add(new Parameter(paramName,
+                                                                  descriptor.typeFriendlyName(),
+                                                                  descriptor.getDefaultValue() != null ? String.valueOf(descriptor.getDefaultValue()) : null,
+                                                                  paramType != null && paramType.isEnum() ?
                                                                   Parameter.stringValueSet(paramType.getEnumConstants()) :
                                                                   Parameter.stringValueSet(descriptor.getValueSet())));
-                    }
-                    Query query = persistenceManager.getQuery(SessionStore.currentContext().getPrincipal().getName(),
-                                                              dataSourceComponent.getSensorName(),
-                                                              dataSourceComponent.getDataSourceName(),
-                                                              node.getId());
-                    if (query != null) {
-                        for (Map.Entry<String, String> e : query.getValues().entrySet()) {
-                            componentParams.stream()
-                                    .filter(cp -> cp.getName().equals(e.getKey()))
-                                    .forEach(cp -> cp.setValue(e.getValue()));
+                            } else {
+                                final String location = querySource.getDataDescriptor().getLocation();
+                                String values = location != null ?
+                                                location.startsWith("[") ?
+                                                location : "[" + location + "]" : null;
+                                componentParams.add(new Parameter(paramName,
+                                                                  descriptor.typeFriendlyName(),
+                                                                  values,
+                                                                  paramType != null && paramType.isEnum() ?
+                                                                  Parameter.stringValueSet(paramType.getEnumConstants()) :
+                                                                  Parameter.stringValueSet(descriptor.getValueSet())));
+                            }
                         }
-                        componentParams.add(new Parameter("pageSize", Integer.class.getName(), String.valueOf(query.getPageSize())));
-                        componentParams.add(new Parameter("pageNumber", Integer.class.getName(), String.valueOf(query.getPageNumber())));
-                        componentParams.add(new Parameter("limit", Integer.class.getName(), String.valueOf(query.getLimit())));
+                    }
+                    if (dataSourceComponent.getId().startsWith("product-set")) {
+                        final SourceDescriptor querySource = dataSourceComponent.getSources()
+                                                                                .stream()
+                                                                                .filter(s -> s.getName().equals(DataSourceComponent.QUERY_PARAMETER))
+                                                                                .findFirst().orElse(null);
+                        DataDescriptor dataDescriptor = querySource.getDataDescriptor();
+                        if (dataDescriptor != null) {
+                            componentParams.add(new Parameter(DataSourceComponent.QUERY_PARAMETER, JavaType.STRING_ARRAY.friendlyName(), dataDescriptor.getLocation()));
+                        }
                     } else {
-                        componentParams.add(new Parameter("pageSize", Integer.class.getName(), "25"));
-                        componentParams.add(new Parameter("pageNumber", Integer.class.getName(), "1"));
-                        componentParams.add(new Parameter("limit", Integer.class.getName(), "25"));
+                        Query query = queryProvider.get(SessionStore.currentContext().getPrincipal().getName(),
+                                                        dataSourceComponent.getSensorName(),
+                                                        dataSourceComponent.getDataSourceName(),
+                                                        node.getId());
+                        if (query != null) {
+                            for (Map.Entry<String, String> e : query.getValues().entrySet()) {
+                                componentParams.stream()
+                                               .filter(cp -> cp.getName().equals(e.getKey()))
+                                               .forEach(cp -> cp.setValue(e.getValue()));
+                            }
+                            componentParams.add(new Parameter("pageSize", JavaType.INT.friendlyName(), String.valueOf(query.getPageSize())));
+                            componentParams.add(new Parameter("pageNumber", JavaType.INT.friendlyName(), String.valueOf(query.getPageNumber())));
+                            componentParams.add(new Parameter("limit", JavaType.INT.friendlyName(), String.valueOf(query.getLimit())));
+                        } else {
+                            componentParams.add(new Parameter("pageSize", JavaType.INT.friendlyName(), "25"));
+                            componentParams.add(new Parameter("pageNumber", JavaType.INT.friendlyName(), "1"));
+                            componentParams.add(new Parameter("limit", JavaType.INT.friendlyName(), "25"));
+                        }
                     }
                     break;
                 case PROCESSING:
@@ -822,7 +1003,8 @@ public class WorkflowServiceImpl
                     for (ParameterDescriptor descriptor : descriptors) {
                         paramType = descriptor.getDataType();
                         componentParams.add(new Parameter(descriptor.getName(),
-                                                          paramType.getName(),
+                                                          //paramType.getName(),
+                                                          descriptor.typeFriendlyName(),
                                                           !"null".equals(descriptor.getDefaultValue()) ? descriptor.getDefaultValue() : null,
                                                           paramType.isEnum() ?
                                                                   Parameter.stringValueSet(paramType.getEnumConstants()) :
@@ -846,7 +1028,7 @@ public class WorkflowServiceImpl
 
     @Override
     public List<TargetDescriptor> getWorkflowOutputs(long workflowId) throws PersistenceException {
-        WorkflowDescriptor workflow = persistenceManager.getWorkflowDescriptor(workflowId);
+        WorkflowDescriptor workflow = workflowProvider.get(workflowId);
         if (workflow == null) {
             throw new IllegalArgumentException(String.format("Non-existent workflow with id '%s'", workflowId));
         }
@@ -870,7 +1052,7 @@ public class WorkflowServiceImpl
             return null;
         }
         try {
-            return GraphParser.parse(persistenceManager, this, graphXml);
+            return GraphParser.parse(componentProvider, this, graphXml);
         } catch (Exception e) {
             throw new SAXException(e);
         }
@@ -904,7 +1086,7 @@ public class WorkflowServiceImpl
         if (groupNode == null || targetNode == null) {
             throw new IllegalArgumentException("Invalid target node or node not part of a group");
         }
-        WorkflowNodeDescriptor outsideNode = persistenceManager.getWorkflowNodeById(sourceNodeId);
+        WorkflowNodeDescriptor outsideNode = workflowNodeProvider.get(sourceNodeId);
         TaoComponent component = WorkflowUtilities.findComponent(outsideNode);
         if (!component.hasDescriptor(linkInput.getId())) {
         //if (component.getTargets().stream().noneMatch(t -> t.getId().equals(linkInput.getId()))) {
@@ -925,7 +1107,7 @@ public class WorkflowServiceImpl
         }
         groupComponentService.save((GroupComponent) component);
         groupNode.addLink(new ComponentLink(sourceNodeId, linkInput, linkOutput));
-        return persistenceManager.updateWorkflowNodeDescriptor(groupNode);
+        return workflowNodeProvider.update(groupNode);
     }
     /**
      * Processes the creation of a link between a node inside a group and a node outside the group.
@@ -950,7 +1132,7 @@ public class WorkflowServiceImpl
         if (groupNode == null || sourceNode == null) {
             throw new IllegalArgumentException("Invalid source node or node not part of a group");
         }
-        WorkflowNodeDescriptor outsideNode = persistenceManager.getWorkflowNodeById(targetNodeId);
+        WorkflowNodeDescriptor outsideNode = workflowNodeProvider.get(targetNodeId);
         TaoComponent component = WorkflowUtilities.findComponent(outsideNode);
         if (!component.hasDescriptor(linkOutput.getId())) {
         //if (component.getSources().stream().noneMatch(s -> s.getId().equals(linkOutput.getId()))) {
@@ -968,7 +1150,7 @@ public class WorkflowServiceImpl
         }
         groupComponentService.save((GroupComponent) component);
         outsideNode.addLink(new ComponentLink(targetNodeId, linkInput, linkOutput));
-        return persistenceManager.updateWorkflowNodeDescriptor(outsideNode);
+        return workflowNodeProvider.update(outsideNode);
     }
 
     private void validateNode(WorkflowDescriptor workflow, WorkflowNodeDescriptor node, List<String> errors) {
@@ -1026,19 +1208,22 @@ public class WorkflowServiceImpl
                                 descriptorList.addAll(t.toParameter());
                             });
                             customValues.forEach(v -> {
-                                ParameterDescriptor descriptor = descriptorList.stream()
-                                        .filter(d -> d.getName().equals(v.getParameterName()))
-                                        .findFirst().orElse(null);
-                                if (descriptor == null) {
-                                    errors.add(String.format("[node.customValues.parameterName] invalid parameter name '%s'",
-                                                             v.getParameterName()));
-                                } else {
-                                    ParameterConverter converter = ConverterFactory.getInstance().create(descriptor);
-                                    try {
-                                        converter.fromString(v.getParameterValue());
-                                    } catch (ConversionException e) {
-                                        errors.add(String.format("[node.customValues.parameterValue] invalid value for parameter '%s'",
-                                                                 v.getParameterName()));
+                                // NodeAffinity is not a parameter having a descriptor, but a property of the TaoComponent class
+                                if (!"nodeAffinity".equals(v.getParameterName())) {
+                                    ParameterDescriptor descriptor = descriptorList.stream()
+                                            .filter(d -> d.getName().equals(v.getParameterName()))
+                                            .findFirst().orElse(null);
+                                    if (descriptor == null) {
+                                        errors.add(String.format("[node.customValues.parameterName] invalid parameter name '%s'",
+                                                v.getParameterName()));
+                                    } else {
+                                        ParameterConverter converter = ConverterFactory.getInstance().create(descriptor);
+                                        try {
+                                            converter.fromString(v.getParameterValue());
+                                        } catch (ConversionException e) {
+                                            errors.add(String.format("[node.customValues.parameterValue] invalid value for parameter '%s'",
+                                                    v.getParameterName()));
+                                        }
                                     }
                                 }
                             });

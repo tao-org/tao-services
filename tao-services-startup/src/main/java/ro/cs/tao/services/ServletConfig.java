@@ -17,8 +17,16 @@ package ro.cs.tao.services;
 
 //import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ro.cs.tao.services.commons.ServletConfiguration;
+
+import java.util.List;
 
 /**
  * @author Cosmin Cara
@@ -26,4 +34,18 @@ import ro.cs.tao.services.commons.ServletConfiguration;
 @Configuration
 public class ServletConfig extends ServletConfiguration {
 
+    @Bean
+    public OpenAPI openAPI() {
+        return new OpenAPI()
+                .components(new Components()
+                                    .addSecuritySchemes("ApiKeyAuth",
+                                                        new SecurityScheme()
+                                                                .type(SecurityScheme.Type.APIKEY)
+                                                                .in(SecurityScheme.In.HEADER)
+                                                                .name("X-Auth-Token")))
+                .security(List.of(new SecurityRequirement().addList("ApiKeyAuth")))
+                .info(new Info()
+                              .title("TAO API")
+                              .description("Version " + versionInfo().get("TAO Services")));
+    }
 }

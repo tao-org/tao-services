@@ -5,17 +5,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.cs.tao.Tag;
-import ro.cs.tao.Tuple;
+import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.datasource.beans.Query;
+import ro.cs.tao.datasource.persistence.DataSourceComponentGroupProvider;
+import ro.cs.tao.datasource.persistence.QueryProvider;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.execution.local.ProductPersister;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.EOProductProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.ProcessingComponentProvider;
+import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.DataSourceGroupService;
+import ro.cs.tao.utils.Tuple;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
@@ -28,7 +33,15 @@ import java.util.stream.Collectors;
 public class DataSourceGroupServiceImpl implements DataSourceGroupService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private DataSourceComponentGroupProvider groupProvider;
+    @Autowired
+    private TagProvider tagProvider;
+    @Autowired
+    private QueryProvider queryProvider;
+    @Autowired
+    private ProcessingComponentProvider componentProvider;
+    @Autowired
+    private EOProductProvider productProvider;
     @Autowired
     private DataSourceComponentService dataSourceComponentService;
 
@@ -36,17 +49,17 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
 
     @Override
     public DataSourceComponentGroup findById(String id) {
-        return persistenceManager.getDataSourceComponentGroup(id);
+        return groupProvider.get(id);
     }
 
     @Override
     public List<DataSourceComponentGroup> list() {
-        return persistenceManager.getDataSourceComponentGroups();
+        return groupProvider.list();
     }
 
     @Override
     public List<DataSourceComponentGroup> list(Iterable<String> ids) {
-        return persistenceManager.getDataSourceComponentGroups(ids);
+        return groupProvider.list(ids);
     }
 
     @Override
@@ -56,7 +69,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
             throw new NullPointerException("[dataSourceGroup]");
         }
         try {
-            return persistenceManager.saveDataSourceComponentGroup(dataSourceGroup);
+            return groupProvider.save(dataSourceGroup);
         } catch (PersistenceException e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -68,7 +81,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         if (dataSourceGroup == null) {
             throw new NullPointerException("[dataSourceGroup]");
         }
-        return persistenceManager.updateDataSourceComponentGroup(dataSourceGroup);
+        return groupProvider.update(dataSourceGroup);
     }
 
     @Override
@@ -76,12 +89,12 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         if (id == null || id.isEmpty()) {
             throw new NullPointerException("[id]");
         }
-        DataSourceComponentGroup group = persistenceManager.getDataSourceComponentGroup(id);
+        DataSourceComponentGroup group = groupProvider.get(id);
         Query[] queries = group.getDataSourceQueries().toArray(new Query[0]);
         DataSourceComponent[] components = group.getDataSourceComponents().toArray(new DataSourceComponent[0]);
         for (Query query : queries) {
             group.removeQuery(query.getId());
-            persistenceManager.removeQuery(query);
+            queryProvider.delete(query);
         }
         for (DataSourceComponent component : components) {
             group.removeDataSourceComponent(component);
@@ -89,22 +102,17 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
             if (productNameList != null) {
                 String[] productNames = productNameList.split(",");
                 for (String productName : productNames) {
-                    persistenceManager.deleteIfNotReferenced(component.getId(), productName);
+                    productProvider.deleteIfNotReferenced(component.getId(), productName);
                 }
             }
-            persistenceManager.deleteDataSourceComponent(component.getId());
+            dataSourceComponentService.delete(component.getId());
         }
-        persistenceManager.deleteDataSourceComponentGroup(id);
+        groupProvider.delete(id);
     }
 
     @Override
     public List<DataSourceComponentGroup> getUserDataSourceComponentGroups(String userName) {
-        return persistenceManager.getUserDataSourceComponentGroup(userName);
-    }
-
-    @Override
-    public List<DataSourceComponentGroup> getDataSourceComponentGroups() {
-        return persistenceManager.getDataSourceComponentGroups();
+        return groupProvider.listByUser(userName);
     }
 
     @Override
@@ -124,7 +132,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                     q.setUserId(user.getName());
                     addQueryToGroup(group, q, tuple.getKeyTwo());
                 }
-                group = persistenceManager.updateDataSourceComponentGroup(group);
+                group = groupProvider.update(group);
             } else { // existing group
                 group = findById(groupId);
                 if (group == null) {
@@ -165,7 +173,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                         }
                         updateProducts(componentId, productList, previousNames);
                         component.getSources().get(0).getDataDescriptor().setLocation(productList.stream().map(EOProduct::getName).collect(Collectors.joining(",")));
-                        persistenceManager.updateDataSourceComponent(component);
+                        dataSourceComponentService.update(component);
                     }
                     updatedQueries.add(dbQuery.getId());
                 }
@@ -183,16 +191,16 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                                 for (String productName : productNames) {
                                     logger.finest(String.format("Product [%s] will be removed from database if not already downloaded or referenced by another component",
                                                                 productName));
-                                    persistenceManager.deleteIfNotReferenced(component.getId(), productName);
+                                    productProvider.deleteIfNotReferenced(component.getId(), productName);
                                 }
                             }
                             logger.finest(String.format("Query [id=%s, label=%s] will be removed from the group [id=%s]",
                                                         query.getId(), query.getLabel(), group.getId()));
-                            persistenceManager.removeQuery(query.getId());
+                            queryProvider.delete(query.getId());
                             group.removeQuery(query.getId());
                             logger.finest(String.format("Data source component [id=%s] will be removed from the group [id=%s]",
                                                         component.getId(), group.getId()));
-                            persistenceManager.deleteDataSourceComponent(component.getId());
+                            dataSourceComponentService.delete(component.getId());
                             group.removeDataSourceComponent(component);
                         } catch (PersistenceException e) {
                             logger.severe(String.format("Cannot remove data source component %s. Reason: %s",
@@ -200,7 +208,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                         }
                     }
                 }
-                group = persistenceManager.updateDataSourceComponentGroup(group);
+                group = groupProvider.update(group);
             }
         } catch (Exception ex) {
             throw new PersistenceException(ex);
@@ -210,7 +218,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
 
     @Override
     public List<Tag> getDatasourceGroupTags() {
-        return persistenceManager.getDatasourceTags();
+        return tagProvider.list(TagType.DATASOURCE);
     }
 
     private DataSourceComponentGroup createGroup(String userName, String label) throws PersistenceException {
@@ -223,7 +231,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         group.setAuthors(userName);
         group.setCopyright("(C) " + userName);
         group.setNodeAffinity("Any");
-        group = persistenceManager.saveDataSourceComponentGroup(group);
+        group = groupProvider.save(group);
         logger.finest(String.format("Created data source group [userName=%s, label=%s, id=%s",
                                     userName, label, group.getId()));
         return group;
@@ -231,14 +239,14 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
 
     private Query addQueryToGroup(DataSourceComponentGroup group, Query query, List<EOProduct> products) throws PersistenceException {
         DataSourceComponent component =
-                dataSourceComponentService.createForProductNames(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
-                                                                 query.getSensor(), query.getDataSource(), query.getId(), query.getLabel(),
-                                                                 SessionStore.currentContext().getPrincipal());
+                dataSourceComponentService.createForLocations(products.stream().map(EOProduct::getName).collect(Collectors.toList()),
+                                                              query.getSensor(), query.getDataSource(), query.getId(), query.getLabel(),
+                                                              SessionStore.currentContext().getPrincipal());
         products = updateProducts(component.getId(), products, null);
         ProductPersister persister = new ProductPersister();
         persister.handle(products);
         query.setComponentId(component.getId());
-        query = persistenceManager.saveQuery(query);
+        query = queryProvider.save(query);
         group.addDataSourceComponent(component);
         group.addQuery(query, component.getSources().get(0).getId());
         logger.finest(String.format("Query [id=%s, label=%s] added to data source group [id=%s]",
@@ -248,8 +256,8 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
 
     private List<EOProduct> updateProducts(String componentId, List<EOProduct> products, Set<String> previousNames) {
         String[] names = products.stream().map(EOProduct::getName).toArray(String[]::new);
-        Set<String> existingProducts = persistenceManager.getProductsByNames(names).stream()
-                                                         .map(EOProduct::getName).collect(Collectors.toSet());
+        Set<String> existingProducts = productProvider.getProductsByNames(names).stream()
+                                                      .map(EOProduct::getName).collect(Collectors.toSet());
         List<EOProduct> candidatesToSave = new ArrayList<>(products);
         // remove from the list the products that are already in database
         candidatesToSave.removeIf(p -> existingProducts.contains(p.getName()));
@@ -259,7 +267,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
             for (String product : candidatesToRemove) {
                 logger.finest(String.format("Product [%s] will be removed from database if not already downloaded or referenced by another component",
                                             product));
-                persistenceManager.deleteIfNotReferenced(componentId, product);
+                productProvider.deleteIfNotReferenced(componentId, product);
             }
         }
         if (candidatesToSave.size() > 0) {
@@ -290,7 +298,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         } else {
             dbQuery = incomingQuery;
         }
-        dbQuery = persistenceManager.saveQuery(dbQuery);
+        dbQuery = queryProvider.save(dbQuery);
         logger.finest(String.format("Query [id=%s, label=%s] was found in database and updated",
                                     dbQuery.getId(), dbQuery.getLabel()));
         return dbQuery;

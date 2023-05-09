@@ -16,6 +16,7 @@
 package ro.cs.tao.services.security;
 
 import org.springframework.security.authentication.jaas.AuthorityGranter;
+import ro.cs.tao.security.UserPrincipal;
 
 import java.security.Principal;
 import java.util.HashSet;

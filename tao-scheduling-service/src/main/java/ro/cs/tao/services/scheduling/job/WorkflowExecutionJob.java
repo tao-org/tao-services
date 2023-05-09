@@ -3,16 +3,15 @@ package ro.cs.tao.services.scheduling.job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.PersistJobDataAfterExecution;
-import org.springframework.security.concurrent.DelegatingSecurityContextExecutorService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.ExecutionRequest;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
 import ro.cs.tao.scheduling.AbstractJob;
 import ro.cs.tao.security.SessionContext;
 import ro.cs.tao.security.SessionStore;
@@ -22,11 +21,13 @@ import ro.cs.tao.user.UserPreference;
 import ro.cs.tao.utils.DateUtils;
 
 import java.security.Principal;
-import java.text.DateFormat;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Executors;
 
 /**
  * @author Lucian Barbulescu
@@ -53,19 +54,14 @@ public class WorkflowExecutionJob extends AbstractJob {
 		final Authentication userAuthentication = (Authentication) dataMap.get(AbstractJob.USER_AUTHENTICATION_KEY);
 		SessionContext context = new SessionContext() {
             @Override
-            protected Principal setPrincipal() {
+            public Principal setPrincipal(Principal principal) {
                 return userAuthentication;
             }
 
             @Override
             protected List<UserPreference> setPreferences() {
-                try {
-                    return persistenceManager != null ?
-                            persistenceManager.getUserPreferences(getPrincipal().getName()) : null;
-                } catch (PersistenceException e) {
-                    logger.severe(e.getMessage());
-                }
-                return null;
+				return persistenceManager != null ?
+						persistenceManager.users().listPreferences(getPrincipal().getName()) : null;
             }
 
             @Override
@@ -103,7 +99,7 @@ public class WorkflowExecutionJob extends AbstractJob {
 			// a job was already started. Check if it is still running
 			// get last job id.
  			final long jobId = jobIds.get(jobIds.size() - 1);
-			final ExecutionJob taoJob = persistenceManager.getJobById(jobId);
+			final ExecutionJob taoJob = persistenceManager.jobs().get(jobId);
 			if (taoJob != null && taoJob.getExecutionStatus().value() < ExecutionStatus.DONE.value()) {
 				// the job is not done. do nothing
 				logger.info("The job named " + jobDetail.getKey().getName() + " for user " + jobDetail.getKey().getGroup() + " is already running!");
@@ -133,17 +129,23 @@ public class WorkflowExecutionJob extends AbstractJob {
 		// send a new execution to the orchestrator
 		final long workflowId = dataMap.getLongValue(WORKFLOW_ID_KEY);
 		final String description = dataMap.getString(DESCRIPTION_KEY);
-		
-		
-		final long jobId = Orchestrator.getInstance().startWorkflow(context, workflowId, description, new HashMap<String, Map<String,String>>(inputs),
-                                                        new DelegatingSecurityContextExecutorService(
-                                                        		Executors.newFixedThreadPool(2), 
-                                                        		SecurityContextHolder.getContext()));
+
+		final Orchestrator orchestrator = Orchestrator.getInstance();
+		final ExecutionRequest request = new ExecutionRequest();
+		request.setWorkflowId(workflowId);
+		request.setName(description);
+		request.setLabel(description);
+		request.setParameters(new HashMap<>(inputs));
+		final ExecutionJob job = orchestrator.startWorkflow(context, request);
 		
 		// save the job id to the job details map
-		jobIds.add(jobId);
-		jobDetail.getJobDataMap().put(JOB_ID_KEY, jobIds);
-		logger.info("Started job " + jobId);
+		if (job != null) {
+			jobIds.add(job.getId());
+			jobDetail.getJobDataMap().put(JOB_ID_KEY, jobIds);
+			logger.info("Started job " + job.getId());
+		} else {
+			throw new RuntimeException("No job was created");
+		}
 	}
 
 	@Override
@@ -163,20 +165,20 @@ public class WorkflowExecutionJob extends AbstractJob {
 				}
 				
 				// get the date of the last product
-				Date date = persistenceManager.getNewestProductDateForUser(userName, footprint);
+				LocalDateTime date = persistenceManager.rasterData().getNewestProductDateForUser(userName, footprint);
 				if (date == null) {
 					// no product defined for the user. Continue with existing values
 					continue;
 				}
 				
 				// shift the date with one day into the future
-				date = Date.from(date.toInstant().plus(1, ChronoUnit.DAYS));
-				final DateFormat df = DateUtils.getFormatterAtLocal("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+				date = date.plusDays(1);
+				final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 				
-				nodeData.getValue().put("startDate", df.format(date));
+				nodeData.getValue().put("startDate", DateUtils.getFormatterAtLocal("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(date));
 				// update endDate to today if it was already defined
 				if (nodeData.getValue().containsKey("endDate")) {
-					nodeData.getValue().put("endDate", df.format(new Date()));
+					nodeData.getValue().put("endDate", df.format(LocalDateTime.now()));
 				}
 			}
 		}

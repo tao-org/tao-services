@@ -17,10 +17,11 @@ package ro.cs.tao.services.user.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
+import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
 
@@ -30,38 +31,43 @@ import java.util.List;
  * @author Oana H.
  */
 @Service("userService")
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl implements UserService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private UserProvider userProvider;
+
+    @Override
+    public List<Group> getGroups() {
+        return userProvider.listGroups();
+    }
 
     @Override
     public void activateUser(String username) throws PersistenceException {
-        persistenceManager.activateUser(username);
+        userProvider.activate(username);
     }
 
     @Override
     public void resetPassword(String username, ResetPasswordInfo resetInfo) throws PersistenceException {
-        persistenceManager.resetUserPassword(username, resetInfo.getResetKey(), resetInfo.getNewPassword());
+        userProvider.resetPassword(username, resetInfo.getResetKey(), resetInfo.getNewPassword());
     }
 
     @Override
     public User getUserInfo(String username) {
-        return persistenceManager.findUserByUsername(username);
+        return userProvider.getByName(username);
     }
 
     @Override
     public User updateUserInfo(User updatedInfo) throws PersistenceException {
-        return persistenceManager.updateUser(updatedInfo, false);
+        return userProvider.update(updatedInfo, false);
     }
 
     @Override
     public List<UserPreference> saveOrUpdateUserPreferences(String username, List<UserPreference> userPreferences) throws PersistenceException {
-        return persistenceManager.saveOrUpdateUserPreferences(username, userPreferences);
+        return userProvider.save(username, userPreferences);
     }
 
     @Override
     public List<UserPreference> removeUserPreferences(String username, List<String> userPrefsKeysToDelete) throws PersistenceException {
-        return persistenceManager.removeUserPreferences(username, userPrefsKeysToDelete);
+        return userProvider.remove(username, userPrefsKeysToDelete);
     }
 }

@@ -30,7 +30,7 @@ import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.interfaces.WebProcessingService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
@@ -53,7 +53,7 @@ import java.util.logging.Logger;
 public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
 
     @Autowired
-    private WebProcessingService webProcessingService;
+    private WebProcessingService<WorkflowInfo, TargetDescriptor> webProcessingService;
 
     private Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -87,9 +87,9 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
             identifier.setValue(processIdentifier);
             processDescription.setIdentifier(identifier);
 
-            final WebProcessingService.ProcessInfo processInfo = webProcessingService.describeProcess(Long.parseLong(processIdentifier));
+            final WebProcessingService.ProcessInfo<WorkflowInfo, TargetDescriptor> processInfo = webProcessingService.describeProcess(Long.parseLong(processIdentifier));
 
-            final WorkflowInfo workflowInfo = processInfo.getWorkflowInfo();
+            final WorkflowInfo workflowInfo = processInfo.getCapabilityInfo();
             if (workflowInfo == null) {
                 final WpsServiceException wpsServiceException = new InvalidParameterValueException(
                         "Unable to describe process. Unknown process identifier '" + processIdentifier + "'"
@@ -190,11 +190,11 @@ public class BCWpsServiceInstanceImpl implements WpsServiceInstance {
         final WpsServerContext serverContext = context.getServerContext();
 
         final long workflowId = jobById.getWorkflowId();
-        final WebProcessingService.ProcessInfo processInfo = webProcessingService.describeProcess(workflowId);
+        final WebProcessingService.ProcessInfo<WorkflowInfo, TargetDescriptor> processInfo = webProcessingService.describeProcess(workflowId);
 
         ExecuteResponseBuilder responseBuilder = new ExecuteResponseBuilder(serverContext)
                 .withStatusLocation(jobId)
-                .withProcessBriefType(processInfo.getWorkflowInfo())
+                .withProcessBriefType(processInfo.getCapabilityInfo())
                 .withStatusCreationTime(getXmlNow());
 
         final ExecutionStatus status = jobById.getExecutionStatus();

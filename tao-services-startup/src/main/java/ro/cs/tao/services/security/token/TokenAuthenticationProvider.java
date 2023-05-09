@@ -16,38 +16,45 @@
 package ro.cs.tao.services.security.token;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.jaas.JaasAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Component;
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
-
-import java.util.Optional;
 
 /**
  *
  * @author Oana H.
  */
 @Component
-@Scope(value = "singleton")
+//@Scope(value = "singleton")
 public class TokenAuthenticationProvider implements AuthenticationProvider {
 
     @Autowired
     private TokenManagementService tokenManagementService;
+    private String apiDevToken;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        Optional token = (Optional) authentication.getPrincipal();
-        if (!token.isPresent() || token.get().toString().isEmpty()) {
+        if (this.apiDevToken == null) {
+            this.apiDevToken = ConfigurationManager.getInstance().getValue("api.token");
+        }
+        String token = (String) authentication.getPrincipal();
+        if (token == null || token.length() == 0) {
             throw new BadCredentialsException("Invalid token");
         }
-        if (!tokenManagementService.contains(token.get().toString())) {
+        if (token.equals(this.apiDevToken)) {
+            return new JaasAuthenticationToken(SystemPrincipal.instance(), token, null, null);
+        }
+        if (!tokenManagementService.isValid(token)) {
             throw new BadCredentialsException("Invalid token or token expired");
         }
-        return tokenManagementService.retrieve(token.get().toString());
+        return tokenManagementService.retrieve(token);
     }
 
     @Override

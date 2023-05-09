@@ -1,16 +1,8 @@
 package ro.cs.tao.services.scheduling.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -18,7 +10,10 @@ import ro.cs.tao.services.interfaces.SchedulingService;
 import ro.cs.tao.services.model.scheduling.SchedulingInfo;
 import ro.cs.tao.services.scheduling.beans.SchedulingRequest;
 
-@Controller
+import java.util.ArrayList;
+import java.util.List;
+
+@RestController
 @RequestMapping("/scheduling")
 public class SchedulingController extends BaseController {
 

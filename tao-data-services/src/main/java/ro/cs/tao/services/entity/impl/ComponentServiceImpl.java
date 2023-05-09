@@ -28,8 +28,10 @@ import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.ContainerProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.ProcessingComponentProvider;
+import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.serialization.MediaType;
 import ro.cs.tao.serialization.SerializationException;
@@ -41,8 +43,11 @@ import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
-import java.util.*;
-import java.util.logging.Logger;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -54,19 +59,22 @@ public class ComponentServiceImpl
         implements ComponentService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
-    private Logger logger = Logger.getLogger(ComponentService.class.getName());
+    private ProcessingComponentProvider processingComponentProvider;
+    @Autowired
+    private TagProvider tagProvider;
+    @Autowired
+    private ContainerProvider containerProvider;
 
     @Override
     public ProcessingComponent findById(String id) {
-        return persistenceManager.getProcessingComponentById(id);
+        return processingComponentProvider.get(id);
     }
 
     @Override
     public List<ProcessingComponent> list() {
         List<ProcessingComponent> components = null;
         try {
-            components = persistenceManager.getProcessingComponents();
+            components = processingComponentProvider.list();
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
@@ -75,15 +83,15 @@ public class ComponentServiceImpl
 
     @Override
     public List<ProcessingComponent> list(Iterable<String> ids) {
-        return persistenceManager.getProcessingComponents(ids);
+        return processingComponentProvider.list(ids);
     }
 
     @Override
     public List<ProcessingComponent> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
         if (pageNumber.isPresent() && pageSize.isPresent()) {
-            return persistenceManager.getProcessingComponents(pageNumber.get(), pageSize.get(), sort);
+            return processingComponentProvider.list(pageNumber.get(), pageSize.get(), sort);
         } else {
-            return persistenceManager.getProcessingComponents();
+            return processingComponentProvider.list();
         }
     }
 
@@ -100,23 +108,23 @@ public class ComponentServiceImpl
 
     @Override
     public List<ProcessingComponentInfo> getUserProcessingComponents(String userName) {
-        return ServiceTransformUtils.toProcessingComponentInfos(persistenceManager.getUserProcessingComponents(userName));
+        return ServiceTransformUtils.toProcessingComponentInfos(processingComponentProvider.listUserProcessingComponents(userName));
     }
 
     @Override
     public List<ProcessingComponentInfo> getUserScriptComponents(String userName) {
-        return ServiceTransformUtils.toProcessingComponentInfos(persistenceManager.getUserScriptComponents(userName));
+        return ServiceTransformUtils.toProcessingComponentInfos(processingComponentProvider.listUserScriptComponents(userName));
     }
 
     @Override
     public ProcessingComponent save(ProcessingComponent component) {
         if (component != null) {
-            if (persistenceManager.existsProcessingComponent(component.getId())) {
+            if (processingComponentProvider.get(component.getId(), component.getContainerId()) != null) {
                 return update(component);
             } else {
                 try {
                     addTagsIfNew(component);
-                    return persistenceManager.saveProcessingComponent(component);
+                    return processingComponentProvider.save(component);
                 } catch (PersistenceException e) {
                     logger.severe(e.getMessage());
                     return null;
@@ -130,7 +138,7 @@ public class ComponentServiceImpl
     public ProcessingComponent update(ProcessingComponent component) {
         try {
             addTagsIfNew(component);
-            return persistenceManager.updateProcessingComponent(component);
+            return processingComponentProvider.update(component);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
             return null;
@@ -140,7 +148,7 @@ public class ComponentServiceImpl
     @Override
     public void delete(String name) {
         try {
-            persistenceManager.deleteProcessingComponent(name);
+            processingComponentProvider.delete(name);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
         }
@@ -153,11 +161,11 @@ public class ComponentServiceImpl
             throw new PersistenceException(String.format("Component with id '%s' not found", id));
         }
         if (tags != null && tags.size() > 0) {
-            Set<String> existingTags = persistenceManager.getWorkflowTags().stream()
+            Set<String> existingTags = tagProvider.list(TagType.WORKFLOW).stream()
                     .map(Tag::getText).collect(Collectors.toSet());
             for (String value : tags) {
                 if (!existingTags.contains(value)) {
-                    persistenceManager.saveTag(new Tag(TagType.COMPONENT, value));
+                    tagProvider.save(new Tag(TagType.COMPONENT, value));
                 }
             }
             entity.setTags(tags);
@@ -167,7 +175,7 @@ public class ComponentServiceImpl
     }
 
     @Override
-    public ProcessingComponent untag(String id, List<String> tags) throws PersistenceException {
+    public ProcessingComponent unTag(String id, List<String> tags) throws PersistenceException {
         ProcessingComponent entity = findById(id);
         if (entity == null) {
             throw new PersistenceException(String.format("Component with id '%s' not found", id));
@@ -209,7 +217,7 @@ public class ComponentServiceImpl
 
     @Override
     public List<Tag> getComponentTags() {
-        return persistenceManager.getComponentTags();
+        return tagProvider.list(TagType.COMPONENT);
     }
 
     @Override
@@ -223,7 +231,14 @@ public class ComponentServiceImpl
         if (value == null || value.trim().isEmpty()) {
             errors.add("[containerId] cannot be empty");
         } else {
-            if ((container = persistenceManager.getContainerById(value)) == null) {
+            container = containerProvider.get(value);
+            if (container == null) {
+                container = containerProvider.getByName(value);
+                if (container != null) {
+                    entity.setContainerId(container.getId());
+                }
+            }
+            if (container == null) {
                 errors.add("[containerId] points to a non-existing container");
             }
         }
@@ -294,7 +309,7 @@ public class ComponentServiceImpl
                 if (dataType == null) {
                     errors.add(String.format("[$%s] cannot determine type", descriptorId));
                 }
-                if (Date.class.equals(dataType)) {
+                if (LocalDateTime.class.equals(dataType)) {
                     value = descriptor.getFormat();
                     if (value == null || value.trim().isEmpty()) {
                         errors.add(String.format("[$%s] format for date parameter not specified", descriptorId));
@@ -348,10 +363,14 @@ public class ComponentServiceImpl
     private void addTagsIfNew(TaoComponent component) {
         List<String> tags = component.getTags();
         if (tags != null) {
-            List<Tag> componentTags = persistenceManager.getComponentTags();
+            List<Tag> componentTags = tagProvider.list(TagType.COMPONENT);
             for (String value : tags) {
                 if (componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
-                    persistenceManager.saveTag(new Tag(TagType.COMPONENT, value));
+                    try {
+                        tagProvider.save(new Tag(TagType.COMPONENT, value));
+                    } catch (PersistenceException e) {
+                        logger.severe(e.getMessage());
+                    }
                 }
             }
         }

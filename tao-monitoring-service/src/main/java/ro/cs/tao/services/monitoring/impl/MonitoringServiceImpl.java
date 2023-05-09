@@ -16,16 +16,16 @@
 package ro.cs.tao.services.monitoring.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.OSRuntimeInfo;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.NotifiableComponent;
 import ro.cs.tao.messaging.Topic;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.persistence.MessageProvider;
+import ro.cs.tao.persistence.NodeProvider;
 import ro.cs.tao.services.commons.MessageConverter;
 import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.interfaces.MonitoringService;
@@ -48,7 +48,11 @@ import java.util.stream.Collectors;
 public class MonitoringServiceImpl extends NotifiableComponent implements MonitoringService<Notification> {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private MessageProvider messageProvider;
+    @Autowired
+    private NodeProvider nodeProvider;
+
+    private String[] topics;
 
     public MonitoringServiceImpl() {
         super();
@@ -56,7 +60,16 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
 
     @Override
     protected String[] topics() {
-        return new String[] { Topic.INFORMATION.value(), Topic.WARNING.value(), Topic.ERROR.value(), Topic.PROGRESS.value() };
+        if (topics == null) {
+            final String value = ConfigurationManager.getInstance().getValue("monitoring.topics");
+            if (value != null) {
+                topics = value.split(",");
+            } else {
+                topics = new String[] { Topic.INFORMATION.value(), Topic.WARNING.value(), Topic.ERROR.value(),
+                                        Topic.PROGRESS.value(), Topic.TOPOLOGY.value(), Topic.EXECUTION.value() };
+            }
+        }
+        return topics;
     }
 
     @Override
@@ -82,7 +95,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
             if (NodeManager.isAvailable()) {
                 runtimeInfo = NodeManager.getInstance().getNodeSnapshot(nodeInfo.getId());
             } else {
-                OSRuntimeInfo inspector = OSRuntimeInfo.createInspector(nodeInfo.getId(), nodeInfo.getUserName(), nodeInfo.getUserPass());
+                OSRuntimeInfo<?> inspector = OSRuntimeInfo.createInspector(nodeInfo.getId(), nodeInfo.getUserName(), nodeInfo.getUserPass(), RuntimeInfo.class);
                 runtimeInfo = inspector.getInfo();
             }
         } catch (Exception e) {
@@ -98,8 +111,8 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
             if (NodeManager.isAvailable()) {
                 runtimeInfo = NodeManager.getInstance().getNodeSnapshot(hostName);
             } else {
-                NodeDescription node = persistenceManager.getNodeByHostName(hostName);
-                runtimeInfo = OSRuntimeInfo.createInspector(node.getId(), node.getUserName(), node.getUserPass()).getSnapshot();
+                NodeDescription node = TopologyManager.getInstance().getNode(hostName);
+                runtimeInfo = OSRuntimeInfo.createInspector(node.getId(), node.getUserName(), node.getUserPass(), RuntimeInfo.class).getSnapshot();
             }
         } catch (Throwable ex) {
             logger.warning(ex.getMessage());
@@ -110,13 +123,18 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     @Override
     public List<Notification> getLiveNotifications() {
         final MessageConverter converter = new MessageConverter();
-        return getLastMessages().stream().map(converter::to).collect(Collectors.toList());
+        List<Notification> notifications = new ArrayList<>();
+        try {
+            notifications = getLastMessages().stream().map(converter::to).collect(Collectors.toList());
+        } catch (Exception e){
+        }
+        return notifications;
     }
 
     @Override
     public Map<String, List<Notification>> getUnreadNotifications(String userName) {
         Map<String, List<Notification>>  messages = new LinkedHashMap<>();
-        List<Message> unread = persistenceManager.getUnreadMessages(userName);
+        List<Message> unread = messageProvider.getUnreadMessages(userName);
         final MessageConverter converter = new MessageConverter();
         if (unread != null) {
             messages.put(Topic.INFORMATION.value(), new ArrayList<>());
@@ -138,9 +156,9 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
 
     @Override
     public List<Notification> getNotifications(String user, int page) {
-        final Page<Message> userMessages = persistenceManager.getUserMessages(user, page);
+        final List<Message> userMessages = messageProvider.getUserMessages(user, page);
         return userMessages != null ?
-                userMessages.getContent().stream()
+                userMessages.stream()
                         .map(m -> new MessageConverter().to(m))
                         .collect(Collectors.toList()) : new ArrayList<>();
     }
@@ -148,23 +166,20 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     @Override
     public List<Notification> acknowledgeNotification(List<Notification> notifications) {
         if (notifications != null) {
-            MessageConverter converter = new MessageConverter();
-            notifications.forEach(message -> {
-                message.setRead(true);
-                try {
-                    persistenceManager.saveMessage(converter.from(message));
-                } catch (PersistenceException e) {
-                    logger.severe(e.getMessage());
-                }
-            });
+            messageProvider.acknowledge(notifications.stream().map(Notification::getId).collect(Collectors.toList()));
         }
         return notifications;
     }
 
     @Override
+    public void deleteAll(String userName) {
+        messageProvider.clear(userName);
+    }
+
+    @Override
     public Map<String, Boolean> getNodesOnlineStatus() {
         Map<String, Boolean> statuses = new HashMap<>();
-        List<NodeDescription> nodes = TopologyManager.getInstance().list();
+        List<NodeDescription> nodes = TopologyManager.getInstance().listNodes();
         if (nodes != null) {
             try {
                 String masterHost = InetAddress.getLocalHost().getHostName();
@@ -176,17 +191,15 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
                         master.setUserPass(node.getUserPass());
                         master.setDescription(node.getDescription());
                         master.setServicesStatus(node.getServicesStatus());
-                        master.setProcessorCount(node.getProcessorCount());
-                        master.setDiskSpaceSizeGB(node.getDiskSpaceSizeGB());
-                        master.setMemorySizeGB(node.getMemorySizeGB());
+                        master.setFlavor(node.getFlavor());
                         master.setActive(true);
-                        master = persistenceManager.saveExecutionNode(master);
-                        persistenceManager.deleteExecutionNode(node.getId());
+                        master = nodeProvider.save(master);
+                        nodeProvider.delete(node.getId());
                         node = master;
                         logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                     }
                     String hostName = node.getId();
-                    Executor executor;
+                    Executor<?> executor;
                     if (hostName.equals(masterHost)) {
                         executor = Executor.create(ExecutorType.PROCESS, hostName, null);
                     } else {

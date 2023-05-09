@@ -27,11 +27,14 @@ import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
-import ro.cs.tao.persistence.PersistenceManager;
-import ro.cs.tao.persistence.exception.PersistenceException;
+import ro.cs.tao.docker.ContainerType;
+import ro.cs.tao.persistence.ContainerProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.ProcessingComponentProvider;
+import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.interfaces.ContainerService;
-import ro.cs.tao.topology.TopologyManager;
+import ro.cs.tao.topology.docker.DockerManager;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -47,22 +50,24 @@ public class ContainerServiceImpl
         extends EntityService<Container> implements ContainerService {
 
     @Autowired
-    private PersistenceManager persistenceManager;
+    private ContainerProvider containerProvider;
+    @Autowired
+    private TagProvider tagProvider;
+    @Autowired
+    private ProcessingComponentProvider componentProvider;
 
     private Logger logger = Logger.getLogger(ContainerService.class.getName());
 
     @Override
     public Container findById(String id) {
-        Container container = null;
-        container = persistenceManager.getContainerById(id);
-        return container;
+        return containerProvider.get(id);
     }
 
     @Override
     public List<Container> list() {
         List<Container> containers = null;
         try {
-            containers = persistenceManager.getContainers();
+            containers = containerProvider.list();
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
@@ -71,7 +76,12 @@ public class ContainerServiceImpl
 
     @Override
     public List<Container> list(Iterable<String> ids) {
-        return persistenceManager.getContainers(ids);
+        return containerProvider.list(ids);
+    }
+
+    @Override
+    public List<Container> listByType(ContainerType type) {
+        return containerProvider.getByType(type);
     }
 
     @Override
@@ -82,7 +92,7 @@ public class ContainerServiceImpl
                 if (shouldBeNull != null) {
                     return update(object);
                 } else {
-                    return persistenceManager.saveContainer(object);
+                    return containerProvider.save(object);
                 }
             } catch (PersistenceException e) {
                 logger.severe(e.getMessage());
@@ -95,7 +105,7 @@ public class ContainerServiceImpl
     @Override
     public Container update(Container object) {
         try {
-            return persistenceManager.updateContainer(object);
+            return containerProvider.update(object);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
             return null;
@@ -105,7 +115,7 @@ public class ContainerServiceImpl
     @Override
     public void delete(String id) {
         try {
-            persistenceManager.deleteContainer(id);
+            containerProvider.delete(id);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
         }
@@ -114,21 +124,20 @@ public class ContainerServiceImpl
     @Override
     public String registerContainer(Path dockerFile, Container container, ProcessingComponent[] components) {
         String containerId;
-        TopologyManager topologyManager = TopologyManager.getInstance();
-        if (topologyManager.getDockerImage(container.getName()) == null) {
+        if (DockerManager.getDockerImage(container.getName()) == null) {
             // build Docker image and put it in Docker registry
-            containerId = topologyManager.registerImage(dockerFile, container.getName(), container.getDescription());
+            containerId = DockerManager.registerImage(dockerFile, container.getName(), container.getDescription());
             // update database with container and applications information
             initializeContainer(containerId, container);
         } else {
             // the image is already registered with Docker, and should be also registered in the database
-            Container c = persistenceManager.getContainerByName(container.getName());
+            Container c = containerProvider.getByName(container.getName());
             containerId = c != null ? c.getId() : null;
         }
         // if provided, register the components of this container
         if (containerId != null && components != null) {
             final List<Application> containerApplications = container.getApplications();
-            List<Tag> componentTags = this.persistenceManager.getComponentTags();
+            List<Tag> componentTags = tagProvider.list(TagType.COMPONENT);
             if (componentTags == null) {
                 componentTags = new ArrayList<>();
             }
@@ -189,7 +198,7 @@ public class ContainerServiceImpl
                     component.setVisibility(ProcessingComponentVisibility.SYSTEM);
                     component.setOwner(SystemPrincipal.instance().getName());
                     component.addTags(getOrCreateTag(componentTags, container.getName()).getText());
-                    persistenceManager.saveProcessingComponent(component);
+                    componentProvider.save(component);
                 } catch (Exception inner) {
                     logger.severe(String.format("Faulty component: %s. Error: %s",
                                                 current != null ? current.getId() : "n/a",
@@ -205,7 +214,7 @@ public class ContainerServiceImpl
         if (webContainer == null) {
             return null;
         }
-        Container container = persistenceManager.getContainerByName(webContainer.getName());
+        Container container = containerProvider.getByName(webContainer.getName());
         boolean existing = (container != null);
         if (!existing) {
             container = webContainer;
@@ -214,7 +223,7 @@ public class ContainerServiceImpl
         }
         container.setId(id);
         try {
-            container = existing ? persistenceManager.updateContainer(container) : persistenceManager.saveContainer(container);
+            container = existing ? containerProvider.update(container) : containerProvider.save(container);
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
@@ -223,7 +232,7 @@ public class ContainerServiceImpl
 
     @Override
     public Container initializeContainer(String id, String name, String path, List<Application> applications) {
-        List<Container> containers = persistenceManager.getContainers();
+        List<Container> containers = containerProvider.list();
         Container container = null;
         if (containers != null) {
             container = containers.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
@@ -246,7 +255,7 @@ public class ContainerServiceImpl
         }
 
         try {
-            container = existing ? persistenceManager.updateContainer(container) : persistenceManager.saveContainer(container);
+            container = existing ? containerProvider.update(container) : containerProvider.save(container);
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
@@ -287,10 +296,10 @@ public class ContainerServiceImpl
         });
     }
 
-    private Tag getOrCreateTag(List<Tag> tags, String tagText) {
+    private Tag getOrCreateTag(List<Tag> tags, String tagText) throws PersistenceException {
         Tag tag = tags.stream().filter(t -> t.getText().equalsIgnoreCase(tagText)).findFirst().orElse(null);
         if (tag == null) {
-            tag = this.persistenceManager.saveTag(new Tag(TagType.COMPONENT, tagText));
+            tag = tagProvider.save(new Tag(TagType.COMPONENT, tagText));
             tags.add(tag);
         }
         return tag;

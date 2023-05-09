@@ -16,6 +16,7 @@
 
 package ro.cs.tao.services.commons;
 
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -24,9 +25,16 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.utils.ExceptionUtils;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -36,7 +44,7 @@ public abstract class ControllerBase {
 
     private ThreadPoolTaskExecutor executorService;
 
-    private Logger logger = Logger.getLogger(getClass().getName());
+    private final Logger logger = Logger.getLogger(getClass().getName());
 
     protected String currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -44,10 +52,14 @@ public abstract class ControllerBase {
     }
 
     protected Future<?> asyncExecute(Runnable runnable) {
-        return asyncExecute(runnable, null);
+        return asyncExecute(runnable, "Operation completed", null);
     }
 
-    protected Future<?> asyncExecute(Runnable runnable, Consumer<Exception> callback) {
+    protected void onUnhandledException(Exception e) {
+        error(ExceptionUtils.getStackTrace(logger, e));
+    }
+
+    protected <T> Future<?> asyncExecute(Callable<T> runnable, Consumer<T> successCallback, Consumer<Exception> errorCallback) {
         synchronized (sharedLock) {
             if (this.executorService == null) {
                 executorService = new ThreadPoolTaskExecutor() {
@@ -68,18 +80,21 @@ public abstract class ControllerBase {
                 };
                 executorService.setThreadGroupName("controller-async");
                 int processors = Runtime.getRuntime().availableProcessors();
-                executorService.setCorePoolSize(Math.min(processors / 2, 2));
-                executorService.setMaxPoolSize(processors * 2);
+                executorService.setCorePoolSize(Math.min(processors / 2, 4));
+                executorService.setMaxPoolSize(executorService.getCorePoolSize() * 2);
                 executorService.setQueueCapacity(25);
                 executorService.initialize();
             }
         }
         return executorService.submit(() -> {
             try {
-                runnable.run();
+                final T result = runnable.call();
+                if (successCallback != null) {
+                    successCallback.accept(result);
+                }
             } catch (Exception ex) {
-                if (callback != null) {
-                    callback.accept(ex);
+                if (errorCallback != null) {
+                    errorCallback.accept(ex);
                 } else {
                     onUnhandledException(ex);
                 }
@@ -87,13 +102,59 @@ public abstract class ControllerBase {
         });
     }
 
-    protected void onUnhandledException(Exception e) {
-        error(ExceptionUtils.getStackTrace(logger, e));
+    protected Future<?> asyncExecute(Runnable runnable, String successMessage, BiConsumer<Exception, String> callback) {
+        synchronized (sharedLock) {
+            if (this.executorService == null) {
+                executorService = new ThreadPoolTaskExecutor() {
+                    @Override
+                    public void execute(Runnable task) {
+                        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                        super.execute(() -> {
+                            try {
+                                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                                context.setAuthentication(authentication);
+                                SecurityContextHolder.setContext(context);
+                                task.run();
+                            } finally {
+                                SecurityContextHolder.clearContext();
+                            }
+                        });
+                    }
+                };
+                executorService.setThreadGroupName("controller-async");
+                int processors = Runtime.getRuntime().availableProcessors();
+                executorService.setCorePoolSize(Math.min(processors / 2, 4));
+                executorService.setMaxPoolSize(executorService.getCorePoolSize() * 2);
+                executorService.setQueueCapacity(25);
+                executorService.initialize();
+            }
+        }
+        return executorService.submit(() -> {
+            try {
+                runnable.run();
+                if (callback != null) {
+                    callback.accept(null, successMessage);
+                }
+            } catch (Exception ex) {
+                if (callback != null) {
+                    callback.accept(ex, null);
+                } else {
+                    onUnhandledException(ex);
+                }
+            }
+        });
     }
 
     protected <T> ResponseEntity<ServiceResponse<?>> prepareResult(T result) {
         return new ResponseEntity<>(new ServiceResponse<>(result),
                                     HttpStatus.OK);
+    }
+
+    protected <T> ResponseEntity<ServiceResponse<?>> prepareResult(T result, int cacheTimeoutMinutes) {
+        CacheControl cacheControl = CacheControl.maxAge(cacheTimeoutMinutes, TimeUnit.MINUTES)
+                .noTransform()
+                .mustRevalidate();
+        return ResponseEntity.ok().cacheControl(cacheControl).body(new ServiceResponse<>(result));
     }
 
     protected <T> ResponseEntity<ServiceResponse<?>> prepareResult(T result, HttpStatus httpStatus) {
@@ -119,7 +180,7 @@ public abstract class ControllerBase {
     }
 
     protected ResponseEntity<ServiceResponse<?>> handleException(Exception ex) {
-        Logger.getLogger(getClass().getName()).severe(org.apache.commons.lang3.exception.ExceptionUtils.getStackFrames(ex)[0]);
+        logger.severe(ExceptionUtils.getStackTrace(logger, ex));
         if (ex instanceof ValidationException) {
             ValidationException vex = (ValidationException) ex;
             return new ResponseEntity<>(new ServiceResponse<>(vex.getAdditionalInfo(),
@@ -130,13 +191,15 @@ public abstract class ControllerBase {
                                                               ResponseStatus.FAILED),
                                         HttpStatus.OK);
         	
-        }/* else {
-            return new ResponseEntity<>(new ServiceResponse<>(String.format("Failed with error: %s - %s",
-                                                                            ex.getClass().getSimpleName(),
-                                                                            ex.getMessage()),
-                                                              ResponseStatus.FAILED),
-                                        HttpStatus.OK);
-        }*/
+        }
+    }
+
+    protected void trace(String message, Object... args) {
+        if (args != null && args.length > 0) {
+            logger.finest(String.format(message, args));
+        } else {
+            logger.finest(message);
+        }
     }
 
     protected void debug(String message, Object... args) {
@@ -169,5 +232,24 @@ public abstract class ControllerBase {
         } else {
             logger.severe(message);
         }
+    }
+
+    protected void exceptionCallbackHandler(Exception ex, String successMessage) {
+        final Message message = new Message();
+        message.setTimestamp(System.currentTimeMillis());
+        String msg;
+        final String topic;
+        if (ex != null) {
+            msg = ex.getMessage();
+            message.setData(msg);
+            topic = Topic.ERROR.value();
+            logger.severe(msg);
+        } else {
+            msg = successMessage;
+            message.setData(msg);
+            topic = Topic.INFORMATION.value();
+            logger.info(msg);
+        }
+        Messaging.send(SessionStore.currentContext().getPrincipal(), topic, message);
     }
 }

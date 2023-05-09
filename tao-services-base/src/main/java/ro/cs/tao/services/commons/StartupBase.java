@@ -21,11 +21,11 @@ import org.springframework.boot.system.ApplicationHome;
 import org.springframework.context.ApplicationListener;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
-import ro.cs.tao.configuration.TaoConfigurationProvider;
 import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
 import ro.cs.tao.services.commons.config.FileProcessor;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.utils.executors.Executor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,7 +46,7 @@ public abstract class StartupBase implements ApplicationListener {
         Files.createDirectories(configDirectory);
         Path scriptsDirectory = homeDirectory().resolve("scripts");
         Files.createDirectories(scriptsDirectory);
-        System.out.println(String.format("Configuration files will be read from %s", configDirectory.toString()));
+        System.out.printf("Configuration files will be read from %s%n", configDirectory.toString());
         if (!Files.exists(configDirectory)) {
             Files.createDirectory(configDirectory);
         }
@@ -55,26 +55,35 @@ public abstract class StartupBase implements ApplicationListener {
         Set<FileProcessor> configurationFileProcessors = serviceRegistry.getServices();
         for (FileProcessor processor : configurationFileProcessors) {
             if (processor instanceof ConfigurationFileProcessor) {
-                allProperties.putAll(((ConfigurationFileProcessor) processor).processConfigFile(configDirectory));
+                allProperties.putAll(((ConfigurationFileProcessor) processor).processConfigFiles(configDirectory));
             } else {
-                processor.processFile(scriptsDirectory);
+                processor.processFiles(scriptsDirectory);
             }
         }
-        allProperties.put(ConfigurationProvider.APP_HOME, homeDirectory().toString());
+        if (ConfigurationManager.getInstance() == null) {
+            final ServiceLoader<ConfigurationProvider> loader = ServiceLoader.load(ConfigurationProvider.class);
+            final Iterator<ConfigurationProvider> iterator = loader.iterator();
+            if (iterator.hasNext()) {
+                ConfigurationManager.setConfigurationProvider(iterator.next());
+            }
+        }
         final ConfigurationProvider configurationProvider = ConfigurationManager.getInstance();
+        configurationProvider.setValue(ConfigurationProvider.APP_HOME, homeDirectory().toString());
         configurationProvider.setConfigurationFolder(configDirectory);
         configurationProvider.setScriptsFolder(scriptsDirectory);
         configurationProvider.putAll(allProperties);
+        configurationProvider.setSystemEnvironment(System.getenv());
+        Executor.setEnvironment(System.getenv());
         StringBuilder builder = new StringBuilder();
         builder.append("Active logging levels: ");
         allProperties.entrySet().stream()
                 .filter(e -> e.getKey().toString().startsWith("logging.level."))
                 .map(e -> new AbstractMap.SimpleEntry<String, String>(e.getKey().toString(), e.getValue().toString()) {})
-                .sorted(Comparator.comparing(AbstractMap.SimpleEntry::getKey)).forEach(e -> {
+                .sorted(Map.Entry.comparingByKey()).forEach(e -> {
             builder.append(e.getKey().replace("logging.level.", "")).append(" -> ").append(e.getValue()).append(", ");
         });
         builder.setLength(builder.length() - 1);
-        System.out.println(builder.toString());
+        System.out.println(builder);
         return allProperties;
     }
 
@@ -93,7 +102,7 @@ public abstract class StartupBase implements ApplicationListener {
                                         .sources(detectLaunchers(startupClass))
                                         .build();
         app.setDefaultProperties(initialize());
-        if (Boolean.parseBoolean(TaoConfigurationProvider.getInstance().getValue("tao.dev.mode", "false"))) {
+        if (Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.dev.mode", "false"))) {
             System.out.println("Development mode is ON");
         }
         app.run(args);

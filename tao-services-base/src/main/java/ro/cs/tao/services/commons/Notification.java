@@ -21,6 +21,7 @@ import java.util.Calendar;
  * @author Cosmin Cara
  */
 public class Notification {
+    private long id;
     private Calendar timestamp;
     private String user;
     private boolean read;
@@ -30,13 +31,22 @@ public class Notification {
 
     public Notification() { }
 
-    public Notification(Calendar timestamp, String user, String source, String topic, String data) {
+    public Notification(long id, Calendar timestamp, String user, String source, String topic, String data) {
+        this.id = id;
         this.timestamp = timestamp;
         this.source = source;
         this.data = data;
         this.user = user;
         this.topic = topic;
         this.read = false;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getUser() { return user; }
