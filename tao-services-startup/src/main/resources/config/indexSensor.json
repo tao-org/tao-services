@@ -1,14 +1,14 @@
 {
 	"EarthData":{
 		"authentication": {
-			"user": "kraftek@c-s.ro",
-			"password": "cei7pitici."
+			"user": "",
+			"password": ""
 		}
 	},
 	"Scientific Data Hub":{
 		"authentication": {
-			"user": "kraftek",
-			"password": "cei7samurai"
+			"user": "",
+			"password": ""
 		},
 		"paramsPrefix":"productType",
 		"sensor": {
@@ -27,8 +27,8 @@
 	},
 	"FedEO":{
 		"authentication": {
-			"user": "kraftek@c-s.ro",
-			"password": "cei7pitici."
+			"user": "",
+			"password": ""
 			
 		},
 		"paramsPrefix":"parentIdentifier",
@@ -682,8 +682,8 @@
 	},
 	"LSA Data Center":{
 		"authentication": {
-			"user": "kraftek@c-s.ro",
-			"password": "cei7pitici."
+			"user": "",
+			"password": ""
 		},
 		"paramsPrefix":"productType",
 		"sensor": {
@@ -717,8 +717,8 @@
 	},
 	"USGS":{
 		"authentication": {
-			"user": "kraftek",
-			"password": "cei7pitici."
+			"user": "",
+			"password": ""
 		},
 		"paramsPrefix":"productType",
 		"sensor":{
@@ -872,8 +872,8 @@
 	},
 	"Mundi DIAS":{
 		"authentication": {
-			"user": "kraftek",
-			"password": "cei7pitici."
+			"user": "",
+			"password": ""
 		},
 		"sensor":{
 			"Sentinel1":{
@@ -892,14 +892,14 @@
 	},
 	"PEPS":{
 		"authentication": {
-			"user": "kraftek",
-			"password": "cei7pitici."
+			"user": "",
+			"password": ""
 		}
 	},
 	"EO-CAT":{
 		"authentication": {
-			"user": "kraftek",
-			"password": "cei7pitici."
+			"user": "",
+			"password": ""
 		},
 		"sensor":{
 			"ALOS-1 (PALSAR_FBS_FBD_PLR)":{
