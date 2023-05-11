@@ -952,7 +952,9 @@ public class WorkflowServiceImpl
                                                                   descriptor.getDefaultValue() != null ? String.valueOf(descriptor.getDefaultValue()) : null,
                                                                   paramType != null && paramType.isEnum() ?
                                                                   Parameter.stringValueSet(paramType.getEnumConstants()) :
-                                                                  Parameter.stringValueSet(descriptor.getValueSet())));
+                                                                  Parameter.stringValueSet(descriptor.getValueSet()),
+                                                                  descriptor.isRequired()));
+
                             } else {
                                 final String location = querySource.getDataDescriptor().getLocation();
                                 String values = location != null ?
@@ -963,7 +965,9 @@ public class WorkflowServiceImpl
                                                                   values,
                                                                   paramType != null && paramType.isEnum() ?
                                                                   Parameter.stringValueSet(paramType.getEnumConstants()) :
-                                                                  Parameter.stringValueSet(descriptor.getValueSet())));
+                                                                  Parameter.stringValueSet(descriptor.getValueSet()),
+                                                                  descriptor.isRequired()));
+
                             }
                         }
                     }
@@ -1008,7 +1012,8 @@ public class WorkflowServiceImpl
                                                           !"null".equals(descriptor.getDefaultValue()) ? descriptor.getDefaultValue() : null,
                                                           paramType.isEnum() ?
                                                                   Parameter.stringValueSet(paramType.getEnumConstants()) :
-                                                                  Parameter.stringValueSet(descriptor.getValueSet())));
+                                                                  Parameter.stringValueSet(descriptor.getValueSet()),
+                                                          descriptor.isNotNull()));
                     }
                     break;
                 case GROUP:
