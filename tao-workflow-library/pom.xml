@@ -20,18 +20,19 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>tao-services</artifactId>
-        <groupId>ro.cs.tao</groupId>
+        <groupId>ro.c-s.tao</groupId>
         <version>1.4.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tao-workflow-library</artifactId>
     <name>TAO Workflow Library</name>
+    <description>Various pre-defined workflows for EO</description>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-execution-api</artifactId>
             <version>${project.version}</version>
         </dependency>

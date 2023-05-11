@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>ro.cs.tao</groupId>
+        <groupId>ro.c-s.tao</groupId>
         <artifactId>tao-core</artifactId>
         <version>1.4.3</version>
     </parent>
@@ -37,7 +37,7 @@
     </modules>
 
     <properties>
-        <spring.boot.version>2.7.9</spring.boot.version>
+        <spring.boot.version>2.7.11</spring.boot.version>
         <taoReleasesUrl>${project.deploy.root.path}/tao-services</taoReleasesUrl>
     </properties>
 
@@ -51,7 +51,7 @@
     <dependencies>
         <!-- TAO domain model -->
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-data-model</artifactId>
             <version>${project.version}</version>
         </dependency>

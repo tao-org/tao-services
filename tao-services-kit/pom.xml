@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>tao-services</artifactId>
-        <groupId>ro.cs.tao</groupId>
+        <groupId>ro.c-s.tao</groupId>
         <version>1.4.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -16,82 +16,82 @@
 
     <dependencies>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-admin-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-auth-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-data-query-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-data-services</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-monitoring-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-orchestration-services</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-progress-report-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-scheduling-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-services-base</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-services-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-services-startup</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-user-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-viewer-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-web-processing-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-workflow-library</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ro.cs.tao</groupId>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-workspace-service</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -130,7 +130,7 @@
                         </goals>
                         <configuration>
                             <includeScope>runtime</includeScope>
-                            <excludeGroupIds>ro.cs.tao</excludeGroupIds>
+                            <excludeGroupIds>ro.c-s.tao</excludeGroupIds>
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>true</overWriteSnapshots>
                             <outputDirectory>${project.build.directory}</outputDirectory>
