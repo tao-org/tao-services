@@ -112,7 +112,7 @@ public class MonitoringController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> clearNotifications() {
         try {
             monitoringService.deleteAll(currentUser());
-            return prepareResult("Operaiton succeeded", ResponseStatus.SUCCEEDED);
+            return prepareResult("Operation succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
         }
