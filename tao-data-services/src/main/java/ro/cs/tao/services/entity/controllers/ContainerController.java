@@ -46,6 +46,7 @@ import ro.cs.tao.services.entity.beans.ContainerRequest;
 import ro.cs.tao.services.entity.beans.ContainerUploadRequest;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.docker.DockerManager;
+import ro.cs.tao.utils.StringUtilities;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -326,6 +327,46 @@ public class ContainerController extends DataEntityController<Container, String,
             asyncExecute(registrationCode, "Docker image registration completed", this::exceptionCallbackHandler);
             return prepareResult("Docker image registration started. A notification will be send when the process completes",
                                  ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/start", method = RequestMethod.POST, consumes = "multipart/form-data", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> startContainer(@RequestParam("id") String containerId) {
+        try {
+            if (StringUtilities.isNullOrEmpty(containerId)) {
+                throw new IllegalArgumentException("[id] null");
+            }
+            final Container container = containerProvider.get(containerId);
+            if (container == null) {
+                throw new IllegalArgumentException(String.format("[%s] not registered", containerId));
+            }
+            if (DockerManager.isRunning(container.getName())) {
+                throw new RuntimeException(String.format("[%s] is already running", container.getName()));
+            }
+            DockerManager.runDaemon(container.getName(), null);
+            return prepareResult("Request to start container [" + containerId + "] sent", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/stop", method = RequestMethod.POST, consumes = "multipart/form-data", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> stopContainer(@RequestParam("id") String containerId) {
+        try {
+            if (StringUtilities.isNullOrEmpty(containerId)) {
+                throw new IllegalArgumentException("[id] null");
+            }
+            final Container container = containerProvider.get(containerId);
+            if (container == null) {
+                throw new IllegalArgumentException(String.format("[%s] not registered", containerId));
+            }
+            if (!DockerManager.isRunning(container.getName())) {
+                throw new RuntimeException(String.format("[%s] is not running", container.getName()));
+            }
+            DockerManager.stopContainer(container.getName());
+            return prepareResult("Container [" + containerId + "] stopped", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
         }

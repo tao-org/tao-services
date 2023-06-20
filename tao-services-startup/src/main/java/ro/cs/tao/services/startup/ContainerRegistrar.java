@@ -4,7 +4,7 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
-import ro.cs.tao.topology.docker.StandaloneContainer;
+import ro.cs.tao.topology.docker.SingletonContainer;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,18 +47,20 @@ public class ContainerRegistrar extends BaseLifeCycle {
         } else {
             logger.fine("No docker image plugin found");
         }
-        final List<StandaloneContainer> containers = TopologyManager.getInstance().getStandaloneContainers();
+        final List<SingletonContainer> containers = TopologyManager.getInstance().getStandaloneContainers();
         if (containers != null && containers.size() > 0) {
             logger.finest(() -> String.format("Found %d docker standalone containers: %s", containers.size(),
                                               containers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.joining(","))));
-            for (StandaloneContainer container : containers) {
-                try {
-                    container.install();
-                    logger.fine(() -> String.format("Installed docker image %s", container.getContainerName()));
-                    container.start();
-                    logger.fine(() -> String.format("Started docker container %s", container.getContainerName()));
-                } catch (Throwable e) {
-                    logger.severe(e.getMessage());
+            for (SingletonContainer container : containers) {
+                if (!container.isPerUser()) {
+                    try {
+                        container.install();
+                        logger.fine(() -> String.format("Installed docker image %s", container.getContainerName()));
+                        container.start();
+                        logger.fine(() -> String.format("Started docker container %s", container.getContainerName()));
+                    } catch (Throwable e) {
+                        logger.severe(e.getMessage());
+                    }
                 }
             }
         } else {
@@ -68,9 +70,9 @@ public class ContainerRegistrar extends BaseLifeCycle {
 
     @Override
     public void onShutdown() {
-        final List<StandaloneContainer> containers = TopologyManager.getInstance().getStandaloneContainers();
+        final List<SingletonContainer> containers = TopologyManager.getInstance().getStandaloneContainers();
         if (containers != null && containers.size() > 0) {
-            for (StandaloneContainer container : containers) {
+            for (SingletonContainer container : containers) {
                 try {
                     logger.fine(() -> String.format("Attempting to stop container %s", container.getContainerName()));
                     container.shutdown();
