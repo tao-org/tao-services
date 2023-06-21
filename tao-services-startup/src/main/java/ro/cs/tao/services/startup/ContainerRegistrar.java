@@ -52,15 +52,15 @@ public class ContainerRegistrar extends BaseLifeCycle {
             logger.finest(() -> String.format("Found %d docker standalone containers: %s", containers.size(),
                                               containers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.joining(","))));
             for (SingletonContainer container : containers) {
-                if (!container.isPerUser()) {
-                    try {
-                        container.install();
-                        logger.fine(() -> String.format("Installed docker image %s", container.getContainerName()));
+                try {
+                    container.install();
+                    logger.fine(() -> String.format("Installed docker image %s", container.getContainerName()));
+                    if (!container.isPerUser()) {
                         container.start();
                         logger.fine(() -> String.format("Started docker container %s", container.getContainerName()));
-                    } catch (Throwable e) {
-                        logger.severe(e.getMessage());
                     }
+                } catch (Throwable e) {
+                    logger.severe(e.getMessage());
                 }
             }
         } else {
