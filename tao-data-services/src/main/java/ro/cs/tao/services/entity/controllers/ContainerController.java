@@ -27,9 +27,7 @@ import ro.cs.tao.component.*;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.docker.Application;
-import ro.cs.tao.docker.Container;
-import ro.cs.tao.docker.ContainerType;
+import ro.cs.tao.docker.*;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
@@ -345,7 +343,13 @@ public class ContainerController extends DataEntityController<Container, String,
             if (DockerManager.isRunning(container.getName())) {
                 throw new RuntimeException(String.format("[%s] is already running", container.getName()));
             }
-            DockerManager.runDaemon(container.getName(), null);
+            final List<String> args = new ArrayList<>();
+            args.add("-p");
+            args.add("8888:8888");
+            args.add("-v");
+            final DockerVolumeMap map = ExecutionConfiguration.getMasterContainerVolumeMap();
+            args.add(map.getHostWorkspaceFolder() + "/" + currentUser() + ":" + container.getApplicationPath());
+            DockerManager.runDaemon(container.getName(), args);
             return prepareResult("Request to start container [" + containerId + "] sent", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
