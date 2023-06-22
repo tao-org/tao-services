@@ -330,7 +330,7 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
-    @RequestMapping(value = "/start", method = RequestMethod.POST, consumes = "multipart/form-data", produces = "application/json")
+    @RequestMapping(value = "/start", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> startContainer(@RequestParam("id") String containerId) {
         try {
             if (StringUtilities.isNullOrEmpty(containerId)) {
@@ -356,7 +356,7 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
-    @RequestMapping(value = "/stop", method = RequestMethod.POST, consumes = "multipart/form-data", produces = "application/json")
+    @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> stopContainer(@RequestParam("id") String containerId) {
         try {
             if (StringUtilities.isNullOrEmpty(containerId)) {
