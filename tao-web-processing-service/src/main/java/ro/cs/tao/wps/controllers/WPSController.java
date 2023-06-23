@@ -36,6 +36,7 @@ import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.component.WPSComponentBean;
 import ro.cs.tao.component.WebServiceAuthentication;
+import ro.cs.tao.component.enums.AuthenticationType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.Container;
@@ -158,7 +159,12 @@ public class WPSController extends BaseController {
             WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
             container = containerService.update(container);
             if (webServiceAuthenticationService.findById(auth.getId()) != null) {
-                auth = webServiceAuthenticationService.update(auth);
+                // Don't persist the NONE authentication since it's irrelevant
+                if (auth.getType() != AuthenticationType.NONE) {
+                    auth = webServiceAuthenticationService.update(auth);
+                } else {
+                    webServiceAuthenticationService.delete(auth.getId());
+                }
             } else {
                 auth = webServiceAuthenticationService.save(auth);
             }
