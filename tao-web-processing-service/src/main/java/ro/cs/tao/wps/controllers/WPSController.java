@@ -157,7 +157,11 @@ public class WPSController extends BaseController {
             }
             WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
             container = containerService.update(container);
-            auth = webServiceAuthenticationService.update(auth);
+            if (webServiceAuthenticationService.findById(auth.getId()) != null) {
+                auth = webServiceAuthenticationService.update(auth);
+            } else {
+                auth = webServiceAuthenticationService.save(auth);
+            }
             return prepareResult(ServiceTransformUtils.toBean(container, auth));
         } catch (Exception e) {
             return handleException(e);
