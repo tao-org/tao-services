@@ -34,6 +34,7 @@
         <module>tao-workspace-service</module>
         <module>tao-viewer-service</module>
         <module>tao-services-kit</module>
+        <module>tao-jupyter-service</module>
     </modules>
 
     <properties>
