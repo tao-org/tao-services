@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.TaoEnum;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.Projection;
 import ro.cs.tao.eodata.sorting.Association;
 import ro.cs.tao.eodata.sorting.DataFilter;
@@ -63,6 +64,11 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
                                values.stream().map(v -> new KeyValuePair(((Enum) v).name(), v.friendlyName()))
                                        .collect(Collectors.toList()));
             }
+            enumValues.put("TAO",
+                           new ArrayList<>() {{
+                               add(new KeyValuePair("version",
+                                                    ConfigurationManager.getInstance().getValue("tao.version")));
+            }});
             this.enums = new WeakReference<>(enumValues);
         }
         return prepareResult(this.enums.get());
