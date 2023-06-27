@@ -81,7 +81,9 @@ public abstract class ServletConfiguration {
                     Attributes attributes = manifest.getMainAttributes();
                     String value = attributes.getValue("Bundle-Name");
                     if (value != null && value.startsWith("TAO")) {
-                        entries.put("TAO Services", attributes.getValue("Version") + " (" + attributes.getValue("Build-Time") + ")");
+                        final String version = attributes.getValue("Version");
+                        ConfigurationManager.getInstance().setValue("tao.version", version);
+                        entries.put("TAO Services", version + " (" + attributes.getValue("Build-Time") + ")");
                     }
                 }
             }
