@@ -370,4 +370,21 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         return response;
     }
 
+    @RequestMapping(value = "/code", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> openNotebook(@RequestParam("componentId") String componentId) {
+        try {
+            if (StringUtilities.isNullOrEmpty(componentId)) {
+                throw new IllegalArgumentException("Invalid component id");
+            }
+            final ProcessingComponent component = this.service.findById(componentId);
+            if (component == null) {
+                throw new IllegalArgumentException("Component does not exist");
+            }
+
+            return prepareResult("Notebook created", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
 }
