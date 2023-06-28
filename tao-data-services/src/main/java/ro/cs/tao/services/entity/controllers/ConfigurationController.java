@@ -19,6 +19,7 @@ import org.reflections.Reflections;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.TaoEnum;
 import ro.cs.tao.configuration.ConfigurationManager;
@@ -162,5 +163,14 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
     @RequestMapping(value = "/projection/codes/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getAvailableProjectionCodes() {
         return prepareResult(Projection.getSupported().keySet());
+    }
+
+    /**
+     * Toggles the development (test) mode on/off
+     */
+    @RequestMapping(value = "/devmode", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> toggleDevMode(@RequestParam("on") boolean mode) {
+        ConfigurationManager.getInstance().setValue("tao.dev.mode", String.valueOf(mode));
+        return prepareResult("Development mode is " + (mode ? "on" : "off"));
     }
 }
