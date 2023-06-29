@@ -16,7 +16,15 @@
 package ro.cs.tao.services.entity.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.h2.util.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -27,27 +35,37 @@ import ro.cs.tao.component.*;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.docker.*;
+import ro.cs.tao.docker.Application;
+import ro.cs.tao.docker.Container;
+import ro.cs.tao.docker.ContainerInstance;
+import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
-import ro.cs.tao.persistence.AuxiliaryDataProvider;
-import ro.cs.tao.persistence.ContainerProvider;
-import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.persistence.ProcessingComponentProvider;
+import ro.cs.tao.persistence.*;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.security.Token;
 import ro.cs.tao.serialization.JsonMapper;
+import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.ContainerRequest;
 import ro.cs.tao.services.entity.beans.ContainerUploadRequest;
 import ro.cs.tao.services.interfaces.ContainerService;
+import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.topology.docker.DockerImageInstaller;
 import ro.cs.tao.topology.docker.DockerManager;
+import ro.cs.tao.topology.docker.SingletonContainer;
 import ro.cs.tao.utils.StringUtilities;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -69,7 +87,11 @@ public class ContainerController extends DataEntityController<Container, String,
     @Autowired
     private ContainerProvider containerProvider;
     @Autowired
+    private ContainerInstanceProvider containerInstanceProvider;
+    @Autowired
     private ProcessingComponentProvider processingComponentProvider;
+    @Autowired
+    private TokenManagementService tokenManagementService;
 
     /**
      * Lists the docker images available on the system.
@@ -331,48 +353,100 @@ public class ContainerController extends DataEntityController<Container, String,
     }
 
     @RequestMapping(value = "/start", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> startContainer(@RequestParam("id") String containerId) {
+    public ResponseEntity<ServiceResponse<?>> startContainer(@RequestParam("id") String imageId) {
         try {
-            if (StringUtilities.isNullOrEmpty(containerId)) {
+            if (StringUtilities.isNullOrEmpty(imageId)) {
                 throw new IllegalArgumentException("[id] null");
             }
-            final Container container = containerProvider.get(containerId);
+            final Container container = containerProvider.get(imageId);
             if (container == null) {
-                throw new IllegalArgumentException(String.format("[%s] not registered", containerId));
+                throw new IllegalArgumentException(String.format("[%s] not registered", imageId));
             }
-            if (DockerManager.isRunning(container.getName())) {
-                throw new RuntimeException(String.format("[%s] is already running", container.getName()));
+            final Set<DockerImageInstaller> services = ServiceRegistryManager.getInstance().getServiceRegistry(DockerImageInstaller.class).getServices();
+            final DockerImageInstaller installer = services.stream()
+                                                           .filter(i -> (i instanceof SingletonContainer) &&
+                                                                        ((SingletonContainer) i).getContainerName().equals(container.getName()))
+                                                           .findFirst().orElse(null);
+            if (installer != null) {
+                try {
+                    installer.getClass().getMethod("start", String.class, String.class);
+                    final String user = currentUser();
+                    final Token token = tokenManagementService.getUserToken(user);
+                    ((SingletonContainer) installer).start(user, token.getToken());
+                } catch (Exception e) {
+                    ((SingletonContainer) installer).start();
+                }
+            } else {
+                final String name = SystemPrincipal.instance().getName();
+                DockerManager.runDaemon(container.getName(), name, null, name, null);
             }
-            final List<String> args = new ArrayList<>();
-            args.add("-p");
-            args.add("8888:8888");
-            args.add("-v");
-            final DockerVolumeMap map = ExecutionConfiguration.getMasterContainerVolumeMap();
-            args.add(map.getHostWorkspaceFolder() + "/" + currentUser() + ":" + container.getApplicationPath());
-            DockerManager.runDaemon(container.getName(), args);
-            return prepareResult("Request to start container [" + containerId + "] sent", ResponseStatus.SUCCEEDED);
+            return prepareResult("Request to start container [" + imageId + "] sent", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
         }
     }
 
     @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> stopContainer(@RequestParam("id") String containerId) {
+    public ResponseEntity<ServiceResponse<?>> stopContainerInstance(@RequestParam("id") String instanceId) {
         try {
-            if (StringUtilities.isNullOrEmpty(containerId)) {
+            if (StringUtilities.isNullOrEmpty(instanceId)) {
                 throw new IllegalArgumentException("[id] null");
             }
-            final Container container = containerProvider.get(containerId);
-            if (container == null) {
-                throw new IllegalArgumentException(String.format("[%s] not registered", containerId));
+            final ContainerInstance instance = containerInstanceProvider.get(instanceId);
+            if (instance == null) {
+                throw new IllegalArgumentException(String.format("[%s] not found", instanceId));
             }
-            if (!DockerManager.isRunning(container.getName())) {
-                throw new RuntimeException(String.format("[%s] is not running", container.getName()));
+            if (!currentUser().equals(instance.getUserName()) && !isCurrentUserAdmin()) {
+                prepareResult("Not authorized", HttpStatus.FORBIDDEN);
             }
-            DockerManager.stopContainer(container.getName());
-            return prepareResult("Container [" + containerId + "] stopped", ResponseStatus.SUCCEEDED);
+            DockerManager.stopInstance(instance.getContainerId(), instance.getUserName());
+            return prepareResult("Container [" + instanceId + "] stopped", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/connect", method = RequestMethod.GET)
+    public void tunnel(@RequestParam("host") String host, @RequestParam("port") Integer port, @RequestParam("query") String query,
+                       HttpServletRequest request, HttpServletResponse response) {
+        try {
+            HttpUriRequest proxiedRequest = createHttpUriRequest(request,
+                                                                 host != null ? host : "127.0.0.1",
+                                                                 port != null ? port : 8888,
+                                                                 query);
+            try (CloseableHttpClient httpClient = HttpClients.createMinimal()) {
+                HttpResponse proxiedResponse = httpClient.execute(proxiedRequest);
+                writeToResponse(proxiedResponse, response);
+            }
+        } catch (URISyntaxException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private HttpUriRequest createHttpUriRequest(HttpServletRequest request, String host, int port, String query) throws URISyntaxException {
+        final URI uri = new URI("http://" + host + ":" + port + (query != null ? "/" + query : ""));
+        final RequestBuilder rb = RequestBuilder.create(request.getMethod());
+        rb.setUri(uri);
+        final Enumeration<String> headerNames = request.getHeaderNames();
+        while(headerNames.hasMoreElements()){
+            String headerName = headerNames.nextElement();
+            if(!headerName.equalsIgnoreCase("accept-encoding")) {
+                rb.addHeader(headerName, request.getHeader(headerName));
+            }
+        }
+
+        return rb.build();
+    }
+
+    private void writeToResponse(HttpResponse proxiedResponse, HttpServletResponse response) throws IOException {
+        for (Header header : proxiedResponse.getAllHeaders()) {
+            if ((! header.getName().equals("Transfer-Encoding")) || (! header.getValue().equals("chunked"))) {
+                response.addHeader(header.getName(), header.getValue());
+            }
+        }
+        try (InputStream is = proxiedResponse.getEntity().getContent();
+             OutputStream os = response.getOutputStream()) {
+            IOUtils.copy(is, os);
         }
     }
 

@@ -21,6 +21,11 @@
         </dependency>
         <dependency>
             <groupId>ro.c-s.tao</groupId>
+            <artifactId>tao-auth-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-topology</artifactId>
             <version>${project.version}</version>
         </dependency>
