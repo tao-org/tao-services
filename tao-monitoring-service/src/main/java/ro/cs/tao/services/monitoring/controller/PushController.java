@@ -1,5 +1,7 @@
 package ro.cs.tao.services.monitoring.controller;
 
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.messaging.Message;
@@ -16,43 +18,9 @@ public class PushController extends BaseController {
     private final Receiver receiver = new Receiver(this);
     private final MessageConverter converter = new MessageConverter();
 
-    @SendTo("/topic/system")
-    public Notification sendSystem(final Message message) {
-        return convert(message);
-    }
-
-    @SendTo("/topic/info")
-    public Notification sendInformation(final Message message) {
-        return convert(message);
-    }
-
-    @SendTo("/topic/warn")
-    public Notification sendWarning(final Message message) {
-        return convert(message);
-    }
-
-    @SendTo("/topic/error")
-    public Notification sendError(final Message message) {
-        return convert(message);
-    }
-
-    @SendTo("/topic/progress")
-    public Notification sendProgress(final Message message) {
-        return convert(message);
-    }
-
-    @SendTo("/topic/execution")
-    public Notification sendExecutionStatus(final Message message) {
-        return convert(message);
-    }
-
-    @SendTo("/topic/topology")
-    public Notification sendTopology(final Message message) {
-        return convert(message);
-    }
-
-    @SendTo("/topic/transfer")
-    public Notification sendTransferProgress(final Message message) {
+    @MessageMapping("/messages/{topic}")
+    @SendTo("/topic/messages")
+    public Notification send(@DestinationVariable("topic") String topic, final Message message) {
         return convert(message);
     }
 
@@ -61,7 +29,7 @@ public class PushController extends BaseController {
     }
 
     private static class Receiver extends Notifiable {
-        private PushController theController;
+        private final PushController theController;
 
         public Receiver(PushController controller) {
             super();
@@ -75,32 +43,7 @@ public class PushController extends BaseController {
         @Override
         protected void onMessageReceived(Message message) {
             String topic = message.getTopic().toLowerCase();
-            switch (topic) {
-                case "system":
-                    theController.sendSystem(message);
-                    break;
-                case "info":
-                    theController.sendInformation(message);
-                    break;
-                case "warn":
-                    theController.sendWarning(message);
-                    break;
-                case "error":
-                    theController.sendError(message);
-                    break;
-                case "progress":
-                    theController.sendProgress(message);
-                    break;
-                case "execution.status.changed":
-                    theController.sendExecutionStatus(message);
-                    break;
-                case "topology":
-                    theController.sendTopology(message);
-                    break;
-                case "transfer":
-                    theController.sendTransferProgress(message);
-                    break;
-            }
+            theController.send(topic, message);
         }
     }
 }
