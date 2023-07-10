@@ -5,6 +5,7 @@ import java.util.Map;
 
 public class Kernel {
     private String display_name;
+    private String name;
     private String language;
     private List<String> agrv;
     private Map<String, String> env;
@@ -16,7 +17,8 @@ public class Kernel {
     public void setDisplay_name(String display_name) {
         this.display_name = display_name;
     }
-
+    public String getName() { return this.name; }
+    public void setName(String name) { this.name = name;}
     public String getLanguage() {
         return language;
     }
