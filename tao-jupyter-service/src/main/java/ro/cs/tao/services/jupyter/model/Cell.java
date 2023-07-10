@@ -2,9 +2,12 @@ package ro.cs.tao.services.jupyter.model;
 
 
 import java.util.List;
+import java.util.Map;
 
 public class Cell {
     private String cell_type;
+    private int execution_count;
+    private String id;
     private CellMetadata metadata;
     private List<String> source;
     private List<Output> outputs;
@@ -16,7 +19,10 @@ public class Cell {
     public void setCell_type(String cell_type) {
         this.cell_type = cell_type;
     }
-
+    public void setExecution_count(int execution_count) {this.execution_count = execution_count;}
+    public int getExecution_count() { return this.execution_count; }
+    public String getId() {return this.id;}
+    public void setId(String id) { this.id = id;}
     public CellMetadata getMetadata() {
         return metadata;
     }
