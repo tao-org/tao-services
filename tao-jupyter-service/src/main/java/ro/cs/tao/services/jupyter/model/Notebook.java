@@ -6,7 +6,15 @@ public class Notebook {
     private NotebookMetadata metadata;
     private int nbformat;
     private int nbformat_minor;
-    private List<Worksheet> worksheets;
+    private List<Cell> cells;
+
+    public List<Cell> getCells() {
+        return cells;
+    }
+
+    public void setCells(List<Cell> cells) {
+        this.cells = cells;
+    }
 
     public NotebookMetadata getMetadata() {
         return metadata;
@@ -30,13 +38,5 @@ public class Notebook {
 
     public void setNbformat_minor(int nbformat_minor) {
         this.nbformat_minor = nbformat_minor;
-    }
-
-    public List<Worksheet> getWorksheets() {
-        return worksheets;
-    }
-
-    public void setWorksheets(List<Worksheet> worksheets) {
-        this.worksheets = worksheets;
     }
 }

@@ -19,6 +19,12 @@
             <artifactId>tao-services-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+            <version>2.4.7</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

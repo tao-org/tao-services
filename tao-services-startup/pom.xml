@@ -195,6 +195,11 @@
             <artifactId>spring-security-messaging</artifactId>
             <version>5.7.3</version>
         </dependency>-->
+        <dependency>
+            <groupId>ro.c-s.tao</groupId>
+            <artifactId>tao-jupyter-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
