@@ -1,11 +1,14 @@
 package ro.cs.tao.services.jupyter.model;
 
 import java.util.List;
+import java.util.Map;
 
 public class CellMetadata {
     private boolean collapsed;
     private String autoscroll;
     private boolean deletable;
+    private Map<String, Object> slideshow;
+    private boolean editable;
     private String format;
     private String name;
     private List<String> tags;
@@ -33,6 +36,14 @@ public class CellMetadata {
     public void setDeletable(boolean deletable) {
         this.deletable = deletable;
     }
+
+    public void setSlideshow(Map<String, Object> slideshow) { this.slideshow = slideshow; }
+
+    public Map<String, Object> getSlideshow() { return this.slideshow; }
+
+    public boolean isEditable() { return editable; }
+
+    public void setEditable(boolean editable) { this.editable = editable; }
 
     public String getFormat() {
         return format;
