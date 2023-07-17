@@ -27,6 +27,7 @@ import ro.cs.tao.eodata.Projection;
 import ro.cs.tao.eodata.sorting.Association;
 import ro.cs.tao.eodata.sorting.DataFilter;
 import ro.cs.tao.eodata.sorting.DataSorter;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ConfigurationService;
 import ro.cs.tao.services.model.KeyValuePair;
@@ -70,6 +71,8 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
                                add(new KeyValuePair("version",
                                                     ConfigurationManager.getInstance().getValue("tao.version")));
             }});
+            enumValues.put("TOPIC",
+                           Topic.listTopics().stream().map(t -> new KeyValuePair(t, null)).collect(Collectors.toList()));
             this.enums = new WeakReference<>(enumValues);
         }
         return prepareResult(this.enums.get());
