@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.Notification;
@@ -35,17 +37,18 @@ import java.util.List;
  * @author Cosmin Cara
  */
 @RestController
-@RequestMapping("/monitor")
 @Tag(name ="Monitoring", description = "Endpoint for monitoring node resources and system notifications")
 public class MonitoringController extends BaseController {
 
     @Autowired
     private MonitoringService<Notification> monitoringService;
+    /*@Autowired
+    private SimpMessagingTemplate simpMessagingTemplate;*/
 
     /**
      * Returns a list of all available nodes resources snapshots
      */
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getAllSnapshot() {
         return prepareResult(monitoringService.getNodesSnapshot(),
                              LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm:ss")));
@@ -54,7 +57,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns a snapshot of the resources of the primary node
      */
-    @RequestMapping(value = "/master", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/master", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getMasterSnapshot() {
         final RuntimeInfo snapshot = monitoringService.getMasterSnapshot();
         if (snapshot == null) {
@@ -65,7 +68,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns a snapshot of the resources of a secondary node
      */
-    @RequestMapping(value = "/{host:.+}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/{host:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNodeSnapshot(@PathVariable("host") String host) {
         final RuntimeInfo snapshot = monitoringService.getNodeSnapshot(host);
         if (snapshot == null) {
@@ -76,21 +79,21 @@ public class MonitoringController extends BaseController {
     /**
      * Returns the active (i.e. not read) system notifications
      */
-    @RequestMapping(value = "/notification/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/notification/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getLiveNotifications() {
         return prepareResult(monitoringService.getLiveNotifications());
     }
     /**
      * Returns the active (i.e. not read) notifications for a user
      */
-    @RequestMapping(value = "/notification/unread", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/notification/unread", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUnreadNotifications() {
         return prepareResult(monitoringService.getUnreadNotifications(SessionStore.currentContext().getPrincipal().getName()));
     }
     /**
      * Returns a page of notifications for a user
      */
-    @RequestMapping(value = "/notification/{page}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/notification/{page}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNotifications(@RequestHeader(value = "user") String user,
                                               @PathVariable("page") int page) {
         return prepareResult(monitoringService.getNotifications(user, page));
@@ -100,7 +103,7 @@ public class MonitoringController extends BaseController {
      * Marks the given notifications as read
      * @param notifications The list of notifications
      */
-    @RequestMapping(value = "/notification/ack", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/monitor/notification/ack", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> acknowledgeNotifications(@RequestBody List<Notification> notifications) {
         return prepareResult(monitoringService.acknowledgeNotification(notifications));
     }
@@ -108,7 +111,7 @@ public class MonitoringController extends BaseController {
     /**
      * Clears the notifications for the current user
      */
-    @RequestMapping(value = "/notification/clear", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/monitor/notification/clear", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> clearNotifications() {
         try {
             monitoringService.deleteAll(currentUser());
@@ -121,9 +124,33 @@ public class MonitoringController extends BaseController {
     /**
      * Inspects the available nodes and returns their status (online or offline)
      */
-    @RequestMapping(value = "/status", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/status", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNodesOnlineStatus() {
         return prepareResult(monitoringService.getNodesOnlineStatus());
     }
+
+    @RequestMapping(value = "/emit", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> emit() {
+        final String message = "Test " + System.currentTimeMillis();
+        Messaging.send(currentUser(), Topic.INFORMATION.getCategory(), message);
+        return prepareResult(message);
+    }
+
+    /*@MessageMapping("/events")
+    public void send(@Payload Notification message) {
+        String user = message.getUser();
+        try {
+            String strMessage = new ObjectMapper().writeValueAsString(message);
+            simpMessagingTemplate.convertAndSend("/queue/" + user, strMessage);
+            final Set<String> administrators = getAdministrators();
+            for (String u : administrators) {
+                if (!user.equals(u)) {
+                    simpMessagingTemplate.convertAndSend("/queue/" + u, message);
+                }
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }*/
 
 }
