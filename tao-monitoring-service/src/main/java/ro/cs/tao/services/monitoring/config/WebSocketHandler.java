@@ -29,6 +29,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private static final Set<String> admins;
     private static final Timer adminRefreshTimer;
     private static final Set<String> subscriptions;
+    private static final Set<Long> handledMessages;
     private static AdministrationService administrationService;
 
     private static final Object lock;
@@ -40,11 +41,13 @@ public class WebSocketHandler extends TextWebSocketHandler {
         sessions = Collections.synchronizedList(new ArrayList<>());
         admins = new HashSet<>();
         subscriptions = new HashSet<>();
+        handledMessages = new HashSet<>();
         adminRefreshTimer = new Timer();
         adminRefreshTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 synchronized (lock) {
+                    handledMessages.clear();
                     admins.clear();
                     admins.addAll(getAdminService().getAdministrators().stream().map(User::getUsername).collect(Collectors.toSet()));
                 }
@@ -170,7 +173,17 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
         @Override
         protected void onMessageReceived(Message message) {
-            this.handler.send(converter.to(message));
+            final Long id = message.getId();
+            if (id != null) {
+                synchronized (lock) {
+                    if (!handledMessages.contains(id)) {
+                        handledMessages.add(id);
+                        this.handler.send(converter.to(message));
+                    } else {
+                        handledMessages.remove(id);
+                    }
+                }
+            }
         }
     }
 }
