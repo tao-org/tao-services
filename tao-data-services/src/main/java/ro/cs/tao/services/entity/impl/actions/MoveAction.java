@@ -25,8 +25,12 @@ public class MoveAction implements ItemAction {
     }
 
     @Override
-    public Path doAction(Path item, Path destination) throws Exception {
-        this.storageService.move(item.toString(), destination.toString());
-        return destination.resolve(item.getFileName());
+    public Path doAction(Path[] items, Path destination) throws Exception {
+        if (items != null) {
+            for (Path item : items) {
+                this.storageService.move(item.toString(), destination.toString());
+            }
+        }
+        return destination;
     }
 }

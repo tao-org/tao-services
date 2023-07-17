@@ -602,56 +602,63 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     public ResponseEntity<ServiceResponse<?>> doAction(@RequestParam("action") String action,
                                                        @RequestParam(name = "item") String item,
                                                        @RequestParam(name = "destination", required = false) String destination) {
-        final String successMessage = String.format("%s [%s] completed", action, item);
-        final String user = currentUser();
-        final BiConsumer<Exception, String> callback = (e, s) -> {
-            String topic;
-            String message;
-            if (e == null) {
-                topic = Topic.INFORMATION.getCategory();
-                message = s;
-            } else {
-                topic = Topic.WARNING.getCategory();
-                message = e.getMessage();
-            }
-
-            Messaging.send(user, topic, message);
-        };
-        asyncExecute(() -> {
+        try {
             if (StringUtilities.isNullOrEmpty(item)) {
-                throw new IllegalArgumentException("Not a file");
+                throw new IllegalArgumentException("No item provided");
             }
-            final boolean oneArg = StringUtilities.isNullOrEmpty(destination);
-            final Repository workspace = getLocalWorkspace(user);
-            final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(user);
-            final List<ItemAction> actions = repositoryService.getRegisteredActions();
-            if (actions != null) {
-                final ItemAction itemAction = actions.stream().filter(a -> a.name().equals(action)).findFirst().orElse(null);
-                if (itemAction != null) {
-                    final Path resolvedPath = Paths.get(workspace.resolve(item));
-                    try {
-                        final ProgressListener listener = new ProgressNotifier(currentPrincipal(),
-                                                                               this,
-                                                                               Topic.TRANSFER_PROGRESS,
-                                                                               new HashMap<>() {{
-                                                                                   put("Repository", workspace.getId());
-                                                                            }});
-                        itemAction.setActionUser(user);
-                        itemAction.setProgressListener(listener);
-                        if (oneArg) {
-                            itemAction.doAction(resolvedPath);
-                        } else {
-                            //final String destPath = workspace.resolve(destination);
-                            //itemAction.doAction(resolvedPath, Paths.get(destPath));
-                            itemAction.doAction(Paths.get(item), Paths.get(destination));
+            final String[] items = item.split(";");
+            final String successMessage = String.format("%s [%s] completed", action, item);
+            final String user = currentUser();
+            final BiConsumer<Exception, String> callback = (e, s) -> {
+                String topic;
+                String message;
+                if (e == null) {
+                    topic = Topic.INFORMATION.getCategory();
+                    message = s;
+                } else {
+                    topic = Topic.WARNING.getCategory();
+                    message = e.getMessage();
+                }
+
+                Messaging.send(user, topic, message);
+            };
+            asyncExecute(() -> {
+                if (StringUtilities.isNullOrEmpty(item)) {
+                    throw new IllegalArgumentException("Not a file");
+                }
+                final boolean oneArg = StringUtilities.isNullOrEmpty(destination);
+                final Repository workspace = getLocalWorkspace(user);
+                final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(user);
+                final List<ItemAction> actions = repositoryService.getRegisteredActions();
+                if (actions != null) {
+                    final ItemAction itemAction = actions.stream().filter(a -> a.name().equals(action)).findFirst().orElse(null);
+                    if (itemAction != null) {
+                        final Path resolvedPath = Paths.get(workspace.resolve(item));
+                        try {
+                            final ProgressListener listener = new ProgressNotifier(currentPrincipal(),
+                                                                                   this,
+                                                                                   Topic.TRANSFER_PROGRESS,
+                                                                                   new HashMap<>() {{
+                                                                                       put("Repository", workspace.getId());
+                                                                                   }});
+                            itemAction.setActionUser(user);
+                            itemAction.setProgressListener(listener);
+                            if (oneArg) {
+                                itemAction.doAction(resolvedPath);
+                            } else {
+                                final Path[] paths = Arrays.stream(items).map(Paths::get).toArray(Path[]::new);
+                                itemAction.doAction(paths, Paths.get(destination));
+                            }
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
                         }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
                     }
                 }
-            }
-        }, successMessage, callback);
-        return prepareResult(action + " started", ResponseStatus.SUCCEEDED);
+            }, successMessage, callback);
+            return prepareResult(action + " started", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
 
     /**
