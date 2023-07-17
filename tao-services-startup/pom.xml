@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tao-services</artifactId>
         <groupId>ro.c-s.tao</groupId>
-        <version>1.4.3</version>
+        <version>1.4.3.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -187,14 +187,14 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-            <version>5.7.3</version>
+            <version>5.7.7</version>
             <!--<version>5.3.2.RELEASE</version>-->
         </dependency>
-        <!--<dependency>
+        <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-messaging</artifactId>
-            <version>5.7.3</version>
-        </dependency>-->
+            <version>5.7.7</version>
+        </dependency>
         <dependency>
             <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-jupyter-service</artifactId>
