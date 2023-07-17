@@ -28,10 +28,7 @@ import ro.cs.tao.user.User;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -82,7 +79,7 @@ public abstract class BaseController extends ControllerBase {
 
     protected String currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication.getName();
+        return authentication != null ? authentication.getName() : null;
     }
 
     protected Principal currentPrincipal() {
@@ -91,6 +88,14 @@ public abstract class BaseController extends ControllerBase {
 
     protected boolean isCurrentUserAdmin() {
         return admins.contains(SessionStore.currentContext().getPrincipal().getName());
+    }
+
+    protected boolean isAdmin(String userName) {
+        return admins.contains(userName);
+    }
+
+    protected Set<String> getAdministrators() {
+        return Collections.unmodifiableSet(admins);
     }
 
     protected void record(String event) {

@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -25,23 +26,35 @@ public class ContainerRegistrar extends BaseLifeCycle {
     @Override
     public void onStartUp() {
         final List<DockerImageInstaller> installers = TopologyManager.getInstance().getInstallers();
+        final Set<String> dbContainers = persistenceManager.containers().list()
+                                                           .stream()
+                                                           .map(Container::getName)
+                                                           .collect(Collectors.toSet());
         if (installers != null && installers.size() > 0) {
-            logger.finest(() -> String.format("Found %d docker image plugins: %s", installers.size(),
-                                              installers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.joining(","))));
-            for (DockerImageInstaller imageInstaller : installers) {
-                try {
-                    Container container = imageInstaller.installImage();
-                    if (container != null && container.getLogo() != null) {
-                        Path imgPath = Paths.get(ConfigurationManager.getInstance().getValue("site.path"))
-                                            .resolve("workflow").resolve("media")
-                                            .resolve(container.getId() + ".png");
-                        if (!Files.exists(imgPath)) {
-                            Files.createDirectories(imgPath.getParent());
-                            Files.write(imgPath, Base64.getDecoder().decode(container.getLogo().trim()));
+            installers.removeIf(i -> {
+                final String[] tokens = i.getContainerName().split("/");
+                return dbContainers.contains(tokens[tokens.length - 1]);
+            });
+            if (installers.isEmpty()) {
+                logger.fine("No new docker image plugins found");
+            } else {
+                logger.finest(() -> String.format("Found %d new docker image plugins: %s", installers.size(),
+                                                  installers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.joining(","))));
+                for (DockerImageInstaller imageInstaller : installers) {
+                    try {
+                        Container container = imageInstaller.installImage();
+                        if (container != null && container.getLogo() != null) {
+                            Path imgPath = Paths.get(ConfigurationManager.getInstance().getValue("site.path"))
+                                                .resolve("workflow").resolve("media")
+                                                .resolve(container.getId() + ".png");
+                            if (!Files.exists(imgPath)) {
+                                Files.createDirectories(imgPath.getParent());
+                                Files.write(imgPath, Base64.getDecoder().decode(container.getLogo().trim()));
+                            }
                         }
+                    } catch (Throwable e) {
+                        logger.severe(e.getMessage());
                     }
-                } catch (Throwable e) {
-                    logger.severe(e.getMessage());
                 }
             }
         } else {
