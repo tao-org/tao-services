@@ -62,29 +62,31 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public AuthInfo login(String userName, String password) {
 
         Token authenticationToken = tokenService.getUserToken(userName);
-        logger.finest("Token " + authenticationToken.getToken());
+        if (authenticationToken != null) {
+            logger.finest("Token " + authenticationToken.getToken());
 
-        // check if user is still active in TAO
-        final User user = userProvider.getByName(userName);
-        if (user != null && user.getStatus() == UserStatus.ACTIVE) {
-            try {
-                // update user last login date
-                userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
-                final List<Repository> list = workspaceProvider.getByUser(userName);
-                if (list == null || list.isEmpty()) {
-                    userProvider.createWorkspaces(userName);
+            // check if user is still active in TAO
+            final User user = userProvider.getByName(userName);
+            if (user != null && user.getStatus() == UserStatus.ACTIVE) {
+                try {
+                    // update user last login date
+                    userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
+                    final List<Repository> list = workspaceProvider.getByUser(userName);
+                    if (list == null || list.isEmpty()) {
+                        userProvider.createWorkspaces(userName);
+                    }
+                    Path path = Paths.get(SystemVariable.ROOT.value()).resolve(userName);
+                    FileUtilities.ensureExists(path);
+                    FileUtilities.ensureExists(path.resolve("files"));
+                } catch (Exception e) {
+                    logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
+                                                userName, ExceptionUtils.getStackTrace(e)));
                 }
-                Path path = Paths.get(SystemVariable.ROOT.value()).resolve(userName);
-                FileUtilities.ensureExists(path);
-                FileUtilities.ensureExists(path.resolve("files"));
-            } catch (Exception e) {
-                logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
-                                            userName, ExceptionUtils.getStackTrace(e)));
+                // retrieve user groups and send them as profiles
+                return new AuthInfo(true, authenticationToken.getToken(),
+                                    authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
+                                    user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
             }
-            // retrieve user groups and send them as profiles
-            return new AuthInfo(true, authenticationToken.getToken(),
-                                authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
-                                user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
         }
         // unauthorized
         return new AuthInfo(false, null, null, -1, null);

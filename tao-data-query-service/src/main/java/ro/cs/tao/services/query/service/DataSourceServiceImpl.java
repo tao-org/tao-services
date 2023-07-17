@@ -116,10 +116,11 @@ public class DataSourceServiceImpl implements DataSourceService {
                             }
                             descriptor = new DataSourceDescriptor(mission, sensor, n, cd.getSensorType().friendlyName(),
                                                                   cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
-                                                                  parameters, dataSource.requiresAuthentication());
+                                                                  parameters, dataSource.requiresAuthentication(),
+                                                                  dataSource.is2FAEnabled());
                         } else {
                             descriptor = new DataSourceDescriptor(sensor, sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
-                                                                  parameters, dataSource.requiresAuthentication());
+                                                                  parameters, dataSource.requiresAuthentication(), dataSource.is2FAEnabled());
                         }
                         instances.add(descriptor);
                         //final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(sensor + "-" + n)).findFirst().orElse(null);
@@ -127,6 +128,7 @@ public class DataSourceServiceImpl implements DataSourceService {
                         if (dsCreds != null) {
                             descriptor.setUser(dsCreds.getUserName());
                             descriptor.setPwd(dsCreds.getPassword());
+                            descriptor.setSecret(dsCreds.getSecret());
                             if (dsCreds.getParams() != null) {
                                 final DataSourceParameter uParam = parameters.values().stream()
                                         .filter(p -> p.getName().toLowerCase().contains("username")).findFirst().orElse(null);
@@ -192,6 +194,10 @@ public class DataSourceServiceImpl implements DataSourceService {
                     params.put(additionalPwd.getKey(), Crypto.encrypt(additionalPwd.getValue(), additionalUser.getValue()));
                     credentials.setParams(params);
                 }
+            }
+            final Map.Entry<String, String> secret = queryObject.getValues().entrySet().stream().filter(e -> e.getKey().toLowerCase().contains("secret")).findFirst().orElse(null);
+            if (secret != null) {
+                credentials.setSecret(secret.getValue());
             }
             try {
                 credentialsProvider.save(credentials);
@@ -315,7 +321,6 @@ public class DataSourceServiceImpl implements DataSourceService {
     @Override
     public DataSourceCredentials getDataSourceCredentials(String dataSource) {
         final List<DataSourceCredentials> userCredentials = credentialsProvider.getByUser(SessionStore.currentContext().getPrincipal().getName());
-        final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(dataSource)).findFirst().orElse(null);
-        return dsCreds;
+        return userCredentials.stream().filter(c -> c.getDataSource().equals(dataSource)).findFirst().orElse(null);
     }
 }
