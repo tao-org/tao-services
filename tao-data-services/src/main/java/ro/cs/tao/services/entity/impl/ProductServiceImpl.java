@@ -16,6 +16,7 @@
 
 package ro.cs.tao.services.entity.impl;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,7 @@ import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.Repository;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -159,84 +161,65 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 																	   new HashMap<String, String>() {{
 																		   put("Repository", repository.getId());
 																	   }});
-		try (Stream<Path> stream = Files.walk(Paths.get(repository.resolve(sourcePath)), 1)){
-			List<Path> files = stream.collect(Collectors.toList());
-			files.removeIf(f -> f.equals(source));
-			Path userFolder = Paths.get(repository.root());
-			final double size = files.size();
-			int count = 1;
+		try {
 			progressListener.started(sourcePath);
-			for (Path file : files) {
-				try {
-					if (inspectionExclusions.stream().anyMatch(file::endsWith)) {
-						continue;
-					}
-					Path targetPath;
-					if (!file.toString().startsWith(userFolder.toString())) {
-						targetPath = userFolder.resolve(file.getFileName());
-						if (!Files.exists(targetPath)) {
-							Logger.getLogger(ProductService.class.getName())
-									.fine(String.format("Copying %s to %s", file, userFolder.toFile()));
-							if (Files.isDirectory(file)) {
-								FileUtils.copyDirectoryToDirectory(file.toFile(), userFolder.toFile());
-							} else {
-								FileUtils.copyFile(file.toFile(), userFolder.toFile());
-							}
-							FileUtilities.ensurePermissions(targetPath);
-						}
-					} else {
-						targetPath = file;
-					}
-					List<EOProduct> list = productProvider.getByLocation(targetPath.toAbsolutePath().toUri().toString());
-					EOProduct product = null;
-					inspector = services.stream()
-							.filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath)).findFirst()
-							.orElse(services.stream()
-									.filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
-									.findFirst().orElse(null));
-					if (inspector == null) {
-						logger.warning("No inspector suitable found for " + file);
-						continue;
-					}
-					if (list.size() == 0) {
-						MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
-						if (metadata != null) {
-							product = metadata.toProductDescriptor(targetPath);
-							product.setEntryPoint(metadata.getEntryPoint());
-							product.addReference(principal.getName());
-							product.setVisibility(Visibility.PUBLIC);
-							product.setAcquisitionDate(metadata.getAquisitionDate());
-							if (metadata.getSize() != null) {
-								product.setApproximateSize(metadata.getSize());
-							}
-							if (metadata.getProductId() != null) {
-								product.setId(metadata.getProductId());
-							}
-							product.setProductStatus(ProductStatus.PRODUCED);
-						}
-					} else {
-						product = list.get(0);
-					}
-					if (product != null) {
+			int count = 1;
+			inspector = services.stream()
+					.filter(i -> DecodeStatus.INTENDED == i.decodeQualification(source)).findFirst()
+					.orElse(services.stream()
+							.filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(source))
+							.findFirst().orElse(null));
+			if (inspector == null) {
+				logger.warning("No inspector suitable found for " + source);
+			} else {
+				CollectionUtils.addIgnoreNull(results, inspectProduct(inspector, principal, source));
+				progressListener.notifyProgress((double) count);
+			}
+			if (results.isEmpty()) {
+				try (Stream<Path> stream = Files.walk(Paths.get(repository.resolve(sourcePath)), 1)) {
+					List<Path> files = stream.collect(Collectors.toList());
+					files.removeIf(f -> f.equals(source));
+					Path userFolder = Paths.get(repository.root());
+					final double size = files.size();
+					for (Path file : files) {
 						try {
-							Path quicklook = OutputDataHandlerManager.getInstance().applyHandlers(file);
-							if (quicklook != null) {
-								product.setQuicklookLocation(quicklook.toString());
+							if (inspectionExclusions.stream().anyMatch(file::endsWith)) {
+								continue;
 							}
-						} catch (Exception e) {
-							logger.warning(String.format("Unable to create quicklook for %s. Reason: %s", file, e.getMessage()));
+							Path targetPath;
+							if (!file.toString().startsWith(userFolder.toString())) {
+								targetPath = userFolder.resolve(file.getFileName());
+								if (!Files.exists(targetPath)) {
+									Logger.getLogger(ProductService.class.getName())
+											.fine(String.format("Copying %s to %s", file, userFolder.toFile()));
+									if (Files.isDirectory(file)) {
+										FileUtils.copyDirectoryToDirectory(file.toFile(), userFolder.toFile());
+									} else {
+										FileUtils.copyFile(file.toFile(), userFolder.toFile());
+									}
+									FileUtilities.ensurePermissions(targetPath);
+								}
+							} else {
+								targetPath = file;
+							}
+							inspector = services.stream()
+									.filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath)).findFirst()
+									.orElse(services.stream()
+											.filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
+											.findFirst().orElse(null));
+							if (inspector == null) {
+								logger.warning("No inspector suitable found for " + file);
+								continue;
+							}
+							CollectionUtils.addIgnoreNull(results, inspectProduct(inspector, principal, targetPath));
+						} catch (Exception e1) {
+							logger.warning(String.format("Import for %s failed. Reason: %s", file, e1.getMessage()));
 						}
-						product = productProvider.save(product);
-						results.add(product);
-						logger.finest("Inspection of " + file + " completed");
-						if (Files.isRegularFile(file)) {
-							Files.deleteIfExists(Paths.get(file + ".aux.xml"));
-						}
+						progressListener.notifyProgress((double) count++ / size);
 					}
-				} catch (Exception e1) {
-					logger.warning(String.format("Import for %s failed. Reason: %s", file, e1.getMessage()));
+				} catch (Exception e) {
+					throw new IOException(e);
 				}
-				progressListener.notifyProgress((double) count++ / size);
 			}
 		} catch (Exception e) {
 			throw new IOException(e);
@@ -383,5 +366,45 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 	@Override
 	public List<String> checkExisting(String... names) {
 		return productProvider.getExistingProductNames(names);
+	}
+
+	private EOProduct inspectProduct (MetadataInspector inspector, Principal principal, Path targetPath) throws Exception {
+		List<EOProduct> list = productProvider.getByLocation(targetPath.toAbsolutePath().toUri().toString());
+		EOProduct product = null;
+		if (list.size() == 0) {
+			MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
+			if (metadata != null) {
+				product = metadata.toProductDescriptor(targetPath);
+				product.setEntryPoint(metadata.getEntryPoint());
+				product.addReference(principal.getName());
+				product.setVisibility(Visibility.PUBLIC);
+				product.setAcquisitionDate(metadata.getAquisitionDate());
+				if (metadata.getSize() != null) {
+					product.setApproximateSize(metadata.getSize());
+				}
+				if (metadata.getProductId() != null) {
+					product.setId(metadata.getProductId());
+				}
+				product.setProductStatus(ProductStatus.PRODUCED);
+			}
+		} else {
+			product = list.get(0);
+		}
+		if (product != null) {
+			try {
+				Path quicklook = OutputDataHandlerManager.getInstance().applyHandlers(targetPath);
+				if (quicklook != null) {
+					product.setQuicklookLocation(quicklook.toString());
+				}
+			} catch (Exception e) {
+				logger.warning(String.format("Unable to create quicklook for %s. Reason: %s", targetPath, e.getMessage()));
+			}
+			product = productProvider.save(product);
+			logger.finest("Inspection of " + targetPath + " completed");
+			if (Files.isRegularFile(targetPath)) {
+				Files.deleteIfExists(Paths.get(targetPath + ".aux.xml"));
+			}
+		}
+		return product;
 	}
 }
