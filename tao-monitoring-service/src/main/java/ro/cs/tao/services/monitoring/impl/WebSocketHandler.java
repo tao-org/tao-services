@@ -1,4 +1,4 @@
-package ro.cs.tao.services.monitoring.config;
+package ro.cs.tao.services.monitoring.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
@@ -10,9 +10,9 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Notifiable;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.services.bridge.spring.SpringContextBridge;
-import ro.cs.tao.services.commons.MessageConverter;
-import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.interfaces.AdministrationService;
+import ro.cs.tao.services.monitoring.beans.MessageConverter;
+import ro.cs.tao.services.monitoring.beans.WSNotification;
 import ro.cs.tao.user.User;
 
 import javax.inject.Singleton;
@@ -128,7 +128,10 @@ public class WebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    void send(Notification message) {
+    void send(WSNotification message) {
+        if (subscriptions.isEmpty()) {
+            return;
+        }
         String user = message.getUser();
         try {
             String topic = "/queue/" + user;
@@ -173,6 +176,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 synchronized (lock) {
                     if (!handledMessages.contains(id)) {
                         handledMessages.add(id);
+                        message.setMessage(message.getMessage().replace("\"", "\\\""));
                         this.handler.send(converter.to(message));
                     } else {
                         handledMessages.remove(id);
