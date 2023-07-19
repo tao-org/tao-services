@@ -33,6 +33,7 @@ import ro.cs.tao.messaging.system.StartupCompletedMessage;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.Endpoints;
 import ro.cs.tao.utils.ExceptionUtils;
+import ro.cs.tao.utils.StringUtilities;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -83,11 +84,29 @@ public class AuthenticationFilter extends GenericFilterBean {
             } else if (token.isPresent()) {
                 processTokenAuthentication(token.get(), request);
             } else {
-                if (isExcludedResource(httpRequest, resourcePath)) {
-                    SecurityContextHolder.getContext().setAuthentication(new SystemAuthentication());
+                // Plain websocket first connection workaround
+                final String upgrade = httpRequest.getHeader("upgrade");
+                if (!StringUtilities.isNullOrEmpty(upgrade) && "websocket".equals(upgrade)) {
+                    final String cookie = httpRequest.getHeader("cookie");
+                    int idx;
+                    if (!StringUtilities.isNullOrEmpty(cookie) && (idx = cookie.indexOf("tokenKey")) > -1) {
+                        int idxE = cookie.indexOf(";", idx);
+                        final String tokenKey = cookie.substring(idx + 9, idxE > 0 ? cookie.indexOf(";", idx) : cookie.length()).trim();
+                        processTokenAuthentication(tokenKey, request);
+                    } else {
+                        final String queryString = httpRequest.getQueryString();
+                        if (!StringUtilities.isNullOrEmpty(queryString) && (idx = queryString.indexOf("tokenKey")) > -1) {
+                            final String tokenKey = queryString.substring(idx + 9).trim();
+                            processTokenAuthentication(tokenKey, request);
+                        }
+                    }
                 } else {
-                    if (requiresToken(resourcePath)) {
-                        throw new AuthenticationCredentialsNotFoundException(resourcePath);
+                    if (isExcludedResource(httpRequest, resourcePath)) {
+                        SecurityContextHolder.getContext().setAuthentication(new SystemAuthentication());
+                    } else {
+                        if (requiresToken(resourcePath)) {
+                            throw new AuthenticationCredentialsNotFoundException(resourcePath);
+                        }
                     }
                 }
             }
