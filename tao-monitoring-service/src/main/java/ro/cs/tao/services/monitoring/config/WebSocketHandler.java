@@ -28,7 +28,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private static final List<WebSocketSession> sessions;
     private static final Set<String> admins;
     private static final Timer adminRefreshTimer;
-    private static final Set<String> subscriptions;
+    private static final Map<String, WebSocketSession> subscriptions;
     private static final Set<Long> handledMessages;
     private static AdministrationService administrationService;
 
@@ -40,7 +40,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         lock = new Object();
         sessions = Collections.synchronizedList(new ArrayList<>());
         admins = new HashSet<>();
-        subscriptions = new HashSet<>();
+        subscriptions = new HashMap<>();
         handledMessages = new HashSet<>();
         adminRefreshTimer = new Timer();
         adminRefreshTimer.schedule(new TimerTask() {
@@ -86,7 +86,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
         sessions.remove(session);
         final Principal principal = session.getPrincipal();
         if (principal != null) {
-            subscriptions.remove(principal.getName());
+            subscriptions.remove("/queue/" + principal.getName());
+            sessions.removeIf(s -> s.getId().equals(session.getId()));
             logger.fine(() -> String.format("Websocket connection closed for principal [%s]", principal.getName()));
         }
     }
@@ -107,7 +108,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                     throw new Exception("Destination not set");
                 }
                 topic = destination.split(":")[1].trim();
-                subscriptions.add(topic);
+                subscriptions.put(topic, session);
                 logger.fine(() -> String.format("Websocket subscription created [principal: %s, topic: %s]",
                                                 principal.getName(), topic));
                 break;
@@ -130,16 +131,17 @@ public class WebSocketHandler extends TextWebSocketHandler {
     void send(Notification message) {
         String user = message.getUser();
         try {
+            String topic = "/queue/" + user;
             String strMessage = new ObjectMapper().writeValueAsString(message);
-            WebSocketSession session = findSession(user);
             final TextMessage txtMsg = new TextMessage(strMessage);
-            if (session != null && subscriptions.contains("/queue/" + user)) {
+            WebSocketSession session = subscriptions.get(topic);
+            if (session != null) {
                 session.sendMessage(txtMsg);
             }
             synchronized (admins) {
                 for (String u : admins) {
-                    if (subscriptions.contains("/queue/" + u)
-                            && !user.equals(u) && (session = findSession(u)) != null) {
+                    topic = "/queue/" + u;
+                    if ((session = subscriptions.get(topic)) != null && !user.equals(u)) {
                         session.sendMessage(txtMsg);
                     }
                 }
@@ -147,13 +149,6 @@ public class WebSocketHandler extends TextWebSocketHandler {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private synchronized WebSocketSession findSession(String user) {
-        return sessions.stream()
-                       .filter(s -> s.getPrincipal() != null &&
-                                    s.getPrincipal().getName().equals(user)).findFirst()
-                       .orElse(null);
     }
 
     public static class MessageReceiver extends Notifiable {
