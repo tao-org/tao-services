@@ -28,7 +28,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private static final List<WebSocketSession> sessions;
     private static final Set<String> admins;
     private static final Timer adminRefreshTimer;
-    private static final Map<String, WebSocketSession> subscriptions;
+    private static final Map<String, List<WebSocketSession>> subscriptions;
     private static final Set<Long> handledMessages;
     private static AdministrationService administrationService;
 
@@ -77,18 +77,21 @@ public class WebSocketHandler extends TextWebSocketHandler {
             admins.addAll(getAdminService().getAdministrators().stream().map(User::getUsername).collect(Collectors.toSet()));
         }
         sessions.add(session);
-        logger.fine(() -> String.format("Websocket connection established for principal [%s]", principal.getName()));
+        logger.fine(() -> String.format("Websocket connection %s established for principal [%s]",
+                                        session.getId(),
+                                        principal.getName()));
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         super.afterConnectionClosed(session, status);
-        sessions.remove(session);
         final Principal principal = session.getPrincipal();
         if (principal != null) {
-            subscriptions.remove("/queue/" + principal.getName());
-            sessions.removeIf(s -> s.getId().equals(session.getId()));
-            logger.fine(() -> String.format("Websocket connection closed for principal [%s]", principal.getName()));
+            final String topic = "/queue/" + principal.getName();
+           removeSession(session.getId(), topic);
+            logger.fine(() -> String.format("Websocket connection %s closed for principal [%s]",
+                                            session.getId(),
+                                            principal.getName()));
         }
     }
 
@@ -108,7 +111,10 @@ public class WebSocketHandler extends TextWebSocketHandler {
                     throw new Exception("Destination not set");
                 }
                 topic = destination.split(":")[1].trim();
-                subscriptions.put(topic, session);
+                if (!subscriptions.containsKey(topic)) {
+                    subscriptions.put(topic, new ArrayList<>());
+                }
+                subscriptions.get(topic).add(session);
                 logger.fine(() -> String.format("Websocket subscription created [principal: %s, topic: %s]",
                                                 principal.getName(), topic));
                 break;
@@ -118,7 +124,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                     throw new Exception("Destination not set");
                 }
                 topic = destination.split(":")[1].trim();
-                subscriptions.remove(topic);
+                removeSession(session.getId(), topic);
                 logger.fine(() -> String.format("Websocket subscription removed [principal: %s, topic: %s]",
                                                 principal.getName(), topic));
                 break;
@@ -137,20 +143,37 @@ public class WebSocketHandler extends TextWebSocketHandler {
             String topic = "/queue/" + user;
             String strMessage = new ObjectMapper().writeValueAsString(message);
             final TextMessage txtMsg = new TextMessage(strMessage);
-            WebSocketSession session = subscriptions.get(topic);
-            if (session != null) {
-                session.sendMessage(txtMsg);
+            List<WebSocketSession> userSessions = subscriptions.get(topic);
+            if (userSessions != null) {
+                for (WebSocketSession session : userSessions) {
+                    session.sendMessage(txtMsg);
+                }
             }
             synchronized (admins) {
                 for (String u : admins) {
                     topic = "/queue/" + u;
-                    if ((session = subscriptions.get(topic)) != null && !user.equals(u)) {
-                        session.sendMessage(txtMsg);
+                    if ((userSessions = subscriptions.get(topic)) != null && !user.equals(u)) {
+                        for (WebSocketSession session : userSessions) {
+                            session.sendMessage(txtMsg);
+                        }
                     }
                 }
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void removeSession(String sessionId, String topic) {
+        final List<WebSocketSession> userSessions = subscriptions.get(topic);
+        if (userSessions != null) {
+            userSessions.removeIf(s -> s.getId().equals(sessionId));
+            if (userSessions.isEmpty()) {
+                subscriptions.remove(topic);
+            }
+        }
+        if (subscriptions.get(topic).isEmpty()) {
+            subscriptions.remove(topic);
         }
     }
 
