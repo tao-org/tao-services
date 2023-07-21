@@ -16,21 +16,27 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.reflections.Reflections;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.TaoEnum;
+import ro.cs.tao.configuration.ConfigurationCategory;
+import ro.cs.tao.configuration.ConfigurationItem;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.Projection;
 import ro.cs.tao.eodata.sorting.Association;
 import ro.cs.tao.eodata.sorting.DataFilter;
 import ro.cs.tao.eodata.sorting.DataSorter;
 import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ConfigurationService;
 import ro.cs.tao.services.model.KeyValuePair;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
@@ -48,6 +54,9 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
     private WeakReference<List<String[]>> groupers;
     private WeakReference<List<String[]>> filters;
     private WeakReference<Map<String, List<KeyValuePair>>> enums;
+
+    @Autowired
+    private PersistenceManager persistenceManager;
 
     /**
      * Lists all the enumerations available.
@@ -175,5 +184,59 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
     public ResponseEntity<ServiceResponse<?>> toggleDevMode(@RequestParam("on") boolean mode) {
         ConfigurationManager.getInstance().setValue("tao.dev.mode", String.valueOf(mode));
         return prepareResult("Development mode is " + (mode ? "on" : "off"));
+    }
+
+    @RequestMapping(value = "/detail/items", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getConfigurationItems(@RequestParam(name = "filter", required = false) String filter,
+                                                                    @RequestParam(name = "category", required = false) Integer categoryId,
+                                                                    @RequestParam(name = "grouped", required = false, defaultValue = "false") boolean grouped) {
+        try {
+            if (categoryId != null) {
+                final ConfigurationCategory category = persistenceManager.configuration().getCategory(categoryId);
+                if (category == null) {
+                    throw new IllegalArgumentException("Invalid category");
+                }
+                final List<ConfigurationItem> items = persistenceManager.configuration().getCategoryItems(category);
+                if (!StringUtilities.isNullOrEmpty(filter)) {
+                    items.removeIf(i -> !i.getId().contains(filter));
+                }
+                return prepareResult(items);
+            } else {
+                if (grouped) {
+                    final Map<ConfigurationCategory, ConfigurationItem> items = persistenceManager.configuration().getGroupedItems();
+                    if (!StringUtilities.isNullOrEmpty(filter)) {
+                        items.entrySet().removeIf(current -> !current.getValue().getId().contains(filter));
+                    }
+                    return prepareResult(items);
+                } else {
+                    return StringUtilities.isNullOrEmpty(filter)
+                           ? prepareResult(persistenceManager.configuration().getItems())
+                           : prepareResult(persistenceManager.configuration().getItems(filter));
+                }
+            }
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/detail/categories", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getCategories() {
+        return prepareResult(persistenceManager.configuration().getCategories());
+    }
+
+    @RequestMapping(value = "/detail/items", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> saveConfigurationItems(@RequestParam("items") List<ConfigurationItem> items) {
+        try {
+            int size = 0;
+            if (items != null) {
+                for (ConfigurationItem item : items) {
+                    persistenceManager.configuration().saveItem(item);
+                }
+                size = items.size();
+            }
+            return prepareResult(size + " configuration items saved", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
 }
