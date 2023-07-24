@@ -199,7 +199,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 synchronized (lock) {
                     if (!handledMessages.contains(id)) {
                         handledMessages.add(id);
-                        message.setMessage(message.getMessage().replace("\"", "\\\""));
+                        if (message.getMessage() != null) {
+                            message.setMessage(message.getMessage().replace("\"", "\\\""));
+                        }
                         this.handler.send(converter.to(message));
                     } else {
                         handledMessages.remove(id);
