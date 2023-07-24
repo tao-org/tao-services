@@ -194,6 +194,9 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         Repository repository = repository();
         Path sourcePath = Paths.get(repository.resolve(source));
         Path destinationPath = Paths.get(repository.resolve(destination));
+        if (destinationPath.getFileName().equals(sourcePath.getFileName())) {
+            destinationPath = destinationPath.getParent();
+        }
         if (destination.startsWith("files")) {
             FileUtilities.move(sourcePath, destinationPath);
             try {
