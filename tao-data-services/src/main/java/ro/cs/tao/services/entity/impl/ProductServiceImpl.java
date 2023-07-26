@@ -34,6 +34,7 @@ import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.spi.OutputDataHandlerManager;
 import ro.cs.tao.spi.ServiceRegistryManager;
@@ -44,7 +45,6 @@ import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.Repository;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -154,7 +154,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		logger.fine("Inspection of " + sourcePath + " starting");
 		List<EOProduct> results = new ArrayList<>();
 		Path source = Paths.get(repository.resolve(sourcePath));
-		Principal principal = SessionStore.currentContext().getPrincipal();
+		Principal principal = new UserPrincipal(repository.getUserName());
 		final ProgressListener progressListener = new ProgressNotifier(principal,
 																	   sourcePath,
 																	   Topic.TRANSFER_PROGRESS,

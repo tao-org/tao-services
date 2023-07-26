@@ -17,6 +17,7 @@ package ro.cs.tao.services.monitoring.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.metrics.MetricsEndpoint;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
@@ -28,10 +29,13 @@ import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.MonitoringService;
+import ro.cs.tao.services.monitoring.beans.Metric;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Cosmin Cara
@@ -40,10 +44,13 @@ import java.util.List;
 @Tag(name ="Monitoring", description = "Endpoint for monitoring node resources and system notifications")
 public class MonitoringController extends BaseController {
 
+    private static List<String> metricNames;
+    private static final Object lock = new Object();
+
     @Autowired
     private MonitoringService<Notification> monitoringService;
-    /*@Autowired
-    private SimpMessagingTemplate simpMessagingTemplate;*/
+    @Autowired
+    private MetricsEndpoint metricsEndpoint;
 
     /**
      * Returns a list of all available nodes resources snapshots
@@ -136,21 +143,18 @@ public class MonitoringController extends BaseController {
         return prepareResult(message);
     }
 
-    /*@MessageMapping("/events")
-    public void send(@Payload Notification message) {
-        String user = message.getUser();
-        try {
-            String strMessage = new ObjectMapper().writeValueAsString(message);
-            simpMessagingTemplate.convertAndSend("/queue/" + user, strMessage);
-            final Set<String> administrators = getAdministrators();
-            for (String u : administrators) {
-                if (!user.equals(u)) {
-                    simpMessagingTemplate.convertAndSend("/queue/" + u, message);
-                }
+    @RequestMapping(value = "/metrics", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getMetrics() {
+        if (metricNames == null) {
+            synchronized (lock) {
+                metricNames = new ArrayList<>(metricsEndpoint.listNames().getNames());
             }
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
         }
-    }*/
+        return prepareResult(metricNames.stream()
+                                        .filter(m -> !(m.startsWith("executor") || m.startsWith("jvm")))
+                                        .map(m -> metricsEndpoint.metric(m, null))
+                                        .map(Metric::toBean)
+                                        .collect(Collectors.toList()));
+    }
 
 }

@@ -39,7 +39,9 @@ import ro.cs.tao.services.entity.beans.*;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.*;
+import ro.cs.tao.services.model.component.DataSourceInfo;
 import ro.cs.tao.services.model.component.ProductSetInfo;
+import ro.cs.tao.utils.AutoEvictableCache;
 import ro.cs.tao.utils.Tuple;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
@@ -52,6 +54,9 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/datasource")
 public class DataSourceComponentController extends DataEntityController<DataSourceComponent, String, DataSourceComponentService>{
+
+    private final AutoEvictableCache<String, DataSourceInfo> componentCache
+            = new AutoEvictableCache<>(s -> new DataSourceInfo(service.findById(s)), 1800);
 
     @Autowired
     private ProductService productService;
@@ -73,7 +78,14 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             Sort sort = new Sort().withField(sortByField.get(), sortDirection.orElse(SortDirection.ASC));
             return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.list(pageNumber, pageSize, sort)));
         } else {
-            return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.list()));
+            if (this.componentCache.size() == 0) {
+                final List<DataSourceComponent> list = service.list();
+                list.forEach(c -> this.componentCache.put(c.getId(), new DataSourceInfo(c)));
+            } else {
+                final List<DataSourceComponent> list = service.getOhterDataSourceComponents(this.componentCache.keySet());
+                list.forEach(c -> this.componentCache.put(c.getId(), new DataSourceInfo(c)));
+            }
+            return prepareResult(this.componentCache.values());
         }
     }
 

@@ -401,12 +401,13 @@ public class DataSourceController extends BaseController {
      */
     @RequestMapping(value = "/fetch", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doFetch(@RequestBody FetchRequest request) {
+        final String user = currentUser();
         asyncExecute(() -> {
             try {
                 List<EOProduct> results;
                 Query query = request.getQuery();
                 if (StringUtilities.isNullOrEmpty(query.getUserId())) {
-                    query.setUserId(currentUser());
+                    query.setUserId(user);
                 }
                 if (request.getLocalPath() != null && request.getPathFormat() != null) {
                     results = dataSourceService.fetch(query, request.getProducts(),

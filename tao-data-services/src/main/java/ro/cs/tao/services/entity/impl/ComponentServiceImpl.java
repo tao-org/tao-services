@@ -117,6 +117,11 @@ public class ComponentServiceImpl
     }
 
     @Override
+    public List<ProcessingComponentInfo> getOtherComponents(Set<String> ids) {
+        return ServiceTransformUtils.toProcessingComponentInfos(processingComponentProvider.listOtherComponents(ids));
+    }
+
+    @Override
     public ProcessingComponent save(ProcessingComponent component) {
         if (component != null) {
             if (processingComponentProvider.get(component.getId(), component.getContainerId()) != null) {

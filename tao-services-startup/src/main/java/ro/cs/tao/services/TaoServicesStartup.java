@@ -18,6 +18,7 @@ package ro.cs.tao.services;
 import org.ggf.drmaa.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -67,7 +68,7 @@ import java.util.stream.Stream;
  * @author Cosmin Cara
  */
 
-@SpringBootApplication
+@SpringBootApplication(exclude = {SolrAutoConfiguration.class})
 @EnableScheduling
 @EnableWebMvc
 public class TaoServicesStartup extends StartupBase implements LifeCycleProcessorListener {
