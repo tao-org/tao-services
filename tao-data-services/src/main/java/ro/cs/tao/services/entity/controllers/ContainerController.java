@@ -107,7 +107,8 @@ public class ContainerController extends DataEntityController<Container, String,
                                                    @RequestParam(name = "pageSize", required = false)Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortByField", required = false)Optional<String> sortByField,
                                                    @RequestParam(name = "sortDirection", required = false)Optional<SortDirection> sortDirection) {
-        List<Container> objects = DockerManager.getAvailableDockerImages();
+        //List<Container> objects = DockerManager.getAvailableDockerImages();
+        List<Container> objects = containerProvider.getByType(ContainerType.DOCKER);
         if (objects == null) {
             objects = new ArrayList<>();
         }

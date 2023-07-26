@@ -38,6 +38,8 @@ import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.GroupComponentService;
 import ro.cs.tao.services.interfaces.NameTokenService;
+import ro.cs.tao.services.model.component.ProcessingComponentInfo;
+import ro.cs.tao.utils.AutoEvictableCache;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.util.*;
@@ -50,6 +52,9 @@ import java.util.stream.Collectors;
 @RequestMapping("/component")
 @io.swagger.v3.oas.annotations.tags.Tag(name = "Components", description = "Operations related to components (executables)")
 public class ComponentController extends DataEntityController<ProcessingComponent, String, ComponentService> {
+
+    private final AutoEvictableCache<String, ProcessingComponentInfo> componentCache
+            = new AutoEvictableCache<>(s -> new ProcessingComponentInfo(service.findById(s)), 1800);
 
     @Autowired
     private GroupComponentService groupComponentService;
@@ -65,7 +70,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listUserComponents(@RequestParam("type") ProcessingComponentType componentType) {
         ResponseEntity<ServiceResponse<?>> response;
-        String userName = SessionStore.currentContext().getPrincipal().getName();
+        String userName = currentUser();//SessionStore.currentContext().getPrincipal().getName();
         switch (componentType) {
             case EXECUTABLE:
                 response = prepareResult(service.getUserProcessingComponents(userName));
@@ -97,7 +102,18 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             Sort sort = new Sort().withField(sortByField.get(), sortDirection.orElse(SortDirection.ASC));
             return prepareResult(ServiceTransformUtils.toProcessingComponentInfos(service.list(pageNumber, pageSize, sort)));
         } else {
-            return prepareResult(ServiceTransformUtils.toProcessingComponentInfos(service.list()));
+            if (this.componentCache.size() == 0) {
+                final List<ProcessingComponentInfo> infos = ServiceTransformUtils.toProcessingComponentInfos(service.list());
+                for (ProcessingComponentInfo info : infos) {
+                    this.componentCache.put(info.getId(), info);
+                }
+            } else {
+                final List<ProcessingComponentInfo> otherComponents = service.getOtherComponents(this.componentCache.keySet());
+                for (ProcessingComponentInfo info : otherComponents) {
+                    this.componentCache.put(info.getId(), info);
+                }
+            }
+            return prepareResult(this.componentCache.values());
         }
     }
 

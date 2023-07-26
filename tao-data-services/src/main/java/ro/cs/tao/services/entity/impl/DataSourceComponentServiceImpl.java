@@ -77,6 +77,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
+    public List<DataSourceComponent> getOhterDataSourceComponents(Set<String> ids) {
+        return dataSourceComponentProvider.getOtherDataSourceComponents(ids);
+    }
+
+    @Override
     public List<DataSourceComponent> getBySource(String dataSourceName) throws PersistenceException {
         return dataSourceComponentProvider.getBySource(dataSourceName);
     }
