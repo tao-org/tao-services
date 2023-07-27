@@ -158,8 +158,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		logger.fine("Inspection of " + sourcePath + " starting");
 		List<EOProduct> results = new ArrayList<>();
 		Path source = Paths.get(repository.resolve(sourcePath));
-		final String userName = repository.getUserId();
-		Principal principal = new UserPrincipal(userProvider.getId(userName));
+		final String userId = repository.getUserId();
+		Principal principal = new UserPrincipal(userId);
 		final ProgressListener progressListener = new ProgressNotifier(principal,
 																	   sourcePath,
 																	   Topic.TRANSFER_PROGRESS,
@@ -178,7 +178,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 				logger.warning("No inspector suitable found for " + source);
 			} else {
 				CollectionUtils.addIgnoreNull(results, inspectProduct(inspector, principal, source));
-				progressListener.notifyProgress((double) count);
+				progressListener.notifyProgress(count);
 			}
 			if (results.isEmpty()) {
 				try (Stream<Path> stream = Files.walk(Paths.get(repository.resolve(sourcePath)), 1)) {

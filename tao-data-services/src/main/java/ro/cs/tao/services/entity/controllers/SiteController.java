@@ -35,7 +35,7 @@ public class SiteController extends DataEntityController<Site, String, SiteServi
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") String id) {
         try {
             final Site entity = this.service.findById(id);
-            if (entity == null || !entity.getUser().equals(currentUser())) {
+            if (entity == null || !entity.getUserId().equals(currentUser())) {
                 throw new IllegalArgumentException("You cannot access this object");
             }
             return prepareResult(entity);
@@ -47,7 +47,7 @@ public class SiteController extends DataEntityController<Site, String, SiteServi
     @Override
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Site entity) {
         try {
-            entity.setUser(currentUser());
+            entity.setUserId(currentUser());
             return super.save(entity);
         } catch (Exception e) {
             return handleException(e);
@@ -57,8 +57,8 @@ public class SiteController extends DataEntityController<Site, String, SiteServi
     @Override
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody Site entity) {
         try {
-            if (StringUtilities.isNullOrEmpty(entity.getUser()) ||
-                    !entity.getUser().equals(currentUser())) {
+            if (StringUtilities.isNullOrEmpty(entity.getUserId()) ||
+                    !entity.getUserId().equals(currentUser())) {
                 throw new IllegalArgumentException("Cannot update this object");
             }
             return super.update(id, entity);
