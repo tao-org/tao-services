@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
-import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -95,24 +94,24 @@ public class MonitoringController extends BaseController {
      */
     @RequestMapping(value = "/monitor/notification/unread", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUnreadNotifications() {
-        return prepareResult(monitoringService.getUnreadNotifications(SessionStore.currentContext().getPrincipal().getName()));
+        return prepareResult(monitoringService.getUnreadNotifications(currentUser()));
     }
     /**
      * Returns a page of notifications for a user
      */
     @RequestMapping(value = "/monitor/notification/{page}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getNotifications(@RequestHeader(value = "user") String user,
+    public ResponseEntity<ServiceResponse<?>> getNotifications(@RequestHeader(value = "user") String userId,
                                               @PathVariable("page") int page) {
-        return prepareResult(monitoringService.getNotifications(user, page));
+        return prepareResult(monitoringService.getNotifications(userId, page));
     }
 
     /**
      * Marks the given notifications as read
-     * @param notifications The list of notifications
+     * @param notificationIds The list of notification identifiers
      */
     @RequestMapping(value = "/monitor/notification/ack", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> acknowledgeNotifications(@RequestBody List<Notification> notifications) {
-        return prepareResult(monitoringService.acknowledgeNotification(notifications));
+    public ResponseEntity<ServiceResponse<?>> acknowledgeNotifications(@RequestBody List<Long> notificationIds) {
+        return prepareResult(monitoringService.acknowledgeNotification(notificationIds));
     }
 
     /**

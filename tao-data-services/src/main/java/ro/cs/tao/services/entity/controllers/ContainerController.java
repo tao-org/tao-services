@@ -195,7 +195,7 @@ public class ContainerController extends DataEntityController<Container, String,
                     data.setId(UUID.randomUUID().toString());
                     data.setLocation(auxFile.toString());
                     data.setDescription(String.format("Auxiliary file for container '%s'", name));
-                    data.setUserName(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
+                    data.setUserId(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
                     data.setCreated(LocalDateTime.now());
                     data.setModified(data.getCreated());
                     auxiliaryDataProvider.save(data);
@@ -316,7 +316,7 @@ public class ContainerController extends DataEntityController<Container, String,
                         data.setId(UUID.randomUUID().toString());
                         data.setLocation(auxFile.toString());
                         data.setDescription(String.format("Auxiliary file for container '%s'", name));
-                        data.setUserName(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
+                        data.setUserId(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
                         data.setCreated(LocalDateTime.now());
                         data.setModified(data.getCreated());
                         auxiliaryDataProvider.save(data);

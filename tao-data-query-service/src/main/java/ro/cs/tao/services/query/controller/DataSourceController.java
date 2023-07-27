@@ -401,13 +401,13 @@ public class DataSourceController extends BaseController {
      */
     @RequestMapping(value = "/fetch", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doFetch(@RequestBody FetchRequest request) {
-        final String user = currentUser();
+        final String userId = currentUser();
         asyncExecute(() -> {
             try {
                 List<EOProduct> results;
                 Query query = request.getQuery();
                 if (StringUtilities.isNullOrEmpty(query.getUserId())) {
-                    query.setUserId(user);
+                    query.setUserId(userId);
                 }
                 if (request.getLocalPath() != null && request.getPathFormat() != null) {
                     results = dataSourceService.fetch(query, request.getProducts(),
@@ -419,7 +419,7 @@ public class DataSourceController extends BaseController {
                     results = new ArrayList<>();
                 }
                 List<String> productPaths = results.stream().map(EOProduct::getLocation).collect(Collectors.toList());
-                if (productPaths.size() > 0) {
+                if (!productPaths.isEmpty()) {
                     try {
                         final StorageService repositoryService = getLocalRepositoryService();
                         final Repository localWorkspace = getLocalRepository(currentUser());

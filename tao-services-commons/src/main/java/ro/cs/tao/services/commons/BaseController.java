@@ -49,7 +49,7 @@ public abstract class BaseController extends ControllerBase {
             public void run() {
                 if (administrationService != null) {
                     admins.clear();
-                    admins.addAll(administrationService.getAdministrators().stream().map(User::getUsername).collect(Collectors.toSet()));
+                    admins.addAll(administrationService.getAdministrators().stream().map(User::getId).collect(Collectors.toSet()));
                 }
             }
         }, 10000, 10000);

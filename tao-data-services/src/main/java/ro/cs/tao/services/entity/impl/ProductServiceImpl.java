@@ -31,6 +31,7 @@ import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
@@ -65,6 +66,9 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 
 	@Autowired
 	private EOProductProvider productProvider;
+
+	@Autowired
+	private UserProvider userProvider;
 
 	@Override
 	protected void validateFields(EOProduct entity, List<String> errors) {
@@ -154,7 +158,8 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		logger.fine("Inspection of " + sourcePath + " starting");
 		List<EOProduct> results = new ArrayList<>();
 		Path source = Paths.get(repository.resolve(sourcePath));
-		Principal principal = new UserPrincipal(repository.getUserName());
+		final String userName = repository.getUserId();
+		Principal principal = new UserPrincipal(userProvider.getId(userName));
 		final ProgressListener progressListener = new ProgressNotifier(principal,
 																	   sourcePath,
 																	   Topic.TRANSFER_PROGRESS,
