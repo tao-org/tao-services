@@ -81,7 +81,7 @@ public class RepositoryEntityController extends DataEntityController<Repository,
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") String id) {
         try {
             final Repository entity = this.service.findById(id);
-            if (entity == null || !entity.getUserName().equals(currentUser())) {
+            if (entity == null || !entity.getUserId().equals(currentUser())) {
                 throw new IllegalArgumentException("You cannot access this workspace");
             }
             final RepositoryBean bean = ServiceTransformUtils.toBean(entity);
@@ -100,7 +100,7 @@ public class RepositoryEntityController extends DataEntityController<Repository,
     @Override
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Repository entity) {
         try {
-            entity.setUserName(currentUser());
+            entity.setUserId(currentUser());
             entity.setSystem(false);
             return super.save(entity);
         } catch (Exception e) {
@@ -111,8 +111,8 @@ public class RepositoryEntityController extends DataEntityController<Repository,
     @Override
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody Repository entity) {
         try {
-            if (StringUtilities.isNullOrEmpty(entity.getUserName()) ||
-                !entity.getUserName().equals(currentUser())) {
+            if (StringUtilities.isNullOrEmpty(entity.getUserId()) ||
+                !entity.getUserId().equals(currentUser())) {
                 throw new IllegalArgumentException("Cannot update this workspace");
             }
             entity.setSystem(false);

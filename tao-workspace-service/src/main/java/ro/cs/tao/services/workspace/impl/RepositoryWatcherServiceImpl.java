@@ -59,9 +59,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
         List<User> activeUsers = userProvider.list(UserStatus.ACTIVE);
         if (activeUsers != null) {
             for (User user : activeUsers) {
-                if (!SystemPrincipal.instance().getName().equals(user.getUsername())) {
-                    registerUser(user.getUsername());
-                }
+                registerUser(user.getUsername());
             }
         }
         final WatcherMonitor watcherMonitor = new WatcherMonitor();

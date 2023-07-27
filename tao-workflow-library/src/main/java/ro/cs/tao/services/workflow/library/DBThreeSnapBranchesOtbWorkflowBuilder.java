@@ -20,7 +20,6 @@ import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.beans.Query;
 import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
@@ -41,7 +40,7 @@ public class DBThreeSnapBranchesOtbWorkflowBuilder extends WorkflowBuilderBase {
                                                "Local DB", dataSourceComponent.getId(), ComponentType.DATASOURCE, null,
                                                null, null, (Direction) null);
         Query dsQuery = new Query();
-        dsQuery.setUserId(SessionStore.currentContext().getPrincipal().getName());
+        dsQuery.setUserId(workflow.getUserId());
         dsQuery.setSensor(dataSourceComponent.getSensorName());
         dsQuery.setDataSource(dataSourceComponent.getDataSourceName());
         dsQuery.setPageNumber(1);

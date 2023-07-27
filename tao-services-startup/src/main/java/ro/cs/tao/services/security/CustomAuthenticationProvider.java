@@ -73,12 +73,12 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
         if (jaasAuthenticationToken.isAuthenticated()) {
             final String userName = jaasAuthenticationToken.getPrincipal().toString();
-            jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new UserPrincipal(userName));
-            // add user groups as roles
             final User user = persistenceManager.users().getByName(userName);
             if (user == null) {
                 throw new RuntimeException(String.format("No such user '%s'", userName));
             }
+            jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new UserPrincipal(user.getId()));
+            // add user groups as roles
             final List<Group> userGroups = user.getGroups();
             if (userGroups != null) {
                 for (Group group : userGroups) {

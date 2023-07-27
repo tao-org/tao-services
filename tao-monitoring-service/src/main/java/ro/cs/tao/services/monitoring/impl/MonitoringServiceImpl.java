@@ -132,9 +132,9 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
-    public Map<String, List<Notification>> getUnreadNotifications(String userName) {
+    public Map<String, List<Notification>> getUnreadNotifications(String userId) {
         Map<String, List<Notification>>  messages = new LinkedHashMap<>();
-        List<Message> unread = messageProvider.getUnreadMessages(userName);
+        List<Message> unread = messageProvider.getUnreadMessages(userId);
         final MessageConverter converter = new MessageConverter();
         if (unread != null) {
             messages.put(Topic.INFORMATION.value(), new ArrayList<>());
@@ -155,8 +155,8 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
-    public List<Notification> getNotifications(String user, int page) {
-        final List<Message> userMessages = messageProvider.getUserMessages(user, page);
+    public List<Notification> getNotifications(String userId, int page) {
+        final List<Message> userMessages = messageProvider.getUserMessages(userId, page);
         return userMessages != null ?
                 userMessages.stream()
                         .map(m -> new MessageConverter().to(m))
@@ -164,11 +164,11 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
-    public List<Notification> acknowledgeNotification(List<Notification> notifications) {
-        if (notifications != null) {
-            messageProvider.acknowledge(notifications.stream().map(Notification::getId).collect(Collectors.toList()));
+    public List<Long> acknowledgeNotification(List<Long> ids) {
+        if (ids != null) {
+            messageProvider.acknowledge(ids);
         }
-        return notifications;
+        return ids;
     }
 
     @Override

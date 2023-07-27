@@ -196,7 +196,7 @@ public class WorkflowServiceImpl
         existing.setName(object.getName());
         existing.setPath(object.getPath());
         existing.setStatus(object.getStatus());
-        existing.setUserName(object.getUserName());
+        existing.setUserId(object.getUserId());
         existing.setVisibility(object.getVisibility());
         existing.setxCoord(object.getxCoord());
         existing.setyCoord(object.getyCoord());
@@ -665,7 +665,7 @@ public class WorkflowServiceImpl
             clone.setStatus(Status.DRAFT);
             clone.setCreated(LocalDateTime.now());
             clone.setActive(workflow.isActive());
-            clone.setUserName(SessionStore.currentContext().getPrincipal().getName());
+            clone.setUserId(SessionStore.currentContext().getPrincipal().getName());
             clone.setVisibility(Visibility.PRIVATE);
             clone = workflowProvider.save(clone);
             // key: old id, value: new node

@@ -10,6 +10,7 @@ import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.execution.wps.WPSExecutor;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.TaoLoginModule;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.model.ItemAction;
@@ -32,6 +33,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
 
     @Override
     public void onStartUp() {
+        SystemPrincipal.refresh(persistenceManager.users());
         Executor.addStatusListener(new TaskStatusListener() {
             final Logger logger = Logger.getLogger(TaskStatusListener.class.getName());
             @Override

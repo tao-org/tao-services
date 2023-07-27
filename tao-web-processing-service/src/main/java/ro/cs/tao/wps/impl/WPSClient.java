@@ -70,7 +70,7 @@ public class WPSClient {
         workflowDescriptor.setId(Long.parseLong(pdt.getIdentifier().getValue()));
         final String title = pdt.getTitle().getValue();
         workflowDescriptor.setName(title);
-        workflowDescriptor.setUserName(this.currentPrincipal.getName());
+        workflowDescriptor.setUserId(this.currentPrincipal.getName());
         workflowDescriptor.setActive(true);
         workflowDescriptor.setStatus(Status.PUBLISHED);
         workflowDescriptor.setPath(url);

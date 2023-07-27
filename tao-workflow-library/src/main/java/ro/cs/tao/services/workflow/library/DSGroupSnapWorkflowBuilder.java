@@ -47,7 +47,7 @@ public class DSGroupSnapWorkflowBuilder extends WorkflowBuilderBase {
                                                               principal);
         DataSourceComponentGroup group = new DataSourceComponentGroup();
         group.setId("Data Source Group " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
-        group.setUserName(principal.getName());
+        group.setUserId(principal.getName());
         group.setLabel(group.getId());
         group.setVersion("1.0");
         group.setDescription(group.getLabel());

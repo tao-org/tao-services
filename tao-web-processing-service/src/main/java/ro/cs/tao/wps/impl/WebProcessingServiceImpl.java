@@ -121,7 +121,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
         }
         final ExecutionJob job = jobProvider.get(jobId);
         if (job != null) {
-            return getLocalRepositoryService(job.getUserName()).getJobResults(jobId);
+            return getLocalRepositoryService(job.getUserId()).getJobResults(jobId);
         } else {
             return null;
         }

@@ -146,7 +146,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             List<ExecutionTaskSummary> runningTasks = taskList.stream().filter(e -> statuses.contains(e.getTaskStatus())).findAny().stream().collect(Collectors.toList());
             for (ExecutionTaskSummary summary: runningTasks) {
                 ExecutionTask task = job.getTasks().stream().filter(t -> t.getId() == summary.getTaskId()).findFirst().get();
-                summary.setUserName(job.getUserName());
+                summary.setUserName(job.getUserId());
                 summary.setComponentType(task instanceof DataSourceExecutionTask ? "ds" : "exec");
                 summary.setJobName(task.getJob().getName());
                 summary.setUsedCPU(task.getUsedCPU());
@@ -176,7 +176,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             ExecutionJobSummary summary = new ExecutionJobSummary();
             summary.setId(job.getId());
             summary.setJobName(job.getName());
-            summary.setUser(job.getUserName());
+            summary.setUser(job.getUserId());
             if (job.getWorkflowId() != null) {
                 final String workflowName = tasksStatus.size() > 0 ?
                         tasksStatus.get(0).getWorkflowName() :
@@ -216,7 +216,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             }
             summary.setId(job.getId());
             summary.setJobName(job.getName());
-            summary.setUser(job.getUserName());
+            summary.setUser(job.getUserId());
             summary.setJobStatus(job.getExecutionStatus());
             summary.setJobStart(job.getStartTime());
             summary.setJobEnd(job.getEndTime());
@@ -241,7 +241,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                     summary.setId(job.getId());
                     summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
                     summary.setJobName(job.getName());
-                    summary.setUser(job.getUserName());
+                    summary.setUser(job.getUserId());
                     summary.setJobStatus(job.getExecutionStatus());
                     summary.setJobStart(job.getStartTime());
                     summary.setJobEnd(job.getEndTime());
@@ -268,7 +268,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 summary.setId(job.getId());
                 summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
                 summary.setJobName(job.getName());
-                summary.setUser(job.getUserName());
+                summary.setUser(job.getUserId());
                 summary.setJobStatus(job.getExecutionStatus());
                 summary.setJobStart(job.getStartTime());
                 summary.setJobEnd(job.getEndTime());
@@ -294,7 +294,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 summary.setId(job.getId());
                 summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
                 summary.setJobName(job.getName());
-                summary.setUser(job.getUserName());
+                summary.setUser(job.getUserId());
                 summary.setJobStatus(job.getExecutionStatus());
                 summary.setJobStart(job.getStartTime());
                 summary.setJobEnd(job.getEndTime());

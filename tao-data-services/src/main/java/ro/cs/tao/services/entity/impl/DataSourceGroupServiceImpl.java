@@ -224,7 +224,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     private DataSourceComponentGroup createGroup(String userName, String label) throws PersistenceException {
         DataSourceComponentGroup group = new DataSourceComponentGroup();
         group.setId(UUID.randomUUID().toString());
-        group.setUserName(userName);
+        group.setUserId(userName);
         group.setLabel(label);
         group.setVersion("1.0");
         group.setDescription(group.getLabel());
@@ -277,7 +277,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         return candidatesToSave;
     }
 
-    private Query updateQuery(Query incomingQuery, Query dbQuery, String userName) throws PersistenceException {
+    private Query updateQuery(Query incomingQuery, Query dbQuery, String userId) throws PersistenceException {
         if (dbQuery != null) {
             dbQuery.setLabel(incomingQuery.getLabel());
             dbQuery.setLimit(incomingQuery.getLimit());
@@ -287,7 +287,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
             dbQuery.setPassword(incomingQuery.getPassword());
             dbQuery.setSensor(incomingQuery.getSensor());
             dbQuery.setUser(incomingQuery.getUser());
-            dbQuery.setUserId(userName);
+            dbQuery.setUserId(userId);
             dbQuery.setComponentId(incomingQuery.getComponentId());
             Map<String, String> parameters = dbQuery.getValues();
             if (parameters == null) {

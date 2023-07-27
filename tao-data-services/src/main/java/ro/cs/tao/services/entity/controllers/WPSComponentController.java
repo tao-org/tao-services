@@ -84,7 +84,7 @@ public class WPSComponentController extends BaseController {
                     if (repository == null) {
                         repository = JacksonUtil.fromString(target.getDataDescriptor().getLocation(), Repository.class);
                         repository.setName(repoName);
-                        repository.setUserName(currentUser());
+                        repository.setUserId(currentUser());
                         repositoryService.save(repository);
                     }
                 } catch (Exception e) {
@@ -124,7 +124,7 @@ public class WPSComponentController extends BaseController {
                     if (repository == null) {
                         repository = JacksonUtil.fromString(target.getDataDescriptor().getLocation(), Repository.class);
                         repository.setName(repoName);
-                        repository.setUserName(currentUser());
+                        repository.setUserId(currentUser());
                         repositoryService.save(repository);
                     }
                 } catch (Exception e) {

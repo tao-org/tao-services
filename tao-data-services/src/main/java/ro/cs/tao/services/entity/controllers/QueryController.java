@@ -18,7 +18,6 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.datasource.beans.Query;
@@ -91,7 +90,7 @@ public class QueryController extends BaseController {
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Query object) {
         try {
-            object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
+            object.setUserId(currentUser());
             return prepareResult(queryService.save(object));
         } catch (Exception ex) {
             return handleException(ex);
@@ -111,7 +110,7 @@ public class QueryController extends BaseController {
     @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody Query object) {
         try {
-            object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
+            object.setUserId(currentUser());
             return prepareResult(queryService.update(object));
         } catch (Exception pex) {
             return handleException(pex);

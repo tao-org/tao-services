@@ -724,7 +724,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         if (workspace == null) {
             throw new IOException("Workspace does not exist");
         }
-        if (!user.equals(workspace.getUserName())) {
+        if (!user.equals(workspace.getUserId())) {
             throw new AccessDeniedException("Operation not allowed");
         }
         return workspace;

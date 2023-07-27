@@ -359,7 +359,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         list.removeIf(p -> p.endsWith(".aux.xml"));
         final String[] pathArray = list.stream().map(p -> p.toUri().toString()).toArray(String[]::new);
         final Map<Path, Map<String, String>> auxAttributes = new HashMap<>();
-        final List<AuxiliaryData> auxData = auxiliaryDataProvider.list(repository.getUserName(), pathArray);
+        final List<AuxiliaryData> auxData = auxiliaryDataProvider.list(repository.getUserId(), pathArray);
         for (AuxiliaryData auxiliaryData : auxData) {
             auxAttributes.put(FileUtilities.toPath(auxiliaryData.getLocation()),
                               auxiliaryData.toAttributeMap());
@@ -577,7 +577,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         }
         data.setLocation(location);
         data.setDescription(description);
-        data.setUserName(userName);
+        data.setUserId(userName);
         data.setCreated(LocalDateTime.now());
         data.setModified(data.getCreated());
         auxiliaryDataProvider.save(data);

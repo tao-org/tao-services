@@ -24,7 +24,7 @@ public class MessageConverter implements Converter<Message, WSNotification> {
         }
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(value.getTimestamp());
-        String user = value.getUser();
+        String user = value.getUserId();
         String msg = value.getData();
         String topic = value.getTopic();
         final long id = value.getId() != null && value.getId() != 0 ? value.getId() : calendar.getTimeInMillis();

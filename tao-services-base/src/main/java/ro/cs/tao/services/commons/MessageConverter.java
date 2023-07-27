@@ -43,7 +43,7 @@ public class MessageConverter implements Converter<Message, Notification> {
         }
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(value.getTimestamp());
-        String user = value.getUser();
+        String user = value.getUserId();
         String msg = value.getData();
         String topic = value.getTopic();
         final long id = value.getId() != null ? value.getId() : calendar.getTimeInMillis();
