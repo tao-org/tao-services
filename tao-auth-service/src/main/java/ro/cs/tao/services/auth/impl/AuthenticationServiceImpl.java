@@ -61,7 +61,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public AuthInfo login(String userName, String password) {
 
-        Token authenticationToken = tokenService.getUserToken(userName);
+        Token authenticationToken = tokenService.getUserToken(userProvider.getId(userName));
         if (authenticationToken != null) {
             logger.finest("Token " + authenticationToken.getToken());
 
