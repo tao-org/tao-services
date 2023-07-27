@@ -31,8 +31,10 @@ import ro.cs.tao.services.security.token.AuthenticationWithToken;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -77,12 +79,16 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             if (user == null) {
                 throw new RuntimeException(String.format("No such user '%s'", userName));
             }
-            jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new UserPrincipal(user.getId()));
+            final UserPrincipal userPrincipal = new UserPrincipal(user.getId());
+            final Set<Principal> principals = jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals();
+            if (principals.stream().noneMatch(p -> p.getName().equals(userPrincipal.getName()))) {
+                principals.add(userPrincipal);
+            }
             // add user groups as roles
             final List<Group> userGroups = user.getGroups();
             if (userGroups != null) {
                 for (Group group : userGroups) {
-                    jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().add(new GroupPrincipal(group.getName()));
+                    principals.add(new GroupPrincipal(group.getName()));
                 }
             }
 

@@ -16,12 +16,10 @@
 package ro.cs.tao.services.commons;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ro.cs.tao.persistence.AuditProvider;
 import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.user.LogEvent;
 import ro.cs.tao.user.User;
@@ -52,7 +50,7 @@ public abstract class BaseController extends ControllerBase {
                     admins.addAll(administrationService.getAdministrators().stream().map(User::getId).collect(Collectors.toSet()));
                 }
             }
-        }, 10000, 10000);
+        }, 0, 10000);
     }
 
     public static ServletUriComponentsBuilder currentURL() {
@@ -78,16 +76,15 @@ public abstract class BaseController extends ControllerBase {
     }
 
     protected String currentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication != null ? authentication.getName() : null;
+        return currentPrincipal().getName();
     }
 
     protected Principal currentPrincipal() {
-        return SessionStore.currentContext().getPrincipal();
+        return (Principal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
     protected boolean isCurrentUserAdmin() {
-        return admins.contains(SessionStore.currentContext().getPrincipal().getName());
+        return admins.contains(currentUser());
     }
 
     protected boolean isAdmin(String userName) {
