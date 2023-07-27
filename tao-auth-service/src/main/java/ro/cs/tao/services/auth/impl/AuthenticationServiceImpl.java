@@ -80,7 +80,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     FileUtilities.ensureExists(path.resolve("files"));
                 } catch (Exception e) {
                     logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
-                                                userName, ExceptionUtils.getStackTrace(e)));
+                                                user.getId(), ExceptionUtils.getStackTrace(e)));
                 }
                 // retrieve user groups and send them as profiles
                 return new AuthInfo(true, authenticationToken.getToken(),
