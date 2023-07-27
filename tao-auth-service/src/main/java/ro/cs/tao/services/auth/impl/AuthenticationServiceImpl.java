@@ -71,7 +71,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 try {
                     // update user last login date
                     userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
-                    final List<Repository> list = workspaceProvider.getByUser(userName);
+                    final List<Repository> list = workspaceProvider.getByUser(user.getId());
                     if (list == null || list.isEmpty()) {
                         userProvider.createWorkspaces(userName);
                     }
