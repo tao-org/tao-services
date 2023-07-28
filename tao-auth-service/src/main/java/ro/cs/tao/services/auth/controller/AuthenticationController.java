@@ -129,7 +129,7 @@ public class AuthenticationController extends BaseController {
             if (success) {
                 trace("Token refreshed [user: %s, addr: %s]", userName, remoteAddr);
             } else {
-                warn("Token refresh failed [user: %s, addr: %s]", userName);
+                warn("Token refresh failed [user: %s, addr: %s]", userName, remoteAddr);
             }
         }
     }

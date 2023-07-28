@@ -50,8 +50,8 @@ public class MessageConverter implements Converter<Message, WSNotification> {
                 }
             }
 
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+        } catch (Exception ignored) {
+            data.put(Message.MESSAGE_KEY, msg);
         }
         WSNotification notification = new WSNotification(id , calendar, user, value.getItem(Message.SOURCE_KEY), topic, data);
         notification.setRead(value.isRead());

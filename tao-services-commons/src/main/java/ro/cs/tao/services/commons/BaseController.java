@@ -17,13 +17,21 @@ package ro.cs.tao.services.commons;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.AuditProvider;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.user.LogEvent;
 import ro.cs.tao.user.User;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -38,6 +46,7 @@ public abstract class BaseController extends ControllerBase {
     private static final Timer groupRefreshTimer;
     private static AdministrationService administrationService;
     private static AuditProvider auditProvider;
+    private static UserProvider userProvider;
 
     static {
         groupRefreshTimer = new Timer(true);
@@ -67,6 +76,15 @@ public abstract class BaseController extends ControllerBase {
     }
 
     @Autowired
+    public final void setUserProvider(UserProvider provider) {
+        if (userProvider == null) {
+            synchronized (admins) {
+                userProvider = provider;
+            }
+        }
+    }
+
+    @Autowired
     public final void setAuditProvider(AuditProvider provider) {
         if (auditProvider == null) {
             synchronized (admins) {
@@ -75,12 +93,26 @@ public abstract class BaseController extends ControllerBase {
         }
     }
 
+    @ExceptionHandler(Exception.class)
+    public void handleUncaughtException(Exception exception, WebRequest request) {
+        error(exception.getMessage());
+       final StringWriter writer = new StringWriter();
+        final PrintWriter printWriter = new PrintWriter(writer);
+        exception.printStackTrace(printWriter);
+        Messaging.send(request.getUserPrincipal(), Topic.ERROR.getCategory(),
+                       request.getContextPath(), exception.getMessage(), writer.toString());
+    }
+
     protected String currentUser() {
         return currentPrincipal().getName();
     }
 
     protected Principal currentPrincipal() {
-        return (Principal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        final Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return principal instanceof UserPrincipal
+               ? (Principal) principal
+               : new UserPrincipal(userProvider.getId((String) principal));
+
     }
 
     protected boolean isCurrentUserAdmin() {
