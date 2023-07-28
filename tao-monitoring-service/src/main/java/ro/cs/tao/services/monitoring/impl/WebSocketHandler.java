@@ -49,7 +49,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 synchronized (lock) {
                     handledMessages.clear();
                     admins.clear();
-                    admins.addAll(getAdminService().getAdministrators().stream().map(User::getUsername).collect(Collectors.toSet()));
+                    admins.addAll(getAdminService().getAdministrators().stream().map(User::getId).collect(Collectors.toSet()));
                 }
             }
         }, 30000, 30000);
@@ -74,7 +74,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         }
         super.afterConnectionEstablished(session);
         if (sessions.isEmpty()) {
-            admins.addAll(getAdminService().getAdministrators().stream().map(User::getUsername).collect(Collectors.toSet()));
+            admins.addAll(getAdminService().getAdministrators().stream().map(User::getId).collect(Collectors.toSet()));
         }
         sessions.add(session);
         logger.fine(() -> String.format("Websocket connection %s established for principal [%s]",
@@ -145,16 +145,30 @@ public class WebSocketHandler extends TextWebSocketHandler {
             final TextMessage txtMsg = new TextMessage(strMessage);
             List<WebSocketSession> userSessions = subscriptions.get(topic);
             if (userSessions != null) {
-                for (WebSocketSession session : userSessions) {
-                    session.sendMessage(txtMsg);
+                final Iterator<WebSocketSession> iterator = userSessions.iterator();
+                while (iterator.hasNext()) {
+                    WebSocketSession session = iterator.next();
+                    if (session.isOpen()) {
+                        session.sendMessage(txtMsg);
+                    } else {
+                        logger.warning("Session " + session.getId() + " is closed and it will be removed.");
+                        iterator.remove();
+                    }
                 }
             }
             synchronized (admins) {
                 for (String u : admins) {
                     topic = "/queue/" + u;
                     if ((userSessions = subscriptions.get(topic)) != null && !user.equals(u)) {
-                        for (WebSocketSession session : userSessions) {
-                            session.sendMessage(txtMsg);
+                        final Iterator<WebSocketSession> iterator = userSessions.iterator();
+                        while (iterator.hasNext()) {
+                            WebSocketSession session = iterator.next();
+                            if (session.isOpen()) {
+                                session.sendMessage(txtMsg);
+                            } else {
+                                logger.warning("Admin session " + session.getId() + " is closed and it will be removed.");
+                                iterator.remove();
+                            }
                         }
                     }
                 }
