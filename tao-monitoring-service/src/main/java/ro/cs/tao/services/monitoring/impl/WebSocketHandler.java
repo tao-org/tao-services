@@ -88,7 +88,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         final Principal principal = session.getPrincipal();
         if (principal != null) {
             final String topic = "/queue/" + principal.getName();
-           removeSession(session.getId(), topic);
+            removeSession(session.getId(), topic);
             logger.fine(() -> String.format("Websocket connection %s closed for principal [%s]",
                                             session.getId(),
                                             principal.getName()));
@@ -186,7 +186,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 subscriptions.remove(topic);
             }
         }
-        if (subscriptions.get(topic).isEmpty()) {
+        if (userSessions == null || userSessions.isEmpty()) {
             subscriptions.remove(topic);
         }
     }
