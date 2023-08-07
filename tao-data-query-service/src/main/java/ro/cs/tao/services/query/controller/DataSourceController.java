@@ -402,6 +402,8 @@ public class DataSourceController extends BaseController {
     @RequestMapping(value = "/fetch", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> doFetch(@RequestBody FetchRequest request) {
         final String userId = currentUser();
+        final StorageService repositoryService = getLocalRepositoryService();
+        final Repository localWorkspace = getLocalRepository(currentUser());
         asyncExecute(() -> {
             try {
                 List<EOProduct> results;
@@ -421,8 +423,6 @@ public class DataSourceController extends BaseController {
                 List<String> productPaths = results.stream().map(EOProduct::getLocation).collect(Collectors.toList());
                 if (!productPaths.isEmpty()) {
                     try {
-                        final StorageService repositoryService = getLocalRepositoryService();
-                        final Repository localWorkspace = getLocalRepository(currentUser());
                         for (int i = 0; i < productPaths.size(); i++) {
                             String path = FileUtilities.toUnixPath(productPaths.get(i));
                             if (!path.startsWith("/")) {

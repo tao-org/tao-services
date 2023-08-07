@@ -123,9 +123,8 @@ public class AdministrationController extends BaseController {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
-        final Set<String> names = new HashSet<>();
         final List<User> users = new ArrayList<>();
-        names.addAll(sessionRegistry.getAllPrincipals().stream().filter(u->!sessionRegistry.getAllSessions(u, false).isEmpty()).map(Object::toString).collect(Collectors.toList()));
+        final Set<String> names = new HashSet<>(sessionRegistry.getAllPrincipals().stream().filter(u -> !sessionRegistry.getAllSessions(u, false).isEmpty()).map(Object::toString).collect(Collectors.toList()));
         if (!names.isEmpty()) {
             users.addAll(adminService.getUsers(names));
         }
