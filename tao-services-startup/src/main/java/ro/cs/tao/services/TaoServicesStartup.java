@@ -134,7 +134,8 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
         Path configJsPath = Paths.get(path).resolve("assets").resolve("dist").resolve("js").resolve("config.js");
         try (Stream<String> stream = Files.lines(configJsPath)) {
             final List<String> lines = stream.map(line -> {
-                if (line.contains("baseWssUrl")) {
+                if (line.contains("baseWssUrl") &&
+                        (!line.contains("ws:") || !line.contains("wss:"))) {
                     return line.substring(0, line.indexOf("'") + 1) +
                             url.replace("http", "ws") +
                             line.substring(line.lastIndexOf("'"));
