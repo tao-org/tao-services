@@ -128,7 +128,24 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
                                                                .sorted().collect(Collectors.joining(","))));
         }
         OutputDataHandlerManager.getInstance().setFileProcessFactory(FileProcessFactory.createLocal());
-        final String url = ConfigurationManager.getInstance().getValue("tao.services.base");
+        final ConfigurationProvider cfgProvider = ConfigurationManager.getInstance();
+        final String url = cfgProvider.getValue("tao.services.base");
+        final String path = cfgProvider.getValue("site.path");
+        Path configJsPath = Paths.get(path).resolve("assets").resolve("dist").resolve("js").resolve("config.js");
+        try (Stream<String> stream = Files.lines(configJsPath)) {
+            final List<String> lines = stream.map(line -> {
+                if (line.contains("baseWssUrl")) {
+                    return line.substring(0, line.indexOf("'") + 1) +
+                            url.replace("http", "ws") +
+                            line.substring(line.lastIndexOf("'"));
+                } else {
+                    return line;
+                }
+            }).collect(Collectors.toList());
+            Files.write(configJsPath, lines);
+        } catch (IOException e) {
+            logger.severe(e.getMessage());
+        }
         logger.info(String.format("Web interface is accessible at %s", url));
         Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.value(), new StartupCompletedMessage());
     }
