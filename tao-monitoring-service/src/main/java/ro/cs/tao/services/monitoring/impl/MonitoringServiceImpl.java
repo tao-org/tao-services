@@ -121,11 +121,11 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
-    public List<Notification> getLiveNotifications() {
+    public List<Notification> getLiveNotifications(String userId) {
         final MessageConverter converter = new MessageConverter();
         List<Notification> notifications = new ArrayList<>();
         try {
-            notifications = getLastMessages().stream().map(converter::to).collect(Collectors.toList());
+            notifications = getLastMessages().stream().filter(m -> userId == null || m.getUserId().equals(userId)).map(converter::to).collect(Collectors.toList());
         } catch (Exception e){
         }
         return notifications;
@@ -164,9 +164,9 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
-    public List<Long> acknowledgeNotification(List<Long> ids) {
+    public List<Long> acknowledgeNotification(List<Long> ids, String userId) {
         if (ids != null) {
-            messageProvider.acknowledge(ids);
+            messageProvider.acknowledge(ids, userId);
         }
         return ids;
     }
