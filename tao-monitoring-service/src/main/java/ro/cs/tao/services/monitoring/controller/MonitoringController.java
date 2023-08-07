@@ -18,6 +18,7 @@ package ro.cs.tao.services.monitoring.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.metrics.MetricsEndpoint;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
@@ -56,8 +57,12 @@ public class MonitoringController extends BaseController {
      */
     @RequestMapping(value = "/monitor/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getAllSnapshot() {
-        return prepareResult(monitoringService.getNodesSnapshot(),
-                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm:ss")));
+        if (isCurrentUserAdmin()) {
+            return prepareResult(monitoringService.getNodesSnapshot(),
+                                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm:ss")));
+        } else {
+            return prepareResult("Not authorized", ResponseStatus.FAILED, HttpStatus.FORBIDDEN);
+        }
     }
 
     /**
@@ -65,29 +70,41 @@ public class MonitoringController extends BaseController {
      */
     @RequestMapping(value = "/monitor/master", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getMasterSnapshot() {
-        final RuntimeInfo snapshot = monitoringService.getMasterSnapshot();
-        if (snapshot == null) {
-            return prepareResult("No information available for master node", ResponseStatus.FAILED);
+        if (isCurrentUserAdmin()) {
+            final RuntimeInfo snapshot = monitoringService.getMasterSnapshot();
+            if (snapshot == null) {
+                return prepareResult("No information available for master node", ResponseStatus.FAILED);
+            }
+            return prepareResult(snapshot, LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm:ss")));
+        } else {
+            return prepareResult("Not authorized", ResponseStatus.FAILED, HttpStatus.FORBIDDEN);
         }
-        return prepareResult(snapshot, LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm:ss")));
     }
     /**
      * Returns a snapshot of the resources of a secondary node
      */
     @RequestMapping(value = "/monitor/{host:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNodeSnapshot(@PathVariable("host") String host) {
-        final RuntimeInfo snapshot = monitoringService.getNodeSnapshot(host);
-        if (snapshot == null) {
-            return prepareResult("No information available for node ['" + host + "']", ResponseStatus.FAILED);
+        if (isCurrentUserAdmin()) {
+            final RuntimeInfo snapshot = monitoringService.getNodeSnapshot(host);
+            if (snapshot == null) {
+                return prepareResult("No information available for node ['" + host + "']", ResponseStatus.FAILED);
+            }
+            return prepareResult(snapshot);
+        } else {
+            return prepareResult("Not authorized", ResponseStatus.FAILED, HttpStatus.FORBIDDEN);
         }
-        return prepareResult(snapshot);
     }
     /**
      * Returns the active (i.e. not read) system notifications
      */
     @RequestMapping(value = "/monitor/notification/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getLiveNotifications() {
-        return prepareResult(monitoringService.getLiveNotifications());
+        if (isCurrentUserAdmin()) {
+            return prepareResult(monitoringService.getLiveNotifications(null));
+        } else {
+            return prepareResult(monitoringService.getLiveNotifications(currentUser()));
+        }
     }
     /**
      * Returns the active (i.e. not read) notifications for a user
@@ -100,9 +117,18 @@ public class MonitoringController extends BaseController {
      * Returns a page of notifications for a user
      */
     @RequestMapping(value = "/monitor/notification/{page}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getNotifications(@RequestHeader(value = "user") String userId,
-                                              @PathVariable("page") int page) {
-        return prepareResult(monitoringService.getNotifications(userId, page));
+    public ResponseEntity<ServiceResponse<?>> getNotifications(@PathVariable("page") int page) {
+        return prepareResult(monitoringService.getNotifications(currentUser(), page));
+    }
+
+    @RequestMapping(value = "/monitor/notification/{user}/{page}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getUserNotifications(@PathVariable("user") String userId,
+                                                                   @PathVariable("page") int page) {
+        if (isCurrentUserAdmin() || currentUser().equals(userId)) {
+            return prepareResult(monitoringService.getNotifications(userId, page));
+        } else {
+            return prepareResult("Not authorized", ResponseStatus.FAILED, HttpStatus.FORBIDDEN);
+        }
     }
 
     /**
@@ -111,7 +137,7 @@ public class MonitoringController extends BaseController {
      */
     @RequestMapping(value = "/monitor/notification/ack", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> acknowledgeNotifications(@RequestBody List<Long> notificationIds) {
-        return prepareResult(monitoringService.acknowledgeNotification(notificationIds));
+        return prepareResult(monitoringService.acknowledgeNotification(notificationIds, currentUser()));
     }
 
     /**
@@ -132,7 +158,11 @@ public class MonitoringController extends BaseController {
      */
     @RequestMapping(value = "/monitor/status", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNodesOnlineStatus() {
-        return prepareResult(monitoringService.getNodesOnlineStatus());
+        if (isCurrentUserAdmin()) {
+            return prepareResult(monitoringService.getNodesOnlineStatus());
+        } else {
+            return prepareResult("Not authorized", ResponseStatus.FAILED, HttpStatus.FORBIDDEN);
+        }
     }
 
     @RequestMapping(value = "/emit", method = RequestMethod.GET, produces = "application/json")
