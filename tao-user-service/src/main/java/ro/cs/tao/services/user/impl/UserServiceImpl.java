@@ -17,6 +17,7 @@ package ro.cs.tao.services.user.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.services.interfaces.UserService;
@@ -36,6 +37,9 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserProvider userProvider;
 
+    @Autowired
+    private ExecutionTaskProvider taskProvider;
+
     @Override
     public List<Group> getGroups() {
         return userProvider.listGroups();
@@ -53,7 +57,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserInfo(String username) {
-        return userProvider.getByName(username);
+        final User user = userProvider.getByName(username);
+        user.setActualProcessingQuota(taskProvider.getCPUsForUser(username));
+        return user;
     }
 
     @Override

@@ -69,9 +69,10 @@ public class ProductController extends DataEntityController<EOProduct, String, P
         if (sourceDir == null) {
             return prepareResult("Source directory not found", ResponseStatus.FAILED);
         }
+        final Repository repository = getLocalRepository();
         asyncExecute(() -> {
             try {
-                this.service.inspect(getLocalRepository(), sourceDir);
+                this.service.inspect(repository, sourceDir);
             } catch (Exception e) {
                 error("Inspection of products in %s failed. Reason: %s", sourceDir, e.getMessage());
             }
