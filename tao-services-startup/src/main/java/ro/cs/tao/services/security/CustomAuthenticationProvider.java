@@ -97,12 +97,12 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                                                                                                 jaasAuthenticationToken.getCredentials(),
                                                                                                 new ArrayList<>(jaasAuthenticationToken.getAuthorities()),
                                                                                                 jaasAuthenticationToken.getLoginContext());
-            Token userToken = tokenService.getUserToken(userName);
+            Token userToken = tokenService.getUserToken(user.getId());
             if (userToken == null) {
                 logger.finest(String.format("No previous token for user %s, generating a new one", userName));
                 userToken = !"admin".equals(userName)
-                            ? tokenService.generateNewToken(userName, user.getPassword())
-                            : localTokenProvider.newToken(userName, user.getPassword());
+                            ? tokenService.generateNewToken(user.getId(), user.getPassword())
+                            : localTokenProvider.newToken(user.getId(), user.getPassword());
                 tokenService.store(userToken, authenticationWithToken);
                 logger.finest(String.format("Stored token %s for user %s", userToken.getToken(), userName));
             } else if (tokenService.retrieve(userToken.getToken()) == null) {

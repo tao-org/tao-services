@@ -565,9 +565,9 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
             filePath = uploadPath.resolve(Paths.get(file.getOriginalFilename()).getFileName());
             Files.copy(stream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
-        String userName = principal.getName();
+        String userId = principal.getName();
         String location = filePath.toUri().toString(); //workspacePath.relativize(filePath).toString();
-        List<AuxiliaryData> listData = auxiliaryDataProvider.list(userName, location);
+        List<AuxiliaryData> listData = auxiliaryDataProvider.list(userId, location);
         AuxiliaryData data;
         if (listData != null && listData.size() == 1) {
             data = listData.get(0);
@@ -577,7 +577,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         }
         data.setLocation(location);
         data.setDescription(description);
-        data.setUserId(userName);
+        data.setUserId(userId);
         data.setCreated(LocalDateTime.now());
         data.setModified(data.getCreated());
         auxiliaryDataProvider.save(data);

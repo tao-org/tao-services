@@ -73,9 +73,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
                     final List<Repository> list = workspaceProvider.getByUser(user.getId());
                     if (list == null || list.isEmpty()) {
-                        userProvider.createWorkspaces(userName);
+                        userProvider.createWorkspaces(user.getId());
                     }
-                    Path path = Paths.get(SystemVariable.ROOT.value()).resolve(userName);
+                    Path path = Paths.get(SystemVariable.ROOT.value()).resolve(user.getId());
                     FileUtilities.ensureExists(path);
                     FileUtilities.ensureExists(path.resolve("files"));
                 } catch (Exception e) {
@@ -95,9 +95,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public boolean logout(String authToken) {
         if (tokenService.isValid(authToken)) {
-            final String username = tokenService.retrieve(authToken).getPrincipal().toString();
-            logger.finest("Logging out (" + username + ")...");
-            tokenService.removeUserTokens(username);
+            final String userId = tokenService.retrieve(authToken).getPrincipal().toString();
+            logger.finest("Logging out (" + userId + ")...");
+            tokenService.removeUserTokens(userId);
             return true;
         }
         else {
@@ -107,10 +107,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public Token getNewToken(String userName, String refreshToken) {
-        final User user = userProvider.getByName(userName);
+    public Token getNewToken(String userId, String refreshToken) {
+        final User user = userProvider.get(userId);
         if (user != null && user.getStatus() == UserStatus.ACTIVE) {
-            Token authenticationToken = tokenService.getUserToken(userName);
+            Token authenticationToken = tokenService.getUserToken(userId);
             if (authenticationToken == null) {
                 authenticationToken = tokenService.getFromRefreshToken(refreshToken);
             }
@@ -120,7 +120,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     final Token token = tokenService.generateNewToken(refreshToken);
                     if (token != null) {
                         final Authentication authentication = tokenService.retrieveFromRefreshToken(refreshToken);
-                        tokenService.removeUserTokens(userName);
+                        tokenService.removeUserTokens(userId);
                         tokenService.store(token, authentication);
                         return token;
                     }

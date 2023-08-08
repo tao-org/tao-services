@@ -119,8 +119,8 @@ public abstract class BaseController extends ControllerBase {
         return admins.contains(currentUser());
     }
 
-    protected boolean isAdmin(String userName) {
-        return admins.contains(userName);
+    protected boolean isAdmin(String userId) {
+        return admins.contains(userId);
     }
 
     protected Set<String> getAdministrators() {

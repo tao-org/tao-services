@@ -46,19 +46,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void activateUser(String username) throws PersistenceException {
-        userProvider.activate(username);
+    public void activateUser(String userId) throws PersistenceException {
+        userProvider.activate(userId);
     }
 
     @Override
-    public void resetPassword(String username, ResetPasswordInfo resetInfo) throws PersistenceException {
-        userProvider.resetPassword(username, resetInfo.getResetKey(), resetInfo.getNewPassword());
+    public void resetPassword(String userId, ResetPasswordInfo resetInfo) throws PersistenceException {
+        userProvider.resetPassword(userId, resetInfo.getResetKey(), resetInfo.getNewPassword());
     }
 
     @Override
-    public User getUserInfo(String username) {
-        final User user = userProvider.getByName(username);
-        user.setActualProcessingQuota(taskProvider.getCPUsForUser(username));
+    public User getUserInfo(String userId) {
+        User user = userProvider.get(userId);
+        if (user == null) {
+            user = userProvider.getByName(userId);
+        }
+        user.setActualProcessingQuota(taskProvider.getCPUsForUser(user.getId()));
         return user;
     }
 
@@ -68,12 +71,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserPreference> saveOrUpdateUserPreferences(String username, List<UserPreference> userPreferences) throws PersistenceException {
-        return userProvider.save(username, userPreferences);
+    public List<UserPreference> saveOrUpdateUserPreferences(String userId, List<UserPreference> userPreferences) throws PersistenceException {
+        return userProvider.save(userId, userPreferences);
     }
 
     @Override
-    public List<UserPreference> removeUserPreferences(String username, List<String> userPrefsKeysToDelete) throws PersistenceException {
-        return userProvider.remove(username, userPrefsKeysToDelete);
+    public List<UserPreference> removeUserPreferences(String userId, List<String> userPrefsKeysToDelete) throws PersistenceException {
+        return userProvider.remove(userId, userPrefsKeysToDelete);
     }
 }

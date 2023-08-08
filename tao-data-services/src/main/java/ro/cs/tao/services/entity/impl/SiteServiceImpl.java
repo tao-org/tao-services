@@ -71,8 +71,8 @@ public class SiteServiceImpl
     }
 
     @Override
-    public List<Site> getByUser(String userName) {
-        return this.siteProvider.getByUser(userName);
+    public List<Site> getByUser(String userId) {
+        return this.siteProvider.getByUser(userId);
     }
 
     @Override

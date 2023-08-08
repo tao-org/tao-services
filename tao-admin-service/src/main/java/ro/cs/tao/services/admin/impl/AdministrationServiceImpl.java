@@ -72,13 +72,13 @@ public class AdministrationServiceImpl implements AdministrationService {
     }
 
     @Override
-    public List<User> getUsers(Set<String> userNames) {
-        return userProvider.listUsers(userNames);
+    public List<User> getUsers(Set<String> userIds) {
+        return userProvider.listUsers(userIds);
     }
 
     @Override
-    public User getUserInfo(String username) {
-        return userProvider.getByName(username);
+    public User getUserInfo(String userId) {
+        return userProvider.get(userId);
     }
 
     @Override
@@ -87,13 +87,13 @@ public class AdministrationServiceImpl implements AdministrationService {
     }
 
     @Override
-    public void disableUser(String username, DisableUserInfo additionalDisableActions) throws PersistenceException {
-        userProvider.disable(username);
+    public void disableUser(String userId, DisableUserInfo additionalDisableActions) throws PersistenceException {
+        userProvider.disable(userId);
         // TODO delete private resources or other additional actions
     }
 
     @Override
-    public void deleteUser(String username) throws PersistenceException {
-        userProvider.delete(username);
+    public void deleteUser(String userId) throws PersistenceException {
+        userProvider.delete(userId);
     }
 }

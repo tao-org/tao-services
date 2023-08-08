@@ -397,10 +397,10 @@ public class ContainerController extends DataEntityController<Container, String,
             if (instance == null) {
                 throw new IllegalArgumentException(String.format("[%s] not found", instanceId));
             }
-            if (!currentUser().equals(instance.getUserName()) && !isCurrentUserAdmin()) {
+            if (!currentUser().equals(instance.getUserId()) && !isCurrentUserAdmin()) {
                 prepareResult("Not authorized", HttpStatus.FORBIDDEN);
             }
-            DockerManager.stopInstance(instance.getContainerId(), instance.getUserName());
+            DockerManager.stopInstance(instance.getContainerId(), instance.getUserId());
             return prepareResult("Container [" + instanceId + "] stopped", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
