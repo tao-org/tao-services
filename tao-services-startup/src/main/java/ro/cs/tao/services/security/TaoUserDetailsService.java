@@ -30,11 +30,11 @@ public class TaoUserDetailsService implements UserDetailsService {
     private PersistenceManager persistenceManager;
 
     @Override
-    public UserDetails loadUserByUsername(String userName)
+    public UserDetails loadUserByUsername(String userId)
       throws UsernameNotFoundException {
-        User user = persistenceManager.users().getByName(userName);
+        User user = persistenceManager.users().get(userId);
         if (user == null) {
-            throw new UsernameNotFoundException("Username " + userName + " not found");
+            throw new UsernameNotFoundException("User " + userId + " not found");
         }
         return new SecurityUser(user);
     }

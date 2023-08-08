@@ -107,13 +107,13 @@ public class ComponentServiceImpl
     }
 
     @Override
-    public List<ProcessingComponentInfo> getUserProcessingComponents(String userName) {
-        return ServiceTransformUtils.toProcessingComponentInfos(processingComponentProvider.listUserProcessingComponents(userName));
+    public List<ProcessingComponentInfo> getUserProcessingComponents(String userId) {
+        return ServiceTransformUtils.toProcessingComponentInfos(processingComponentProvider.listUserProcessingComponents(userId));
     }
 
     @Override
-    public List<ProcessingComponentInfo> getUserScriptComponents(String userName) {
-        return ServiceTransformUtils.toProcessingComponentInfos(processingComponentProvider.listUserScriptComponents(userName));
+    public List<ProcessingComponentInfo> getUserScriptComponents(String userId) {
+        return ServiceTransformUtils.toProcessingComponentInfos(processingComponentProvider.listUserScriptComponents(userId));
     }
 
     @Override

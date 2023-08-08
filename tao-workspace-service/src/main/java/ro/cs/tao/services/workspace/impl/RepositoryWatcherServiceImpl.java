@@ -59,7 +59,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
         List<User> activeUsers = userProvider.list(UserStatus.ACTIVE);
         if (activeUsers != null) {
             for (User user : activeUsers) {
-                registerUser(user.getUsername());
+                registerUser(user.getId());
             }
         }
         final WatcherMonitor watcherMonitor = new WatcherMonitor();
@@ -80,42 +80,42 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
     }
 
     @Override
-    public void registerUser(String userName) {
-        if (!SystemPrincipal.instance().getName().equals(userName)) {
+    public void registerUser(String userId) {
+        if (!SystemPrincipal.instance().getName().equals(userId)) {
             final Path rootPath = Paths.get(SystemVariable.ROOT.value());
             try {
-                Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userName));
+                Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userId));
                 walkAndRegisterDirectories(userWorkspace);
-                int usedSpace = getUsedSpace(userName);
-                updateUserInputQuota(userName, usedSpace);
+                int usedSpace = getUsedSpace(userId);
+                updateUserInputQuota(userId, usedSpace);
             } catch (IOException e) {
-                logger.severe(String.format("Failed to watch user workspace [user=%s, reason=%s]%n", userName, e.getMessage()));
+                logger.severe(String.format("Failed to watch user workspace [user=%s, reason=%s]%n", userId, e.getMessage()));
             }
         }
     }
 
     @Override
-    public void unregisterUser(String userName) {
-        if (!SystemPrincipal.instance().getName().equals(userName)) {
+    public void unregisterUser(String userId) {
+        if (!SystemPrincipal.instance().getName().equals(userId)) {
             final Path rootPath = Paths.get(SystemVariable.ROOT.value());
             try {
-                Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userName));
+                Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userId));
                 walkAndUnregisterDirectories(userWorkspace);
             } catch (IOException e) {
-                logger.severe(String.format("Failed to watch user workspace [user=%s, reason=%s]%n", userName, e.getMessage()));
+                logger.severe(String.format("Failed to watch user workspace [user=%s, reason=%s]%n", userId, e.getMessage()));
             }
         }
     }
 
     /**
      * Update the actual input quota of a user
-     * @param userName - the username for which the update needs to be done
+     * @param userId - the user id for which the update needs to be done
      */
-    private void updateUserInputQuota(String userName, int usedSpace) {
-        if (!SystemPrincipal.instance().getName().equals(userName)) {
+    private void updateUserInputQuota(String userId, int usedSpace) {
+        if (!SystemPrincipal.instance().getName().equals(userId)) {
             try { // update user quota
-                userProvider.updateInputQuota(userName, usedSpace);
-                logger.finest(String.format("Input quota update [%s:%dMB]", userName, usedSpace));
+                userProvider.updateInputQuota(userId, usedSpace);
+                logger.finest(String.format("Input quota update [%s:%dMB]", userId, usedSpace));
             } catch (PersistenceException e) {
                 logger.severe(e.getMessage());
             }
@@ -176,12 +176,12 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
     }
 
     /**
-     * Get the user name from the path
+     * Get the user id from the path
      * e.g.: mnt\tao\working_dir\simple should return simple
      * @param path - current given path
      * @return username
      */
-    private String getUserName(String path) {
+    private String getUserId(String path) {
         final StringTokenizer dirTokenizer = new StringTokenizer(path.replace("\\", "/"), "/");
         while (dirTokenizer.hasMoreElements()) {
             String nextDirectory = dirTokenizer.nextToken();
@@ -194,15 +194,15 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
 
     /**
      * Get the used space for a given user workspace
-     * @param userName - name of the user
+     * @param userId - id of the user
      * @return memory in MB taken up by the current user
      * @throws IOException if the folder is not found
      */
-    private int getUsedSpace(String userName) throws IOException {
-        if (SystemPrincipal.instance().getName().equals(userName)) {
+    private int getUsedSpace(String userId) throws IOException {
+        if (SystemPrincipal.instance().getName().equals(userId)) {
             return -1;
         }
-        final Path userWorkspace = Paths.get(SystemVariable.ROOT.value()).resolve(userName);
+        final Path userWorkspace = Paths.get(SystemVariable.ROOT.value()).resolve(userId);
         if (!Files.exists(userWorkspace)) {
             return -1;
         }
@@ -282,10 +282,10 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
             while (true) {
                 try {
                     String entry = eventsQueue.take();
-                    final String userName = getUserName(entry);
-                    if (userName != null) {
-                        final int usedSpace = getUsedSpace(userName);
-                        updateUserInputQuota(userName, usedSpace);
+                    final String userId = getUserId(entry);
+                    if (userId != null) {
+                        final int usedSpace = getUsedSpace(userId);
+                        updateUserInputQuota(userId, usedSpace);
                     } else {
                         logger.warning("Cannot determine user from entry '" + entry + "'");
                     }

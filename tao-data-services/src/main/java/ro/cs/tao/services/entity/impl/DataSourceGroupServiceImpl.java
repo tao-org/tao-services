@@ -111,8 +111,8 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     }
 
     @Override
-    public List<DataSourceComponentGroup> getUserDataSourceComponentGroups(String userName) {
-        return groupProvider.listByUser(userName);
+    public List<DataSourceComponentGroup> getUserDataSourceComponentGroups(String userId) {
+        return groupProvider.listByUser(userId);
     }
 
     @Override
@@ -221,19 +221,19 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         return tagProvider.list(TagType.DATASOURCE);
     }
 
-    private DataSourceComponentGroup createGroup(String userName, String label) throws PersistenceException {
+    private DataSourceComponentGroup createGroup(String userId, String label) throws PersistenceException {
         DataSourceComponentGroup group = new DataSourceComponentGroup();
         group.setId(UUID.randomUUID().toString());
-        group.setUserId(userName);
+        group.setUserId(userId);
         group.setLabel(label);
         group.setVersion("1.0");
         group.setDescription(group.getLabel());
-        group.setAuthors(userName);
-        group.setCopyright("(C) " + userName);
+        group.setAuthors(userId);
+        group.setCopyright("(C) " + userId);
         group.setNodeAffinity("Any");
         group = groupProvider.save(group);
         logger.finest(String.format("Created data source group [userName=%s, label=%s, id=%s",
-                                    userName, label, group.getId()));
+                                    userId, label, group.getId()));
         return group;
     }
 

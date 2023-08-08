@@ -107,8 +107,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
-    public List<DataSourceComponent> getUserDataSourceComponents(String userName) {
-        return dataSourceComponentProvider.getUserDataSourceComponents(userName);
+    public List<DataSourceComponent> getUserDataSourceComponents(String userId) {
+        return dataSourceComponentProvider.getUserDataSourceComponents(userId);
     }
 
     @Override
@@ -384,8 +384,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
-    public List<DataSourceComponent> getProductSets(String userName) throws PersistenceException {
-        return this.dataSourceComponentProvider.getProductSets(userName);
+    public List<DataSourceComponent> getProductSets(String userId) throws PersistenceException {
+        return this.dataSourceComponentProvider.getProductSets(userId);
     }
 
     @Override

@@ -16,7 +16,6 @@
 package ro.cs.tao.services.auth.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -31,9 +30,6 @@ import ro.cs.tao.services.model.auth.AuthInfo;
 import ro.cs.tao.utils.StringUtilities;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.StringTokenizer;
 
 /**
  * @author Oana H.
@@ -107,13 +103,13 @@ public class AuthenticationController extends BaseController {
      * @param refreshToken  The refresh token to be used
      */
     @RequestMapping(value = "/refresh", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> refresh(@RequestParam(name = "user") String userName,
+    public ResponseEntity<ServiceResponse<?>> refresh(@RequestParam(name = "user") String userId,
                                                       @RequestParam(name = "token") String refreshToken,
                                                       HttpServletRequest request) {
         boolean success = false;
         final String remoteAddr = request.getRemoteAddr();
         try {
-            final Token newToken = authenticationService.getNewToken(userName, refreshToken);
+            final Token newToken = authenticationService.getNewToken(userId, refreshToken);
             if (newToken != null) {
                 HttpHeaders headers = new HttpHeaders();
                 headers.add("Set-Cookie", "refreshToken=" + newToken.getRefreshToken() + ";Max-Age=" + newToken.getExpiresInSeconds());
@@ -127,14 +123,14 @@ public class AuthenticationController extends BaseController {
             return prepareResult(ex.getMessage(), ResponseStatus.FAILED);
         } finally {
             if (success) {
-                trace("Token refreshed [user: %s, addr: %s]", userName, remoteAddr);
+                trace("Token refreshed [user: %s, addr: %s]", userId, remoteAddr);
             } else {
-                warn("Token refresh failed [user: %s, addr: %s]", userName, remoteAddr);
+                warn("Token refresh failed [user: %s, addr: %s]", userId, remoteAddr);
             }
         }
     }
 
-    private String getUsernameFromBasicAuthHeader(String authHeader) throws UnsupportedEncodingException {
+    /*private String getUsernameFromBasicAuthHeader(String authHeader) throws UnsupportedEncodingException {
         String username = null;
         if (authHeader != null) {
             StringTokenizer st = new StringTokenizer(authHeader);
@@ -150,6 +146,6 @@ public class AuthenticationController extends BaseController {
             }
         }
         return username;
-    }
+    }*/
 
 }

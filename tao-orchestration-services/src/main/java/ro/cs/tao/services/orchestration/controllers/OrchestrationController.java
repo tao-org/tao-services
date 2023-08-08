@@ -191,14 +191,14 @@ public class OrchestrationController extends BaseController {
     /**
      * Returns the running jobs of a specific user.
      * Only an administrator can call perform this operation.
-     * @param userName  The user account name
+     * @param userId  The user identifier
      */
-    @RequestMapping(value = "/running/jobs/{user}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getRunningJobsForUser(@PathVariable("user") String userName) {
-        if (!currentUser().equals(userName) && !isCurrentUserAdmin()) {
+    @RequestMapping(value = "/running/jobs/{userId}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getRunningJobsForUser(@PathVariable("userId") String userId) {
+        if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
-        List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs(userName);
+        List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs(userId);
         if (summaries == null) {
             summaries = new ArrayList<>();
         }
@@ -230,14 +230,14 @@ public class OrchestrationController extends BaseController {
 
     /**
      * Returns the queued jobs of a specific user.
-     * @param userName  The user account name
+     * @param userId  The user identifier
      */
-    @RequestMapping(value = "/queued/jobs/{user}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getQueuedJobsForUser(@PathVariable("user") String userName) {
-        if (!currentUser().equals(userName) && !isCurrentUserAdmin()) {
+    @RequestMapping(value = "/queued/jobs/{userId}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getQueuedJobsForUser(@PathVariable("userId") String userId) {
+        if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
-        Queue<ExecutionJobSummary> summaries = orchestrationService.getQueuedJobs(userName);
+        Queue<ExecutionJobSummary> summaries = orchestrationService.getQueuedJobs(userId);
         if (summaries == null) {
             summaries = new ArrayDeque<>();
         }
@@ -245,16 +245,16 @@ public class OrchestrationController extends BaseController {
     }
 
     @RequestMapping(value = "/queued/jobs", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> moveJobInQueue(@RequestParam(name = "user", required = false) String userName,
+    public ResponseEntity<ServiceResponse<?>> moveJobInQueue(@RequestParam(name = "user", required = false) String userId,
                                                              @RequestParam("jobId") long jobId,
                                                              @RequestParam("moveUp") boolean moveUp) {
-        if (!currentUser().equals(userName) && !isCurrentUserAdmin()) {
+        if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         if (moveUp) {
-            orchestrationService.moveJobUp(jobId, userName);
+            orchestrationService.moveJobUp(jobId, userId);
         } else {
-            orchestrationService.moveJobDown(jobId, userName);
+            orchestrationService.moveJobDown(jobId, userId);
         }
         return prepareResult(String.format("Job %d moved %s one position in queue", jobId, moveUp ? "up" : "down"),
                              ResponseStatus.SUCCEEDED);
@@ -298,11 +298,11 @@ public class OrchestrationController extends BaseController {
      * If the user is not specified:
      *  - for an administrator it returns the summaries of all finished jobs
      *  - for a user it returns the summaries of all his/her finished jobs
-     * @param userName  The user account name
+     * @param userId  The user account identifier
      */
-    @RequestMapping(value = {"/history","/history/{user}"}, method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getJobsHistory(@PathVariable("user") String userName) {
-        List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(userName != null ? userName : (isCurrentUserAdmin() ? null : currentUser()));
+    @RequestMapping(value = {"/history","/history/{userId}"}, method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getJobsHistory(@PathVariable("userId") String userId) {
+        List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(userId != null ? userId : (isCurrentUserAdmin() ? null : currentUser()));
         if (summaries == null) {
             summaries = new ArrayList<>();
         }
@@ -312,15 +312,15 @@ public class OrchestrationController extends BaseController {
     /**
      * Clears the job history for a user.
      * If the user is not specified it clears the jobs of the current user
-     * @param userName  The user account name
+     * @param userId  The user identifier
      */
-    @RequestMapping(value = {"/history", "/history/{user}"}, method = RequestMethod.DELETE, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> clearJobsHistory(@PathVariable("user") String userName) {
-        if (!currentUser().equals(userName) && !isCurrentUserAdmin()) {
+    @RequestMapping(value = {"/history", "/history/{userId}"}, method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> clearJobsHistory(@PathVariable("userId") String userId) {
+        if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         try {
-            orchestrationService.clearJobHistory(userName != null ? userName : currentUser());
+            orchestrationService.clearJobHistory(userId != null ? userId : currentUser());
             return prepareResult("Job history deleted", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);

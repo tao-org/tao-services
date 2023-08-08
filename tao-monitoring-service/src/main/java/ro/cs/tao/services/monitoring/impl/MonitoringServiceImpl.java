@@ -172,8 +172,8 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
-    public void deleteAll(String userName) {
-        messageProvider.clear(userName);
+    public void deleteAll(String userId) {
+        messageProvider.clear(userId);
     }
 
     @Override

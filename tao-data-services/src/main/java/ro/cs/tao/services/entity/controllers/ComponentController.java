@@ -70,13 +70,13 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listUserComponents(@RequestParam("type") ProcessingComponentType componentType) {
         ResponseEntity<ServiceResponse<?>> response;
-        String userName = currentUser();//SessionStore.currentContext().getPrincipal().getName();
+        String userId = currentUser();//SessionStore.currentContext().getPrincipal().getName();
         switch (componentType) {
             case EXECUTABLE:
-                response = prepareResult(service.getUserProcessingComponents(userName));
+                response = prepareResult(service.getUserProcessingComponents(userId));
                 break;
             case SCRIPT:
-                response = prepareResult(service.getUserScriptComponents(userName));
+                response = prepareResult(service.getUserScriptComponents(userId));
                 break;
             default:
                 response = prepareResult("Unknown component type", ResponseStatus.FAILED);

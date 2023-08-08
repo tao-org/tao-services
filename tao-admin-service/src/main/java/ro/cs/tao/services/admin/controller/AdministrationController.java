@@ -37,10 +37,7 @@ import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.mail.MailSender;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -78,7 +75,7 @@ public class AdministrationController extends BaseController {
                 //send email with activation link
                 final MailSender mailSender = new MailSender();
                 final ConfigurationProvider configManager = ConfigurationManager.getInstance();
-                final String activationEndpointUrl = configManager.getValue("tao.services.base") + "/user/activate/" + userInfo.getUsername();
+                final String activationEndpointUrl = configManager.getValue("tao.services.base") + "/user/activate/" + userInfo.getId();
                 final String userFullName = userInfo.getFirstName() + " " + userInfo.getLastName();
                 final String activationEmailContent = constructEmailContentForAccountActivation(userFullName, activationEndpointUrl);
                 mailSender.sendMail(userInfo.getEmail(), "TAO - User activation required", activationEmailContent, null);
@@ -146,16 +143,16 @@ public class AdministrationController extends BaseController {
      * Returns the detail of a user account
      * @param username  The user account name
      */
-    @RequestMapping(value = "/users/{username}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("username") String username) {
+    @RequestMapping(value = "/users/{userId}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
-        if (StringUtilities.isNullOrEmpty(username)) {
+        if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
-            final User userInfo = adminService.getUserInfo(username);
+            final User userInfo = adminService.getUserInfo(userId);
             if (userInfo != null) {
                 return prepareResult(userInfo);
             } else {
@@ -170,13 +167,17 @@ public class AdministrationController extends BaseController {
      * Updates the user account information
      * @param updatedUserInfo   The user account information
      */
-    @RequestMapping(value = "/users/{username}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> updateUserInfo(@RequestBody User updatedUserInfo) {
+    @RequestMapping(value = "/users/{userId}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> updateUserInfo(@PathVariable("userId") String userId,
+                                                             @RequestBody User updatedUserInfo) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         if (updatedUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
+        }
+        if (!Objects.equals(updatedUserInfo.getId(), userId)) {
+            return prepareResult("Invalid identifier");
         }
         try {
             final User userInfo = adminService.updateUserInfo(updatedUserInfo);
@@ -204,18 +205,18 @@ public class AdministrationController extends BaseController {
      * @param username  The user account name
      * @param additionalDisableActions  Additional actions to be performed
      */
-    @RequestMapping(value = "/users/{username}/disable", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> disableUser(@PathVariable("username") String username, @RequestBody DisableUserInfo additionalDisableActions) {
+    @RequestMapping(value = "/users/{userId}/disable", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> disableUser(@PathVariable("userId") String userId, @RequestBody DisableUserInfo additionalDisableActions) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
-        if (StringUtilities.isNullOrEmpty(username) || additionalDisableActions == null) {
+        if (StringUtilities.isNullOrEmpty(userId) || additionalDisableActions == null) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
             // disable user
-            adminService.disableUser(username, additionalDisableActions);
-            return prepareResult(String.format("%s was disabled", username), ResponseStatus.SUCCEEDED);
+            adminService.disableUser(userId, additionalDisableActions);
+            return prepareResult(String.format("%s was disabled", userId), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             return handleException(ex);
         }
@@ -225,21 +226,21 @@ public class AdministrationController extends BaseController {
      * Deletes a user account
      * @param username  The user account name
      */
-    @RequestMapping(value = "/users/{username}", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("username") String username) {
+    @RequestMapping(value = "/users/{userId}", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("userId") String userId) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
-        if (StringUtilities.isNullOrEmpty(username)) {
+        if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
-            adminService.deleteUser(username);
+            adminService.deleteUser(userId);
             // TODO delete private resources
             /*if (deletePrivateResources){
 
             }*/
-            return prepareResult(String.format("User %s was deleted", username), ResponseStatus.SUCCEEDED);
+            return prepareResult(String.format("User %s was deleted", userId), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             return handleException(ex);
         }

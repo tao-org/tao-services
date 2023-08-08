@@ -131,8 +131,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public int purgeJobs(String user) throws ExecutionException {
-        return Orchestrator.getInstance().purgeJobs(user);
+    public int purgeJobs(String userId) throws ExecutionException {
+        return Orchestrator.getInstance().purgeJobs(userId);
     }
 
     @Override
@@ -146,7 +146,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             List<ExecutionTaskSummary> runningTasks = taskList.stream().filter(e -> statuses.contains(e.getTaskStatus())).findAny().stream().collect(Collectors.toList());
             for (ExecutionTaskSummary summary: runningTasks) {
                 ExecutionTask task = job.getTasks().stream().filter(t -> t.getId() == summary.getTaskId()).findFirst().get();
-                summary.setUserName(job.getUserId());
+                summary.setUserId(job.getUserId());
                 summary.setComponentType(task instanceof DataSourceExecutionTask ? "ds" : "exec");
                 summary.setJobName(task.getJob().getName());
                 summary.setUsedCPU(task.getUsedCPU());
@@ -165,22 +165,22 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<ExecutionJobSummary> getRunningJobs(String userName) {
+    public List<ExecutionJobSummary> getRunningJobs(String userId) {
         final List<ExecutionJobSummary> summaries = new ArrayList<>();
         final Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
-        final List<ExecutionJob> jobs = jobProvider.list(userName, statuses);
+        final List<ExecutionJob> jobs = jobProvider.list(userId, statuses);
         List<ExecutionTaskSummary> tasksStatus;
         for (ExecutionJob job : jobs) {
             tasksStatus = getTasksStatus(job.getId());
             ExecutionJobSummary summary = new ExecutionJobSummary();
             summary.setId(job.getId());
             summary.setJobName(job.getName());
-            summary.setUser(job.getUserId());
+            summary.setUserId(job.getUserId());
             if (job.getWorkflowId() != null) {
-                final String workflowName = tasksStatus.size() > 0 ?
-                        tasksStatus.get(0).getWorkflowName() :
-                        workflowService.getFullDescriptor(job.getWorkflowId()).getName();
+                final String workflowName = !tasksStatus.isEmpty() ?
+                                            tasksStatus.get(0).getWorkflowName() :
+                                            workflowService.getFullDescriptor(job.getWorkflowId()).getName();
                 summary.setWorkflowName(workflowName);
             }
             summary.setJobStatus(job.getExecutionStatus());
@@ -198,12 +198,12 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<ExecutionJobSummary> getCompletedJobs(String userName) {
+    public List<ExecutionJobSummary> getCompletedJobs(String userId) {
         final List<ExecutionJobSummary> summaries = new ArrayList<>();
         final Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.SUSPENDED, ExecutionStatus.DONE,
                                      ExecutionStatus.FAILED, ExecutionStatus.CANCELLED);
-        final List<ExecutionJob> jobs = jobProvider.list(userName, statuses);
+        final List<ExecutionJob> jobs = jobProvider.list(userId, statuses);
         List<ExecutionTaskSummary> tasksStatus;
         for (ExecutionJob job : jobs) {
             tasksStatus = getTasksStatus(job.getId());
@@ -216,7 +216,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             }
             summary.setId(job.getId());
             summary.setJobName(job.getName());
-            summary.setUser(job.getUserId());
+            summary.setUserId(job.getUserId());
             summary.setJobStatus(job.getExecutionStatus());
             summary.setJobStart(job.getStartTime());
             summary.setJobEnd(job.getEndTime());
@@ -241,7 +241,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                     summary.setId(job.getId());
                     summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
                     summary.setJobName(job.getName());
-                    summary.setUser(job.getUserId());
+                    summary.setUserId(job.getUserId());
                     summary.setJobStatus(job.getExecutionStatus());
                     summary.setJobStart(job.getStartTime());
                     summary.setJobEnd(job.getEndTime());
@@ -251,7 +251,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         } else {
                 final List<User> users = userProvider.list(UserStatus.ACTIVE);
                 for (User user : users) {
-                    results.put(user.getUsername(), new ArrayDeque<>(createFakeJobs(user.getUsername(), 5)));
+                    results.put(user.getId(), new ArrayDeque<>(createFakeJobs(user.getId(), 5)));
                 }
             }
         return results;
@@ -268,7 +268,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 summary.setId(job.getId());
                 summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
                 summary.setJobName(job.getName());
-                summary.setUser(job.getUserId());
+                summary.setUserId(job.getUserId());
                 summary.setJobStatus(job.getExecutionStatus());
                 summary.setJobStart(job.getStartTime());
                 summary.setJobEnd(job.getEndTime());
@@ -277,65 +277,65 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         } else {
             final List<User> users = userProvider.list(UserStatus.ACTIVE);
             for (User user : users) {
-                results.addAll(createFakeJobs(user.getUsername(), 5));
+                results.addAll(createFakeJobs(user.getId(), 5));
             }
         }
         return results;
     }
 
     @Override
-    public Queue<ExecutionJobSummary> getQueuedJobs(String userName) {
+    public Queue<ExecutionJobSummary> getQueuedJobs(String userId) {
         final Queue<ExecutionJobSummary> results = new ArrayDeque<>();
         if (!ExecutionConfiguration.developmentModeEnabled()) {
-            final List<Long> jobs = Orchestrator.getInstance().getUserQueuedJobs(userName);
+            final List<Long> jobs = Orchestrator.getInstance().getUserQueuedJobs(userId);
             final List<ExecutionJob> list = jobProvider.list(jobs);
             for (ExecutionJob job : list) {
                 ExecutionJobSummary summary = new ExecutionJobSummary();
                 summary.setId(job.getId());
                 summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
                 summary.setJobName(job.getName());
-                summary.setUser(job.getUserId());
+                summary.setUserId(job.getUserId());
                 summary.setJobStatus(job.getExecutionStatus());
                 summary.setJobStart(job.getStartTime());
                 summary.setJobEnd(job.getEndTime());
                 results.offer(summary);
             }
         } else {
-            results.addAll(createFakeJobs(userName, 5));
+            results.addAll(createFakeJobs(userId, 5));
         }
         return results;
     }
 
     @Override
-    public void moveJobUp(long jobId, String userName) {
-        if (userName == null || userName.isBlank()) {
+    public void moveJobUp(long jobId, String userId) {
+        if (userId == null || userId.isBlank()) {
             Orchestrator.getInstance().moveJobToHead(jobId);
         } else {
-            Orchestrator.getInstance().moveJobToHead(userName, jobId);
+            Orchestrator.getInstance().moveJobToHead(userId, jobId);
         }
     }
 
     @Override
-    public void moveJobDown(long jobId, String userName) {
-        if (userName == null || userName.isBlank()) {
+    public void moveJobDown(long jobId, String userId) {
+        if (userId == null || userId.isBlank()) {
             Orchestrator.getInstance().moveJobToTail(jobId);
         } else {
-            Orchestrator.getInstance().moveJobToTail(userName, jobId);
+            Orchestrator.getInstance().moveJobToTail(userId, jobId);
         }
     }
 
     @Override
-    public void deleteJobFromQueue(String userName, long jobId) throws PersistenceException {
-        Orchestrator.getInstance().removeJob(userName, jobId);
+    public void deleteJobFromQueue(String userId, long jobId) throws PersistenceException {
+        Orchestrator.getInstance().removeJob(userId, jobId);
         jobProvider.delete(jobId);
     }
 
     @Override
-    public void clearJobHistory(String userName) throws PersistenceException {
+    public void clearJobHistory(String userId) throws PersistenceException {
         final Set<ExecutionStatus> statuses = new HashSet<>();
         Collections.addAll(statuses, ExecutionStatus.SUSPENDED, ExecutionStatus.DONE,
                            ExecutionStatus.FAILED, ExecutionStatus.CANCELLED);
-        final List<ExecutionJob> jobs = jobProvider.list(userName, statuses);
+        final List<ExecutionJob> jobs = jobProvider.list(userId, statuses);
         for (ExecutionJob job : jobs) {
             List<ExecutionTask> tasks = job.getTasks();
             for (ExecutionTask task : tasks) {
@@ -412,16 +412,16 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         return 0;
     }
 
-    private List<ExecutionJobSummary> createFakeJobs(String user, int count) {
+    private List<ExecutionJobSummary> createFakeJobs(String userId, int count) {
         final List<ExecutionJobSummary> jobs = new ArrayList<>();
         final Random random = new Random();
         for (int i = 0; i < count; i++) {
-            String suffix = user.substring(0, 2) + count;
+            String suffix = userId.substring(0, 2) + count;
             ExecutionJobSummary summary = new ExecutionJobSummary();
             summary.setId(random.nextLong());
             summary.setWorkflowName("Fake workflow " + suffix);
             summary.setJobName("Fake job " + suffix);
-            summary.setUser(user);
+            summary.setUserId(userId);
             summary.setJobStatus(ExecutionStatus.UNDETERMINED);
             summary.setJobStart(LocalDateTime.now().minusHours(count - i));
             jobs.add(summary);
