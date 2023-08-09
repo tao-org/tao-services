@@ -30,7 +30,7 @@ public class ContainerRegistrar extends BaseLifeCycle {
                                                            .stream()
                                                            .map(Container::getName)
                                                            .collect(Collectors.toSet());
-        if (installers != null && installers.size() > 0) {
+        if (installers != null && !installers.isEmpty()) {
             installers.removeIf(i -> {
                 final String[] tokens = i.getContainerName().split("/");
                 return dbContainers.contains(tokens[tokens.length - 1]);
@@ -61,7 +61,7 @@ public class ContainerRegistrar extends BaseLifeCycle {
             logger.fine("No docker image plugin found");
         }
         final List<SingletonContainer> containers = TopologyManager.getInstance().getStandaloneContainers();
-        if (containers != null && containers.size() > 0) {
+        if (containers != null && !containers.isEmpty()) {
             logger.finest(() -> String.format("Found %d docker standalone containers: %s", containers.size(),
                                               containers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.joining(","))));
             for (SingletonContainer container : containers) {
@@ -84,7 +84,7 @@ public class ContainerRegistrar extends BaseLifeCycle {
     @Override
     public void onShutdown() {
         final List<SingletonContainer> containers = TopologyManager.getInstance().getStandaloneContainers();
-        if (containers != null && containers.size() > 0) {
+        if (containers != null && !containers.isEmpty()) {
             for (SingletonContainer container : containers) {
                 try {
                     logger.fine(() -> String.format("Attempting to stop container %s", container.getContainerName()));
