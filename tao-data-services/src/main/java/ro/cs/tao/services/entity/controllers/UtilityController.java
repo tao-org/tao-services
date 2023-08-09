@@ -15,6 +15,7 @@ import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.async.Parallel;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +34,10 @@ public class UtilityController extends BaseController {
                                  @RequestParam(name = "password", required = false) String password) {
         ResponseEntity<?> serviceResponse;
         try {
+            if (StringUtilities.isNullOrEmpty(url) || "undefined".equalsIgnoreCase(url)) {
+                throw new IOException("Invalid url");
+            }
+            URI uri = URI.create(url);
             String sitePath = ConfigurationManager.getInstance().getValue("site.path");
             if (sitePath == null || sitePath.isEmpty()) {
                 throw new IOException("Cannot determine site path");
@@ -46,7 +51,7 @@ public class UtilityController extends BaseController {
                 throw new IOException("File could not be downloaded");
             }
             serviceResponse = ResponseEntity.ok(Paths.get(sitePath).relativize(file).toString().replace('\\', '/'));
-        } catch (IOException e) {
+        } catch (Exception e) {
             serviceResponse = new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return serviceResponse;
@@ -67,7 +72,7 @@ public class UtilityController extends BaseController {
             final String user = request.getUser();
             final String password = request.getPassword();
             final List<Variable> urls = request.getUrls();
-            if (urls == null || urls.size() == 0) {
+            if (urls == null || urls.isEmpty()) {
                 throw new IOException("Empty list");
             }
             final int size = urls.size();
