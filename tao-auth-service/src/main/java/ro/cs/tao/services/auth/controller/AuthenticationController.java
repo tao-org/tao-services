@@ -99,7 +99,7 @@ public class AuthenticationController extends BaseController {
 
     /**
      * Refreshes the authentication token for a user
-     * @param userName      The user login
+     * @param userId      The user identifier
      * @param refreshToken  The refresh token to be used
      */
     @RequestMapping(value = "/refresh", method = RequestMethod.POST, produces = "application/json")
@@ -119,7 +119,6 @@ public class AuthenticationController extends BaseController {
                 return prepareResult(null, HttpStatus.BAD_REQUEST);
             }
         } catch (Exception ex) {
-            //return handleException(ex);
             return prepareResult(ex.getMessage(), ResponseStatus.FAILED);
         } finally {
             if (success) {
@@ -129,23 +128,4 @@ public class AuthenticationController extends BaseController {
             }
         }
     }
-
-    /*private String getUsernameFromBasicAuthHeader(String authHeader) throws UnsupportedEncodingException {
-        String username = null;
-        if (authHeader != null) {
-            StringTokenizer st = new StringTokenizer(authHeader);
-            if (st.hasMoreTokens()) {
-                String basic = st.nextToken();
-                if (basic.equalsIgnoreCase("Basic")) {
-                    String credentials = new String(Base64.decodeBase64(st.nextToken()), StandardCharsets.UTF_8);
-                    int separatorPosition = credentials.indexOf(":");
-                    if (separatorPosition != -1) {
-                        username = credentials.substring(0, separatorPosition).trim();
-                    }
-                }
-            }
-        }
-        return username;
-    }*/
-
 }
