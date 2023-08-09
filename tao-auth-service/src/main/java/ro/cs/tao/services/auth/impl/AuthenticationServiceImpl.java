@@ -61,7 +61,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public AuthInfo login(String userName, String password) {
 
-        Token authenticationToken = tokenService.getUserToken(userProvider.getId(userName));
+        final String userId = userProvider.getId(userName);
+        Token authenticationToken = tokenService.getUserToken(userId);
         if (authenticationToken != null) {
             logger.finest("Token " + authenticationToken.getToken());
 
@@ -83,13 +84,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                                                 user.getId(), ExceptionUtils.getStackTrace(e)));
                 }
                 // retrieve user groups and send them as profiles
-                return new AuthInfo(true, authenticationToken.getToken(),
+                return new AuthInfo(true, userId, authenticationToken.getToken(),
                                     authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
                                     user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
             }
         }
         // unauthorized
-        return new AuthInfo(false, null, null, -1, null);
+        return new AuthInfo(false, null, null, null, -1, null);
     }
 
     @Override
