@@ -57,6 +57,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 @RestController
@@ -256,9 +257,12 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
             final Repository workspace = getOwnedWorkspace(currentUser(), workspaceId);
             final StorageService service = StorageServiceFactory.getInstance(workspace);
-            final List<FileObject> list = service.listFiles(relativeFolder, null, lastItem, 1);
-            // remove items that were submitted to the deletion queue but not yet deleted
-            list.removeIf(f -> deletionQueue.contains(f.getRelativePath()));
+            // exclude items that were submitted to the deletion queue but not yet deleted
+            final Set<String> exclusions = deletionQueue.stream()
+                                                        .filter(e -> e.getKeyOne().equals(workspace))
+                                                        .map(Tuple::getKeyTwo)
+                                                        .collect(Collectors.toSet());
+            final List<FileObject> list = service.listFiles(relativeFolder, null, lastItem, 1, exclusions);
             if (workspace.root().equals(relativeFolder) && list.isEmpty()) {
                 list.add(service.emptyFolderItem());
             }

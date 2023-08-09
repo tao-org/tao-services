@@ -39,6 +39,7 @@ import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 
+import javax.validation.constraints.NotNull;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.nio.file.*;
@@ -444,6 +445,117 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     @Override
+    public List<FileObject> listFiles(String fromPath, Set<String> exclusions, String lastItem, int depth, Set<Path> excludedPaths) throws IOException {
+        Repository repository = repository();
+        final Path workspaceRoot = Paths.get(repository.root());
+        final Path root = Paths.get(repository.resolve(fromPath));
+        //final int depth = 10;//root.getNameCount() - workspaceRoot.getNameCount() == 1 ? 1 : 10;
+        final List<Path> list = list(root, depth, excludedPaths);
+        if (exclusions != null) {
+            ListIterator<Path> iterator = list.listIterator();
+            int nc;
+            while (iterator.hasNext()) {
+                Path current = iterator.next();
+                for (String exc : exclusions) {
+                    Path excPath = Paths.get(exc);
+                    nc = excPath.getNameCount();
+                    if (current.getNameCount() < nc) {
+                        continue;
+                    }
+                    if (current.startsWith(exc)) {
+                        iterator.remove();
+                    }
+                }
+            }
+        }
+        list.removeIf(p -> p.endsWith(".aux.xml"));
+        final String[] pathArray = list.stream().map(p -> p.toUri().toString()).toArray(String[]::new);
+        final Map<Path, Map<String, String>> auxAttributes = new HashMap<>();
+        final List<AuxiliaryData> auxData = auxiliaryDataProvider.list(repository.getUserId(), pathArray);
+        for (AuxiliaryData auxiliaryData : auxData) {
+            auxAttributes.put(FileUtilities.toPath(auxiliaryData.getLocation()),
+                              auxiliaryData.toAttributeMap());
+        }
+        final List<EOProduct> productList = productProvider.getByLocation(pathArray);
+        final Map<Path, Map<String, String>> productAttributes = new HashMap<>();
+        for (EOProduct product : productList) {
+            String entryPoint = product.getEntryPoint();
+            if (entryPoint != null) {
+                int idx = entryPoint.lastIndexOf('.');
+                if (idx > 0 && SIMPLE_PRODUCT_EXTENSIONS.contains(entryPoint.substring(idx))) {
+                    productAttributes.put(FileUtilities.toPath(product.getLocation()).resolve(entryPoint),
+                                          product.toAttributeMap());
+                } else {
+                    productAttributes.put(FileUtilities.toPath(product.getLocation()),
+                                          product.toAttributeMap());
+                }
+            } else {
+                productAttributes.put(FileUtilities.toPath(product.getLocation()),
+                                      product.toAttributeMap());
+            }
+        }
+        final List<VectorData> vectors = vectorDataProvider.getByLocation(pathArray);
+        final Map<Path, Map<String, String>> vectorAttributes = new HashMap<>();
+        for (VectorData vectorData : vectors) {
+            vectorAttributes.put(FileUtilities.toPath(vectorData.getLocation()),
+                                 vectorData.toAttributeMap());
+        }
+        final List<FileObject> fileObjects = new ArrayList<>();
+        if (repository.isRoot(fromPath)) {
+            fileObjects.add(repositoryRootNode(repository));
+        }
+        final int filesNameIndex = root.getNameCount() + 1;
+        long size;
+        LocalDateTime lastModified;
+        Map<String, String> currentAttributeMap = null;
+        for (Path realPath : list) {
+            //Path realPath = realRoot.resolve(path);
+            try {
+                BasicFileAttributes attributes = Files.readAttributes(realPath, BasicFileAttributes.class);
+                size = attributes.size();
+                lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(attributes.lastModifiedTime().toMillis()),
+                                                       ZoneId.systemDefault());
+            } catch (IOException e) {
+                size = -1;
+                lastModified = null;
+            }
+            final boolean isInFiles = realPath.getNameCount() > filesNameIndex && realPath.getName(filesNameIndex).toString().equals("files");
+            final Path path = workspaceRoot.relativize(realPath);
+            String pathToRecord = path.toString().replace("\\", "/");
+            if (Files.isDirectory(realPath)) {
+                pathToRecord += "/";
+            }
+            final FileObject fileObject = new FileObject(PROTOCOL, pathToRecord, Files.isDirectory(realPath), size);
+            fileObject.setLastModified(lastModified);
+            if (isInFiles) {
+                if (auxAttributes.containsKey(realPath)) {
+                    fileObject.setAttributes(auxAttributes.get(realPath));
+                }
+            } else {
+                final Path absPath = realPath.toAbsolutePath();
+                if (productAttributes.containsKey(absPath)) {
+                    currentAttributeMap = productAttributes.get(absPath);
+                    fileObject.setProductName(currentAttributeMap.get("name"));
+                    currentAttributeMap.remove("name");
+                    //currentAttributeMap.remove("formatType");
+                    currentAttributeMap.remove("width");
+                    currentAttributeMap.remove("height");
+                    currentAttributeMap.remove("pixelType");
+                    currentAttributeMap.remove("sensorType");
+                    currentAttributeMap.remove("size");
+                    fileObject.setAttributes(currentAttributeMap);
+                } else if (productAttributes.containsKey(absPath.getParent()) && currentAttributeMap != null) {
+                    fileObject.setAttributes(currentAttributeMap);
+                } else if (vectorAttributes.containsKey(absPath)) {
+                    fileObject.setAttributes(vectorAttributes.get(absPath));
+                }
+            }
+            fileObjects.add(fileObject);
+        }
+        return fileObjects;
+    }
+
+    @Override
     public List<FileObject> getJobResults(long jobId) {
         return getResults(null, jobId);
     }
@@ -597,10 +709,38 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     private List<Path> list(Path path, int depth) throws IOException {
-        try (Stream<Path> stream = Files.walk(path, depth, FileVisitOption.FOLLOW_LINKS)) {
-            return stream.filter(p -> !p.equals(path) && !p.toString().endsWith(".png") && !p.toString().endsWith(".png.aux.xml"))
-                    .sorted().collect(Collectors.toList());
-        }
+        return list(path, depth, Collections.emptySet());
+    }
+
+    private List<Path> list(Path path, int depth, @NotNull Set<Path> exclusions) throws IOException {
+        final List<Path> results = new ArrayList<>();
+        Files.walkFileTree(path, EnumSet.of(FileVisitOption.FOLLOW_LINKS), depth, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                if (exclusions.contains(dir)) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                } else {
+                    if (!dir.equals(path)) {
+                        results.add(dir);
+                    }
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                if (exclusions.contains(file)) {
+                    return FileVisitResult.CONTINUE;
+                } else {
+                    if (!file.toString().endsWith(".png") && !file.toString().endsWith(".png.aux.xml")) {
+                        results.add(file);
+                    }
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        results.sort(Comparator.naturalOrder());
+        return results;
     }
 
     private void deleteFolder(Path folder) throws IOException {

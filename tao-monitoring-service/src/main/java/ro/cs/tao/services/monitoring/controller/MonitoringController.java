@@ -15,26 +15,39 @@
  */
 package ro.cs.tao.services.monitoring.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.metrics.MetricsEndpoint;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.datasource.DataSourceTopic;
+import ro.cs.tao.execution.model.ExecutionStatus;
+import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
+import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.messaging.progress.ActivityProgress;
+import ro.cs.tao.messaging.progress.DownloadProgress;
+import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.security.UserPrincipal;
+import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.MonitoringService;
 import ro.cs.tao.services.monitoring.beans.Metric;
+import ro.cs.tao.utils.StringUtilities;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -166,10 +179,22 @@ public class MonitoringController extends BaseController {
     }
 
     @RequestMapping(value = "/emit", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> emit() {
-        final String message = "Test " + System.currentTimeMillis();
-        Messaging.send(currentUser(), Topic.INFORMATION.getCategory(), message);
-        return prepareResult(message);
+    public ResponseEntity<ServiceResponse<?>> emit(@RequestParam(name = "principal", required = false) String principal,
+                                                   @RequestParam("topic") String topic) {
+        try {
+            if (StringUtilities.isNullOrEmpty(topic)) {
+                throw new IllegalArgumentException("[topic] is empty");
+            }
+            Principal user = StringUtilities.isNullOrEmpty(principal) ? currentPrincipal() : new UserPrincipal(principal);
+            final Message message = createMessage(user, topic);
+            if (message == null) {
+                throw new IllegalArgumentException("Topic '" + topic + "' not known");
+            }
+            Messaging.send(user, topic, message, false);
+            return prepareResult(message);
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
 
     @RequestMapping(value = "/metrics", method = RequestMethod.GET, produces = "application/json")
@@ -186,4 +211,40 @@ public class MonitoringController extends BaseController {
                                         .collect(Collectors.toList()));
     }
 
+    private Message createMessage(Principal principal, String topic) throws JsonProcessingException {
+        Message message = null;
+        if (Topic.INFORMATION.value().equals(topic)) {
+            message = Message.create(principal.getName(), "Test", "Info " + System.currentTimeMillis(), false);
+        } else if (Topic.WARNING.value().equals(topic)) {
+            message = Message.create(principal.getName(), "Test", "Warn " + System.currentTimeMillis(), false);
+        } else if (Topic.ERROR.value().equals(topic)) {
+            message = Message.create(principal.getName(), "Test", "Error " + System.currentTimeMillis(), false);
+        } else if (Topic.SYSTEM.value().equals(topic)) {
+            message = Message.create(SystemPrincipal.instance().getName(), "Test", "System " + System.currentTimeMillis(), false);
+        } else if (Topic.RESOURCES.value().equals(topic)) {
+            final String master = NodeManager.getInstance().getMasterNode().getNode().getId();
+            final RuntimeInfo nodeSnapshot = NodeManager.getInstance().getNodeSnapshot(master);
+            message = Message.create(SystemPrincipal.instance().getName(), master, JsonMapper.instance().writeValueAsString(nodeSnapshot), false);
+        } else if (Topic.EXECUTION.value().equals(topic)) {
+            message = Message.create(principal.getName(), "task id", ExecutionStatus.RUNNING.name(), false);
+        } else if (Topic.TOPOLOGY.value().equals(topic)) {
+            message = new Message();
+            message.setTopic(Topic.TOPOLOGY.value());
+            message.setPersistent(false);
+            message.addItem("node", "node_name");
+            message.addItem("operation", "added");
+            message.addItem("user", "node_user");
+            message.addItem("password", "node_pwd");
+        } else if (Topic.TRANSFER_PROGRESS.value().equals(topic)) {
+            message = new ActivityProgress("Test " + System.currentTimeMillis(), new Random().nextDouble());
+        } else if (DataSourceTopic.PRODUCT_PROGRESS.value().equals(topic)) {
+            Random random = new Random();
+            message = new DownloadProgress("name", random.nextDouble(), random.nextDouble() * 10.0, 1);
+        }
+        if (message != null) {
+            message.setTopic(topic);
+            message.setUserId(principal.getName());
+        }
+        return message;
+    }
 }
