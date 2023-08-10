@@ -242,6 +242,7 @@ public class MonitoringController extends BaseController {
             message = new DownloadProgress("name", random.nextDouble(), random.nextDouble() * 10.0, 1);
         }
         if (message != null) {
+            message.setId(System.currentTimeMillis());
             message.setTopic(topic);
             message.setUserId(principal.getName());
         }
