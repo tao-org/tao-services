@@ -738,6 +738,12 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                 }
                 return FileVisitResult.CONTINUE;
             }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                logger.warning(exc.getMessage());
+                return FileVisitResult.CONTINUE;
+            }
         });
         results.sort(Comparator.naturalOrder());
         return results;

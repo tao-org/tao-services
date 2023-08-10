@@ -7,6 +7,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Notifiable;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.services.bridge.spring.SpringContextBridge;
@@ -203,6 +204,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
             for (String topic : topics) {
                 subscribe(topic);
             }
+            Messaging.subscribe(this, Topic.getCategoryPattern(Topic.PROGRESS));
+            Messaging.subscribe(this, Topic.getCategoryPattern(Topic.TRANSFER_PROGRESS));
         }
 
 
