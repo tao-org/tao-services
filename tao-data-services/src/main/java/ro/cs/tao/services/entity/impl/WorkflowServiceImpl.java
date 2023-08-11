@@ -54,6 +54,7 @@ import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.services.utils.WorkflowUtilities;
 import ro.cs.tao.snap.xml.GraphParser;
+import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.Tuple;
 import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
@@ -221,14 +222,14 @@ public class WorkflowServiceImpl
         if (entity == null) {
             throw new PersistenceException(String.format("Workflow with id '%s' not found", id));
         }
-        if (tags != null && tags.size() > 0) {
+        if (tags != null && !tags.isEmpty()) {
             Set<String> existingTags = tagProvider.list(TagType.WORKFLOW).stream()
                     .map(Tag::getText).collect(Collectors.toSet());
             tags.stream().filter(t -> !existingTags.contains(t)).forEach(t -> {
                 try {
                     tagProvider.save(new Tag(TagType.WORKFLOW, t));
                 } catch (PersistenceException e) {
-                    e.printStackTrace();
+                    logger.warning(ExceptionUtils.getStackTrace(logger, e));
                 }
             });
             entity.setTags(tags);
@@ -243,7 +244,7 @@ public class WorkflowServiceImpl
         if (entity == null) {
             throw new PersistenceException(String.format("Workflow with id '%s' not found", id));
         }
-        if (tags != null && tags.size() > 0) {
+        if (tags != null && !tags.isEmpty()) {
             List<String> entityTags = entity.getTags();
             if (entityTags != null) {
                 entityTags.removeAll(tags);
@@ -271,7 +272,7 @@ public class WorkflowServiceImpl
         WorkflowUtilities.ensureUniqueName(workflow, nodeDescriptor);
         List<String> validationErrors = new ArrayList<>();
         validateNode(workflow, nodeDescriptor, validationErrors);
-        if (validationErrors.size() > 0) {
+        if (!validationErrors.isEmpty()) {
             throw new PersistenceException(String.format("Node contains errors: [%s]",
                                                          String.join(",", validationErrors)));
         }
@@ -295,7 +296,7 @@ public class WorkflowServiceImpl
         WorkflowUtilities.ensureUniqueName(workflow, nodeDescriptor);
         List<String> validationErrors = new ArrayList<>();
         validateNode(workflow, nodeDescriptor, validationErrors);
-        if (validationErrors.size() > 0) {
+        if (!validationErrors.isEmpty()) {
             throw new PersistenceException(String.format("Node contains errors: [%s]",
                                                          String.join(",", validationErrors)));
         }
@@ -304,7 +305,7 @@ public class WorkflowServiceImpl
 
     @Override
     public List<WorkflowNodeDescriptor> updateNodes(long workflowId, List<WorkflowNodeDescriptor> nodeDescriptors) throws PersistenceException {
-        if (nodeDescriptors == null || nodeDescriptors.size() == 0) {
+        if (nodeDescriptors == null || nodeDescriptors.isEmpty()) {
             throw new PersistenceException("Cannot update an empty list");
         }
         List<WorkflowNodeDescriptor> updatedNodes = new ArrayList<>();
@@ -316,7 +317,7 @@ public class WorkflowServiceImpl
 
     @Override
     public void updateNodesPositions(long workflowId, Map<Long, float[]> positions) throws PersistenceException {
-        if (positions != null && positions.size() > 0) {
+        if (positions != null && !positions.isEmpty()) {
             /*List<WorkflowNodeDescriptor> nodes = workflowNodeProvider.list(positions.keySet());
             for (WorkflowNodeDescriptor node : nodes) {
                 if (!node.getWorkflow().getId().equals(workflowId)) {
@@ -354,7 +355,7 @@ public class WorkflowServiceImpl
         nodeDescriptor.setWorkflow(workflow);
         // delete any incoming links the node may have
         Set<ComponentLink> links = nodeDescriptor.getIncomingLinks();
-        if (links != null && links.size() > 0) {
+        if (links != null && !links.isEmpty()) {
             ComponentLink[] linkArray = new ComponentLink[links.size()];
             linkArray = links.toArray(linkArray);
             for (ComponentLink link : linkArray) {
@@ -1169,7 +1170,7 @@ public class WorkflowServiceImpl
             errors.add("[node.name] there is another node with the same name");
         }
         final Set<ComponentLink> incomingLinks = node.getIncomingLinks();
-        if (incomingLinks != null && incomingLinks.size() > 0) {
+        if (incomingLinks != null && !incomingLinks.isEmpty()) {
             if (incomingLinks.stream()
                     .noneMatch(l -> l.getOutput().getParentId().equals(node.getComponentId()))) {
                 errors.add(String.format("[%s.incomingLinks] contains some invalid node identifiers",
@@ -1202,12 +1203,12 @@ public class WorkflowServiceImpl
                 } else {
                     List<ParameterValue> customValues = node.getCustomValues();
                     // Validate custom parameter values for the attached component
-                    if (customValues != null && customValues.size() > 0) {
+                    if (customValues != null && !customValues.isEmpty()) {
                         List<ParameterDescriptor> descriptors = null;
                         if (component instanceof ProcessingComponent) {
                             descriptors = ((ProcessingComponent) component).getParameterDescriptors();
                         }
-                        if (descriptors != null && descriptors.size() > 0) {
+                        if (descriptors != null && !descriptors.isEmpty()) {
                             final List<ParameterDescriptor> descriptorList = new ArrayList<>(descriptors);
                             component.getTargets().forEach(t -> {
                                 descriptorList.addAll(t.toParameter());
@@ -1235,7 +1236,7 @@ public class WorkflowServiceImpl
                         }
                     }
                     // Validate the compatibilities of the attached component with the declared incoming components
-                    if (incomingLinks != null && incomingLinks.size() > 0) {
+                    if (incomingLinks != null && !incomingLinks.isEmpty()) {
                         List<TaoComponent> linkedComponents = new ArrayList<>();
                         WorkflowNodeDescriptor nodeBefore;
                         for (ComponentLink link : incomingLinks) {

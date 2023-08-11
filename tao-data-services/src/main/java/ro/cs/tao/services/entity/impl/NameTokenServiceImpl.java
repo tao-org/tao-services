@@ -86,7 +86,7 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
     public Map<String, String> getNameTokens(String sensor) {
         final Map<String, String> tokens = new LinkedHashMap<>();
         List<NamingRule> rules = namingRuleProvider.listBySensor(sensor);
-        if (rules != null && rules.size() > 0) {
+        if (rules != null && !rules.isEmpty()) {
             NamingRule first = rules.get(0);
             final List<NameToken> tokenList = first.getTokens();
             tokenList.sort(Comparator.comparingInt(NameToken::getMatchingGroupNumber));
@@ -144,7 +144,7 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
             return;
         }
         try {
-            NameExpressionParser parser = new NameExpressionParser(entity);
+            new NameExpressionParser(entity);
         } catch (Exception e) {
             errors.add("[regex] " + e.getMessage());
         }

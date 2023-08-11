@@ -423,7 +423,8 @@ public class DataSourceController extends BaseController {
                 List<String> productPaths = results.stream().map(EOProduct::getLocation).collect(Collectors.toList());
                 if (!productPaths.isEmpty()) {
                     try {
-                        for (int i = 0; i < productPaths.size(); i++) {
+                        final int size = productPaths.size();
+                        for (int i = 0; i < size; i++) {
                             String path = FileUtilities.toUnixPath(productPaths.get(i));
                             if (!path.startsWith("/")) {
                                 path = localWorkspace.resolve(path);

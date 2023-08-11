@@ -149,12 +149,12 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                     if (queries[i].getQuery() == null) {
                         errors.add(String.format("Empty query on position %d", i + 1));
                     }
-                    if (queries[i].getProducts() == null && queries[i].getProducts().size() == 0) {
+                    if (queries[i].getProducts() == null && queries[i].getProducts().isEmpty()) {
                         errors.add(String.format("Empty product names list on position %d", i + 1));
                     }
                 }
             }
-            if (errors.size() > 0) {
+            if (!errors.isEmpty()) {
                 result = prepareResult(String.join(";", errors), ResponseStatus.FAILED);
             } else {
                 DataSourceComponentGroup group =
@@ -211,7 +211,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
             String dataSource = request.getDataSource();
             String description = request.getLabel();
             Principal currentUser = SessionStore.currentContext().getPrincipal();
-            if (products != null && products.size() > 0) {
+            if (products != null && !products.isEmpty()) {
                 return prepareResult(service.createForProducts(products, dataSource, request.getQueryId(), description, currentUser));
             } else {
                 return prepareResult("Product list not provided", ResponseStatus.FAILED);
@@ -224,7 +224,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     @RequestMapping(value = "/create/names", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody DataSourceNameRequest request) {
         try {
-            if (request == null || request.getProducts() == null || request.getProducts().size() == 0) {
+            if (request == null || request.getProducts() == null || request.getProducts().isEmpty()) {
                 throw new IllegalArgumentException("[products] Body is empty");
             }
             final List<Variable> products = request.getProducts();
@@ -244,7 +244,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                 names = entry.getValue();
                 prods = this.productService.getByNames(names.toArray(new String[0]));
                 long addedQuota = 0;
-                if (prods != null && prods.size() > 0) {
+                if (prods != null && !prods.isEmpty()) {
                 	// check if, by adding the selected products, the quota will not be reached
                     for (EOProduct p: prods) {
                     	if (p.getRefs().contains(currentUser.getName()) || 
@@ -270,7 +270,9 @@ public class DataSourceComponentController extends DataEntityController<DataSour
                     components.add(service.createForLocations(names, entry.getKey(), dataSource, null, request.getLabel(), currentUser));
                 }
             }
-            return components.size() > 0 ? prepareResult(components) : prepareResult("No component was created", ResponseStatus.FAILED);
+            return components.isEmpty()
+                   ? prepareResult("No component was created", ResponseStatus.FAILED)
+                   : prepareResult(components);
         } catch (PersistenceException | QuotaException e) {
             return handleException(e);
         }
@@ -280,7 +282,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     public ResponseEntity<ServiceResponse<?>> createProductSet(@RequestBody ProductSetRequest request) {
         try {
             List<String> productPaths;
-            if (request == null || (productPaths = request.getProductPaths()) == null || productPaths.size() == 0) {
+            if (request == null || (productPaths = request.getProductPaths()) == null || productPaths.isEmpty()) {
                 throw new IllegalArgumentException("[productPaths] Body is empty");
             }
             final StorageService repositoryService = getLocalRepositoryService();
