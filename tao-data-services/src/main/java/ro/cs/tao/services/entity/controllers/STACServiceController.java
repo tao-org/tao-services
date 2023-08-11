@@ -1,6 +1,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +41,7 @@ import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/stac")
+@Tag(name = "STAC Components", description = "Operations related to STAC components management")
 public class STACServiceController extends BaseController {
     @Autowired
     private ContainerService containerService;
@@ -54,6 +56,10 @@ public class STACServiceController extends BaseController {
 
     private final Logger logger = Logger.getLogger(STACServiceController.class.getName());
 
+    /**
+     * Creates a new STAC component (client). The new component will act as a TAO data source.
+     * @param bean  Structure defining connection and authentication information for the remote STAC service
+     */
     @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> createSTACService(@RequestBody WebServiceBean bean) {
         try {
@@ -116,6 +122,10 @@ public class STACServiceController extends BaseController {
         }
     }
 
+    /**
+     * Updates a STAC component definition.
+     * @param bean  Structure defining connection and authentication information for the remote STAC service
+     */
     @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<?> updateSTACService(@RequestBody WebServiceBean bean) {
         try {
@@ -142,7 +152,7 @@ public class STACServiceController extends BaseController {
                 }
             }
             final List<Application> applications = container.getApplications();
-            if (applications != null && applications.size() > 0) { // Create the corresponding data sources
+            if (applications != null && !applications.isEmpty()) { // Create the corresponding data sources
                 DataSourceManager.getInstance().registerDataSource(new STACSource(container.getName()));
                 for (Application application : applications) {
                     DataSourceComponent component = new DataSourceComponent(application.getPath(), container.getName());
@@ -185,6 +195,10 @@ public class STACServiceController extends BaseController {
         }
     }
 
+    /**
+     * Removes a STAC component.
+     * @param id    The component identifier
+     */
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
     public ResponseEntity<?> deleteSTACService(@PathVariable("id") String id) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -206,6 +220,11 @@ public class STACServiceController extends BaseController {
         return responseEntity;
     }
 
+    /**
+     * Inspects the remote STAC service for the available collections
+     * @param endpoint  The remote STAC endpoint (URL)
+     * @param authentication    If needed, authentication information for the remote service
+     */
     @RequestMapping(value = "/collections", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> inspectSTACService(@RequestParam(name = "remoteAddress") String endpoint,
                                                 @RequestParam(name = "authentication", required = false) String authentication) {

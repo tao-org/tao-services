@@ -1,5 +1,6 @@
 package ro.cs.tao.services.workspace.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -62,6 +63,7 @@ import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/files/")
+@Tag(name = "Workspaces", description = "Operations related to file operations on user workspaces")
 public class StorageController extends DataEntityController<EOProduct, String, ProductService> {
 
     private static final String tokenJSON = "{ \"repository\":\"%s\", \"fileName\":%s, \"folder\":%s, \"user\":\"%s\" }";
@@ -567,6 +569,14 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         }
     }
 
+    /**
+     * Retrieves blocks of text from a file.
+     *
+     * @param repositoryId  The identifier of the repository holding the file
+     * @param file      The file path, relative to the root of the repository
+     * @param lines     (optional) How many lines of text to retrieve. Default is 20.
+     * @param skipLines (optional) The offset (i.e. line number) to start from. Default is 0.
+     */
     @GetMapping(value = "/read", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> readAsText(@RequestParam("repositoryId") String repositoryId,
                                                          @RequestParam("file") String file,

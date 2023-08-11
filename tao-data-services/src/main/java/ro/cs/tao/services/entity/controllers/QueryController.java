@@ -16,6 +16,7 @@
 
 package ro.cs.tao.services.entity.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,44 +27,53 @@ import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.QueryService;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/datasource/query")
+@Tag(name = "Saved Queries", description = "Operations related to the management of saved queries")
 public class QueryController extends BaseController {
 
     @Autowired
     private QueryService queryService;
 
+    /**
+     * Returns a list of saved queries according to the given filters.
+     * @param userId    The user identifier
+     * @param sensor    The sensor (or collection) name
+     * @param dataSource    The data source name
+     * @param workflowNodeId    The workflow node identifier
+     */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getQuery(@RequestParam(name = "userId", required = false) Optional<String> userId,
+    public ResponseEntity<ServiceResponse<?>> getQuery(@RequestParam("userId") String userId,
                                                        @RequestParam(name = "sensor", required = false) Optional<String> sensor,
                                                        @RequestParam(name = "dataSource", required = false) Optional<String> dataSource,
                                                        @RequestParam(name = "nodeId", required = false) Optional<Long> workflowNodeId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            if (!userId.isPresent() && !sensor.isPresent() && !dataSource.isPresent() && !workflowNodeId.isPresent()) {
+            if (StringUtilities.isNullOrEmpty(userId) && sensor.isEmpty() && dataSource.isEmpty() && workflowNodeId.isEmpty()) {
                 responseEntity = prepareResult(queryService.list());
             } else {
-                if (!userId.isPresent()) {
+                if (StringUtilities.isNullOrEmpty(userId)) {
                     responseEntity = prepareResult("Missing userId", ResponseStatus.FAILED);
                 } else {
                     if (sensor.isPresent() && dataSource.isPresent() && workflowNodeId.isPresent()) {
-                        responseEntity = prepareResult(queryService.getQuery(userId.get(), sensor.get(),
+                        responseEntity = prepareResult(queryService.getQuery(userId, sensor.get(),
                                                                              dataSource.get(), workflowNodeId.get()));
                     } else if (sensor.isPresent() && dataSource.isPresent()) {
-                        responseEntity = prepareResult(queryService.getQueries(userId.get(), sensor.get(), dataSource.get()));
+                        responseEntity = prepareResult(queryService.getQueries(userId, sensor.get(), dataSource.get()));
                     } else if (sensor.isPresent()) {
-                        responseEntity = prepareResult(queryService.getQueriesBySensor(userId.get(), sensor.get()));
+                        responseEntity = prepareResult(queryService.getQueriesBySensor(userId, sensor.get()));
                     } else if (dataSource.isPresent()) {
-                        responseEntity = prepareResult(queryService.getQueriesByDataSource(userId.get(), dataSource.get()));
+                        responseEntity = prepareResult(queryService.getQueriesByDataSource(userId, dataSource.get()));
                     } else if (workflowNodeId.isPresent()) {
-                        responseEntity = prepareResult(queryService.getQueries(userId.get(), workflowNodeId.get()));
+                        responseEntity = prepareResult(queryService.getQueries(userId, workflowNodeId.get()));
                     } else {
-                        responseEntity = prepareResult(queryService.getQueries(userId.get()));
+                        responseEntity = prepareResult(queryService.getQueries(userId));
                     }
                 }
             }
