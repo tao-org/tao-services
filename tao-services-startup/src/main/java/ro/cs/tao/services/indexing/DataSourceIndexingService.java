@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.simple.JSONObject;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.simplify.DouglasPeuckerSimplifier;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.datasource.*;
 import ro.cs.tao.datasource.db.DatabaseSource;
@@ -18,16 +17,16 @@ import ro.cs.tao.serialization.GeometryAdapter;
 import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.utils.DateUtils;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -105,9 +104,9 @@ public class DataSourceIndexingService {
                     } catch (Exception e) {
                         logger.warning(String.format("Unable to retrieve %s - %s in data_sources_index table [%s]", dataSource.getId(), key.toString(), e.getMessage()));
                     }
-                    boolean unfinised = existingDataSources.stream().filter(e -> e.getParameters() == null ? true : e.getParameters().entrySet().stream().filter(p -> p.getValue() != null).count() > 0).count() > 0;
-                    if (existingDataSources.size() == 0 || existingDataSources.get(0).getToYear() >= today.getYear() || unfinised) {
-                        LinkedHashMap<String, String> parameters = (existingDataSources.size() > 0 && existingDataSources.get(0).getParameters() != null) ? existingDataSources.get(0).getParameters() : new LinkedHashMap<>();
+                    boolean unfinised = existingDataSources.stream().filter(e -> e.getParameters() == null || e.getParameters().entrySet().stream().filter(p -> p.getValue() != null).count() > 0).count() > 0;
+                    if (existingDataSources.isEmpty() || existingDataSources.get(0).getToYear() >= today.getYear() || unfinised) {
+                        LinkedHashMap<String, String> parameters = (!existingDataSources.isEmpty() && existingDataSources.get(0).getParameters() != null) ? existingDataSources.get(0).getParameters() : new LinkedHashMap<>();
                         JSONObject parametersJson = new JSONObject();
                         parametersJson.putAll(parameters);
                         Map<String, String> coveragePeriod = retrieveTemporalCoverageBounds(((CollectionDescription) value).getTemporalCoverage());
@@ -132,7 +131,7 @@ public class DataSourceIndexingService {
                                 stmtDs.setString(2, key.toString());
                                 stmtDs.setInt(3, fromYear);
                                 stmtDs.setInt(4, toYear);
-                                stmtDs.setObject(5, existingDataSources.size() > 0 ? today : null);
+                                stmtDs.setObject(5, !existingDataSources.isEmpty() ? today : null);
                                 stmtDs.execute();
                                 ResultSet generatedKeys = stmtDs.getGeneratedKeys();
                                 if (generatedKeys.next()) {
@@ -160,7 +159,7 @@ public class DataSourceIndexingService {
                                             try {
                                                 q.setPageSize(PAGE_SIZE);
                                                 q.setMaxResults(MAX_RECORDS);
-                                                if (existingDataSources.size() > 0 && existingDataSources.get(0).getParameters() != null) {
+                                                if (!existingDataSources.isEmpty() && existingDataSources.get(0).getParameters() != null) {
                                                     if (existingDataSources.get(0).getParameters().get(paramKey) != null) {
                                                         pageNumber = Integer.parseInt(existingDataSources.get(0).getParameters().get(paramKey));
                                                     } else if (existingDataSources.get(0).getParameters().containsKey(paramKey)) {
@@ -171,7 +170,7 @@ public class DataSourceIndexingService {
                                                 logger.info(String.format("%s time period %s - %s", paramKey, beginDate, endDate));
                                                 q.setPageNumber(pageNumber);
                                                 q.setQueryDelay(5000);
-                                                while ((page = q.execute()).size() > 0) {
+                                                while (!(page = q.execute()).isEmpty()) {
                                                     try (Connection sqlConnection = source.getConnection();
                                                          PreparedStatement stmtDsProps = sqlConnection.prepareStatement(insertIndexedDsStatement);
                                                          PreparedStatement stmtDsUpdate = sqlConnection.prepareStatement(updateDsParamsStatement)) {
@@ -243,7 +242,7 @@ public class DataSourceIndexingService {
                                             //used to determine what parameter will be iterated (is set in the JSON file)
                                             String paramKey = q.getParameter(dataSourceDescr.getParamsPrefix()) != null ? q.getParameter(dataSourceDescr.getParamsPrefix()).getValue().toString() : q.getSensorName();
                                             beginDate = LocalDateTime.of(fromYear, 1, 1, 0, 0, 0);
-                                            if (existingDataSources.size() > 0 && existingDataSources.get(0).getParameters() != null) {
+                                            if (!existingDataSources.isEmpty() && existingDataSources.get(0).getParameters() != null) {
                                                 if (existingDataSources.get(0).getParameters().containsKey(paramKey)) {
                                                     beginDate = existingDataSources.get(0).getLastRun();
                                                 }
@@ -252,7 +251,7 @@ public class DataSourceIndexingService {
                                             logger.info(String.format("%s time period %s - %s", paramKey, beginDate, endDate));
                                             q.setMaxResults(2000);
                                             List<EOProduct> productList = q.execute();
-                                            if (productList.size() > 0) {
+                                            if (!productList.isEmpty()) {
                                                 try (Connection sqlConnection = source.getConnection();
                                                      PreparedStatement stmtDsProps = sqlConnection.prepareStatement(insertIndexedDsStatement);
                                                      PreparedStatement stmtDsUpdate = sqlConnection.prepareStatement(updateDsParamsStatement)) {
@@ -316,7 +315,7 @@ public class DataSourceIndexingService {
                     }
                 }
             }
-            if (parametersToIterate.size() > 0) {
+            if (!parametersToIterate.isEmpty()) {
                 for (Map.Entry<String, ArrayList<String>> entity : parametersToIterate.entrySet()) {
                     for (String entityValue : entity.getValue()) {
                         DataQuery tempQuery = query.clone();

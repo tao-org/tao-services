@@ -270,7 +270,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
                 productProvider.deleteIfNotReferenced(componentId, product);
             }
         }
-        if (candidatesToSave.size() > 0) {
+        if (!candidatesToSave.isEmpty()) {
             ProductPersister persister = new ProductPersister();
             persister.handle(candidatesToSave);
         }

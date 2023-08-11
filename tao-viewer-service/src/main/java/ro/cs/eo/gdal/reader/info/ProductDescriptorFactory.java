@@ -41,7 +41,7 @@ public class ProductDescriptorFactory {
             @Override
             public ProductDescriptor apply(Path path) {
                 List<FormatDescriptor> descriptors = instance.descriptors.stream().filter(d -> d.matches(path.toString())).collect(Collectors.toList());
-                if (descriptors.size() > 0) {
+                if (!descriptors.isEmpty()) {
                     descriptors.sort(Comparator.comparingInt(FormatDescriptor::getPriority));
                     for (FormatDescriptor descriptor : descriptors) {
                         try {

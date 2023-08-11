@@ -134,7 +134,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         } else {
             // Maybe it's linked to a raster product
             final List<EOProduct> products = productProvider.getByLocation(filePath.toUri().toString());
-            if (products != null && products.size() > 0) {
+            if (products != null && !products.isEmpty()) {
                 for (EOProduct product : products) {
                     try {
                         productProvider.delete(product);
@@ -146,7 +146,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
             } else {
                 // If not, maybe it's linked to a vector product
                 final List<VectorData> vectorProducts = vectorDataProvider.getByLocation(filePath.toUri().toString());
-                if (vectorProducts != null && vectorProducts.size() > 0) {
+                if (vectorProducts != null && !vectorProducts.isEmpty()) {
                     for (VectorData product : vectorProducts) {
                         try {
                             vectorDataProvider.delete(product);
@@ -214,7 +214,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
             String destinationURI = destinationPath.toUri().toString();
             List<EOProduct> products = productProvider.getByLocation(sourcePath.toUri().toString());
 
-            if (products == null || products.size() == 0) { // we might have vector products
+            if (products == null || products.isEmpty()) { // we might have vector products
                 List<VectorData> vectorProducts = vectorDataProvider.getByLocation(sourcePath.toUri().toString());
                 if (vectorProducts.size() > 1) {
                     throw new IOException("Cannot move vector products");

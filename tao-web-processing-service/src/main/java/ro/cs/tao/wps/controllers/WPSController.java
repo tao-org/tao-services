@@ -233,7 +233,7 @@ public class WPSController extends BaseController {
                 component.setOwner(currentUser());
                 component.setVersion("WPS 1.0");
                 final Map<String, List<Parameter>> parameters = processInfo.getParameters();
-                if (parameters.size() > 0) {
+                if (!parameters.isEmpty()) {
                     Iterator<Map.Entry<String, List<Parameter>>> iterator = parameters.entrySet().iterator();
                     List<Parameter> params = new ArrayList<>();
                     while (iterator.hasNext()) {

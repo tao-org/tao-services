@@ -86,7 +86,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		try {
 			products = productProvider.list();
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.warning(e.getMessage());
 		}
 		return products;
 	}
@@ -376,7 +376,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 	private EOProduct inspectProduct (MetadataInspector inspector, Principal principal, Path targetPath) throws Exception {
 		List<EOProduct> list = productProvider.getByLocation(targetPath.toAbsolutePath().toUri().toString());
 		EOProduct product = null;
-		if (list.size() == 0) {
+		if (list.isEmpty()) {
 			MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
 			if (metadata != null) {
 				product = metadata.toProductDescriptor(targetPath);

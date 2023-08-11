@@ -149,7 +149,7 @@ public class TopologyServiceImpl
         if (entity == null) {
             throw new PersistenceException(String.format("Node with id '%s' not found", id));
         }
-        if (tags != null && tags.size() > 0) {
+        if (tags != null && !tags.isEmpty()) {
             Set<String> existingTags = tagProvider.list(TagType.TOPOLOGY_NODE).stream()
                     .map(Tag::getText).collect(Collectors.toSet());
             for (String value : tags) {
@@ -169,7 +169,7 @@ public class TopologyServiceImpl
         if (entity == null) {
             throw new PersistenceException(String.format("Node with id '%s' not found", id));
         }
-        if (tags != null && tags.size() > 0) {
+        if (tags != null && !tags.isEmpty()) {
             List<String> entityTags = entity.getTags();
             if (entityTags != null) {
                 for (String value : tags) {
