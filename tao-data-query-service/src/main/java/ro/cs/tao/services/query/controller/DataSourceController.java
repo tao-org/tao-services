@@ -84,7 +84,7 @@ public class DataSourceController extends BaseController {
 
     private static final Pattern s2TilePattern = Pattern.compile("\\d{2}\\w{3}");
     private static final Pattern l8TilePattern = Pattern.compile("\\d{6}");
-    private static final List<DataSourceDescriptorBean> cachedDataSources = new ArrayList<>();
+    //private static final List<DataSourceDescriptorBean> cachedDataSources = new ArrayList<>();
 
     @Autowired
     private DataSourceService dataSourceService;
@@ -100,12 +100,12 @@ public class DataSourceController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> getRegisteredSources() {
         //if (cachedDataSources.isEmpty()) {
         //    synchronized (cachedDataSources) {
-        List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
-        if (instances == null) {
-            instances = new ArrayList<>();
-        }
-                //cachedDataSources.addAll(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()));
-        return prepareResult(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()));
+                List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
+                if (instances == null) {
+                    instances = new ArrayList<>();
+                }
+        //        cachedDataSources.addAll(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()));
+                return prepareResult(instances.stream().map(DataSourceDescriptorBean::new).collect(Collectors.toList()));
         //    }
         //}
         //return prepareResult(cachedDataSources, 60);
@@ -152,7 +152,7 @@ public class DataSourceController extends BaseController {
      * @param sensorName    The sensor (or collection) name
      */
     @RequestMapping(value = "/sensor/{name}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getDatasourcesForSensor(@PathVariable("name") String sensorName) {
+    public ResponseEntity<ServiceResponse<?>> getDataSourcesForSensor(@PathVariable("name") String sensorName) {
         List<String> sources = dataSourceService.getDatasourcesForSensor(sensorName);
         if (sources == null) {
             sources = new ArrayList<>();
@@ -329,7 +329,7 @@ public class DataSourceController extends BaseController {
                         try {
                             value = dataSourceService.count(subQuery);
                         } catch (SerializationException e) {
-                            e.printStackTrace();
+                            warn(e.getMessage());
                             value = 0;
                         }
                         variable.setValue(String.valueOf(value));
@@ -343,7 +343,7 @@ public class DataSourceController extends BaseController {
                         Variable variable = result.get();
                         counts.put(variable.getKey(), variable.getValue());
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        warn(e.getMessage());
                     }
                 }
                 LinkedHashMap<String, String> sorted = new LinkedHashMap<>();
@@ -435,7 +435,8 @@ public class DataSourceController extends BaseController {
                         }
                         final String label = StringUtilities.isNullOrEmpty(query.getLabel()) ? results.get(0).getProductType() : query.getLabel();
                         dataSourceComponentService.createForLocations(productPaths, label, currentPrincipal());
-                        Messaging.send(currentUser(), Topic.INFORMATION.getCategory(), "Product set [" + label + "] was added to the user workspace");
+                        Messaging.send(currentUser(), Topic.INFORMATION.getCategory(),
+                                       "Product set [" + label + "] was added to the user [" + userId + "] workspace");
                     } catch (Exception e) {
                         warn(e.getMessage());
                     }

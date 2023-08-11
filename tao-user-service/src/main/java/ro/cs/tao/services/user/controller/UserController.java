@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.user.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/user")
+@Tag(name = "User Management", description = "Operations related to user management")
 public class UserController extends BaseController {
 
     @Autowired
@@ -61,11 +63,18 @@ public class UserController extends BaseController {
     @Autowired
     private RepositoryService repositoryService;
 
+    /**
+     * Returns the groups of users.
+     */
     @RequestMapping(value = "/groups/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getGroups() {
         return prepareResult(userService.getGroups());
     }
 
+    /**
+     * Activates the given user account.
+     * @param userId    The user account identifier
+     */
     @RequestMapping(value = "/activate/{userId}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> activate(@PathVariable("userId") String userId) {
         if (StringUtilities.isNullOrEmpty(userId)) {
@@ -106,11 +115,19 @@ public class UserController extends BaseController {
         }
     }
 
+    /**
+     * Resets the password of the given user account
+     * @param userId    The user account identifier
+     * @param resetPasswordInfo Structure holding the reset key and the new password
+     */
     @RequestMapping(value = "/{userId}/reset", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> resetPassword(@PathVariable("userId") String userId, @RequestBody ResetPasswordInfo resetPasswordInfo) {
         if (StringUtilities.isNullOrEmpty(userId) || resetPasswordInfo == null ||
                 StringUtilities.isNullOrEmpty(resetPasswordInfo.getResetKey()) || StringUtilities.isNullOrEmpty(resetPasswordInfo.getNewPassword())) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
+        }
+        if (!currentUser().equals(userId) || !isCurrentUserAdmin()) {
+            return prepareResult("Not allowed", ResponseStatus.FAILED);
         }
         try {
             userService.resetPassword(userId, resetPasswordInfo);
@@ -121,6 +138,10 @@ public class UserController extends BaseController {
         }
     }
 
+    /**
+     * Returns the user profile
+     * @param userId    The user account identifier
+     */
     @RequestMapping(value = "/{userId}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId) {
         if (StringUtilities.isNullOrEmpty(userId)) {
@@ -142,6 +163,10 @@ public class UserController extends BaseController {
         }
     }
 
+    /**
+     * Updates the user profile
+     * @param updatedUserInfo   The user profile structure
+     */
     @RequestMapping(value = "/{userId}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateUserInfo(@RequestBody User updatedUserInfo) {
         if (updatedUserInfo == null) {
@@ -159,8 +184,14 @@ public class UserController extends BaseController {
         }
     }
 
+    /**
+     * Saves the preferences of an account
+     * @param userPreferences   The preferences list as the body of the request
+     * @param authToken         The authentication token as header
+     */
     @RequestMapping(value = "/prefs", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> saveOrUpdateUserPreferences(@RequestBody List<UserPreference> userPreferences, @RequestHeader("X-Auth-Token") String authToken) {
+    public ResponseEntity<?> saveOrUpdateUserPreferences(@RequestBody List<UserPreference> userPreferences,
+                                                         @RequestHeader("X-Auth-Token") String authToken) {
         if (userPreferences == null || userPreferences.isEmpty() || StringUtilities.isNullOrEmpty(authToken)) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
@@ -177,8 +208,14 @@ public class UserController extends BaseController {
         }
     }
 
+    /**
+     * Deletes the preferences of an account
+     * @param userPrefsKeysToDelete The preferences list as the body of the request
+     * @param authToken The authentication token as header
+     */
     @RequestMapping(value = "/prefs", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> removeUserPreferences(@RequestBody List<String> userPrefsKeysToDelete, @RequestHeader("X-Auth-Token") String authToken) {
+    public ResponseEntity<ServiceResponse<?>> removeUserPreferences(@RequestBody List<String> userPrefsKeysToDelete,
+                                                                    @RequestHeader("X-Auth-Token") String authToken) {
         if (StringUtilities.isNullOrEmpty(authToken)) {
             return prepareResult("Invalid token!", ResponseStatus.FAILED);
         }

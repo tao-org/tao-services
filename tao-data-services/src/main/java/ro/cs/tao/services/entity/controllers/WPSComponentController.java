@@ -1,5 +1,6 @@
 package ro.cs.tao.services.entity.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/wpscomponent")
+@Tag(name = "WPS Components", description = "Operations related to WPS components managements")
 public class WPSComponentController extends BaseController {
 
     @Autowired
@@ -36,6 +38,15 @@ public class WPSComponentController extends BaseController {
     @Autowired
     private RepositoryService repositoryService;
 
+    /**
+     * Returns a (paged) list of WPS components.
+     * The optional parameters are either all set or none is set.
+     *
+     * @param pageNumber    (optional) The page number
+     * @param pageSize      (optional) Items per page
+     * @param sortByField   (optional) The sort field
+     * @param sortDirection (optional) The sort direction (ASC or DESC)
+     */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
@@ -52,6 +63,11 @@ public class WPSComponentController extends BaseController {
         }
     }
 
+    /**
+     * Creates a new WPS component.
+     *
+     * @param entity    The WPS component structure
+     */
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody WPSComponentBean entity) {
         try {
@@ -97,6 +113,11 @@ public class WPSComponentController extends BaseController {
         }
     }
 
+    /**
+     * Updates an existing WPS component.
+     *
+     * @param entity    The WPS component structure
+     */
     @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody WPSComponentBean entity) {
         try {
@@ -137,6 +158,11 @@ public class WPSComponentController extends BaseController {
         }
     }
 
+    /**
+     * Removes a WPS component.
+     *
+     * @param id    The WPS component identifier
+     */
     @RequestMapping(value = "/", method = RequestMethod.DELETE, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("id") String id) {
         try {

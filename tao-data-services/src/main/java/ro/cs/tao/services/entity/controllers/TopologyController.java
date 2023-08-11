@@ -35,8 +35,12 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/topology")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Topology", description = "Operations related to TAO worker nodes")
 public class TopologyController extends DataEntityController<NodeDescription, String, TopologyService> {
 
+    /**
+     * List all the tags associated with topology nodes.
+     */
     @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getNodeTags();
@@ -46,26 +50,41 @@ public class TopologyController extends DataEntityController<NodeDescription, St
         return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 
+    /**
+     * Returns the worker nodes that are active.
+     */
     @RequestMapping(value = "/active", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getActiveNodes() {
         return prepareResult(service.getNodes(true));
     }
-
+    /**
+     * Returns the worker nodes that are not active.
+     */
     @RequestMapping(value = "/inactive", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getInactiveNodes() {
         return prepareResult(service.getNodes(false));
     }
-
+    /**
+     * Returns the list of supported node flavors.
+     * Note: if the OpenStack provider is activated, it is the list provided by the remote environment.
+     * Otherwise, it is a list of current nodes hardware configuration.
+     */
     @RequestMapping(value = "/flavors", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNodeFlavors() {
         return prepareResult(service.getNodeFlavors());
     }
 
+    /**
+     * Checks if the OpenStack (or other) external provider is active or not.
+     */
     @RequestMapping(value = "/external", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> isExternalProviderAvailable() {
         return prepareResult(service.isExternalProviderAvailable());
     }
 
+    /**
+     * Returns a list of active node names (and 'Any') that will serve for assigning a component to be executed on a specific node.
+     */
     @RequestMapping(value = "/available", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNodeAffinities() {
         List<NodeDescription> activeNodes = service.getNodes(true);

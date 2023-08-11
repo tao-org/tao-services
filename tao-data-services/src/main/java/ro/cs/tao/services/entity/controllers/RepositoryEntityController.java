@@ -1,5 +1,6 @@
 package ro.cs.tao.services.entity.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
@@ -19,8 +20,12 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/workspace")
+@Tag(name = "Repositories", description = "Operations related to repository management")
 public class RepositoryEntityController extends DataEntityController<Repository, String, RepositoryService> {
 
+    /**
+     * Returns the list of types of supported repositories.
+     */
     @RequestMapping(value = "/types/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getWorkspaceTypes() {
         try {
@@ -30,6 +35,14 @@ public class RepositoryEntityController extends DataEntityController<Repository,
         }
     }
 
+    /**
+     * Returns a (paged) list of repositories definition.
+     *
+     * @param pageNumber    (optional) The page number. Default is 0.
+     * @param pageSize      (optional) Items per page. Default is the list size.
+     * @param sortByField   (optional) The sort field. Default is 'name'.
+     * @param sortDirection (optional) The sort direction (ASC or DESC). Default is ASC.
+     */
     @Override
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
@@ -77,6 +90,12 @@ public class RepositoryEntityController extends DataEntityController<Repository,
         }
     }
 
+    /**
+     * Returns the definition of a repository.
+     * Only an administrator or the owner of the repository can retrieve the information.
+     *
+     * @param id    The repository identifier
+     */
     @Override
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") String id) {
         try {
@@ -97,6 +116,11 @@ public class RepositoryEntityController extends DataEntityController<Repository,
         }
     }
 
+    /**
+     * Creates a new repository definition.
+     *
+     * @param entity    The repository definition structure
+     */
     @Override
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Repository entity) {
         try {
@@ -108,6 +132,11 @@ public class RepositoryEntityController extends DataEntityController<Repository,
         }
     }
 
+    /**
+     * Updates an existing repository definition.
+     *
+     * @param entity    The repository definition structure
+     */
     @Override
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody Repository entity) {
         try {
