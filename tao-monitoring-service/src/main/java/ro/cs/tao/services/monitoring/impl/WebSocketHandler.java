@@ -10,6 +10,7 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Notifiable;
 import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.services.bridge.spring.SpringContextBridge;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.monitoring.beans.MessageConverter;
@@ -32,6 +33,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private static final Map<String, List<WebSocketSession>> subscriptions;
     private static final Set<Long> handledMessages;
     private static AdministrationService administrationService;
+    private static UserProvider userProvider;
 
     private static final Object lock;
 
@@ -63,16 +65,20 @@ public class WebSocketHandler extends TextWebSocketHandler {
         return administrationService;
     }
 
+    private static UserProvider getUserProvider() {
+        if (userProvider == null) {
+            userProvider = SpringContextBridge.services().getService(UserProvider.class);
+        }
+        return userProvider;
+    }
+
     public WebSocketHandler() {
         MessageReceiver receiver = new MessageReceiver(this);
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        final Principal principal = session.getPrincipal();
-        if (principal == null) {
-            throw new Exception("Not authorized");
-        }
+        final Principal principal = validateSession(session);
         super.afterConnectionEstablished(session);
         if (sessions.isEmpty()) {
             admins.addAll(getAdminService().getAdministrators().stream().map(User::getId).collect(Collectors.toSet()));
@@ -98,12 +104,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        final Principal principal = validateSession(session);
         final String payload = message.getPayload();
         final String[] lines = payload.split("\n");
-        final Principal principal = session.getPrincipal();
-        if (principal == null) {
-            throw new Exception("Not authorized");
-        }
         String destination, topic;
         switch (lines[0]) {
             case "SUBSCRIBE":
@@ -152,7 +155,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
                     if (session.isOpen()) {
                         session.sendMessage(txtMsg);
                     } else {
-                        logger.warning("Session " + session.getId() + " is closed and it will be removed.");
+                        logger.warning(() -> String.format("Session %s [principal: %s] is closed and will be removed.",
+                                                           session.getId(), user));
                         iterator.remove();
                     }
                 }
@@ -167,7 +171,10 @@ public class WebSocketHandler extends TextWebSocketHandler {
                             if (session.isOpen()) {
                                 session.sendMessage(txtMsg);
                             } else {
-                                logger.warning("Admin session " + session.getId() + " is closed and it will be removed.");
+                                logger.warning(() -> String.format("Admin session %s [principal: %s] is closed and will be removed",
+                                                                   session.getId(), session.getPrincipal() != null
+                                                                                    ? session.getPrincipal().getName()
+                                                                                    : "null"));
                                 iterator.remove();
                             }
                         }
@@ -177,6 +184,19 @@ public class WebSocketHandler extends TextWebSocketHandler {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Principal validateSession(WebSocketSession session) throws Exception {
+        final Principal principal = session.getPrincipal();
+        if (principal == null) {
+            throw new Exception("Not authorized");
+        }
+        final User user = getUserProvider().get(principal.getName());
+        if (user == null) {
+            session.close(CloseStatus.NOT_ACCEPTABLE);
+            throw new Exception("Invalid user identifier");
+        }
+        return principal;
     }
 
     private void removeSession(String sessionId, String topic) {
