@@ -3,8 +3,10 @@ package ro.cs.tao.services.security;
 import org.springframework.security.core.Authentication;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.security.TokenCache;
+import ro.cs.tao.services.security.token.AuthenticationWithToken;
 import ro.cs.tao.utils.Tuple;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -37,7 +39,11 @@ public class TokenCacheImpl implements TokenCache {
         if (authentication == null || authentication.getPrincipal() == null) {
             logger.warning(String.format("Token %s has no corresponding authentication", token.getToken()));
         } else {
-            final String user = authentication.getPrincipal().toString();
+            Principal principal = null;
+            if (authentication instanceof AuthenticationWithToken) {
+                principal = ((AuthenticationWithToken) authentication).getLoginContext().getSubject().getPrincipals().stream().findFirst().orElse(null);
+            }
+            final String user = principal != null ? principal.getName() : authentication.getPrincipal().toString();
             cache.put(user, new Tuple<>(token, authentication));
         }
     }
