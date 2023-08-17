@@ -93,7 +93,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             }
 
             // generate and store a new authentication token
-            final AuthenticationWithToken authenticationWithToken = new AuthenticationWithToken(jaasAuthenticationToken.getPrincipal(),
+            final AuthenticationWithToken authenticationWithToken = new AuthenticationWithToken(//jaasAuthenticationToken.getPrincipal(),
+                                                                                                userPrincipal,
                                                                                                 jaasAuthenticationToken.getCredentials(),
                                                                                                 new ArrayList<>(jaasAuthenticationToken.getAuthorities()),
                                                                                                 jaasAuthenticationToken.getLoginContext());
