@@ -2,6 +2,7 @@ package ro.cs.tao.services.monitoring.beans;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.progress.DownloadProgress;
 import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.services.commons.Converter;
 
@@ -49,7 +50,10 @@ public class MessageConverter implements Converter<Message, WSNotification> {
                     }
                 }
             }
-
+            if (value instanceof DownloadProgress) {
+                data.put("speed", ((DownloadProgress) value).getTransferSpeedMB());
+                data.put("remaining", String.valueOf(((DownloadProgress) value).getRemaining()));
+            }
         } catch (Exception ignored) {
             data.put(Message.MESSAGE_KEY, msg);
         }
