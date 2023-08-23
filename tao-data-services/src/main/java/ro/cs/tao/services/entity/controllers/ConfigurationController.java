@@ -203,11 +203,14 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
                 return prepareResult(items);
             } else {
                 if (grouped) {
-                    final Map<ConfigurationCategory, ConfigurationItem> items = persistenceManager.configuration().getGroupedItems();
+                    final Map<String, List<ConfigurationItem>> items = persistenceManager.configuration().getGroupedItems();
                     if (!StringUtilities.isNullOrEmpty(filter)) {
-                        items.entrySet().removeIf(current -> !current.getValue().getId().contains(filter));
+                        items.entrySet().removeIf(current -> !current.getValue().stream().anyMatch(item -> item.getId().contains(filter)));
                     }
-                    return prepareResult(items);
+                    // sort items by category order
+                    final Map<String, List<ConfigurationItem>> sortedItems = items.entrySet().stream().sorted(Comparator.comparing(item -> item.getValue().get(0).getCategory().getOrder()))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+                    return prepareResult(sortedItems);
                 } else {
                     return StringUtilities.isNullOrEmpty(filter)
                            ? prepareResult(persistenceManager.configuration().getItems())
