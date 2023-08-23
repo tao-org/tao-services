@@ -35,6 +35,7 @@
         <module>tao-viewer-service</module>
         <module>tao-services-kit</module>
         <module>tao-jupyter-service</module>
+        <!--<module>tao-openeo-service</module>-->
     </modules>
 
     <properties>

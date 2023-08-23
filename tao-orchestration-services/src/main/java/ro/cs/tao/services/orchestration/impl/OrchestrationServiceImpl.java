@@ -375,7 +375,17 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Override
     public long invokeWPS(String identifier, Map<String, Map<String, String>> inputs) throws ExecutionException {
         try {
-            final ExecutionJob job = Orchestrator.getInstance().startExecution(SessionStore.currentContext(), identifier, inputs);
+            final ExecutionJob job = Orchestrator.getInstance().invokeWPS(SessionStore.currentContext(), identifier, inputs);
+            return job != null ? job.getId() : -1;
+        } catch (Exception e) {
+            throw new ExecutionException(e);
+        }
+    }
+
+    @Override
+    public long invokeWMS(String identifier, Map<String, String> inputs) throws ExecutionException {
+        try {
+            final ExecutionJob job = Orchestrator.getInstance().invokeWMS(SessionStore.currentContext(), identifier, inputs);
             return job != null ? job.getId() : -1;
         } catch (Exception e) {
             throw new ExecutionException(e);

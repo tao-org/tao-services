@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.datasource.DownloadManager;
-import ro.cs.tao.services.commons.ControllerBase;
+import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ProgressReportService;
 import ro.cs.tao.services.progress.impl.Filter;
@@ -34,7 +34,7 @@ import java.util.Base64;
 @RestController
 @RequestMapping("/progress")
 @Tag(name = "Progress", description = "Reports the progress of lengthy operations")
-public class ProgressReportController extends ControllerBase {
+public class ProgressReportController extends BaseController {
 
     @Autowired
     private ProgressReportService progressReportService;
@@ -49,8 +49,8 @@ public class ProgressReportController extends ControllerBase {
     public ResponseEntity<ServiceResponse<?>> getTasksInProgress(@RequestParam(name = "category", required = false) String category,
                                                                  @RequestParam(name = "userId", required = false) String userId,
                                                                  @RequestParam(name = "filter", required = false) String jsonFilter) {
-        final String filter;
-        if (!StringUtilities.isNullOrEmpty(userId)) {
+        String filter = null;
+        if (!StringUtilities.isNullOrEmpty(userId) && (currentUser().equals(userId) || isCurrentUserAdmin())) {
             if (StringUtilities.isNullOrEmpty(jsonFilter)) {
                 Filter f = new Filter();
                 f.setName("Principal");
@@ -59,8 +59,15 @@ public class ProgressReportController extends ControllerBase {
             } else {
                 filter = new String(Base64.getDecoder().decode(jsonFilter));
             }
-        } else {
-            filter = null;
+        } else if (StringUtilities.isNullOrEmpty(userId)) {
+            if (StringUtilities.isNullOrEmpty(jsonFilter)) {
+                Filter f = new Filter();
+                f.setName("Principal");
+                f.setValue(currentUser());
+                filter = f.toString();
+            } else {
+                filter = new String(Base64.getDecoder().decode(jsonFilter));
+            }
         }
         return prepareResult(progressReportService.getRunningTasks(category, filter));
     }
