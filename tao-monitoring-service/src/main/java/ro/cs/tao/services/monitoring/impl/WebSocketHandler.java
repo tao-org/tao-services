@@ -161,21 +161,23 @@ public class WebSocketHandler extends TextWebSocketHandler {
                     }
                 }
             }
-            synchronized (admins) {
-                for (String u : admins) {
-                    topic = "/queue/" + u;
-                    if ((userSessions = subscriptions.get(topic)) != null && !user.equals(u)) {
-                        final Iterator<WebSocketSession> iterator = userSessions.iterator();
-                        while (iterator.hasNext()) {
-                            WebSocketSession session = iterator.next();
-                            if (session.isOpen()) {
-                                session.sendMessage(txtMsg);
-                            } else {
-                                logger.warning(() -> String.format("Admin session %s [principal: %s] is closed and will be removed",
-                                                                   session.getId(), session.getPrincipal() != null
-                                                                                    ? session.getPrincipal().getName()
-                                                                                    : "null"));
-                                iterator.remove();
+            if (!Topic.TRANSFER_PROGRESS.value().equals(message.getTopic())) {
+                synchronized (admins) {
+                    for (String u : admins) {
+                        topic = "/queue/" + u;
+                        if ((userSessions = subscriptions.get(topic)) != null && !user.equals(u)) {
+                            final Iterator<WebSocketSession> iterator = userSessions.iterator();
+                            while (iterator.hasNext()) {
+                                WebSocketSession session = iterator.next();
+                                if (session.isOpen()) {
+                                    session.sendMessage(txtMsg);
+                                } else {
+                                    logger.warning(() -> String.format("Admin session %s [principal: %s] is closed and will be removed",
+                                                                       session.getId(), session.getPrincipal() != null
+                                                                                        ? session.getPrincipal().getName()
+                                                                                        : "null"));
+                                    iterator.remove();
+                                }
                             }
                         }
                     }
