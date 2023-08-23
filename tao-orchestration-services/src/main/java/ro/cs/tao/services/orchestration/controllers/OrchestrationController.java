@@ -37,7 +37,7 @@ import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.OrchestratorService;
-import ro.cs.tao.services.orchestration.beans.WPSExecutionRequest;
+import ro.cs.tao.services.orchestration.beans.WebServiceExecutionRequest;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.util.*;
@@ -364,7 +364,7 @@ public class OrchestrationController extends BaseController {
      * @param request   The invocation parameters
      */
     @RequestMapping(value = "/wps", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> invokeRemoteWPS(@RequestBody WPSExecutionRequest request) {
+    public ResponseEntity<ServiceResponse<?>> invokeRemoteWPS(@RequestBody WebServiceExecutionRequest request) {
         try {
             if (request == null) {
                 throw new Exception("Empty body");
@@ -415,6 +415,26 @@ public class OrchestrationController extends BaseController {
             return jobId != -1 ?
                     prepareResult(jobId, "Execution started") :
                     prepareResult("Cannot start execution. See error log for details", ResponseStatus.FAILED);
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
+     * Performs a remote Web Map Service invocation.
+     * @param request   The invocation parameters
+     */
+    @RequestMapping(value = "/wms", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> invokeRemoteWMS(@RequestBody WebServiceExecutionRequest request) {
+        try {
+            if (request == null) {
+                throw new Exception("Empty body");
+            }
+            final Map<String, String> parameters = request.getParameters();
+            final long jobId = orchestrationService.invokeWMS(request.getWpsId(), parameters);
+            return jobId != -1 ?
+                   prepareResult(jobId, "Execution started") :
+                   prepareResult("Cannot start execution. See error log for details", ResponseStatus.FAILED);
         } catch (Exception ex) {
             return handleException(ex);
         }

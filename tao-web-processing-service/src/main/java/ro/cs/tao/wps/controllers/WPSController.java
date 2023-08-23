@@ -26,6 +26,7 @@ import com.bc.wps.exceptions.InvalidRequestException;
 import com.bc.wps.responses.ExceptionResponse;
 import com.bc.wps.utilities.JaxbHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -65,6 +66,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/wps")
+@Tag(name = "WPS Endpoint", description = "Endpoint exposing TAO workflows as WPS operations")
 public class WPSController extends BaseController {
 
     private final static Set<String> allowedRequests = new HashSet<String>() {{

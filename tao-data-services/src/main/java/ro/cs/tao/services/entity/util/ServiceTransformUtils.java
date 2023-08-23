@@ -17,13 +17,13 @@ package ro.cs.tao.services.entity.util;
 
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.WMSComponent;
 import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.component.enums.AuthenticationType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.docker.Container;
-import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.services.entity.beans.RepositoryBean;
@@ -82,6 +82,14 @@ public final class ServiceTransformUtils {
         final List<WPSComponentInfo> results = new ArrayList<>();
         for (WPSComponent component : components) {
             results.add(new WPSComponentInfo(component));
+        }
+        return results;
+    }
+
+    public static List<WMSComponentInfo> toWMSComponentInfos(final List<WMSComponent> components) {
+        final List<WMSComponentInfo> results = new ArrayList<>();
+        for (WMSComponent component : components) {
+            results.add(new WMSComponentInfo(component));
         }
         return results;
     }

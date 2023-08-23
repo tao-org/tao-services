@@ -39,8 +39,11 @@ import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.MonitoringService;
+import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.monitoring.beans.Metric;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
@@ -64,6 +67,8 @@ public class MonitoringController extends BaseController {
     private MonitoringService<Notification> monitoringService;
     @Autowired
     private MetricsEndpoint metricsEndpoint;
+    @Autowired
+    private RepositoryService repositoryService;
 
     /**
      * Returns a list of all available nodes resources snapshots
@@ -237,6 +242,10 @@ public class MonitoringController extends BaseController {
             message.addItem("password", "node_pwd");
         } else if (Topic.TRANSFER_PROGRESS.value().equals(topic)) {
             message = new ActivityProgress("Test " + System.currentTimeMillis(), new Random().nextDouble());
+            final Repository repository = repositoryService.getByUser(currentUser()).stream()
+                                                           .filter(r -> r.getType() == RepositoryType.LOCAL)
+                                                           .findFirst().get();
+            message.addItem("Repository", repository.getId());
         } else if (DataSourceTopic.PRODUCT_PROGRESS.value().equals(topic)) {
             Random random = new Random();
             message = new DownloadProgress("name", random.nextDouble(), random.nextDouble() * 10.0, 1);

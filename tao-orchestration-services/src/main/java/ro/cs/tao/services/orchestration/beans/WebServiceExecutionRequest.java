@@ -2,7 +2,7 @@ package ro.cs.tao.services.orchestration.beans;
 
 import java.util.Map;
 
-public class WPSExecutionRequest {
+public class WebServiceExecutionRequest {
     private String wpsId;
     private Map<String, String> parameters;
 
