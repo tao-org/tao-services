@@ -3,6 +3,7 @@ package ro.cs.tao.services.workspace.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.core.io.FileSystemResource;
+import ro.cs.tao.ListenableInputStream;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.messaging.ProgressNotifier;
@@ -121,6 +122,11 @@ public class UserTransferService {
                         sourceStream = (InputStream) source;
                     }
                     logger.finest("Begin transferring file " + srcPath);
+                    if (fileObject.getSize() > 0) {
+                        sourceStream = new ListenableInputStream(sourceStream,
+                                                                 fileObject.getSize(),
+                                                                 this.progressListener.subProgressListener());
+                    }
                     if (item.isForce() || !destinationService.exists(item.getDestinationPath())) {
                         destinationService.storeFile(sourceStream, fileObject.getSize(), item.getDestinationPath(), srcPath);
                     } else {
