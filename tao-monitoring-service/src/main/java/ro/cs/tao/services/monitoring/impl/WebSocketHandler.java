@@ -31,7 +31,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private static final Set<String> admins;
     private static final Timer adminRefreshTimer;
     private static final Map<String, List<WebSocketSession>> subscriptions;
-    private static final Set<Long> handledMessages;
+    private static final Set<Message> handledMessages;
     private static AdministrationService administrationService;
     private static UserProvider userProvider;
 
@@ -233,18 +233,15 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
         @Override
         protected void onMessageReceived(Message message) {
-            final Long id = message.getId();
-            if (id != null) {
-                synchronized (lock) {
-                    if (!handledMessages.contains(id)) {
-                        handledMessages.add(id);
-                        if (message.getMessage() != null) {
-                            message.setMessage(message.getMessage().replace("\"", "\\\""));
-                        }
-                        this.handler.send(converter.to(message));
-                    } else {
-                        handledMessages.remove(id);
+            synchronized (lock) {
+                if (!handledMessages.contains(message)) {
+                    handledMessages.add(message);
+                    if (message.getMessage() != null) {
+                        message.setMessage(message.getMessage().replace("\"", "\\\""));
                     }
+                    this.handler.send(converter.to(message));
+                } else {
+                    handledMessages.remove(message);
                 }
             }
         }
