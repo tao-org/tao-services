@@ -15,10 +15,7 @@ import ro.cs.tao.services.interfaces.WPSComponentService;
 import ro.cs.tao.services.model.component.WPSComponentInfo;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service("wpsComponentService")
@@ -37,6 +34,9 @@ public class WPSComponentServiceImpl extends EntityService<WPSComponent> impleme
         List<WPSComponent> components = null;
         try {
             components = wpsComponentProvider.list();
+            if (components == null) {
+                components = new ArrayList<>();
+            }
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
@@ -50,11 +50,16 @@ public class WPSComponentServiceImpl extends EntityService<WPSComponent> impleme
 
     @Override
     public List<WPSComponent> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
+        List<WPSComponent> components;
         if (pageNumber.isPresent() && pageSize.isPresent()) {
-            return wpsComponentProvider.list(pageNumber.get(), pageSize.get(), sort);
+            components = wpsComponentProvider.list(pageNumber.get(), pageSize.get(), sort);
         } else {
-            return wpsComponentProvider.list();
+            components = wpsComponentProvider.list();
         }
+        if (components == null) {
+            return new ArrayList<>();
+        }
+        return components;
     }
 
     @Override

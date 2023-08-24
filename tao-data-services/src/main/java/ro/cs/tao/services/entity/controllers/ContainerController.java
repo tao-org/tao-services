@@ -42,7 +42,10 @@ import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
-import ro.cs.tao.persistence.*;
+import ro.cs.tao.persistence.AuxiliaryDataProvider;
+import ro.cs.tao.persistence.ContainerInstanceProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.ProcessingComponentProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.Token;
@@ -85,8 +88,6 @@ public class ContainerController extends DataEntityController<Container, String,
     @Autowired
     private AuxiliaryDataProvider auxiliaryDataProvider;
     @Autowired
-    private ContainerProvider containerProvider;
-    @Autowired
     private ContainerInstanceProvider containerInstanceProvider;
     @Autowired
     private ProcessingComponentProvider processingComponentProvider;
@@ -108,7 +109,12 @@ public class ContainerController extends DataEntityController<Container, String,
                                                    @RequestParam(name = "sortByField", required = false)Optional<String> sortByField,
                                                    @RequestParam(name = "sortDirection", required = false)Optional<SortDirection> sortDirection) {
         //List<Container> objects = DockerManager.getAvailableDockerImages();
-        List<Container> objects = containerProvider.getByType(ContainerType.DOCKER);
+        List<Container> objects;
+        if (isCurrentUserAdmin()) {
+            objects = service.listByType(ContainerType.DOCKER);
+        } else {
+            objects = service.listContainersVisibleToUser(currentUser());
+        }
         if (objects == null) {
             objects = new ArrayList<>();
         }
@@ -220,6 +226,7 @@ public class ContainerController extends DataEntityController<Container, String,
             if (description != null && !description.equals(container.getDescription())) {
                 container.setDescription(description);
             }
+            container.setOwnerId(currentUser());
             asyncExecute(() -> {
                 try {
                     service.registerContainer(dockerPath, container, components);
@@ -284,7 +291,7 @@ public class ContainerController extends DataEntityController<Container, String,
             if (logoFile != null) {
                 container.setLogo(Base64.getEncoder().encodeToString(logoFile.getBytes()));
             }
-
+            container.setOwnerId(currentUser());
             final ProcessingComponent[] components = request.getComponentDescriptors();
             final Runnable registrationCode;
 
@@ -359,7 +366,7 @@ public class ContainerController extends DataEntityController<Container, String,
             if (StringUtilities.isNullOrEmpty(imageId)) {
                 throw new IllegalArgumentException("[id] null");
             }
-            final Container container = containerProvider.get(imageId);
+            final Container container = service.findById(imageId);
             if (container == null) {
                 throw new IllegalArgumentException(String.format("[%s] not registered", imageId));
             }
@@ -452,7 +459,7 @@ public class ContainerController extends DataEntityController<Container, String,
     }
 
     private Container initializeContainer(Container container, ProcessingComponent[] components) throws PersistenceException {
-        container = this.containerProvider.save(container);
+        container = service.save(container);
         ProcessingComponent current = null;
         final List<Application> containerApplications = container.getApplications();
         for (ProcessingComponent component : components) {

@@ -85,6 +85,11 @@ public class ContainerServiceImpl
     }
 
     @Override
+    public List<Container> listContainersVisibleToUser(String userId) {
+        return containerProvider.listContainersVisibleToUser(userId);
+    }
+
+    @Override
     public Container save(Container object) {
         if (object != null) {
             try {

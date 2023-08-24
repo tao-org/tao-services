@@ -35,10 +35,7 @@ import ro.cs.tao.services.model.ItemAction;
 import ro.cs.tao.services.workspace.impl.TransferService;
 import ro.cs.tao.services.workspace.model.TransferRequest;
 import ro.cs.tao.services.workspace.model.TransferableItem;
-import ro.cs.tao.utils.Crypto;
-import ro.cs.tao.utils.HashedBlockingQueue;
-import ro.cs.tao.utils.StringUtilities;
-import ro.cs.tao.utils.Tuple;
+import ro.cs.tao.utils.*;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
 import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.Repository;
@@ -54,7 +51,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -623,7 +619,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             final String[] items = item.split(";");
             final String successMessage = String.format("%s [%s] completed", action, item);
             final String user = currentUser();
-            final BiConsumer<Exception, String> callback = (e, s) -> {
+            final TriConsumer<String, Exception, String> callback = (u, e, s) -> {
                 String topic;
                 String message;
                 if (e == null) {
@@ -686,7 +682,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                                      @RequestParam(name = "name") String newName) {
         final String successMessage = String.format("Renaming [%s] completed", item);
         final String user = currentUser();
-        final BiConsumer<Exception, String> callback = (e, s) -> {
+        final TriConsumer<String, Exception, String> callback = (u, e, s) -> {
             String topic;
             String message;
             if (e == null) {

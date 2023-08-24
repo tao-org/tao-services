@@ -380,12 +380,17 @@ public class WorkflowServiceImpl
         workflowNodeProvider.update(nodeDescriptor);
 
         if (ComponentType.DATASOURCE.equals(nodeDescriptor.getComponentType())) {
-            DataSourceComponent component = (DataSourceComponent) WorkflowUtilities.findComponent(nodeDescriptor);
-            Query query = queryProvider.get(SessionStore.currentContext().getPrincipal().getName(),
-                                            component.getSensorName(), component.getDataSourceName(),
-                                            nodeDescriptor.getId());
-            if (query != null) {
-                queryProvider.delete(query);
+            try {
+                DataSourceComponent component = (DataSourceComponent) WorkflowUtilities.findComponent(nodeDescriptor);
+                Query query = queryProvider.get(SessionStore.currentContext().getPrincipal().getName(),
+                                                component.getSensorName(), component.getDataSourceName(),
+                                                nodeDescriptor.getId());
+                if (query != null) {
+                    queryProvider.delete(query);
+                }
+            } catch (PersistenceException pex) {
+                logger.warning(String.format("Component [%s] not found. The workflow node will be removed",
+                                             nodeDescriptor.getComponentId()));
             }
         }
 

@@ -28,13 +28,12 @@ import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
-import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.utils.ExceptionUtils;
+import ro.cs.tao.utils.TriConsumer;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -102,7 +101,7 @@ public abstract class ControllerBase {
         });
     }
 
-    protected Future<?> asyncExecute(Runnable runnable, String successMessage, BiConsumer<Exception, String> callback) {
+    protected Future<?> asyncExecute(Runnable runnable, String successMessage, TriConsumer<String, Exception, String> callback) {
         synchronized (sharedLock) {
             if (this.executorService == null) {
                 executorService = new ThreadPoolTaskExecutor() {
@@ -129,15 +128,16 @@ public abstract class ControllerBase {
                 executorService.initialize();
             }
         }
+        final String user = currentUser();
         return executorService.submit(() -> {
             try {
                 runnable.run();
                 if (callback != null) {
-                    callback.accept(null, successMessage);
+                    callback.accept(user, null, successMessage);
                 }
             } catch (Exception ex) {
                 if (callback != null) {
-                    callback.accept(ex, null);
+                    callback.accept(user, ex, null);
                 } else {
                     onUnhandledException(ex);
                 }
@@ -234,7 +234,7 @@ public abstract class ControllerBase {
         }
     }
 
-    protected void exceptionCallbackHandler(Exception ex, String successMessage) {
+    protected void exceptionCallbackHandler(String userId, Exception ex, String successMessage) {
         final Message message = new Message();
         message.setTimestamp(System.currentTimeMillis());
         String msg;
@@ -250,6 +250,6 @@ public abstract class ControllerBase {
             topic = Topic.INFORMATION.value();
             logger.info(msg);
         }
-        Messaging.send(SessionStore.currentContext().getPrincipal(), topic, message);
+        Messaging.send(userId, topic, message);
     }
 }
