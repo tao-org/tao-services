@@ -14,6 +14,7 @@ import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.eodata.enums.DataFormat;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WMSComponentService;
@@ -60,6 +61,7 @@ public class WMSController extends BaseController {
             if ("GetCapabilities".equalsIgnoreCase(requestType)) {
                 Container capabilities = client.getCapabilities();
                 if (Boolean.TRUE.equals(save)) {
+                    capabilities.setOwnerId(SystemPrincipal.instance().getName());
                     capabilities = containerService.save(capabilities);
                 }
                 return prepareResult(capabilities);

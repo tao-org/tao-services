@@ -77,6 +77,7 @@ public class STACServiceController extends BaseController {
                 container.setId(UUID.randomUUID().toString());
             }
             WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
+            container.setOwnerId(currentUser());
             container = containerService.save(container);
             auth.setId(container.getId());
             auth = webServiceAuthenticationService.save(auth);

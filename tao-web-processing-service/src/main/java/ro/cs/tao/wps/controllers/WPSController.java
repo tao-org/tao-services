@@ -43,6 +43,7 @@ import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -209,6 +210,7 @@ public class WPSController extends BaseController {
             if ("GetCapabilities".equalsIgnoreCase(requestType)) {
                 Container capabilities = client.getCapabilities();
                 if (Boolean.TRUE.equals(save)) {
+                    capabilities.setOwnerId(SystemPrincipal.instance().getName());
                     capabilities = containerService.save(capabilities);
                 }
                 return prepareResult(capabilities);
