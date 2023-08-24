@@ -18,10 +18,7 @@ package ro.cs.tao.services.entity.controllers;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.TaoEnum;
 import ro.cs.tao.configuration.ConfigurationCategory;
 import ro.cs.tao.configuration.ConfigurationItem;
@@ -39,6 +36,7 @@ import ro.cs.tao.services.model.KeyValuePair;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.lang.ref.WeakReference;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -228,11 +226,12 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
     }
 
     @RequestMapping(value = "/detail/items", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> saveConfigurationItems(@RequestParam("items") List<ConfigurationItem> items) {
+    public ResponseEntity<ServiceResponse<?>> saveConfigurationItems(@RequestBody List<ConfigurationItem> items) {
         try {
             int size = 0;
             if (items != null) {
                 for (ConfigurationItem item : items) {
+                    item.setLastUpdated(LocalDateTime.now());
                     persistenceManager.configuration().saveItem(item);
                 }
                 size = items.size();
