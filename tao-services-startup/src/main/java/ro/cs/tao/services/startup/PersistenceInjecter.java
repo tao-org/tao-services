@@ -1,5 +1,6 @@
 package ro.cs.tao.services.startup;
 
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.execution.Executor;
 import ro.cs.tao.execution.TaskStatusListener;
 import ro.cs.tao.execution.drmaa.DRMAAExecutor;
@@ -54,6 +55,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
                 }
             }
         });
+        ConfigurationManager.getInstance().setPersistentConfigurationProvider(persistenceManager.configuration());
         QueryExecutor.setProductProvider(persistenceManager.rasterData());
         QueryExecutor.setWorkflowProvider(persistenceManager.workflows());
         QueryExecutor.setDataSourceConfigurationProvider(persistenceManager.dataSourceConfigurationProvider());

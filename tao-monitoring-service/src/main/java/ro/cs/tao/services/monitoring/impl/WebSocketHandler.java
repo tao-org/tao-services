@@ -31,7 +31,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private static final Set<String> admins;
     private static final Timer adminRefreshTimer;
     private static final Map<String, List<WebSocketSession>> subscriptions;
-    private static final Set<Message> handledMessages;
+    private static final LinkedHashMap<Integer, Message> handledMessages;
     private static AdministrationService administrationService;
     private static UserProvider userProvider;
 
@@ -44,7 +44,12 @@ public class WebSocketHandler extends TextWebSocketHandler {
         sessions = Collections.synchronizedList(new ArrayList<>());
         admins = new HashSet<>();
         subscriptions = new HashMap<>();
-        handledMessages = new HashSet<>();
+        handledMessages = new LinkedHashMap<>() {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<Integer, Message> eldest) {
+                return this.size() > 10;
+            }
+        };
         adminRefreshTimer = new Timer();
         adminRefreshTimer.schedule(new TimerTask() {
             @Override
@@ -234,14 +239,13 @@ public class WebSocketHandler extends TextWebSocketHandler {
         @Override
         protected void onMessageReceived(Message message) {
             synchronized (lock) {
-                if (!handledMessages.contains(message)) {
-                    handledMessages.add(message);
+                final int hash = Objects.hash(message);
+                if (!handledMessages.containsKey(hash)) {
+                    handledMessages.put(hash, message);
                     if (message.getMessage() != null) {
                         message.setMessage(message.getMessage().replace("\"", "\\\""));
                     }
                     this.handler.send(converter.to(message));
-                } else {
-                    handledMessages.remove(message);
                 }
             }
         }
