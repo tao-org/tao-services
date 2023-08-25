@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Map;
 
 public class Kernel {
-    private String display_name;
-    private String name;
-    private String language;
+    private String display_name = "Python 3 (ipykernel)";
+    private String name = "python3";
+    private String language = "python";
     private List<String> agrv;
     private Map<String, String> env;
 

@@ -1,15 +1,16 @@
 package ro.cs.tao.services.jupyter.model;
 
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public class Cell {
-    private String cell_type;
-    private int execution_count;
+    private String cell_type = "code";
+    private int execution_count = 0;
     private String id;
-    private CellMetadata metadata;
-    private List<String> source;
+    private CellMetadata metadata = new CellMetadata();
+    private List<String> source = Collections.singletonList("print(\"Welcome to Notebook\")");
     private List<Output> outputs;
 
     public String getCell_type() {

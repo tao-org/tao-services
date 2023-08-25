@@ -4,12 +4,12 @@ import java.util.Map;
 
 public class LanguageInfo {
     private Map<String, Object> codemirror_mode;
-    private String file_extension;
-    private String mimetype;
-    private String name;
-    private String nbconvert_exporter;
-    private String pygments_lexer;
-    private String version;
+    private String file_extension = ".py";
+    private String mimetype = "text/x-python";
+    private String name = "python";
+    private String nbconvert_exporter = "python";
+    private String pygments_lexer = "ipython3";
+    private String version = "3.11.4";
 
     public void setCodemirror_mode(Map<String, Object> codemirror_mode) {
         this.codemirror_mode = codemirror_mode;

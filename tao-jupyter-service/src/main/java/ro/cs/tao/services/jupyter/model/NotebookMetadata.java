@@ -2,9 +2,9 @@ package ro.cs.tao.services.jupyter.model;
 
 public class NotebookMetadata {
     private String signature;
-    private Kernel kernelspec;
+    private Kernel kernelspec = new Kernel();
 
-    private LanguageInfo language_info;
+    private LanguageInfo language_info = new LanguageInfo();
 
     public String getSignature() {
         return signature;

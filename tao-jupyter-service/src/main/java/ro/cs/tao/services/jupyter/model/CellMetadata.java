@@ -1,17 +1,18 @@
 package ro.cs.tao.services.jupyter.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class CellMetadata {
-    private boolean collapsed;
-    private String autoscroll;
-    private boolean deletable;
+    private boolean collapsed = false;
+    private String autoscroll = null;
+    private boolean deletable = false;
     private Map<String, Object> slideshow;
-    private boolean editable;
+    private boolean editable = false;
     private String format;
-    private String name;
-    private List<String> tags;
+    private String name ;
+    private List<String> tags = new ArrayList<>();
 
     public boolean isCollapsed() {
         return collapsed;

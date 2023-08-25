@@ -1,12 +1,14 @@
 package ro.cs.tao.services.jupyter.model;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Notebook {
-    private NotebookMetadata metadata;
-    private int nbformat;
-    private int nbformat_minor;
-    private List<Cell> cells;
+    private NotebookMetadata metadata = new NotebookMetadata();
+    private int nbformat = 4;
+    private int nbformat_minor = 5;
+    private List<Cell> cells = Collections.singletonList(new Cell());
 
     public List<Cell> getCells() {
         return cells;
