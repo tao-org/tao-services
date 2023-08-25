@@ -242,9 +242,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 final int hash = Objects.hash(message);
                 if (!handledMessages.containsKey(hash)) {
                     handledMessages.put(hash, message);
-                    if (message.getMessage() != null) {
+                    /*if (message.getMessage() != null) {
                         message.setMessage(message.getMessage().replace("\"", "\\\""));
-                    }
+                    }*/
                     this.handler.send(converter.to(message));
                 }
             }
