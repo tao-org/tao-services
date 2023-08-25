@@ -90,8 +90,8 @@ public class WPSController extends BaseController {
     public ResponseEntity<?> list(@PathVariable(required = false) String type) {
         try {
             ContainerType containerType = ContainerType.WPS;
-            if (type != null && type.equalsIgnoreCase("STAC")) {
-                containerType = ContainerType.STAC;
+            if (type != null) {
+                containerType = ContainerType.valueOf(type.toUpperCase());
             }
 
             final List<Container> containers = containerService.listByType(containerType);
@@ -123,9 +123,9 @@ public class WPSController extends BaseController {
             if (bean == null) {
                 throw new IllegalArgumentException("Empty body");
             }
-            if (bean.getType() != ContainerType.WPS) {
+            /*if (bean.getType() != ContainerType.WPS) {
                 throw new IllegalArgumentException("Wrong container type");
-            }
+            }*/
             if (StringUtilities.isNullOrEmpty(bean.getId())) {
                 bean.setId(UUID.randomUUID().toString());
             }
@@ -149,9 +149,9 @@ public class WPSController extends BaseController {
             if (bean == null) {
                 throw new IllegalArgumentException("Empty body");
             }
-            if (bean.getType() != ContainerType.WPS) {
+            /*if (bean.getType() != ContainerType.WPS) {
                 throw new IllegalArgumentException("Wrong container type");
-            }
+            }*/
             if (StringUtilities.isNullOrEmpty(bean.getId())) {
                 throw new IllegalArgumentException("Wrong HTTP verb");
             }
