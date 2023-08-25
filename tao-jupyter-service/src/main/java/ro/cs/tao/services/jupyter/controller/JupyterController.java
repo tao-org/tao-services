@@ -12,7 +12,7 @@ public class JupyterController extends ControllerBase {
     @Autowired
     private JupyterService jupyterService;
     @RequestMapping(value = "/jupyter", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> foo(@RequestBody Notebook ws){
+    public ResponseEntity<ServiceResponse<?>> generateTemplate(@RequestBody Notebook ws){
         try {
             return prepareResult(jupyterService.generateNotebook(ws));
         } catch (Exception e) {
