@@ -18,7 +18,6 @@ package ro.cs.tao.services.query;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.services.commons.ServiceLauncher;
 
 /**
@@ -26,7 +25,7 @@ import ro.cs.tao.services.commons.ServiceLauncher;
  */
 @Configuration
 @ImportResource("classpath:data-query-service-context.xml")
-@EnableWebMvc
+
 public class DataQueryServiceLauncher implements ServiceLauncher {
 
     public static void main(String[] args) {

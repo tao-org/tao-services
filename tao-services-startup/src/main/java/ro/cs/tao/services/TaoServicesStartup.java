@@ -24,7 +24,6 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.component.RuntimeOptimizer;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
@@ -70,7 +69,7 @@ import java.util.stream.Stream;
 
 @SpringBootApplication(exclude = {SolrAutoConfiguration.class})
 @EnableScheduling
-@EnableWebMvc
+
 public class TaoServicesStartup extends StartupBase implements LifeCycleProcessorListener {
     @Autowired
     private LifeCycleProcessor lifeCycleProcessor;
