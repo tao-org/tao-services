@@ -11,9 +11,19 @@ public class Notebook {
     private List<Cell> cells = Collections.singletonList(new Cell());
 
     public List<Cell> getCells() {
-        return cells;
+        return this.cells;
     }
 
+    public Cell getCellById(int cellID)
+    {
+        for (Cell cell : this.cells) {
+            if (cell.getExecution_count() == cellID)
+            {
+                return cell;
+            }
+        }
+        return null;
+    }
     public void setCells(List<Cell> cells) {
         this.cells = cells;
     }
@@ -42,3 +52,4 @@ public class Notebook {
         this.nbformat_minor = nbformat_minor;
     }
 }
+
