@@ -25,6 +25,12 @@
             <version>2.4.7</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>ro.c-s.tao</groupId>
+            <artifactId>tao-data-services</artifactId>
+            <version>1.4.5</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
