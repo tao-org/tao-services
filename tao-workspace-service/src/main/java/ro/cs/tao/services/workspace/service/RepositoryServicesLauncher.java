@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.services.commons.ServiceLauncher;
 import ro.cs.tao.services.interfaces.RepositoryWatcherService;
 
@@ -13,7 +12,7 @@ import javax.annotation.PreDestroy;
 
 @Configuration
 @ImportResource("classpath:tao-workspace-service-context.xml")
-@EnableWebMvc
+
 public class RepositoryServicesLauncher implements ServiceLauncher {
 
     @Autowired

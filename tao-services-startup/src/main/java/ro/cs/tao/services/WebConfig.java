@@ -16,15 +16,17 @@
 
 package ro.cs.tao.services;
 
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.commons.WebConfiguration;
+import ro.cs.tao.services.entity.beans.ContainerRequest;
+import ro.cs.tao.services.entity.conversion.ContainerRequestDeserializer;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-@EnableWebMvc
 @Configuration
 public class WebConfig extends WebConfiguration {
 
@@ -47,4 +49,12 @@ public class WebConfig extends WebConfiguration {
     @Override
     protected String defaultPage() { return "sap.html"; }//return "login.html"; }
 
+    @Override
+    protected MappingJackson2HttpMessageConverter jacksonMessageConverter() {
+        final MappingJackson2HttpMessageConverter converter = super.jacksonMessageConverter();
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(ContainerRequest.class, new ContainerRequestDeserializer());
+        converter.getObjectMapper().registerModule(module);
+        return converter;
+    }
 }

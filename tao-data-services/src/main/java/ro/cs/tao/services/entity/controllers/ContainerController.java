@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -264,10 +265,12 @@ public class ContainerController extends DataEntityController<Container, String,
                                                      @ModelAttribute ContainerRequest request,
                                                      Model model) {
         try {
-            final Container container = request.getContainerDescriptor();
-            if (container == null) {
+            final String containerDescriptor = request.getContainerDescriptor();
+            if (containerDescriptor == null) {
                 throw new IllegalArgumentException("No container descriptor received");
             }
+            final ObjectMapper mapper = new ObjectMapper();
+            final Container container = mapper.readerFor(Container.class).readValue(containerDescriptor);
             final List<MultipartFile> dockerFiles = request.getDockerFiles();
             final boolean noFilePresent = dockerFiles == null || dockerFiles.isEmpty();
             if (noFilePresent && DockerManager.getDockerImage(container.getName()) == null) {
@@ -292,7 +295,13 @@ public class ContainerController extends DataEntityController<Container, String,
                 container.setLogo(Base64.getEncoder().encodeToString(logoFile.getBytes()));
             }
             container.setOwnerId(currentUser());
-            final ProcessingComponent[] components = request.getComponentDescriptors();
+            final String componentDescriptors = request.getComponentDescriptors();
+            final ProcessingComponent[] components;
+            if (componentDescriptors != null) {
+                components = mapper.readerForArrayOf(ProcessingComponent.class).readValue(componentDescriptors);
+            } else {
+                components = new ProcessingComponent[0];
+            }
             final Runnable registrationCode;
 
             if (noFilePresent) {
@@ -460,10 +469,8 @@ public class ContainerController extends DataEntityController<Container, String,
 
     private Container initializeContainer(Container container, ProcessingComponent[] components) throws PersistenceException {
         container = service.save(container);
-        ProcessingComponent current = null;
         final List<Application> containerApplications = container.getApplications();
         for (ProcessingComponent component : components) {
-            current = component;
             component.setContainerId(container.getId());
             component.setLabel(component.getId());
             component.setComponentType(ProcessingComponentType.EXECUTABLE);
