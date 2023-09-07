@@ -31,6 +31,7 @@ import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.messaging.progress.ActivityProgress;
 import ro.cs.tao.messaging.progress.DownloadProgress;
+import ro.cs.tao.quota.QuotaTopic;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.serialization.JsonMapper;
@@ -218,6 +219,7 @@ public class MonitoringController extends BaseController {
 
     private Message createMessage(Principal principal, String topic) throws JsonProcessingException {
         Message message = null;
+        final String master = NodeManager.getInstance().getMasterNode().getNode().getId();
         if (Topic.INFORMATION.value().equals(topic)) {
             message = Message.create(principal.getName(), "Test", "Info " + System.currentTimeMillis(), false);
         } else if (Topic.WARNING.value().equals(topic)) {
@@ -227,11 +229,18 @@ public class MonitoringController extends BaseController {
         } else if (Topic.SYSTEM.value().equals(topic)) {
             message = Message.create(SystemPrincipal.instance().getName(), "Test", "System " + System.currentTimeMillis(), false);
         } else if (Topic.RESOURCES.value().equals(topic)) {
-            final String master = NodeManager.getInstance().getMasterNode().getNode().getId();
+            final RuntimeInfo nodeSnapshot = NodeManager.getInstance().getNodeSnapshot(master);
+            message = Message.create(SystemPrincipal.instance().getName(), master, JsonMapper.instance().writeValueAsString(nodeSnapshot), false);
+        } else if (QuotaTopic.USER_STORAGE_USAGE.value().equals(topic)) {
+            message = Message.create(SystemPrincipal.instance().getName(), "QuotaManager", "User storage updated", "1024", false);
+        } else if (QuotaTopic.USER_CPU_USAGE.value().equals(topic)) {
+            message = Message.create(SystemPrincipal.instance().getName(), "QuotaManager", "CPU usage updated", "4", false);
+        } else if (Topic.RESOURCES.value().equals(topic)) {
             final RuntimeInfo nodeSnapshot = NodeManager.getInstance().getNodeSnapshot(master);
             message = Message.create(SystemPrincipal.instance().getName(), master, JsonMapper.instance().writeValueAsString(nodeSnapshot), false);
         } else if (Topic.EXECUTION.value().equals(topic)) {
             message = Message.create(principal.getName(), "task id", ExecutionStatus.RUNNING.name(), false);
+            message.addItem("host", master);
         } else if (Topic.TOPOLOGY.value().equals(topic)) {
             message = new Message();
             message.setTopic(Topic.TOPOLOGY.value());
