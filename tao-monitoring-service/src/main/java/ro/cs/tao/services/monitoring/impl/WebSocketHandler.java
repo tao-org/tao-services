@@ -234,8 +234,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
             }
             Messaging.subscribe(this, Topic.getCategoryPattern(Topic.PROGRESS));
             Messaging.subscribe(this, Topic.getCategoryPattern(Topic.TRANSFER_PROGRESS));
-            subscribe(QuotaTopic.USER_STORAGE_USAGE.getCategory());
-            subscribe(QuotaTopic.USER_CPU_USAGE.getCategory());
+            subscribe(QuotaTopic.USER_STORAGE_USAGE.value());
+            subscribe(QuotaTopic.USER_CPU_USAGE.value());
         }
 
 
