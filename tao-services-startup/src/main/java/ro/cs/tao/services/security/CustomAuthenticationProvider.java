@@ -30,6 +30,7 @@ import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.security.token.AuthenticationWithToken;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
+import ro.cs.tao.user.UserType;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -102,7 +103,10 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             if (userToken == null) {
                 logger.finest(String.format("No previous token for user %s, generating a new one", userName));
                 userToken = !"admin".equals(userName)
-                            ? tokenService.generateNewToken(user.getId(), user.getPassword())
+                            ? tokenService.generateNewToken(!UserType.KEYCLOAK.equals(user.getUserType())
+                                                            ? user.getId()
+                                                            : user.getUsername(),
+                                                            user.getPassword())
                             : localTokenProvider.newToken(user.getId(), user.getPassword());
                 tokenService.store(userToken, authenticationWithToken);
                 logger.finest(String.format("Stored token %s for user %s", userToken.getToken(), userName));
