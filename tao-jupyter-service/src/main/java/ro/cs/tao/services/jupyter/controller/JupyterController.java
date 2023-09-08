@@ -8,13 +8,15 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.jupyter.impl.JupyterService;
 import ro.cs.tao.services.jupyter.model.NotebookParams;
 
+import java.util.List;
+
 @RestController
 public class JupyterController extends ControllerBase {
     @Autowired
     private JupyterService jupyterService;
 
     @RequestMapping(value = "/jupyter", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> generateTemplate(@RequestBody NotebookParams ps) {
+    public ResponseEntity<ServiceResponse<?>> generateTemplate(@RequestBody List<NotebookParams> ps) {
         try {
             return prepareResult(jupyterService.generateNotebook(ps));
         } catch (Exception e) {

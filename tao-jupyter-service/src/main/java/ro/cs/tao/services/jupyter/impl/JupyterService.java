@@ -20,14 +20,33 @@ import java.util.List;
 public class JupyterService {
     public int USER_CELL = 0; // editable cell where user can modify content.
 
-    public int generateNotebook(NotebookParams ws) {
+    public int generateNotebook(List<NotebookParams> ws) {
         // generate default ipynb template
         Notebook notebook = new Notebook();
+        // filter and remove unsuitable parameters
+        ws.removeIf(NotebookParams::isNull);
         // inject params if any
-        if (!ws.isNull()) {
-            insertParam(notebook, ws);
-        }
+        insertParam(notebook, ws);
         // deserialize
+        writeNotebook(notebook);
+        return 0;
+    }
+
+    public void insertParam(Notebook notebook, List<NotebookParams> params) {
+        Cell targetCell = notebook.getCellById(USER_CELL);
+        // Script to be added / edited here
+        StringBuilder cellContent = new StringBuilder();
+        // inject every variable into source code section
+        for (NotebookParams param : params) {
+            cellContent.append(String.format("%s = %s\n", param.getName(), param.getDefaultValue()));
+        }
+        // Update cell source code
+        targetCell.setSource(Collections.singletonList(cellContent.toString()));
+        // Update notebook with new cell
+        notebook.setCells(Collections.singletonList(targetCell));
+    }
+
+    public void writeNotebook(Notebook notebook) {
         var mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         try {
@@ -40,15 +59,5 @@ public class JupyterService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return 0;
-    }
-
-    public void insertParam(Notebook notebook, NotebookParams params) {
-        Cell targetCell = notebook.getCellById(USER_CELL);
-        // Script to be added / edited here
-        String cellContent = String.format("%s = %s", params.getName(), params.getDefaultValue());
-        targetCell.setSource(Collections.singletonList(cellContent));
-
-        notebook.setCells(Collections.singletonList(targetCell));
     }
 }
