@@ -11,6 +11,7 @@ import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Notifiable;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.quota.QuotaTopic;
 import ro.cs.tao.services.bridge.spring.SpringContextBridge;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.monitoring.beans.MessageConverter;
@@ -233,6 +234,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
             }
             Messaging.subscribe(this, Topic.getCategoryPattern(Topic.PROGRESS));
             Messaging.subscribe(this, Topic.getCategoryPattern(Topic.TRANSFER_PROGRESS));
+            subscribe(QuotaTopic.USER_STORAGE_USAGE.getCategory());
+            subscribe(QuotaTopic.USER_CPU_USAGE.getCategory());
         }
 
 
