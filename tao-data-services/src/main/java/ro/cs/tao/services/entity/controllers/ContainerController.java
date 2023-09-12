@@ -375,29 +375,34 @@ public class ContainerController extends DataEntityController<Container, String,
             if (StringUtilities.isNullOrEmpty(imageId)) {
                 throw new IllegalArgumentException("[id] null");
             }
-            final Container container = service.findById(imageId);
+            Container container = service.findById(imageId);
             if (container == null) {
-                throw new IllegalArgumentException(String.format("[%s] not registered", imageId));
+                container = service.listContainersVisibleToUser(currentUser())
+                                   .stream().filter(c -> c.getName().equals(imageId)).findFirst().orElse(null);
+                if (container == null) {
+                    throw new IllegalArgumentException(String.format("[%s] not registered", imageId));
+                }
             }
             final Set<DockerImageInstaller> services = ServiceRegistryManager.getInstance().getServiceRegistry(DockerImageInstaller.class).getServices();
+            final Container finalContainer = container;
             final DockerImageInstaller installer = services.stream()
                                                            .filter(i -> (i instanceof SingletonContainer) &&
-                                                                        ((SingletonContainer) i).getContainerName().equals(container.getName()))
+                                                                        ((SingletonContainer) i).getContainerName().equals(finalContainer.getName()))
                                                            .findFirst().orElse(null);
             if (installer != null) {
                 try {
                     installer.getClass().getMethod("start", String.class, String.class);
                     final String user = currentUser();
                     final Token token = tokenManagementService.getUserToken(user);
-                    ((SingletonContainer) installer).start(user, token.getToken());
+                    return prepareResult(((SingletonContainer) installer).start(user, token.getToken()));
                 } catch (Exception e) {
-                    ((SingletonContainer) installer).start();
+                    return prepareResult(((SingletonContainer) installer).start());
                 }
             } else {
                 final String name = SystemPrincipal.instance().getName();
-                DockerManager.runDaemon(container.getName(), name, null, name, null);
+                return prepareResult(DockerManager.runDaemon(container.getName(), name, null, name, null));
             }
-            return prepareResult("Request to start container [" + imageId + "] sent", ResponseStatus.SUCCEEDED);
+            //return prepareResult("Request to start container [" + imageId + "] sent", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
         }
