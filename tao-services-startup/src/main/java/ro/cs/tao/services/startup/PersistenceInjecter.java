@@ -51,7 +51,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
                 try {
                     task = persistenceManager.tasks().update(task);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.warning(ExceptionUtils.getStackTrace(logger, e));
                 }
             }
         });
@@ -60,6 +60,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
         QueryExecutor.setWorkflowProvider(persistenceManager.workflows());
         QueryExecutor.setDataSourceConfigurationProvider(persistenceManager.dataSourceConfigurationProvider());
         QueryExecutor.setTaskProvider(persistenceManager.tasks());
+        QueryExecutor.setComponentProvider(persistenceManager.dataSourceComponents());
         DRMAAExecutor.setTaskProvider(persistenceManager.tasks());
         DRMAAExecutor.setContainerProvider(persistenceManager.containers());
         WPSExecutor.setTaskProvider(persistenceManager.tasks());

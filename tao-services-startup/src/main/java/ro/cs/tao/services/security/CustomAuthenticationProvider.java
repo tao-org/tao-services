@@ -75,10 +75,11 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         JaasAuthenticationToken jaasAuthenticationToken = (JaasAuthenticationToken) delegate.authenticate(authentication);
 
         if (jaasAuthenticationToken.isAuthenticated()) {
-            final String userName = jaasAuthenticationToken.getPrincipal().toString();
-            final User user = persistenceManager.users().getByName(userName);
+            final Principal principal = jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals().stream().findFirst().get();
+            final String userId = principal.getName();
+            final User user = persistenceManager.users().get(userId);
             if (user == null) {
-                throw new RuntimeException(String.format("No such user '%s'", userName));
+                throw new RuntimeException(String.format("No such user '%s'", userId));
             }
             final UserPrincipal userPrincipal = new UserPrincipal(user.getId());
             final Set<Principal> principals = jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals();
@@ -101,23 +102,23 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                                                                                                 jaasAuthenticationToken.getLoginContext());
             Token userToken = tokenService.getUserToken(user.getId());
             if (userToken == null) {
-                logger.finest(String.format("No previous token for user %s, generating a new one", userName));
-                userToken = !"admin".equals(userName)
+                logger.finest(String.format("No previous token for user %s, generating a new one", userId));
+                userToken = !"admin".equals(userId)
                             ? tokenService.generateNewToken(!UserType.KEYCLOAK.equals(user.getUserType())
                                                             ? user.getId()
                                                             : user.getUsername(),
                                                             user.getPassword())
                             : localTokenProvider.newToken(user.getId(), user.getPassword());
                 tokenService.store(userToken, authenticationWithToken);
-                logger.finest(String.format("Stored token %s for user %s", userToken.getToken(), userName));
+                logger.finest(String.format("Stored token %s for user %s", userToken.getToken(), userId));
             } else if (tokenService.retrieve(userToken.getToken()) == null) {
-                logger.finest(String.format("No previous authentication for user %s, storing the created one", userName));
+                logger.finest(String.format("No previous authentication for user %s, storing the created one", userId));
                 tokenService.store(new Token(userToken.getToken(), userToken.getRefreshToken(), TokenProvider.defaultExpiration()),
                                    authenticationWithToken);
-                logger.finest(String.format("Stored token %s for user %s", userToken.getToken(), userName));
+                logger.finest(String.format("Stored token %s for user %s", userToken.getToken(), userId));
             }
             authenticationWithToken.setToken(userToken.getToken());
-            return jaasAuthenticationToken;
+            return authenticationWithToken;
         } else {
             return null;
         }
