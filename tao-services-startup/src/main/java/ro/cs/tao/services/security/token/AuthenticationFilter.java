@@ -70,14 +70,20 @@ public class AuthenticationFilter extends GenericFilterBean {
         if (!systemInitialised && !httpResponse.isCommitted()) {
             httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "The system is not able yet to serve http requests");
         }
-        final Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
+        Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
         final String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
 
         try {
             ServletRequest request = servletRequest;
             if (postToAuthenticate(httpRequest, resourcePath)) {
-                final String username = httpRequest.getParameter("username");
-                final String password = httpRequest.getParameter("password");
+                String username = httpRequest.getParameter("username");
+                if (username == null) {
+                    username = httpRequest.getParameter("code");
+                }
+                String password = httpRequest.getParameter("password");
+                if (password == null) {
+                    password = "";
+                }
                 MutableHttpServletRequest wrapper = new MutableHttpServletRequest(httpRequest);
                 wrapper.putHeader("Authorization", "Basic " + new String(Base64.encodeBase64((username + ":" + password).getBytes(StandardCharsets.US_ASCII))));
                 request = wrapper;

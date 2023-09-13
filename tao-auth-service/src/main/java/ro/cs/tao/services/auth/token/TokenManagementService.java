@@ -58,6 +58,10 @@ public class TokenManagementService {
         return tokenProvider.newToken(refreshToken);
     }
 
+    public Token generateNewTokenFromCode(String code) {
+        return tokenProvider.newTokenFromCode(code);
+    }
+
     public void store(Token token, Authentication authentication) {
         tokenCache.put(token, authentication);
     }

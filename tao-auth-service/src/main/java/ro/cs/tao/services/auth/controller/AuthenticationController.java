@@ -48,11 +48,17 @@ public class AuthenticationController extends BaseController {
      * @param password  The user password
      */
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> login(@RequestParam("username") String user,
-                                                    @RequestParam("password") String password) {
+    public ResponseEntity<ServiceResponse<?>> login(@RequestParam(name = "username", required = false) String user,
+                                                    @RequestParam(name = "password", required = false) String password,
+                                                    @RequestParam(name = "code", required = false) String code) {
         boolean success = true;
         try {
-            final AuthInfo authInfo = authenticationService.login(user, password);
+            final AuthInfo authInfo;
+            if (!StringUtilities.isNullOrEmpty(code)) {
+                authInfo = authenticationService.loginWithCode(currentUser());
+            } else {
+                authInfo = authenticationService.login(user, password);
+            }
             if (authInfo != null && authInfo.isAuthenticated()) {
                 if (authInfo.getRefreshToken() != null) {
                     HttpHeaders headers = new HttpHeaders();

@@ -7,6 +7,7 @@ import ro.cs.tao.security.TaoLoginModule;
 import ro.cs.tao.security.TokenCache;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,12 +41,15 @@ public class KeycloakLoginModule extends TaoLoginModule {
         if (subject.getPrincipals().stream().anyMatch(p -> p.getName().equals(user))) {
             return new User();
         }
-        User userEntity = this.client.checkLoginCredentials(username, password);
+        User userEntity = !StringUtilities.isNullOrEmpty(password)
+                          ? this.client.checkLoginCredentials(username, password)
+                          : this.client.checkLoginCredentials(username);
         if (userEntity != null) {
-            User existing = userProvider.getByName(user);
+            this.username = userEntity.getUsername();
+            User existing = userProvider.getByName(userEntity.getUsername());
             try {
                 if (existing == null) {
-                    final boolean isAdmin = username.equals(this.client.getAdminUser());
+                    final boolean isAdmin = password != null && username.equals(this.client.getAdminUser());
                     final List<Group> groups = userProvider.listGroups().stream()
                             .filter(g -> (isAdmin ? "ADMIN" : "USER").equalsIgnoreCase(g.getName())).collect(Collectors.toList());
                     userEntity.setGroups(groups);

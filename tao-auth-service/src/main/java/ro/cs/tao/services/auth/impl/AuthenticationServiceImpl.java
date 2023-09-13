@@ -84,13 +84,50 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                                                 user.getId(), ExceptionUtils.getStackTrace(e)));
                 }
                 // retrieve user groups and send them as profiles
-                return new AuthInfo(true, userId, authenticationToken.getToken(),
+                return new AuthInfo(true, userId, userName, authenticationToken.getToken(),
                                     authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
                                     user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
             }
         }
         // unauthorized
-        return new AuthInfo(false, null, null, null, -1, null);
+        return new AuthInfo(false, null, null, null, null, -1, null);
+    }
+
+    @Override
+    public AuthInfo loginWithCode(String userId) {
+        Token authenticationToken = tokenService.getUserToken(userId);
+        if (authenticationToken != null) {
+            logger.finest("Token " + authenticationToken.getToken());
+
+            // check if user is still active in TAO
+            final Authentication authentication = tokenService.retrieve(authenticationToken.getToken());
+            if (authentication != null) {
+                //final String userId = userProvider.getId(authentication.getName());
+                final User user = userProvider.get(userId);
+                if (user != null && user.getStatus() == UserStatus.ACTIVE) {
+                    try {
+                        // update user last login date
+                        userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
+                        final List<Repository> list = workspaceProvider.getByUser(user.getId());
+                        if (list == null || list.isEmpty()) {
+                            userProvider.createWorkspaces(user);
+                        }
+                        Path path = Paths.get(SystemVariable.ROOT.value()).resolve(user.getId());
+                        FileUtilities.ensureExists(path);
+                        FileUtilities.ensureExists(path.resolve("files"));
+                    } catch (Exception e) {
+                        logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
+                                                    user.getId(), ExceptionUtils.getStackTrace(e)));
+                    }
+                    // retrieve user groups and send them as profiles
+                    return new AuthInfo(true, userId, user.getUsername(), authenticationToken.getToken(),
+                                        authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
+                                        user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
+                }
+            }
+        }
+        // unauthorized
+        return new AuthInfo(false, null, null, null, null, -1, null);
     }
 
     @Override
