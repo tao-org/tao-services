@@ -1,6 +1,7 @@
 package ro.cs.tao.services.startup;
 
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.execution.Executor;
 import ro.cs.tao.execution.TaskStatusListener;
 import ro.cs.tao.execution.drmaa.DRMAAExecutor;
@@ -55,7 +56,10 @@ public class PersistenceInjecter extends BaseLifeCycle {
                 }
             }
         });
-        ConfigurationManager.getInstance().setPersistentConfigurationProvider(persistenceManager.configuration());
+        final ConfigurationProvider configurationProvider = ConfigurationManager.getInstance();
+        configurationProvider.setPersistentConfigurationProvider(persistenceManager.configuration());
+        ro.cs.tao.utils.executors.Executor.setLocalSudoUser(configurationProvider.getValue("topology.master.user"));
+        ro.cs.tao.utils.executors.Executor.setLocalSudoPwd(configurationProvider.getValue("topology.master.password"));
         QueryExecutor.setProductProvider(persistenceManager.rasterData());
         QueryExecutor.setWorkflowProvider(persistenceManager.workflows());
         QueryExecutor.setDataSourceConfigurationProvider(persistenceManager.dataSourceConfigurationProvider());
