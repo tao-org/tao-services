@@ -10,6 +10,7 @@ import ro.cs.tao.services.jupyter.model.Cell;
 import ro.cs.tao.services.jupyter.model.Notebook;
 import ro.cs.tao.services.jupyter.model.NotebookParams;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -52,10 +53,14 @@ public class JupyterService {
         try {
             var json = mapper.writeValueAsString(notebook);
             final DockerVolumeMap map = ExecutionConfiguration.getMasterContainerVolumeMap();
-            final String userMappedVolume = map.getHostWorkspaceFolder().endsWith("/")
+            final String mapVolumePath = map.getHostWorkspaceFolder().endsWith("/")
                     ? map.getHostWorkspaceFolder()
                     : (map.getHostWorkspaceFolder() + "/");
-            Files.write(Paths.get(userMappedVolume + "templateNotebook.ipynb").toFile().toPath(), json.getBytes());
+
+            File file = new File(mapVolumePath);
+            String[] userMappedVolume = file.list();
+
+            Files.write(Paths.get(mapVolumePath + userMappedVolume[0] + "/templateNotebook.ipynb").toFile().toPath(), json.getBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
