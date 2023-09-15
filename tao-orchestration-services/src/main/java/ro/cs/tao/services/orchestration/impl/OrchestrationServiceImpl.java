@@ -138,8 +138,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Override
     public List<ExecutionTaskSummary> getRunningTasks(String userId) {
         final List<ExecutionTaskSummary> summaries = new ArrayList<>();
-        final Set<ExecutionStatus> statuses = new HashSet<>();
-        Collections.addAll(statuses, ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
+        final Set<ExecutionStatus> statuses = EnumSet.of(ExecutionStatus.RUNNING, ExecutionStatus.QUEUED_ACTIVE);
         final List<ExecutionJob> jobs = jobProvider.list(userId, statuses);
         for (ExecutionJob job : jobs) {
             List<ExecutionTaskSummary> taskList = getTasksStatus(job.getId());

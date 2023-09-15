@@ -390,8 +390,9 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                                  vectorData.toAttributeMap());
         }
         final List<FileObject> fileObjects = new ArrayList<>();
+        final FileObject rootNode = repositoryRootNode(repository);
         if (repository.isRoot(fromPath)) {
-            fileObjects.add(repositoryRootNode(repository));
+            fileObjects.add(rootNode);
         }
         final int filesNameIndex = root.getNameCount() + 1;
         long size;
@@ -732,7 +733,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                 if (exclusions.contains(file)) {
                     return FileVisitResult.CONTINUE;
                 } else {
-                    if (!file.toString().endsWith(".png") && !file.toString().endsWith(".png.aux.xml")) {
+                    if (!file.toString().endsWith(".aux.xml")) {
                         results.add(file);
                     }
                 }

@@ -38,7 +38,7 @@ public class KeycloakLoginModule extends TaoLoginModule {
         if (userProvider == null) {
             throw new RuntimeException("[userProvider] not set");
         }
-        if (subject.getPrincipals().stream().anyMatch(p -> p.getName().equals(user))) {
+        if (!subject.getPrincipals().isEmpty() && subject.getPrincipals().stream().anyMatch(p -> p.getName().equals(user))) {
             return new User();
         }
         User userEntity = !StringUtilities.isNullOrEmpty(password)
