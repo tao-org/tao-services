@@ -17,6 +17,7 @@ package ro.cs.tao.services.monitoring.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.hsqldb.lib.HashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.metrics.MetricsEndpoint;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.datasource.DataSourceTopic;
 import ro.cs.tao.execution.model.ExecutionStatus;
+import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
 import ro.cs.tao.messaging.Message;
@@ -119,10 +121,14 @@ public class MonitoringController extends BaseController {
      */
     @RequestMapping(value = "/monitor/notification/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getLiveNotifications() {
-        if (isCurrentUserAdmin()) {
-            return prepareResult(monitoringService.getLiveNotifications(null));
-        } else {
-            return prepareResult(monitoringService.getLiveNotifications(currentUser()));
+        try {
+            if (isCurrentUserAdmin()) {
+                return prepareResult(monitoringService.getLiveNotifications(null));
+            } else {
+                return prepareResult(monitoringService.getLiveNotifications(currentUser()));
+            }
+        } catch (Throwable t) {
+            return prepareResult(new HashMap<>());
         }
     }
     /**
@@ -130,21 +136,33 @@ public class MonitoringController extends BaseController {
      */
     @RequestMapping(value = "/monitor/notification/unread", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUnreadNotifications() {
-        return prepareResult(monitoringService.getUnreadNotifications(currentUser()));
+        try {
+            return prepareResult(monitoringService.getUnreadNotifications(currentUser()));
+        } catch (Throwable t) {
+            return prepareResult(new HashMap<>());
+        }
     }
     /**
      * Returns a page of notifications for a user
      */
     @RequestMapping(value = "/monitor/notification/{page}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getNotifications(@PathVariable("page") int page) {
-        return prepareResult(monitoringService.getNotifications(currentUser(), page));
+        try {
+            return prepareResult(monitoringService.getNotifications(currentUser(), page));
+        } catch (Throwable t) {
+            return prepareResult(new ArrayList<>());
+        }
     }
 
     @RequestMapping(value = "/monitor/notification/{user}/{page}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserNotifications(@PathVariable("user") String userId,
                                                                    @PathVariable("page") int page) {
         if (isCurrentUserAdmin() || currentUser().equals(userId)) {
-            return prepareResult(monitoringService.getNotifications(userId, page));
+            try{
+                return prepareResult(monitoringService.getNotifications(userId, page));
+            } catch (Throwable t) {
+                return prepareResult(new ArrayList<>());
+            }
         } else {
             return prepareResult("Not authorized", ResponseStatus.FAILED, HttpStatus.FORBIDDEN);
         }
@@ -239,8 +257,25 @@ public class MonitoringController extends BaseController {
             final RuntimeInfo nodeSnapshot = NodeManager.getInstance().getNodeSnapshot(master);
             message = Message.create(SystemPrincipal.instance().getName(), master, JsonMapper.instance().writeValueAsString(nodeSnapshot), false);
         } else if (Topic.EXECUTION.value().equals(topic)) {
-            message = Message.create(principal.getName(), "task id", ExecutionStatus.RUNNING.name(), false);
-            message.addItem("host", master);
+            message = Message.create(principal.getName(), "1", ExecutionStatus.RUNNING.name(), false);
+            //message.addItem("host", master);
+            ExecutionTaskSummary summary = new ExecutionTaskSummary();
+            summary.setTaskId(1);
+            summary.setCommand("docker run");
+            summary.setJobName("job name");
+            summary.setHost(master);
+            summary.setComponentType("exec");
+            summary.setWorkflowName("workflow");
+            summary.setOutput("");
+            summary.setComponentName("ndviOp");
+            summary.setLastUpdated(LocalDateTime.now());
+            summary.setTaskStart(LocalDateTime.now().minusMinutes(1));
+            summary.setPercentComplete(0.57);
+            summary.setTaskStatus(ExecutionStatus.RUNNING);
+            summary.setUsedCPU(8);
+            summary.setUsedRAM(8192);
+            summary.setUserId(principal.getName());
+            message.setPayload(JsonMapper.instance().writeValueAsString(summary));
         } else if (Topic.TOPOLOGY.value().equals(topic)) {
             message = new Message();
             message.setTopic(Topic.TOPOLOGY.value());

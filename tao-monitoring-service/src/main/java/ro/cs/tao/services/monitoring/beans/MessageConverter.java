@@ -32,29 +32,33 @@ public class MessageConverter implements Converter<Message, WSNotification> {
         rawData.keySet().removeAll(exclusions);
         Map<String, Object> data = new HashMap<>();
         for (Map.Entry<String, String> entry : rawData.entrySet()) {
+            final String entryValue = entry.getValue();
             try {
-                Iterator<String> iterator;
-                data = JsonMapper.instance().readValue(entry.getValue(), data.getClass());
-                iterator = data.keySet().iterator();
-                while (iterator.hasNext()) {
-                    String key = iterator.next();
-                    if (exclusions.contains(key)) {
-                        iterator.remove();
+                if (entryValue != null) {
+                    Iterator<String> iterator;
+                    data = JsonMapper.instance().readValue(entryValue, data.getClass());
+                    iterator = data.keySet().iterator();
+                    while (iterator.hasNext()) {
+                        String key = iterator.next();
+                        if (exclusions.contains(key)) {
+                            iterator.remove();
 
-                    } else {
-                        Object val = data.get(key);
-                        if (val instanceof String) {
-                            try {
-                                Map<String, Object> map = new HashMap<>();
-                                map = JsonMapper.instance().readerFor(map.getClass()).readValue((String) val);
-                                data.replace(key, map);
-                            } catch (JsonProcessingException ignored) {
+                        } else {
+                            Object val = data.get(key);
+                            if (val instanceof String) {
+                                try {
+                                    Map<String, Object> map = new HashMap<>();
+                                    map = JsonMapper.instance().readerFor(map.getClass()).readValue((String) val);
+                                    data.replace(key, map);
+                                } catch (JsonProcessingException ignored) {
+                                }
                             }
                         }
                     }
                 }
             } catch (Exception ignored) {
-                data.put(entry.getKey(), entry.getValue());
+                final String key = entry.getKey();
+                data.put(key != null ? key : "unknown", entryValue);
             }
             if (value instanceof DownloadProgress) {
                 data.put("speed", ((DownloadProgress) value).getTransferSpeedMB());

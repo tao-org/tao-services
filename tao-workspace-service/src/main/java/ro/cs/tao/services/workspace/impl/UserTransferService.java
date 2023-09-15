@@ -85,8 +85,8 @@ public class UserTransferService {
         try {
             if (this.progressListener == null) {
                 this.progressListener = new ProgressNotifier(this.principal, item.getBatch(),
-                        Topic.TRANSFER_PROGRESS, new HashMap<String, String>() {{
-                            put("Repository", item.getDestinationRepository().getId());
+                        Topic.TRANSFER_PROGRESS, new HashMap<>() {{
+                    put("Repository", item.getDestinationRepository().getId());
                 }});
                 this.progressListener.started(item.getBatch());
             }
@@ -109,7 +109,7 @@ public class UserTransferService {
             } else {
                 srcPath = srcWorkspace.resolve(fileObject.getRelativePath());
             }
-            this.progressListener.subActivityStarted(srcPath);
+            listener.subActivityStarted(srcPath);
             if (srcWorkspace.getId().equals(dstWorkspace.getId())) {
                 destinationService.move(srcPath, item.getDestinationPath());
             } else {
@@ -125,7 +125,7 @@ public class UserTransferService {
                     if (fileObject.getSize() > 0) {
                         sourceStream = new ListenableInputStream(sourceStream,
                                                                  fileObject.getSize(),
-                                                                 this.progressListener.subProgressListener());
+                                                                 listener);
                     }
                     if (item.isForce() || !destinationService.exists(item.getDestinationPath())) {
                         destinationService.storeFile(sourceStream, fileObject.getSize(), item.getDestinationPath(), srcPath);
@@ -143,7 +143,7 @@ public class UserTransferService {
                     logger.finest("Removed file " + srcPath);
                 }
             }
-            this.progressListener.subActivityEnded(srcPath);
+            listener.subActivityEnded(srcPath);
             //decrement(item.getBatch());
             this.progressListener.notifyProgress(getBatchProgress(item.getBatch()));
             final TransferableItem next = this.queue.peek();
