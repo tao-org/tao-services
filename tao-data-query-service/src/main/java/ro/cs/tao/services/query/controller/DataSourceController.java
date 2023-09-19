@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.component.Variable;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataQuery;
 import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.datasource.DataSourceCredentials;
@@ -37,8 +38,10 @@ import ro.cs.tao.eodata.metadata.MetadataInspector;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.persistence.SiteProvider;
 import ro.cs.tao.products.landsat.Landsat8TileExtent;
 import ro.cs.tao.products.sentinels.Sentinel2TileExtent;
+import ro.cs.tao.serialization.GeometryAdapter;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -56,6 +59,7 @@ import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.executors.NamedThreadPoolExecutor;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
+import ro.cs.tao.workspaces.Site;
 
 import java.awt.geom.Path2D;
 import java.io.FileNotFoundException;
@@ -92,6 +96,8 @@ public class DataSourceController extends BaseController {
     private DataSourceComponentService dataSourceComponentService;
     @Autowired
     private RepositoryProvider repositoryProvider;
+    @Autowired
+    private SiteProvider siteProvider;
 
     /**
      * Lists the available data sources
@@ -378,6 +384,7 @@ public class DataSourceController extends BaseController {
             if (!actualMode.equals("details") && !actualMode.equals("list")) {
                 throw new IllegalArgumentException("Unsupported parameter value [mode=" + actualMode + "]");
             }
+            checkContentRestriction(query);
             List<EOProduct> results = dataSourceService.query(query);
             if (results == null) {
                 results = new ArrayList<>();
@@ -408,6 +415,7 @@ public class DataSourceController extends BaseController {
             try {
                 List<EOProduct> results;
                 Query query = request.getQuery();
+                checkContentRestriction(query);
                 if (StringUtilities.isNullOrEmpty(query.getUserId())) {
                     query.setUserId(userId);
                 }
@@ -475,6 +483,38 @@ public class DataSourceController extends BaseController {
             }
         } else {
             return prepareResult("No metadata inspector found", ResponseStatus.FAILED);
+        }
+    }
+
+    private void checkContentRestriction(Query query) throws Exception {
+        // Verify that the incoming query respects the (optionally) defined area content restriction
+        final String aoiRestriction = ConfigurationManager.getInstance().getValue("area.content.restriction", null);
+        if (aoiRestriction != null) {
+            final double aoiMinIntersection = Double.parseDouble(ConfigurationManager.getInstance().getValue("area.content.intersection", "0.1"));
+            final GeometryAdapter adapter = new GeometryAdapter();
+            final Geometry aoiGeom = adapter.marshal(aoiRestriction);
+            final String siteId = query.getSiteId();
+            String footprint = null;
+            if (siteId != null) {
+                final Site site = siteProvider.get(siteId);
+                if (site != null) {
+                    footprint = site.getFootprint();
+                    final Geometry siteGeom = adapter.marshal(footprint);
+                    if (Double.compare(siteGeom.intersection(aoiGeom).getArea() / siteGeom.getArea(), aoiMinIntersection) < 0) {
+                        throw new IllegalArgumentException("Selected area is outside the allowed search area");
+                    }
+                }
+            } else {
+                footprint = query.getValues().entrySet().stream()
+                                 .filter(e -> CommonParameterNames.FOOTPRINT.equals(e.getKey()))
+                                 .map(Map.Entry::getValue).findFirst().orElse(null);
+            }
+            if (footprint != null) {
+                final Geometry siteGeom = adapter.marshal(footprint);
+                if (Double.compare(siteGeom.intersection(aoiGeom).getArea() / siteGeom.getArea(), aoiMinIntersection) < 0) {
+                    throw new IllegalArgumentException("Selected area is outside the allowed search area");
+                }
+            }
         }
     }
 
