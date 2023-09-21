@@ -149,13 +149,20 @@ public class OrchestrationController extends BaseController {
     }
 
     /**
-     * Removes all pending jobs of the current user
+     * Removes all pending jobs of the given user.
+     * If no userId is given, it will remove all pending jobs from the job queue.
+     *
+     * @param userId    The user identifier
      */
     @RequestMapping(value = "/purge", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> purgeJobs() {
+    public ResponseEntity<ServiceResponse<?>> purgeJobs(@RequestParam(name = "userId", required = false) String userId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            response = prepareResult(orchestrationService.purgeJobs(currentUser()));
+            if (!isCurrentUserAdmin()) {
+                response = prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
+            } else {
+                response = prepareResult(orchestrationService.purgeJobs(userId));
+            }
         } catch (ExecutionException ex) {
             response = handleException(ex);
         }
@@ -247,17 +254,26 @@ public class OrchestrationController extends BaseController {
     @RequestMapping(value = "/queued/jobs", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> moveJobInQueue(@RequestParam(name = "user", required = false) String userId,
                                                              @RequestParam("jobId") long jobId,
-                                                             @RequestParam("moveUp") boolean moveUp) {
+                                                             @RequestParam("operation") QueueOperation operation) {
         if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
-        if (moveUp) {
-            orchestrationService.moveJobUp(jobId, userId);
-        } else {
-            orchestrationService.moveJobDown(jobId, userId);
+        try {
+            switch (operation) {
+                case MOVE_UP:
+                    orchestrationService.moveJobUp(jobId, userId);
+                    break;
+                case MOVE_DOWN:
+                    orchestrationService.moveJobDown(jobId, userId);
+                    break;
+                case REMOVE:
+                    orchestrationService.deleteJobFromQueue(userId, jobId);
+                    break;
+            }
+            return prepareResult("Job queue operation completed", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
         }
-        return prepareResult(String.format("Job %d moved %s one position in queue", jobId, moveUp ? "up" : "down"),
-                             ResponseStatus.SUCCEEDED);
     }
 
     /**
