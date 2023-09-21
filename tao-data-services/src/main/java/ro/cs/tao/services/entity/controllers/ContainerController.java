@@ -441,7 +441,7 @@ public class ContainerController extends DataEntityController<Container, String,
                 writeToResponse(proxiedResponse, response);
             }
         } catch (URISyntaxException | IOException e) {
-            e.printStackTrace();
+            error(e.getMessage());
         }
     }
 
