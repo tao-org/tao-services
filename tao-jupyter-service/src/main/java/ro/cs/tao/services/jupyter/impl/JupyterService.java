@@ -11,6 +11,7 @@ import ro.cs.tao.services.jupyter.model.NotebookParams;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
@@ -53,5 +54,19 @@ public class JupyterService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public String readNotebook(Path path)
+    {
+        Path notebookPath = Paths.get(path.toString() + path.getRoot().toString() + "templateNotebook.ipynb");
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            Notebook notebook = mapper.readValue(notebookPath.toFile(), Notebook.class);
+            List<String> sourceCode = notebook.getCellById(0).getSource();
+            return sourceCode.get(0);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
     }
 }
