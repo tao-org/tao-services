@@ -34,6 +34,16 @@ public class JupyterController extends BaseController {
         }
     }
 
+    @RequestMapping(value = "/ReadNotebook", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> ReadNotebook() {
+        try {
+            final Repository repository = getLocalRepository(currentUser());
+            return prepareResult(jupyterService.readNotebook(Path.of(repository.root())));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
     private Repository getLocalRepository(String user) {
         return repositoryProvider.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
     }
