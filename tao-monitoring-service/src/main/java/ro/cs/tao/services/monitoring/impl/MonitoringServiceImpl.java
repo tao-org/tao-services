@@ -31,6 +31,7 @@ import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.interfaces.MonitoringService;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
+import ro.cs.tao.utils.executors.AuthenticationType;
 import ro.cs.tao.utils.executors.Executor;
 import ro.cs.tao.utils.executors.ExecutorType;
 
@@ -95,7 +96,8 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
             if (NodeManager.isAvailable()) {
                 runtimeInfo = NodeManager.getInstance().getNodeSnapshot(nodeInfo.getId());
             } else {
-                OSRuntimeInfo<?> inspector = OSRuntimeInfo.createInspector(nodeInfo.getId(), nodeInfo.getUserName(), nodeInfo.getUserPass(), RuntimeInfo.class);
+                OSRuntimeInfo<?> inspector = OSRuntimeInfo.createInspector(nodeInfo.getId(), nodeInfo.getUserName(), nodeInfo.getUserPass(),
+                                                                           AuthenticationType.PASSWORD, RuntimeInfo.class);
                 runtimeInfo = inspector.getInfo();
             }
         } catch (Exception e) {
@@ -112,7 +114,11 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
                 runtimeInfo = NodeManager.getInstance().getNodeSnapshot(hostName);
             } else {
                 NodeDescription node = TopologyManager.getInstance().getNode(hostName);
-                runtimeInfo = OSRuntimeInfo.createInspector(node.getId(), node.getUserName(), node.getUserPass(), RuntimeInfo.class).getSnapshot();
+                AuthenticationType type = node.getSshKey() != null ? AuthenticationType.CERTIFICATE : AuthenticationType.PASSWORD;
+                runtimeInfo = OSRuntimeInfo.createInspector(node.getId(), node.getUserName(),
+                                                            type == AuthenticationType.PASSWORD ? node.getUserPass() : node.getSshKey(),
+                                                            type,
+                                                            RuntimeInfo.class).getSnapshot();
             }
         } catch (Throwable ex) {
             logger.warning(ex.getMessage());
