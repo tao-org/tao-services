@@ -93,42 +93,13 @@ public class TopologyController extends DataEntityController<NodeDescription, St
         return prepareResult(names);
     }
 
-    /*@RequestMapping(path = "/{host:.+}", method = RequestMethod.GET, produces = "application/json")
-    public void tunnelWebSSH(@PathVariable("host") String host, HttpServletRequest request, HttpServletResponse response) {
-        try {
-            HttpUriRequest proxiedRequest = createHttpUriRequest(request, host);
-            CloseableHttpClient httpClient = HttpClients.createMinimal();
-            HttpResponse proxiedResponse = httpClient.execute(proxiedRequest);
-            writeToResponse(proxiedResponse, response);
-        } catch (URISyntaxException | IOException e) {
-            e.printStackTrace();
-        }
+    @Override
+    public ResponseEntity<ServiceResponse<?>> save(NodeDescription entity) {
+        return super.save(entity);
     }
 
-    private HttpUriRequest createHttpUriRequest(HttpServletRequest request, String host) throws URISyntaxException {
-        final URI uri = new URI("http://" + host + ":4200/");
-        final RequestBuilder rb = RequestBuilder.create(request.getMethod());
-        rb.setUri(uri);
-        final Enumeration<String> headerNames = request.getHeaderNames();
-        while(headerNames.hasMoreElements()){
-            String headerName = headerNames.nextElement();
-            if(!headerName.equalsIgnoreCase("accept-encoding")) {
-                rb.addHeader(headerName, request.getHeader(headerName));
-            }
-        }
-
-        return rb.build();
+    @Override
+    public ResponseEntity<ServiceResponse<?>> update(String id, NodeDescription entity) {
+        return super.update(id, entity);
     }
-
-    private void writeToResponse(HttpResponse proxiedResponse, HttpServletResponse response) throws IOException {
-        for (Header header : proxiedResponse.getAllHeaders()) {
-            if ((! header.getName().equals("Transfer-Encoding")) || (! header.getValue().equals("chunked"))) {
-                response.addHeader(header.getName(), header.getValue());
-            }
-        }
-        try (InputStream is = proxiedResponse.getEntity().getContent();
-             OutputStream os = response.getOutputStream()) {
-            IOUtils.copy(is, os);
-        }
-    }*/
 }
