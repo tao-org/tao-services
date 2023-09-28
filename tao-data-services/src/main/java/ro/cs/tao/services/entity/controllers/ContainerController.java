@@ -73,6 +73,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -304,12 +305,13 @@ public class ContainerController extends DataEntityController<Container, String,
             }
             final Runnable registrationCode;
 
+            final Principal principal = currentPrincipal();
             if (noFilePresent) {
                 // The container was pulled from Docker Hub
                 registrationCode = () -> {
                     try {
                         initializeContainer(container, components);
-                        Messaging.send(currentPrincipal(), Topic.INFORMATION.value(), this,
+                        Messaging.send(principal, Topic.INFORMATION.value(), this,
                                        String.format("Docker image '%s' successfully registered", container.getName()));
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
@@ -356,6 +358,8 @@ public class ContainerController extends DataEntityController<Container, String,
                 registrationCode = () -> {
                     try {
                         service.registerContainer(dockerPath, container, components);
+                        Messaging.send(principal, Topic.INFORMATION.value(), this,
+                                       String.format("Docker image '%s' successfully registered", container.getName()));
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }
