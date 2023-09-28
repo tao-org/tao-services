@@ -6,10 +6,12 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import ro.cs.tao.datasource.DataSourceTopic;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Notifiable;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.quota.QuotaTopic;
 import ro.cs.tao.services.bridge.spring.SpringContextBridge;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.monitoring.beans.MessageConverter;
@@ -230,11 +232,10 @@ public class WebSocketHandler extends TextWebSocketHandler {
             for (String topic : topics) {
                 subscribe(topic);
             }
-            /* Should have already all the topics above
-            Messaging.subscribe(this, Topic.getCategoryPattern(Topic.PROGRESS));
-            Messaging.subscribe(this, Topic.getCategoryPattern(Topic.TRANSFER_PROGRESS));
+            subscribe(DataSourceTopic.PRODUCT_PROGRESS.value());
+            //Messaging.subscribe(this, Topic.getCategoryPattern(Topic.TRANSFER_PROGRESS));
             subscribe(QuotaTopic.USER_STORAGE_USAGE.value());
-            subscribe(QuotaTopic.USER_CPU_USAGE.value());*/
+            subscribe(QuotaTopic.USER_CPU_USAGE.value());
         }
 
 

@@ -263,6 +263,10 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             final Queue<Tuple<Long, String>> jobs = Orchestrator.getInstance().getAllJobs();
             for (Tuple<Long, String> entry : jobs) {
                 final ExecutionJob job = jobProvider.get(entry.getKeyOne());
+                if (job == null) {
+                    Orchestrator.getInstance().removeJob(entry.getKeyTwo(), entry.getKeyOne());
+                    continue;
+                }
                 ExecutionJobSummary summary = new ExecutionJobSummary();
                 summary.setId(job.getId());
                 summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());

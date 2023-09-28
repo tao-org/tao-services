@@ -37,7 +37,10 @@ import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.mail.MailSender;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -121,9 +124,9 @@ public class AdministrationController extends BaseController {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         final List<User> users = new ArrayList<>();
-        final Set<String> names = new HashSet<>(sessionRegistry.getAllPrincipals().stream().filter(u -> !sessionRegistry.getAllSessions(u, false).isEmpty()).map(Object::toString).collect(Collectors.toList()));
-        if (!names.isEmpty()) {
-            users.addAll(adminService.getUsers(names));
+        final Set<String> ids = sessionRegistry.getAllPrincipals().stream().filter(u -> !sessionRegistry.getAllSessions(u, false).isEmpty()).map(Object::toString).collect(Collectors.toSet());
+        if (!ids.isEmpty()) {
+            users.addAll(adminService.getUsers(ids));
         }
         return prepareResult(users);
     }
