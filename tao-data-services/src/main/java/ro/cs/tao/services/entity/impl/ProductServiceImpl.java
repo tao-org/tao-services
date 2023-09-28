@@ -16,7 +16,6 @@
 
 package ro.cs.tao.services.entity.impl;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -177,7 +176,10 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 			if (inspector == null) {
 				logger.warning("No inspector suitable found for " + source);
 			} else {
-				CollectionUtils.addIgnoreNull(results, inspectProduct(inspector, principal, source));
+				final EOProduct eoProduct = inspectProduct(inspector, principal, source);
+				if (eoProduct != null) {
+					results.add(eoProduct);
+				}
 				progressListener.notifyProgress(count);
 			}
 			if (results.isEmpty()) {
@@ -216,7 +218,10 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 								logger.warning("No inspector suitable found for " + file);
 								continue;
 							}
-							CollectionUtils.addIgnoreNull(results, inspectProduct(inspector, principal, targetPath));
+							final EOProduct eoProduct = inspectProduct(inspector, principal, targetPath);
+							if (eoProduct != null) {
+								results.add(eoProduct);
+							}
 						} catch (Exception e1) {
 							logger.warning(String.format("Import for %s failed. Reason: %s", file, e1.getMessage()));
 						}

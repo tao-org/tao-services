@@ -1,6 +1,5 @@
 package ro.cs.tao.services.entity.impl;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +44,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     @Autowired
     private DataSourceComponentService dataSourceComponentService;
 
-    private Logger logger = Logger.getLogger(DataSourceGroupService.class.getName());
+    private final Logger logger = Logger.getLogger(DataSourceGroupService.class.getName());
 
     @Override
     public DataSourceComponentGroup findById(String id) {
@@ -262,8 +261,8 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         // remove from the list the products that are already in database
         candidatesToSave.removeIf(p -> existingProducts.contains(p.getName()));
         if (previousNames != null) {
-            Collection<String> candidatesToRemove = CollectionUtils.subtract(previousNames,
-                                                                             products.stream().map(EOProduct::getName).collect(Collectors.toSet()));
+            final Set<String> pNames = products.stream().map(EOProduct::getName).collect(Collectors.toSet());
+            Collection<String> candidatesToRemove = previousNames.stream().filter(n -> !pNames.contains(n)).collect(Collectors.toList());
             for (String product : candidatesToRemove) {
                 logger.finest(String.format("Product [%s] will be removed from database if not already downloaded or referenced by another component",
                                             product));
