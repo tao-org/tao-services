@@ -72,8 +72,8 @@ public class AdministrationServiceImpl implements AdministrationService {
     }
 
     @Override
-    public List<User> getUsers(Set<String> userNames) {
-        return userProvider.listUsers(userNames);
+    public List<User> getUsers(Set<String> userIds) {
+        return userProvider.listUsers(userIds);
     }
 
     @Override

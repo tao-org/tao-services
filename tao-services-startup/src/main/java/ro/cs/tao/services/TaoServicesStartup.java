@@ -136,7 +136,7 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
                 if (line.contains("baseWssUrl") &&
                         (!line.contains("ws:") || !line.contains("wss:"))) {
                     return line.substring(0, line.indexOf("'") + 1) +
-                            (url.endsWith("/") ? url.substring(0, url.length() - 1) : url).replace("http", "ws") +
+                            (url.endsWith("/") ? url : url + "/").replace("http", "ws") +
                             line.substring(line.lastIndexOf("'"));
                 } else {
                     return line;
