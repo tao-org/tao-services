@@ -153,18 +153,18 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
           .authorizeRequests()
                 .antMatchers(Endpoints.GLOBAL_PATH_EXPRESSION)
                 // permit all after token management
-                .permitAll()
-                .and()
+                    .permitAll()
+                    .and()
 
-                // replace code above to bypass token management
-                /*.authenticated()
-                .and()
-                .httpBasic()
-                .and()
-                .authenticationProvider(customAuthProvider())*/
-
-                .csrf()
-                .disable();
+                    // replace code above to bypass token management
+                    /*.authenticated()
+                    .and()
+                    .httpBasic()
+                    .and()
+                    .authenticationProvider(customAuthProvider())*/
+                    .csrf()
+                        .disable()
+                .addFilterAfter(new RedirectFilter(), AuthenticationFilter.class);
         http.cors();
     }
 

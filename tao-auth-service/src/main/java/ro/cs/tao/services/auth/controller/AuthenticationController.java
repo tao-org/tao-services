@@ -21,6 +21,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -65,6 +67,7 @@ public class AuthenticationController extends BaseController {
                     headers.add("Set-Cookie", "refreshToken=" + authInfo.getRefreshToken() + ";Max-Age=" + authInfo.getExpiration());
                     return ResponseEntity.status(HttpStatus.OK).headers(headers).body(new ServiceResponse<>(authInfo));
                 } else {
+                    Messaging.send(currentUser(), Topic.AUTHENTICATION.value(), "Login");
                     return prepareResult(authInfo);
                 }
             } else {
@@ -94,6 +97,7 @@ public class AuthenticationController extends BaseController {
         }
         try {
             if (authenticationService.logout(authToken)) {
+                Messaging.send(currentUser(), Topic.AUTHENTICATION.value(), "Logout");
                 return prepareResult("Logout successful", HttpStatus.OK);
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);

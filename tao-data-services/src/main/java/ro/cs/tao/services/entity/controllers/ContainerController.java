@@ -398,7 +398,7 @@ public class ContainerController extends DataEntityController<Container, String,
                     installer.getClass().getMethod("start", String.class, String.class);
                     final String user = currentUser();
                     final Token token = tokenManagementService.getUserToken(user);
-                    return prepareResult(((SingletonContainer) installer).start(user, token.getToken()));
+                    return prepareResult(((SingletonContainer) installer).start(user, user));//token.getToken()));
                 } catch (Exception e) {
                     return prepareResult(((SingletonContainer) installer).start());
                 }

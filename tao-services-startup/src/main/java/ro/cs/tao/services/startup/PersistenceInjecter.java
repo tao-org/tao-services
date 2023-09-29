@@ -14,6 +14,7 @@ import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.TaoLoginModule;
+import ro.cs.tao.services.RedirectFilter;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.model.ItemAction;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
@@ -91,6 +92,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
         for (ItemAction action : services) {
             action.setProductProvider(this.persistenceManager.rasterData());
         }
+        RedirectFilter.setContainerInstanceProvider(this.persistenceManager.containerInstance());
     }
 
     @Override
