@@ -203,7 +203,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
                 if (grouped) {
                     final Map<String, List<ConfigurationItem>> items = persistenceManager.configuration().getGroupedItems();
                     if (!StringUtilities.isNullOrEmpty(filter)) {
-                        items.entrySet().removeIf(current -> !current.getValue().stream().anyMatch(item -> item.getId().contains(filter)));
+                        items.entrySet().removeIf(current -> current.getValue().stream().noneMatch(item -> item.getId().contains(filter)));
                     }
                     // sort items by category order
                     final Map<String, List<ConfigurationItem>> sortedItems = items.entrySet().stream().sorted(Comparator.comparing(item -> item.getValue().get(0).getCategory().getOrder()))
