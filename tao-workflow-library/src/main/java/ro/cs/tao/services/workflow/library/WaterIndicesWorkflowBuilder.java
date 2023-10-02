@@ -25,27 +25,27 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ThreeSnapOtbWorkflowBuilder extends WorkflowBuilderBase {
+public class WaterIndicesWorkflowBuilder extends WorkflowBuilderBase {
     @Override
-    public String getName() { return "SNAP Resample, NDVI, MSAVI and OTB Concatenate"; }
+    public String getName() { return "Sentinel-2 Water Indices"; }
 
     @Override
     protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
         Map<String, String> customValues = new HashMap<>();
-        customValues.put("targetResolution", "60");
         WorkflowNodeDescriptor node1 = addNode(workflow,
-                                               "SNAP Resample", "snap-resample", ComponentType.PROCESSING, customValues,
-                                               null, null, (Direction) null);
-        customValues.clear();
+                                               "NDWI", "snap-ndwi", ComponentType.PROCESSING, null,
+                                               null, ComponentType.PROCESSING, (Direction) null);
         WorkflowNodeDescriptor node2 = addNode(workflow,
-                                               "SNAP NDVI", "snap-ndvi", ComponentType.PROCESSING, null,
-                                               node1, ComponentType.PROCESSING, Direction.TOP_RIGHT);
+                                               "NDPI", "snap-ndpi", ComponentType.PROCESSING, null,
+                                               null, ComponentType.PROCESSING, Direction.BOTTOM);
         WorkflowNodeDescriptor node3 = addNode(workflow,
-                                               "SNAP MSAVI", "snap-msavi", ComponentType.PROCESSING, null,
-                                               node1, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+                                               "NDTI", "snap-ndti", ComponentType.PROCESSING, null,
+                                               null, ComponentType.PROCESSING, Direction.BOTTOM);
+        customValues.put("t", "${1:MISSION}_${1:TILE}_${1:ADATE}T${1:ATIME}_WATIDX.tif");
         WorkflowNodeDescriptor node4 = addNode(workflow,
-                                               "OTB Combine", "ConcatenateImages", ComponentType.PROCESSING, null,
-                                               node2, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+                                               "Combine", "snap-bandmerge", ComponentType.PROCESSING, customValues,
+                                               node1, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+        addLink(node2, node4);
         addLink(node3, node4);
     }
 }
