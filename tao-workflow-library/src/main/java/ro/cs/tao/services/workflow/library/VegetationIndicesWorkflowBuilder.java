@@ -48,7 +48,7 @@ public class VegetationIndicesWorkflowBuilder extends WorkflowBuilderBase {
         customValues.put("t", "${1:MISSION}_${1:TILE}_${1:ADATE}T${1:ATIME}_VEGIDX.tif");
         WorkflowNodeDescriptor node3 = addNode(workflow,
                                                "Combine", "snap-bandmerge", ComponentType.PROCESSING, customValues,
-                                               node2, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+                                               node2, ComponentType.PROCESSING, Direction.TOP_RIGHT);
         addLink(node1, node3);
     }
 }

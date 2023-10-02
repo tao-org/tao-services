@@ -44,7 +44,7 @@ public class WaterIndicesWorkflowBuilder extends WorkflowBuilderBase {
         customValues.put("t", "${1:MISSION}_${1:TILE}_${1:ADATE}T${1:ATIME}_WATIDX.tif");
         WorkflowNodeDescriptor node4 = addNode(workflow,
                                                "Combine", "snap-bandmerge", ComponentType.PROCESSING, customValues,
-                                               node1, ComponentType.PROCESSING, Direction.BOTTOM_RIGHT);
+                                               node1, ComponentType.PROCESSING, Direction.TOP_RIGHT);
         addLink(node2, node4);
         addLink(node3, node4);
     }
