@@ -39,12 +39,17 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.security.AuthenticationMode;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.Endpoints;
+import ro.cs.tao.services.commons.TunnelFilter;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.token.AuthenticationFilter;
 import ro.cs.tao.services.security.token.TokenAuthenticationProvider;
+import ro.cs.tao.spi.ServiceRegistry;
+import ro.cs.tao.spi.ServiceRegistryManager;
 
+import javax.servlet.Filter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -128,43 +133,53 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-          .sessionManagement()
-                .maximumSessions(2).maxSessionsPreventsLogin(false).sessionRegistry(sessionRegistry())
-                .and()
-                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
-          .and()
-          .headers().frameOptions().sameOrigin()
-          .and()
-          .authorizeRequests()
-                .antMatchers(Endpoints.REFRESH_ENDPOINT, Endpoints.DOWNLOAD_ENDPOINT)
-                    .permitAll()
-                .antMatchers(Endpoints.LOGIN_ENDPOINT)
-                    .authenticated()
+                .sessionManagement()
+                    .maximumSessions(2).maxSessionsPreventsLogin(false).sessionRegistry(sessionRegistry())
+                    .and()
+                    .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
+                    .and()
+                .headers().frameOptions().sameOrigin()
+                    .and()
+                    .authorizeRequests()
+                        .antMatchers(Endpoints.REFRESH_ENDPOINT, Endpoints.DOWNLOAD_ENDPOINT)
+                            .permitAll()
+                        .antMatchers(Endpoints.LOGIN_ENDPOINT)
+                            .authenticated()
                     .and()
                     .httpBasic()
                     .and()
                     .authenticationProvider(customAuthenticationProvider)
-          .authorizeRequests()
-                .antMatchers(apiEndpointsWithAuthToken())
-                    .authenticated()
-                    .and()
-                    .authenticationProvider(tokenProvider)
-                .addFilterBefore(new AuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class)
-          .authorizeRequests()
-                .antMatchers(Endpoints.GLOBAL_PATH_EXPRESSION)
-                // permit all after token management
-                    .permitAll()
-                    .and()
+                        .authorizeRequests()
+                            .antMatchers(apiEndpointsWithAuthToken())
+                                .authenticated()
+                        .and()
+                        .authenticationProvider(tokenProvider)
+                            .addFilterBefore(new AuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class)
+                        .authorizeRequests()
+                            .antMatchers(Endpoints.GLOBAL_PATH_EXPRESSION)
+                                // permit all after token management
+                                .permitAll()
+                        .and()
 
-                    // replace code above to bypass token management
-                    /*.authenticated()
-                    .and()
-                    .httpBasic()
-                    .and()
-                    .authenticationProvider(customAuthProvider())*/
+                // replace code above to bypass token management
+                /*.authenticated()
+                .and()
+                .httpBasic()
+                .and()
+                .authenticationProvider(customAuthProvider())*/
                     .csrf()
-                        .disable()
-                .addFilterAfter(new RedirectFilter(), AuthenticationFilter.class);
+                        .disable();
+        final ServiceRegistry<TunnelFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(TunnelFilter.class);
+        final Set<TunnelFilter> tunnelFilters = registry.getServices();
+        if (tunnelFilters != null && !tunnelFilters.isEmpty()) {
+            Class<? extends Filter> afterClass = AuthenticationFilter.class;
+            for (TunnelFilter filter : tunnelFilters) {
+                http.addFilterAfter(filter, afterClass);
+                Logger.getLogger(WebSecurityConfig.class.getName())
+                        .fine("Registered tunnel filter: " + filter.getClass());
+                afterClass = filter.getClass();
+            }
+        }
         http.cors();
     }
 

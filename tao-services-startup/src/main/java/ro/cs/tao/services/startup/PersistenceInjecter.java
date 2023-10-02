@@ -14,7 +14,7 @@ import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.TaoLoginModule;
-import ro.cs.tao.services.RedirectFilter;
+import ro.cs.tao.services.commons.ContainerTunnelFilter;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.model.ItemAction;
 import ro.cs.tao.services.security.CustomAuthenticationProvider;
@@ -58,6 +58,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
             }
         });
         final ConfigurationProvider configurationProvider = ConfigurationManager.getInstance();
+        final ServiceRegistryManager registryManager = ServiceRegistryManager.getInstance();
         configurationProvider.setPersistentConfigurationProvider(persistenceManager.configuration());
         ro.cs.tao.utils.executors.Executor.setLocalSudoUser(configurationProvider.getValue("topology.master.user"));
         ro.cs.tao.utils.executors.Executor.setLocalSudoPwd(configurationProvider.getValue("topology.master.password"));
@@ -77,7 +78,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
         logger.fine("Persistence injection completed");
         SpringSessionProvider.setPersistenceManager(this.persistenceManager);
         SessionStore.setSessionContextProvider(new SpringSessionProvider());
-        final Set<LoginModule> loginModules = ServiceRegistryManager.getInstance().getServiceRegistry(LoginModule.class).getServices();
+        final Set<LoginModule> loginModules = registryManager.getServiceRegistry(LoginModule.class).getServices();
         for (LoginModule module : loginModules) {
             if (TaoLoginModule.class.isAssignableFrom(module.getClass())) {
                 TaoLoginModule.setUserProvider(this.persistenceManager.users());
@@ -87,12 +88,12 @@ public class PersistenceInjecter extends BaseLifeCycle {
         StorageServiceFactory.setProductProvider(this.persistenceManager.rasterData());
         StorageServiceFactory.setVectorDataProvider(this.persistenceManager.vectorData());
         StorageServiceFactory.setAuxiliaryDataProvider(this.persistenceManager.auxiliaryData());
-        ServiceRegistry<ItemAction> registry = ServiceRegistryManager.getInstance().getServiceRegistry(ItemAction.class);
+        ServiceRegistry<ItemAction> registry = registryManager.getServiceRegistry(ItemAction.class);
         Set<ItemAction> services = registry.getServices();
         for (ItemAction action : services) {
             action.setProductProvider(this.persistenceManager.rasterData());
         }
-        RedirectFilter.setContainerInstanceProvider(this.persistenceManager.containerInstance());
+        ContainerTunnelFilter.setContainerInstanceProvider(this.persistenceManager.containerInstance());
     }
 
     @Override
