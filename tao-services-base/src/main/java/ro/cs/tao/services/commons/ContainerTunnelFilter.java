@@ -1,14 +1,12 @@
-package ro.cs.tao.services;
+package ro.cs.tao.services.commons;
 
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.h2.util.IOUtils;
-import org.springframework.http.server.ServletServerHttpRequest;
-import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.ContainerInstance;
@@ -28,22 +26,24 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.logging.Logger;
 
-public class RedirectFilter implements javax.servlet.Filter {
+public abstract class ContainerTunnelFilter implements TunnelFilter {
 
-    private static ContainerInstanceProvider containerInstanceProvider;
+    protected static ContainerInstanceProvider containerInstanceProvider;
+    protected Logger logger = Logger.getLogger(TunnelFilter.class.getName());
 
     public static void setContainerInstanceProvider(ContainerInstanceProvider provider) {
         containerInstanceProvider = provider;
     }
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        ServletServerHttpRequest request = new ServletServerHttpRequest((HttpServletRequest) servletRequest);
-        ServletServerHttpResponse response = new ServletServerHttpResponse((HttpServletResponse) servletResponse);
-        final URI uri = request.getURI();
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        final HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+        final URI uri = URI.create((httpServletRequest).getRequestURI());
         String path = uri.getPath();
-        if (path.startsWith("/lab") || path.startsWith("/static/lab") || path.startsWith("/api")) {
+        if (filterExpression().matcher(path).find()) {
             final String principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
             final List<ContainerInstance> instances = containerInstanceProvider.getByUserId(principal);
             if (instances != null && !instances.isEmpty()) {
@@ -52,26 +52,26 @@ public class RedirectFilter implements javax.servlet.Filter {
                     servicesPath = servicesPath.substring(0, servicesPath.length() - 1);
                 }
                 final ContainerInstance instance = instances.get(0);
-                final String newPath = servicesPath + ":" + instance.getPort() + request.getServletRequest().getServletPath();
+                final String newPath = servicesPath + ":" + instance.getPort() + httpServletRequest.getServletPath();
                 try {
-                    HttpUriRequest proxiedRequest = createHttpUriRequest(request.getServletRequest(),
+                    HttpUriRequest proxiedRequest = createHttpUriRequest(httpServletRequest,
                                                                          newPath,
-                                                                         request.getServletRequest().getQueryString());
+                                                                         httpServletRequest.getQueryString());
 
                     try (final CloseableHttpClient client = WrappedCloseableHttpClient.createHttpClient(new BasicCookieStore(), null)) {
                         HttpResponse proxiedResponse = client.execute(proxiedRequest);
-                        writeToResponse(proxiedResponse, response.getServletResponse());
+                        writeToResponse(proxiedResponse, httpServletResponse);
                     }
                 } catch (URISyntaxException | IOException e) {
-                    e.printStackTrace();
+                    logger.warning(e.getMessage());
                 }
             }
-            filterChain.doFilter(request.getServletRequest(), response.getServletResponse());
+            chain.doFilter(httpServletRequest, httpServletResponse);
         }
-        filterChain.doFilter(servletRequest, servletResponse);
+        chain.doFilter(request, response);
     }
 
-    private HttpUriRequest createHttpUriRequest(HttpServletRequest request, String baseUrl, String query) throws URISyntaxException {
+    protected HttpUriRequest createHttpUriRequest(HttpServletRequest request, String baseUrl, String query) throws URISyntaxException {
         final URI uri = new URI(baseUrl + (query != null ? "?" + query : ""));
         final RequestBuilder rb = RequestBuilder.create(request.getMethod());
         rb.setUri(uri);
@@ -85,7 +85,7 @@ public class RedirectFilter implements javax.servlet.Filter {
         return rb.build();
     }
 
-    private void writeToResponse(HttpResponse proxiedResponse, HttpServletResponse response) throws IOException {
+    protected void writeToResponse(HttpResponse proxiedResponse, HttpServletResponse response) throws IOException {
         for (Header header : proxiedResponse.getAllHeaders()) {
             if ((! header.getName().equals("Transfer-Encoding")) || (! header.getValue().equals("chunked"))) {
                 response.addHeader(header.getName(), header.getValue());
@@ -96,5 +96,4 @@ public class RedirectFilter implements javax.servlet.Filter {
             IOUtils.copy(is, os);
         }
     }
-
 }
