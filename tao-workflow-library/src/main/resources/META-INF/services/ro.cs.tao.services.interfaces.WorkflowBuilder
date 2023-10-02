@@ -20,3 +20,4 @@
 #ro.cs.tao.services.workflow.library.CoherenceWorkflow
 ro.cs.tao.services.workflow.library.VegetationIndicesWorkflowBuilder
 ro.cs.tao.services.workflow.library.WaterIndicesWorkflowBuilder
+ro.cs.tao.services.workflow.library.FloodDetectionWorkflowBuilder
