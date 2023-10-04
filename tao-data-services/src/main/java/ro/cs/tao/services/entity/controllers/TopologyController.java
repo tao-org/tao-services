@@ -18,6 +18,7 @@ package ro.cs.tao.services.entity.controllers;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.StringIdentifiable;
@@ -91,6 +92,23 @@ public class TopologyController extends DataEntityController<NodeDescription, St
         List<String> names = activeNodes.stream().map(StringIdentifiable::getId).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
         names.add(0, "Any");
         return prepareResult(names);
+    }
+
+    /**
+     * Installs the necessary services on a node.
+     */
+    @RequestMapping(value = "/install", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> installServices(@RequestParam("nodeId") String nodeId) {
+        try {
+            final NodeDescription node = service.findById(nodeId);
+            if (node == null) {
+                throw new IllegalArgumentException("No such node");
+            }
+            asyncExecute(() -> service.installServices(node));
+            return prepareResult("Services installation started on node " + nodeId);
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
 
     @Override

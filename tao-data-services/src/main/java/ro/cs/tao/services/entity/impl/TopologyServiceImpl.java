@@ -192,6 +192,11 @@ public class TopologyServiceImpl
     }
 
     @Override
+    public void installServices(NodeDescription node) {
+        TopologyManager.getInstance().installServices(node);
+    }
+
+    @Override
     protected void validateFields(NodeDescription object, List<String> errors) throws ValidationException {
         String value = object.getId();
         if (value == null || value.trim().isEmpty()) {

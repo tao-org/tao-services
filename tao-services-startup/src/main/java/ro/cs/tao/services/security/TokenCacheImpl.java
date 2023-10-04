@@ -75,7 +75,7 @@ public class TokenCacheImpl implements TokenCache {
         for (Map.Entry<String, Tuple<Token, Authentication>> entry : cache.entrySet()) {
             final Token t = entry.getValue().getKeyOne();
             if ((!t.isExpired() && t.getToken().equals(token)) ||
-                t.getRefreshToken().equals(token)) {
+                    (t.getRefreshToken() != null && t.getRefreshToken().equals(token))) {
                 authentication = entry.getValue().getKeyTwo();
             }
         }
