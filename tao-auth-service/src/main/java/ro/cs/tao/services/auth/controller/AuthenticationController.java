@@ -67,7 +67,7 @@ public class AuthenticationController extends BaseController {
                     headers.add("Set-Cookie", "refreshToken=" + authInfo.getRefreshToken() + ";Max-Age=" + authInfo.getExpiration());
                     return ResponseEntity.status(HttpStatus.OK).headers(headers).body(new ServiceResponse<>(authInfo));
                 } else {
-                    Messaging.send(currentUser(), Topic.AUTHENTICATION.value(), "Login");
+                    Messaging.send(currentUser(), Topic.AUTHENTICATION.value(), "Login " + currentUser());
                     return prepareResult(authInfo);
                 }
             } else {
@@ -97,7 +97,7 @@ public class AuthenticationController extends BaseController {
         }
         try {
             if (authenticationService.logout(authToken)) {
-                Messaging.send(currentUser(), Topic.AUTHENTICATION.value(), "Logout");
+                Messaging.send(currentUser(), Topic.AUTHENTICATION.value(), "Logout " + currentUser());
                 return prepareResult("Logout successful", HttpStatus.OK);
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
