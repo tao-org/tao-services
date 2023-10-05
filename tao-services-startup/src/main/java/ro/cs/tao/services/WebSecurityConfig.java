@@ -154,12 +154,25 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                                 .authenticated()
                         .and()
                         .authenticationProvider(tokenProvider)
-                            .addFilterBefore(new AuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class)
-                        .authorizeRequests()
-                            .antMatchers(Endpoints.GLOBAL_PATH_EXPRESSION)
+                            .addFilterBefore(new AuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
+        if (ConfigurationManager.getInstance().getBooleanValue("enable.tunnel.filters")) {
+            final ServiceRegistry<TunnelFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(TunnelFilter.class);
+            final Set<TunnelFilter> tunnelFilters = registry.getServices();
+            if (tunnelFilters != null && !tunnelFilters.isEmpty()) {
+                Class<? extends Filter> afterClass = BasicAuthenticationFilter.class;
+                for (TunnelFilter filter : tunnelFilters) {
+                    http.addFilterAfter(filter, afterClass);
+                    Logger.getLogger(WebSecurityConfig.class.getName())
+                          .fine("Registered tunnel filter: " + filter.getClass());
+                    afterClass = filter.getClass();
+                }
+            }
+        }
+        http    .authorizeRequests()
+                    .antMatchers(Endpoints.GLOBAL_PATH_EXPRESSION)
                                 // permit all after token management
-                                .permitAll()
-                        .and()
+                    .permitAll()
+                    .and()
 
                 // replace code above to bypass token management
                 /*.authenticated()
@@ -169,17 +182,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 .authenticationProvider(customAuthProvider())*/
                     .csrf()
                         .disable();
-        final ServiceRegistry<TunnelFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(TunnelFilter.class);
-        final Set<TunnelFilter> tunnelFilters = registry.getServices();
-        if (tunnelFilters != null && !tunnelFilters.isEmpty()) {
-            Class<? extends Filter> afterClass = AuthenticationFilter.class;
-            for (TunnelFilter filter : tunnelFilters) {
-                http.addFilterAfter(filter, afterClass);
-                Logger.getLogger(WebSecurityConfig.class.getName())
-                        .fine("Registered tunnel filter: " + filter.getClass());
-                afterClass = filter.getClass();
-            }
-        }
         http.cors();
     }
 
