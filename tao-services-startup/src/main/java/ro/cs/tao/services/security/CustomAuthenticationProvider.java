@@ -117,6 +117,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                                    authenticationWithToken);
                 logger.finest(String.format("Stored token %s for user %s", userToken.getToken(), userId));
             }
+            tokenService.removeUserTokens(user.getUsername());
             authenticationWithToken.setToken(userToken.getToken());
             return authenticationWithToken;
         } else {
