@@ -27,6 +27,7 @@ import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.NodeFlavor;
+import ro.cs.tao.topology.ServiceDescription;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.topology.docker.DockerManager;
 
@@ -192,8 +193,8 @@ public class TopologyServiceImpl
     }
 
     @Override
-    public void installServices(NodeDescription node) {
-        TopologyManager.getInstance().installServices(node);
+    public void installServices(NodeDescription node, ServiceDescription service) {
+        TopologyManager.getInstance().installServices(node, service);
     }
 
     @Override
