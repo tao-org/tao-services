@@ -237,6 +237,9 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
                 for (WatchEvent<?> event : key.pollEvents()) {
                     WatchEvent.Kind<?> kind = event.kind();
                     Path name = ((WatchEvent<Path>) event).context();
+                    if (directory == null) {
+                        continue;
+                    }
                     Path child = directory.resolve(name);
 
                     //logger.finest(String.format("Filesystem event %s: %s\n", event.kind().name(), child));
