@@ -135,13 +135,13 @@ public class TopologyController extends DataEntityController<NodeDescription, St
         }
     }
 
-    @Override
-    public ResponseEntity<ServiceResponse<?>> save(NodeDescription entity) {
+    /*@Override
+    public ResponseEntity<ServiceResponse<?>> save(@RequestBody NodeDescription entity) {
         return super.save(entity);
     }
 
     @Override
     public ResponseEntity<ServiceResponse<?>> update(String id, NodeDescription entity) {
         return super.update(id, entity);
-    }
+    }*/
 }

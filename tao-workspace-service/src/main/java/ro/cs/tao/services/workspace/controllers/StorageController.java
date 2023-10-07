@@ -37,6 +37,7 @@ import ro.cs.tao.services.workspace.model.TransferRequest;
 import ro.cs.tao.services.workspace.model.TransferableItem;
 import ro.cs.tao.utils.*;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
+import ro.cs.tao.utils.executors.MemoryUnit;
 import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
@@ -378,46 +379,52 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             final boolean isFile = StringUtilities.isNullOrEmpty(folder);
             switch (repository.getType()) {
                 case LOCAL:
-                    if (isFile) {
-                        Resource file = loadAsResource(user, fileName);
-                        response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                        response.setContentLengthLong(file.contentLength());
-                        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename());
-                        response.setStatus(HttpStatus.OK.value());
-                        byte[] buffer = new byte[262144];
-                        try (InputStream in = file.getInputStream()) {
-                            int read;
-                            while ((read = in.read(buffer)) > 0) {
-                                response.getOutputStream().write(buffer, 0, read);
-                            }
-                        }
-                    } else {
-                        final Path path = Paths.get(repository.resolve(folder));
-                        if (Files.exists(path) && Files.isDirectory(path)) {
-                            try {
+                    asyncExecute(() -> {
+                        try {
+                            if (isFile) {
+                                Resource file = loadAsResource(user, fileName);
                                 response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
-                                response.setStatus(HttpServletResponse.SC_OK);
-                                try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
-                                    getLocalRepositoryService(user).streamToZip(path.toString(), zipOutputStream);
-                                    zipOutputStream.finish();
+                                response.setContentLengthLong(file.contentLength());
+                                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename());
+                                response.setStatus(HttpStatus.OK.value());
+                                byte[] buffer = new byte[MemoryUnit.MB.value().intValue()];
+                                try (InputStream in = file.getInputStream()) {
+                                    int read;
+                                    while ((read = in.read(buffer)) > 0) {
+                                        response.getOutputStream().write(buffer, 0, read);
+                                    }
                                 }
-                            } catch (IOException ex) {
-                                try {
-                                    warn(ex.getMessage());
-                                    response.sendError(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
-                                } catch (IOException e) {
-                                    error(e.getMessage());
+                            } else {
+                                final Path path = Paths.get(repository.resolve(folder));
+                                if (Files.exists(path) && Files.isDirectory(path)) {
+                                    try {
+                                        response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                                        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
+                                        response.setStatus(HttpServletResponse.SC_OK);
+                                        try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
+                                            getLocalRepositoryService(user).streamToZip(path.toString(), zipOutputStream);
+                                            zipOutputStream.finish();
+                                        }
+                                    } catch (IOException ex) {
+                                        try {
+                                            warn(ex.getMessage());
+                                            response.sendError(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+                                        } catch (IOException e) {
+                                            error(e.getMessage());
+                                        }
+                                    }
+                                } else {
+                                    try {
+                                        response.sendError(HttpStatus.BAD_REQUEST.value(), String.format("%s does not exist or it is not a folder", folder));
+                                    } catch (IOException e) {
+                                        error(e.getMessage());
+                                    }
                                 }
                             }
-                        } else {
-                            try {
-                                response.sendError(HttpStatus.BAD_REQUEST.value(), String.format("%s does not exist or it is not a folder", folder));
-                            } catch (IOException e) {
-                                error(e.getMessage());
-                            }
+                        } catch (IOException e) {
+                            error(e.getMessage());
                         }
-                    }
+                    });
                     break;
                 default:
                     StorageService client = StorageServiceFactory.getInstance(repository.getUrlPrefix());
