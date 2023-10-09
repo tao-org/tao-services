@@ -212,7 +212,7 @@ public class WorkflowServiceImpl
         WorkflowDescriptor descriptor = findById(id);
         if (descriptor != null) {
             descriptor.setActive(false);
-            save(descriptor);
+            update(descriptor);
         }
     }
 
@@ -652,7 +652,7 @@ public class WorkflowServiceImpl
                     workflowNodeProvider.update(outNode);
                 }
                 workflow.removeNode(groupDescriptor);
-                workflowProvider.save(workflow);
+                workflowProvider.update(workflow);
                 workflowNodeProvider.delete(groupDescriptor.getId());
             }
             return null;

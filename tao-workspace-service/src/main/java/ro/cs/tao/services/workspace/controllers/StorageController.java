@@ -46,6 +46,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -78,7 +79,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
     static {
         deletionQueue = new HashedBlockingQueue<>(Tuple::getKeyTwo);
-        BlockingQueueWorker<Tuple<Repository, String>> queueWorker = new BlockingQueueWorker<>(deletionQueue, new DeleteOperation(), 1, "delete-worker");
+        BlockingQueueWorker<Tuple<Repository, String>> queueWorker = new BlockingQueueWorker<>(deletionQueue, new DeleteOperation(), 1, "delete-worker", 2000);
         queueWorker.start();
     }
 
@@ -355,7 +356,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 folder = StringUtilities.isNullOrEmpty(folder) ? null : "\"" + folder + "\"";
             }
             final String json = String.format(tokenJSON, repositoryId, fileName, folder, user);
-            return prepareResult("/files/get?token=" + URLEncoder.encode(Crypto.encrypt(json, SystemPrincipal.instance().getName()), "UTF8"));
+            return prepareResult("/files/get?token=" + URLEncoder.encode(Crypto.encrypt(json, SystemPrincipal.instance().getName()),
+                                                                         StandardCharsets.UTF_8));
         } catch (Exception e) {
             return handleException(e);
         }
@@ -379,7 +381,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             final boolean isFile = StringUtilities.isNullOrEmpty(folder);
             switch (repository.getType()) {
                 case LOCAL:
-                    asyncExecute(() -> {
+                    //asyncExecute(() -> {
                         try {
                             if (isFile) {
                                 Resource file = loadAsResource(user, fileName);
@@ -424,7 +426,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                         } catch (IOException e) {
                             error(e.getMessage());
                         }
-                    });
+                    //});
                     break;
                 default:
                     StorageService client = StorageServiceFactory.getInstance(repository.getUrlPrefix());

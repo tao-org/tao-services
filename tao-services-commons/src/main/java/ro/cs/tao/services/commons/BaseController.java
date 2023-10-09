@@ -109,7 +109,7 @@ public abstract class BaseController extends ControllerBase {
 
     protected Principal currentPrincipal() {
         final Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return principal instanceof UserPrincipal
+        return principal instanceof Principal
                ? (Principal) principal
                : new UserPrincipal(userProvider.getId((String) principal));
 
