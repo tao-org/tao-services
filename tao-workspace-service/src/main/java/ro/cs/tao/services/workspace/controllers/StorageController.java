@@ -23,7 +23,10 @@ import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.quota.QuotaException;
+import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.controllers.DataEntityController;
@@ -783,6 +786,11 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 } catch (IOException e) {
                     Logger.getLogger(StorageController.class.getName()).warning(e.getMessage());
                 }
+            }
+            try {
+                UserQuotaManager.getInstance().updateUserInputQuota(new UserPrincipal(item.getKeyOne().getUserId()));
+            } catch (QuotaException e) {
+                Logger.getLogger(DeleteOperation.class.getName()).warning(e.getMessage());
             }
             return null;
         }
