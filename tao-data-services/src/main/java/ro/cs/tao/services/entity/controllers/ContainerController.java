@@ -68,8 +68,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Inet4Address;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -433,7 +433,9 @@ public class ContainerController extends DataEntityController<Container, String,
     }
 
     @RequestMapping(value = "/connect", method = RequestMethod.GET)
-    public void tunnel(@RequestParam("host") String host, @RequestParam("port") Integer port, @RequestParam("query") String query,
+    public void tunnel(@RequestParam(name = "host", required = false) String host,
+                       @RequestParam(name = "port", required = false) Integer port,
+                       @RequestParam(name = "query", required = false) String query,
                        HttpServletRequest request, HttpServletResponse response) {
         try {
             HttpUriRequest proxiedRequest = createHttpUriRequest(request,
@@ -444,14 +446,15 @@ public class ContainerController extends DataEntityController<Container, String,
                 HttpResponse proxiedResponse = httpClient.execute(proxiedRequest);
                 writeToResponse(proxiedResponse, response);
             }
-        } catch (URISyntaxException | IOException e) {
+        } catch (Exception e) {
             error(e.getMessage());
         }
     }
 
-    private HttpUriRequest createHttpUriRequest(HttpServletRequest request, String host, int port, String query) throws URISyntaxException {
+    private HttpUriRequest createHttpUriRequest(HttpServletRequest request, String host, int port, String query) throws Exception {
         final URI uri = new URI("http://" + host + ":" + port + (query != null ? "/" + query : ""));
         final RequestBuilder rb = RequestBuilder.create(request.getMethod());
+        rb.addHeader("Remote Address", Inet4Address.getLocalHost().getHostAddress());
         rb.setUri(uri);
         final Enumeration<String> headerNames = request.getHeaderNames();
         while(headerNames.hasMoreElements()){
