@@ -673,6 +673,7 @@ public class WorkflowServiceImpl
             clone.setActive(workflow.isActive());
             clone.setUserId(SessionStore.currentContext().getPrincipal().getName());
             clone.setVisibility(Visibility.PRIVATE);
+            clone.setCreatedFromWorkflowId(workflow.getId());
             clone = workflowProvider.save(clone);
             // key: old id, value: new node
             final Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
@@ -740,7 +741,6 @@ public class WorkflowServiceImpl
             // Create a cloned workflow
             clone = clone(workflow);
             clone.setName(name);
-            clone.setCreatedFromWorkflowId(fromWorkflowId);
             final Set<Long> ids = new HashSet<>();
             for (Map.Entry<Long, String> entry : linksToAdd.entrySet()) {
                 // For each input create a node
