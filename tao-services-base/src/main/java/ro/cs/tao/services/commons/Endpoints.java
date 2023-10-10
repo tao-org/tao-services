@@ -28,6 +28,7 @@ public class Endpoints {
     public static final String REFRESH_ENDPOINT = "/auth/refresh";
     public static final String LOGIN_ENDPOINT_METHOD = "POST";
     public static final String DOWNLOAD_ENDPOINT = "/files/get";
+    public static final String TUNNEL_ENDPOINT = "/docker/connect";
     public static final String LOGOUT_ENDPOINT = "/auth/logout";
     public static final String ADMIN_SERVICE_PATH_EXPRESSION = "/admin/**/*";
     //public static final String USER_SERVICE_PATH_EXPRESSION = "/user/**/*";

@@ -44,6 +44,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,10 +58,14 @@ public class AuthenticationFilter extends GenericFilterBean {
     private static volatile boolean systemInitialised = false;
     private final AuthenticationManager authenticationManager;
     private final SystemMessageReceiver receiver;
+    private final HashSet<String> excludedEndpoints;
 
     public AuthenticationFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
         this.receiver = new SystemMessageReceiver();
+        this.excludedEndpoints = new HashSet<>();
+        this.excludedEndpoints.add(Endpoints.DOWNLOAD_ENDPOINT);
+        this.excludedEndpoints.add(Endpoints.TUNNEL_ENDPOINT);
     }
 
     @Override
@@ -157,10 +162,8 @@ public class AuthenticationFilter extends GenericFilterBean {
     }
 
     private boolean isExcludedResource(HttpServletRequest httpRequest, String resourcePath){
-        return  (Endpoints.REFRESH_ENDPOINT.equalsIgnoreCase(resourcePath)
-                    && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD)) ||
-                (resourcePath.startsWith(Endpoints.DOWNLOAD_ENDPOINT)
-                    && httpRequest.getMethod().equals("GET"));
+        return (this.excludedEndpoints.contains (resourcePath) && httpRequest.getMethod().equals("GET")) ||
+               (resourcePath.equalsIgnoreCase(Endpoints.REFRESH_ENDPOINT) && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD));
     }
 
     private static class SystemMessageReceiver extends Notifiable {
