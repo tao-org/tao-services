@@ -129,7 +129,8 @@ public class ContainerServiceImpl
     @Override
     public String registerContainer(Path dockerFile, Container container, ProcessingComponent[] components) {
         String containerId;
-        if (DockerManager.getDockerImage(container.getName()) == null) {
+        final Container dockerImage = DockerManager.getDockerImage(container.getName());
+        if (dockerImage == null) {
             // build Docker image and put it in Docker registry
             containerId = DockerManager.registerImage(dockerFile, container.getName(), container.getDescription());
             // update database with container and applications information
@@ -137,7 +138,18 @@ public class ContainerServiceImpl
         } else {
             // the image is already registered with Docker, and should be also registered in the database
             Container c = containerProvider.getByName(container.getName());
-            containerId = c != null ? c.getId() : null;
+            if (c == null) {
+                container.setId(dockerImage.getId());
+                try {
+                    containerProvider.save(container);
+                } catch (PersistenceException e) {
+                    logger.warning(String.format("Container %s could not be registered. Reason: %s",
+                                                 container.getName(), e.getMessage()));
+                }
+                containerId = container.getId();
+            } else {
+                containerId = c.getId();
+            }
         }
         // if provided, register the components of this container
         if (containerId != null && components != null) {
