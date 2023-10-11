@@ -318,7 +318,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.updateNode(workflowId, node));
-            record("Node " + node + " in workflow " + workflowId + " modified");
+            record("Node " + node.getName() + " in workflow " + workflowId + " modified");
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
