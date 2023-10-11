@@ -24,6 +24,7 @@ import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.persistence.managers.AuditManager;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.services.admin.mail.Constants;
 import ro.cs.tao.services.auth.token.TokenManagementService;
@@ -37,10 +38,8 @@ import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.mail.MailSender;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -59,6 +58,9 @@ public class AdministrationController extends BaseController {
 
     @Autowired
     private SessionRegistry sessionRegistry;
+
+    @Autowired
+    private AuditManager auditManager;
 
     /**
      * Creates a new user
@@ -144,7 +146,7 @@ public class AdministrationController extends BaseController {
 
     /**
      * Returns the detail of a user account
-     * @param username  The user account name
+     * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId) {
@@ -205,7 +207,7 @@ public class AdministrationController extends BaseController {
 
     /**
      * Disables a user account
-     * @param username  The user account name
+     * @param userId  The user identifier
      * @param additionalDisableActions  Additional actions to be performed
      */
     @RequestMapping(value = "/users/{userId}/disable", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
@@ -227,7 +229,7 @@ public class AdministrationController extends BaseController {
 
     /**
      * Deletes a user account
-     * @param username  The user account name
+     * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("userId") String userId) {
@@ -244,6 +246,62 @@ public class AdministrationController extends BaseController {
 
             }*/
             return prepareResult(String.format("User %s was deleted", userId), ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
+     * Returns the aggregated time spent by users on this instance
+     * @param userId (optional) The user identifier. If not specified, the aggregation is done for all users
+     * @param from  (optional) The start of the interval to aggregate. If not specified, it is the first timestamp recorded
+     * @param to    (optional) The end of the interval to aggregate. If not specified, it is the current moment.
+     */
+    @RequestMapping(value = "/users/sessions", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getSessionsTime(@RequestParam(name = "userId", required = false) String userId,
+                                                              @RequestParam(name = "from", required = false) LocalDateTime from,
+                                                              @RequestParam(name = "to", required = false) LocalDateTime to) {
+        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            if (from != null && to != null) {
+                if (StringUtilities.isNullOrEmpty(userId)) {
+                    return prepareResult(auditManager.getAllSessions(from, to));
+                } else {
+                    return prepareResult(auditManager.getUserSessions(userId, from, to));
+                }
+            } else {
+                LocalDateTime start = from != null ? from : LocalDateTime.MIN;
+                LocalDateTime end = to != null ? to : LocalDateTime.now();
+                if (StringUtilities.isNullOrEmpty(userId)) {
+                    return prepareResult(auditManager.getAllSessions(from, to));
+                } else {
+                    return prepareResult(auditManager.getUserSessions(userId, start, end));
+                }
+            }
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
+     * Returns the aggregated time consumed by users for processing. The values returned are in minutes.
+     *
+     * @param userId (optional) The user identifier. If not specified, the aggregation is done for all users
+     */
+    @RequestMapping(value = "/users/sessions/total", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getTotalProcessingTime(@RequestParam(name = "userId", required = false) String userId) {
+        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            if (StringUtilities.isNullOrEmpty(userId)) {
+                return prepareResult(auditManager.getAggregatedUsersProcessingTime());
+            } else {
+                return prepareResult(new AbstractMap.SimpleEntry<>(userId,
+                                                                   auditManager.getAggregatedUserProcessingTime(userId)));
+            }
         } catch (Exception ex) {
             return handleException(ex);
         }
