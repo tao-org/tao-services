@@ -9,8 +9,10 @@ import ro.cs.tao.execution.local.NullExecutor;
 import ro.cs.tao.execution.local.QueryExecutor;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.execution.model.ResourceUsage;
 import ro.cs.tao.execution.wps.WPSExecutor;
 import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.persistence.managers.ResourceUsageManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.TaoLoginModule;
@@ -21,9 +23,11 @@ import ro.cs.tao.services.security.CustomAuthenticationProvider;
 import ro.cs.tao.services.security.SpringSessionProvider;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.topology.NodeFlavor;
 import ro.cs.tao.utils.ExceptionUtils;
 
 import javax.security.auth.spi.LoginModule;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -38,11 +42,30 @@ public class PersistenceInjecter extends BaseLifeCycle {
     public void onStartUp() {
         SystemPrincipal.refresh(persistenceManager.users());
         Executor.addStatusListener(new TaskStatusListener() {
+            final EnumSet<ExecutionStatus> stoppedStates = EnumSet.of(ExecutionStatus.DONE, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED);
             final Logger logger = Logger.getLogger(TaskStatusListener.class.getName());
             @Override
             public void taskStatusChanged(ExecutionTask task, ExecutionStatus status, String reason) {
                 try {
                     persistenceManager.tasks().updateStatus(task, status, reason);
+                    final ResourceUsageManager resourceUsageManager = persistenceManager.resourceUsage();
+                    ResourceUsage usage = resourceUsageManager.get(task.getId());
+                    if (ExecutionStatus.RUNNING == status) {
+                        if (usage == null) {
+                            usage = new ResourceUsage();
+                            usage.setId(task.getId());
+                            usage.setHost(task.getExecutionNodeHostName());
+                            final NodeFlavor flavor = persistenceManager.nodes().get(usage.getHost()).getFlavor();
+                            if (flavor != null) {
+                                usage.setFlavor(flavor.getId());
+                            }
+                            usage.setStartTime(task.getStartTime());
+                            resourceUsageManager.save(usage);
+                        }
+                    } else if (stoppedStates.contains(status)) {
+                        usage.setEndTime(task.getEndTime());
+                        resourceUsageManager.update(usage);
+                    }
                 } catch (Exception e) {
                     logger.severe(ExceptionUtils.getStackTrace(logger, e));
                 }
