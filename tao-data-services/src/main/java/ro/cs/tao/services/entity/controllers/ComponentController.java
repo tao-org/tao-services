@@ -248,7 +248,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      */
     @Override
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> get(String id) {
+    public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") String id) {
         ResponseEntity<ServiceResponse<?>> response;
         ProcessingComponent entity;
         try {
