@@ -34,6 +34,7 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.ConfigurationService;
 import ro.cs.tao.services.model.KeyValuePair;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.lang.ref.WeakReference;
 import java.time.LocalDateTime;
@@ -69,6 +70,9 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
             Set<Class<? extends TaoEnum>> enums = reflections.getSubTypesOf(TaoEnum.class);
             for (Class<? extends TaoEnum> anEnum : enums) {
                 List<TaoEnum> values = Arrays.stream(anEnum.getEnumConstants()).collect(Collectors.toList());
+                if (anEnum.equals(RepositoryType.class)) {
+                    values.removeIf(v -> !((RepositoryType) v).visible());
+                }
                 enumValues.put(anEnum.getName(),
                                values.stream().map(v -> new KeyValuePair(((Enum) v).name(), v.friendlyName()))
                                        .collect(Collectors.toList()));
