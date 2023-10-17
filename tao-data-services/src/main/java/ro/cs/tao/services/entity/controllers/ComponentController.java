@@ -40,6 +40,7 @@ import ro.cs.tao.services.interfaces.GroupComponentService;
 import ro.cs.tao.services.interfaces.NameTokenService;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 import ro.cs.tao.utils.AutoEvictableCache;
+import ro.cs.tao.utils.GenericComparator;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.util.*;
@@ -98,17 +99,29 @@ public class ComponentController extends DataEntityController<ProcessingComponen
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
                                                    @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
-        if (pageNumber.isPresent() && sortByField.isPresent()) {
-            Sort sort = new Sort().withField(sortByField.get(), sortDirection.orElse(SortDirection.ASC));
-            return prepareResult(ServiceTransformUtils.toProcessingComponentInfos(service.list(pageNumber, pageSize, sort)));
+        if (pageNumber.isPresent()) {
+            String sField = sortByField.orElse("id");
+            Optional<Integer> pSize = pageSize.isPresent() ? pageSize : Optional.of(10);
+            Sort sort = new Sort().withField(sField, sortDirection.orElse(SortDirection.ASC));
+            return prepareResult(ServiceTransformUtils.toProcessingComponentInfos(service.list(pageNumber, pSize, sort)));
         } else {
             if (this.componentCache.size() == 0) {
                 final List<ProcessingComponentInfo> infos = ServiceTransformUtils.toProcessingComponentInfos(service.list());
+                if (sortByField.isPresent()) {
+                    final Map<String, Boolean> fields = new HashMap<>();
+                    fields.put(sortByField.orElse("id"), sortDirection.orElse(SortDirection.ASC).equals(SortDirection.ASC));
+                    infos.sort(new GenericComparator(ProcessingComponent.class, fields));
+                }
                 for (ProcessingComponentInfo info : infos) {
                     this.componentCache.put(info.getId(), info);
                 }
             } else {
                 final List<ProcessingComponentInfo> otherComponents = service.getOtherComponents(this.componentCache.keySet());
+                if (sortByField.isPresent()) {
+                    final Map<String, Boolean> fields = new HashMap<>();
+                    fields.put(sortByField.orElse("id"), sortDirection.orElse(SortDirection.ASC).equals(SortDirection.ASC));
+                    otherComponents.sort(new GenericComparator(ProcessingComponent.class, fields));
+                }
                 for (ProcessingComponentInfo info : otherComponents) {
                     this.componentCache.put(info.getId(), info);
                 }
