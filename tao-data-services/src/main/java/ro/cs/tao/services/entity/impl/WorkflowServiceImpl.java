@@ -203,6 +203,7 @@ public class WorkflowServiceImpl
         existing.setyCoord(object.getyCoord());
         existing.setZoom(object.getZoom());
         existing.setTags(object.getTags());
+        existing.setActive(object.isActive());
         //addTagsIfNew(object);
         return workflowProvider.update(existing);
     }
