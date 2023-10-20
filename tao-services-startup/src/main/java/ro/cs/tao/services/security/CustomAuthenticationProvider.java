@@ -47,6 +47,7 @@ import java.util.logging.Logger;
 public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     private static final Logger logger = Logger.getLogger(CustomAuthenticationProvider.class.getName());
+    private static String adminId;
 
     private final AuthenticationProvider delegate;
 
@@ -72,6 +73,9 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication authentication) {
+        if (adminId == null) {
+            adminId = persistenceManager.users().getByName("admin").getId();
+        }
         JaasAuthenticationToken jaasAuthenticationToken = (JaasAuthenticationToken) delegate.authenticate(authentication);
 
         if (jaasAuthenticationToken.isAuthenticated()) {
@@ -103,7 +107,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             Token userToken = tokenService.getUserToken(user.getId());
             if (userToken == null) {
                 logger.finest(String.format("No previous token for user %s, generating a new one", userId));
-                userToken = !"admin".equals(userId)
+                userToken = !adminId.equals(userId)
                             ? tokenService.generateNewToken(!UserType.KEYCLOAK.equals(user.getUserType())
                                                             ? user.getId()
                                                             : user.getUsername(),
