@@ -20,7 +20,7 @@ public class KeycloakLoginModule extends TaoLoginModule {
         super();
         this.client = new KeycloakClient();
         final TokenCache cache = TokenCacheManager.getCache();
-        this.client.setTokenKeeper(cache::put);
+        this.client.setTokenKeeper(cache);
     }
 
     @Override
@@ -60,6 +60,9 @@ public class KeycloakLoginModule extends TaoLoginModule {
                     }
                     existing = userEntity;
                     userProvider.save(existing);
+                } else if (StringUtilities.isNullOrEmpty(existing.getPassword())){
+                    existing.setPassword(password);
+                    userProvider.update(existing);
                 }
                 userEntity = existing;
                 logger.finest("Keycloak login: " + user);
