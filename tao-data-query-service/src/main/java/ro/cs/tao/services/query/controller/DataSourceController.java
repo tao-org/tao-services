@@ -17,6 +17,9 @@ package ro.cs.tao.services.query.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.TopologyException;
 import org.locationtech.jts.io.WKTReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -89,6 +92,7 @@ public class DataSourceController extends BaseController {
     private static final Pattern s2TilePattern = Pattern.compile("\\d{2}\\w{3}");
     private static final Pattern l8TilePattern = Pattern.compile("\\d{6}");
     //private static final List<DataSourceDescriptorBean> cachedDataSources = new ArrayList<>();
+    private static Geometry aoiGeometry;
 
     @Autowired
     private DataSourceService dataSourceService;
@@ -492,7 +496,20 @@ public class DataSourceController extends BaseController {
         if (aoiRestriction != null) {
             final double aoiMinIntersection = Double.parseDouble(ConfigurationManager.getInstance().getValue("area.content.intersection", "0.1"));
             final GeometryAdapter adapter = new GeometryAdapter();
-            final Geometry aoiGeom = adapter.marshal(aoiRestriction);
+            if (aoiGeometry ==  null) {
+                final Geometry aoiGeom = adapter.marshal(aoiRestriction);
+                final int numGeometries = aoiGeom.getNumGeometries();
+                for (int i = 0; i < numGeometries; i++) {
+                    final Geometry geometry = aoiGeom.getGeometryN(i);
+                    if (geometry instanceof Polygon || geometry instanceof MultiPolygon) {
+                        try {
+                            aoiGeometry = aoiGeometry == null ? geometry : aoiGeometry.union(geometry);
+                        } catch (TopologyException ex) {
+                            warn(ex.getMessage());
+                        }
+                    }
+                }
+            }
             final String siteId = query.getSiteId();
             String footprint = null;
             if (siteId != null) {
@@ -500,7 +517,7 @@ public class DataSourceController extends BaseController {
                 if (site != null) {
                     footprint = site.getFootprint();
                     final Geometry siteGeom = adapter.marshal(footprint);
-                    if (Double.compare(siteGeom.intersection(aoiGeom).getArea() / siteGeom.getArea(), aoiMinIntersection) < 0) {
+                    if (Double.compare(siteGeom.intersection(aoiGeometry).getArea() / siteGeom.getArea(), aoiMinIntersection) < 0) {
                         throw new IllegalArgumentException("Selected area is outside the allowed search area");
                     }
                 }
@@ -511,7 +528,7 @@ public class DataSourceController extends BaseController {
             }
             if (footprint != null) {
                 final Geometry siteGeom = adapter.marshal(footprint);
-                if (Double.compare(siteGeom.intersection(aoiGeom).getArea() / siteGeom.getArea(), aoiMinIntersection) < 0) {
+                if (Double.compare(siteGeom.intersection(aoiGeometry).getArea() / siteGeom.getArea(), aoiMinIntersection) < 0) {
                     throw new IllegalArgumentException("Selected area is outside the allowed search area");
                 }
             }
