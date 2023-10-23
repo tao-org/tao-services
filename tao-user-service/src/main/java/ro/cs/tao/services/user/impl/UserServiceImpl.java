@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.services.commons.WorkspaceCreator;
 import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
 import ro.cs.tao.user.Group;
@@ -48,6 +49,16 @@ public class UserServiceImpl implements UserService {
     @Override
     public void activateUser(String userId) throws PersistenceException {
         userProvider.activate(userId);
+    }
+
+    @Override
+    public void createWorkspaces(String userId) {
+        final User user = userProvider.get(userId);
+        if (user != null) {
+            userProvider.createWorkspaces(user, new WorkspaceCreator());
+        } else {
+            userProvider.createWorkspaces(userId, new WorkspaceCreator());
+        }
     }
 
     @Override

@@ -28,15 +28,7 @@ public class AuditConfig {
             final Logger logger = Logger.getLogger(HttpSessionListener.class.getName());
             @Override
             public void sessionCreated(HttpSessionEvent hse) {
-                final LogEvent event = new LogEvent();
-                event.setUserId(getUserId(hse));
-                event.setTimestamp(LocalDateTime.now());
-                event.setEvent("Login");
-                try {
-                    auditProvider.save(event);
-                } catch (PersistenceException e) {
-                    logger.severe(e.getMessage());
-                }
+                // NO-OP, login is handled in the AuthenticationController
             }
 
             @Override

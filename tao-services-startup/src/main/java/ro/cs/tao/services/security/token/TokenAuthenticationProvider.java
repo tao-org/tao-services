@@ -45,7 +45,7 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
             this.apiDevToken = ConfigurationManager.getInstance().getValue("api.token");
         }
         String token = (String) authentication.getPrincipal();
-        if (token == null || token.length() == 0) {
+        if (token == null || token.isEmpty()) {
             throw new BadCredentialsException("Invalid token");
         }
         if (token.equals(this.apiDevToken)) {

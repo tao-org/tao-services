@@ -32,6 +32,7 @@ import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
@@ -44,7 +45,7 @@ import java.util.logging.Logger;
 
 @ControllerAdvice
 public class GlobalRestExceptionHandler extends ResponseEntityExceptionHandler {
-
+    private static final String detail = "%s (origin:%s,user:%s,request:%s)";
     private static final Logger logger = Logger.getLogger(ResponseEntityExceptionHandler.class.getName());
 
     @Override
@@ -128,11 +129,14 @@ public class GlobalRestExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private ResponseEntity<Object> handle(Exception exception, WebRequest request, HttpStatus status) {
-        logger.severe(exception.getMessage());
+        ServletWebRequest req = (ServletWebRequest) request;
+        logger.severe(String.format(detail, exception.getMessage(),
+                                    req.getRequest().getRemoteAddr(),
+                                    req.getUserPrincipal() != null ? req.getUserPrincipal().getName() : "anonymous",
+                                    req.getRequest().getRequestURI()));
         Map<String, Object> body = new HashMap<>();
         body.put("error", exception.getMessage());
         body.put("requestParameters", request.getParameterMap());
-        body.put("user", request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : "guest");
         return new ResponseEntity<>(body, status);
     }
 }
