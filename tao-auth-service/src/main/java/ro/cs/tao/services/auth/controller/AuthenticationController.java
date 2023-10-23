@@ -23,15 +23,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.persistence.AuditProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
+import ro.cs.tao.user.LogEvent;
 import ro.cs.tao.utils.StringUtilities;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 
 /**
  * @author Oana H.
@@ -43,6 +47,8 @@ public class AuthenticationController extends BaseController {
 
     @Autowired
     private AuthenticationService authenticationService;
+    @Autowired
+    private AuditProvider auditProvider;
 
     /**
      * Logs in a user
@@ -62,6 +68,15 @@ public class AuthenticationController extends BaseController {
                 authInfo = authenticationService.login(user, password);
             }
             if (authInfo != null && authInfo.isAuthenticated()) {
+                final LogEvent event = new LogEvent();
+                event.setUserId(authInfo.getUserId());
+                event.setTimestamp(LocalDateTime.now());
+                event.setEvent("Login");
+                try {
+                    auditProvider.save(event);
+                } catch (PersistenceException e) {
+                    error(e.getMessage());
+                }
                 if (authInfo.getRefreshToken() != null) {
                     HttpHeaders headers = new HttpHeaders();
                     headers.add("Set-Cookie", "refreshToken=" + authInfo.getRefreshToken() + ";Max-Age=" + authInfo.getExpiration());

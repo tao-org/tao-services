@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -110,6 +111,30 @@ public class UserController extends BaseController {
                 return prepareResult(headers, HttpStatus.TEMPORARY_REDIRECT);
             }
 
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
+     * Initializes the default repositories for the given user account.
+     * If the repositories were already initialized, nothing happens.
+     * Only an administrator is allowed to call this endpoint.
+     *
+     * @param userId The user account identifier
+     */
+    @RequestMapping(value = "/initialize", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> createWorkspaces(@RequestParam("userId") String userId) {
+        try {
+            if (StringUtilities.isNullOrEmpty(userId)) {
+                throw new IllegalArgumentException("Invalid user id");
+            }
+            if (isCurrentUserAdmin() || SystemPrincipal.instance().getName().equals(currentUser())) {
+                userService.createWorkspaces(userId);
+            } else {
+                return prepareResult("Not authorized", HttpStatus.UNAUTHORIZED);
+            }
+            return prepareResult("Workspace initialized", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             return handleException(ex);
         }
