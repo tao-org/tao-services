@@ -42,18 +42,21 @@ public class PersistenceInjecter extends BaseLifeCycle {
     public void onStartUp() {
         SystemPrincipal.refresh(persistenceManager.users());
         Executor.addStatusListener(new TaskStatusListener() {
-            final EnumSet<ExecutionStatus> stoppedStates = EnumSet.of(ExecutionStatus.DONE, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED);
+            final EnumSet<ExecutionStatus> stoppedStates = EnumSet.of(ExecutionStatus.DONE,
+                                                                      ExecutionStatus.FAILED,
+                                                                      ExecutionStatus.CANCELLED,
+                                                                      ExecutionStatus.PENDING_FINALISATION);
             final Logger logger = Logger.getLogger(TaskStatusListener.class.getName());
             @Override
             public void taskStatusChanged(ExecutionTask task, ExecutionStatus status, String reason) {
                 try {
                     persistenceManager.tasks().updateStatus(task, status, reason);
                     final ResourceUsageManager resourceUsageManager = persistenceManager.resourceUsage();
-                    ResourceUsage usage = resourceUsageManager.get(task.getId());
+                    ResourceUsage usage = resourceUsageManager.getByTask(task.getId());
                     if (ExecutionStatus.RUNNING == status) {
                         if (usage == null) {
                             usage = new ResourceUsage();
-                            usage.setId(task.getId());
+                            usage.setTaskId(task.getId());
                             usage.setHost(task.getExecutionNodeHostName());
                             final NodeFlavor flavor = persistenceManager.nodes().get(usage.getHost()).getFlavor();
                             if (flavor != null) {
@@ -63,8 +66,10 @@ public class PersistenceInjecter extends BaseLifeCycle {
                             resourceUsageManager.save(usage);
                         }
                     } else if (stoppedStates.contains(status)) {
-                        usage.setEndTime(task.getEndTime());
-                        resourceUsageManager.update(usage);
+                        if (usage != null) {
+                            usage.setEndTime(task.getEndTime());
+                            resourceUsageManager.update(usage);
+                        }
                     }
                 } catch (Exception e) {
                     logger.severe(ExceptionUtils.getStackTrace(logger, e));
