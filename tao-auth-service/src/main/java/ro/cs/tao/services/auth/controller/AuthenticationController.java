@@ -25,6 +25,7 @@ import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.AuditProvider;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -49,6 +50,8 @@ public class AuthenticationController extends BaseController {
     private AuthenticationService authenticationService;
     @Autowired
     private AuditProvider auditProvider;
+    @Autowired
+    private UserProvider userProvider;
 
     /**
      * Logs in a user
@@ -76,6 +79,9 @@ public class AuthenticationController extends BaseController {
                     auditProvider.save(event);
                 } catch (PersistenceException e) {
                     error(e.getMessage());
+                }
+                if (StringUtilities.isNullOrEmpty(user)) {
+                    user = userProvider.get(currentUser()).getUsername();
                 }
                 if (authInfo.getRefreshToken() != null) {
                     HttpHeaders headers = new HttpHeaders();
