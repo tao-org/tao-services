@@ -186,7 +186,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     public ResponseEntity<ServiceResponse<?>> initializeSampleWorkflows(@RequestParam(name = "name", required = false) String name) {
         ServiceRegistry<WorkflowBuilder> registry = ServiceRegistryManager.getInstance().getServiceRegistry(WorkflowBuilder.class);
         Set<WorkflowBuilder> services = registry.getServices();
-        if (services == null || services.size() == 0) {
+        if (services == null || services.isEmpty()) {
             return prepareResult("No sample workflows found", ResponseStatus.FAILED);
         } else {
             List<WorkflowDescriptor> descriptors = new ArrayList<>();

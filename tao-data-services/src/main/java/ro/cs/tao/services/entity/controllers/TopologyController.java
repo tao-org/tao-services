@@ -17,12 +17,10 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.StringIdentifiable;
+import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.NodeProvider;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.TopologyService;
@@ -135,13 +133,21 @@ public class TopologyController extends DataEntityController<NodeDescription, St
         }
     }
 
-    /*@Override
+    @Override
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody NodeDescription entity) {
+        entity.setAppId(Orchestrator.getInstance().getId());
         return super.save(entity);
     }
 
     @Override
-    public ResponseEntity<ServiceResponse<?>> update(String id, NodeDescription entity) {
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody NodeDescription entity) {
+        final NodeDescription initial = service.findById(entity.getId());
+        entity.setFlavor(initial.getFlavor());
+        entity.setAppId(initial.getAppId());
+        entity.setServerId(initial.getServerId());
+        entity.setOwner(initial.getOwner());
         return super.update(id, entity);
-    }*/
+    }
 }
