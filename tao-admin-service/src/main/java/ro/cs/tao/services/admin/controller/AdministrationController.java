@@ -102,6 +102,14 @@ public class AdministrationController extends BaseController {
         return prepareResult(adminService.getAllUsersUnicityInfo());
     }
 
+    @RequestMapping(value = "/users/ids", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getAllUserNames() {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        return prepareResult(adminService.getAllUserNames());
+    }
+
     /**
      * Lists user accounts by their status
      * @param activationStatus  The user status

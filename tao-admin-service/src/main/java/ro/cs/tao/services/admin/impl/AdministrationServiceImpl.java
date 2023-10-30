@@ -21,6 +21,7 @@ import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.model.user.DisableUserInfo;
+import ro.cs.tao.services.model.user.UserMapping;
 import ro.cs.tao.services.model.user.UserUnicityInfo;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Oana H.
@@ -54,6 +56,12 @@ public class AdministrationServiceImpl implements AdministrationService {
             results.add(new UserUnicityInfo(username, unicityInfo.get(username)[0], unicityInfo.get(username)[1]));
         }
         return results;
+    }
+
+    @Override
+    public List<UserMapping> getAllUserNames() {
+        final Map<String, String> mappings = userProvider.listNames();
+        return mappings.entrySet().stream().map(e -> new UserMapping(e.getKey(), e.getValue())).collect(Collectors.toList());
     }
 
     @Override
