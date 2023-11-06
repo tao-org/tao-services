@@ -28,6 +28,8 @@ import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.ContainerProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
@@ -222,6 +224,11 @@ public class ContainerServiceImpl
                                                 inner.getClass().getSimpleName() + ":" + inner.getMessage()));
                 }
             }
+        }
+        if (containerId != null) {
+            Messaging.send(SystemPrincipal.instance(), Topic.CONTAINER.value(),
+                           String.format("Container %s has been added. Visibility: %s",
+                                         containerId, container.getVisibility().friendlyName()));
         }
         return containerId;
     }
