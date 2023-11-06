@@ -36,10 +36,7 @@ import ro.cs.tao.component.*;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.docker.Application;
-import ro.cs.tao.docker.Container;
-import ro.cs.tao.docker.ContainerInstance;
-import ro.cs.tao.docker.ContainerType;
+import ro.cs.tao.docker.*;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
@@ -152,6 +149,9 @@ public class ContainerController extends DataEntityController<Container, String,
     public ResponseEntity<ServiceResponse<?>> upload(HttpServletRequest servletRequest,
                                                      @ModelAttribute ContainerUploadRequest request,
                                                      Model model) {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
         try {
             final List<MultipartFile> dockerFiles = request.getDockerFiles();
             if (dockerFiles == null || dockerFiles.isEmpty()) {
@@ -193,6 +193,7 @@ public class ContainerController extends DataEntityController<Container, String,
             if (container.getType() == null) {
                 container.setType(ContainerType.DOCKER);
             }
+            container.setVisibility(ContainerVisibility.PRIVATE);
             dockerFiles.remove(dockerFile);
             final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
             final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
@@ -291,6 +292,7 @@ public class ContainerController extends DataEntityController<Container, String,
             if (container.getType() == null) {
                 container.setType(ContainerType.DOCKER);
             }
+            container.setVisibility(ContainerVisibility.UNDEFINED);
             final MultipartFile logoFile = request.getContainerLogo();
             if (logoFile != null) {
                 container.setLogo(Base64.getEncoder().encodeToString(logoFile.getBytes()));
