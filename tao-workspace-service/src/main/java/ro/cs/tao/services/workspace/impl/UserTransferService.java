@@ -145,11 +145,15 @@ public class UserTransferService {
             }
             listener.subActivityEnded(srcPath);
             //decrement(item.getBatch());
-            this.progressListener.notifyProgress(getBatchProgress(item.getBatch()));
+            if (this.progressListener != null) {
+                this.progressListener.notifyProgress(getBatchProgress(item.getBatch()));
+            }
             final TransferableItem next = this.queue.peek();
             if (next == null || !item.getBatch().equals(next.getBatch())) {
-                this.progressListener.ended();
-                this.progressListener = null;
+                if (this.progressListener != null) {
+                    this.progressListener.ended();
+                    this.progressListener = null;
+                }
                 logger.finest("Transfer batch [" + item.getBatch() + "] completed");
             }
         } catch (Exception e) {
