@@ -45,7 +45,7 @@ public class UserTransferService {
     UserTransferService(Principal user) {
         this.logger = Logger.getLogger(TransferService.class.getName());
         this.queue = new LinkedBlockingDeque<>();
-        this.queueWorker = new BlockingQueueWorker<>(this.queue, this::processRequest);
+        this.queueWorker = new BlockingQueueWorker<>(this.queue, this::processRequest, 2, "transfer-worker", 250);
         this.principal = user;
         this.stateFile = Paths.get(SystemVariable.ROOT.value()).resolve("transfer").resolve(user.getName()).resolve("transfer_queue.json");
         restoreState();
