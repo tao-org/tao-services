@@ -28,6 +28,7 @@ import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
+import ro.cs.tao.docker.ContainerVisibility;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.ContainerProvider;
@@ -84,6 +85,11 @@ public class ContainerServiceImpl
     @Override
     public List<Container> listByType(ContainerType type) {
         return containerProvider.getByType(type);
+    }
+
+    @Override
+    public List<Container> listByTypeAndVisibility(ContainerType type, ContainerVisibility visibility) {
+        return containerProvider.getByTypeAndVisibility(type, visibility);
     }
 
     @Override
