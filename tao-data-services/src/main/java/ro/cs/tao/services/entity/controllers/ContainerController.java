@@ -31,6 +31,7 @@ import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ro.cs.tao.EnumUtils;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.enums.ProcessingComponentType;
@@ -118,6 +119,26 @@ public class ContainerController extends DataEntityController<Container, String,
             objects = new ArrayList<>();
         }
         return prepareResult(objects);
+    }
+
+    /**
+     * Lists the docker images with a given visibility.
+     *
+     * @param typeId    The container type identifier
+     * @param visibilityId  The container visibility identifier
+     */
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> listByType(@RequestParam("type") int typeId,
+                                                         @RequestParam("visibility") int visibilityId) {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            return prepareResult(service.listByTypeAndVisibility(EnumUtils.getEnumConstantByValue(ContainerType.class, typeId),
+                                                                 EnumUtils.getEnumConstantByValue(ContainerVisibility.class, visibilityId)));
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
 
     /**
