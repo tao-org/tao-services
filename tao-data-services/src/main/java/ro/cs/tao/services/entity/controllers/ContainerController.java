@@ -127,7 +127,7 @@ public class ContainerController extends DataEntityController<Container, String,
      * @param typeId    The container type identifier
      * @param visibilityId  The container visibility identifier
      */
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/type", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> listByType(@RequestParam("type") int typeId,
                                                          @RequestParam("visibility") int visibilityId) {
         if (!isCurrentUserAdmin()) {
