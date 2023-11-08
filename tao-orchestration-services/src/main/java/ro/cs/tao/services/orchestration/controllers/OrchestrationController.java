@@ -28,6 +28,7 @@ import ro.cs.tao.execution.ExecutionsManager;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
 import ro.cs.tao.execution.model.*;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
+import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
@@ -37,6 +38,8 @@ import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.OrchestratorService;
+import ro.cs.tao.services.orchestration.beans.TaskOutput;
+import ro.cs.tao.services.orchestration.beans.TaskSummary;
 import ro.cs.tao.services.orchestration.beans.WebServiceExecutionRequest;
 import ro.cs.tao.utils.StringUtilities;
 
@@ -52,6 +55,8 @@ public class OrchestrationController extends BaseController {
     private OrchestratorService orchestrationService;
     @Autowired
     private ExecutionJobProvider executionJobManager;
+    @Autowired
+    private ExecutionTaskProvider executionTaskProvider;
 
     /**
      * Starts the execution of a workflow
@@ -179,7 +184,27 @@ public class OrchestrationController extends BaseController {
         if (tasks == null) {
             tasks = new ArrayList<>();
         }
-        return prepareResult(tasks);
+        return prepareResult(tasks.stream().map(TaskSummary::toTaskSummary).collect(Collectors.toList()));
+    }
+
+    /**
+     * Returns the output and the command line of a task
+     */
+    @RequestMapping(value = "/tasks/{id}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getTaskOutput(@PathVariable("id") long taskId) {
+        try {
+            final ExecutionTaskSummary task = executionTaskProvider.getTaskStatus(taskId);
+            if (task == null) {
+                throw new IllegalArgumentException("Task does not exist");
+            }
+            final TaskOutput taskOutput = new TaskOutput();
+            taskOutput.setTaskId(task.getTaskId());
+            taskOutput.setOutput(task.getOutput());
+            taskOutput.setCommand(task.getCommand());
+            return prepareResult(taskOutput);
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
 
     /**
