@@ -112,13 +112,15 @@ public class AuthenticationController extends BaseController {
      * @param authToken The authentication token
      */
     @RequestMapping(value = "/logout", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> logout(@RequestHeader("X-Auth-Token") String authToken) {
+    public ResponseEntity<ServiceResponse<?>> logout(@RequestHeader("X-Auth-Token") String authToken,
+                                                     HttpServletRequest request) {
         if (StringUtilities.isNullOrEmpty(authToken)) {
             return prepareResult("Expected request header absent!", ResponseStatus.FAILED);
         }
         try {
             if (authenticationService.logout(authToken)) {
                 Messaging.send(currentUser(), Topic.AUTHENTICATION.value(), "Logout " + currentUser());
+                request.getSession().invalidate();
                 return prepareResult("Logout successful", HttpStatus.OK);
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
