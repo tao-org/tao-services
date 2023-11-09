@@ -23,6 +23,9 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.session.HttpSessionDestroyedEvent;
 import org.springframework.transaction.PlatformTransactionManager;
 import ro.cs.tao.component.RuntimeOptimizer;
 import ro.cs.tao.component.SystemVariable;
@@ -36,24 +39,32 @@ import ro.cs.tao.execution.model.TaskSelector;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.messaging.system.StartupCompletedMessage;
+import ro.cs.tao.persistence.AuditProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.TransactionalMethod;
 import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.StartupBase;
+import ro.cs.tao.services.interfaces.LogoutListener;
 import ro.cs.tao.services.startup.LifeCycleProcessor;
 import ro.cs.tao.services.startup.LifeCycleProcessorListener;
 import ro.cs.tao.spi.OutputDataHandlerManager;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
+import ro.cs.tao.user.LogEvent;
+import ro.cs.tao.user.SessionDuration;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.executors.FileProcessFactory;
 import ro.cs.tao.utils.executors.MemoryUnit;
 
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +86,8 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
     private LifeCycleProcessor lifeCycleProcessor;
     @Autowired
     private PlatformTransactionManager transactionManager;
+    @Autowired
+    private AuditProvider auditProvider;
 
     private final static Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
     private static final Map<String, Class> plugins = new LinkedHashMap<String, Class>() {{
@@ -114,6 +127,30 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
             }
             TransactionalMethod.setTransactionManager(transactionManager);
             lifeCycleProcessor.activate(this);
+        } else if (event instanceof HttpSessionDestroyedEvent) {
+            final LogEvent evt = new LogEvent();
+            final HttpSession session = ((HttpSessionDestroyedEvent) event).getSession();
+            SecurityContext context = (SecurityContext) session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+            final String userId = ((Principal) context.getAuthentication().getPrincipal()).getName();
+            if (userId == null) {
+                return;
+            }
+            evt.setUserId(userId);
+            evt.setTimestamp(LocalDateTime.now());
+            evt.setEvent("Logout");
+            try {
+                auditProvider.save(evt);
+                final Set<LogoutListener> listeners = ServiceRegistryManager.getInstance().getServiceRegistry(LogoutListener.class).getServices();
+                if (listeners != null) {
+                    for (LogoutListener listener : listeners) {
+                        final SessionDuration sessionDuration = auditProvider.getLastUserSession(userId);
+                        final int processingTime = auditProvider.getLastSessionUserProcessingTime(userId);
+                        listener.doAction(userId, sessionDuration, processingTime);
+                    }
+                }
+            } catch (PersistenceException e) {
+                logger.severe(e.getMessage());
+            }
         }
     }
 
