@@ -474,6 +474,21 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
+    @Override
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE)
+    public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") String id) {
+        try {
+            final Container container = service.findById(id);
+            if (isCurrentUserAdmin() || currentUser().equals(container.getOwnerId())) {
+                return super.delete(id);
+            } else {
+                return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
+            }
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
     private HttpUriRequest createHttpUriRequest(HttpServletRequest request, String host, int port, String query) throws Exception {
         final URI uri = new URI("http://" + host + ":" + port + (query != null ? "/" + query : ""));
         final RequestBuilder rb = RequestBuilder.create(request.getMethod());
