@@ -131,25 +131,28 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
             final LogEvent evt = new LogEvent();
             final HttpSession session = ((HttpSessionDestroyedEvent) event).getSession();
             SecurityContext context = (SecurityContext) session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-            final String userId = ((Principal) context.getAuthentication().getPrincipal()).getName();
-            if (userId == null) {
-                return;
-            }
-            evt.setUserId(userId);
-            evt.setTimestamp(LocalDateTime.now());
-            evt.setEvent("Logout");
-            try {
-                auditProvider.save(evt);
-                final Set<LogoutListener> listeners = ServiceRegistryManager.getInstance().getServiceRegistry(LogoutListener.class).getServices();
-                if (listeners != null) {
-                    for (LogoutListener listener : listeners) {
-                        final SessionDuration sessionDuration = auditProvider.getLastUserSession(userId);
-                        final int processingTime = auditProvider.getLastSessionUserProcessingTime(userId);
-                        listener.doAction(userId, sessionDuration, processingTime);
-                    }
+            // There may be initial sessions that don't have a security context. Ignore them.
+            if (context != null && context.getAuthentication() != null && context.getAuthentication().getPrincipal() != null) {
+                final String userId = ((Principal) context.getAuthentication().getPrincipal()).getName();
+                if (userId == null) {
+                    return;
                 }
-            } catch (PersistenceException e) {
-                logger.severe(e.getMessage());
+                evt.setUserId(userId);
+                evt.setTimestamp(LocalDateTime.now());
+                evt.setEvent("Logout");
+                try {
+                    auditProvider.save(evt);
+                    final Set<LogoutListener> listeners = ServiceRegistryManager.getInstance().getServiceRegistry(LogoutListener.class).getServices();
+                    if (listeners != null) {
+                        for (LogoutListener listener : listeners) {
+                            final SessionDuration sessionDuration = auditProvider.getLastUserSession(userId);
+                            final int processingTime = auditProvider.getLastSessionUserProcessingTime(userId);
+                            listener.doAction(userId, sessionDuration, processingTime);
+                        }
+                    }
+                } catch (PersistenceException e) {
+                    logger.severe(e.getMessage());
+                }
             }
         }
     }
