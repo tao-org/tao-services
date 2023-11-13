@@ -142,6 +142,19 @@ public class ContainerController extends DataEntityController<Container, String,
     }
 
     /**
+     * Lists the docker images for the current user.
+     *
+     */
+    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> listByUser() {
+        try {
+            return prepareResult(service.listUserContainers(currentUser()));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    /**
      * Lists the formats defined for a container.
      *
      * @param containerId   The container identifier
