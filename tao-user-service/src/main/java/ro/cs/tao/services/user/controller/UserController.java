@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.persistence.AuditProvider;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
@@ -32,6 +33,8 @@ import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.interfaces.RepositoryWatcherService;
 import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
+import ro.cs.tao.services.user.impl.UserInfo;
+import ro.cs.tao.user.SessionDuration;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
 import ro.cs.tao.user.UserType;
@@ -63,6 +66,9 @@ public class UserController extends BaseController {
 
     @Autowired
     private RepositoryService repositoryService;
+
+    @Autowired
+    private AuditProvider auditProvider;
 
     /**
      * Returns the groups of users.
@@ -173,8 +179,12 @@ public class UserController extends BaseController {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
-            final User userInfo = userService.getUserInfo(userId);
-            if (userInfo != null) {
+            final User user = userService.getUserInfo(userId);
+            if (user != null) {
+                final int processingTime = auditProvider.getAggregatedUserProcessingTime(userId);
+                final List<SessionDuration> sessions = auditProvider.getUserSessions(userId);
+                int sessionTime = sessions != null ? (int) sessions.stream().mapToDouble(SessionDuration::getDuration).sum() : 0;
+                final UserInfo userInfo = new UserInfo(user, sessionTime, processingTime);
                 if (userInfo.getActualInputQuota() == -1) {
                     Repository repository = getLocalRepository(currentUser());
                     userInfo.setActualInputQuota((int) (FileUtilities.folderSize(Paths.get(repository.root())) >> 20));
