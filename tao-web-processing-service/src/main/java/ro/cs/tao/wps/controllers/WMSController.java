@@ -4,21 +4,27 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.*;
+import ro.cs.tao.component.enums.AuthenticationType;
 import ro.cs.tao.component.enums.ParameterType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.eodata.enums.DataFormat;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
+import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.beans.WebServiceBean;
+import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WMSComponentService;
 import ro.cs.tao.services.interfaces.WebServiceAuthenticationService;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.wps.beans.LayerInfo;
 import ro.cs.tao.wps.impl.WMSClient;
 
@@ -40,6 +46,95 @@ public class WMSController extends BaseController {
     private WebServiceAuthenticationService webServiceAuthenticationService;
     @Autowired
     private WMSComponentService wmsComponentService;
+    @Autowired
+    private SourceDescriptorRepository sourceDescriptorRepository;
+    @Autowired
+    private TargetDescriptorRepository targetDescriptorRepository;
+
+    /**
+     * Creates a new WMS component (client).
+     * @param bean  Structure defining connection and authentication information for the remote WMS service
+     */
+    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> save(@RequestBody WebServiceBean bean) {
+        try {
+            if (bean == null) {
+                throw new IllegalArgumentException("Empty body");
+            }
+            if (bean.getType() != ContainerType.WMS) {
+                throw new IllegalArgumentException("Wrong container type");
+            }
+            if (StringUtilities.isNullOrEmpty(bean.getId())) {
+                bean.setId(UUID.randomUUID().toString());
+            }
+            Container container = ServiceTransformUtils.getContainerPart(bean);
+            if (StringUtilities.isNullOrEmpty(container.getId())) {
+                container.setId(UUID.randomUUID().toString());
+            }
+            WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
+            container = containerService.save(container);
+            auth.setId(container.getId());
+            auth = webServiceAuthenticationService.save(auth);
+            return prepareResult(ServiceTransformUtils.toBean(container, auth));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    /**
+     * Updates a WMS component definition.
+     * @param bean  Structure defining connection and authentication information for the remote WMS service
+     */
+    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<?> update(@RequestBody WebServiceBean bean) {
+        try {
+            if (bean == null) {
+                throw new IllegalArgumentException("Empty body");
+            }
+            /*if (bean.getType() != ContainerType.WPS) {
+                throw new IllegalArgumentException("Wrong container type");
+            }*/
+            if (StringUtilities.isNullOrEmpty(bean.getId())) {
+                throw new IllegalArgumentException("Wrong HTTP verb");
+            }
+            Container container = ServiceTransformUtils.getContainerPart(bean);
+            if (container.getTag() == null) {
+                container.setTag("WPS");
+            }
+            WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
+            container = containerService.update(container);
+            if (webServiceAuthenticationService.findById(auth.getId()) != null) {
+                // Don't persist the NONE authentication since it's irrelevant
+                if (auth.getType() != AuthenticationType.NONE) {
+                    auth = webServiceAuthenticationService.update(auth);
+                } else {
+                    webServiceAuthenticationService.delete(auth.getId());
+                }
+            } else {
+                auth = webServiceAuthenticationService.save(auth);
+            }
+            return prepareResult(ServiceTransformUtils.toBean(container, auth));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    /**
+     * Removes a WMS component.
+     * @param id    The component identifier
+     */
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<?> delete(@PathVariable("id") String id) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            webServiceAuthenticationService.delete(id);
+            containerService.delete(id);
+            responseEntity = prepareResult("Entity deleted", ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
 
     @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<?> inspectRemote(@RequestParam(name = "request") String requestType,
