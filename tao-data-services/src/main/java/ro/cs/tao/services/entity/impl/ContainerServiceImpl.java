@@ -307,12 +307,12 @@ public class ContainerServiceImpl
         if (value == null || value.trim().isEmpty()) {
             errors.add("[name] cannot be empty");
         }
-        value = entity.getTag();
+        /*value = entity.getTag();
         if (value == null || value.trim().isEmpty()) {
             errors.add("[tag] cannot be empty");
-        }
+        }*/
         List<Application> applications = entity.getApplications();
-        if (applications.size() == 0) {
+        if (applications.isEmpty()) {
             errors.add("[applications] cannot be empty");
         }
         applications.forEach(app -> {
