@@ -47,6 +47,7 @@ public abstract class BaseController extends ControllerBase {
     private static AdministrationService administrationService;
     private static AuditProvider auditProvider;
     private static UserProvider userProvider;
+    private static final Map<String, String> userTokens = new HashMap<>();
 
     static {
         groupRefreshTimer = new Timer(true);
@@ -64,6 +65,14 @@ public abstract class BaseController extends ControllerBase {
 
     public static ServletUriComponentsBuilder currentURL() {
         return ServletUriComponentsBuilder.fromCurrentRequestUri();
+    }
+
+    public static String tokenOf(String userId) {
+        return userTokens.get(userId);
+    }
+
+    protected static void refToken(String userId, String token) {
+        userTokens.put(userId, token);
     }
 
     @Autowired

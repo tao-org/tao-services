@@ -1,6 +1,7 @@
 package ro.cs.tao.wps.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/wms")
+@Tag(name = "WMS Endpoint", description = "Endpoint for remote WMS operations")
 public class WMSController extends BaseController {
 
     private final static Set<String> allowedRequests = new HashSet<String>() {{
@@ -50,6 +52,33 @@ public class WMSController extends BaseController {
     private SourceDescriptorRepository sourceDescriptorRepository;
     @Autowired
     private TargetDescriptorRepository targetDescriptorRepository;
+
+
+    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> list() {
+        try {
+            final List<Container> containers = containerService.listByType(ContainerType.WMS);
+            final List<WebServiceBean> results = new ArrayList<>();
+            for (Container container : containers) {
+                results.add(ServiceTransformUtils.toBean(container,
+                                                         webServiceAuthenticationService.findById(container.getId())));
+            }
+            return prepareResult(results);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> getById(@PathVariable("id") String id) {
+        try {
+            final Container container = containerService.findById(id);
+            final WebServiceAuthentication auth = webServiceAuthenticationService.findById(id);
+            return prepareResult(ServiceTransformUtils.toBean(container, auth));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
 
     /**
      * Creates a new WMS component (client).
