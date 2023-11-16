@@ -27,6 +27,7 @@ import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.security.*;
 import ro.cs.tao.services.auth.token.TokenManagementService;
+import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.security.token.AuthenticationWithToken;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
@@ -123,6 +124,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             }
             tokenService.removeUserTokens(user.getUsername());
             authenticationWithToken.setToken(userToken.getToken());
+            BaseController.storeToken(userId, userToken.getToken());
             return authenticationWithToken;
         } else {
             return null;

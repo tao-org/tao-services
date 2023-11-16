@@ -35,7 +35,11 @@ import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.eodata.OutputDataHandler;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
 import ro.cs.tao.execution.Executor;
+import ro.cs.tao.execution.model.ResourceUsage;
+import ro.cs.tao.execution.model.ResourceUsageReport;
 import ro.cs.tao.execution.model.TaskSelector;
+import ro.cs.tao.execution.persistence.ResourceUsageProvider;
+import ro.cs.tao.execution.persistence.ResourceUsageReportProvider;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.messaging.system.StartupCompletedMessage;
@@ -44,6 +48,7 @@ import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.TransactionalMethod;
 import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.StartupBase;
 import ro.cs.tao.services.interfaces.LogoutListener;
 import ro.cs.tao.services.startup.LifeCycleProcessor;
@@ -64,6 +69,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -88,6 +94,10 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
     private PlatformTransactionManager transactionManager;
     @Autowired
     private AuditProvider auditProvider;
+    @Autowired
+    private ResourceUsageProvider resourceUsageProvider;
+    @Autowired
+    private ResourceUsageReportProvider resourceUsageReportProvider;
 
     private final static Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
     private static final Map<String, Class> plugins = new LinkedHashMap<String, Class>() {{
@@ -146,9 +156,25 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
                     if (listeners != null) {
                         for (LogoutListener listener : listeners) {
                             final SessionDuration sessionDuration = auditProvider.getLastUserSession(userId);
-                            final int processingTime = auditProvider.getLastSessionUserProcessingTime(userId);
-                            listener.doAction(userId, sessionDuration, processingTime);
+                            final ResourceUsageReport report = resourceUsageReportProvider.getByUserId(userId);
+                            int processingTime = 0;
+                            final List<ResourceUsage> usages;
+                            if (report != null) {
+                                usages = resourceUsageProvider.getByUserIdSince(userId, report.getLastReportTime());
+                            } else {
+                                usages = resourceUsageProvider.getByUserId(userId);
+                            }
+                            if (usages != null) {
+                                for (ResourceUsage usage : usages) {
+                                    processingTime += (int) Duration.between(usage.getStartTime(),
+                                                                             usage.getEndTime() != null
+                                                                                ? usage.getEndTime()
+                                                                                : LocalDateTime.now()).toSeconds();
+                                }
+                            }
+                            listener.doAction(userId, BaseController.tokenOf(userId), sessionDuration, processingTime);
                         }
+                        BaseController.clearToken(userId);
                     }
                 } catch (PersistenceException e) {
                     logger.severe(e.getMessage());

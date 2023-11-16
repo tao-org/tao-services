@@ -71,8 +71,12 @@ public abstract class BaseController extends ControllerBase {
         return userTokens.get(userId);
     }
 
-    protected static void refToken(String userId, String token) {
+    public static void storeToken(String userId, String token) {
         userTokens.put(userId, token);
+    }
+
+    public static void clearToken(String userId) {
+        userTokens.remove(userId);
     }
 
     @Autowired
