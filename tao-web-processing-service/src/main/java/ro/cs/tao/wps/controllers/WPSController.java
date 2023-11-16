@@ -104,9 +104,7 @@ public class WPSController extends BaseController {
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> getById(@PathVariable("id") String id) {
         try {
-            final Container container = containerService.findById(id);
-            final WebServiceAuthentication auth = webServiceAuthenticationService.findById(id);
-            return prepareResult(ServiceTransformUtils.toBean(container, auth));
+            return prepareResult(wpsComponentService.findById(id));
         } catch (Exception e) {
             return handleException(e);
         }
