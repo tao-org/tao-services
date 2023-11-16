@@ -56,6 +56,21 @@ public class STACServiceController extends BaseController {
 
     private final Logger logger = Logger.getLogger(STACServiceController.class.getName());
 
+    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> list() {
+        try {
+            final List<Container> containers = containerService.listByType(ContainerType.STAC);
+            final List<WebServiceBean> results = new ArrayList<>();
+            for (Container container : containers) {
+                results.add(ServiceTransformUtils.toBean(container,
+                                                         webServiceAuthenticationService.findById(container.getId())));
+            }
+            return prepareResult(results);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
     /**
      * Creates a new STAC component (client). The new component will act as a TAO data source.
      * @param bean  Structure defining connection and authentication information for the remote STAC service

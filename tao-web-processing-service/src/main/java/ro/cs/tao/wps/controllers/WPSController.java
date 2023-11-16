@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/wps")
-@Tag(name = "WPS Endpoint", description = "Endpoint exposing TAO workflows as WPS operations")
+@Tag(name = "WPS Endpoint", description = "Endpoint exposing TAO workflows as WPS operations and for remote WPS operations")
 public class WPSController extends BaseController {
 
     private final static Set<String> allowedRequests = new HashSet<String>() {{
@@ -86,15 +86,10 @@ public class WPSController extends BaseController {
     @Autowired
     private WorkflowService workflowService;
 
-    @RequestMapping(value = {"/list","/list/{type}"}, method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<?> list(@PathVariable(required = false) String type) {
+    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<?> list() {
         try {
-            ContainerType containerType = ContainerType.WPS;
-            if (type != null) {
-                containerType = ContainerType.valueOf(type.toUpperCase());
-            }
-
-            final List<Container> containers = containerService.listByType(containerType);
+            final List<Container> containers = containerService.listByType(ContainerType.WPS);
             final List<WebServiceBean> results = new ArrayList<>();
             for (Container container : containers) {
                 results.add(ServiceTransformUtils.toBean(container,
