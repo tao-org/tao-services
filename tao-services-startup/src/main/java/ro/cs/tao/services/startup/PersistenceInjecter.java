@@ -56,6 +56,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
                     if (ExecutionStatus.RUNNING == status) {
                         if (usage == null) {
                             usage = new ResourceUsage();
+                            usage.setUserId(task.getJob().getUserId());
                             usage.setTaskId(task.getId());
                             usage.setHost(task.getExecutionNodeHostName());
                             final NodeFlavor flavor = persistenceManager.nodes().get(usage.getHost()).getFlavor();
