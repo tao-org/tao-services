@@ -39,12 +39,6 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 	/** Template for the JSON data transmitted (including container size). */
 	private final static String JSON_FULL = "{\"user_id\":\"%s\",\"usage_secs\":%d,\"usage_storage\":%d}";
 
-	/** Template for the JSON data transmitted (without container size). */
-	private final static String JSON_USAGE_SECS = "{\"user_id\":\"%s\",\"usage_secs\":%d}";
-
-	/** Template for the JSON data transmitted (without processing time). */
-	private final static String JSON_USAGE_STORAGE = "{\"user_id\":\"%s\",\"usage_storage\":%d}";
-
 	/** The periodic task. */
 	private final UpdateQuotaTask periodicTask = new UpdateQuotaTask();
 
@@ -179,25 +173,15 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 	            header = "X-Auth-Token";
 	        }
 	        String json = null;
-	        if (usedStorage <= 0) {
-				if (processingTime > 0) {
-					json = String.format(JSON_USAGE_SECS, userId, includeSessionTime * sessionDuration.getDuration() + processingTime);
-				}
-	        } else {
-				if (processingTime > 0) {
+	        if (usedStorage > 0 && processingTime > 0) {
 					json = String.format(JSON_FULL, userId, includeSessionTime * sessionDuration.getDuration() + processingTime, usedStorage);
-				} else {
-					json = String.format(JSON_USAGE_STORAGE, userId, usedStorage);
-				}
-	        }
-	        if (json != null) {
-				try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.POST, serviceAPIUrl, header, token, json)) {
-					if (response.getStatusLine().getStatusCode() > 201) {
-						throw new IOException(EntityUtils.toString(response.getEntity()));
+					try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.POST, serviceAPIUrl, header, token, json)) {
+						if (response.getStatusLine().getStatusCode() > 201) {
+							throw new IOException(EntityUtils.toString(response.getEntity()));
+						}
+					} catch (Exception e) {
+						logger.severe(e.getMessage());
 					}
-				} catch (Exception e) {
-					logger.severe(e.getMessage());
-				}
 			} else {
 				logger.fine(() -> String.format("User %s has no storage and no processing time, skipping", userId));
 			}
