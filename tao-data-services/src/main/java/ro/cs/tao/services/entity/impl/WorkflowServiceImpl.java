@@ -23,6 +23,7 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.converters.ConverterFactory;
 import ro.cs.tao.component.converters.ParameterConverter;
+import ro.cs.tao.component.enums.ComponentCategory;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
@@ -1272,8 +1273,15 @@ public class WorkflowServiceImpl
                             if (targets.stream()
                                     .noneMatch(t -> sources.stream()
                                             .anyMatch(s -> s.isCompatibleWith(t)))) {
-                                errors.add(String.format("[node.incomingLinks] component %s is not compatible with component %s",
-                                                         component.getId(), linkedComponent.getId()));
+                                errors.add(String.format("[node.incomingLinks] the input format of '%s' is not compatible with the output format of '%s'",
+                                                         component.getLabel(), linkedComponent.getLabel()));
+                            }
+                            if (linkedComponent instanceof ProcessingComponent && component instanceof ProcessingComponent) {
+                                if (!ComponentCategory.isCompatibleWith(((ProcessingComponent) component).getCategory(),
+                                                                        ((ProcessingComponent) linkedComponent).getCategory())) {
+                                    errors.add(String.format("[node.incomingLinks] component '%s' is not compatible with component '%s'",
+                                                             component.getLabel(), linkedComponent.getLabel()));
+                                }
                             }
                         }
                     }
