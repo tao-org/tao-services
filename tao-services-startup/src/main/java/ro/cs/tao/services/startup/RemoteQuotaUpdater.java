@@ -3,25 +3,11 @@
  */
 package ro.cs.tao.services.startup;
 
-import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.regex.Pattern;
-
 import org.apache.http.util.EntityUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.execution.model.ResourceUsage;
 import ro.cs.tao.execution.model.ResourceUsageReport;
-import ro.cs.tao.execution.persistence.ResourceUsageProvider;
-import ro.cs.tao.execution.persistence.ResourceUsageReportProvider;
-import ro.cs.tao.persistence.AuditProvider;
-import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.topology.TopologyException;
 import ro.cs.tao.topology.openstack.SwiftService;
@@ -30,6 +16,15 @@ import ro.cs.tao.user.User;
 import ro.cs.tao.utils.CloseableHttpResponse;
 import ro.cs.tao.utils.HttpMethod;
 import ro.cs.tao.utils.NetUtils;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Periodically inspect the remote quota and save it to the keyclock profile.
@@ -42,29 +37,22 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 	private static final Pattern GUID_PATTERN = Pattern.compile("^[0-9a-fA-F]{8}\\-(?:[0-9a-fA-F]{4}\\-){3}[0-9a-fA-F]{12}$");
 
 	/** Template for the JSON data transmitted (including container size). */
-	private final static String TEMPLATE_JSON_FULL = "{\"user_id\":\"%s\",\"usage_secs\":%d,\"usage_storage\":%d}";
+	private final static String JSON_FULL = "{\"user_id\":\"%s\",\"usage_secs\":%d,\"usage_storage\":%d}";
 
 	/** Template for the JSON data transmitted (without container size). */
-	private final static String TEMPLATE_JSON_LITE = "{\"user_id\":\"%s\",\"usage_secs\":%d}";
-	
+	private final static String JSON_USAGE_SECS = "{\"user_id\":\"%s\",\"usage_secs\":%d}";
+
+	/** Template for the JSON data transmitted (without processing time). */
+	private final static String JSON_USAGE_STORAGE = "{\"user_id\":\"%s\",\"usage_storage\":%d}";
+
 	/** The periodic task. */
-	private UpdateQuotaTask periodicTask = new UpdateQuotaTask();
+	private final UpdateQuotaTask periodicTask = new UpdateQuotaTask();
 
 	/** The timer used to run the periodic task. */
-	private Timer timer = new Timer();
+	private final Timer timer = new Timer();
 	
 	/**	OpenStack swift service */
 	private final SwiftService swiftService = new SwiftService();
-	
-    @Autowired
-    private AuditProvider auditProvider;
-    @Autowired
-    private UserProvider userProvider;
-    @Autowired
-    private ResourceUsageProvider resourceUsageProvider;
-    @Autowired
-    private ResourceUsageReportProvider resourceUsageReportProvider;
-	
 	
 //	/**	Keyclock client. */
 //	private final KeycloakClient keyclockClient = new KeycloakClient();
@@ -87,14 +75,14 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 		
 		// get the configured execution rate, in hours
         final String executionRateStr = ConfigurationManager.getInstance().getValue("tao.remote.quota.execution.rate", "1");
-        // compute the execution rate, in miliseconds.
+        // compute the execution rate, in milliseconds.
         long executionRate;
         try {
         	executionRate = Long.parseLong(executionRateStr) * 3600000;
         } catch (NumberFormatException ex) {
         	// add warning to the log 
-        	logger.warning("The value " + executionRateStr + " provided to the property tao.remote.quota.execution.rate is not valid. Using the default value 1.");
-        	// fall back to the 1 hour delay
+        	logger.warning(() -> "The value " + executionRateStr + " provided to the property tao.remote.quota.execution.rate is not valid. Using the default value 1.");
+        	// fall back to the 1-hour delay
         	executionRate = 3600000;
         }
         
@@ -122,22 +110,23 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 		
 		@Override
 		public void run() {
-			// Get the list of registered users
-			// TODO: Filter out INTERNAL users ?
-			final List<User> users = userProvider.list();
-			
+			// Get the list of registered users that have quota enabled
+			final List<User> users = persistenceManager.users().list()
+													   .stream()
+													   .filter(u -> u.getProcessingQuota() > 0)
+													   .collect(Collectors.toList());
 			for (User user : users) {
 				// get the user ID
 				final String userId = user.getId();
 				
-                final SessionDuration sessionDuration = auditProvider.getLastUserSession(userId);
-                final ResourceUsageReport report = resourceUsageReportProvider.getByUserId(userId);
+                final SessionDuration sessionDuration = persistenceManager.audit().getLastUserSession(userId);
+                final ResourceUsageReport report = persistenceManager.resourceUsageReport().getByUserId(userId);
                 int processingTime = 0;
                 final List<ResourceUsage> usages;
                 if (report != null) {
-                    usages = resourceUsageProvider.getByUserIdSince(userId, report.getLastReportTime());
+                    usages = persistenceManager.resourceUsage().getByUserIdSince(userId, report.getLastReportTime());
                 } else {
-                    usages = resourceUsageProvider.getByUserId(userId);
+                    usages = persistenceManager.resourceUsage().getByUserId(userId);
                 }
                 if (usages != null) {
                     for (ResourceUsage usage : usages) {
@@ -153,9 +142,9 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
                 try {
 					containerSize = swiftService.getContainerSize(userId);
     			} catch (IOException e) {
-					logger.severe("Error reading the container size. Received message: " + e.getMessage());
+					logger.severe(() -> "Error reading the container size. Received message: " + e.getMessage());
 				} catch (TopologyException e) {
-					logger.fine("OpenStack authentication error. Received message: " + e.getMessage());
+					logger.fine(() -> "OpenStack authentication error. Received message: " + e.getMessage());
 				}
 
                 // update user's data
@@ -189,20 +178,29 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 	        } else {
 	            header = "X-Auth-Token";
 	        }
-	        final String json;
-	        if (usedStorage == -1) {
-	        	json = String.format(TEMPLATE_JSON_LITE, userId, includeSessionTime * sessionDuration.getDuration() + processingTime);
+	        String json = null;
+	        if (usedStorage <= 0) {
+				if (processingTime > 0) {
+					json = String.format(JSON_USAGE_SECS, userId, includeSessionTime * sessionDuration.getDuration() + processingTime);
+				}
 	        } else {
-	        	json = String.format(TEMPLATE_JSON_FULL, userId, includeSessionTime * sessionDuration.getDuration() + processingTime, usedStorage);
+				if (processingTime > 0) {
+					json = String.format(JSON_FULL, userId, includeSessionTime * sessionDuration.getDuration() + processingTime, usedStorage);
+				} else {
+					json = String.format(JSON_USAGE_STORAGE, userId, usedStorage);
+				}
 	        }
-	        	
-	        try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.POST, serviceAPIUrl, header, token, json)) {
-	            if (response.getStatusLine().getStatusCode() > 201) {
-	                throw new IOException(EntityUtils.toString(response.getEntity()));
-	            }
-	        } catch (Exception e) {
-	            logger.severe(e.getMessage());
-	        }
+	        if (json != null) {
+				try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.POST, serviceAPIUrl, header, token, json)) {
+					if (response.getStatusLine().getStatusCode() > 201) {
+						throw new IOException(EntityUtils.toString(response.getEntity()));
+					}
+				} catch (Exception e) {
+					logger.severe(e.getMessage());
+				}
+			} else {
+				logger.fine(() -> String.format("User %s has no storage and no processing time, skipping", userId));
+			}
 	    }
 
 		
