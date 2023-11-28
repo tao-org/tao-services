@@ -68,7 +68,9 @@ public class TopologyController extends DataEntityController<NodeDescription, St
      */
     @RequestMapping(value = "/inactive", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getInactiveNodes() {
-        return prepareResult(service.getNodes(false));
+        final List<NodeDescription> nodes = service.getNodes(false);
+        nodes.removeIf(n -> n.getId().equalsIgnoreCase("localhost"));
+        return prepareResult(nodes);
     }
     /**
      * Returns the list of supported node flavors.

@@ -237,18 +237,17 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
                 for (WatchEvent<?> event : key.pollEvents()) {
                     WatchEvent.Kind<?> kind = event.kind();
                     Path name = ((WatchEvent<Path>) event).context();
-                    if (directory == null) {
-                        continue;
-                    }
                     Path child = directory.resolve(name);
 
                     //logger.finest(String.format("Filesystem event %s: %s\n", event.kind().name(), child));
 
                     if (kind == ENTRY_CREATE) { // if directory is created, and watching recursively, then register it and its sub-directories
                         try {
-                            final BasicFileAttributes attributes = Files.readAttributes(child, BasicFileAttributes.class);
-                            if (attributes.isDirectory() || Files.isDirectory(child)) {
-                                walkAndRegisterDirectories(child);
+                            if (!Files.isSymbolicLink(child)) {
+                                final BasicFileAttributes attributes = Files.readAttributes(child, BasicFileAttributes.class);
+                                if (attributes.isDirectory() || Files.isDirectory(child)) {
+                                    walkAndRegisterDirectories(child);
+                                }
                             }
                         } catch (NoSuchFileException | NotDirectoryException ignored) {
                             // a file may throw this exception if it's not fully "created"
