@@ -260,6 +260,33 @@ public class AdministrationController extends BaseController {
     }
 
     /**
+     * Sends a message from an administrator to a logged-in user.
+     *
+     * @param userId  The user identifier
+     * @param message The message
+     */
+    @RequestMapping(value = "/message", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> messageUser(@RequestParam("userId") String userId,
+                                                          @RequestParam("message") String message) {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        if (StringUtilities.isNullOrEmpty(userId)) {
+            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
+        }
+        if (sessionRegistry.getAllPrincipals().stream().noneMatch(u -> u.equals(userId)
+                                                                    && !sessionRegistry.getAllSessions(u, false).isEmpty())) {
+            return prepareResult(String.format("No user session is active for %s!", userId), ResponseStatus.FAILED);
+        }
+        try {
+            adminService.messageUser(userId, message);
+            return prepareResult(String.format("Message sent to %s", userId), ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
      * Returns the aggregated time spent by users on this instance
      * @param userId (optional) The user identifier. If not specified, the aggregation is done for all users
      * @param from  (optional) The start of the interval to aggregate. If not specified, it is the first timestamp recorded

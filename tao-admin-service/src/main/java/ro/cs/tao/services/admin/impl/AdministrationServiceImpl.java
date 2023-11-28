@@ -17,6 +17,9 @@ package ro.cs.tao.services.admin.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.services.interfaces.AdministrationService;
@@ -103,5 +106,15 @@ public class AdministrationServiceImpl implements AdministrationService {
     @Override
     public void deleteUser(String userId) throws PersistenceException {
         userProvider.delete(userId);
+    }
+
+    @Override
+    public void messageUser(String userId, String message) {
+        final Message msg = Message.create(userId, "Administrator", message);
+        msg.setId(System.currentTimeMillis());
+        msg.setPersistent(false);
+        msg.setTopic(Topic.INFORMATION.value());
+        msg.setTimestamp(System.currentTimeMillis());
+        Messaging.send(msg);
     }
 }
