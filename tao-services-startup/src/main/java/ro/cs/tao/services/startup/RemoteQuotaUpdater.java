@@ -172,16 +172,15 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 	        } else {
 	            header = "X-Auth-Token";
 	        }
-	        String json = null;
 	        if (usedStorage > 0 && processingTime > 0) {
-					json = String.format(JSON_FULL, userId, includeSessionTime * sessionDuration.getDuration() + processingTime, usedStorage);
-					try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.POST, serviceAPIUrl, header, token, json)) {
-						if (response.getStatusLine().getStatusCode() > 201) {
-							throw new IOException(EntityUtils.toString(response.getEntity()));
-						}
-					} catch (Exception e) {
-						logger.severe(e.getMessage());
+				final String json = String.format(JSON_FULL, userId, includeSessionTime * sessionDuration.getDuration() + processingTime, usedStorage);
+				try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.POST, serviceAPIUrl, header, token, json)) {
+					if (response.getStatusLine().getStatusCode() > 201) {
+						throw new IOException(EntityUtils.toString(response.getEntity()));
 					}
+				} catch (Exception e) {
+					logger.severe(e.getMessage());
+				}
 			} else {
 				logger.fine(() -> String.format("User %s has no storage and no processing time, skipping", userId));
 			}
