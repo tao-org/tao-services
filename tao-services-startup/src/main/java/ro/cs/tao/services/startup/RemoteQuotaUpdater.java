@@ -182,7 +182,7 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 					logger.severe(e.getMessage());
 				}
 			} else {
-				logger.fine(() -> String.format("User %s has no storage and no processing time, skipping", userId));
+				logger.finest(() -> String.format("User %s has no storage and no processing time, skipping", userId));
 			}
 	    }
 
