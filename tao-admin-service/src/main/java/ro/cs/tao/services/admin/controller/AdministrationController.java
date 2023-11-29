@@ -38,6 +38,7 @@ import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.mail.MailSender;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -281,6 +282,33 @@ public class AdministrationController extends BaseController {
         try {
             adminService.messageUser(userId, message);
             return prepareResult(String.format("Message sent to %s", userId), ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
+     * Sends a message from an administrator to a logged-in user.
+     *
+     * @param userId  The user identifier
+     * @param message The message
+     */
+    @RequestMapping(value = "/message/all", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> messageUsers(@RequestParam("message") String message) {
+        if (!isCurrentUserAdmin()) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            final List<String> activeUsers = sessionRegistry.getAllPrincipals().stream()
+                                                        .filter(u -> !sessionRegistry.getAllSessions(u, false).isEmpty())
+                                                        .map(u -> u instanceof Principal ? ((Principal) u).getName() : u.toString())
+                                                        .collect(Collectors.toList());
+            for (String principal : activeUsers) {
+                try {
+                    adminService.messageUser(principal, message);
+                } catch (Exception ignored) { }
+            }
+            return prepareResult(String.format("Message sent to: %s", String.join(",", activeUsers)), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             return handleException(ex);
         }
