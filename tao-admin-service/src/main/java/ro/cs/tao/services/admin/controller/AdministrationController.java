@@ -26,6 +26,7 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.persistence.managers.AuditManager;
 import ro.cs.tao.quota.UserQuotaManager;
+import ro.cs.tao.services.admin.beans.UserBean;
 import ro.cs.tao.services.admin.mail.Constants;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
@@ -123,7 +124,15 @@ public class AdministrationController extends BaseController {
         if (activationStatus == null) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
-        return prepareResult(adminService.findUsersByStatus(activationStatus));
+        final List<User> users = adminService.findUsersByStatus(activationStatus);
+        final Map<String, Integer> processingTime = auditManager.getAggregatedUsersProcessingTime();
+        return prepareResult(users.stream().map(u -> {
+            UserBean bean = new UserBean(u);
+            if (processingTime.containsKey(u.getId())) {
+                bean.setProcessingTime(processingTime.getOrDefault(u.getId(), 0));
+            }
+            return bean;
+        }).collect(Collectors.toList()));
     }
 
     /**
