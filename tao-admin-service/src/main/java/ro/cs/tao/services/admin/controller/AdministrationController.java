@@ -275,7 +275,7 @@ public class AdministrationController extends BaseController {
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
-        if (sessionRegistry.getAllPrincipals().stream().noneMatch(u -> u.equals(userId)
+        if (sessionRegistry.getAllPrincipals().stream().noneMatch(u -> u.toString().equals(userId)
                                                                     && !sessionRegistry.getAllSessions(u, false).isEmpty())) {
             return prepareResult(String.format("No user session is active for %s!", userId), ResponseStatus.FAILED);
         }
@@ -288,9 +288,8 @@ public class AdministrationController extends BaseController {
     }
 
     /**
-     * Sends a message from an administrator to a logged-in user.
+     * Sends a message from an administrator to all logged-in users.
      *
-     * @param userId  The user identifier
      * @param message The message
      */
     @RequestMapping(value = "/message/all", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
