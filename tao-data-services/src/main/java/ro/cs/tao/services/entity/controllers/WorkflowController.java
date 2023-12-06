@@ -26,6 +26,7 @@ import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.persistence.WorkflowNodeProvider;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -34,8 +35,11 @@ import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.WorkflowBuilder;
 import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.user.User;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
@@ -61,6 +65,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
 
     @Autowired
     private WorkflowNodeProvider workflowNodeProvider;
+
+    @Autowired
+    private UserProvider userProvider;
 
     /**
      * Lists the workflows that are visible to the current user, optionally specifying the pagination of results.
@@ -115,8 +122,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
      * @param status    The workflow status (@see {@link Status})
      */
     @RequestMapping(value = "/status/{status}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByStatus(@PathVariable("status") Status status) {
-        return prepareResult(service.getUserWorkflowsByStatus(currentUser(), status));
+    public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByStatus(@PathVariable("status") Status status,
+                                                                       @RequestParam(name = "userId", required = false) String userId) {
+        if (!StringUtilities.isNullOrEmpty(userId) && !isCurrentUserAdmin()) {
+            return unauthorizedResponse();
+        }
+        return prepareResult(service.getUserWorkflowsByStatus(userId == null ? currentUser() : userId, status));
     }
 
     /**
@@ -125,7 +136,11 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
      *
      */
     @RequestMapping(value = "/visibility/{visibility}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByVisibility(@PathVariable("visibility") Visibility visibility) {
+    public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByVisibility(@PathVariable("visibility") Visibility visibility,
+                                                                           @RequestParam(name = "userId", required = false) String userId) {
+        if (!StringUtilities.isNullOrEmpty(userId) && !isCurrentUserAdmin()) {
+            return unauthorizedResponse();
+        }
         return prepareResult(service.getUserPublishedWorkflowsByVisibility(currentUser(), visibility));
     }
 
@@ -474,6 +489,61 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             responseEntity = prepareResult(service.snapGraphToWorkflow(graphXml));
+        } catch (Exception e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
+
+    /**
+     * Subscribes a user to a workflow
+     * @param userId    The user identifier
+     * @param workflowId The workflow identifier
+     *
+     */
+    @RequestMapping(value = "/subscribe", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> subscribe(@RequestParam("userId") String userId,
+                                                        @RequestParam("workflowId") long workflowId) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            final User user = userProvider.get(userId);
+            if (user == null) {
+                throw new IllegalArgumentException("[userId] Invalid argument");
+            }
+            final WorkflowInfo info = service.getWorkflowInfo(workflowId);
+            if (info == null) {
+                throw new IllegalArgumentException("[workflowId] Invalid argument");
+            } else if (info.getStatus() == Status.PUBLISHED || info.getVisibility() == Visibility.SUBSCRIPTION) {
+                throw new IllegalArgumentException("This workflow cannot be yet subscribed");
+            }
+            responseEntity = prepareResult(service.subscribeToWorkflow(userId, workflowId));
+        } catch (Exception e) {
+            responseEntity = handleException(e);
+        }
+        return responseEntity;
+    }
+
+    /**
+     * Unsubscribes a user from a workflow
+     * @param userId    The user identifier
+     * @param workflowId The workflow identifier
+     *
+     */
+    @RequestMapping(value = "/unsubscribe", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> unsubscribe(@RequestParam("userId") String userId,
+                                                        @RequestParam("workflowId") long workflowId) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            final User user = userProvider.get(userId);
+            if (user == null) {
+                throw new IllegalArgumentException("[userId] Invalid argument");
+            }
+            final WorkflowInfo info = service.getWorkflowInfo(workflowId);
+            if (info == null) {
+                throw new IllegalArgumentException("[workflowId] Invalid argument");
+            }
+            service.unsubscribeFromWorkflow(userId, workflowId);
+            responseEntity = prepareResult("Unsubscribed successfully", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             responseEntity = handleException(e);
         }
