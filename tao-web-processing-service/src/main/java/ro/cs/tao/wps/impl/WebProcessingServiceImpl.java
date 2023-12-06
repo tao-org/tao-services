@@ -192,6 +192,6 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
     }
 
     private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService(String userId) {
-        return StorageServiceFactory.getInstance(repositoryProvider.getByUser(userId).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
+        return StorageServiceFactory.getInstance(repositoryProvider.getUserSystemRepositories(userId).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
     }
 }

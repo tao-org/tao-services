@@ -381,7 +381,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     }
 
     private Repository getLocalRepository(String user) {
-        return repositoryProvider.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
+        return repositoryProvider.getUserSystemRepositories(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
     }
 
     private StorageService getLocalRepositoryService() {

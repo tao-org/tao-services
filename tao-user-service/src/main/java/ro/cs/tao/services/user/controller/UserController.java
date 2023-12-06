@@ -24,12 +24,12 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.persistence.AuditProvider;
+import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
-import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.interfaces.RepositoryWatcherService;
 import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
@@ -65,7 +65,7 @@ public class UserController extends BaseController {
     private RepositoryWatcherService repositoryWatcherService;
 
     @Autowired
-    private RepositoryService repositoryService;
+    private RepositoryProvider repositoryProvider;
 
     @Autowired
     private AuditProvider auditProvider;
@@ -263,6 +263,6 @@ public class UserController extends BaseController {
     }
 
     private Repository getLocalRepository(String userId) {
-        return repositoryService.getByUser(userId).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
+        return repositoryProvider.getUserSystemRepositories(userId).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
     }
 }

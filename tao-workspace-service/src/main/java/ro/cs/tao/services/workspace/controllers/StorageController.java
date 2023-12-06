@@ -759,11 +759,11 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     }
 
     private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService(String user) {
-        return getRepositoryService(repositoryProvider.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
+        return getRepositoryService(repositoryProvider.getUserSystemRepositories(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
     }
 
     private Repository getLocalWorkspace(String user) {
-        return repositoryProvider.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
+        return repositoryProvider.getUserSystemRepositories(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
     }
 
     private String sanitizePath(String path) {

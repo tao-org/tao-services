@@ -171,6 +171,6 @@ public class ViewerController extends ControllerBase {
     }
 
     private Repository getLocalRepository() {
-        return repositoryProvider.getByUser(currentUser()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
+        return repositoryProvider.getUserSystemRepositories(currentUser()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
     }
 }
