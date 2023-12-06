@@ -136,7 +136,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
     }
 
     private Repository getLocalRepository() {
-        return repositoryProvider.getByUser(currentUser()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
+        return repositoryProvider.getUserSystemRepositories(currentUser()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
     }
 
     private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService() {

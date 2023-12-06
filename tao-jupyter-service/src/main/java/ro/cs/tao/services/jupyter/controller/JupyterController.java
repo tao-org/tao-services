@@ -45,6 +45,6 @@ public class JupyterController extends BaseController {
     }
 
     private Repository getLocalRepository(String user) {
-        return repositoryProvider.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
+        return repositoryProvider.getUserSystemRepositories(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
     }
 }
