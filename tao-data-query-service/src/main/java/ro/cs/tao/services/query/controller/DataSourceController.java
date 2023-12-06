@@ -55,6 +55,7 @@ import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.services.query.beans.FetchRequest;
+import ro.cs.tao.services.query.beans.Filter;
 import ro.cs.tao.services.query.beans.TileRequest;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.FileUtilities;
@@ -155,6 +156,22 @@ public class DataSourceController extends BaseController {
             sensors = new HashSet<>();
         }
         return prepareResult(sensors);
+    }
+
+    /**
+     * Returns any defined filter for data sources
+     */
+    @RequestMapping(value = "/filter/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getFilter() {
+        final String prefix = "datasource.filter.";
+        final Map<String, String> values = ConfigurationManager.getInstance().getValues(prefix);
+        Filter filter;
+        if (values != null) {
+            filter = new Filter(values.get(prefix + "category"), values.get(prefix + "collection"), values.get(prefix + "provider"));
+        } else {
+            filter = new Filter(null, null, null);
+        }
+        return prepareResult(filter);
     }
 
     /**
