@@ -21,9 +21,9 @@ public class UserBean {
         return user.getUsername();
     }
 
-    public String getPassword() {
+    /*public String getPassword() {
         return user.getPassword();
-    }
+    }*/
 
     public String getEmail() {
         return user.getEmail();
@@ -85,9 +85,9 @@ public class UserBean {
         return user.getUserType();
     }
 
-    public String getPasswordResetKey() {
+    /*public String getPasswordResetKey() {
         return user.getPasswordResetKey();
-    }
+    }*/
 
     public LocalDateTime getCreated() {
         return user.getCreated();

@@ -57,10 +57,7 @@ import ro.cs.tao.services.utils.WorkflowUtilities;
 import ro.cs.tao.snap.xml.GraphParser;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.Tuple;
-import ro.cs.tao.workflow.ParameterValue;
-import ro.cs.tao.workflow.WorkflowDescriptor;
-import ro.cs.tao.workflow.WorkflowNodeDescriptor;
-import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
+import ro.cs.tao.workflow.*;
 import ro.cs.tao.workflow.enums.ComponentType;
 import ro.cs.tao.workflow.enums.Status;
 
@@ -105,6 +102,8 @@ public class WorkflowServiceImpl
     private SourceDescriptorRepository sourceDescriptorRepository;
     @Autowired
     private TargetDescriptorRepository targetDescriptorRepository;
+    @Autowired
+    private WorkflowSubscriptionProvider workflowSubscriptionProvider;
 
     private Logger logger = Logger.getLogger(WorkflowService.class.getName());
     //region Workflow
@@ -158,8 +157,8 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public List<WorkflowInfo> getUserVisibleWorkflows(String user) {
-        return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listUserVisible(user));
+    public List<WorkflowInfo> getUserVisibleWorkflows(String userId) {
+        return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listUserVisible(userId));
     }
 
     @Override
@@ -170,6 +169,48 @@ public class WorkflowServiceImpl
     @Override
     public List<Tag> getWorkflowTags() {
         return tagProvider.list(TagType.WORKFLOW);
+    }
+
+    @Override
+    public List<WorkflowInfo> getUserSubscribedWorkflows(String userId) {
+        final List<WorkflowSubscription> subscriptions = workflowSubscriptionProvider.getByUser(userId);
+        final List<WorkflowInfo> workflowInfos = new ArrayList<>();
+        if (subscriptions != null && !subscriptions.isEmpty()) {
+            workflowInfos.addAll(ServiceTransformUtils.toWorkflowInfos(workflowProvider.list(subscriptions.stream()
+                                                                                     .map(WorkflowSubscription::getWorkflowId)
+                                                                                     .collect(Collectors.toSet()))));
+        }
+        return workflowInfos;
+    }
+
+    @Override
+    public long subscribeToWorkflow(String userId, long workflowId) {
+        WorkflowSubscription subscription = workflowSubscriptionProvider.getByUserAndWorkflow(userId, workflowId);
+        if (subscription == null) {
+            subscription = new WorkflowSubscription();
+            subscription.setUserId(userId);
+            subscription.setWorkflowId(workflowId);
+            subscription.setCreated(LocalDateTime.now());
+            try {
+                subscription = workflowSubscriptionProvider.save(subscription);
+            } catch (PersistenceException e) {
+                logger.severe(e.getMessage());
+                return -1;
+            }
+        }
+        return subscription.getId();
+    }
+
+    @Override
+    public void unsubscribeFromWorkflow(String userId, long workflowId) {
+        final WorkflowSubscription subscription = workflowSubscriptionProvider.getByUserAndWorkflow(userId, workflowId);
+        if (subscription != null) {
+            try {
+                workflowSubscriptionProvider.delete(subscription.getId());
+            } catch (PersistenceException e) {
+                logger.severe(e.getMessage());
+            }
+        }
     }
 
     @Override

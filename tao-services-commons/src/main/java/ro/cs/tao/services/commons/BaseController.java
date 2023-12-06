@@ -16,6 +16,8 @@
 package ro.cs.tao.services.commons;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
@@ -146,5 +148,9 @@ public abstract class BaseController extends ControllerBase {
         } catch (PersistenceException e) {
             Logger.getLogger(getClass().getName()).warning(e.getMessage());
         }
+    }
+
+    protected ResponseEntity<ServiceResponse<?>> unauthorizedResponse() {
+        return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
     }
 }
