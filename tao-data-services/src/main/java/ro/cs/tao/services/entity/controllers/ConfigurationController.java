@@ -31,6 +31,7 @@ import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.entity.beans.ExtendedKeyValuePair;
 import ro.cs.tao.services.interfaces.ConfigurationService;
 import ro.cs.tao.services.model.KeyValuePair;
 import ro.cs.tao.utils.StringUtilities;
@@ -52,7 +53,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
     private WeakReference<List<String>> sorters;
     private WeakReference<List<String[]>> groupers;
     private WeakReference<List<String[]>> filters;
-    private WeakReference<Map<String, List<KeyValuePair>>> enums;
+    private WeakReference<Map<String, List<ExtendedKeyValuePair>>> enums;
 
     @Autowired
     private PersistenceManager persistenceManager;
@@ -65,7 +66,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
     @RequestMapping(value = "/enums", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getAvailableEnumValues() {
         if (this.enums == null || this.enums.get() == null) {
-            Map<String, List<KeyValuePair>> enumValues = new HashMap<>();
+            Map<String, List<ExtendedKeyValuePair>> enumValues = new HashMap<>();
             Reflections reflections = new Reflections("ro.cs.tao");
             Set<Class<? extends TaoEnum>> enums = reflections.getSubTypesOf(TaoEnum.class);
             for (Class<? extends TaoEnum> anEnum : enums) {
@@ -74,16 +75,18 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
                     values.removeIf(v -> !((RepositoryType) v).visible());
                 }
                 enumValues.put(anEnum.getName(),
-                               values.stream().map(v -> new KeyValuePair(((Enum) v).name(), v.friendlyName()))
+                               values.stream().map(v -> new ExtendedKeyValuePair(((Enum) v).name(), v.friendlyName(), v.isVisible()))
                                        .collect(Collectors.toList()));
             }
             enumValues.put("TAO",
                            new ArrayList<>() {{
-                               add(new KeyValuePair("version",
-                                                    ConfigurationManager.getInstance().getValue("tao.version")));
+                               add(new ExtendedKeyValuePair("version",
+                                                    ConfigurationManager.getInstance().getValue("tao.version"), true));
             }});
             enumValues.put("TOPIC",
-                           Topic.listTopics().stream().map(t -> new KeyValuePair(t, null)).collect(Collectors.toList()));
+                           Topic.listTopics().stream()
+                                .map(t -> new ExtendedKeyValuePair(t, null, true))
+                                .collect(Collectors.toList()));
             this.enums = new WeakReference<>(enumValues);
         }
         return prepareResult(this.enums.get());
