@@ -3,28 +3,29 @@
  */
 package ro.cs.tao.services.startup;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.apache.http.util.EntityUtils;
+
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.execution.model.ResourceUsage;
 import ro.cs.tao.execution.model.ResourceUsageReport;
 import ro.cs.tao.services.commons.BaseController;
-import ro.cs.tao.topology.TopologyException;
 import ro.cs.tao.topology.openstack.SwiftService;
 import ro.cs.tao.user.SessionDuration;
 import ro.cs.tao.user.User;
 import ro.cs.tao.utils.CloseableHttpResponse;
 import ro.cs.tao.utils.HttpMethod;
 import ro.cs.tao.utils.NetUtils;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * Periodically inspect the remote quota and save it to the keyclock profile.
@@ -109,9 +110,28 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 													   .stream()
 													   .filter(u -> u.getProcessingQuota() > 0)
 													   .collect(Collectors.toList());
+			
+			// Get all remote container sizes
+			Map<String, Long> userContainerSizes = null;
+			try {
+				userContainerSizes = swiftService.getContainerSizes();
+			} catch (IOException e) {
+				logger.severe(() -> "Error reading the container sizes. Received message: " + e.getMessage());
+				// stop the execution because no container size can be determined,
+				// thus nothing can be uploaded
+				return;
+			}
+			
 			for (User user : users) {
 				// get the user ID
 				final String userId = user.getId();
+				
+				// check if a container size was determined for this user
+				if (userContainerSizes == null || !userContainerSizes.containsKey(userId)) {
+					// go to next user
+					logger.fine(() -> String.format("User %s has no storage, skipping", userId));
+					continue;
+				}
 				
                 final SessionDuration sessionDuration = persistenceManager.audit().getLastUserSession(userId);
                 final ResourceUsageReport report = persistenceManager.resourceUsageReport().getByUserId(userId);
@@ -132,14 +152,7 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
                 }
                 
                 // get the user's storage
-                long containerSize = -1;
-                try {
-					containerSize = swiftService.getContainerSize(userId);
-    			} catch (IOException e) {
-					logger.severe(() -> "Error reading the container size. Received message: " + e.getMessage());
-				} catch (TopologyException e) {
-					logger.fine(() -> "OpenStack authentication error. Received message: " + e.getMessage());
-				}
+                long containerSize = userContainerSizes.get(userId);
 
                 // update user's data
                 updateUserData(userId, BaseController.tokenOf(userId), sessionDuration, processingTime, containerSize);
@@ -182,7 +195,7 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 					logger.severe(e.getMessage());
 				}
 			} else {
-				logger.finest(() -> String.format("User %s has no storage and no processing time, skipping", userId));
+				logger.finest(() -> String.format("User %s has no storage and/or no processing time, skipping", userId));
 			}
 	    }
 
