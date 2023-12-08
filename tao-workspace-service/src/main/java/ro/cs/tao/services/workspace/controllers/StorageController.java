@@ -38,6 +38,7 @@ import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.model.ItemAction;
 import ro.cs.tao.services.workspace.impl.TransferService;
+import ro.cs.tao.services.workspace.model.SubscriptionBean;
 import ro.cs.tao.services.workspace.model.TransferRequest;
 import ro.cs.tao.services.workspace.model.TransferableItem;
 import ro.cs.tao.utils.*;
@@ -533,6 +534,28 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
             dataSubscriptionProvider.delete(subscription);
             responseEntity = prepareResult(String.format("Share %s removed", subscription.getName()), ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
+        return responseEntity;
+    }
+    /**
+     * List the shared data of the current user
+     *
+     */
+    @GetMapping(value = "share/list", produces = "application/json")
+    public ResponseEntity<?> shareFile() {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            final List<SubscriptionBean> list = new ArrayList<>();
+            final List<DataSubscription> shares = dataSubscriptionProvider.getByUser(currentUser());
+            if (shares != null) {
+                for (DataSubscription share : shares) {
+                    // TODO: 0 should be replaced by the actual number of subscribers
+                    list.add(new SubscriptionBean(share, 0));
+                }
+            }
+            responseEntity = prepareResult(list);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
         }
