@@ -16,11 +16,13 @@ import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.util.Zipper;
+import ro.cs.tao.eodata.DataSubscription;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.persistence.DataSubscriptionProvider;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.quota.QuotaException;
@@ -54,6 +56,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Function;
@@ -77,6 +80,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
     @Autowired
     private TransferService transferService;
+
+    @Autowired
+    private DataSubscriptionProvider dataSubscriptionProvider;
 
     private static final BlockingQueue<Tuple<Repository, String>> deletionQueue;
 
@@ -467,6 +473,70 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         } catch (IOException e) {
             error(e.getMessage());
         }
+    }
+    /**
+     * Shares a file or a folder from the user workspace
+     *
+     * @param file    The name of the file or of the folder
+     */
+    @PostMapping(value = "share", produces = "application/json")
+    public ResponseEntity<?> shareFile(@RequestParam("workspace") String workspaceId,
+                                       @RequestParam("file") String file,
+                                       @RequestParam("name") String name) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (StringUtils.isEmpty(file) || file.startsWith(".") || file.startsWith("..")) {
+                throw new IOException("The file must be relative and should not start with '.' or '..'");
+            }
+            final Repository workspace = getOwnedWorkspace(currentUser(), workspaceId);
+            if (!workspace.isSystem()) {
+                throw new IOException("This repository doesn't support sharing files or folders");
+            }
+            final String path = workspace.resolve(file);
+            DataSubscription subscription = new DataSubscription();
+            subscription.setName(StringUtilities.isNullOrEmpty(name) ? workspace.fileName(path) : name);
+            subscription.setUserId(currentUser());
+            subscription.setCreated(LocalDateTime.now());
+            subscription = dataSubscriptionProvider.save(subscription);
+            if (subscription.getId() > 0) {
+                responseEntity = prepareResult(String.format("Share %s created", name), ResponseStatus.SUCCEEDED);
+            } else {
+                throw new Exception(String.format("%s was not shared", file));
+            }
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
+        return responseEntity;
+    }
+    /**
+     * Shares a file or a folder from the user workspace
+     *
+     * @param file    The name of the file or of the folder
+     */
+    @PostMapping(value = "unshare", produces = "application/json")
+    public ResponseEntity<?> unshareFile(@RequestParam("workspace") String workspaceId,
+                                         @RequestParam("file") String file) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (StringUtils.isEmpty(file) || file.startsWith(".") || file.startsWith("..")) {
+                throw new IOException("The file must be relative and should not start with '.' or '..'");
+            }
+            final Repository workspace = getOwnedWorkspace(currentUser(), workspaceId);
+            if (!workspace.isSystem()) {
+                throw new IOException("This repository doesn't support sharing files or folders");
+            }
+            final String path = workspace.resolve(file);
+            final List<DataSubscription> shares = dataSubscriptionProvider.getByUser(currentUser());
+            final DataSubscription subscription = shares.stream().filter(s -> s.getDataRootPath().equals(path)).findFirst().orElse(null);
+            if (subscription == null) {
+                throw new IOException(String.format("%s is not shared", file));
+            }
+            dataSubscriptionProvider.delete(subscription);
+            responseEntity = prepareResult(String.format("Share %s removed", subscription.getName()), ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
+        return responseEntity;
     }
     /**
      * Transfers one or more file objects from the source workspace to the destination workspace
