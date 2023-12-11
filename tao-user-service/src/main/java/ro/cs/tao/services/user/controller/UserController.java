@@ -199,6 +199,27 @@ public class UserController extends BaseController {
     }
 
     /**
+     * Returns the user login name
+     * @param userId    The user account identifier
+     */
+    @RequestMapping(value = "/name", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getUserName(@PathVariable("userId") String userId) {
+        if (StringUtilities.isNullOrEmpty(userId)) {
+            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
+        }
+        try {
+            final User user = userService.getUserInfo(userId);
+            if (user != null) {
+                return prepareResult(user.getUsername());
+            } else {
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
+            }
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
      * Updates the user profile
      * @param updatedUserInfo   The user profile structure
      */
