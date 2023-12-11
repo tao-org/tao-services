@@ -717,6 +717,7 @@ public class WorkflowServiceImpl
             clone.setUserId(SessionStore.currentContext().getPrincipal().getName());
             clone.setVisibility(Visibility.PRIVATE);
             clone.setCreatedFromWorkflowId(workflow.getId());
+            clone.setTemporary(true);
             clone = workflowProvider.save(clone);
             // key: old id, value: new node
             final Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
