@@ -65,7 +65,7 @@ public abstract class ServletConfiguration {
 
     protected Map<String, String> versionInfo() {
         final Map<String, String> version = readManifest();
-        if (version.size() == 0) {
+        if (version.isEmpty()) {
             version.put("TAO Services", "running from IDE");
         }
         return version;
