@@ -211,6 +211,28 @@ public class AdministrationController extends BaseController {
     }
 
     /**
+     * Creates a resource subscription of a user account
+     * @param userId  The user identifier
+     * @param subscription The subscription entity
+     */
+    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> createUserSubscription(@PathVariable("userId") String userId,
+                                                                     @RequestBody ResourceSubscription subscription) {
+        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        if (subscription == null || subscription.getId() != null || subscription.getFlavor() == null || subscription.getFlavorQuantity() == 0) {
+            return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
+        }
+        try {
+            subscription.setEnded(null);
+            return prepareResult(resourceSubscriptionProvider.save(subscription));
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
      * Updates a resource subscription of a user account
      * @param userId  The user identifier
      * @param subscription The subscription entity
