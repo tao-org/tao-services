@@ -24,6 +24,7 @@ import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.persistence.ResourceSubscriptionProvider;
 import ro.cs.tao.persistence.managers.AuditManager;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.services.admin.beans.UserBean;
@@ -63,6 +64,9 @@ public class AdministrationController extends BaseController {
 
     @Autowired
     private AuditManager auditManager;
+
+    @Autowired
+    private ResourceSubscriptionProvider resourceSubscriptionProvider;
 
     /**
      * Creates a new user
@@ -181,6 +185,25 @@ public class AdministrationController extends BaseController {
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
+     * Returns the resource subscriptions of a user account
+     * @param userId  The user identifier
+     */
+    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> getUserSubscriptions(@PathVariable("userId") String userId) {
+        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        if (StringUtilities.isNullOrEmpty(userId)) {
+            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
+        }
+        try {
+            return prepareResult(resourceSubscriptionProvider.getByUser(userId));
         } catch (Exception ex) {
             return handleException(ex);
         }

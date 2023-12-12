@@ -1,6 +1,6 @@
 package ro.cs.tao.services.workspace.model;
 
-import ro.cs.tao.eodata.DataSubscription;
+import ro.cs.tao.subscription.DataSubscription;
 
 import java.time.LocalDateTime;
 
