@@ -16,7 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.util.Zipper;
-import ro.cs.tao.eodata.DataSubscription;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.messaging.Messaging;
@@ -41,6 +40,7 @@ import ro.cs.tao.services.workspace.impl.TransferService;
 import ro.cs.tao.services.workspace.model.SubscriptionBean;
 import ro.cs.tao.services.workspace.model.TransferRequest;
 import ro.cs.tao.services.workspace.model.TransferableItem;
+import ro.cs.tao.subscription.DataSubscription;
 import ro.cs.tao.utils.*;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
 import ro.cs.tao.utils.executors.MemoryUnit;
@@ -516,20 +516,14 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param file    The name of the file or of the folder
      */
     @PostMapping(value = "unshare", produces = "application/json")
-    public ResponseEntity<?> unshareFile(@RequestParam("workspace") String workspaceId,
-                                         @RequestParam("file") String file) {
+    public ResponseEntity<?> unshareFile(@RequestParam("file") String file) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             if (StringUtils.isEmpty(file) || file.startsWith(".") || file.startsWith("..")) {
                 throw new IOException("The file must be relative and should not start with '.' or '..'");
             }
-            final Repository workspace = getOwnedWorkspace(currentUser(), workspaceId);
-            if (!workspace.isSystem()) {
-                throw new IOException("This repository doesn't support sharing files or folders");
-            }
-            final String path = workspace.resolve(file);
             final List<DataSubscription> shares = dataSubscriptionProvider.getByUser(currentUser());
-            final DataSubscription subscription = shares.stream().filter(s -> s.getDataRootPath().equals(path)).findFirst().orElse(null);
+            final DataSubscription subscription = shares.stream().filter(s -> s.getDataRootPath().equals(file)).findFirst().orElse(null);
             if (subscription == null) {
                 throw new IOException(String.format("%s is not shared", file));
             }
