@@ -39,9 +39,33 @@ import java.util.logging.Logger;
 
 @CrossOrigin(origins = {"http://localhost", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082"})
 public abstract class ControllerBase {
-    private static final Object sharedLock = new Object();
 
-    private ThreadPoolTaskExecutor executorService;
+    private static final ThreadPoolTaskExecutor executorService;
+
+    static {
+        executorService = new ThreadPoolTaskExecutor() {
+            @Override
+            public void execute(Runnable task) {
+                final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                super.execute(() -> {
+                    try {
+                        SecurityContext context = SecurityContextHolder.createEmptyContext();
+                        context.setAuthentication(authentication);
+                        SecurityContextHolder.setContext(context);
+                        task.run();
+                    } finally {
+                        SecurityContextHolder.clearContext();
+                    }
+                });
+            }
+        };
+        executorService.setThreadGroupName("controller-async");
+        int processors = Runtime.getRuntime().availableProcessors();
+        executorService.setCorePoolSize(Math.min(processors / 2, 4));
+        executorService.setMaxPoolSize(executorService.getCorePoolSize() * 4);
+        executorService.setQueueCapacity(25);
+        executorService.initialize();
+    }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
@@ -59,32 +83,6 @@ public abstract class ControllerBase {
     }
 
     protected <T> Future<?> asyncExecute(Callable<T> runnable, Consumer<T> successCallback, Consumer<Exception> errorCallback) {
-        synchronized (sharedLock) {
-            if (this.executorService == null) {
-                executorService = new ThreadPoolTaskExecutor() {
-                    @Override
-                    public void execute(Runnable task) {
-                        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                        super.execute(() -> {
-                            try {
-                                SecurityContext context = SecurityContextHolder.createEmptyContext();
-                                context.setAuthentication(authentication);
-                                SecurityContextHolder.setContext(context);
-                                task.run();
-                            } finally {
-                                SecurityContextHolder.clearContext();
-                            }
-                        });
-                    }
-                };
-                executorService.setThreadGroupName("controller-async");
-                int processors = Runtime.getRuntime().availableProcessors();
-                executorService.setCorePoolSize(Math.min(processors / 2, 4));
-                executorService.setMaxPoolSize(executorService.getCorePoolSize() * 2);
-                executorService.setQueueCapacity(25);
-                executorService.initialize();
-            }
-        }
         return executorService.submit(() -> {
             try {
                 final T result = runnable.call();
@@ -102,32 +100,6 @@ public abstract class ControllerBase {
     }
 
     protected Future<?> asyncExecute(Runnable runnable, String successMessage, TriConsumer<String, Exception, String> callback) {
-        synchronized (sharedLock) {
-            if (this.executorService == null) {
-                executorService = new ThreadPoolTaskExecutor() {
-                    @Override
-                    public void execute(Runnable task) {
-                        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                        super.execute(() -> {
-                            try {
-                                SecurityContext context = SecurityContextHolder.createEmptyContext();
-                                context.setAuthentication(authentication);
-                                SecurityContextHolder.setContext(context);
-                                task.run();
-                            } finally {
-                                SecurityContextHolder.clearContext();
-                            }
-                        });
-                    }
-                };
-                executorService.setThreadGroupName("controller-async");
-                int processors = Runtime.getRuntime().availableProcessors();
-                executorService.setCorePoolSize(Math.min(processors / 2, 4));
-                executorService.setMaxPoolSize(executorService.getCorePoolSize() * 2);
-                executorService.setQueueCapacity(25);
-                executorService.initialize();
-            }
-        }
         final String user = currentUser();
         return executorService.submit(() -> {
             try {
@@ -180,6 +152,7 @@ public abstract class ControllerBase {
     }
 
     protected ResponseEntity<ServiceResponse<?>> handleException(Exception ex) {
+        logger.severe("Exception in session of " + currentUser() + ":");
         logger.severe(ExceptionUtils.getStackTrace(logger, ex));
         if (ex instanceof ValidationException) {
             ValidationException vex = (ValidationException) ex;
