@@ -497,6 +497,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             DataSubscription subscription = new DataSubscription();
             subscription.setName(StringUtilities.isNullOrEmpty(name) ? workspace.fileName(path) : name);
             subscription.setUserId(currentUser());
+            subscription.setDataRootPath(path);
             subscription.setCreated(LocalDateTime.now());
             subscription = dataSubscriptionProvider.save(subscription);
             if (subscription.getId() > 0) {
