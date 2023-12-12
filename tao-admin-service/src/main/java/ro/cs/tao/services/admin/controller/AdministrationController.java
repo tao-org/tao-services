@@ -35,6 +35,7 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.model.user.DisableUserInfo;
+import ro.cs.tao.subscription.ResourceSubscription;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
@@ -204,6 +205,57 @@ public class AdministrationController extends BaseController {
         }
         try {
             return prepareResult(resourceSubscriptionProvider.getByUser(userId));
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
+     * Updates a resource subscription of a user account
+     * @param userId  The user identifier
+     * @param subscription The subscription entity
+     */
+    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> updateUserSubscription(@PathVariable("userId") String userId,
+                                                                     @RequestBody ResourceSubscription subscription) {
+        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        if (subscription == null || subscription.getId() == null || subscription.getFlavor() == null || subscription.getFlavorQuantity() == 0) {
+            return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
+        }
+        try {
+            if (subscription.getEnded() != null) {
+                throw new IllegalAccessException("A closed subscription cannot be updated");
+            }
+            return prepareResult(resourceSubscriptionProvider.save(subscription));
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
+     * Closes a resource subscription of a user account
+     * @param userId  The user identifier
+     */
+    @RequestMapping(value = "/users/{userId}/subscriptions/{subscriptionId}", method = RequestMethod.DELETE, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId,
+                                                                    @PathVariable("subscriptionId") long subscriptionId) {
+        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+            return prepareResult(null, HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            final ResourceSubscription subscription = resourceSubscriptionProvider.get(subscriptionId);
+            if (subscription == null) {
+                throw new IllegalArgumentException("No such subscription");
+            }
+            if (subscription.getEnded() != null) {
+                throw new IllegalAccessException("Subscription already closed");
+            } else {
+                subscription.setEnded(LocalDateTime.now());
+                resourceSubscriptionProvider.save(subscription);
+            }
+            return prepareResult("Subscription closed", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             return handleException(ex);
         }
