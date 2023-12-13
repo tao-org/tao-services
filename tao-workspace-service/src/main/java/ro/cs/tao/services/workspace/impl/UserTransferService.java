@@ -151,7 +151,7 @@ public class UserTransferService {
             final TransferableItem next = this.queue.peek();
             if (next == null || !item.getBatch().equals(next.getBatch())) {
                 if (this.progressListener != null) {
-                    this.progressListener.ended();
+                    this.progressListener.ended(true);
                     this.progressListener = null;
                 }
                 logger.finest("Transfer batch [" + item.getBatch() + "] completed");
@@ -159,7 +159,7 @@ public class UserTransferService {
         } catch (Exception e) {
             logger.severe(ExceptionUtils.getStackTrace(logger, e));
             if (this.progressListener != null) {
-                this.progressListener.ended();
+                this.progressListener.ended(false);
             }
             this.queueWorker.setPaused(true);
             initRetryTimer();
