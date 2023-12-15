@@ -23,6 +23,7 @@ import org.springframework.boot.actuate.metrics.MetricsEndpoint;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.DataSourceTopic;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
@@ -48,12 +49,15 @@ import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -65,6 +69,14 @@ public class MonitoringController extends BaseController {
 
     private static List<String> metricNames;
     private static final Object lock = new Object();
+
+    private static Timer collectTimer;
+    private static final Task collectTask = new Task();
+
+    static {
+        collectTimer = new Timer();
+        collectTimer.scheduleAtFixedRate(collectTask, 0, 60000);
+    }
 
     @Autowired
     private MonitoringService<Notification> monitoringService;
@@ -223,16 +235,46 @@ public class MonitoringController extends BaseController {
 
     @RequestMapping(value = "/metrics", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getMetrics() {
+        return prepareResult(collectMetrics());
+    }
+
+    @RequestMapping(value = "/metrics/enable", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> enableMetrics() {
+        try {
+            collectTimer.cancel();
+            collectTimer = new Timer();
+            collectTask.endpoint = metricsEndpoint;
+            collectTimer.scheduleAtFixedRate(collectTask, 1000, 60000);
+            return prepareResult("Metrics collection enabled");
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/metrics/disable", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<ServiceResponse<?>> disableMetrics() {
+        try {
+            collectTimer.cancel();
+            return prepareResult("Metrics collection disabled");
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    private List<Metric> collectMetrics() {
+        if (collectTask.endpoint == null) {
+            collectTask.endpoint = metricsEndpoint;
+        }
         if (metricNames == null) {
             synchronized (lock) {
                 metricNames = new ArrayList<>(metricsEndpoint.listNames().getNames());
             }
         }
-        return prepareResult(metricNames.stream()
-                                        .filter(m -> !(m.startsWith("executor") || m.startsWith("jvm")))
-                                        .map(m -> metricsEndpoint.metric(m, null))
-                                        .map(Metric::toBean)
-                                        .collect(Collectors.toList()));
+        return metricNames.stream()
+                          .filter(m -> !(m.startsWith("executor") || m.startsWith("jvm")))
+                          .map(m -> metricsEndpoint.metric(m, null))
+                          .map(Metric::toBean)
+                          .collect(Collectors.toList());
     }
 
     private Message createMessage(Principal principal, String topic) throws JsonProcessingException {
@@ -300,5 +342,36 @@ public class MonitoringController extends BaseController {
             message.setUserId(principal.getName());
         }
         return message;
+    }
+
+    private static class Task extends TimerTask {
+        private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        private MetricsEndpoint endpoint;
+
+        @Override
+        public void run() {
+            try {
+                final Path logFile = Paths.get(ConfigurationManager.getInstance().getValue("site.path")).getParent().resolve("logs").resolve("metrics.log");
+                if (endpoint != null) {
+                    if (metricNames == null) {
+                        synchronized (lock) {
+                            metricNames = new ArrayList<>(endpoint.listNames().getNames());
+                        }
+                    }
+                    if (!Files.exists(logFile)) {
+                        Files.createDirectories(logFile.getParent());
+                        Files.writeString(logFile, "datetime;" + String.join(";", metricNames) + "\n");
+                    }
+                    final String values = metricNames.stream().map(m -> endpoint.metric(m, null))
+                                                     .map(m -> m.getMeasurements().stream()
+                                                                .map(s -> String.valueOf(s.getValue())).collect(Collectors.joining(",")))
+                                                     .collect(Collectors.joining(";"));
+                    Files.writeString(logFile, LocalDateTime.now().format(formatter) + ";" + values + "\n", StandardOpenOption.APPEND);
+
+                }
+            } catch (Throwable t) {
+                Logger.getLogger(MonitoringController.class.getName()).warning(t.getMessage());
+            }
+        }
     }
 }
