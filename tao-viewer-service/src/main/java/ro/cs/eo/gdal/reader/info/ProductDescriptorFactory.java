@@ -37,7 +37,7 @@ public class ProductDescriptorFactory {
         try (InputStream inputStream = ProductDescriptorFactory.class.getResourceAsStream("descriptors.json")) {
             this.descriptors.addAll(new ObjectMapper().readValue(inputStream, JSON_FORMAT_DESCRIPTOR_TYPE_REFERENCE));
         }
-        this.descriptorCache = new AutoEvictableCache<>(new Function<Path, ProductDescriptor>() {
+        this.descriptorCache = new AutoEvictableCache<>(new Function<>() {
             @Override
             public ProductDescriptor apply(Path path) {
                 List<FormatDescriptor> descriptors = instance.descriptors.stream().filter(d -> d.matches(path.toString())).collect(Collectors.toList());
