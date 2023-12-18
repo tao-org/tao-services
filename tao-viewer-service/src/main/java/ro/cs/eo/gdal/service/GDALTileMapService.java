@@ -3,6 +3,7 @@ package ro.cs.eo.gdal.service;
 import org.springframework.stereotype.Service;
 import ro.cs.eo.gdal.dataio.GDALTileCache;
 import ro.cs.eo.gdal.dataio.Keys;
+import ro.cs.eo.gdal.reader.Extent;
 import ro.cs.eo.gdal.reader.ImageInfo;
 import ro.cs.eo.gdal.reader.TileReader;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
@@ -22,6 +23,7 @@ public class GDALTileMapService {
     private final TileReader tileReader;
 
     private final GDALTileCache gdalTileCache;
+    private final Path seriesPath;
 
     public GDALTileMapService() {
         ConfigurationProvider config = ConfigurationManager.getInstance();
@@ -31,6 +33,7 @@ public class GDALTileMapService {
         final boolean cacheClearAtStartup = Boolean.parseBoolean(config.getValue(Keys.CONFIG_CACHE_CLEAR_AT_STARTUP_KEY, "false"));
         this.gdalTileCache = new GDALTileCache(cacheEnabled, path, size, cacheClearAtStartup);
         this.tileReader = new TileReader(this.gdalTileCache);
+        this.seriesPath = Paths.get(System.getProperty("user.home")).resolve(config.getValue(Keys.CONFIG_CACHE_DIR_KEY, ".eds/series/"));
     }
 
     public void setCacheDirPath(Path cacheDirPath) {
@@ -71,5 +74,22 @@ public class GDALTileMapService {
         }
     }
 
+    public void extractSubset(ProductDescriptor productDescriptor, Extent extent, String name) throws FileNotFoundException {
+        try {
+            final Path sourceLocalFilePath = productDescriptor.getProductPath();
+            if (Files.exists(sourceLocalFilePath)) {
+                final String imageFileName = sourceLocalFilePath.getFileName().toString().replaceAll(regEx, "$1") + ".png";
+                this.tileReader.extractSubset(productDescriptor,
+                                              this.seriesPath.resolve(name).resolve(imageFileName),
+                                              extent.xmin, extent.ymin, extent.xmax - extent.xmin, extent.ymax - extent.ymin);
+            } else {
+                throw new FileNotFoundException("Product path not exists.");
+            }
+        } catch (FileNotFoundException | IndexOutOfBoundsException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
 
 }

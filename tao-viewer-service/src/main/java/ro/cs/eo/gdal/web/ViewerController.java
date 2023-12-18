@@ -11,29 +11,41 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ro.cs.eo.gdal.dataio.Keys;
+import ro.cs.eo.gdal.reader.Extent;
 import ro.cs.eo.gdal.reader.ImageInfo;
 import ro.cs.eo.gdal.reader.TileReader;
 import ro.cs.eo.gdal.reader.info.FormatDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptorFactory;
+import ro.cs.eo.gdal.service.FileGeometryFilter;
 import ro.cs.eo.gdal.service.GDALTileMapService;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.services.commons.ControllerBase;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.spi.ServiceRegistry;
+import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/view")
 public class ViewerController extends ControllerBase {
 
     private final AnnotationConfigApplicationContext context;
+    private final Logger logger = Logger.getLogger(ViewerController.class.getName());
 
     @Autowired
     private RepositoryProvider repositoryProvider;
@@ -88,13 +100,15 @@ public class ViewerController extends ControllerBase {
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
             return new ResponseEntity<>(("<html><body><h1>" + e.getMessage() + "</h1><br/><h3>Try again.</h3></body></html>").getBytes(), headers, HttpStatus.NOT_FOUND);
         } catch (FileNotFoundException e) {
+            logger.warning(e.getMessage());
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
             return new ResponseEntity<>(("<html><body><h1>" + e.getMessage() + "</h1></body></html>").getBytes(), headers, HttpStatus.NOT_FOUND);
         } catch(IllegalArgumentException e){
+            logger.warning(e.getMessage());
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
             return new ResponseEntity<>(("<html><body><h1>" + e.getMessage() + "</h1><br/><h3>Try another product.</h3></body></html>").getBytes(), headers, HttpStatus.NOT_ACCEPTABLE);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
             return new ResponseEntity<>(("<html><body><h1>500</h1><br/><h3>Internal server error.</h3></body></html>").getBytes(), headers, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -128,13 +142,16 @@ public class ViewerController extends ControllerBase {
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
             return new ResponseEntity<>(imageInfo.toJson(), headers, HttpStatus.OK);
         } catch (FileNotFoundException e) {
+            logger.warning(e.getMessage());
             return new ResponseEntity<>("<html><body><h1>" + e.getMessage() + "</h1></body></html>", headers, HttpStatus.NOT_FOUND);
         } catch (IndexOutOfBoundsException e) {
+            logger.warning(e.getMessage());
             return new ResponseEntity<>("<html><body><h1>" + e.getMessage() + "</h1><br/><h3>Try again.</h3></body></html>", headers, HttpStatus.NOT_FOUND);
         } catch(IllegalArgumentException e){
+            logger.warning(e.getMessage());
             return new ResponseEntity<>("<html><body><h1>" + e.getMessage() + "</h1><br/><h3>Try another product.</h3></body></html>", headers, HttpStatus.NOT_ACCEPTABLE);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             return new ResponseEntity<>("<html><body><h1>500</h1><br/><h3>Internal server error.</h3></body></html>", headers, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -143,11 +160,12 @@ public class ViewerController extends ControllerBase {
     public ResponseEntity<byte[]> viewMap() {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
-        try {
-            byte[] data = IOUtils.toByteArray(ViewerController.class.getResourceAsStream("view1.html"));
+        try (InputStream s = ViewerController.class.getResourceAsStream("view1.html")) {
+            final byte[] data;
+            data = s != null ? IOUtils.toByteArray(s) : new byte[0];
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             return new ResponseEntity<>("<html><body><h1>500</h1><br/><h3>Internal server error.</h3></body></html>".getBytes(), headers, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -165,8 +183,51 @@ public class ViewerController extends ControllerBase {
             }
             return new ResponseEntity<>("<html><body><h1>BAD</h1><br/><h3>Cache directory path not updated. Invalid path.</h3></body></html>", headers, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             return new ResponseEntity<>("<html><body><h1>500</h1><br/><h3>Internal server error.</h3></body></html>", headers, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @RequestMapping(value = "/series", method = RequestMethod.POST, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public ResponseEntity<ServiceResponse<?>> extractSeries(@RequestParam("geometry") String geometryWKT,
+                                                            @RequestParam("id") String id) {
+        GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
+        try {
+            final ServiceRegistry<FileGeometryFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(FileGeometryFilter.class);
+            final Set<FileGeometryFilter> services = registry.getServices();
+            if (services.isEmpty()) {
+                throw new Exception("Not implemented");
+            }
+            final Path basePath = Paths.get(System.getProperty("user.home"))
+                                       .resolve(ConfigurationManager.getInstance()
+                                                                    .getValue(Keys.CONFIG_CACHE_DIR_KEY, ".eds/series/"))
+                                       .resolve(id);
+            final FileGeometryFilter filter = services.iterator().next();
+            final Extent extent = filter.computeEnvelope(geometryWKT);
+            final List<Path> files = filter.filter(geometryWKT);
+            final List<Path> outFiles = files.stream()
+                                             .map(f -> basePath.resolve(f.getFileName().toString().replaceAll("^(.*?)\\..*$", "$1") + ".png"))
+                                             .collect(Collectors.toList());
+            asyncExecute(() -> {
+                for (Path file : files) {
+                    try {
+                        ProductDescriptor productDescriptor = ProductDescriptorFactory.getDescriptor(file);
+                        double[] scale = TileReader.getScale(file);
+                        if (scale != null && scale.length == 2) {
+                            FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
+                            formatDescriptor.setPixelMinScale((int) scale[0]);
+                            formatDescriptor.setPixelMaxScale((int) scale[1]);
+                            formatDescriptor.setPriority(1);
+                        }
+                        gdalTileMapService.extractSubset(productDescriptor, extent, id);
+                    } catch (Exception e) {
+                        warn(e.getMessage());
+                    }
+                }
+            });
+            return prepareResult(outFiles);
+        } catch (Exception e) {
+            return handleException(e);
         }
     }
 

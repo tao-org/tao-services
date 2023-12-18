@@ -89,6 +89,41 @@ public class TileReader {
         }
     }
 
+    public void extractSubset(ProductDescriptor productDescriptor, Path filePath, double x, double y, double width, double height) throws IOException {
+        Dataset[] gdalDatasets = null;
+        Dataset vrtDataset = null;
+        Dataset warpDataset = null;
+        Dataset translateDataset = null;
+        try {
+            GDAL.useExceptions();
+            Files.createDirectories(filePath.getParent());
+            if (config.reverseY) {
+                y = - y;
+            }
+            final Extent extent = new Extent(x, y, x + width, x + height);
+            gdalDatasets = prepareDatasets(productDescriptor, extent);
+            vrtDataset = buildVRTDataset(productDescriptor, gdalDatasets);
+            final String tmpFileName = "/vsimem/" + System.currentTimeMillis() + ".tif";
+            warpDataset = buildWarpedDataset(productDescriptor, extent, vrtDataset, tmpFileName);
+            translateDataset = buildTranslatedDataset(productDescriptor, warpDataset, filePath.toString());
+        } finally {
+            if (gdalDatasets != null) {
+                for (Dataset gdalDataset : gdalDatasets) {
+                    deleteDataset(gdalDataset, false);
+                }
+            }
+            if (vrtDataset != null) {
+                deleteDataset(vrtDataset, false);
+            }
+            if (warpDataset != null) {
+                deleteDataset(warpDataset, false);
+            }
+            if (translateDataset != null) {
+                deleteDataset(translateDataset, false);
+            }
+        }
+    }
+
     public ImageInfo getInfo(ProductDescriptor productDescriptor) {
         final Path productFilePath = productDescriptor.getProductPath();
         final String name = productFilePath.getFileName().toString();
@@ -197,7 +232,7 @@ public class TileReader {
                 deleteDataset(gdalDataset, false);
             }
         }
-        if (gdalDatasets.size() < 1) {
+        if (gdalDatasets.isEmpty()) {
             throw new IndexOutOfBoundsException("Tile out of bounds.");
         }
 
