@@ -71,7 +71,7 @@ public class MonitoringController extends BaseController {
     private static final Object lock = new Object();
 
     private static Timer collectTimer;
-    private static final Task collectTask = new Task();
+    private static Task collectTask = new Task();
 
     static {
         collectTimer = new Timer();
@@ -242,7 +242,9 @@ public class MonitoringController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> enableMetrics() {
         try {
             collectTimer.cancel();
+            collectTask.cancel();
             collectTimer = new Timer();
+            collectTask = new Task();
             collectTask.endpoint = metricsEndpoint;
             collectTimer.scheduleAtFixedRate(collectTask, 1000, 60000);
             return prepareResult("Metrics collection enabled");
