@@ -170,6 +170,7 @@ public final class ServiceTransformUtils {
         bean.setReadOnly(entity.isReadOnly());
         bean.setSystem(entity.isSystem());
         bean.setEditable(entity.isEditable());
+        bean.setOrder(entity.getOrder());
         return bean;
     }
 

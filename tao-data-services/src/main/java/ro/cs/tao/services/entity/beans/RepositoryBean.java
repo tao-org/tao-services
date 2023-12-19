@@ -13,6 +13,7 @@ public class RepositoryBean {
     private boolean system;
     private boolean readOnly;
     private boolean editable;
+    private short order;
     private LinkedHashMap<String, String> parameters;
     private List<Action> actions;
 
@@ -86,6 +87,14 @@ public class RepositoryBean {
 
     public void setEditable(boolean editable) {
         this.editable = editable;
+    }
+
+    public short getOrder() {
+        return order;
+    }
+
+    public void setOrder(short order) {
+        this.order = order;
     }
 
     public LinkedHashMap<String, String> getParameters() {
