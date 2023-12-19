@@ -75,7 +75,7 @@ public class MonitoringController extends BaseController {
 
     static {
         collectTimer = new Timer();
-        collectTimer.scheduleAtFixedRate(collectTask, 0, 60000);
+        collectTimer.scheduleAtFixedRate(collectTask, 60000, 60000);
     }
 
     @Autowired
