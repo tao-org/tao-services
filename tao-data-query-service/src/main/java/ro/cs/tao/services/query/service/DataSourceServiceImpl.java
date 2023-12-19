@@ -105,7 +105,7 @@ public class DataSourceServiceImpl implements DataSourceService {
                     Map<String, CollectionDescription> sensorTypes = dataSource.getSensorTypes();
                     if (sensorTypes != null) {
                         final Map<String, DataSourceParameter> parameters = dataSourceManager.getSupportedParameters(sensor, n);
-                        final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(dataSource.getId());
+                        final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(sensor + "-" + n);
                         // In case of symlink, copy or check fetch modes, authentication is not required
                         final boolean requiresAuthentication;
                         if (dataSourceConfiguration != null && fetchModes.contains(dataSourceConfiguration.getFetchMode())) {
