@@ -460,7 +460,7 @@ public class AdministrationController extends BaseController {
      */
     @RequestMapping(value = "/users/sessions/total", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getTotalProcessingTime(@RequestParam(name = "userId", required = false) String userId) {
-        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+        if (!isCurrentUserAdmin() && !currentUser().equals(userId)) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         try {
