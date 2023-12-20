@@ -700,8 +700,8 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         if (stream == null) {
             return;
         }
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        if (!Files.exists(uploadPath.getParent())) {
+            Files.createDirectories(uploadPath.getParent());
         }
         // Resolve filename when coming from IE
         try (InputStream inputStream = wrapStream(stream)) {

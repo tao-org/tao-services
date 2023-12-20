@@ -45,7 +45,7 @@ public class UserTransferService {
     UserTransferService(Principal user) {
         this.logger = Logger.getLogger(TransferService.class.getName());
         this.queue = new LinkedBlockingDeque<>();
-        this.queueWorker = new BlockingQueueWorker<>(this.queue, this::processRequest, 2, "transfer-worker", 250);
+        this.queueWorker = new BlockingQueueWorker<>(this.queue, this::processRequest, 1, "transfer-worker", 250);
         this.principal = user;
         this.stateFile = Paths.get(SystemVariable.ROOT.value()).resolve("transfer").resolve(user.getName()).resolve("transfer_queue.json");
         restoreState();
@@ -109,7 +109,9 @@ public class UserTransferService {
             } else {
                 srcPath = srcWorkspace.resolve(fileObject.getRelativePath());
             }
-            listener.subActivityStarted(srcPath);
+            if (this.progressListener != null) {
+            	this.progressListener.subActivityStarted(srcPath);
+            }
             if (srcWorkspace.getId().equals(dstWorkspace.getId())) {
                 destinationService.move(srcPath, item.getDestinationPath());
             } else {
@@ -143,7 +145,9 @@ public class UserTransferService {
                     logger.finest("Removed file " + srcPath);
                 }
             }
-            listener.subActivityEnded(srcPath);
+            if (this.progressListener != null) {
+            	this.progressListener.subActivityEnded(srcPath, true);
+            }
             //decrement(item.getBatch());
             if (this.progressListener != null) {
                 this.progressListener.notifyProgress(getBatchProgress(item.getBatch()));
