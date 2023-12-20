@@ -1,0 +1,282 @@
+package ro.cs.tao.services.workspace.impl;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.eodata.AuxiliaryData;
+import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.eodata.VectorData;
+import ro.cs.tao.execution.JobCompletedListener;
+import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.ExecutionStatus;
+import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.execution.util.TaskUtilities;
+import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Notifiable;
+import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.persistence.AuxiliaryDataProvider;
+import ro.cs.tao.persistence.EOProductProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.persistence.VectorDataProvider;
+import ro.cs.tao.services.bridge.spring.SpringContextBridge;
+import ro.cs.tao.services.factory.StorageServiceFactory;
+import ro.cs.tao.services.interfaces.StorageService;
+import ro.cs.tao.services.model.FileObject;
+import ro.cs.tao.services.workspace.model.TransferableItem;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
+
+/**
+ * Upload a job's files to the user's remote repository.
+ * 
+ * <p>
+ * The user's remote repository is defined as the default and non local repository.
+ */
+public class JobFilesUpload extends Notifiable implements JobCompletedListener {
+    /** Key for removing intermediate file option. */
+    private static final String REMOVE_INTERMEDIATE_FILES_KEY = "tao.remove.intermediate.files";
+	
+    private static final Pattern TRANSFER_SUCCESSFULL = Pattern.compile("^\\[.+\\]\\sCompleted\\stransfer\\sfor\\s(.+)$");
+    
+    /** Class logger. */
+	private final Logger logger;
+
+    /** Repository provider. */
+	private final RepositoryProvider repositoryProvider;
+
+	/** Raster product provider. */
+	private EOProductProvider productProvider;
+
+	/** Vector data provider. */
+    private VectorDataProvider vectorDataProvider;
+	
+    /** Auxiliary data provider. */
+    private AuxiliaryDataProvider auxiliaryDataProvider;
+
+    /** File transfer service. */
+    private final TransferService transferService;
+    
+	/**
+	 * Constructor.
+	 */
+	public JobFilesUpload() {
+		this.logger = Logger.getLogger(this.getClass().getName());
+		this.repositoryProvider = SpringContextBridge.services().getService(RepositoryProvider.class);
+		this.productProvider = SpringContextBridge.services().getService(EOProductProvider.class);
+		this.vectorDataProvider = SpringContextBridge.services().getService(VectorDataProvider.class);
+		this.auxiliaryDataProvider = SpringContextBridge.services().getService(AuxiliaryDataProvider.class);
+		this.transferService = SpringContextBridge.services().getService(TransferService.class);
+		subscribe(Topic.TRANSFER_PROGRESS.value());
+	}
+	
+	@Override
+	public void onCompleted(ExecutionJob job) {
+		// only process jobs which finished successfully
+		if (job.getExecutionStatus() != ExecutionStatus.DONE) {
+			return;
+		}
+    	final Repository localRepository = getLocalRepository(job.getUserId());
+    	if (localRepository == null) {
+    		logger.warning("Cannot find local repository for user " + job.getUserId() + ". No files will be transfered.");
+    		return;
+    	}
+    	final Repository remoteRepository = getRemoteRepository(job.getUserId());
+    	if (remoteRepository == null) {
+    		logger.warning("Cannot find remote repository for user " + job.getUserId() + ". No files will be transfered.");
+    		return;
+    	}
+    	
+    	final StorageService<?, ?> localStorage = StorageServiceFactory.getInstance(localRepository);
+    	final StorageService<?, ?> remoteStorage = StorageServiceFactory.getInstance(remoteRepository);
+    	
+    	// get all produced files and folders
+    	final List<FileObject> producedItems;
+    	try {
+    		final Path workspaceRoot = Paths.get(localRepository.root());
+    		final Path jobOutputhPath = Paths.get(job.getJobOutputPath());
+    		producedItems = localStorage.listTree(workspaceRoot.relativize(jobOutputhPath).toString());
+    	} catch (IOException ex) {
+    		logger.warning("Cannot list the generated files for job " + job.getId() + ". No files will be transfered.");
+    		return;
+    	}
+    	
+    	// get a list of terminal nodes
+    	final List<ExecutionTask> terminalTasks = job.getTasks().stream()
+      										 	 .filter(t -> TaskUtilities.isTerminalTask(t) && t.getExecutionStatus() == ExecutionStatus.DONE)
+      											 .collect(Collectors.toList());
+   
+    	// create the filters for the files and folders generated by the terminal nodes
+    	final List<String> filters = terminalTasks.stream().map(t -> { return job.getId() + "-" + t.getId() + "-";}).collect(Collectors.toList());
+    	
+
+    	// create all folders on the remote server
+//    	producedItems.stream().filter(it -> it.isFolder() && isTransferableFile(it, filters)).forEach(folder -> {
+//    		try {
+//    			// get the relative folder path
+//    			final Path relativeFolder = Paths.get(job.getUserId(), folder.getRelativePath());
+//    			for (int i = 1; i <= relativeFolder.getNameCount(); i++ ) {
+//    				// create all subfolders
+//    				if (!remoteStorage.exists(relativeFolder.subpath(0, i).toString())) {
+//        				remoteStorage.createFolder(relativeFolder.subpath(0, i).toString().replace('\\', '/'), true);	
+//    				}
+//    			}
+//			} catch (Exception e) {
+//				logger.warning("Cannot create remote folder " + folder.getDisplayName() + ". Message: " + e.getMessage());
+//			}
+//    	});
+
+    	// create a list of transferable items containing only the files from the terminal nodes.
+    	final List<TransferableItem> items = producedItems.stream().filter(fo -> !fo.isFolder() && isTransferableFile(fo, filters))
+    			.map(fo -> new TransferableItem(job.getUserId(), 
+    					job.getUserId() + "/" + job.getId(), 
+    					localRepository, 
+    					fo, 
+    					remoteRepository, 
+    					Paths.get(job.getUserId(), fo.getRelativePath()).toString().replace('\\', '/'), 
+    					false, 
+    					true)).collect(Collectors.toList());
+
+    	transferService.request(items.toArray(new TransferableItem[items.size()]));
+    	
+    	// if required, delete all intermediate folders (their content should also be deleted, by implementation
+    	if (ConfigurationManager.getInstance().getBooleanValue(REMOVE_INTERMEDIATE_FILES_KEY)) {
+    		
+    		producedItems.stream()
+    				.filter(fo -> fo.isFolder() && !isTransferableFile(fo, filters))
+    	    		.forEach(fo -> {
+		    			try {
+							localStorage.remove(fo.getRelativePath());
+						} catch (IOException e) {
+							logger.warning("Cannot remove item " + fo.getRelativePath() + ". Message: " + e.getMessage());
+						}
+    	    		});
+    	}
+    	
+	}
+	
+	/**
+	 * Check if the file should be transfered.
+	 * 
+	 * <p>
+	 *  A file should be transfered if its path contains one of the filter sequences
+	 * 
+	 * @param fo
+	 * @param filters
+	 * @return
+	 */
+	private boolean isTransferableFile(final FileObject fo, final List<String> filters) {
+		
+		final String filePath = fo.getRelativePath();
+		for (final String filter : filters) {
+			if (filePath.contains(filter)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private Repository getLocalRepository(final String userID) {
+		return repositoryProvider.getUserSystemRepositories(userID).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
+		
+	}
+
+	private Repository getRemoteRepository(final String userID) {
+		return repositoryProvider.getUserSystemRepositories(userID).stream().filter(w -> w.getType() != RepositoryType.LOCAL).findFirst().orElse(null);
+		
+	}
+
+	@Override
+	protected void onMessageReceived(Message message) {
+		final String payload = message.getPayload();
+		if (payload == null) {
+			return;
+		}
+		final Matcher matcher = TRANSFER_SUCCESSFULL.matcher(payload);
+		
+		if (matcher.matches() && (matcher.groupCount() == 1)) {
+			// extract the file name
+			final String fileName = matcher.group(1);
+			
+			// get the user's local and remote system repositories
+	    	final Repository localRepository = getLocalRepository(message.getUserId());
+	    	final Repository remoteRepository = getRemoteRepository(message.getUserId());
+	    	
+	    	// get the local and remote file paths
+	    	final Path localPath = Paths.get(localRepository.resolve(fileName));
+	    	final Path localRepositoryPath = Paths.get(localRepository.root());
+	    	final Path relativePath = localRepositoryPath.relativize(localPath);
+	    	final URI remoteURI = URI.create(remoteRepository.getUrlPrefix() + "://" + remoteRepository.resolve(relativePath.toString().replace("\\", "/")));
+	    	
+            // check if it's linked to a raster product
+            final List<EOProduct> products = productProvider.getByLocation(localPath.toUri().toString());
+            if (products != null && !products.isEmpty()) {
+                for (EOProduct product : products) {
+                    try {
+                    	// update location
+                    	product.setLocation(remoteURI.toString());
+                        productProvider.save(product);
+                    } catch (PersistenceException e) {
+                        logger.warning(String.format("Failed to update raster product %s. Reason: %s",
+                                                     product.getName(), e.getMessage()));
+                    } catch (URISyntaxException e) {
+                        logger.warning(String.format("Failed to update raster product %s. Reason: %s",
+                                product.getName(), e.getMessage()));
+					}
+                }
+            } else {
+                // If not, maybe it's linked to a vector product
+                final List<VectorData> vectorProducts = vectorDataProvider.getByLocation(localPath.toUri().toString());
+                if (vectorProducts != null && !vectorProducts.isEmpty()) {
+                    for (VectorData product : vectorProducts) {
+                        try {
+                        	// update location
+                        	product.setLocation(remoteURI.toString());
+                            vectorDataProvider.save(product);
+                        } catch (PersistenceException e) {
+                            logger.warning(String.format("Failed to update vector product %s. Reason: %s",
+                                                         product.getName(), e.getMessage()));
+                        } catch (URISyntaxException e) {
+                            logger.warning(String.format("Failed to update vector product %s. Reason: %s",
+                                    product.getName(), e.getMessage()));
+                        }
+                    }
+                } else {
+                    // If not, maybe it's linked to an auxiliary file
+                    AuxiliaryData data = auxiliaryDataProvider.getByLocation(localPath.toUri().toString());
+                    if (data != null) {
+                        try {
+                        	// update location
+                        	data.setLocation(remoteURI.toString());
+                            auxiliaryDataProvider.save(data);
+                        } catch (PersistenceException e) {
+                            logger.warning(String.format("Failed to update auxiliary data %s. Reason: %s",
+                                                         data.getLocation(), e.getMessage()));
+                        }
+                    }
+                }
+            }
+
+            // delete the local file
+            try {
+				Files.delete(localPath);
+	            logger.finest("Removed file " + fileName);
+			} catch (IOException e) {
+                logger.warning(String.format("Failed to delete file %s. Reason: %s",
+                		fileName, e.getMessage()));
+			}
+		}
+	}
+}
