@@ -26,8 +26,8 @@ import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.services.interfaces.WMSComponentService;
 import ro.cs.tao.services.interfaces.WebServiceAuthenticationService;
 import ro.cs.tao.utils.StringUtilities;
-import ro.cs.tao.wps.beans.LayerInfo;
-import ro.cs.tao.wps.impl.WMSClient;
+import ro.cs.tao.wms.beans.LayerInfo;
+import ro.cs.tao.wms.impl.WMSClient;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -223,7 +223,11 @@ public class WMSController extends BaseController {
                 descriptor.setLabel("Bounding box");
                 descriptor.setDescription("Bounding box");
                 descriptor.setType(ParameterType.REGULAR);
-                descriptor.setDataType(double[].class);
+                descriptor.setDataType(String.class);
+                if (boundingBox != null) {
+                    descriptor.setDefaultValue(boundingBox[0][0] + "," + boundingBox[0][1] + "," +
+                                               boundingBox[1][0] + "," + boundingBox[1][1]);
+                }
                 parameters.add(descriptor);
 
                 descriptor = new ParameterDescriptor();
@@ -260,8 +264,29 @@ public class WMSController extends BaseController {
                     descriptor.setType(ParameterType.REGULAR);
                     descriptor.setDataType(String.class);
                     descriptor.setValueSet(styles.toArray(new String[0]));
+                    descriptor.setDefaultValue(styles.get(0));
                     parameters.add(descriptor);
                 }
+
+                descriptor = new ParameterDescriptor();
+                descriptor.setId("width");
+                descriptor.setName("width");
+                descriptor.setLabel("Width");
+                descriptor.setDescription("Image width");
+                descriptor.setType(ParameterType.REGULAR);
+                descriptor.setDataType(int.class);
+                descriptor.setDefaultValue("1024");
+                parameters.add(descriptor);
+
+                descriptor = new ParameterDescriptor();
+                descriptor.setId("height");
+                descriptor.setName("height");
+                descriptor.setLabel("Height");
+                descriptor.setDescription("Image height");
+                descriptor.setType(ParameterType.REGULAR);
+                descriptor.setDataType(int.class);
+                descriptor.setDefaultValue("768");
+                parameters.add(descriptor);
 
                 component.setParameters(parameters);
 
@@ -281,6 +306,12 @@ public class WMSController extends BaseController {
                 targetDescriptor.setParentId(component.getId());
                 targetDescriptor.setDataDescriptor(new DataDescriptor() {{
                     setFormatType(DataFormat.RASTER);
+                    if (formats != null && formats.length > 0) {
+                        setFormatName(formats[0]);
+                        if (formats[0].startsWith("image/")) {
+                            setLocation("image." + formats[0].substring(formats[0].indexOf('/') + 1));
+                        }
+                    }
                 }});
                 component.addTarget(targetDescriptor);
 

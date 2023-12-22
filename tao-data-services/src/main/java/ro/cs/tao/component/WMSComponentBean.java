@@ -1,6 +1,7 @@
 package ro.cs.tao.component;
 
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
+import ro.cs.tao.docker.ContainerType;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,8 +25,10 @@ public class WMSComponentBean {
     private boolean active;
     private String owner;
     private String serviceId;
+    private final ContainerType type;
 
     public WMSComponentBean() {
+        this.type = ContainerType.WMS;
     }
 
     public WMSComponentBean(WMSComponent src) {
@@ -51,6 +54,7 @@ public class WMSComponentBean {
         if (src.getService() != null) {
             this.serviceId = src.getService().getId();
         }
+        this.type = ContainerType.WMS;
     }
 
     public String getId() {
@@ -187,6 +191,10 @@ public class WMSComponentBean {
 
     public void setServiceId(String serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public ContainerType getType() {
+        return type;
     }
 
     public WMSComponent toComponent() {

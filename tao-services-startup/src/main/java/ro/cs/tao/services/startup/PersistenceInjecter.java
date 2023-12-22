@@ -10,6 +10,7 @@ import ro.cs.tao.execution.local.QueryExecutor;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.execution.model.ResourceUsage;
+import ro.cs.tao.execution.wms.WMSExecutor;
 import ro.cs.tao.execution.wps.WPSExecutor;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.persistence.managers.ResourceUsageManager;
@@ -100,7 +101,9 @@ public class PersistenceInjecter extends BaseLifeCycle {
         DRMAAExecutor.setContainerProvider(persistenceManager.containers());
         WPSExecutor.setTaskProvider(persistenceManager.tasks());
         WPSExecutor.setJobProvider(persistenceManager.jobs());
-        WPSExecutor.setAuthenticationProvider(persistenceManager.wpsAuthentication());
+        WPSExecutor.setAuthenticationProvider(persistenceManager.webServiceAuthentication());
+        WMSExecutor.setJobProvider(persistenceManager.jobs());
+        WMSExecutor.setAuthenticationProvider(persistenceManager.webServiceAuthentication());
         NullExecutor.setWorkflowNodeProvider(persistenceManager.workflowNodes());
         NullExecutor.setComponentProvider(persistenceManager.processingComponents());
         Messaging.setPersister(this.persistenceManager.notifications());
