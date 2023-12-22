@@ -47,6 +47,7 @@ public class Endpoints {
     public static final String ORCHESTRATOR_SERVICE_PATH_EXPRESSION = "/orchestrator/**/*";
     public static final String API_PATH_EXPRESSION = "/api/**/*";
     public static final String GLOBAL_PATH_EXPRESSION = "/**/*";
+    public static final String CLEANUP_SERVICE_PATH_EXPRESSION = "/cleanup";
     private static Set<String> endpointList;
 
     public static Set<String> endpoints(String packagePrefix) {
