@@ -451,9 +451,9 @@ public class OrchestrationController extends BaseController {
                     parameters.remove("availability");
                 }
             }
-            final long jobId = orchestrationService.invokeWPS(request.getWpsId(),
+            final long jobId = orchestrationService.invokeWPS(request.getWebServiceId(),
                                                               new HashMap<String, Map<String, String>>() {{
-                                                                  put(request.getWpsId(), parameters);
+                                                                  put(request.getWebServiceId(), parameters);
                                                               }});
             return jobId != -1 ?
                     prepareResult(jobId, "Execution started") :
@@ -483,7 +483,7 @@ public class OrchestrationController extends BaseController {
                 }
                 parameters.remove("footprint");
             }
-            final long jobId = orchestrationService.invokeWMS(request.getWpsId(), parameters);
+            final long jobId = orchestrationService.invokeWMS(request.getWebServiceId(), parameters);
             return jobId != -1 ?
                    prepareResult(jobId, "Execution started") :
                    prepareResult("Cannot start execution. See error log for details", ResponseStatus.FAILED);
