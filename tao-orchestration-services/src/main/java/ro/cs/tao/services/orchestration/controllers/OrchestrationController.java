@@ -17,6 +17,7 @@
 package ro.cs.tao.services.orchestration.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.locationtech.jts.geom.Envelope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,7 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.serialization.GeometryAdapter;
 import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -472,6 +474,15 @@ public class OrchestrationController extends BaseController {
                 throw new Exception("Empty body");
             }
             final Map<String, String> parameters = request.getParameters();
+            if (parameters.containsKey("footprint")) {
+                final String footprint = parameters.get("footprint");
+                if (!StringUtilities.isNullOrEmpty(footprint)) {
+                    final Envelope envelope = new GeometryAdapter().marshal(footprint).getEnvelopeInternal();
+                    String bbox = envelope.getMinX() + "," + envelope.getMinY() + "," + envelope.getMaxX() + "," + envelope.getMaxY();
+                    parameters.replace("bbox", bbox);
+                }
+                parameters.remove("footprint");
+            }
             final long jobId = orchestrationService.invokeWMS(request.getWpsId(), parameters);
             return jobId != -1 ?
                    prepareResult(jobId, "Execution started") :
