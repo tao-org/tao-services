@@ -1,6 +1,7 @@
 package ro.cs.tao.component;
 
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
+import ro.cs.tao.docker.ContainerType;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,8 +25,10 @@ public class WPSComponentBean {
     private boolean active;
     private String owner;
     private String serviceId;
+    private final ContainerType type;
 
     public WPSComponentBean() {
+        this.type = ContainerType.WPS;
     }
 
     public WPSComponentBean(WPSComponent src) {
@@ -51,6 +54,7 @@ public class WPSComponentBean {
         if (src.getService() != null) {
             this.serviceId = src.getService().getId();
         }
+        this.type = ContainerType.WPS;
     }
 
     public String getId() {
@@ -187,6 +191,10 @@ public class WPSComponentBean {
 
     public void setServiceId(String serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public ContainerType getType() {
+        return type;
     }
 
     public WPSComponent toComponent() {
