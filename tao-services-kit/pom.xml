@@ -100,6 +100,11 @@
             <artifactId>tao-jupyter-service</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.c-s.tao</groupId>
+            <artifactId>tao-cleanup-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>        
     </dependencies>
 
     <build>
