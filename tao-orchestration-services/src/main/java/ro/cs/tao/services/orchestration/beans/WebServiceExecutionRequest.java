@@ -3,15 +3,15 @@ package ro.cs.tao.services.orchestration.beans;
 import java.util.Map;
 
 public class WebServiceExecutionRequest {
-    private String wpsId;
+    private String webServiceId;
     private Map<String, String> parameters;
 
-    public String getWpsId() {
-        return wpsId;
+    public String getWebServiceId() {
+        return webServiceId;
     }
 
-    public void setWpsId(String wpsId) {
-        this.wpsId = wpsId;
+    public void setWebServiceId(String webServiceId) {
+        this.webServiceId = webServiceId;
     }
 
     public Map<String, String> getParameters() {
