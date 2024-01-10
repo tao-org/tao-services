@@ -26,6 +26,7 @@ import ro.cs.tao.services.model.user.ResetPasswordInfo;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.util.List;
 
@@ -68,11 +69,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserInfo(String userId) {
-        User user = userProvider.get(userId);
-        if (user == null) {
-            user = userProvider.getByName(userId);
+        User user = null;
+        if (!StringUtilities.isNullOrEmpty(userId)) {
+            user = userProvider.get(userId);
+            if (user == null) {
+                user = userProvider.getByName(userId);
+            }
+            user.setActualProcessingQuota(taskProvider.getCPUsForUser(user.getId()));
         }
-        user.setActualProcessingQuota(taskProvider.getCPUsForUser(user.getId()));
         return user;
     }
 
