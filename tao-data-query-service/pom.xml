@@ -5,7 +5,7 @@
     <parent>
         <artifactId>tao-services</artifactId>
         <groupId>ro.c-s.tao</groupId>
-        <version>1.4.9</version>
+        <version>1.5.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -20,11 +20,11 @@
             <artifactId>tao-data-sources</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-datasources-scihub</artifactId>
             <version>${project.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-datasources-asf</artifactId>
@@ -70,11 +70,11 @@
             <artifactId>tao-datasources-lsa</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-datasources-mundi</artifactId>
             <version>${project.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-datasources-creodias</artifactId>
@@ -82,7 +82,7 @@
         </dependency>
         <dependency>
             <groupId>ro.c-s.tao</groupId>
-            <artifactId>tao-execution-model</artifactId>
+            <artifactId>tao-execution</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
