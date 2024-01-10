@@ -111,8 +111,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         }
         JobType type = EnumUtils.getEnumConstantByName(JobType.class, request.getJobType());
         return Orchestrator.getInstance().createJob(SessionStore.currentContext(),
-                                                    request.getWorkflowId(), request.getName(),
-                                                    request.getParameters(), type);
+                                                    modified.getWorkflowId(), modified.getName(),
+                                                    modified.getParameters(), type);
     }
 
     @Override

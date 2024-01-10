@@ -510,19 +510,21 @@ public class DataSourceController extends BaseController {
     private void checkContentRestriction(Query query) throws Exception {
         // Verify that the incoming query respects the (optionally) defined area content restriction
         final String aoiRestriction = ConfigurationManager.getInstance().getValue("area.content.restriction", null);
-        if (aoiRestriction != null) {
+        if (!StringUtilities.isNullOrEmpty(aoiRestriction)) {
             final double aoiMinIntersection = Double.parseDouble(ConfigurationManager.getInstance().getValue("area.content.intersection", "0.1"));
             final GeometryAdapter adapter = new GeometryAdapter();
-            if (aoiGeometry ==  null) {
+            if (aoiGeometry == null) {
                 final Geometry aoiGeom = adapter.marshal(aoiRestriction);
-                final int numGeometries = aoiGeom.getNumGeometries();
-                for (int i = 0; i < numGeometries; i++) {
-                    final Geometry geometry = aoiGeom.getGeometryN(i);
-                    if (geometry instanceof Polygon || geometry instanceof MultiPolygon) {
-                        try {
-                            aoiGeometry = aoiGeometry == null ? geometry : aoiGeometry.union(geometry);
-                        } catch (TopologyException ex) {
-                            warn(ex.getMessage());
+                if (aoiGeom != null) {
+                    final int numGeometries = aoiGeom.getNumGeometries();
+                    for (int i = 0; i < numGeometries; i++) {
+                        final Geometry geometry = aoiGeom.getGeometryN(i);
+                        if (geometry instanceof Polygon || geometry instanceof MultiPolygon) {
+                            try {
+                                aoiGeometry = aoiGeometry == null ? geometry : aoiGeometry.union(geometry);
+                            } catch (TopologyException ex) {
+                                warn(ex.getMessage());
+                            }
                         }
                     }
                 }
