@@ -13,6 +13,7 @@ public class RepositoryBean {
     private boolean system;
     private boolean readOnly;
     private boolean editable;
+    private String pageItem;
     private short order;
     private LinkedHashMap<String, String> parameters;
     private List<Action> actions;
@@ -95,6 +96,14 @@ public class RepositoryBean {
 
     public void setOrder(short order) {
         this.order = order;
+    }
+
+    public String getPageItem() {
+        return this.pageItem;
+    }
+
+    public void setPageItem(final String pageItem) {
+        this.pageItem = pageItem;
     }
 
     public LinkedHashMap<String, String> getParameters() {
