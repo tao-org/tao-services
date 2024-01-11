@@ -171,6 +171,7 @@ public final class ServiceTransformUtils {
         bean.setSystem(entity.isSystem());
         bean.setEditable(entity.isEditable());
         bean.setOrder(entity.getOrder());
+        bean.setPageItem(entity.getType().pageItem());
         return bean;
     }
 
