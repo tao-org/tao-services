@@ -15,6 +15,7 @@ public class RepositoryBean {
     private boolean editable;
     private String pageItem;
     private short order;
+    private boolean persistent;
     private LinkedHashMap<String, String> parameters;
     private List<Action> actions;
 
@@ -96,6 +97,14 @@ public class RepositoryBean {
 
     public void setOrder(short order) {
         this.order = order;
+    }
+
+    public boolean isPersistent() {
+        return persistent;
+    }
+
+    public void setPersistent(boolean persistent) {
+        this.persistent = persistent;
     }
 
     public String getPageItem() {

@@ -155,6 +155,7 @@ public final class ServiceTransformUtils {
         entity.setReadOnly(bean.isReadOnly());
         entity.setEditable(bean.isEditable());
         entity.setType(EnumUtils.getEnumConstantByName(RepositoryType.class, bean.getType()));
+        entity.setPersistentStorage(bean.isPersistent());
         return entity;
     }
 
@@ -171,6 +172,7 @@ public final class ServiceTransformUtils {
         bean.setSystem(entity.isSystem());
         bean.setEditable(entity.isEditable());
         bean.setOrder(entity.getOrder());
+        bean.setPersistent(entity.isPersistentStorage());
         bean.setPageItem(entity.getType().pageItem());
         return bean;
     }
