@@ -56,6 +56,7 @@ import ro.cs.tao.services.startup.LifeCycleProcessorListener;
 import ro.cs.tao.spi.OutputDataHandlerManager;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
 import ro.cs.tao.user.LogEvent;
 import ro.cs.tao.user.SessionDuration;
@@ -204,6 +205,9 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
                     return line.substring(0, line.indexOf("'") + 1) +
                             (url.endsWith("/") ? url : url + "/").replace("http", "ws") +
                             line.substring(line.lastIndexOf("'"));
+                } else if (line.contains("openStackPresent")) {
+                    return line.substring(0, line.indexOf("=") + 1) +
+                            TopologyManager.getInstance().isExternalProviderAvailable() + ";";
                 } else {
                     return line;
                 }
