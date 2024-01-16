@@ -1,6 +1,7 @@
 package ro.cs.tao.component;
 
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
+import ro.cs.tao.component.ogc.WMSComponent;
 import ro.cs.tao.docker.ContainerType;
 
 import java.util.List;
