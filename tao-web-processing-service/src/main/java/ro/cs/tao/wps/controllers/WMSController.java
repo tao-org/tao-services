@@ -10,6 +10,7 @@ import ro.cs.tao.component.*;
 import ro.cs.tao.component.enums.AuthenticationType;
 import ro.cs.tao.component.enums.ParameterType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
+import ro.cs.tao.component.ogc.WMSComponent;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.eodata.enums.DataFormat;

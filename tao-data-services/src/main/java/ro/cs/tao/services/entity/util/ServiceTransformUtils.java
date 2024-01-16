@@ -17,10 +17,10 @@ package ro.cs.tao.services.entity.util;
 
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.ProcessingComponent;
-import ro.cs.tao.component.WMSComponent;
-import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.component.enums.AuthenticationType;
+import ro.cs.tao.component.ogc.WMSComponent;
+import ro.cs.tao.component.ogc.WPSComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.docker.Container;
