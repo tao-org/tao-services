@@ -24,9 +24,13 @@ import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.persistence.NodeFlavorProvider;
 import ro.cs.tao.persistence.ResourceSubscriptionProvider;
 import ro.cs.tao.persistence.managers.AuditManager;
 import ro.cs.tao.quota.UserQuotaManager;
+import ro.cs.tao.services.admin.beans.Flavor;
+import ro.cs.tao.services.admin.beans.ResourceSubscriptionRequest;
+import ro.cs.tao.services.admin.beans.ResourceSubscriptionResponse;
 import ro.cs.tao.services.admin.beans.UserBean;
 import ro.cs.tao.services.admin.mail.Constants;
 import ro.cs.tao.services.auth.token.TokenManagementService;
@@ -36,6 +40,8 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.model.user.DisableUserInfo;
 import ro.cs.tao.subscription.ResourceSubscription;
+import ro.cs.tao.subscription.SubscriptionType;
+import ro.cs.tao.topology.NodeFlavor;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
@@ -68,6 +74,9 @@ public class AdministrationController extends BaseController {
 
     @Autowired
     private ResourceSubscriptionProvider resourceSubscriptionProvider;
+
+    @Autowired
+    private NodeFlavorProvider nodeFlavorProvider;
 
     /**
      * Creates a new user
@@ -197,16 +206,66 @@ public class AdministrationController extends BaseController {
      */
     @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> getUserSubscriptions(@PathVariable("userId") String userId) {
-        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
-            return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
-        if (StringUtilities.isNullOrEmpty(userId)) {
-            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
-        }
-        try {
-            return prepareResult(resourceSubscriptionProvider.getByUser(userId));
-        } catch (Exception ex) {
-            return handleException(ex);
+        if (!adminService.isDevModeEnabled()) {
+            if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
+            }
+            if (StringUtilities.isNullOrEmpty(userId)) {
+                return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
+            }
+            try {
+                final List<ResourceSubscription> subscriptions = resourceSubscriptionProvider.getByUser(userId);
+                if (subscriptions.isEmpty()) {
+                    return prepareResult(new ArrayList<>());
+                }
+                final ResourceSubscription first = subscriptions.get(0);
+                final ResourceSubscriptionResponse response = new ResourceSubscriptionResponse();
+                response.setUserId(userId);
+                response.setCreated(subscriptions.stream().min(new Comparator<ResourceSubscription>() {
+                    @Override
+                    public int compare(ResourceSubscription o1, ResourceSubscription o2) {
+                        return o1.getCreated().compareTo(o2.getCreated());
+                    }
+                }).get().getCreated());
+                response.setPaid(first.isPaid());
+                response.setType(first.getType());
+                response.setObjectStorageGB(subscriptions.stream().mapToInt(s -> s.getObjectStorageGB()).sum());
+                final List<Flavor> flavors = new ArrayList<>();
+                for (ResourceSubscription subscription : subscriptions) {
+                    Flavor flavor = new Flavor();
+                    flavor.setFlavor(subscription.getFlavor());
+                    flavor.setQuantity(subscription.getFlavorQuantity());
+                    flavor.setHdd(subscription.getFlavorHddSizeGB());
+                    flavor.setSsd(subscription.getFlavorSsdSizeGB());
+                }
+                response.setFlavors(flavors);
+                return prepareResult(response);
+            } catch (Exception ex) {
+                return handleException(ex);
+            }
+        } else {
+            final ResourceSubscriptionResponse response = new ResourceSubscriptionResponse();
+            response.setUserId(userId);
+            response.setCreated(LocalDateTime.now());
+            response.setPaid(false);
+            response.setType(SubscriptionType.FIXED_RESOURCES);
+            response.setObjectStorageGB(10);
+            final List<Flavor> flavors = new ArrayList<>();
+            Flavor flavor = new Flavor();
+            NodeFlavor nodeFlavor = new NodeFlavor();
+            nodeFlavor.setId("xa.large");
+            nodeFlavor.setCpu(4);
+            nodeFlavor.setMemory(8192);
+            nodeFlavor.setDisk(512);
+            nodeFlavor.setSwap(16384);
+            nodeFlavor.setRxtxFactor(0.5f);
+            flavor.setFlavor(nodeFlavor);
+            flavor.setQuantity(1);
+            flavor.setHdd(2048);
+            flavor.setSsd(384);
+            flavors.add(flavor);
+            response.setFlavors(flavors);
+            return prepareResult(response);
         }
     }
 
@@ -217,16 +276,39 @@ public class AdministrationController extends BaseController {
      */
     @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> createUserSubscription(@PathVariable("userId") String userId,
-                                                                     @RequestBody ResourceSubscription subscription) {
+                                                                     @RequestBody ResourceSubscriptionRequest request) {
         if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
-        if (subscription == null || subscription.getId() != null || subscription.getFlavor() == null || subscription.getFlavorQuantity() == 0) {
+        Map<String, Map<String, Integer>> flavors;
+        if (request == null || (flavors = request.getFlavors()) == null || flavors.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
         }
         try {
-            subscription.setEnded(null);
-            return prepareResult(resourceSubscriptionProvider.save(subscription));
+            int idx = 0;
+            for (Map.Entry<String, Map<String, Integer>> flavor : flavors.entrySet()) {
+                final NodeFlavor nodeFlavor = nodeFlavorProvider.get(flavor.getKey());
+                final Map<String, Integer> values = flavor.getValue();
+                if (nodeFlavor == null || values.getOrDefault("quantity", 0) <= 0) {
+                    return prepareResult("Invalid flavor '" + flavor.getKey() + "'", ResponseStatus.FAILED);
+                }
+                ResourceSubscription subscription = new ResourceSubscription();
+                subscription.setUserId(request.getUserId());
+                subscription.setFlavor(nodeFlavor);
+                subscription.setType(request.getType());
+                subscription.setCreated(request.getCreated());
+                subscription.setEnded(null);
+                subscription.setPaid(request.isPaid());
+                subscription.setFlavorHddSizeGB(values.getOrDefault("hdd", 0));
+                subscription.setFlavorSsdSizeGB(values.getOrDefault("ssd", 0));
+                subscription.setFlavorQuantity(values.get("quantity"));
+                if (idx == 0) {
+                    subscription.setObjectStorageGB(request.getObjectStorageGB());
+                }
+                resourceSubscriptionProvider.save(subscription);
+                idx++;
+            }
+            return prepareResult("Subscriptions created");
         } catch (Exception ex) {
             return handleException(ex);
         }
@@ -239,18 +321,59 @@ public class AdministrationController extends BaseController {
      */
     @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<ServiceResponse<?>> updateUserSubscription(@PathVariable("userId") String userId,
-                                                                     @RequestBody ResourceSubscription subscription) {
+                                                                     @RequestBody ResourceSubscriptionRequest request) {
         if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
-        if (subscription == null || subscription.getId() == null || subscription.getFlavor() == null || subscription.getFlavorQuantity() == 0) {
+        Map<String, Map<String, Integer>> flavors;
+        if (request == null || (flavors = request.getFlavors()) == null || flavors.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
         }
+        int created = 0, removed = 0, updated = 0;
         try {
-            if (subscription.getEnded() != null) {
-                throw new IllegalAccessException("A closed subscription cannot be updated");
+            final List<ResourceSubscription> subscriptions = resourceSubscriptionProvider.getByUser(userId);
+            for (ResourceSubscription subscription : subscriptions) {
+                final String flavorId = subscription.getFlavor().getId();
+                final Map<String, Integer> flavorEntry = flavors.get(flavorId);
+                if (flavorEntry == null || flavorEntry.getOrDefault("quantity", 0) <= 0) {
+                    // Flavor has been deleted
+                    subscription.setEnded(LocalDateTime.now());
+                    resourceSubscriptionProvider.update(subscription);
+                    removed++;
+                } else {
+                    final Integer quantity = flavorEntry.get("quantity");
+                    if (subscription.getFlavorQuantity() != quantity) {
+                        // Flavor has been updated
+                        subscription.setFlavorQuantity(quantity);
+                        resourceSubscriptionProvider.update(subscription);
+                        updated++;
+                    }
+                }
+                flavors.remove(flavorId);
             }
-            return prepareResult(resourceSubscriptionProvider.save(subscription));
+            for (Map.Entry<String, Map<String, Integer>> flavor : flavors.entrySet()) {
+                // New flavors have been added
+                final NodeFlavor nodeFlavor = nodeFlavorProvider.get(flavor.getKey());
+                final Map<String, Integer> values = flavor.getValue();
+                if (nodeFlavor == null || values.getOrDefault("quantity", 0) <= 0) {
+                    return prepareResult("Invalid flavor '" + flavor.getKey() + "'", ResponseStatus.FAILED);
+                }
+                ResourceSubscription subscription = new ResourceSubscription();
+                subscription.setUserId(request.getUserId());
+                subscription.setFlavor(nodeFlavor);
+                subscription.setType(request.getType());
+                subscription.setCreated(request.getCreated());
+                subscription.setEnded(null);
+                subscription.setPaid(request.isPaid());
+                subscription.setFlavorHddSizeGB(values.getOrDefault("hdd", 0));
+                subscription.setFlavorSsdSizeGB(values.getOrDefault("sdd", 0));
+                subscription.setFlavorQuantity(values.get("quantity"));
+                subscription.setObjectStorageGB(request.getObjectStorageGB());
+                resourceSubscriptionProvider.save(subscription);
+                created++;
+            }
+            return prepareResult(String.format("Subscriptions: %d created, %d updated, %d removed",
+                                               created, updated, removed));
         } catch (Exception ex) {
             return handleException(ex);
         }
