@@ -549,6 +549,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     /**
      * List the shared data of the current user
      *
+     * @param userId    (optional) The user identifier for which to list the shared data.
+     *                  This parameter is considered only for administrators.
      */
     @GetMapping(value = "share/list", produces = "application/json")
     public ResponseEntity<?> listSharedFiles(@RequestParam(name = "userId", required = false) String userId) {
@@ -574,6 +576,11 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return responseEntity;
     }
 
+    /**
+     * Copies a shared dataset to the persistent storage of the current user.
+     *
+     * @param subscriptionId    The id of the shared dataset
+     */
     @PostMapping(value = "share/subscribe", produces = "application/json")
     public ResponseEntity<?> subscribeToShare(@RequestParam(name = "id") long subscriptionId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
