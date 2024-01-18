@@ -6,11 +6,9 @@ import java.time.LocalDateTime;
 
 public class SubscriptionBean {
     private final DataSubscription subscription;
-    private final int subscribers;
 
-    public SubscriptionBean(DataSubscription subscription, int subscribers) {
+    public SubscriptionBean(DataSubscription subscription) {
         this.subscription = subscription;
-        this.subscribers = subscribers;
     }
 
     public Long getId() {
@@ -25,11 +23,16 @@ public class SubscriptionBean {
         return subscription.getDataRootPath();
     }
 
+    public String getWorkspaceId() {
+        return subscription.getRepositoryId();
+    }
+
+    public int getSubscribers() {
+        return subscription.getSubscribersCount();
+    }
+
     public LocalDateTime getCreated() {
         return subscription.getCreated();
     }
 
-    public int getSubscribers() {
-        return subscribers;
-    }
 }
