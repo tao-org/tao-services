@@ -587,6 +587,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             TransferRequest request = new TransferRequest();
             request.setSourceWorkspace(subscription.getRepositoryId());
             request.setDestinationWorkspace(targetRepository.getId());
+            request.setDestinationPath(subscription.getName());
             request.setMove(false);
             request.setOverwrite(true);
             String relativePath = subscription.getDataRootPath().replace(sourceRepository.root() + "/", "");
