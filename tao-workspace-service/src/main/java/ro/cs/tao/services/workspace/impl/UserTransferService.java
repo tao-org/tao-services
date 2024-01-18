@@ -189,8 +189,8 @@ public class UserTransferService {
         if (this.saveState) {
             try {
                 Files.createDirectories(this.stateFile.getParent());
-                if (Files.exists(this.stateFile)) {
-                    Files.delete(this.stateFile);
+                if (Files.notExists(this.stateFile)) {
+                    Files.createFile(this.stateFile);
                 }
                 final TransferableItem[] requests = queue.toArray(new TransferableItem[0]);
                 try (OutputStream stream = Files.newOutputStream(this.stateFile)) {
