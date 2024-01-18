@@ -478,7 +478,10 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     /**
      * Shares a file or a folder from the user workspace
      *
-     * @param file    The name of the file or of the folder
+     * @param workspaceId   The identifier of the workspace the file or folder is in
+     * @param file          The path of the file or of the folder, relative to the workspace root.
+     *                      The file or folder can be part of only one share.
+     * @param name          The name of the share. Name must be unique for a user
      */
     @PostMapping(value = "share", produces = "application/json")
     public ResponseEntity<?> shareFile(@RequestParam("workspace") String workspaceId,
@@ -494,9 +497,18 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 throw new IOException("This repository doesn't support sharing files or folders");
             }
             final String path = workspace.resolve(file);
-            DataSubscription subscription = new DataSubscription();
+            DataSubscription subscription = dataSubscriptionProvider.get(currentUser(), workspaceId, file);
+            if (subscription != null) {
+                throw new Exception(file + " is already shared");
+            }
+            subscription = dataSubscriptionProvider.get(currentUser(), name);
+            if (subscription != null) {
+                throw new Exception("A share with the name '" + name + "' already exists");
+            }
+            subscription = new DataSubscription();
             subscription.setName(StringUtilities.isNullOrEmpty(name) ? workspace.fileName(path) : name);
             subscription.setUserId(currentUser());
+            subscription.setRepositoryId(workspaceId);
             subscription.setDataRootPath(path);
             subscription.setCreated(LocalDateTime.now());
             subscription = dataSubscriptionProvider.save(subscription);
@@ -511,21 +523,21 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return responseEntity;
     }
     /**
-     * Shares a file or a folder from the user workspace
+     * Removes a share for the current user.
+     * The share must belong to the current user.
      *
-     * @param file    The name of the file or of the folder
+     * @param name    The name of the share to be removed.
      */
     @PostMapping(value = "unshare", produces = "application/json")
-    public ResponseEntity<?> unshareFile(@RequestParam("file") String file) {
+    public ResponseEntity<?> unshareFile(@RequestParam("name") String name) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            if (StringUtils.isEmpty(file) || file.startsWith(".") || file.startsWith("..")) {
-                throw new IOException("The file must be relative and should not start with '.' or '..'");
+            if (StringUtils.isEmpty(name)) {
+                throw new IOException("Invalid share name");
             }
-            final List<DataSubscription> shares = dataSubscriptionProvider.getByUser(currentUser());
-            final DataSubscription subscription = shares.stream().filter(s -> s.getDataRootPath().equals(file)).findFirst().orElse(null);
+            final DataSubscription subscription = dataSubscriptionProvider.get(currentUser(), name);
             if (subscription == null) {
-                throw new IOException(String.format("%s is not shared", file));
+                throw new IOException(String.format("%s is not shared by the current user", name));
             }
             dataSubscriptionProvider.delete(subscription);
             responseEntity = prepareResult(String.format("Share %s removed", subscription.getName()), ResponseStatus.SUCCEEDED);
@@ -539,16 +551,21 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *
      */
     @GetMapping(value = "share/list", produces = "application/json")
-    public ResponseEntity<?> shareFile() {
+    public ResponseEntity<?> listSharedFiles(@RequestParam(name = "userId", required = false) String userId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
+        if (!isCurrentUserAdmin() && !StringUtilities.isNullOrEmpty(userId) && !userId.equals(currentUser())) {
+            return prepareResult("Operation not permitted", HttpStatus.UNAUTHORIZED);
+        }
+        String user = StringUtilities.isNullOrEmpty(userId)
+                      ? isCurrentUserAdmin()
+                        ? null
+                        : currentUser()
+                      : userId;
         try {
             final List<SubscriptionBean> list = new ArrayList<>();
-            final List<DataSubscription> shares = dataSubscriptionProvider.getByUser(currentUser());
+            final List<DataSubscription> shares = user != null ? dataSubscriptionProvider.getByUser(user) : dataSubscriptionProvider.list();
             if (shares != null) {
-                for (DataSubscription share : shares) {
-                    // TODO: 0 should be replaced by the actual number of subscribers
-                    list.add(new SubscriptionBean(share, 0));
-                }
+                list.addAll(shares.stream().map(s -> new SubscriptionBean(s)).collect(Collectors.toList()));
             }
             responseEntity = prepareResult(list);
         } catch (Exception ex) {
@@ -556,6 +573,35 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         }
         return responseEntity;
     }
+
+    @PostMapping(value = "share/subscribe", produces = "application/json")
+    public ResponseEntity<?> subscribeToShare(@RequestParam(name = "id") long subscriptionId) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            final DataSubscription subscription = dataSubscriptionProvider.get(subscriptionId);
+            if (subscription == null) {
+                throw new IOException("The specified share does not exist");
+            }
+            final Repository targetRepository = repositoryProvider.getUserPersistentRepository(currentUser());
+            final Repository sourceRepository = repositoryProvider.get(subscription.getRepositoryId());
+            TransferRequest request = new TransferRequest();
+            request.setSourceWorkspace(subscription.getRepositoryId());
+            request.setDestinationWorkspace(targetRepository.getId());
+            request.setMove(false);
+            request.setOverwrite(true);
+            String relativePath = subscription.getDataRootPath().replace(sourceRepository.root() + "/", "");
+            final StorageService storageService = getRepositoryService(sourceRepository);
+            request.setFileObjects(storageService.listTree(relativePath));
+            transfer(request);
+            subscription.setSubscribersCount(subscription.getSubscribersCount() + 1);
+            dataSubscriptionProvider.update(subscription);
+            responseEntity = prepareResult("Started copying " + subscription.getName() + " in the " + targetRepository.getName() + " repository");
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
+        return responseEntity;
+    }
+
     /**
      * Transfers one or more file objects from the source workspace to the destination workspace
      *
