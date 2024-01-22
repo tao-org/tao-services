@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ro.cs.eo.gdal.dataio.Keys;
 import ro.cs.eo.gdal.reader.Extent;
 import ro.cs.eo.gdal.reader.ImageInfo;
 import ro.cs.eo.gdal.reader.TileReader;
@@ -21,22 +20,25 @@ import ro.cs.eo.gdal.reader.info.ProductDescriptorFactory;
 import ro.cs.eo.gdal.service.FileGeometryFilter;
 import ro.cs.eo.gdal.service.GDALTileMapService;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.ProductHelperFactory;
+import ro.cs.tao.eodata.util.ProductHelper;
 import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.services.commons.ControllerBase;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -56,14 +58,14 @@ public class ViewerController extends ControllerBase {
         this.context.refresh();
     }
 
-    @RequestMapping(value = "/scale", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/scale", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getScale(@RequestParam("file") String relativePath) {
         final Repository localRepository = getLocalRepository();
         final String path = localRepository.resolve(relativePath);
         return prepareResult(TileReader.getScale(Paths.get(path)));
     }
 
-    @RequestMapping(value = "/scale", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/scale", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> changeScale(@RequestParam("file") String relativePath,
                                                           @RequestParam("min") double min,
                                                           @RequestParam("max") double max) {
@@ -188,43 +190,99 @@ public class ViewerController extends ControllerBase {
         }
     }
 
-    @RequestMapping(value = "/series", method = RequestMethod.POST, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<ServiceResponse<?>> extractSeries(@RequestParam("geometry") String geometryWKT,
-                                                            @RequestParam("id") String id) {
+    @RequestMapping(value = "/series", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> extractSeriesInfo(@RequestParam("id") String id,
+                                                                @RequestParam("geometry") String geometryWKT) {
         GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
         try {
+            Map<String, Map<String, Object>> outFiles = new LinkedHashMap<>();
             final ServiceRegistry<FileGeometryFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(FileGeometryFilter.class);
             final Set<FileGeometryFilter> services = registry.getServices();
             if (services.isEmpty()) {
                 throw new Exception("Not implemented");
             }
-            final Path basePath = Paths.get(System.getProperty("user.home"))
-                                       .resolve(ConfigurationManager.getInstance()
-                                                                    .getValue(Keys.CONFIG_CACHE_DIR_KEY, ".eds/series/"))
-                                       .resolve(id);
+            final String sitePath = ConfigurationManager.getInstance().getValue("site.path");
+            if (sitePath == null || sitePath.isEmpty()) {
+                throw new IOException("Cannot determine site path");
+            }
+            Path cachePath = Paths.get(sitePath).resolve("series");
+            if (!Files.exists(cachePath)) {
+                Files.createDirectories(cachePath);
+            }
             final FileGeometryFilter filter = services.iterator().next();
             final Extent extent = filter.computeEnvelope(geometryWKT);
             final List<Path> files = filter.filter(geometryWKT);
-            final List<Path> outFiles = files.stream()
-                                             .map(f -> basePath.resolve(f.getFileName().toString().replaceAll("^(.*?)\\..*$", "$1") + ".png"))
-                                             .collect(Collectors.toList());
-            asyncExecute(() -> {
-                for (Path file : files) {
-                    try {
-                        ProductDescriptor productDescriptor = ProductDescriptorFactory.getDescriptor(file);
-                        double[] scale = TileReader.getScale(file);
-                        if (scale != null && scale.length == 2) {
-                            FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
-                            formatDescriptor.setPixelMinScale((int) scale[0]);
-                            formatDescriptor.setPixelMaxScale((int) scale[1]);
-                            formatDescriptor.setPriority(1);
-                        }
-                        gdalTileMapService.extractSubset(productDescriptor, extent, id);
-                    } catch (Exception e) {
-                        warn(e.getMessage());
-                    }
+            files.sort(new Comparator<Path>() {
+                @Override
+                public int compare(Path o1, Path o2) {
+                    final ProductHelper h1 = ProductHelperFactory.getHelper(o1.getFileName().toString());
+                    final ProductHelper h2 = ProductHelperFactory.getHelper(o2.getFileName().toString());
+                    if (h1 == null || h1.getSensingDate() == null) return 1;
+                    if (h2 == null || h2.getSensingDate() == null) return -1;
+                    return h1.getSensingDate().compareTo(h2.getSensingDate());
                 }
             });
+            String relPath;
+            Map<String, Object> innerMap;
+            for (Path file : files) {
+                final String fileName = file.getFileName().toString();
+                relPath = "/series/" + id + "/" + fileName.replaceAll("^(.*?)\\..*$", "$1") + ".png";
+                final ProductHelper helper = ProductHelperFactory.getHelper(fileName);
+                innerMap = new LinkedHashMap<>();
+                innerMap.put("date", helper != null ? helper.getSensingDate() : null);
+                innerMap.put("image", relPath);
+                outFiles.put(fileName, innerMap);
+            }
+            return prepareResult(outFiles);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/series/images", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> extractSeries(@RequestParam("id") String id,
+                                                            @RequestParam("geometry") String geometryWKT,
+                                                            @RequestParam("files") List<String> files) {
+        GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
+        try {
+            if (files == null || files.isEmpty()) {
+                throw new IllegalArgumentException("[files] cannot be empty");
+            }
+            if (StringUtilities.isNullOrEmpty(id)) {
+                throw new IllegalArgumentException("[id] cannot be empty");
+            }
+            final String sitePath = ConfigurationManager.getInstance().getValue("site.path");
+            if (sitePath == null || sitePath.isEmpty()) {
+                throw new IOException("Cannot determine site path");
+            }
+            Path cachePath = Paths.get(sitePath).resolve("series");
+            if (!Files.exists(cachePath)) {
+                Files.createDirectories(cachePath);
+            }
+            List<Path> paths = files.stream().map(Paths::get).collect(Collectors.toList());
+            final ServiceRegistry<FileGeometryFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(FileGeometryFilter.class);
+            final Set<FileGeometryFilter> services = registry.getServices();
+            if (services.isEmpty()) {
+                throw new Exception("Not implemented");
+            }
+            final FileGeometryFilter filter = services.iterator().next();
+            final Extent extent = filter.computeEnvelope(geometryWKT);
+            final List<String> outFiles = new ArrayList<>();
+            for (Path file : paths) {
+                try {
+                    ProductDescriptor productDescriptor = ProductDescriptorFactory.getDescriptor(file);
+                    double[] scale = TileReader.getScale(file);
+                    if (scale != null && scale.length == 2) {
+                        FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
+                        formatDescriptor.setPixelMinScale((int) scale[0]);
+                        formatDescriptor.setPixelMaxScale((int) scale[1]);
+                        formatDescriptor.setPriority(1);
+                    }
+                    outFiles.add("/series/" + id + "/" + gdalTileMapService.extractSubset(productDescriptor, extent, id));
+                } catch (Exception e) {
+                    warn(e.getMessage());
+                }
+            }
             return prepareResult(outFiles);
         } catch (Exception e) {
             return handleException(e);

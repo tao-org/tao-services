@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.messaging.Messaging;
@@ -58,7 +59,7 @@ public class AuthenticationController extends BaseController {
      * @param user      The user account
      * @param password  The user password
      */
-    @RequestMapping(value = "/login", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/login", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> login(@RequestParam(name = "username", required = false) String user,
                                                     @RequestParam(name = "password", required = false) String password,
                                                     @RequestParam(name = "code", required = false) String code) {
@@ -111,7 +112,7 @@ public class AuthenticationController extends BaseController {
      * Logs out a user
      * @param authToken The authentication token
      */
-    @RequestMapping(value = "/logout", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/logout", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> logout(@RequestHeader("X-Auth-Token") String authToken,
                                                      HttpServletRequest request) {
         if (StringUtilities.isNullOrEmpty(authToken)) {
@@ -135,7 +136,7 @@ public class AuthenticationController extends BaseController {
      * @param userId      The user identifier
      * @param refreshToken  The refresh token to be used
      */
-    @RequestMapping(value = "/refresh", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/refresh", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> refresh(@RequestParam(name = "user") String userId,
                                                       @RequestParam(name = "token") String refreshToken,
                                                       HttpServletRequest request) {

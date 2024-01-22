@@ -98,7 +98,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *
      * @param filter    Filter to be applied on key names
      */
-    @GetMapping(value = "config", produces = "application/json")
+    @GetMapping(value = "config", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getConfiguration(@RequestParam("filter") String filter) {
         if (filter == null || filter.trim().isEmpty()) {
             return handleException(new IllegalAccessException("[filter] Value required"));
@@ -115,9 +115,31 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
     //region Private workspace
     /**
+     * Lists the content of a remote workspace that is linked to the current user.
+     *
+     * @param workspaceId       The workspace identifier
+     *
+     * @param lastItem          [Optional] The item to start from (in case of paged results)
+     */
+    @PostMapping(value = "persistent", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> markPersistent(@RequestParam("workspaceId") String workspaceId) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            if (StringUtilities.isNullOrEmpty(workspaceId)) {
+                throw new IOException("Not allowed");
+            }
+            repositoryProvider.setUserPersistentRepository(currentUser(), workspaceId);
+            responseEntity = prepareResult("Repository " + workspaceId + " will be used for final workflow results");
+        } catch (Exception ex) {
+            responseEntity = handleException(ex);
+        }
+
+        return responseEntity;
+    }
+    /**
      * Lists the content of the user local workspace.
      */
-    @GetMapping(value = "local/", produces = "application/json")
+    @GetMapping(value = "local/", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> list() {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -135,7 +157,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param relativeFolder    The folder relative to the root of the workspace
      * @param lastItem          [Optional] The last retrieved item to start from
      */
-    @GetMapping(value = "local", produces = "application/json")
+    @GetMapping(value = "local", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam("folder") String relativeFolder,
                                                    @RequestParam(name = "last", required = false) String lastItem) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -158,7 +180,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param folder        The folder into which the file will be uploaded
      * @param description   A description of the file
      */
-    @PostMapping(value = "upload/", produces = "application/json")
+    @PostMapping(value = "upload/", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile file,
                                         @RequestParam("folder") String folder,
                                         @RequestParam("desc") String description) {
@@ -177,7 +199,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param source        The source file (or product folder)
      * @param destination   The destination folder
      */
-    @PostMapping(value = "move/", produces = "application/json")
+    @PostMapping(value = "move/", produces = MediaType.APPLICATION_JSON_VALUE)
     @Deprecated
     public ResponseEntity<ServiceResponse<?>> move(@RequestParam("source") String source,
                                                    @RequestParam("destination") String destination) {
@@ -195,7 +217,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *
      * @param workflowId    The workflow identifier
      */
-    @GetMapping(value = "output", produces = "application/json")
+    @GetMapping(value = "output", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listOutputs(@RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -214,7 +236,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param folder        The folder
      * @param visibility    The new visibility
      */
-    @PostMapping(value = "toggle", produces = "application/json")
+    @PostMapping(value = "toggle", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<ServiceResponse<?>> toggleVisibility(@RequestParam("folder") String folder,
                                                                @RequestParam("visibility") Visibility visibility) {
@@ -253,7 +275,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param relativeFolder    The folder to start with
      * @param lastItem          [Optional] The item to start from (in case of paged results)
      */
-    @GetMapping(value = "browse", produces = "application/json")
+    @GetMapping(value = "browse", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listWorkspace(@RequestParam("workspace") String workspaceId,
                                                             @RequestParam(name = "folder", required = false) String relativeFolder,
                                                             @RequestParam(name = "last", required = false) String lastItem) {
@@ -288,7 +310,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *
      * @param folder    The name of the folder
      */
-    @PostMapping(value = "folder/", produces = "application/json")
+    @PostMapping(value = "folder/", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createUserFolder(@RequestParam("workspace") String workspaceId,
                                               @RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -314,7 +336,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param workspaceId   The workspace identifier
      * @param file          The name of the file(s) or folder(s) to be deleted
      */
-    @DeleteMapping(produces = "application/json")
+    @DeleteMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("workspace") String workspaceId,
                                                      @RequestParam("file") String file) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
@@ -340,7 +362,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param fileName  The file name (exclusive with 'folder')
      * @param folder    The folder name (exclusive with 'file')
      */
-    @GetMapping(value = "/download/{repository}", produces = "application/json")
+    @GetMapping(value = "/download/{repository}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> requestDownload(@PathVariable("repository") String repositoryId,
                                              @RequestParam(name = "fileName", required = false) String fileName,
                                              @RequestParam(name = "folder", required = false) String folder) {
@@ -483,7 +505,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *                      The file or folder can be part of only one share.
      * @param name          The name of the share. Name must be unique for a user
      */
-    @PostMapping(value = "share", produces = "application/json")
+    @PostMapping(value = "share", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> shareFile(@RequestParam("workspace") String workspaceId,
                                        @RequestParam("file") String file,
                                        @RequestParam("name") String name) {
@@ -528,7 +550,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *
      * @param name    The name of the share to be removed.
      */
-    @PostMapping(value = "unshare", produces = "application/json")
+    @PostMapping(value = "unshare", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> unshareFile(@RequestParam("name") String name) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -552,7 +574,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param userId    (optional) The user identifier for which to list the shared data.
      *                  This parameter is considered only for administrators.
      */
-    @GetMapping(value = "share/list", produces = "application/json")
+    @GetMapping(value = "share/list", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> listSharedFiles(@RequestParam(name = "userId", required = false) String userId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         if (!isCurrentUserAdmin() && !StringUtilities.isNullOrEmpty(userId) && !userId.equals(currentUser())) {
@@ -581,7 +603,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *
      * @param subscriptionId    The id of the shared dataset
      */
-    @PostMapping(value = "share/subscribe", produces = "application/json")
+    @PostMapping(value = "share/subscribe", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> subscribeToShare(@RequestParam(name = "id") long subscriptionId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -623,7 +645,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      *                          - an optional filter (regex) for matching remote items
      *
      */
-    @PostMapping(value = "/transfer/", produces = "application/json")
+    @PostMapping(value = "/transfer/", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> transfer(@RequestBody TransferRequest request) {
         final String currentUser = currentUser();
         asyncExecute(() -> {
@@ -692,7 +714,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param destination   (Optional) The destination folder
      * @return              The name of the extracted folder
      */
-    @PostMapping(value = "/extract", produces = "application/json")
+    @PostMapping(value = "/extract", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> uncompress(@RequestParam("archive") String path,
                                                          @RequestParam(name = "folder", required = false) String destination) {
         try {
@@ -727,7 +749,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param lines     (optional) How many lines of text to retrieve. Default is 20.
      * @param skipLines (optional) The offset (i.e. line number) to start from. Default is 0.
      */
-    @GetMapping(value = "/read", produces = "application/json")
+    @GetMapping(value = "/read", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> readAsText(@RequestParam("repositoryId") String repositoryId,
                                                          @RequestParam("file") String file,
                                                          @RequestParam(required = false, name = "lines") Integer lines,
@@ -762,7 +784,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param destination   (Optional) The destination of the action result
      * @return              A message indicating if the action was performed or not
      */
-    @PostMapping(value = "/action", produces = "application/json")
+    @PostMapping(value = "/action", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> doAction(@RequestParam("action") String action,
                                                        @RequestParam(name = "item") String item,
                                                        @RequestParam(name = "destination", required = false) String destination) {
@@ -831,7 +853,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param newName       The new name
      * @return              A message indicating if the action was performed or not
      */
-    @PostMapping(value = "/rename", produces = "application/json")
+    @PostMapping(value = "/rename", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> rename(@RequestParam(name = "item") String item,
                                                      @RequestParam(name = "name") String newName) {
         final String successMessage = String.format("Renaming [%s] completed", item);

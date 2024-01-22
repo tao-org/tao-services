@@ -33,7 +33,7 @@ public class GDALTileMapService {
         final boolean cacheClearAtStartup = Boolean.parseBoolean(config.getValue(Keys.CONFIG_CACHE_CLEAR_AT_STARTUP_KEY, "false"));
         this.gdalTileCache = new GDALTileCache(cacheEnabled, path, size, cacheClearAtStartup);
         this.tileReader = new TileReader(this.gdalTileCache);
-        this.seriesPath = Paths.get(System.getProperty("user.home")).resolve(config.getValue(Keys.CONFIG_CACHE_DIR_KEY, ".eds/series/"));
+        this.seriesPath = Paths.get(System.getProperty("site.path")).resolve("series");
     }
 
     public void setCacheDirPath(Path cacheDirPath) {
@@ -74,7 +74,7 @@ public class GDALTileMapService {
         }
     }
 
-    public void extractSubset(ProductDescriptor productDescriptor, Extent extent, String name) throws FileNotFoundException {
+    public String extractSubset(ProductDescriptor productDescriptor, Extent extent, String name) throws FileNotFoundException {
         try {
             final Path sourceLocalFilePath = productDescriptor.getProductPath();
             if (Files.exists(sourceLocalFilePath)) {
@@ -82,6 +82,7 @@ public class GDALTileMapService {
                 this.tileReader.extractSubset(productDescriptor,
                                               this.seriesPath.resolve(name).resolve(imageFileName),
                                               extent.xmin, extent.ymin, extent.xmax - extent.xmin, extent.ymax - extent.ymin);
+                return imageFileName;
             } else {
                 throw new FileNotFoundException("Product path not exists.");
             }

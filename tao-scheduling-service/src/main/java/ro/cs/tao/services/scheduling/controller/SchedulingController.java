@@ -1,6 +1,7 @@
 package ro.cs.tao.services.scheduling.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.services.commons.BaseController;
@@ -34,7 +35,7 @@ public class SchedulingController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/add", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/add", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> addSchedule(@RequestBody SchedulingRequest request) {
     	ResponseEntity<ServiceResponse<?>> response;
     	if (request.getId() != null) {
@@ -91,7 +92,7 @@ public class SchedulingController extends BaseController {
     }
 
     
-    @RequestMapping(value = "/update", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/update", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateSchedule(@RequestBody SchedulingRequest request) {
     	ResponseEntity<ServiceResponse<?>> response;
     	if (request.getId() == null) {

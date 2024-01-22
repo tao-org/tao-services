@@ -26,6 +26,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.h2.util.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -103,7 +104,7 @@ public class ContainerController extends DataEntityController<Container, String,
      * @param sortDirection (optional) The sort direction
      */
     @Override
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false)Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortByField", required = false)Optional<String> sortByField,
@@ -127,7 +128,7 @@ public class ContainerController extends DataEntityController<Container, String,
      * @param typeId    The container type identifier
      * @param visibilityId  The container visibility identifier
      */
-    @RequestMapping(value = "/type", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/type", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listByType(@RequestParam("type") int typeId,
                                                          @RequestParam("visibility") int visibilityId) {
         if (!isCurrentUserAdmin()) {
@@ -145,7 +146,7 @@ public class ContainerController extends DataEntityController<Container, String,
      * Lists the docker images for the current user.
      *
      */
-    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listByUser() {
         try {
             return prepareResult(service.listUserContainers(currentUser()));
@@ -159,7 +160,7 @@ public class ContainerController extends DataEntityController<Container, String,
      *
      * @param containerId   The container identifier
      */
-    @RequestMapping(value = "/formats", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/formats", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getFormats(@RequestParam("containerId") String containerId) {
         try {
             Container container = service.findById(containerId);
@@ -179,7 +180,7 @@ public class ContainerController extends DataEntityController<Container, String,
      *
      * @param request   The structure containing the necessary information
      */
-    @RequestMapping(value = "/upload", method = RequestMethod.POST, consumes = "multipart/form-data", produces = "application/json")
+    @RequestMapping(value = "/upload", method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> upload(HttpServletRequest servletRequest,
                                                      @ModelAttribute ContainerUploadRequest request,
                                                      Model model) {
@@ -282,7 +283,7 @@ public class ContainerController extends DataEntityController<Container, String,
      * Pulls a Docker image to the local repository
      * @param image     The name of the Docker image
      */
-    @RequestMapping(value = "/pull", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/pull", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> pullFromHub(@RequestParam("image") String image) {
         try {
             return prepareResult(DockerManager.pullImage(image));
@@ -296,7 +297,7 @@ public class ContainerController extends DataEntityController<Container, String,
      *
      * @param request   The structure containing the necessary information
      */
-    @RequestMapping(value = "/register", method = RequestMethod.POST, consumes = "multipart/form-data", produces = "application/json")
+    @RequestMapping(value = "/register", method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> upload(HttpServletRequest servletRequest,
                                                      @ModelAttribute ContainerRequest request,
                                                      Model model) {
@@ -409,7 +410,7 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
-    @RequestMapping(value = "/start", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/start", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> startContainer(@RequestParam("id") String imageId) {
         try {
             if (StringUtilities.isNullOrEmpty(imageId)) {
@@ -448,7 +449,7 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
-    @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> stopContainerInstance(@RequestParam("id") String instanceId) {
         try {
             if (StringUtilities.isNullOrEmpty(instanceId)) {

@@ -15,14 +15,14 @@
  */
 package ro.cs.tao.services.cleanup.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -43,7 +43,7 @@ public class CleanupController extends BaseController {
     /**
      * Perform the cleanup operation.
      */
-    @RequestMapping(value = "/database/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/database/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> cleanupDatabase() {
         if (isCurrentUserAdmin()) {
         	final long deletedProducts = cleanupService.cleanupDatabase();

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.*;
@@ -55,7 +56,7 @@ public class WMSController extends BaseController {
     private TargetDescriptorRepository targetDescriptorRepository;
 
 
-    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> list() {
         try {
             final List<Container> containers = containerService.listByType(ContainerType.WMS);
@@ -70,7 +71,7 @@ public class WMSController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getById(@PathVariable("id") String id) {
         try {
             return prepareResult(wmsComponentService.findById(id));
@@ -83,7 +84,7 @@ public class WMSController extends BaseController {
      * Creates a new WMS component (client).
      * @param bean  Structure defining connection and authentication information for the remote WMS service
      */
-    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
@@ -113,7 +114,7 @@ public class WMSController extends BaseController {
      * Updates a WMS component definition.
      * @param bean  Structure defining connection and authentication information for the remote WMS service
      */
-    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> update(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
@@ -151,7 +152,7 @@ public class WMSController extends BaseController {
      * Removes a WMS component.
      * @param id    The component identifier
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> delete(@PathVariable("id") String id) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -164,7 +165,7 @@ public class WMSController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> inspectRemote(@RequestParam(name = "request") String requestType,
                                            @RequestParam(name = "remoteAddress") String endpoint,
                                            @RequestParam(name = "capability", required = false) String capability,

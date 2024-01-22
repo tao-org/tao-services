@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
@@ -73,7 +74,7 @@ public class UserController extends BaseController {
     /**
      * Returns the groups of users.
      */
-    @RequestMapping(value = "/groups/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/groups/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getGroups() {
         return prepareResult(userService.getGroups());
     }
@@ -82,7 +83,7 @@ public class UserController extends BaseController {
      * Activates the given user account.
      * @param userId    The user account identifier
      */
-    @RequestMapping(value = "/activate/{userId}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/activate/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> activate(@PathVariable("userId") String userId) {
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
@@ -129,7 +130,7 @@ public class UserController extends BaseController {
      *
      * @param userId The user account identifier
      */
-    @RequestMapping(value = "/initialize", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/initialize", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createWorkspaces(@RequestParam("userId") String userId) {
         try {
             if (StringUtilities.isNullOrEmpty(userId)) {
@@ -151,7 +152,7 @@ public class UserController extends BaseController {
      * @param userId    The user account identifier
      * @param resetPasswordInfo Structure holding the reset key and the new password
      */
-    @RequestMapping(value = "/{userId}/reset", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/{userId}/reset", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> resetPassword(@PathVariable("userId") String userId, @RequestBody ResetPasswordInfo resetPasswordInfo) {
         if (StringUtilities.isNullOrEmpty(userId) || resetPasswordInfo == null ||
                 StringUtilities.isNullOrEmpty(resetPasswordInfo.getResetKey()) || StringUtilities.isNullOrEmpty(resetPasswordInfo.getNewPassword())) {
@@ -173,7 +174,7 @@ public class UserController extends BaseController {
      * Returns the user profile
      * @param userId    The user account identifier
      */
-    @RequestMapping(value = "/{userId}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId) {
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
@@ -202,7 +203,7 @@ public class UserController extends BaseController {
      * Returns the user login name
      * @param userId    The user account identifier
      */
-    @RequestMapping(value = "/name", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/name", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserName(@PathVariable("userId") String userId) {
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
@@ -223,7 +224,7 @@ public class UserController extends BaseController {
      * Updates the user profile
      * @param updatedUserInfo   The user profile structure
      */
-    @RequestMapping(value = "/{userId}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/{userId}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateUserInfo(@RequestBody User updatedUserInfo) {
         if (updatedUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
@@ -245,7 +246,7 @@ public class UserController extends BaseController {
      * @param userPreferences   The preferences list as the body of the request
      * @param authToken         The authentication token as header
      */
-    @RequestMapping(value = "/prefs", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/prefs", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> saveOrUpdateUserPreferences(@RequestBody List<UserPreference> userPreferences,
                                                          @RequestHeader("X-Auth-Token") String authToken) {
         if (userPreferences == null || userPreferences.isEmpty() || StringUtilities.isNullOrEmpty(authToken)) {
@@ -269,7 +270,7 @@ public class UserController extends BaseController {
      * @param userPrefsKeysToDelete The preferences list as the body of the request
      * @param authToken The authentication token as header
      */
-    @RequestMapping(value = "/prefs", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/prefs", method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> removeUserPreferences(@RequestBody List<String> userPrefsKeysToDelete,
                                                                     @RequestHeader("X-Auth-Token") String authToken) {
         if (StringUtilities.isNullOrEmpty(authToken)) {

@@ -17,6 +17,7 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.TaoEnum;
@@ -63,7 +64,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
      * A such enumeration must implement {@link TaoEnum}
      *
      */
-    @RequestMapping(value = "/enums", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/enums", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAvailableEnumValues() {
         if (this.enums == null || this.enums.get() == null) {
             Map<String, List<ExtendedKeyValuePair>> enumValues = new HashMap<>();
@@ -97,7 +98,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
      * A sorter embeds a rule for sorting inputs of a link
      *
      */
-    @RequestMapping(value = "/sorters", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/sorters", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAvailableSorters() {
         if (this.sorters == null || this.sorters.get() == null) {
             List<String> descriptions = new ArrayList<>();
@@ -121,7 +122,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
      * A grouper embeds a rule for grouping inputs of a link (e.g. into pairs)
      *
      */
-    @RequestMapping(value = "/groupers", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/groupers", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAvailableGroupers() {
         if (this.groupers == null || this.groupers.get() == null) {
             List<String[]> descriptions = new ArrayList<>();
@@ -145,7 +146,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
      * A filter embeds a rule for applying a certain criterion to inputs of a link.
      *
      */
-    @RequestMapping(value = "/filters", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/filters", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAvailableFilters() {
         if (this.filters == null || this.filters.get() == null) {
             List<String[]> descriptions = new ArrayList<>();
@@ -168,7 +169,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
      * Lists all the projections that are known to the system (codes and definitions)
      *
      */
-    @RequestMapping(value = "/projection/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/projection/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAvailableProjections() {
         return prepareResult(Projection.getSupported());
     }
@@ -177,7 +178,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
      * Lists all the projection codes (EPSG format) that are known to the system
      *
      */
-    @RequestMapping(value = "/projection/codes/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/projection/codes/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAvailableProjectionCodes() {
         return prepareResult(Projection.getSupported().keySet());
     }
@@ -185,13 +186,13 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
     /**
      * Toggles the development (test) mode on/off
      */
-    @RequestMapping(value = "/devmode", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/devmode", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> toggleDevMode(@RequestParam("on") boolean mode) {
         ConfigurationManager.getInstance().setValue("tao.dev.mode", String.valueOf(mode));
         return prepareResult("Development mode is " + (mode ? "on" : "off"));
     }
 
-    @RequestMapping(value = "/detail/items", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/detail/items", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getConfigurationItems(@RequestParam(name = "filter", required = false) String filter,
                                                                     @RequestParam(name = "category", required = false) Integer categoryId,
                                                                     @RequestParam(name = "grouped", required = false, defaultValue = "false") boolean grouped) {
@@ -227,12 +228,12 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
         }
     }
 
-    @RequestMapping(value = "/detail/categories", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/detail/categories", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getCategories() {
         return prepareResult(persistenceManager.configuration().getCategories());
     }
 
-    @RequestMapping(value = "/detail/items", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/detail/items", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> saveConfigurationItems(@RequestBody List<ConfigurationItem> items) {
         try {
             int size = 0;

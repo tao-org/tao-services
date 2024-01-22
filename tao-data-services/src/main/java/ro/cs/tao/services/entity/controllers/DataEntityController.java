@@ -16,6 +16,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
@@ -44,7 +45,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
      * Returns the details of the entity
      * @param id    The entity identifier
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") K id) {
         ResponseEntity<ServiceResponse<?>> response;
         T entity;
@@ -62,7 +63,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
@@ -78,7 +79,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
      * Creates a new entity.
      * If values of the entity fields are not correct, the response will contain which values were faulty.
      */
-    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody T entity) {
         final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
         ServiceResponse<?> body = validationResponse.getBody();
@@ -93,7 +94,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
      * Updates an existing entity.
      * If values of the entity fields are not correct, the response will contain which values were faulty.
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") K id, @RequestBody T entity) {
         final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
         ServiceResponse<?> body = validationResponse.getBody();
@@ -113,7 +114,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
      * @param id    The entity identifier
      * @param tags  The list of tags to be associated
      */
-    @RequestMapping(value = "/{id:.+}/tag", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/{id:.+}/tag", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> tag(@PathVariable("id") K id, @RequestBody List<String> tags) {
         try {
             return prepareResult(service.tag(id, tags));
@@ -126,7 +127,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
      * @param id    The entity identifier
      * @param tags  The list of tags to be removed
      */
-    @RequestMapping(value = "/{id:.+}/untag", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/{id:.+}/untag", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> untag(@PathVariable("id") K id, @RequestBody List<String> tags) {
         try {
             return prepareResult(service.unTag(id, tags));

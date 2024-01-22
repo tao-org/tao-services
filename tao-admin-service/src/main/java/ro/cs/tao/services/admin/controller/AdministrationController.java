@@ -18,6 +18,7 @@ package ro.cs.tao.services.admin.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionRegistry;
@@ -82,7 +83,7 @@ public class AdministrationController extends BaseController {
      * Creates a new user
      * @param newUserInfo   The user account information
      */
-    @RequestMapping(value = "/users", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/users", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> addNewUser(@RequestBody User newUserInfo) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -110,7 +111,7 @@ public class AdministrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/users/unicity", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/users/unicity", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAllUsersUnicityInfo() {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -118,7 +119,7 @@ public class AdministrationController extends BaseController {
         return prepareResult(adminService.getAllUsersUnicityInfo());
     }
 
-    @RequestMapping(value = "/users/ids", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/users/ids", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAllUserNames() {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -130,7 +131,7 @@ public class AdministrationController extends BaseController {
      * Lists user accounts by their status
      * @param activationStatus  The user status
      */
-    @RequestMapping(value = "/users", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/users", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> findUsersByStatus(@RequestParam("status") UserStatus activationStatus) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -152,7 +153,7 @@ public class AdministrationController extends BaseController {
     /**
      * Lists the currently logged-in users
      */
-    @RequestMapping(value = "/users/logged", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/users/logged", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> findLoggedUsers() {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -168,7 +169,7 @@ public class AdministrationController extends BaseController {
     /**
      * Lists the existing user groups
      */
-    @RequestMapping(value = "/users/groups", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/users/groups", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getGroups() {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -180,7 +181,7 @@ public class AdministrationController extends BaseController {
      * Returns the detail of a user account
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/users/{userId}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/users/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -204,7 +205,7 @@ public class AdministrationController extends BaseController {
      * Returns the resource subscriptions of a user account
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserSubscriptions(@PathVariable("userId") String userId) {
         if (!adminService.isDevModeEnabled()) {
             if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
@@ -274,7 +275,7 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      * @param subscription The subscription entity
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
         if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
@@ -319,7 +320,7 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      * @param subscription The subscription entity
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
         if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
@@ -383,7 +384,7 @@ public class AdministrationController extends BaseController {
      * Closes a resource subscription of a user account
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions/{subscriptionId}", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/users/{userId}/subscriptions/{subscriptionId}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId,
                                                                     @PathVariable("subscriptionId") long subscriptionId) {
         if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
@@ -410,7 +411,7 @@ public class AdministrationController extends BaseController {
      * Updates the user account information
      * @param updatedUserInfo   The user account information
      */
-    @RequestMapping(value = "/users/{userId}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/users/{userId}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateUserInfo(@PathVariable("userId") String userId,
                                                              @RequestBody User updatedUserInfo) {
         if (!isCurrentUserAdmin()) {
@@ -448,7 +449,7 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      * @param additionalDisableActions  Additional actions to be performed
      */
-    @RequestMapping(value = "/users/{userId}/disable", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/users/{userId}/disable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> disableUser(@PathVariable("userId") String userId, @RequestBody DisableUserInfo additionalDisableActions) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -469,7 +470,7 @@ public class AdministrationController extends BaseController {
      * Deletes a user account
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/users/{userId}", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/users/{userId}", method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("userId") String userId) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -495,7 +496,7 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      * @param message The message
      */
-    @RequestMapping(value = "/message", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/message", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> messageUser(@RequestParam("userId") String userId,
                                                           @RequestParam("message") String message) {
         if (!isCurrentUserAdmin()) {
@@ -521,7 +522,7 @@ public class AdministrationController extends BaseController {
      *
      * @param message The message
      */
-    @RequestMapping(value = "/message/all", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/message/all", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> messageUsers(@RequestParam("message") String message) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -548,7 +549,7 @@ public class AdministrationController extends BaseController {
      * @param from  (optional) The start of the interval to aggregate. If not specified, it is the first timestamp recorded
      * @param to    (optional) The end of the interval to aggregate. If not specified, it is the current moment.
      */
-    @RequestMapping(value = "/users/sessions", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/users/sessions", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getSessionsTime(@RequestParam(name = "userId", required = false) String userId,
                                                               @RequestParam(name = "from", required = false) LocalDateTime from,
                                                               @RequestParam(name = "to", required = false) LocalDateTime to) {
@@ -581,7 +582,7 @@ public class AdministrationController extends BaseController {
      *
      * @param userId (optional) The user identifier. If not specified, the aggregation is done for all users
      */
-    @RequestMapping(value = "/users/sessions/total", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/users/sessions/total", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getTotalProcessingTime(@RequestParam(name = "userId", required = false) String userId) {
         if (!isCurrentUserAdmin() && !currentUser().equals(userId)) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);

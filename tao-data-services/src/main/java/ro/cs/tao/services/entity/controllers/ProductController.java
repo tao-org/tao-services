@@ -18,6 +18,7 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -52,7 +53,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
      * Retrieve a list of EOProducts given their names
      * @param nameList  The list of product names
      */
-    @RequestMapping(value = "", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getByNames(@RequestParam("name") String nameList) {
         if (nameList == null || nameList.isEmpty()) {
             return prepareResult("[name] parameter is empty");
@@ -64,7 +65,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
      *
      * @param sourceDir     The source folder
      */
-    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> inspect(@RequestParam("sourceDir") String sourceDir) {
         if (sourceDir == null) {
             return prepareResult("Source directory not found", ResponseStatus.FAILED);
@@ -86,7 +87,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
      * @param linkOnly      If <code>true</code>, only symlinks to the original products will be created
      *                      in the workspace. Otherwise, the whole products will be copied locally
      */
-    @RequestMapping(value = "/import", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/import", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> importProducts(@RequestParam("sourceDir") String sourceDir,
                                                              @RequestParam("linkOnly") boolean linkOnly) {
         if (sourceDir == null) {
@@ -102,7 +103,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
      * Checks if the database contains products with the given names.
      * @param names     The list of product names to check
      */
-    @RequestMapping(value = "/check", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/check", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> checkExistingProducts(@RequestParam("names") String[] names) {
         return prepareResult(this.service.checkExisting(names));
     }
@@ -111,7 +112,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
      *
      * @param fileName  The preview file name
      */
-    @RequestMapping(value = "/preview", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/preview", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> downloadPreview(@RequestParam("fileName") String fileName) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {

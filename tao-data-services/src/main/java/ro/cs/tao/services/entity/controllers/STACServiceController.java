@@ -3,6 +3,7 @@ package ro.cs.tao.services.entity.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.SourceDescriptor;
@@ -56,7 +57,7 @@ public class STACServiceController extends BaseController {
 
     private final Logger logger = Logger.getLogger(STACServiceController.class.getName());
 
-    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> list() {
         try {
             final List<Container> containers = containerService.listByType(ContainerType.STAC);
@@ -75,7 +76,7 @@ public class STACServiceController extends BaseController {
      * Creates a new STAC component (client). The new component will act as a TAO data source.
      * @param bean  Structure defining connection and authentication information for the remote STAC service
      */
-    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createSTACService(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
@@ -142,7 +143,7 @@ public class STACServiceController extends BaseController {
      * Updates a STAC component definition.
      * @param bean  Structure defining connection and authentication information for the remote STAC service
      */
-    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> updateSTACService(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
@@ -215,7 +216,7 @@ public class STACServiceController extends BaseController {
      * Removes a STAC component.
      * @param id    The component identifier
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> deleteSTACService(@PathVariable("id") String id) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -241,7 +242,7 @@ public class STACServiceController extends BaseController {
      * @param endpoint  The remote STAC endpoint (URL)
      * @param authentication    If needed, authentication information for the remote service
      */
-    @RequestMapping(value = "/collections", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/collections", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> inspectSTACService(@RequestParam(name = "remoteAddress") String endpoint,
                                                 @RequestParam(name = "authentication", required = false) String authentication) {
         try {

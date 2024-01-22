@@ -16,6 +16,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Tag;
@@ -47,7 +48,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     /**
      * List all the tags associated with topology nodes.
      */
-    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getNodeTags();
         if (objects == null ) {
@@ -59,14 +60,14 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     /**
      * Returns the worker nodes that are active.
      */
-    @RequestMapping(value = "/active", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/active", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getActiveNodes() {
         return prepareResult(service.getNodes(true));
     }
     /**
      * Returns the worker nodes that are not active.
      */
-    @RequestMapping(value = "/inactive", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/inactive", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getInactiveNodes() {
         final List<NodeDescription> nodes = service.getNodes(false);
         nodes.removeIf(n -> n.getId().equalsIgnoreCase("localhost"));
@@ -77,7 +78,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
      * Note: if the OpenStack provider is activated, it is the list provided by the remote environment.
      * Otherwise, it is a list of current nodes hardware configuration.
      */
-    @RequestMapping(value = "/flavors", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/flavors", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNodeFlavors() {
         return prepareResult(service.getNodeFlavors());
     }
@@ -85,7 +86,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     /**
      * Checks if the OpenStack (or other) external provider is active or not.
      */
-    @RequestMapping(value = "/external", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/external", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> isExternalProviderAvailable() {
         return prepareResult(service.isExternalProviderAvailable());
     }
@@ -93,7 +94,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     /**
      * Returns a list of active node names (and 'Any') that will serve for assigning a component to be executed on a specific node.
      */
-    @RequestMapping(value = "/available", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/available", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNodeAffinities() {
         List<NodeDescription> activeNodes = service.getNodes(true);
         List<String> names = activeNodes.stream().map(StringIdentifiable::getId).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
@@ -110,7 +111,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
      * @param serviceName The name of the service
      * @param version   The version of the service
      */
-    @RequestMapping(value = "/install", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/install", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> installServices(@RequestParam("nodeId") String nodeId,
                                                               @RequestParam(name = "service", required = false) String serviceName,
                                                               @RequestParam(name = "version", required = false) String version) {
@@ -136,14 +137,14 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     }
 
     @Override
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody NodeDescription entity) {
         entity.setAppId(Orchestrator.getInstance().getId());
         return super.save(entity);
     }
 
     @Override
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody NodeDescription entity) {
         final NodeDescription initial = service.findById(entity.getId());
         entity.setFlavor(initial.getFlavor());

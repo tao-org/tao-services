@@ -119,7 +119,7 @@ public class WPSClient {
             final String mimeType = outParam.getComplexOutput().getDefault().getFormat().getMimeType();
             DataFormat format;
             switch (mimeType.toLowerCase()) {
-                case "application/json":
+                case MediaType.APPLICATION_JSON_VALUE:
                     format = DataFormat.JSON;
                     break;
                 case "application/octet-stream":

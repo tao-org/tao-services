@@ -159,7 +159,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
             final ServiceRegistry<TunnelFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(TunnelFilter.class);
             final Set<TunnelFilter> tunnelFilters = registry.getServices();
             if (tunnelFilters != null && !tunnelFilters.isEmpty()) {
-                Class<? extends Filter> afterClass = BasicAuthenticationFilter.class;
+                Class<? extends Filter> afterClass = AuthenticationFilter.class;
                 for (TunnelFilter filter : tunnelFilters) {
                     http.addFilterAfter(filter, afterClass);
                     Logger.getLogger(WebSecurityConfig.class.getName())

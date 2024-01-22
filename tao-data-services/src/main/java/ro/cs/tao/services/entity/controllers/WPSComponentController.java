@@ -2,6 +2,7 @@ package ro.cs.tao.services.entity.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
@@ -48,7 +49,7 @@ public class WPSComponentController extends BaseController {
      * @param sortDirection (optional) The sort direction (ASC or DESC)
      */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
@@ -68,7 +69,7 @@ public class WPSComponentController extends BaseController {
      *
      * @param entity    The WPS component structure
      */
-    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody WPSComponentBean entity) {
         try {
             if (entity == null) {
@@ -118,7 +119,7 @@ public class WPSComponentController extends BaseController {
      *
      * @param entity    The WPS component structure
      */
-    @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody WPSComponentBean entity) {
         try {
             if (entity == null) {
@@ -163,7 +164,7 @@ public class WPSComponentController extends BaseController {
      *
      * @param id    The WPS component identifier
      */
-    @RequestMapping(value = "/", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("id") String id) {
         try {
             final WPSComponent entity = wpsComponentService.findById(id);
