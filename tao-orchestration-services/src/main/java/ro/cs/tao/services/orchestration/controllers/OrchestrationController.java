@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.locationtech.jts.geom.Envelope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
@@ -65,7 +66,7 @@ public class OrchestrationController extends BaseController {
      * @param request   Structure containing the workflow identifier, parameters, job type and name
      * @see JobType
      */
-    @RequestMapping(value = "/start", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/start", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> start(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -85,7 +86,7 @@ public class OrchestrationController extends BaseController {
      * Returns the available parameters for a workflow
      * @param workflowId    The workflow identifier
      */
-    @RequestMapping(value = "/parameters/{id}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/parameters/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getWorkflowParameters(@PathVariable("id") long workflowId) {
         try {
             return prepareResult(orchestrationService.getWorkflowParameters(workflowId));
@@ -98,7 +99,7 @@ public class OrchestrationController extends BaseController {
      * Returns the outputs of a workflow execution (a workflow can have more than one execution)
      * @param workflowId    The workflow identifier
      */
-    @RequestMapping(value = "/outputs/{id}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/outputs/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getWorkflowOutputs(@PathVariable("id") long workflowId) {
         try {
             return prepareResult(orchestrationService.getWorkflowOutputs(workflowId));
@@ -111,7 +112,7 @@ public class OrchestrationController extends BaseController {
      * Stops a running job
      * @param jobId The job identifier
      */
-    @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> stop(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -127,7 +128,7 @@ public class OrchestrationController extends BaseController {
      * Pauses a running job
      * @param jobId The job identifier
      */
-    @RequestMapping(value = "/pause", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/pause", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> pause(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -143,7 +144,7 @@ public class OrchestrationController extends BaseController {
      * Resumes to execution a paused job
      * @param jobId The job identifier
      */
-    @RequestMapping(value = "/resume", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/resume", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> resume(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -161,7 +162,7 @@ public class OrchestrationController extends BaseController {
      *
      * @param userId    The user identifier
      */
-    @RequestMapping(value = "/purge", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/purge", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> purgeJobs(@RequestParam(name = "userId", required = false) String userId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -179,7 +180,7 @@ public class OrchestrationController extends BaseController {
     /**
      * Returns the running tasks (steps of a job) of the current user
      */
-    @RequestMapping(value = "/running/tasks", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/running/tasks", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getRunningTasks() {
         List<ExecutionTaskSummary> tasks =
                 orchestrationService.getRunningTasks(isCurrentUserAdmin() ? null : currentUser());
@@ -192,7 +193,7 @@ public class OrchestrationController extends BaseController {
     /**
      * Returns the output and the command line of a task
      */
-    @RequestMapping(value = "/tasks/{id}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/tasks/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getTaskOutput(@PathVariable("id") long taskId) {
         try {
             final ExecutionTaskSummary task = executionTaskProvider.getTaskStatus(taskId);
@@ -213,7 +214,7 @@ public class OrchestrationController extends BaseController {
      * Returns the running jobs of the current user.
      * If the user is in the admin group, returns all the running jobs.
      */
-    @RequestMapping(value = "/running/jobs", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/running/jobs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getRunningJobs() {
         List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs(isCurrentUserAdmin() ? null : currentUser());
         if (summaries == null) {
@@ -227,7 +228,7 @@ public class OrchestrationController extends BaseController {
      * Only an administrator can call perform this operation.
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/running/jobs/{userId}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/running/jobs/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getRunningJobsForUser(@PathVariable("userId") String userId) {
         if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -242,7 +243,7 @@ public class OrchestrationController extends BaseController {
     /**
      * Returns the queued jobs for all the users (only if the current user is an admin)
      */
-    @RequestMapping(value = "/queued/jobs", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/queued/jobs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getQueuedJobs(@RequestParam(name = "grouped", required = false) Boolean grouped) {
         if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -266,7 +267,7 @@ public class OrchestrationController extends BaseController {
      * Returns the queued jobs of a specific user.
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/queued/jobs/{userId}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/queued/jobs/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getQueuedJobsForUser(@PathVariable("userId") String userId) {
         if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -278,7 +279,7 @@ public class OrchestrationController extends BaseController {
         return prepareResult(summaries);
     }
 
-    @RequestMapping(value = "/queued/jobs", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/queued/jobs", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> moveJobInQueue(@RequestParam(name = "user", required = false) String userId,
                                                              @RequestParam("jobId") long jobId,
                                                              @RequestParam("operation") QueueOperation operation) {
@@ -307,7 +308,7 @@ public class OrchestrationController extends BaseController {
      * Returns the summaries of tasks of a job
      * @param jobId The job identifier
      */
-    @RequestMapping(value = "/{jobId}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/{jobId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getJobTaskStatuses(@PathVariable("jobId") long jobId) {
         List<ExecutionTaskSummary> summaries = orchestrationService.getTasksStatus(jobId);
         if (summaries == null) {
@@ -320,7 +321,7 @@ public class OrchestrationController extends BaseController {
      * Returns the outputs of a job
      * @param jobId The job identifier
      */
-    @RequestMapping(value = "/{jobId}/output", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/{jobId}/output", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getJobOutput(@PathVariable("jobId") long jobId) {
         ExecutionJob job = executionJobManager.get(jobId);
         String output;
@@ -343,7 +344,7 @@ public class OrchestrationController extends BaseController {
      *  - for a user it returns the summaries of all his/her finished jobs
      * @param userId  The user account identifier
      */
-    @RequestMapping(value = {"/history","/history/{userId}"}, method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = {"/history","/history/{userId}"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getJobsHistory(@PathVariable("userId") String userId) {
         List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(userId != null ? userId : (isCurrentUserAdmin() ? null : currentUser()));
         if (summaries == null) {
@@ -357,7 +358,7 @@ public class OrchestrationController extends BaseController {
      * If the user is not specified it clears the jobs of the current user
      * @param userId  The user identifier
      */
-    @RequestMapping(value = {"/history", "/history/{userId}"}, method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = {"/history", "/history/{userId}"}, method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> clearJobsHistory(@PathVariable("userId") String userId) {
         if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -370,7 +371,7 @@ public class OrchestrationController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/process", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/process", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> processExternalGraph(@RequestParam("graph") String jsonGraph,
                                                                    @RequestParam("callback") String callback,
                                                                    @RequestParam(name = "container", required = false) String container) {
@@ -406,7 +407,7 @@ public class OrchestrationController extends BaseController {
      * Performs a remote Web Processing Service invocation.
      * @param request   The invocation parameters
      */
-    @RequestMapping(value = "/wps", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/wps", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> invokeRemoteWPS(@RequestBody WebServiceExecutionRequest request) {
         try {
             if (request == null) {
@@ -467,7 +468,7 @@ public class OrchestrationController extends BaseController {
      * Performs a remote Web Map Service invocation.
      * @param request   The invocation parameters
      */
-    @RequestMapping(value = "/wms", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/wms", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> invokeRemoteWMS(@RequestBody WebServiceExecutionRequest request) {
         try {
             if (request == null) {
@@ -498,7 +499,7 @@ public class OrchestrationController extends BaseController {
      * are properly computed.
      * @param request   The export request
      */
-    @RequestMapping(value = "/script", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/script", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> scriptJob(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -522,7 +523,7 @@ public class OrchestrationController extends BaseController {
      * @param status    The new task status
      * @param message   (optional) A message associated with the status change
      */
-    @RequestMapping(value = "/statusChanged", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/statusChanged", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> taskStatusChanged(@RequestParam("taskId") long taskId,
                                                             @RequestParam("status") String status,
                                                             @RequestParam(name = "message", required = false) String message) {

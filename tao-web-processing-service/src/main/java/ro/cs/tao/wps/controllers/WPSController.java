@@ -86,7 +86,7 @@ public class WPSController extends BaseController {
     @Autowired
     private WorkflowService workflowService;
 
-    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> list() {
         try {
             final List<Container> containers = containerService.listByType(ContainerType.WPS);
@@ -101,7 +101,7 @@ public class WPSController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getById(@PathVariable("id") String id) {
         try {
             return prepareResult(wpsComponentService.findById(id));
@@ -110,7 +110,7 @@ public class WPSController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> save(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
@@ -136,7 +136,7 @@ public class WPSController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> update(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
@@ -170,7 +170,7 @@ public class WPSController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> delete(@PathVariable("id") String id) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -183,7 +183,7 @@ public class WPSController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> inspectRemote(@RequestParam(name = "request") String requestType,
                                            @RequestParam(name = "remoteAddress") String endpoint,
                                            @RequestParam(name = "capability", required = false) String capability,

@@ -17,6 +17,7 @@ package ro.cs.tao.services.progress.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -45,7 +46,7 @@ public class ProgressReportController extends BaseController {
      * @param userId  The user account name
      * @param jsonFilter    Additional filter
      */
-    @RequestMapping(value = "", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getTasksInProgress(@RequestParam(name = "category", required = false) String category,
                                                                  @RequestParam(name = "userId", required = false) String userId,
                                                                  @RequestParam(name = "filter", required = false) String jsonFilter) {
@@ -75,14 +76,14 @@ public class ProgressReportController extends BaseController {
     /**
      * Returns statistics about downloads
      */
-    @RequestMapping(value = "/download/statistics", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/download/statistics", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getGlobalDownloadStatus() {
         return prepareResult(DownloadManager.getOverallStatus());
     }
     /**
      * Returns information about the current downloads
      */
-    @RequestMapping(value = "/download/statistics/detail", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/download/statistics/detail", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getDownloadStatus() {
         return prepareResult(DownloadManager.getCurrentStatus());
     }

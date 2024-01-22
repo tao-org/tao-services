@@ -22,6 +22,7 @@ import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.TopologyException;
 import org.locationtech.jts.io.WKTReader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.SystemVariable;
@@ -107,7 +108,7 @@ public class DataSourceController extends BaseController {
     /**
      * Lists the available data sources
      */
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getRegisteredSources() {
         //if (cachedDataSources.isEmpty()) {
         //    synchronized (cachedDataSources) {
@@ -125,7 +126,7 @@ public class DataSourceController extends BaseController {
     /**
      * Lists the short description of the available data sources
      */
-    @RequestMapping(value = "/summary", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/summary", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getRegisteredSourcesSummary() {
         List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
         if (instances == null) {
@@ -137,7 +138,7 @@ public class DataSourceController extends BaseController {
     /**
      * Lists the registered providers (e.g. USGS) and the collections available from them
      */
-    @RequestMapping(value = "/providers", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/providers", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getProviders() {
         Map<String, String[]> providers = dataSourceService.getDataSourceProviders();
         if (providers == null) {
@@ -149,7 +150,7 @@ public class DataSourceController extends BaseController {
     /**
      * Lists the registered sensors (or collections)
      */
-    @RequestMapping(value = "/sensor/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/sensor/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getSupportedSensors() {
         Set<String> sensors = dataSourceService.getSupportedSensors();
         if (sensors == null) {
@@ -161,7 +162,7 @@ public class DataSourceController extends BaseController {
     /**
      * Returns any defined filter for data sources
      */
-    @RequestMapping(value = "/filter/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/filter/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getFilter() {
         final String prefix = "datasource.filter.";
         final Map<String, String> values = ConfigurationManager.getInstance().getValues(prefix);
@@ -178,7 +179,7 @@ public class DataSourceController extends BaseController {
      * Lists the data sources that provide the given sensor or collection
      * @param sensorName    The sensor (or collection) name
      */
-    @RequestMapping(value = "/sensor/{name}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/sensor/{name}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getDataSourcesForSensor(@PathVariable("name") String sensorName) {
         List<String> sources = dataSourceService.getDatasourcesForSensor(sensorName);
         if (sources == null) {
@@ -192,7 +193,7 @@ public class DataSourceController extends BaseController {
      * @param sensorName        The sensor (or collection) name
      * @param dataSourceName   The name of the data source
      */
-    @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getSupportedParameters(@PathVariable("name") String sensorName,
                                                                      @PathVariable("source") String dataSourceName) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(sensorName, dataSourceName);
@@ -212,7 +213,7 @@ public class DataSourceController extends BaseController {
      * @param satellite The satellite. Supported values are 'sentinel2' and 'landsat8'
      * @param tile  The tile identifier (for Landsat-8, this is the path and row)
      */
-    @RequestMapping(value = "/footprint", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/footprint", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getTileFootprint(@RequestParam("satellite") String satellite, @RequestParam("tile") String tile) {
         try {
             if (StringUtilities.isNullOrEmpty(satellite)) {
@@ -279,7 +280,7 @@ public class DataSourceController extends BaseController {
      * Returns a list of product tiles that intersect an area of interest.
      * @param request   A structure containing: the area of interest (as WKT), the satellite (supported values: 'sentinel2', 'landsat8')
      */
-    @RequestMapping(value = "/tiles", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+    @RequestMapping(value = "/tiles", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getTilesForFootprint(@RequestBody TileRequest request) {
         try {
             if (request == null) {
@@ -333,7 +334,7 @@ public class DataSourceController extends BaseController {
      * Returns the number of products that match the search criteria.
      * @param query The search critera
      */
-    @RequestMapping(value = "/count", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/count", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> doCount(@RequestBody Query query) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
@@ -391,7 +392,7 @@ public class DataSourceController extends BaseController {
      * @param mode  The return mode: 'list' (only the product names) or 'details'
      * @param query The search criteria
      */
-    @RequestMapping(value = "/exec", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/exec", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> doQuery(@RequestParam(name = "mode", required = false) String mode,
                                                       @RequestBody Query query) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
@@ -427,7 +428,7 @@ public class DataSourceController extends BaseController {
      * Retrieves the products given in the request.
      * @param request   The request structure
      */
-    @RequestMapping(value = "/fetch", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/fetch", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> doFetch(@RequestBody FetchRequest request) {
         final String userId = currentUser();
         final StorageService repositoryService = getLocalRepositoryService();
@@ -483,7 +484,7 @@ public class DataSourceController extends BaseController {
      * A product, besides the files constituting it, holds additional metadata in the TAO database.
      * @param productPath   The path to inspect, relative to the user workspace
      */
-    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> inspect(@RequestParam("path") String productPath) {
         Set<MetadataInspector> services = ServiceRegistryManager.getInstance()
                 .getServiceRegistry(MetadataInspector.class)

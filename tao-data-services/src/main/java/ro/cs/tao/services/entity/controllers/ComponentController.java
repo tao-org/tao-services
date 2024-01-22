@@ -17,6 +17,7 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
@@ -68,7 +69,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param componentType The type of the components (@see {@link ProcessingComponentType})
      *
      */
-    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listUserComponents(@RequestParam("type") ProcessingComponentType componentType) {
         ResponseEntity<ServiceResponse<?>> response;
         String userId = currentUser();//SessionStore.currentContext().getPrincipal().getName();
@@ -93,7 +94,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param sortDirection     (optional) the sort direction
      */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     @Override
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
@@ -134,7 +135,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * Returns the descriptors of one or more components, given their ids.
      * @param idList    The list of identifiers
      */
-    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "id") String idList) {
         if (idList == null || idList.isEmpty()) {
             return prepareResult("Invalid id list", ResponseStatus.FAILED);
@@ -149,7 +150,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param groupIdList   The list of identifiers
      *
      */
-    @RequestMapping(value = "/group", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/group", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getGroupComponent(@RequestParam(name = "id") String groupIdList) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         if (groupIdList == null || groupIdList.isEmpty()) {
@@ -166,7 +167,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * A naming rule is a set of regexes that are mapped to tokens in the name of products of a known type (i.e. Sentinel-2)
      *
      */
-    @RequestMapping(value = "/naming/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/naming/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNamingRules() {
         return prepareResult(nameTokenService.list().stream().map(NamingRuleInfo::new).collect(Collectors.toList()));
     }
@@ -176,7 +177,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param sensor    The sensor
      *
      */
-    @RequestMapping(value = "/naming/tokens", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/naming/tokens", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getTokens(@RequestParam(name = "sensor") String sensor) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         if (StringUtils.isBlank(sensor)) {
@@ -192,7 +193,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param nodeId    The identifier of the workflow node
      *
      */
-    @RequestMapping(value = "/naming/find", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/naming/find", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNamingRuleDetails(@RequestParam("nodeId") long nodeId) {
         try {
             return prepareResult(nameTokenService.findTokens(nodeId));
@@ -206,7 +207,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param id    The identifier of the naming rule
      *
      */
-    @RequestMapping(value = "/naming/{id}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/naming/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNamingRuleDetails(@PathVariable("id") int id) {
         try {
             return prepareResult(nameTokenService.findById(id));
@@ -220,7 +221,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param rule  The naming rule description, containing the regex and the matching tokens
      *
      */
-    @RequestMapping(value = "/naming", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/naming", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> saveRule(@RequestBody NamingRule rule) {
         try {
             return prepareResult(nameTokenService.save(rule));
@@ -233,7 +234,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param rule  The naming rule description, containing the regex and the matching tokens
      *
      */
-    @RequestMapping(value = "/naming", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/naming", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateRule(@RequestBody NamingRule rule) {
         return saveRule(rule);
     }
@@ -242,7 +243,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param id    The rule identifier
      *
      */
-    @RequestMapping(value = "/naming/{id}", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/naming/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> deleteRule(@PathVariable("id") int id) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -260,7 +261,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      *
      */
     @Override
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") String id) {
         ResponseEntity<ServiceResponse<?>> response;
         ProcessingComponent entity;
@@ -282,7 +283,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param entity    The descriptor of the processing component
      *
      */
-    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Override
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody ProcessingComponent entity) {
         if (entity.getOwner() == null || entity.getOwner().isEmpty()) {
@@ -297,7 +298,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param entity    The descriptor of the processing component
      *
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Override
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody ProcessingComponent entity) {
         if (currentUser().equals(entity.getOwner()) || isCurrentUserAdmin()) {
@@ -313,7 +314,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param id    The component identifier
      *
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Override
     public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") String id) {
         if (StringUtilities.isNullOrEmpty(id)) {
@@ -334,7 +335,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * List all the constraints that can be applied to links of a workflow
      *
      */
-    @RequestMapping(value = "/constraints", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/constraints", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listConstraints() {
         List<String> objects = service.getAvailableConstraints();
         if (objects == null ) {
@@ -347,7 +348,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * Lists all the tags that are associated with components
      *
      */
-    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getComponentTags();
         if (objects == null ) {
@@ -361,7 +362,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param component     The component descriptor
      *
      */
-    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> importFrom(@RequestBody ProcessingComponent component) {
         ResponseEntity<ServiceResponse<?>> response;
         if (component != null) {
@@ -399,7 +400,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         return response;
     }
 
-    @RequestMapping(value = "/code", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/code", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> openNotebook(@RequestParam("componentId") String componentId) {
         try {
             if (StringUtilities.isNullOrEmpty(componentId)) {

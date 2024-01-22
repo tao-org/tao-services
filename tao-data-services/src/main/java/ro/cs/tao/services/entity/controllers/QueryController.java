@@ -18,6 +18,7 @@ package ro.cs.tao.services.entity.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
@@ -46,7 +47,7 @@ public class QueryController extends BaseController {
      * @param workflowNodeId    The workflow node identifier
      */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getQuery(@RequestParam(name = "sensor", required = false) Optional<String> sensor,
                                                        @RequestParam(name = "dataSource", required = false) Optional<String> dataSource,
                                                        @RequestParam(name = "nodeId", required = false) Optional<Long> workflowNodeId) {
@@ -75,7 +76,7 @@ public class QueryController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/paged", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/paged", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAllQueries(@RequestParam("page") int pageNumber,
                                                             @RequestParam("pageSize") int size,
                                                             @RequestParam("sort") String sortDirection) {
@@ -84,12 +85,12 @@ public class QueryController extends BaseController {
         return prepareResult(queries);
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> findById(@PathVariable("id") long id) {
         return prepareResult(queryService.getQueryById(id));
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Query object) {
         try {
             object.setUserId(currentUser());
@@ -99,7 +100,7 @@ public class QueryController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> deleteById(@PathVariable("id") long id) {
         try {
             queryService.delete(id);
@@ -109,7 +110,7 @@ public class QueryController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody Query object) {
         try {
             object.setUserId(currentUser());

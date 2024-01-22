@@ -17,6 +17,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
@@ -68,7 +69,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     private RepositoryProvider repositoryProvider;
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    @RequestMapping(value = "/page", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/page", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     @Override
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
@@ -89,12 +90,12 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getSystemDatasources() {
         return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.getSystemDataSourceComponents()));
     }
 
-    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "id") String idList) {
         if (idList == null || idList.isEmpty()) {
             return prepareResult("Invalid id list", ResponseStatus.FAILED);
@@ -103,12 +104,12 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return prepareResult(service.list(Arrays.asList(ids)));
     }
 
-    @RequestMapping(value = "/user/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/user/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponents() {
         return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.getUserDataSourceComponents(SessionStore.currentContext().getPrincipal().getName())));
     }
 
-    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponent(@RequestParam("id") String id) {
         try {
             return prepareResult(service.findById(id));
@@ -117,7 +118,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/user/group", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/user/group", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponentGroup(@RequestParam("id") String groupId) {
         try {
             return prepareResult(dataSourceGroupService.findById(groupId));
@@ -126,13 +127,13 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/user/group/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/user/group/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponentGroups() {
         return prepareResult(ServiceTransformUtils.toDataSourceGroupInfos(
                 dataSourceGroupService.getUserDataSourceComponentGroups(SessionStore.currentContext().getPrincipal().getName())));
     }
 
-    @RequestMapping(value = "/user/group/save", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/user/group/save", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createOrUpdateDataSourceGroup(@RequestBody DataSourceGroupRequest request) throws PersistenceException {
         ResponseEntity<ServiceResponse<?>> result;
         try {
@@ -172,7 +173,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return result;
     }
 
-    @RequestMapping(value = "/user/group/remove", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/user/group/remove", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> removeDataSourceComponentFromGroup(@RequestParam("groupId") String groupId) {
         ResponseEntity<ServiceResponse<?>> result;
         try {
@@ -203,7 +204,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return result;
     }
 
-    @RequestMapping(value = "/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/create", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody DataSourceRequest request) {
         try {
             List<EOProduct> products = request.getProducts();
@@ -221,7 +222,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/create/names", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/create/names", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody DataSourceNameRequest request) {
         try {
             if (request == null || request.getProducts() == null || request.getProducts().isEmpty()) {
@@ -278,7 +279,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/productset", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/productset", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createProductSet(@RequestBody ProductSetRequest request) {
         try {
             List<String> productPaths;
@@ -299,7 +300,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getDatasourceTags();
         if (objects == null ) {
@@ -308,7 +309,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 
-    @RequestMapping(value = "/config", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/config", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getConfiguration(@RequestParam("dataSourceId") String dataSourceId) {
         try {
             return prepareResult(service.getConfiguration(dataSourceId));
@@ -317,7 +318,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/config", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/config", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> saveConfiguration(@RequestBody DataSourceConfiguration configuration) {
         try {
             service.saveConfiguration(configuration);
@@ -327,7 +328,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/config", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/config", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody DataSourceConfiguration configuration) {
         try {
             service.updateConfiguration(configuration);
@@ -337,7 +338,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/productset", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/productset", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listProductSets() {
         try {
             final String user = currentUser();
@@ -347,7 +348,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/productset/{id}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/productset/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getProductSet(@PathVariable("id") String id) {
         try {
             return prepareResult(new ProductSetInfo(this.service.findById(id), currentUser()));
@@ -356,7 +357,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/productset", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/productset", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateProductSet(@RequestBody ProductSetInfo productSet) {
         try {
             List<String> products = productSet.getProducts();
@@ -370,7 +371,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/productset/{id}", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/productset/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> deleteProductSet(@PathVariable("id") String id) {
         try {
             this.service.delete(id);

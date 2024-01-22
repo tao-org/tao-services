@@ -1,6 +1,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
@@ -26,7 +27,7 @@ public class RepositoryEntityController extends DataEntityController<Repository,
     /**
      * Returns the list of types of supported repositories.
      */
-    @RequestMapping(value = "/types/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/types/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getWorkspaceTypes() {
         try {
             return prepareResult(Arrays.stream(RepositoryType.values()).map(ServiceTransformUtils::toBean).collect(Collectors.toList()));

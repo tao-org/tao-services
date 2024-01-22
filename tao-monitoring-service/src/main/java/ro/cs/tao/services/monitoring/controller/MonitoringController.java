@@ -21,6 +21,7 @@ import org.hsqldb.lib.HashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.metrics.MetricsEndpoint;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
@@ -88,7 +89,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns a list of all available nodes resources snapshots
      */
-    @RequestMapping(value = "/monitor/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAllSnapshot() {
         if (isCurrentUserAdmin()) {
             return prepareResult(monitoringService.getNodesSnapshot(),
@@ -101,7 +102,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns a snapshot of the resources of the primary node
      */
-    @RequestMapping(value = "/monitor/master", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/master", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getMasterSnapshot() {
         if (isCurrentUserAdmin()) {
             final RuntimeInfo snapshot = monitoringService.getMasterSnapshot();
@@ -116,7 +117,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns a snapshot of the resources of a secondary node
      */
-    @RequestMapping(value = "/monitor/{host:.+}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/{host:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNodeSnapshot(@PathVariable("host") String host) {
         if (isCurrentUserAdmin()) {
             final RuntimeInfo snapshot = monitoringService.getNodeSnapshot(host);
@@ -131,7 +132,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns the active (i.e. not read) system notifications
      */
-    @RequestMapping(value = "/monitor/notification/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/notification/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getLiveNotifications() {
         try {
             if (isCurrentUserAdmin()) {
@@ -146,7 +147,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns the active (i.e. not read) notifications for a user
      */
-    @RequestMapping(value = "/monitor/notification/unread", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/notification/unread", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUnreadNotifications() {
         try {
             return prepareResult(monitoringService.getUnreadNotifications(currentUser()));
@@ -157,7 +158,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns a page of notifications for a user
      */
-    @RequestMapping(value = "/monitor/notification/{page}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/notification/{page}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNotifications(@PathVariable("page") int page) {
         try {
             return prepareResult(monitoringService.getNotifications(currentUser(), page));
@@ -166,7 +167,7 @@ public class MonitoringController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/monitor/notification/{user}/{page}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/notification/{user}/{page}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserNotifications(@PathVariable("user") String userId,
                                                                    @PathVariable("page") int page) {
         if (isCurrentUserAdmin() || currentUser().equals(userId)) {
@@ -184,7 +185,7 @@ public class MonitoringController extends BaseController {
      * Marks the given notifications as read
      * @param notificationIds The list of notification identifiers
      */
-    @RequestMapping(value = "/monitor/notification/ack", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/monitor/notification/ack", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> acknowledgeNotifications(@RequestBody List<Long> notificationIds) {
         return prepareResult(monitoringService.acknowledgeNotification(notificationIds, currentUser()));
     }
@@ -192,7 +193,7 @@ public class MonitoringController extends BaseController {
     /**
      * Clears the notifications for the current user
      */
-    @RequestMapping(value = "/monitor/notification/clear", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/monitor/notification/clear", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> clearNotifications() {
         try {
             monitoringService.deleteAll(currentUser());
@@ -205,7 +206,7 @@ public class MonitoringController extends BaseController {
     /**
      * Inspects the available nodes and returns their status (online or offline)
      */
-    @RequestMapping(value = "/monitor/status", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/monitor/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNodesOnlineStatus() {
         if (isCurrentUserAdmin()) {
             return prepareResult(monitoringService.getNodesOnlineStatus());
@@ -214,7 +215,7 @@ public class MonitoringController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/emit", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/emit", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> emit(@RequestParam(name = "principal", required = false) String principal,
                                                    @RequestParam("topic") String topic) {
         try {
@@ -233,12 +234,12 @@ public class MonitoringController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/metrics", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/metrics", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getMetrics() {
         return prepareResult(collectMetrics());
     }
 
-    @RequestMapping(value = "/metrics/enable", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/metrics/enable", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> enableMetrics() {
         try {
             collectTimer.cancel();
@@ -253,7 +254,7 @@ public class MonitoringController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/metrics/disable", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/metrics/disable", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> disableMetrics() {
         try {
             collectTimer.cancel();
