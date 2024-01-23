@@ -23,7 +23,7 @@ public class GDALTileMapService {
     private final TileReader tileReader;
 
     private final GDALTileCache gdalTileCache;
-    private final Path seriesPath;
+    private Path seriesPath;
 
     public GDALTileMapService() {
         ConfigurationProvider config = ConfigurationManager.getInstance();
@@ -33,7 +33,6 @@ public class GDALTileMapService {
         final boolean cacheClearAtStartup = Boolean.parseBoolean(config.getValue(Keys.CONFIG_CACHE_CLEAR_AT_STARTUP_KEY, "false"));
         this.gdalTileCache = new GDALTileCache(cacheEnabled, path, size, cacheClearAtStartup);
         this.tileReader = new TileReader(this.gdalTileCache);
-        this.seriesPath = Paths.get(System.getProperty("site.path")).resolve("series");
     }
 
     public void setCacheDirPath(Path cacheDirPath) {
@@ -76,6 +75,9 @@ public class GDALTileMapService {
 
     public String extractSubset(ProductDescriptor productDescriptor, Extent extent, String name) throws FileNotFoundException {
         try {
+            if (this.seriesPath == null) {
+                this.seriesPath = Paths.get(ConfigurationManager.getInstance().getValue("site.path")).resolve("series");
+            }
             final Path sourceLocalFilePath = productDescriptor.getProductPath();
             if (Files.exists(sourceLocalFilePath)) {
                 final String imageFileName = sourceLocalFilePath.getFileName().toString().replaceAll(regEx, "$1") + ".png";
