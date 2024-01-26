@@ -41,6 +41,7 @@ import ro.cs.tao.workspaces.RepositoryType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Oana H.
@@ -120,16 +121,17 @@ public final class ServiceTransformUtils {
         return results;
     }
 
-    public static List<WorkflowInfo> toWorkflowInfos(final List<WorkflowDescriptor> descriptors){
+    public static List<WorkflowInfo> toWorkflowInfos(final List<WorkflowDescriptor> descriptors,
+                                                     final Map<Long, String> images){
         final List<WorkflowInfo> results = new ArrayList<>();
         for(WorkflowDescriptor workflowDescriptor : descriptors){
-            results.add(new WorkflowInfo(workflowDescriptor));
+            results.add(new WorkflowInfo(workflowDescriptor, images.get(workflowDescriptor.getId())));
         }
         return results;
     }
 
-    public static WorkflowInfo toWorkflowInfo(WorkflowDescriptor descriptor){
-        return new WorkflowInfo(descriptor);
+    public static WorkflowInfo toWorkflowInfo(WorkflowDescriptor descriptor, String image){
+        return new WorkflowInfo(descriptor, image);
     }
 
     public static RepositoryTypeBean toBean(RepositoryType type) {

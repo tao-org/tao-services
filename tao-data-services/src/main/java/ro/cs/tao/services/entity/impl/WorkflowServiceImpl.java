@@ -138,36 +138,58 @@ public class WorkflowServiceImpl
 
     @Override
     public List<WorkflowInfo> getUserWorkflowsByStatus(String user, Status status) {
-        return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listUserWorkflowsByStatus(user, status.value()));
+        final List<WorkflowDescriptor> list = workflowProvider.listUserWorkflowsByStatus(user, status.value());
+        final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
+                                                                                .map(WorkflowDescriptor::getId)
+                                                                                .collect(Collectors.toSet()));
+        return ServiceTransformUtils.toWorkflowInfos(list, images);
     }
 
     @Override
     public List<WorkflowInfo> getUserPublishedWorkflowsByVisibility(String user, Visibility visibility) {
-        return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listUserPublishedWorkflowsByVisibility(user, visibility.value()));
+        final List<WorkflowDescriptor> list = workflowProvider.listUserPublishedWorkflowsByVisibility(user, visibility.value());
+        final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
+                                                                                .map(WorkflowDescriptor::getId)
+                                                                                .collect(Collectors.toSet()));
+        return ServiceTransformUtils.toWorkflowInfos(list, images);
     }
 
     @Override
     public List<WorkflowInfo> getOtherPublicWorkflows(String user) {
-        return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listOtherPublicWorkflows(user));
+        final List<WorkflowDescriptor> list = workflowProvider.listOtherPublicWorkflows(user);
+        final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
+                                                                                .map(WorkflowDescriptor::getId)
+                                                                                .collect(Collectors.toSet()));
+        return ServiceTransformUtils.toWorkflowInfos(list, images);
     }
 
     @Override
     public List<WorkflowInfo> getPublicWorkflows() {
+        final List<WorkflowDescriptor> list;
         if (!isDevModeEnabled()) {
-            return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listPublic());
+            list = workflowProvider.listPublic();
         } else {
-            return ServiceTransformUtils.toWorkflowInfos(MockData.getMockWorkflows());
+            list = MockData.getMockWorkflows();
         }
+        final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
+                                                                                .map(WorkflowDescriptor::getId)
+                                                                                .collect(Collectors.toSet()));
+        return ServiceTransformUtils.toWorkflowInfos(list, images);
     }
 
     @Override
     public List<WorkflowInfo> getUserVisibleWorkflows(String userId) {
-        return ServiceTransformUtils.toWorkflowInfos(workflowProvider.listUserVisible(userId));
+        final List<WorkflowDescriptor> list = workflowProvider.listUserVisible(userId);
+        final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
+                                                                                .map(WorkflowDescriptor::getId)
+                                                                                .collect(Collectors.toSet()));
+        return ServiceTransformUtils.toWorkflowInfos(list, images);
     }
 
     @Override
     public WorkflowInfo getWorkflowInfo(long workflowId) {
-        return ServiceTransformUtils.toWorkflowInfo(workflowProvider.get(workflowId));
+        return ServiceTransformUtils.toWorkflowInfo(workflowProvider.get(workflowId),
+                                                    workflowProvider.getWorkflowImage(workflowId));
     }
 
     @Override
@@ -180,9 +202,11 @@ public class WorkflowServiceImpl
         final List<WorkflowSubscription> subscriptions = workflowSubscriptionProvider.getByUser(userId);
         final List<WorkflowInfo> workflowInfos = new ArrayList<>();
         if (subscriptions != null && !subscriptions.isEmpty()) {
-            workflowInfos.addAll(ServiceTransformUtils.toWorkflowInfos(workflowProvider.list(subscriptions.stream()
+            final List<WorkflowDescriptor> list = workflowProvider.list(subscriptions.stream()
                                                                                      .map(WorkflowSubscription::getWorkflowId)
-                                                                                     .collect(Collectors.toSet()))));
+                                                                                     .collect(Collectors.toSet()));
+            final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream().map(WorkflowDescriptor::getId).collect(Collectors.toSet()));
+            workflowInfos.addAll(ServiceTransformUtils.toWorkflowInfos(list, images));
         }
         return workflowInfos;
     }
