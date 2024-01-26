@@ -1146,6 +1146,26 @@ public class WorkflowServiceImpl
         return null;
     }
 
+    @Override
+    public String getWorkflowImage(long id) {
+        return workflowProvider.getWorkflowImage(id);
+    }
+
+    @Override
+    public void addWorkflowImage(long id, String image) {
+        workflowProvider.addWorkflowImage(id, image);
+    }
+
+    @Override
+    public void updateWorkflowImage(long id, String newImage) {
+        workflowProvider.updateWorkflowImage(id, newImage);
+    }
+
+    @Override
+    public void deleteWorkflowImage(long id) {
+        workflowProvider.deleteWorkflowImage(id);
+    }
+
     /**
      * Processes the creation of a link between a node outside a group and a node inside a group.
      * The actual link is made between the source node and the group node.
