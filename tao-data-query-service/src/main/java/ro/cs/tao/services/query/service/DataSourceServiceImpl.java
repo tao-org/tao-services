@@ -38,7 +38,6 @@ import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.utils.Crypto;
 import ro.cs.tao.utils.StringUtilities;
-import ro.cs.tao.utils.async.Parallel;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,6 +52,7 @@ import java.util.regex.Pattern;
 @Service("dataSourceService")
 public class DataSourceServiceImpl implements DataSourceService {
     private static final Pattern satelliteVersionPattern = Pattern.compile("[-_]\\d[A-D]");
+    private static final Set<FetchMode> localFetchModes = EnumSet.of(FetchMode.COPY, FetchMode.SYMLINK, FetchMode.CHECK);
     @Autowired
     private DownloadListener downloadListener;
 
@@ -96,7 +96,6 @@ public class DataSourceServiceImpl implements DataSourceService {
         //final SortedSet<String> sensors = dataSourceManager.getSupportedSensors();
         final SortedSet<String> sensors = getSupportedSensors();
         final List<DataSourceCredentials> userCredentials = credentialsProvider.getByUser(SessionStore.currentContext().getPrincipal().getName());
-        final EnumSet<FetchMode> fetchModes = EnumSet.of(FetchMode.SYMLINK, FetchMode.COPY, FetchMode.CHECK);
         for (String sensor : sensors) {
             //dataSourceManager.getNames(sensor).forEach(n -> {
             getDatasourcesForSensor(sensor).forEach(n -> {
@@ -108,7 +107,7 @@ public class DataSourceServiceImpl implements DataSourceService {
                         final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(sensor + "-" + n);
                         // In case of symlink, copy or check fetch modes, authentication is not required
                         final boolean requiresAuthentication;
-                        if (dataSourceConfiguration != null && fetchModes.contains(dataSourceConfiguration.getFetchMode())) {
+                        if (dataSourceConfiguration != null && localFetchModes.contains(dataSourceConfiguration.getFetchMode())) {
                             requiresAuthentication = false;
                         } else {
                             requiresAuthentication = dataSource.requiresAuthentication();
@@ -280,11 +279,11 @@ public class DataSourceServiceImpl implements DataSourceService {
             final int parallelism = DataSourceManager.getInstance().get(dsComponent.getSensorName(),
                                                                         dsComponent.getDataSourceName()).getMaximumAllowedTransfers();
             final String finalPath = path;
-            if ((dsComponent.getFetchMode() == FetchMode.SYMLINK || dsComponent.getFetchMode() == FetchMode.COPY) && localRepositoryRoot != null) {
+            if (localFetchModes.contains(dsComponent.getFetchMode()) && localRepositoryRoot != null) {
                 if (pathFormat != null) {
                     properties.put("local.archive.path.format", pathFormat);
                 }
-                if (parallelism > 1) {
+                /*if (parallelism > 1) {
                     results = Collections.synchronizedList(new ArrayList<>());
                     final String root = localRepositoryRoot;
                     Parallel.For(0, products.size(), parallelism, (i) -> {
@@ -295,12 +294,12 @@ public class DataSourceServiceImpl implements DataSourceService {
                             logger.severe(ex.getMessage());
                         }
                     });
-                } else {
+                } else {*/
                     results = dsComponent.doFetch(products, null, path, localRepositoryRoot, properties);
-                }
+                //}
             } else {
                 properties.put("auto.uncompress", "true");
-                if (parallelism > 1) {
+                /*if (parallelism > 1) {
                     results = Collections.synchronizedList(new ArrayList<>());
                     Parallel.For(0, products.size(), parallelism, (i) -> {
                         try {
@@ -310,9 +309,9 @@ public class DataSourceServiceImpl implements DataSourceService {
                             logger.severe(ex.getMessage());
                         }
                     });
-                } else {
+                } else {*/
                     results = dsComponent.doFetch(products, null, path, null, properties);
-                }
+                //}
             }
         } else {
             results = null;
