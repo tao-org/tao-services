@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.BaseException;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
@@ -117,6 +118,51 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             response = prepareResult(entity);
         }
         return response;
+    }
+
+    @RequestMapping(value = "/{id:.+}/image", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getImage(@PathVariable("id") long workflowId) {
+        try {
+            return prepareResult(service.getWorkflowImage(workflowId));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/{id:.+}/image", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> addImage(@PathVariable("id") long workflowId,
+                                                       @RequestParam("image") MultipartFile image) {
+        try {
+            if (image != null) {
+                service.addWorkflowImage(workflowId, Base64.getEncoder().encodeToString(image.getBytes()));
+            }
+            return prepareResult(service.getWorkflowInfo(workflowId));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/{id:.+}/image", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> updateImage(@PathVariable("id") long workflowId,
+                                                          @RequestParam("image") MultipartFile image) {
+        try {
+            if (image != null) {
+                service.updateWorkflowImage(workflowId, Base64.getEncoder().encodeToString(image.getBytes()));
+            }
+            return prepareResult(service.getWorkflowInfo(workflowId));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/{id:.+}/image", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> deleteImage(@PathVariable("id") long workflowId) {
+        try {
+            service.deleteWorkflowImage(workflowId);
+            return prepareResult(service.getWorkflowInfo(workflowId));
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
 
     /**
