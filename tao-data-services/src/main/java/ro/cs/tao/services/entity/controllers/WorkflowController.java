@@ -142,7 +142,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
     }
 
-    @RequestMapping(value = "/{id:.+}/image", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/{id:.+}/image", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateImage(@PathVariable("id") long workflowId,
                                                           @RequestParam("image") MultipartFile image) {
         try {
