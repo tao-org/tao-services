@@ -132,7 +132,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
             final WorkflowDescriptor descriptor = new WorkflowDescriptor();
             descriptor.setId(workflowId);
             descriptor.setName("MockWorkflowName");
-            return new WorkflowInfo(descriptor);
+            return new WorkflowInfo(descriptor, null);
         }
         try {
             return workflowService.getWorkflowInfo(workflowId);
