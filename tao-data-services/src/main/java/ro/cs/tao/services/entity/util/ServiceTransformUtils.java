@@ -125,7 +125,7 @@ public final class ServiceTransformUtils {
                                                      final Map<Long, String> images){
         final List<WorkflowInfo> results = new ArrayList<>();
         for(WorkflowDescriptor workflowDescriptor : descriptors){
-            results.add(new WorkflowInfo(workflowDescriptor, images.get(workflowDescriptor.getId())));
+            results.add(new WorkflowInfo(workflowDescriptor, images != null ? images.get(workflowDescriptor.getId()) : null));
         }
         return results;
     }
