@@ -74,7 +74,7 @@ public class WPSClient {
         workflowDescriptor.setActive(true);
         workflowDescriptor.setStatus(Status.PUBLISHED);
         workflowDescriptor.setPath(url);
-        info.setWorkflowInfo(new WorkflowInfo(workflowDescriptor));
+        info.setWorkflowInfo(new WorkflowInfo(workflowDescriptor, null));
         Map<String, List<Parameter>> parameters = new HashMap<>();
         final EList paramList = pdt.getDataInputs().getInput();
         for (Object o : paramList) {
@@ -119,7 +119,7 @@ public class WPSClient {
             final String mimeType = outParam.getComplexOutput().getDefault().getFormat().getMimeType();
             DataFormat format;
             switch (mimeType.toLowerCase()) {
-                case MediaType.APPLICATION_JSON_VALUE:
+                case "application/json":
                     format = DataFormat.JSON;
                     break;
                 case "application/octet-stream":
