@@ -77,7 +77,7 @@ public class BCWpsServiceInstanceImpl_GetStatusTest {
         final WebProcessingServiceImpl.ProcessInfoImpl processInfo = new WebProcessingServiceImpl.ProcessInfoImpl();
         final WorkflowDescriptor workflowDescriptor = new WorkflowDescriptor();
 
-        final WorkflowInfo workflowInfo = new WorkflowInfo(workflowDescriptor);
+        final WorkflowInfo workflowInfo = new WorkflowInfo(workflowDescriptor, null);
 
         processInfo.setWorkflowInfo(workflowInfo);
         when(taoWebProcessingServiceMock.describeProcess(456)).thenReturn(processInfo);
