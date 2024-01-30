@@ -215,7 +215,7 @@ public class WPSIntegrationTest_SpringMocking {
         workflow.setId(id);
         workflow.setStatus(Status.READY);
         workflow.setVisibility(Visibility.PUBLIC);
-        return new WorkflowInfo(workflow);
+        return new WorkflowInfo(workflow, null);
     }
 
     private void prepareConfigurationManagerForTest() {
