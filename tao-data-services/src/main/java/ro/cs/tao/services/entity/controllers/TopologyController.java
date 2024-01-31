@@ -148,9 +148,15 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody NodeDescription entity) {
         final NodeDescription initial = service.findById(entity.getId());
         entity.setFlavor(initial.getFlavor());
-        entity.setAppId(initial.getAppId());
-        entity.setServerId(initial.getServerId());
-        entity.setOwner(initial.getOwner());
+        if (entity.getAppId() == null) {
+            entity.setAppId(initial.getAppId());
+        }
+        if (entity.getServerId() == null) {
+            entity.setServerId(initial.getServerId());
+        }
+        if (entity.getOwner() == null) {
+            entity.setOwner(initial.getOwner());
+        }
         return super.update(id, entity);
     }
 }
