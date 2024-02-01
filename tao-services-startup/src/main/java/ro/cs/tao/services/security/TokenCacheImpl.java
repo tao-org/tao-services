@@ -58,6 +58,13 @@ public class TokenCacheImpl implements TokenCache {
     }
 
     @Override
+    public String getUser(String token) {
+        final Map.Entry<String, Tuple<Token, Authentication>> entry = cache.entrySet().stream().filter(e -> e.getValue().getKeyOne().getToken()
+                                                                                                             .equals(token)).findFirst().orElse(null);
+        return entry != null ? entry.getKey() : null;
+    }
+
+    @Override
     public Token getFromRefreshToken(String refreshToken) {
         return expiredTokens.keySet().stream().filter(t -> t.getRefreshToken().equals(refreshToken)).findFirst().orElse(null);
     }

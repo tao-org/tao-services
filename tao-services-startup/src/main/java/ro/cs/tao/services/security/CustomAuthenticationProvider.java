@@ -65,7 +65,9 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         this.tokenService.setTokenCache(TokenCacheManager.getCache());
         if (AuthenticationMode.KEYCLOAK.name().equalsIgnoreCase(ConfigurationManager.getInstance().getValue("authentication.mode"))) {
             // Keycloak settings are present
-            this.tokenService.setTokenProvider(new KeycloakClient());
+            final KeycloakClient client = new KeycloakClient();
+            client.setTokenKeeper(TokenCacheManager.getCache());
+            this.tokenService.setTokenProvider(client);
         }
         this.localTokenProvider = new TokenProvider() { };
     }

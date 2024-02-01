@@ -25,7 +25,10 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.stereotype.Component;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.security.Token;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
+import ro.cs.tao.services.security.TokenCacheManager;
 
 /**
  *
@@ -53,6 +56,15 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
         }
         if (!tokenManagementService.isValid(token)) {
             throw new BadCredentialsException("Invalid token or token expired");
+        } else {
+            Authentication auth = tokenManagementService.retrieve(token);
+            if (auth == null) {
+                final Token fullToken = TokenCacheManager.getCache().getFullToken(token);
+                final String userId = TokenCacheManager.getCache().getUser(token);
+                auth = new JaasAuthenticationToken(new UserPrincipal(userId), token, null, null);
+                auth.setAuthenticated(true);
+                TokenCacheManager.getCache().put(fullToken, auth);
+            }
         }
         return tokenManagementService.retrieve(token);
     }
