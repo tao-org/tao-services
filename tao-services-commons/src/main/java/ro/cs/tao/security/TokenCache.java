@@ -8,5 +8,7 @@ public interface TokenCache extends TokenKeeper {
 
     default Authentication getAuthentication(String token) { return null; }
 
+    default String getUser(String token) { return null; }
+
     default Authentication getPreviousAuthentication(String token) { return null; }
 }
