@@ -27,6 +27,7 @@ import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
@@ -567,6 +568,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             }
             final WorkflowDescriptor descriptor = service.getDescriptor(info.getName());
             descriptor.setStatus(Status.PUBLISHED);
+            descriptor.setVisibility(getConfiguredPublishedWorkflowVisibility());
             responseEntity = prepareResult(service.update(descriptor));
         } catch (Exception e) {
             responseEntity = handleException(e);
@@ -581,21 +583,25 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
      *
      */
     @RequestMapping(value = "/subscribe", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> subscribe(@RequestParam("userId") String userId,
+    public ResponseEntity<ServiceResponse<?>> subscribe(@RequestParam(name = "userId", required = false) String userId,
                                                         @RequestParam("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            final User user = userProvider.get(userId);
+            if (!StringUtilities.isNullOrEmpty(userId) && !isCurrentUserAdmin() && !currentUser().equals(userId)) {
+                throw new IllegalArgumentException("Operation not allowed");
+            }
+            final String uId = userId != null ? userId : currentUser();
+            final User user = userProvider.get(uId);
             if (user == null) {
                 throw new IllegalArgumentException("[userId] Invalid argument");
             }
             final WorkflowInfo info = service.getWorkflowInfo(workflowId);
             if (info == null) {
                 throw new IllegalArgumentException("[workflowId] Invalid argument");
-            } else if (info.getStatus() == Status.PUBLISHED || info.getVisibility() == Visibility.SUBSCRIPTION) {
+            } else if (info.getStatus() != Status.PUBLISHED || info.getVisibility() != getConfiguredPublishedWorkflowVisibility()) {
                 throw new IllegalArgumentException("This workflow cannot be yet subscribed");
             }
-            responseEntity = prepareResult(service.subscribeToWorkflow(userId, workflowId));
+            responseEntity = prepareResult(service.subscribeToWorkflow(uId, workflowId));
         } catch (Exception e) {
             responseEntity = handleException(e);
         }
@@ -627,6 +633,17 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             responseEntity = handleException(e);
         }
         return responseEntity;
+    }
+
+    private Visibility getConfiguredPublishedWorkflowVisibility() {
+        final Visibility visibility;
+        final String value = ConfigurationManager.getInstance().getValue("other.workflows.visibility");
+        if (value != null && Enum.valueOf(Visibility.class, value.toUpperCase()).equals(Visibility.SUBSCRIPTION)) {
+            visibility = Visibility.SUBSCRIPTION;
+        } else {
+            visibility = Visibility.PUBLIC;
+        }
+        return visibility;
     }
 
 }
