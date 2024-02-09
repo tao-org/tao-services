@@ -219,7 +219,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         WorkflowDescriptor source = this.service.findById(workflowId);
         try {
             if (source != null ) {
-                final WorkflowDescriptor clone = service.clone(source);
+                final WorkflowDescriptor clone = service.clone(source, false);
                 clone.setTemporary(false);
                 responseEntity = prepareResult(service.update(clone));
                 record("Cloned workflow " + workflowId);
