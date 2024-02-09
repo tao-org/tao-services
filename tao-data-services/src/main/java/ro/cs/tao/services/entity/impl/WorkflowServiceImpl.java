@@ -732,7 +732,7 @@ public class WorkflowServiceImpl
     //endregion
     //region Clone and import
     @Override
-    public WorkflowDescriptor clone(WorkflowDescriptor workflow) throws PersistenceException {
+    public WorkflowDescriptor clone(WorkflowDescriptor workflow, boolean temporary) throws PersistenceException {
         if (workflow == null) {
             return null;
         }
@@ -745,7 +745,7 @@ public class WorkflowServiceImpl
             clone.setUserId(SessionStore.currentContext().getPrincipal().getName());
             clone.setVisibility(Visibility.PRIVATE);
             clone.setCreatedFromWorkflowId(workflow.getId());
-            clone.setTemporary(true);
+            clone.setTemporary(temporary);
             clone = workflowProvider.save(clone);
             // key: old id, value: new node
             final Map<Long, WorkflowNodeDescriptor> cloneMap = new HashMap<>();
@@ -811,7 +811,7 @@ public class WorkflowServiceImpl
             // These inputs are not yet connected to the level 1 nodes, we need to create the nodes and the links
             final WorkflowDescriptor workflow = findById(fromWorkflowId);
             // Create a cloned workflow
-            clone = clone(workflow);
+            clone = clone(workflow, true);
             clone.setName(name);
             final Set<Long> ids = new HashSet<>();
             for (Map.Entry<Long, String> entry : linksToAdd.entrySet()) {
