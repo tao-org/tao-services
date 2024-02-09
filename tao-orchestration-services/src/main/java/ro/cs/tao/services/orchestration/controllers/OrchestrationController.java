@@ -34,6 +34,7 @@ import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.serialization.GeometryAdapter;
 import ro.cs.tao.serialization.JsonMapper;
@@ -537,6 +538,23 @@ public class OrchestrationController extends BaseController {
                 Messaging.send(SystemPrincipal.instance(), Topic.EXECUTION.value(), taskId, taskStatus.name());
             }
             return prepareResult("", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/start/forced", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> forceStart(@RequestParam("jobId") long jobId) {
+        try {
+            if (jobId <= 0) {
+                throw new IllegalArgumentException("Invalid jobId");
+            }
+            final ExecutionJob job = executionJobManager.get(jobId);
+            if (job == null) {
+                throw new IllegalArgumentException("Job does not exist");
+            }
+            Orchestrator.getInstance().queueJob(job);
+            return prepareResult("Job " + jobId + " queued", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
         }
