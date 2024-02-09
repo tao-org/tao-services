@@ -162,6 +162,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                                    @RequestParam(name = "last", required = false) String lastItem) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
+            checkPath(relativeFolder);
             final StorageService repositoryService = getLocalRepositoryService(currentUser());
             if (relativeFolder == null || relativeFolder.trim().isEmpty() || relativeFolder.equals(".")) {
                 responseEntity = prepareResult(repositoryService.listUserWorkspace());
@@ -205,6 +206,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                                    @RequestParam("destination") String destination) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
+            checkPath(source);
+            checkPath(destination);
             getLocalRepositoryService(currentUser()).move(source, destination);
             responseEntity = prepareResult("The file has been moved successfully", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
@@ -284,9 +287,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (StringUtils.isEmpty(relativeFolder)) {
                 relativeFolder = "/";
             }
-            if (relativeFolder.startsWith(".") || relativeFolder.startsWith("..")) {
-                throw new IOException("Not allowed");
-            }
+            checkPath(relativeFolder);
             final Repository workspace = getOwnedWorkspace(currentUser(), workspaceId);
             final StorageService service = StorageServiceFactory.getInstance(workspace);
             // exclude items that were submitted to the deletion queue but not yet deleted
@@ -315,9 +316,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                               @RequestParam("folder") String folder) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            if (StringUtils.isEmpty(folder) || folder.startsWith(".") || folder.startsWith("..")) {
-                throw new IOException("The folder must be relative and should not start with '.' or '..'");
-            }
+            checkPath(folder);
             final Repository workspace = getOwnedWorkspace(currentUser(), workspaceId);
             final StorageService service = getRepositoryService(workspace);
             final Path createdPath = service.createFolder(folder.startsWith("/") ? folder.substring(1) : folder, true);
@@ -344,8 +343,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             String[] files = file.split(",");
             final Repository workspace = getOwnedWorkspace(currentUser(), workspaceId);
             for (String f : files) {
-                if (StringUtils.isEmpty(f) || f.startsWith(".") || f.startsWith("..") || f.startsWith("/")) {
-                    throw new IOException("The path must be relative and should not start with '.' or '..' [" + f + "]");
+                checkPath(f);
+                if (f.startsWith("/")) {
+                    throw new IOException("The path must be relative [" + f + "]");
                 }
                 deletionQueue.put(new Tuple<>(workspace, f));
             }
@@ -367,6 +367,15 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                              @RequestParam(name = "fileName", required = false) String fileName,
                                              @RequestParam(name = "folder", required = false) String folder) {
         try {
+            if (!StringUtilities.isNullOrEmpty(fileName) && !StringUtilities.isNullOrEmpty(folder)) {
+                throw new IllegalArgumentException("Either 'fileName' or 'folder' must be set, but not both");
+            }
+            final boolean isFile = StringUtilities.isNullOrEmpty(folder);
+            if (isFile) {
+                checkPath(fileName);
+            } else {
+                checkPath(folder);
+            }
             final Repository repository = repositoryProvider.get(repositoryId);
             if (repository == null) {
                 throw new IllegalArgumentException("[repository] Invalid value");
@@ -375,10 +384,6 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             List<Repository> userRepositories = repositoryProvider.getByUser(user);
             if (userRepositories.stream().noneMatch(r -> repositoryId.equals(r.getId()))) {
                 throw new IllegalArgumentException("Operation not allowed");
-            }
-            final boolean isFile = StringUtilities.isNullOrEmpty(folder);
-            if (!(StringUtilities.isNullOrEmpty(fileName) || isFile)) {
-                throw new IllegalArgumentException("Either [fileName] or [folder] (but not both) must be supplied");
             }
             if (repository.getType() == RepositoryType.LOCAL) {
                 fileName = StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + (fileName.startsWith(user) ? fileName : user + "/" + fileName) + "\"";
@@ -411,6 +416,11 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             final String user = values.get("user");
             final Repository repository = repositoryProvider.get(repositoryId);
             final boolean isFile = StringUtilities.isNullOrEmpty(folder);
+            if (isFile) {
+                checkPath(fileName);
+            } else {
+                checkPath(folder);
+            }
             switch (repository.getType()) {
                 case LOCAL:
                     //asyncExecute(() -> {
@@ -511,9 +521,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                        @RequestParam("name") String name) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            if (StringUtils.isEmpty(file) || file.startsWith(".") || file.startsWith("..")) {
-                throw new IOException("The file must be relative and should not start with '.' or '..'");
-            }
+            checkPath(file);
             final Repository workspace = getOwnedWorkspace(currentUser(), workspaceId);
             if (!workspace.isSystem()) {
                 throw new IOException("This repository doesn't support sharing files or folders");
@@ -718,9 +726,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     public ResponseEntity<ServiceResponse<?>> uncompress(@RequestParam("archive") String path,
                                                          @RequestParam(name = "folder", required = false) String destination) {
         try {
-            if (StringUtilities.isNullOrEmpty(path)) {
-                throw new IllegalArgumentException("Not a file");
-            }
+            checkPath(path);
             if (!path.toLowerCase().endsWith(".zip") && !path.toLowerCase().endsWith(".tar.gz")) {
                 throw new IllegalArgumentException("Unsupported archive type");
             }
@@ -728,6 +734,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             final String resolvedPath = workspace.resolve(path);
             if (StringUtilities.isNullOrEmpty(destination)) {
                 destination = resolvedPath.substring(0, resolvedPath.lastIndexOf('/'));
+            } else {
+                checkPath(destination);
             }
             final Path out;
             if (path.toLowerCase().endsWith(".zip")) {
@@ -755,9 +763,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                                          @RequestParam(required = false, name = "lines") Integer lines,
                                                          @RequestParam(required = false, name = "skip") Integer skipLines) {
         try {
-            if (StringUtilities.isNullOrEmpty(file)) {
-                throw new IllegalArgumentException("Not a file");
-            }
+            checkPath(file);
             final Repository repository = repositoryProvider.get(repositoryId);
             if (repository == null) {
                 throw new IllegalArgumentException("Invalid repository");
@@ -808,11 +814,14 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
                 Messaging.send(user, topic, message);
             };
+            final boolean oneArg = StringUtilities.isNullOrEmpty(destination);
+            if (!oneArg) {
+                checkPath(destination);
+            }
             asyncExecute(() -> {
                 if (StringUtilities.isNullOrEmpty(item)) {
                     throw new IllegalArgumentException("Not a file");
                 }
-                final boolean oneArg = StringUtilities.isNullOrEmpty(destination);
                 final Repository workspace = getLocalWorkspace(user);
                 final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(user);
                 final List<ItemAction> actions = repositoryService.getRegisteredActions();
@@ -935,6 +944,15 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             return "/";
         } else {
             return path.replace("\\", "/");
+        }
+    }
+
+    private void checkPath(String path) {
+        if (StringUtilities.isNullOrEmpty(path)) {
+            throw new IllegalArgumentException("Empty path");
+        }
+        if (path.startsWith(".") || path.contains("../") || path.contains("..\\")) {
+            throw new IllegalArgumentException("Not allowed");
         }
     }
 
