@@ -34,6 +34,8 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
 import ro.cs.tao.user.LogEvent;
+import ro.cs.tao.user.User;
+import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 
 import javax.servlet.http.HttpServletRequest;
@@ -71,7 +73,8 @@ public class AuthenticationController extends BaseController {
             } else {
                 authInfo = authenticationService.login(user, password);
             }
-            if (authInfo != null && authInfo.isAuthenticated()) {
+            final User userObj = userProvider.get(currentUser());
+            if (authInfo != null && authInfo.isAuthenticated() && userObj.getStatus() == UserStatus.ACTIVE) {
                 final LogEvent event = new LogEvent();
                 event.setUserId(authInfo.getUserId());
                 event.setTimestamp(LocalDateTime.now());
@@ -82,7 +85,7 @@ public class AuthenticationController extends BaseController {
                     error(e.getMessage());
                 }
                 if (StringUtilities.isNullOrEmpty(user)) {
-                    user = userProvider.get(currentUser()).getUsername();
+                    user = userObj.getUsername();
                 }
                 if (authInfo.getRefreshToken() != null) {
                     HttpHeaders headers = new HttpHeaders();
