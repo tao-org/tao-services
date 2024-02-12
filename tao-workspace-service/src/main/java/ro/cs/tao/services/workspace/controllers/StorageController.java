@@ -21,9 +21,7 @@ import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
-import ro.cs.tao.persistence.DataSubscriptionProvider;
-import ro.cs.tao.persistence.EOProductProvider;
-import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.persistence.*;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
@@ -72,6 +70,9 @@ import java.util.zip.ZipOutputStream;
 public class StorageController extends DataEntityController<EOProduct, String, ProductService> {
 
     private static final String tokenJSON = "{ \"repository\":\"%s\", \"fileName\":%s, \"folder\":%s, \"user\":\"%s\" }";
+    private static final Pattern maliciousPathRegEx = Pattern.compile("\\.\\.\\/|\\.\\.|\\/\\/|\\\\\\\\|\\/\\.\\/|\\\\\\.\\\\|%|;");
+
+    private static final Map<String, Integer> maliciousAttempts = new HashMap<>();
 
     @Autowired
     private EOProductProvider productProvider;
@@ -84,6 +85,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
     @Autowired
     private DataSubscriptionProvider dataSubscriptionProvider;
+
+    @Autowired
+    private UserProvider userProvider;
 
     private static final BlockingQueue<Tuple<Repository, String>> deletionQueue;
 
@@ -948,11 +952,30 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     }
 
     private void checkPath(String path) {
+        IllegalArgumentException ex = null;
         if (StringUtilities.isNullOrEmpty(path)) {
-            throw new IllegalArgumentException("Empty path");
+            ex = new IllegalArgumentException("Empty path");
         }
-        if (path.startsWith(".") || path.contains("../") || path.contains("..\\")) {
-            throw new IllegalArgumentException("Not allowed");
+        if (path.startsWith(".") || maliciousPathRegEx.matcher(path).find()) {
+            ex = new IllegalArgumentException("Not allowed");
+        }
+        if (ex != null) {
+            final String userId = currentUser();
+            warn("User [%s] submitted a malicious path: %s", userId, path);
+            Integer count = maliciousAttempts.putIfAbsent(userId, 0);
+            if (count != null) {
+                count = maliciousAttempts.put(userId, count++);
+            }
+            if (count != null && count == 3) {
+                try {
+                    userProvider.disable(userId);
+                    error("Account " + userId + " was disabled due to multiple malicious attempts");
+                } catch (PersistenceException e) {
+                    warn(e.getMessage());
+                }
+                maliciousAttempts.remove(userId);
+            }
+            throw ex;
         }
     }
 
