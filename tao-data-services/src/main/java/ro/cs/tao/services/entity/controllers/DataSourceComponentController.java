@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
+import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.Variable;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
@@ -48,12 +49,16 @@ import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.FileNotFoundException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/datasource")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Data Sources", description = "Operations related to data sources")
 public class DataSourceComponentController extends DataEntityController<DataSourceComponent, String, DataSourceComponentService>{
 
     private final AutoEvictableCache<String, DataSourceInfo> componentCache
@@ -373,6 +378,31 @@ public class DataSourceComponentController extends DataEntityController<DataSour
 
     @RequestMapping(value = "/productset/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> deleteProductSet(@PathVariable("id") String id) {
+        try {
+            final DataSourceComponent component = this.service.findById(id);
+            final SourceDescriptor descriptor = component.getSources().stream().filter(s -> DataSourceComponent.QUERY_PARAMETER.equals(s.getName())).findFirst().orElse(null);
+            Map<String, Boolean> products = new LinkedHashMap<>();
+            if (descriptor != null) {
+                String location = descriptor.getDataDescriptor().getLocation();
+                if (location != null) {
+                    products.putAll(Arrays.stream(location.split(",")).collect(Collectors.toMap(Function.identity(), p -> {
+                        try {
+                            return Files.exists(Paths.get(p));
+                        } catch (Exception e) {
+                            return false;
+                        }
+                    })));
+
+                }
+            }
+            return prepareResult(id, ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/productset/{id}/check", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> verifyProductSet(@PathVariable("id") String id) {
         try {
             this.service.delete(id);
             return prepareResult(id, ResponseStatus.SUCCEEDED);

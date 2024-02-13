@@ -191,6 +191,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                         @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
+            checkPath(folder);
             getLocalRepositoryService(currentUser()).storeUserFile(file, folder, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
@@ -659,64 +660,77 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      */
     @PostMapping(value = "/transfer/", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> transfer(@RequestBody TransferRequest request) {
-        final String currentUser = currentUser();
-        asyncExecute(() -> {
+        try {
             if (request == null) {
                 throw new IllegalArgumentException("Empty body");
             }
-            final List<FileObject> requestedFiles = request.getFileObjects();
-            final Repository srcWorkspace = getOwnedWorkspace(currentUser, request.getSourceWorkspace());
-            final Repository dstWorkspace = getOwnedWorkspace(currentUser, request.getDestinationWorkspace());
-            if (dstWorkspace.isReadOnly()) {
-                throw new AccessDeniedException("Destination is read-only");
+            final List<FileObject> fileObjects = request.getFileObjects();
+            if (fileObjects == null || fileObjects.isEmpty()) {
+                throw new IllegalArgumentException("Empty file list");
             }
-            int count = 0;
-            long size = 0;
-            String dstFolder = request.getDestinationPath();
-            if (!dstFolder.endsWith("/")) {
-                dstFolder += "/";
-            }
-            String targetFolder;
-            final boolean isMove = request.getMove() != null && request.getMove();
-            final boolean overwriteExisting = request.getOverwrite() != null && request.getOverwrite();
-            final StorageService service = getRepositoryService(srcWorkspace);
-            Pattern pattern = null;
-            if (request.getFilter() != null) {
-                try {
-                    pattern = Pattern.compile(request.getFilter());
-                } catch (Throwable t) {
-                    Logger.getLogger(StorageController.class.getName()).warning(t.getMessage());
+            checkPath(request.getDestinationPath());
+            fileObjects.forEach(f -> checkPath(f.getRelativePath()));
+            final String currentUser = currentUser();
+            asyncExecute(() -> {
+                if (request == null) {
+                    throw new IllegalArgumentException("Empty body");
                 }
-            }
-            for (FileObject fileObject : requestedFiles) {
-                String objectPath = fileObject.getRelativePath();
-                size = fileObject.getSize();
-                targetFolder = dstFolder;
-                if (fileObject.isFolder()) {
-                    // Keep only the last part of the folder path (i.e. folder name)
-                    targetFolder += srcWorkspace.fileName(objectPath);
-                    final List<FileObject> files = service.listTree(fileObject.getRelativePath());
-                    final List<TransferableItem> items = new ArrayList<>();
-                    for (FileObject fObject : files) {
-                        if (!fObject.isFolder()) {
-                            String path = srcWorkspace.relativize(objectPath, fObject.getRelativePath());
-                            path = targetFolder + (path.startsWith("/") ? "" : (targetFolder.endsWith("/") ? "" : "/") + path);
-                            if (pattern == null || pattern.matcher(path).find()) {
-                                items.add(new TransferableItem(currentUser, objectPath, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting));
-                                size += fObject.getSize();
-                                count++;
+                final List<FileObject> requestedFiles = fileObjects;
+                final Repository srcWorkspace = getOwnedWorkspace(currentUser, request.getSourceWorkspace());
+                final Repository dstWorkspace = getOwnedWorkspace(currentUser, request.getDestinationWorkspace());
+                if (dstWorkspace.isReadOnly()) {
+                    throw new AccessDeniedException("Destination is read-only");
+                }
+                int count = 0;
+                long size = 0;
+                String dstFolder = request.getDestinationPath();
+                if (!dstFolder.endsWith("/")) {
+                    dstFolder += "/";
+                }
+                String targetFolder;
+                final boolean isMove = request.getMove() != null && request.getMove();
+                final boolean overwriteExisting = request.getOverwrite() != null && request.getOverwrite();
+                final StorageService service = getRepositoryService(srcWorkspace);
+                Pattern pattern = null;
+                if (request.getFilter() != null) {
+                    try {
+                        pattern = Pattern.compile(request.getFilter());
+                    } catch (Throwable t) {
+                        Logger.getLogger(StorageController.class.getName()).warning(t.getMessage());
+                    }
+                }
+                for (FileObject fileObject : requestedFiles) {
+                    String objectPath = fileObject.getRelativePath();
+                    size = fileObject.getSize();
+                    targetFolder = dstFolder;
+                    if (fileObject.isFolder()) {
+                        // Keep only the last part of the folder path (i.e. folder name)
+                        targetFolder += srcWorkspace.fileName(objectPath);
+                        final List<FileObject> files = service.listTree(fileObject.getRelativePath());
+                        final List<TransferableItem> items = new ArrayList<>();
+                        for (FileObject fObject : files) {
+                            if (!fObject.isFolder()) {
+                                String path = srcWorkspace.relativize(objectPath, fObject.getRelativePath());
+                                path = targetFolder + (path.startsWith("/") ? "" : (targetFolder.endsWith("/") ? "" : "/") + path);
+                                if (pattern == null || pattern.matcher(path).find()) {
+                                    items.add(new TransferableItem(currentUser, objectPath, srcWorkspace, fObject, dstWorkspace, path, isMove, overwriteExisting));
+                                    size += fObject.getSize();
+                                    count++;
+                                }
                             }
                         }
+                        queueFiles(items.toArray(new TransferableItem[0]));
+                    } else {
+                        queueFile(objectPath, fileObject, srcWorkspace, dstWorkspace, targetFolder + srcWorkspace.fileName(objectPath), isMove, overwriteExisting);
+                        count = 1;
                     }
-                    queueFiles(items.toArray(new TransferableItem[0]));
-                } else {
-                    queueFile(objectPath, fileObject, srcWorkspace, dstWorkspace, targetFolder + srcWorkspace.fileName(objectPath), isMove, overwriteExisting);
-                    count = 1;
                 }
-            }
-            return String.format("Transfer queued (%d files, %d bytes)", count, size);
-        }, message -> Messaging.send(currentUser, Topic.INFORMATION.getCategory(), message), null);
-        return prepareResult("Analysing remote items", ResponseStatus.SUCCEEDED);
+                return String.format("Transfer queued (%d files, %d bytes)", count, size);
+            }, message -> Messaging.send(currentUser, Topic.INFORMATION.getCategory(), message), null);
+            return prepareResult("Analysing remote items", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
     //endregion
 
@@ -832,8 +846,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 if (actions != null) {
                     final ItemAction itemAction = actions.stream().filter(a -> a.name().equals(action)).findFirst().orElse(null);
                     if (itemAction != null) {
-                        final Path resolvedPath = Paths.get(workspace.resolve(item));
                         try {
+                            checkPath(item);
+                            final Path resolvedPath = Paths.get(workspace.resolve(item));
                             final ProgressListener listener = new ProgressNotifier(currentPrincipal(),
                                                                                    this,
                                                                                    Topic.TRANSFER_PROGRESS,
