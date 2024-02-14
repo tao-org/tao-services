@@ -612,14 +612,22 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * @param subscriptionId    The id of the shared dataset
      */
     @PostMapping(value = "share/subscribe", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> subscribeToShare(@RequestParam(name = "id") long subscriptionId) {
+    public ResponseEntity<?> subscribeToShare(@RequestParam(name = "id") long subscriptionId,
+                                              @RequestParam(name = "userId", required = false) String userId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
+            if (!StringUtilities.isNullOrEmpty(userId) && !isCurrentUserAdmin() && !currentUser().equals(userId)) {
+                throw new IllegalArgumentException("Operation not allowed");
+            }
             final DataSubscription subscription = dataSubscriptionProvider.get(subscriptionId);
             if (subscription == null) {
                 throw new IOException("The specified share does not exist");
             }
-            final Repository targetRepository = repositoryProvider.getUserPersistentRepository(currentUser());
+            final String uId = userId != null ? userId : currentUser();
+            if (uId.equals(subscription.getUserId())) {
+                throw new IOException("Cannot subscribe to owned shared data");
+            }
+            final Repository targetRepository = repositoryProvider.getUserPersistentRepository(uId);
             final Repository sourceRepository = repositoryProvider.get(subscription.getRepositoryId());
             TransferRequest request = new TransferRequest();
             request.setSourceWorkspace(subscription.getRepositoryId());
