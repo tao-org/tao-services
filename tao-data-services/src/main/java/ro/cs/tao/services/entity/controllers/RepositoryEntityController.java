@@ -5,6 +5,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.RepositoryBean;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
@@ -55,13 +57,21 @@ public class RepositoryEntityController extends DataEntityController<Repository,
                 List<Repository> userRepositories = this.service.getByUser(currentUser());
                 for (Repository repository : userRepositories) {
                     final RepositoryBean bean = ServiceTransformUtils.toBean(repository);
-                    final StorageService storageService = StorageServiceFactory.getInstance(repository);
-                    List<ItemAction> actions = storageService.getRegisteredActions();
-                    if (actions != null) {
-                        bean.setActions(actions.stream().map(a -> new RepositoryBean.Action(a.name(), a.supportedFiles()))
-                                               .sorted(Comparator.comparing(RepositoryBean.Action::getName)).collect(Collectors.toList()));
+                    try {
+                        final StorageService storageService = StorageServiceFactory.getInstance(repository);
+                        List<ItemAction> actions = storageService.getRegisteredActions();
+                        if (actions != null) {
+                            bean.setActions(actions.stream().map(a -> new RepositoryBean.Action(a.name(), a.supportedFiles()))
+                                                   .sorted(Comparator.comparing(RepositoryBean.Action::getName)).collect(Collectors.toList()));
+                        }
+                        repositories.add(bean);
+                    } catch (Exception e) {
+                        final String msg = "Could not connect to repository " + repository.getName() + ". " + e.getMessage();
+                        warn(msg);
+                        Messaging.send(currentUser(),
+                                       Topic.WARNING.value(),
+                                       msg);
                     }
-                    repositories.add(bean);
                 }
                 return prepareResult(repositories);
             } catch (Exception e) {
