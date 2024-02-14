@@ -19,16 +19,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.jaas.JaasAuthenticationToken;
+import org.springframework.security.authentication.jaas.JaasGrantedAuthority;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Component;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.security.TokenCacheManager;
+import ro.cs.tao.user.User;
+
+import java.util.ArrayList;
 
 /**
  *
@@ -40,6 +46,8 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
 
     @Autowired
     private TokenManagementService tokenManagementService;
+    @Autowired
+    private UserProvider userProvider;
     private String apiDevToken;
 
     @Override
@@ -61,8 +69,10 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
             if (auth == null) {
                 final Token fullToken = TokenCacheManager.getCache().getFullToken(token);
                 final String userId = TokenCacheManager.getCache().getUser(token);
-                auth = new JaasAuthenticationToken(new UserPrincipal(userId), token, null, null);
-                auth.setAuthenticated(true);
+                final User user = userProvider.get(userId);
+                final UserPrincipal principal = new UserPrincipal(userId);
+                GrantedAuthority authority = new JaasGrantedAuthority(user.getGroups().get(0).getName(), principal);
+                auth = new JaasAuthenticationToken(principal, token, new ArrayList<>() {{ add(authority); }}, null);
                 TokenCacheManager.getCache().put(fullToken, auth);
             }
         }
