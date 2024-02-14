@@ -390,13 +390,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (userRepositories.stream().noneMatch(r -> repositoryId.equals(r.getId()))) {
                 throw new IllegalArgumentException("Operation not allowed");
             }
-            if (repository.getType() == RepositoryType.LOCAL) {
-                fileName = StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + (fileName.startsWith(user) ? fileName : user + "/" + fileName) + "\"";
-                folder = StringUtilities.isNullOrEmpty(folder) ? null : "\"" + (folder.startsWith(user) ? folder : user + "/" + folder) + "\"";
-            } else {
-                fileName = StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + fileName + "\"";
-                folder = StringUtilities.isNullOrEmpty(folder) ? null : "\"" + folder + "\"";
-            }
+            fileName = StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + fileName + "\"";
+            folder = StringUtilities.isNullOrEmpty(folder) ? null : "\"" + folder + "\"";
             final String json = String.format(tokenJSON, repositoryId, fileName, folder, user);
             return prepareResult("/files/get?token=" + URLEncoder.encode(Crypto.encrypt(json, SystemPrincipal.instance().getName()),
                                                                          StandardCharsets.UTF_8));
