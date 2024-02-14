@@ -35,6 +35,7 @@ import ro.cs.tao.services.security.TokenCacheManager;
 import ro.cs.tao.user.User;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -48,19 +49,21 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
     private TokenManagementService tokenManagementService;
     @Autowired
     private UserProvider userProvider;
-    private String apiDevToken;
+
+    private List<GrantedAuthority> apiAuthority;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        if (this.apiDevToken == null) {
-            this.apiDevToken = ConfigurationManager.getInstance().getValue("api.token");
-        }
         String token = (String) authentication.getPrincipal();
         if (token == null || token.isEmpty()) {
             throw new BadCredentialsException("Invalid token");
         }
-        if (token.equals(this.apiDevToken)) {
-            return new JaasAuthenticationToken(SystemPrincipal.instance(), token, null, null);
+        if (token.equals(ConfigurationManager.getInstance().getValue("api.token"))) {
+            if (this.apiAuthority == null) {
+                this.apiAuthority = new ArrayList<>();
+                apiAuthority.add(new JaasGrantedAuthority("ADMIN", SystemPrincipal.instance()));
+            }
+            return new JaasAuthenticationToken(SystemPrincipal.instance(), token, this.apiAuthority, null);
         }
         if (!tokenManagementService.isValid(token)) {
             throw new BadCredentialsException("Invalid token or token expired");
