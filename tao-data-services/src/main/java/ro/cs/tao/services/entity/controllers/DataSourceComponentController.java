@@ -379,6 +379,16 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     @RequestMapping(value = "/productset/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> deleteProductSet(@PathVariable("id") String id) {
         try {
+            this.service.delete(id);
+            return prepareResult(id, ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/productset/{id}/check", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> verifyProductSet(@PathVariable("id") String id) {
+        try {
             final DataSourceComponent component = this.service.findById(id);
             final SourceDescriptor descriptor = component.getSources().stream().filter(s -> DataSourceComponent.QUERY_PARAMETER.equals(s.getName())).findFirst().orElse(null);
             Map<String, Boolean> products = new LinkedHashMap<>();
@@ -395,16 +405,6 @@ public class DataSourceComponentController extends DataEntityController<DataSour
 
                 }
             }
-            return prepareResult(id, ResponseStatus.SUCCEEDED);
-        } catch (Exception e) {
-            return handleException(e);
-        }
-    }
-
-    @RequestMapping(value = "/productset/{id}/check", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> verifyProductSet(@PathVariable("id") String id) {
-        try {
-            this.service.delete(id);
             return prepareResult(id, ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
