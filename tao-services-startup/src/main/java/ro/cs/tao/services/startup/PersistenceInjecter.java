@@ -96,6 +96,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
         QueryExecutor.setWorkflowProvider(persistenceManager.workflows());
         QueryExecutor.setDataSourceConfigurationProvider(persistenceManager.dataSourceConfigurationProvider());
         QueryExecutor.setTaskProvider(persistenceManager.tasks());
+        QueryExecutor.setJobProvider(persistenceManager.jobs());
         QueryExecutor.setComponentProvider(persistenceManager.dataSourceComponents());
         DRMAAExecutor.setTaskProvider(persistenceManager.tasks());
         DRMAAExecutor.setContainerProvider(persistenceManager.containers());
