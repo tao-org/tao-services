@@ -21,7 +21,7 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.docker.Container;
-import ro.cs.tao.persistence.NodeProvider;
+import ro.cs.tao.persistence.NodeDBProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.services.interfaces.TopologyService;
@@ -48,7 +48,7 @@ public class TopologyServiceImpl
     @Autowired
     private TagProvider tagProvider;
     @Autowired
-    private NodeProvider nodeProvider;
+    private NodeDBProvider nodeDBProvider;
 
     public boolean isExternalProviderAvailable() {
         return topologyManager().isExternalProviderAvailable();
@@ -80,7 +80,7 @@ public class TopologyServiceImpl
 
     @Override
     public List<NodeDescription> getNodes(boolean active) {
-        return nodeProvider.list(active);
+        return nodeDBProvider.list(active);
     }
 
     @Override

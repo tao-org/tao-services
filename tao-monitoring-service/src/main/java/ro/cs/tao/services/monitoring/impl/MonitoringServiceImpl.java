@@ -25,7 +25,7 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.NotifiableComponent;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.MessageProvider;
-import ro.cs.tao.persistence.NodeProvider;
+import ro.cs.tao.persistence.NodeDBProvider;
 import ro.cs.tao.services.commons.MessageConverter;
 import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.interfaces.MonitoringService;
@@ -51,7 +51,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     @Autowired
     private MessageProvider messageProvider;
     @Autowired
-    private NodeProvider nodeProvider;
+    private NodeDBProvider nodeDBProvider;
 
     private String[] topics;
 
@@ -199,8 +199,8 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
                         master.setServicesStatus(node.getServicesStatus());
                         master.setFlavor(node.getFlavor());
                         master.setActive(true);
-                        master = nodeProvider.save(master);
-                        nodeProvider.delete(node.getId());
+                        master = nodeDBProvider.save(master);
+                        nodeDBProvider.delete(node.getId());
                         node = master;
                         logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                     }

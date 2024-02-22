@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.StringIdentifiable;
 import ro.cs.tao.orchestration.Orchestrator;
-import ro.cs.tao.persistence.NodeProvider;
+import ro.cs.tao.persistence.NodeDBProvider;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class TopologyController extends DataEntityController<NodeDescription, String, TopologyService> {
 
     @Autowired
-    private NodeProvider nodeProvider;
+    private NodeDBProvider nodeDBProvider;
 
     /**
      * List all the tags associated with topology nodes.
@@ -125,7 +125,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
                 if (StringUtilities.isNullOrEmpty(version)) {
                     version = "1.0";
                 }
-                serviceDescription = nodeProvider.getServiceDescription(serviceName, version);
+                serviceDescription = nodeDBProvider.getServiceDescription(serviceName, version);
             } else {
                 serviceDescription = null;
             }
