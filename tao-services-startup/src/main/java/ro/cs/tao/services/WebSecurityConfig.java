@@ -30,6 +30,9 @@ import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.firewall.HttpStatusRequestRejectedHandler;
+import org.springframework.security.web.firewall.RequestRejectedException;
+import org.springframework.security.web.firewall.RequestRejectedHandler;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -47,6 +50,9 @@ import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 
 import javax.servlet.Filter;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
@@ -58,6 +64,8 @@ import java.util.logging.Logger;
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implements ApplicationContextAware {
+
+    private final Logger logger = Logger.getLogger(WebSecurityConfig.class.getName());
 
     @Autowired
     private AuthenticationEntryPoint entryPoint;
@@ -128,6 +136,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     @Bean
     public ServletListenerRegistrationBean<HttpSessionEventPublisher> httpSessionEventPublisher() {
         return new ServletListenerRegistrationBean<HttpSessionEventPublisher>(new HttpSessionEventPublisher());
+    }
+
+    @Bean
+    public RequestRejectedHandler requestRejectedHandler() {
+        return new HttpStatusRequestRejectedHandler() {
+            @Override
+            public void handle(HttpServletRequest request, HttpServletResponse response, RequestRejectedException requestRejectedException) throws IOException {
+                logger.warning(requestRejectedException.getMessage() + " from " + request.getRequestURL());
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            }
+        };
     }
 
     @Override
