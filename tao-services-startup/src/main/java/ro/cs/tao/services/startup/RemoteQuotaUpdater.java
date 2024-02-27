@@ -3,18 +3,7 @@
  */
 package ro.cs.tao.services.startup;
 
-import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import org.apache.http.util.EntityUtils;
-
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.execution.model.ResourceUsage;
@@ -26,6 +15,17 @@ import ro.cs.tao.user.User;
 import ro.cs.tao.utils.CloseableHttpResponse;
 import ro.cs.tao.utils.HttpMethod;
 import ro.cs.tao.utils.NetUtils;
+import ro.cs.tao.utils.StringUtilities;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Periodically inspect the remote quota and save it to the keyclock profile.
@@ -174,28 +174,39 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 		
 	    private void updateUserData(String userId, String token, SessionDuration sessionDuration, int processingTime, long usedStorage) {
 	        final ConfigurationProvider cfgProvider = ConfigurationManager.getInstance();
-	        final int includeSessionTime = cfgProvider.getBooleanValue("quota.include.session.time") ? 1 : 0;
 	        final String serviceAPIUrl = cfgProvider.getValue("dunia.service.api.url", "https://dunia.esa.int/api/quota/tao");
-	        final String serviceAPIHeader = cfgProvider.getValue("dunia.service.api.key");
-	        final String header;
-	        if (serviceAPIHeader != null) {
-	            final String[] items = serviceAPIHeader.split(":");
-	            header = items[0];
-	            token = items[1];
-	        } else {
-	            header = "X-Auth-Token";
-	        }
-	        if (usedStorage > 0 && processingTime > 0) {
-				final String json = String.format(JSON_FULL, userId, includeSessionTime * sessionDuration.getDuration() + processingTime, usedStorage);
-				try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.POST, serviceAPIUrl, header, token, json)) {
-					if (response.getStatusLine().getStatusCode() > 201) {
-						throw new IOException(EntityUtils.toString(response.getEntity()));
-					}
-				} catch (Exception e) {
-					logger.severe(e.getMessage());
+			// If external URL is not defined, do nothing
+			if (!StringUtilities.isNullOrEmpty(serviceAPIUrl)) {
+				final String serviceAPIHeader = cfgProvider.getValue("dunia.service.api.key");
+				final int includeSessionTime = cfgProvider.getBooleanValue("quota.include.session.time") ? 1 : 0;
+				final String header;
+				if (serviceAPIHeader != null) {
+					// The configuration value should be in the form header_name:header_value
+					final String[] items = serviceAPIHeader.split(":");
+					header = items[0];
+					token = items[1];
+				} else {
+					header = "X-Auth-Token";
 				}
-			} else {
-				logger.finest(() -> String.format("User %s has no storage and/or no processing time, skipping", userId));
+				if (StringUtilities.isNullOrEmpty(token)) {
+					// The API token is not configured, and hence if the user is not logged into TAO, there is no token
+					logger.fine("API token for quota update is not configured and the user " + userId + " is offline");
+					return;
+				}
+				if (usedStorage > 0 && processingTime > 0) {
+					final String json = String.format(JSON_FULL, userId, includeSessionTime * sessionDuration.getDuration() + processingTime, usedStorage);
+					try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.POST, serviceAPIUrl, header, token, json)) {
+						if (response.getStatusLine().getStatusCode() > 201) {
+							throw new IOException(EntityUtils.toString(response.getEntity()));
+						} else {
+							logger.finest(() -> String.format("Storace and processing quota updated for user %s", userId));
+						}
+					} catch (Exception e) {
+						logger.severe(e.getMessage());
+					}
+				} else {
+					logger.finest(() -> String.format("User %s has no storage and/or no processing time, skipping", userId));
+				}
 			}
 	    }
 
