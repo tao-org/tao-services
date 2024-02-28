@@ -628,6 +628,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 throw new IOException("Cannot subscribe to owned shared data");
             }
             final Repository targetRepository = repositoryProvider.getUserPersistentRepository(uId);
+            if (targetRepository == null) {
+                throw new IOException("User doesn't have a persistent storage repository");
+            }
             final Repository sourceRepository = repositoryProvider.get(subscription.getRepositoryId());
             TransferRequest request = new TransferRequest();
             request.setSourceWorkspace(subscription.getRepositoryId());
