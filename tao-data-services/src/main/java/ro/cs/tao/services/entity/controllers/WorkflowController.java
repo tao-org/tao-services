@@ -553,15 +553,17 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
      *
      */
     @RequestMapping(value = "/publish", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> publish(@RequestParam("workflowId") long workflowId) {
+    public ResponseEntity<ServiceResponse<?>> publish(@RequestParam("workflowId") long workflowId,
+                                                      @RequestParam(name = "userId", required = false) String userId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             final WorkflowInfo info = service.getWorkflowInfo(workflowId);
             if (info == null) {
                 throw new IllegalArgumentException("[workflowId] Invalid argument");
             }
-            if (!info.getUserId().equals(currentUser())) {
-                return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
+            final String uId = StringUtilities.isNullOrEmpty(userId) ? currentUser() : userId;
+            if (!info.getUserId().equals(userId) && !isCurrentUserAdmin()) {
+                return prepareResult("Workflow should be published by the owner", HttpStatus.UNAUTHORIZED);
             }
             if (info.getStatus() != Status.READY) {
                 throw new IllegalArgumentException("The workflow status does not allow publication");
