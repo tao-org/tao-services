@@ -23,11 +23,9 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
-import ro.cs.tao.component.ProcessingComponent;
-import ro.cs.tao.component.ProcessingComponentBean;
-import ro.cs.tao.component.SourceDescriptor;
-import ro.cs.tao.component.TargetDescriptor;
+import ro.cs.tao.component.*;
 import ro.cs.tao.component.enums.ProcessingComponentType;
+import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.eodata.naming.NamingRule;
 import ro.cs.tao.persistence.PersistenceException;
@@ -309,6 +307,41 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     }
 
     /**
+     * Updates a template parameter of a processing component.
+     * Only the owner of the component or an administrator are allowed to invoke this method.
+     *
+     * @param parameter    The descriptor of the template parameter
+     *
+     */
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> updateTemplateParameter(@PathVariable("id") String id,
+                                                                      @RequestParam("parameterId") String paramId,
+                                                                      @RequestBody TemplateParameterDescriptor parameter) {
+        try {
+            if (StringUtilities.isNullOrEmpty(id)) {
+                throw new IllegalArgumentException("[id] missing");
+            }
+            if (StringUtilities.isNullOrEmpty(paramId)) {
+                throw new IllegalArgumentException("[parameterId] missing");
+            }
+            if (parameter == null) {
+                throw new IllegalArgumentException("empty body");
+            }
+            final ProcessingComponent component = service.findById(id);
+            if (currentUser().equals(component.getOwner()) || isCurrentUserAdmin()) {
+                final List<ParameterDescriptor> descriptors = component.getParameterDescriptors();
+                descriptors.removeIf(p -> p.getId().equals(paramId));
+                descriptors.add(parameter);
+                return super.update(id, component);
+            } else {
+                return prepareResult("Not authorized", ResponseStatus.FAILED);
+            }
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    /**
      * Removes a processing component.
      * Only the owner of the component or an administrator are allowed to invoke this method.
      * @param id    The component identifier
@@ -330,7 +363,28 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             return prepareResult("Not authorized", ResponseStatus.FAILED);
         }
     }
-
+    /**
+     * Clones an existing processing component for the current user
+     * @param entity    The descriptor of the processing component
+     *
+     */
+    @RequestMapping(value = "/clone", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> clone(@RequestParam("componentId") String componentId) {
+        try {
+            if (StringUtilities.isNullOrEmpty(componentId)) {
+                throw new IllegalArgumentException("[componentId] Missing");
+            }
+            final ProcessingComponent original = service.findById(componentId);
+            final ProcessingComponent cloned = original.clone();
+            cloned.setVisibility(ProcessingComponentVisibility.USER);
+            cloned.setId(UUID.randomUUID().toString());
+            cloned.setContainerId(original.getContainerId());
+            cloned.setOwner(currentUser());
+            return prepareResult(service.save(cloned));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
     /**
      * List all the constraints that can be applied to links of a workflow
      *
