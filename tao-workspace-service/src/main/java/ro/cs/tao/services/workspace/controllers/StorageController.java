@@ -932,11 +932,12 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("[fileName] cannot be null or empty");
         }
-        final Path filePath = Paths.get(SystemVariable.ROOT.value(), fileName).toAbsolutePath();
-        if (!Files.exists(filePath)) {
-            throw new IOException(String.format("File '%s' does not exist", filePath));
+        final Repository repository = getLocalWorkspace(user);
+        final Path path = Paths.get(repository.resolve(fileName)).toAbsolutePath();
+        if (!Files.exists(path)) {
+            throw new IOException(String.format("File '%s' does not exist", path));
         }
-        return getLocalRepositoryService(user).download(filePath.toString());
+        return getLocalRepositoryService(user).download(path.toString());
     }
 
     private Repository getOwnedWorkspace(String user, String workspaceId) throws IOException {
