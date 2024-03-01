@@ -417,10 +417,10 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
             }
             final FileObject fileObject = new FileObject(PROTOCOL, pathToRecord, Files.isDirectory(realPath), size);
             fileObject.setLastModified(lastModified);
-            if (isInFiles) {
+            // if (isInFiles) {
                 if (auxAttributes.containsKey(realPath)) {
                     fileObject.setAttributes(auxAttributes.get(realPath));
-                }
+            //    }
             } else {
                 final Path absPath = realPath.toAbsolutePath();
                 if (productAttributes.containsKey(absPath)) {
@@ -528,10 +528,10 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
             }
             final FileObject fileObject = new FileObject(PROTOCOL, pathToRecord, Files.isDirectory(realPath), size);
             fileObject.setLastModified(lastModified);
-            if (isInFiles) {
+            //if (isInFiles) {
                 if (auxAttributes.containsKey(realPath)) {
                     fileObject.setAttributes(auxAttributes.get(realPath));
-                }
+            //    }
             } else {
                 final Path absPath = realPath.toAbsolutePath();
                 if (productAttributes.containsKey(absPath)) {
