@@ -40,6 +40,7 @@ import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
@@ -370,7 +371,7 @@ public class ComponentServiceImpl
         if (tags != null) {
             List<Tag> componentTags = tagProvider.list(TagType.COMPONENT);
             for (String value : tags) {
-                if (componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
+                if (!StringUtilities.isNullOrEmpty(value) && componentTags.stream().noneMatch(t -> t.getText().equalsIgnoreCase(value))) {
                     try {
                         tagProvider.save(new Tag(TagType.COMPONENT, value));
                     } catch (PersistenceException e) {
