@@ -17,9 +17,13 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
@@ -27,9 +31,13 @@ import ro.cs.tao.component.*;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.naming.NamingRule;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.repository.ContainerRepository;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.serialization.BaseSerializer;
+import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.NamingRuleInfo;
@@ -41,7 +49,13 @@ import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 import ro.cs.tao.utils.AutoEvictableCache;
 import ro.cs.tao.utils.GenericComparator;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.utils.executors.MemoryUnit;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,6 +75,9 @@ public class ComponentController extends DataEntityController<ProcessingComponen
 
     @Autowired
     private NameTokenService nameTokenService;
+    @Autowired
+    @Qualifier("containerRepository")
+    private ContainerRepository containerRepository;
 
     /**
      * Lists the components of a given type that are visible to the current user
@@ -277,6 +294,31 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     }
 
     /**
+     * Export a processing component descriptor as json file.
+     * @param id    The component identifier
+     *
+     */
+    @RequestMapping(value = "/{id:.+}/export", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public void export(@PathVariable("id") String id, HttpServletResponse response) {
+        try {
+            ProcessingComponent entity;
+            entity = service.findById(id);
+            if (entity == null) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            } else {
+                response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + entity.getId());
+                response.setStatus(HttpStatus.OK.value());
+                final BaseSerializer<ProcessingComponent> serializer = SerializerFactory.create(ProcessingComponent.class, ro.cs.tao.serialization.MediaType.JSON);
+                final String jsonString = serializer.serialize(entity);
+                response.getOutputStream().write(jsonString.getBytes());
+            }
+        } catch (Exception e) {
+            error(e.getMessage());
+        }
+    }
+
+    /**
      * Creates a new processing component for the current user
      * @param entity    The descriptor of the processing component
      *
@@ -336,6 +378,46 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             } else {
                 return prepareResult("Not authorized", ResponseStatus.FAILED);
             }
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    /**
+     * Import a processing component descriptor from a json file.
+     * @param id    The component identifier
+     *
+     */
+    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public ResponseEntity<ServiceResponse<?>> importFile(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file == null || file.getOriginalFilename() == null) {
+                throw new IOException("Empty file");
+            }
+            final BaseSerializer<ProcessingComponent> serializer = SerializerFactory.create(ProcessingComponent.class, ro.cs.tao.serialization.MediaType.JSON);
+            final char[] buffer = new char[MemoryUnit.KB.value().intValue()];
+            final StringBuilder builder = new StringBuilder();
+            try (InputStream stream = file.getInputStream();
+                 Reader reader = new InputStreamReader(stream)) {
+                for (int numRead; (numRead = reader.read(buffer, 0, buffer.length)) > 0;) {
+                    builder.append(buffer, 0, numRead);
+                }
+            }
+            final ProcessingComponent entity = serializer.deserialize(builder.toString());
+            final ProcessingComponent existing = service.findById(entity.getId());
+            if (existing != null) {
+                throw new IOException("Processing component already exists");
+            }
+            Optional<Container> oContainer = containerRepository.findById(existing.getContainerId());
+            if (oContainer.isEmpty()) {
+                final Container container = containerRepository.findByName(existing.getContainerId());
+                if (container == null) {
+                    throw new IOException("The container of the component is not registered");
+                } else {
+                    entity.setContainerId(container.getId());
+                }
+            }
+            return prepareResult(service.save(entity));
         } catch (Exception e) {
             return handleException(e);
         }
