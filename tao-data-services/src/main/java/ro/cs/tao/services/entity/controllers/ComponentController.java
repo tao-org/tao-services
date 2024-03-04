@@ -313,9 +313,9 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      * @param parameter    The descriptor of the template parameter
      *
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/{id:.+}/{parameterId:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateTemplateParameter(@PathVariable("id") String id,
-                                                                      @RequestParam("parameterId") String paramId,
+                                                                      @PathVariable("parameterId") String paramId,
                                                                       @RequestBody TemplateParameterDescriptor parameter) {
         try {
             if (StringUtilities.isNullOrEmpty(id)) {
