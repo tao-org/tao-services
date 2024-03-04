@@ -203,7 +203,7 @@ public class UserController extends BaseController {
      * Returns the user login name
      * @param userId    The user account identifier
      */
-    @RequestMapping(value = "/name", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/name/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserName(@PathVariable("userId") String userId) {
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
