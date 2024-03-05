@@ -16,6 +16,7 @@
 package ro.cs.tao.services.entity.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,8 @@ import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.persistence.WorkflowNodeProvider;
+import ro.cs.tao.serialization.BaseSerializer;
+import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
@@ -49,6 +52,7 @@ import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
 import ro.cs.tao.workflow.enums.Status;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -635,6 +639,31 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             responseEntity = handleException(e);
         }
         return responseEntity;
+    }
+
+    /**
+     * Export a workflow descriptor as json file.
+     * @param id    The workflow identifier
+     *
+     */
+    @RequestMapping(value = "/{id:.+}/export", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public void export(@PathVariable("id") long id, HttpServletResponse response) {
+        try {
+            WorkflowDescriptor entity;
+            entity = service.getFullDescriptor(id);
+            if (entity == null) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            } else {
+                response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + entity.getId());
+                response.setStatus(HttpStatus.OK.value());
+                final BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, ro.cs.tao.serialization.MediaType.JSON);
+                final String jsonString = serializer.serialize(entity);
+                response.getOutputStream().write(jsonString.getBytes());
+            }
+        } catch (Exception e) {
+            error(e.getMessage());
+        }
     }
 
     private Visibility getConfiguredPublishedWorkflowVisibility() {

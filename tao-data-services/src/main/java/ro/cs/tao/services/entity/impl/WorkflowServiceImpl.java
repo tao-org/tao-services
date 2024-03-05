@@ -45,6 +45,10 @@ import ro.cs.tao.persistence.*;
 import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
 import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.serialization.BaseSerializer;
+import ro.cs.tao.serialization.MediaType;
+import ro.cs.tao.serialization.SerializationException;
+import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
@@ -57,7 +61,9 @@ import ro.cs.tao.services.utils.WorkflowUtilities;
 import ro.cs.tao.snap.xml.GraphParser;
 import ro.cs.tao.subscription.WorkflowSubscription;
 import ro.cs.tao.utils.ExceptionUtils;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.Tuple;
+import ro.cs.tao.utils.executors.MemoryUnit;
 import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
@@ -66,7 +72,12 @@ import ro.cs.tao.workflow.enums.ComponentType;
 import ro.cs.tao.workflow.enums.Status;
 
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -1164,6 +1175,47 @@ public class WorkflowServiceImpl
     @Override
     public void deleteWorkflowImage(long id) {
         workflowProvider.deleteWorkflowImage(id);
+    }
+
+    @Override
+    public WorkflowDescriptor importWorkflow(InputStream source) throws IOException, SerializationException, PersistenceException {
+        final BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, MediaType.JSON);
+        final char[] buffer = new char[MemoryUnit.KB.value().intValue()];
+        final StringBuilder builder = new StringBuilder();
+        try (Reader reader = new InputStreamReader(source)) {
+            for (int numRead; (numRead = reader.read(buffer, 0, buffer.length)) > 0;) {
+                builder.append(buffer, 0, numRead);
+            }
+        }
+        WorkflowDescriptor descriptor = serializer.deserialize(builder.toString());
+        WorkflowDescriptor existing;
+        if (descriptor.getId() != null) {
+            existing = getFullDescriptor(descriptor.getId());
+            // If the same id exists, let the persistence assign a new ID
+            if (existing != null) {
+                descriptor.setId(null);
+            }
+        }
+        existing = workflowProvider.getByName(descriptor.getName());
+        // Slightly modify the name because a workflow with the same name exists
+        if (existing != null) {
+            descriptor.setName(descriptor.getName() + " (imported " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + ")");
+        }
+        // Verify that all the components from nodes are registered with this instance
+        final List<WorkflowNodeDescriptor> nodes = descriptor.getNodes();
+        for (WorkflowNodeDescriptor node : nodes) {
+            final String componentId = node.getComponentId();
+            if (StringUtilities.isNullOrEmpty(componentId) || componentService.findById(componentId) == null) {
+                throw new IOException("Component for node [" + node.getName() + "] is missing or not registered");
+            }
+        }
+        return workflowProvider.save(descriptor);
+    }
+
+    @Override
+    public String exportWorkflow(WorkflowDescriptor descriptor) throws SerializationException {
+        final BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, MediaType.JSON);
+        return serializer.serialize(descriptor);
     }
 
     /**
