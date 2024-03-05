@@ -33,15 +33,17 @@ import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
 import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.security.SystemSessionContext;
-import ro.cs.tao.serialization.MediaType;
-import ro.cs.tao.serialization.SerializationException;
-import ro.cs.tao.serialization.Serializer;
-import ro.cs.tao.serialization.SerializerFactory;
+import ro.cs.tao.serialization.*;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.utils.executors.MemoryUnit;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -224,6 +226,39 @@ public class ComponentServiceImpl
     @Override
     public List<Tag> getComponentTags() {
         return tagProvider.list(TagType.COMPONENT);
+    }
+
+    @Override
+    public ProcessingComponent importComponent(InputStream source) throws IOException, SerializationException {
+        final BaseSerializer<ProcessingComponent> serializer = SerializerFactory.create(ProcessingComponent.class, MediaType.JSON);
+        final char[] buffer = new char[MemoryUnit.KB.value().intValue()];
+        final StringBuilder builder = new StringBuilder();
+        try (Reader reader = new InputStreamReader(source)) {
+            for (int numRead; (numRead = reader.read(buffer, 0, buffer.length)) > 0;) {
+                builder.append(buffer, 0, numRead);
+            }
+        }
+        final ProcessingComponent entity = serializer.deserialize(builder.toString());
+        final ProcessingComponent existing = findById(entity.getId());
+        if (existing != null) {
+            throw new IOException("Processing component already exists");
+        }
+        Container container = containerProvider.get(existing.getContainerId());
+        if (container == null) {
+            container = containerProvider.getByName(existing.getContainerId());
+            if (container == null) {
+                throw new IOException("The container of the component is not registered");
+            } else {
+                entity.setContainerId(container.getId());
+            }
+        }
+        return save(entity);
+    }
+
+    @Override
+    public String exportComponent(ProcessingComponent component) throws SerializationException {
+        final BaseSerializer<ProcessingComponent> serializer = SerializerFactory.create(ProcessingComponent.class, MediaType.JSON);
+        return serializer.serialize(component);
     }
 
     @Override

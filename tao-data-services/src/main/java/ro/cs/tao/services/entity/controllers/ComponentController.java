@@ -31,13 +31,10 @@ import ro.cs.tao.component.*;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.validation.ValidationException;
-import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.naming.NamingRule;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.repository.ContainerRepository;
 import ro.cs.tao.security.SessionStore;
-import ro.cs.tao.serialization.BaseSerializer;
-import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.NamingRuleInfo;
@@ -49,13 +46,10 @@ import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 import ro.cs.tao.utils.AutoEvictableCache;
 import ro.cs.tao.utils.GenericComparator;
 import ro.cs.tao.utils.StringUtilities;
-import ro.cs.tao.utils.executors.MemoryUnit;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -309,9 +303,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
                 response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                 response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + entity.getId());
                 response.setStatus(HttpStatus.OK.value());
-                final BaseSerializer<ProcessingComponent> serializer = SerializerFactory.create(ProcessingComponent.class, ro.cs.tao.serialization.MediaType.JSON);
-                final String jsonString = serializer.serialize(entity);
-                response.getOutputStream().write(jsonString.getBytes());
+                response.getOutputStream().write(service.exportComponent(entity).getBytes());
             }
         } catch (Exception e) {
             error(e.getMessage());
@@ -394,30 +386,9 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             if (file == null || file.getOriginalFilename() == null) {
                 throw new IOException("Empty file");
             }
-            final BaseSerializer<ProcessingComponent> serializer = SerializerFactory.create(ProcessingComponent.class, ro.cs.tao.serialization.MediaType.JSON);
-            final char[] buffer = new char[MemoryUnit.KB.value().intValue()];
-            final StringBuilder builder = new StringBuilder();
-            try (InputStream stream = file.getInputStream();
-                 Reader reader = new InputStreamReader(stream)) {
-                for (int numRead; (numRead = reader.read(buffer, 0, buffer.length)) > 0;) {
-                    builder.append(buffer, 0, numRead);
-                }
+            try (InputStream stream = file.getInputStream()) {
+                 return prepareResult(service.importComponent(stream));
             }
-            final ProcessingComponent entity = serializer.deserialize(builder.toString());
-            final ProcessingComponent existing = service.findById(entity.getId());
-            if (existing != null) {
-                throw new IOException("Processing component already exists");
-            }
-            Optional<Container> oContainer = containerRepository.findById(existing.getContainerId());
-            if (oContainer.isEmpty()) {
-                final Container container = containerRepository.findByName(existing.getContainerId());
-                if (container == null) {
-                    throw new IOException("The container of the component is not registered");
-                } else {
-                    entity.setContainerId(container.getId());
-                }
-            }
-            return prepareResult(service.save(entity));
         } catch (Exception e) {
             return handleException(e);
         }
