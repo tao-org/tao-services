@@ -1,19 +1,5 @@
 package ro.cs.tao.services.workspace.impl;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.eodata.EOProduct;
@@ -24,13 +10,11 @@ import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Notifiable;
 import ro.cs.tao.messaging.Topic;
-import ro.cs.tao.persistence.AuxiliaryDataProvider;
-import ro.cs.tao.persistence.EOProductProvider;
-import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.persistence.RepositoryProvider;
-import ro.cs.tao.persistence.VectorDataProvider;
+import ro.cs.tao.persistence.*;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.bridge.spring.SpringContextBridge;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.StorageService;
@@ -38,6 +22,18 @@ import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.workspace.model.TransferableItem;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Upload a job's files to the user's remote repository.
@@ -127,12 +123,19 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
     					localRepository, 
     					fo, 
     					remoteRepository, 
-    					Paths.get(job.getUserId(), fo.getRelativePath()).toString().replace('\\', '/'), 
+    					//Paths.get(job.getUserId(), fo.getRelativePath()).toString().replace('\\', '/'),
+						fo.getRelativePath(),
     					false, 
     					true)).collect(Collectors.toList());
 
     	transferService.request(items.toArray(new TransferableItem[items.size()]));
-    	
+
+		Messaging.send(new UserPrincipal(job.getUserId()),
+					   Topic.EXECUTION.value(),
+					   this,
+					   String.format("Results of [%s] will be transferred to %s. You can follow the progress in Repositories section.",
+									 job.getName(), remoteRepository.getName()));
+
     	// if required, delete all intermediate folders (their content should also be deleted, by implementation
     	if (ConfigurationManager.getInstance().getBooleanValue(REMOVE_INTERMEDIATE_FILES_KEY)) {
     		
