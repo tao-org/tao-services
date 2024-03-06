@@ -750,6 +750,7 @@ public class WorkflowServiceImpl
         return TransactionalMethod.withExceptionType(PersistenceException.class).execute(() -> {
             WorkflowDescriptor clone = new WorkflowDescriptor();
             clone.setName(workflow.getName() + " - " + System.currentTimeMillis());
+            clone.setDescription(workflow.getDescription());
             clone.setStatus(Status.DRAFT);
             clone.setCreated(LocalDateTime.now());
             clone.setActive(workflow.isActive());
@@ -768,6 +769,7 @@ public class WorkflowServiceImpl
                 clonedNode.setWorkflow(clone);
                 clonedNode.setCreatedFromNodeId(node.getId());
                 clonedNode.setName(node.getName());
+                clonedNode.setDescription(node.getDescription());
                 clonedNode.setxCoord(node.getxCoord());
                 clonedNode.setyCoord(node.getyCoord());
                 clonedNode.setComponentId(node.getComponentId());
