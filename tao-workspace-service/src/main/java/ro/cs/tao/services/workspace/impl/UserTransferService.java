@@ -6,8 +6,10 @@ import org.springframework.core.io.FileSystemResource;
 import ro.cs.tao.ListenableInputStream;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
@@ -158,7 +160,9 @@ public class UserTransferService {
                     this.progressListener.ended(true);
                     this.progressListener = null;
                 }
-                logger.finest("Transfer batch [" + item.getBatch() + "] completed");
+                final String msg = "Transfer batch [" + item.getBatch() + "] completed";
+                Messaging.send(new UserPrincipal(item.getUser()), Topic.INFORMATION.value(), this, msg);
+                logger.finest(msg);
             }
         } catch (Exception e) {
             logger.severe(ExceptionUtils.getStackTrace(logger, e));
