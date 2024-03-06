@@ -30,14 +30,15 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
     private static final Logger logger = Logger.getLogger(RepositoryWatcherServiceImpl.class.getName());
     private static final int BOUND = 10;
     private static final String WORKSPACE_DIR;
+    private static final String ROOT;
 
     private BlockingQueue<String> eventsQueue;
     private WatchService watcher;
     private Map<WatchKey, Path> keys;
 
     static {
-        String root = SystemVariable.ROOT.value().replace("\\", "/");
-        WORKSPACE_DIR = root.substring(root.lastIndexOf('/') + 1);
+        ROOT = SystemVariable.ROOT.value().replace("\\", "/");
+        WORKSPACE_DIR = ROOT.substring(ROOT.lastIndexOf('/') + 1);
     }
 
     @Autowired
@@ -62,6 +63,11 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
                 registerUser(user.getId());
             }
         }
+        try {
+            registerDirectory(Paths.get(SystemVariable.ROOT.value()));
+        } catch (IOException e) {
+            logger.warning(e.getMessage());
+        }
         final WatcherMonitor watcherMonitor = new WatcherMonitor();
         watcherMonitor.setName("WatcherMonitor");
         watcherMonitor.start();
@@ -82,7 +88,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
     @Override
     public void registerUser(String userId) {
         if (!SystemPrincipal.instance().getName().equals(userId)) {
-            final Path rootPath = Paths.get(SystemVariable.ROOT.value());
+            final Path rootPath = Paths.get(ROOT);
             try {
                 Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userId));
                 walkAndRegisterDirectories(userWorkspace);
@@ -97,7 +103,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
     @Override
     public void unregisterUser(String userId) {
         if (!SystemPrincipal.instance().getName().equals(userId)) {
-            final Path rootPath = Paths.get(SystemVariable.ROOT.value());
+            final Path rootPath = Paths.get(ROOT);
             try {
                 Path userWorkspace = FileUtilities.ensureExists(rootPath.resolve(userId));
                 walkAndUnregisterDirectories(userWorkspace);
@@ -202,7 +208,7 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
         if (SystemPrincipal.instance().getName().equals(userId)) {
             return -1;
         }
-        final Path userWorkspace = Paths.get(SystemVariable.ROOT.value()).resolve(userId);
+        final Path userWorkspace = Paths.get(ROOT).resolve(userId);
         if (!Files.exists(userWorkspace)) {
             return -1;
         }
@@ -243,14 +249,22 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
 
                     if (kind == ENTRY_CREATE) { // if directory is created, and watching recursively, then register it and its sub-directories
                         try {
-                            if (!Files.isSymbolicLink(child)) {
+                            if (directory.equals(Paths.get(ROOT))) {
                                 final BasicFileAttributes attributes = Files.readAttributes(child, BasicFileAttributes.class);
-                                if (attributes.isDirectory() || Files.isDirectory(child)) {
-                                    walkAndRegisterDirectories(child);
+                                if (attributes.isRegularFile() || Files.isRegularFile(child)) {
+                                    logger.warning(String.format("File %s created outside users folders", child));
+                                }
+                            } else {
+
+                                if (!Files.isSymbolicLink(child)) {
+                                    final BasicFileAttributes attributes = Files.readAttributes(child, BasicFileAttributes.class);
+                                    if (attributes.isDirectory() || Files.isDirectory(child)) {
+                                        walkAndRegisterDirectories(child);
+                                    }
                                 }
                             }
                         } catch (NoSuchFileException | NotDirectoryException ignored) {
-                            // a file may throw this exception if it's not fully "created"
+                        // a file may throw this exception if it's not fully "created"
                         } catch (IOException e) {
                             logger.severe(String.format("Cannot register directory %s. Reason: %s",
                                                         child, ExceptionUtils.getStackTrace(e)));
