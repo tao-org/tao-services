@@ -192,6 +192,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             checkPath(folder);
+            checkFile(file.getOriginalFilename());
             getLocalRepositoryService(currentUser()).storeUserFile(file, folder, description);
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
@@ -892,6 +893,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                                      @RequestParam(name = "name") String newName) {
         final String successMessage = String.format("Renaming [%s] completed", item);
         final String user = currentUser();
+        checkFile(newName);
         final TriConsumer<String, Exception, String> callback = (u, e, s) -> {
             String topic;
             String message;
@@ -984,20 +986,35 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         if (ex != null) {
             final String userId = currentUser();
             warn("User [%s] submitted a malicious path: %s", userId, path);
-            Integer count = maliciousAttempts.putIfAbsent(userId, 0);
-            if (count != null) {
-                count = maliciousAttempts.put(userId, count++);
-            }
-            if (count != null && count == 3) {
-                try {
-                    userProvider.disable(userId);
-                    error("Account " + userId + " was disabled due to multiple malicious attempts");
-                } catch (PersistenceException e) {
-                    warn(e.getMessage());
-                }
-                maliciousAttempts.remove(userId);
-            }
+            incrementAttempts(userId);
             throw ex;
+        }
+    }
+
+    private void checkFile(String fileName) {
+        if (!StringUtilities.isNullOrEmpty(fileName)) {
+            if (fileName.endsWith(".exe") || fileName.endsWith(".bat")) {
+                final String userId = currentUser();
+                warn("User [%s] submitted a suspicious file: %s", userId, fileName);
+                incrementAttempts(userId);
+                throw new IllegalArgumentException("Not allowed");
+            }
+        }
+    }
+
+    private void incrementAttempts(String userId) {
+        Integer count = maliciousAttempts.putIfAbsent(userId, 0);
+        if (count != null) {
+            count = maliciousAttempts.put(userId, count++);
+        }
+        if (count != null && count == 3) {
+            try {
+                userProvider.disable(userId);
+                error("Account " + userId + " was disabled due to multiple malicious attempts");
+            } catch (PersistenceException e) {
+                warn(e.getMessage());
+            }
+            maliciousAttempts.remove(userId);
         }
     }
 
