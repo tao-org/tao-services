@@ -26,7 +26,10 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.NodeFlavorProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ResourceSubscriptionProvider;
 import ro.cs.tao.persistence.managers.AuditManager;
 import ro.cs.tao.quota.UserQuotaManager;
@@ -45,9 +48,11 @@ import ro.cs.tao.services.model.user.DisableUserInfo;
 import ro.cs.tao.subscription.ResourceSubscription;
 import ro.cs.tao.subscription.SubscriptionType;
 import ro.cs.tao.topology.NodeFlavor;
+import ro.cs.tao.topology.TopologyException;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.utils.TriConsumer;
 import ro.cs.tao.utils.mail.MailSender;
 
 import javax.servlet.http.HttpServletRequest;
@@ -289,6 +294,19 @@ public class AdministrationController extends BaseController {
         if (request == null || (flavors = request.getFlavors()) == null || flavors.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
         }
+        final TriConsumer<String, Exception, String> callback = (u, e, s) -> {
+            String topic;
+            String message;
+            if (e == null) {
+                topic = Topic.INFORMATION.getCategory();
+                message = s;
+            } else {
+                topic = Topic.WARNING.getCategory();
+                message = e.getMessage();
+            }
+
+            Messaging.send(userId, topic, message);
+        };
         try {
             int idx = 0;
             for (Map.Entry<String, Map<String, Integer>> flavor : flavors.entrySet()) {
@@ -311,6 +329,14 @@ public class AdministrationController extends BaseController {
                     subscription.setObjectStorageGB(request.getObjectStorageGB());
                 }
                 resourceSubscriptionProvider.save(subscription);
+                final String successMessage = "Node with flavor " + nodeFlavor.getId() + " created";
+                asyncExecute(() -> {
+                    try {
+                        adminService.initializeSubscription(subscription);
+                    } catch (PersistenceException e) {
+                        throw new TopologyException(e);
+                    }
+                }, successMessage, callback);
                 idx++;
             }
             return prepareResult("Subscriptions created");
