@@ -50,6 +50,7 @@ import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.mail.MailSender;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.LocalDateTime;
@@ -552,7 +553,7 @@ public class AdministrationController extends BaseController {
      * @param userId    The user to impersonate
      */
     @RequestMapping(value = "/impersonate", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> impersonate(@RequestParam("userId") String userId) throws IOException {
+    public ResponseEntity<ServiceResponse<?>> impersonate(@RequestParam("userId") String userId, HttpServletRequest request) throws IOException {
         try {
             if (!isCurrentUserAdmin()) {
                 throw new IllegalArgumentException();
@@ -567,8 +568,9 @@ public class AdministrationController extends BaseController {
                 String url = ConfigurationManager.getInstance().getValue("keycloak.auth-server-url");
                 String realm = ConfigurationManager.getInstance().getValue("keycloak.realm");
                 String client = ConfigurationManager.getInstance().getValue("keycloak.resource");
+                request.getSession().invalidate();
                 return prepareResult(url + "/realms/" + realm + "/protocol/openid-connect/auth?response_type=code&scope=openid&client_id="
-                        + client + "&redirect_uri=" + ConfigurationManager.getInstance().getValue("tao.services.base"));
+                        + client + "&redirect_uri=" + ConfigurationManager.getInstance().getValue("tao.services.base") + "/ui/login.html");
 
             }
         } catch (Exception e) {
