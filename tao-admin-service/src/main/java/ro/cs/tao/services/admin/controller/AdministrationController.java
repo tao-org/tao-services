@@ -23,12 +23,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.EnumUtils;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.persistence.NodeFlavorProvider;
 import ro.cs.tao.persistence.ResourceSubscriptionProvider;
 import ro.cs.tao.persistence.managers.AuditManager;
 import ro.cs.tao.quota.UserQuotaManager;
+import ro.cs.tao.security.AuthenticationMode;
 import ro.cs.tao.services.admin.beans.Flavor;
 import ro.cs.tao.services.admin.beans.ResourceSubscriptionRequest;
 import ro.cs.tao.services.admin.beans.ResourceSubscriptionResponse;
@@ -48,6 +50,7 @@ import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.mail.MailSender;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -540,6 +543,36 @@ public class AdministrationController extends BaseController {
             return prepareResult(String.format("Message sent to: %s", String.join(",", activeUsers)), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             return handleException(ex);
+        }
+    }
+
+    /**
+     * Forces the keycloak redirection after an impersonation action (on keycloak)
+     *
+     * @param userId    The user to impersonate
+     */
+    @RequestMapping(value = "/impersonate", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> impersonate(@RequestParam("userId") String userId) throws IOException {
+        try {
+            if (!isCurrentUserAdmin()) {
+                throw new IllegalArgumentException();
+            } else {
+                final AuthenticationMode authMode = EnumUtils.getEnumConstantByName(AuthenticationMode.class,
+                                                                                    ConfigurationManager.getInstance()
+                                                                                                        .getValue("authentication.mode", "local")
+                                                                                                        .toUpperCase());
+                if (authMode != AuthenticationMode.KEYCLOAK) {
+                    throw new IllegalArgumentException("Auth mode not Keycloak");
+                }
+                String url = ConfigurationManager.getInstance().getValue("keycloak.auth-server-url");
+                String realm = ConfigurationManager.getInstance().getValue("keycloak.realm");
+                String client = ConfigurationManager.getInstance().getValue("keycloak.resource");
+                return prepareResult(url + "/realms/" + realm + "/protocol/openid-connect/auth?response_type=code&scope=openid&client_id="
+                        + client + "&redirect_uri=" + ConfigurationManager.getInstance().getValue("tao.services.base"));
+
+            }
+        } catch (Exception e) {
+            return handleException(e);
         }
     }
 
