@@ -17,15 +17,23 @@ package ro.cs.tao.services.admin.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.persistence.NodeDBProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.model.user.DisableUserInfo;
 import ro.cs.tao.services.model.user.UserMapping;
 import ro.cs.tao.services.model.user.UserUnicityInfo;
+import ro.cs.tao.subscription.ResourceSubscription;
+import ro.cs.tao.subscription.SubscriptionType;
+import ro.cs.tao.topology.NodeDescription;
+import ro.cs.tao.topology.NodeFlavor;
+import ro.cs.tao.topology.TopologyException;
+import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
@@ -44,7 +52,8 @@ public class AdministrationServiceImpl implements AdministrationService {
 
     @Autowired
     private UserProvider userProvider;
-
+    @Autowired
+    private NodeDBProvider nodeDBProvider;
 
     @Override
     public User addNewUser(User newUserInfo) throws PersistenceException {
@@ -116,5 +125,16 @@ public class AdministrationServiceImpl implements AdministrationService {
         msg.setTopic(Topic.INFORMATION.value());
         msg.setTimestamp(System.currentTimeMillis());
         Messaging.send(msg);
+    }
+
+    @Override
+    public void initializeSubscription(ResourceSubscription subscription) throws TopologyException, PersistenceException {
+        final TopologyManager topologyManager = TopologyManager.getInstance();
+        if (topologyManager.isExternalProviderAvailable() && subscription.getType() == SubscriptionType.FIXED_RESOURCES) {
+            final NodeFlavor flavor = subscription.getFlavor();
+            final int existing = nodeDBProvider.countUsableNodes(subscription.getUserId());
+            final NodeDescription node = NodeManager.getInstance().getNewNodeDescription(existing, subscription.getUserId(), flavor);
+            topologyManager.addNode(node);
+        }
     }
 }
