@@ -182,6 +182,21 @@
             <artifactId>tao-workspace-stac</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.c-s.tao</groupId>
+            <artifactId>tao-functions</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.c-s.tao</groupId>
+            <artifactId>tao-products-sentinels</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.c-s.tao</groupId>
+            <artifactId>tao-products-landsat</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!--<dependency>
             <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-integration-sen2agri</artifactId>
