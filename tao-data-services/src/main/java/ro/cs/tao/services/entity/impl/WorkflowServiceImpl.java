@@ -285,6 +285,7 @@ public class WorkflowServiceImpl
         existing.setZoom(object.getZoom());
         existing.setTags(object.getTags());
         existing.setActive(object.isActive());
+        existing.setDescription(object.getDescription());
         //addTagsIfNew(object);
         return workflowProvider.update(existing);
     }
