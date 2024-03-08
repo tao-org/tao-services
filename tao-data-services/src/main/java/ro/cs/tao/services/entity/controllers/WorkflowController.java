@@ -27,7 +27,9 @@ import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.ComponentLink;
+import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceException;
@@ -47,6 +49,7 @@ import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.user.User;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
@@ -387,9 +390,11 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                                          @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
+            final List<ParameterValue> customValues = node.getCustomValues();
+            validateValueTypes(node);
             responseEntity = prepareResult(service.updateNode(workflowId, node));
             record("Node " + node.getName() + " in workflow " + workflowId + " modified");
-        } catch (PersistenceException e) {
+        } catch (Exception e) {
             responseEntity = handleException(e);
         }
         return responseEntity;
@@ -405,9 +410,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                                           @RequestBody List<WorkflowNodeDescriptor> nodes) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
+            for (WorkflowNodeDescriptor node : nodes) {
+                validateValueTypes(node);
+            }
             responseEntity = prepareResult(service.updateNodes(workflowId, nodes));
             record("Nodes " + nodes.stream().map(WorkflowNodeDescriptor::getName).collect(Collectors.joining(",")) + " in workflow " + workflowId + " modified");
-        } catch (PersistenceException e) {
+        } catch (Exception e) {
             responseEntity = handleException(e);
         }
         return responseEntity;
@@ -663,6 +671,39 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             }
         } catch (Exception e) {
             error(e.getMessage());
+        }
+    }
+
+    private void validateValueTypes(WorkflowNodeDescriptor node) throws ValidationException {
+        final List<ParameterValue> customValues = node.getCustomValues();
+        if (customValues != null) {
+            List<String> errors = null;
+            final ProcessingComponent component = componentService.findById(node.getComponentId());
+            for (ParameterValue value : customValues) {
+                final ParameterDescriptor descriptor = component.getParameterDescriptors()
+                                                                .stream()
+                                                                .filter(p -> p.getName().equals(value.getParameterName()))
+                                                                .findFirst().get();
+                try {
+                    if (!descriptor.javaType().isArrayType()) {
+                        descriptor.javaType().parse(value.getParameterValue());
+                    } else {
+                        descriptor.javaType().parseArray(value.getParameterValue());
+                    }
+                } catch (Exception e) {
+                    if (errors == null) {
+                        errors = new ArrayList<>();
+                    }
+                    errors.add(String.format("[%s.%s] %s is not of expected type (%s)",
+                                             node.getName(),
+                                             value.getParameterName(),
+                                             value.getParameterValue(),
+                                             descriptor.javaType().friendlyName()));
+                }
+            }
+            if (errors != null) {
+                throw new ValidationException(String.join("\n", errors));
+            }
         }
     }
 
