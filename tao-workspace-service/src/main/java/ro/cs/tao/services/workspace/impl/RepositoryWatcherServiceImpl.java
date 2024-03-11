@@ -192,7 +192,11 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
         while (dirTokenizer.hasMoreElements()) {
             String nextDirectory = dirTokenizer.nextToken();
             if (nextDirectory.equalsIgnoreCase(WORKSPACE_DIR)) {
-                return dirTokenizer.nextToken();
+                try {
+                    return dirTokenizer.nextToken();
+                } catch (NoSuchElementException e) {
+                    logger.warning(e.getMessage());
+                }
             }
         }
         return null;
