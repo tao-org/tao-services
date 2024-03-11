@@ -17,6 +17,7 @@
 package ro.cs.tao.services.orchestration.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.ggf.drmaa.SessionFactory;
 import org.locationtech.jts.geom.Envelope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.datasource.param.CommonParameterNames;
+import ro.cs.tao.drmaa.Environment;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.ExecutionsManager;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
@@ -61,6 +63,23 @@ public class OrchestrationController extends BaseController {
     private ExecutionJobProvider executionJobManager;
     @Autowired
     private ExecutionTaskProvider executionTaskProvider;
+
+    /**
+     * Returns the available parameters for a workflow
+     * @param workflowId    The workflow identifier
+     */
+    @RequestMapping(value = "/environment", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getEnvironments() {
+        try {
+            Set<Environment> environments = SessionFactory.getEnvironments();
+            if (environments == null) {
+                environments = new HashSet<>();
+            }
+            return prepareResult(environments.stream().toList().stream().sorted());
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
 
     /**
      * Starts the execution of a workflow
