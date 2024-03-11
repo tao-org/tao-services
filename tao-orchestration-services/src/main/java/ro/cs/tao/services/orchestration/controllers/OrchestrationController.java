@@ -75,7 +75,14 @@ public class OrchestrationController extends BaseController {
             if (environments == null) {
                 environments = new HashSet<>();
             }
-            return prepareResult(environments.stream().toList().stream().sorted());
+            final List<Environment> list = environments.stream().toList();
+            list.sort(new Comparator<Environment>() {
+                @Override
+                public int compare(Environment o1, Environment o2) {
+                    return o1.value().compareTo(o2.value());
+                }
+            });
+            return prepareResult(list);
         } catch (Exception ex) {
             return handleException(ex);
         }
