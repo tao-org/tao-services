@@ -12,9 +12,6 @@ import ro.cs.tao.spi.ServiceRegistryManager;
 
 public class OrchestratorInitializer extends BaseLifeCycle {
 	
-	/**	Upload results to bucket. */
-	private static final String UPLOAD_RESULTS_TO_BUCKET = "tao.upload.to.bucket";
-	
     @Override
     public int priority() { return 9; }
 
@@ -23,10 +20,8 @@ public class OrchestratorInitializer extends BaseLifeCycle {
         final Orchestrator orchestrator = Orchestrator.getInstance();
         DRMAAExecutor.setApplicationId(orchestrator.getId());
         NodeManager.getInstance().setApplicationId(orchestrator.getId());
-        if (ConfigurationManager.getInstance().getBooleanValue(UPLOAD_RESULTS_TO_BUCKET)) {
-            // register the listener implementation that moves the files to the user's remote repository on job completion
-            orchestrator.addJobListener(new JobFilesUpload());
-        }
+        // add the job listener to upload the files to the remote repository
+        orchestrator.addJobListener(new JobFilesUpload());
         final ServiceRegistry<TokenResolver> registry = ServiceRegistryManager.getInstance().getServiceRegistry(TokenResolver.class);
         NameExpressionParser.setResolvers(registry.getServices());
         orchestrator.start();
