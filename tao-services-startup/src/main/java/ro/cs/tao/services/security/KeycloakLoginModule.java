@@ -2,6 +2,7 @@ package ro.cs.tao.services.security;
 
 import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.AuthenticationMode;
 import ro.cs.tao.security.TaoLoginModule;
 import ro.cs.tao.security.TokenCache;
@@ -10,6 +11,7 @@ import ro.cs.tao.user.User;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class KeycloakLoginModule extends TaoLoginModule {
@@ -21,6 +23,12 @@ public class KeycloakLoginModule extends TaoLoginModule {
         this.client = new KeycloakClient();
         final TokenCache cache = TokenCacheManager.getCache();
         this.client.setTokenKeeper(cache);
+        this.client.setUserProvider(new Supplier<UserProvider>() {
+            @Override
+            public UserProvider get() {
+                return userProvider;
+            }
+        });
     }
 
     @Override

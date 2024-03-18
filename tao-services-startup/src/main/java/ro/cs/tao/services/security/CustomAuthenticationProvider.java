@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceManager;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.*;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
@@ -37,6 +38,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
@@ -67,12 +69,22 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             // Keycloak settings are present
             final KeycloakClient client = new KeycloakClient();
             client.setTokenKeeper(TokenCacheManager.getCache());
+            client.setUserProvider(new Supplier<UserProvider>() {
+                @Override
+                public UserProvider get() {
+                    return persistenceManager.users();
+                }
+            });
             this.tokenService.setTokenProvider(client);
         }
         this.localTokenProvider = new TokenProvider() { };
     }
 
     public static void setPersistenceManager(PersistenceManager manager) { persistenceManager = manager; }
+
+    UserProvider getUserProvider() {
+        return persistenceManager.users();
+    }
 
     @Override
     public Authentication authenticate(Authentication authentication) {
