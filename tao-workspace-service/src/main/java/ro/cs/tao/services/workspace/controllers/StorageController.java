@@ -639,6 +639,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             request.setDestinationPath(subscription.getName());
             request.setMove(false);
             request.setOverwrite(true);
+            request.setFromAnotherUser(true);
             String relativePath = subscription.getDataRootPath().replace(sourceRepository.root() + "/", "");
             final StorageService storageService = getRepositoryService(sourceRepository);
             request.setFileObjects(storageService.listTree(relativePath));
@@ -678,12 +679,15 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             checkPath(request.getDestinationPath());
             fileObjects.forEach(f -> checkPath(f.getRelativePath()));
             final String currentUser = currentUser();
+            final boolean isFromAnother = request.getFromAnotherUser() != null && request.getFromAnotherUser();
             asyncExecute(() -> {
                 if (request == null) {
                     throw new IllegalArgumentException("Empty body");
                 }
                 final List<FileObject> requestedFiles = fileObjects;
-                final Repository srcWorkspace = getOwnedWorkspace(currentUser, request.getSourceWorkspace());
+                final Repository srcWorkspace = isFromAnother
+                                                ? getWorkspace(request.getSourceWorkspace())
+                                                : getOwnedWorkspace(currentUser, request.getSourceWorkspace());
                 final Repository dstWorkspace = getOwnedWorkspace(currentUser, request.getDestinationWorkspace());
                 if (dstWorkspace.isReadOnly()) {
                     throw new AccessDeniedException("Destination is read-only");
@@ -949,6 +953,22 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         }
         if (!user.equals(workspace.getUserId())) {
             throw new AccessDeniedException("Operation not allowed");
+        }
+        return workspace;
+    }
+
+    private Repository getPersistentWorkspace(String user, String workspaceId) throws IOException {
+        final Repository workspace = repositoryProvider.getUserPersistentRepository(user);
+        if (workspace == null) {
+            throw new IOException("Workspace does not exist");
+        }
+        return workspace;
+    }
+
+    private Repository getWorkspace(String workspaceId) throws IOException {
+        final Repository workspace = repositoryProvider.get(workspaceId);
+        if (workspace == null) {
+            throw new IOException("Workspace does not exist");
         }
         return workspace;
     }
