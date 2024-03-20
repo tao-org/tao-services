@@ -580,7 +580,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             if (info.getStatus() != Status.READY) {
                 throw new IllegalArgumentException("The workflow status does not allow publication");
             }
-            final WorkflowDescriptor descriptor = service.getDescriptor(info.getName());
+            final WorkflowDescriptor descriptor = service.findById(workflowId);
             descriptor.setStatus(Status.PUBLISHED);
             descriptor.setVisibility(getConfiguredPublishedWorkflowVisibility());
             responseEntity = prepareResult(service.update(descriptor));
@@ -683,22 +683,24 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                 final ParameterDescriptor descriptor = component.getParameterDescriptors()
                                                                 .stream()
                                                                 .filter(p -> p.getName().equals(value.getParameterName()))
-                                                                .findFirst().get();
-                try {
-                    if (!descriptor.javaType().isArrayType()) {
-                        descriptor.javaType().parse(value.getParameterValue());
-                    } else {
-                        descriptor.javaType().parseArray(value.getParameterValue());
+                                                                .findFirst().orElse(null);
+                if (descriptor != null) {
+                    try {
+                        if (!descriptor.javaType().isArrayType()) {
+                            descriptor.javaType().parse(value.getParameterValue());
+                        } else {
+                            descriptor.javaType().parseArray(value.getParameterValue());
+                        }
+                    } catch (Exception e) {
+                        if (errors == null) {
+                            errors = new ArrayList<>();
+                        }
+                        errors.add(String.format("[%s.%s] %s is not of expected type (%s)",
+                                                 node.getName(),
+                                                 value.getParameterName(),
+                                                 value.getParameterValue(),
+                                                 descriptor.javaType().friendlyName()));
                     }
-                } catch (Exception e) {
-                    if (errors == null) {
-                        errors = new ArrayList<>();
-                    }
-                    errors.add(String.format("[%s.%s] %s is not of expected type (%s)",
-                                             node.getName(),
-                                             value.getParameterName(),
-                                             value.getParameterValue(),
-                                             descriptor.javaType().friendlyName()));
                 }
             }
             if (errors != null) {
