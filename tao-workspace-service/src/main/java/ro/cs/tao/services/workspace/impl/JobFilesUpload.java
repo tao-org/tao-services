@@ -24,7 +24,6 @@ import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -240,15 +239,15 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
 	    	final Path localPath = Paths.get(localRepository.resolve(fileName));
 	    	final Path localRepositoryPath = Paths.get(localRepository.root());
 	    	final Path relativePath = localRepositoryPath.relativize(localPath);
-	    	final URI remoteURI = URI.create(remoteRepository.getUrlPrefix() + "://" + remoteRepository.resolve(buildRelativePath(relativePath.toString().replace("\\", "/"))));
-	    	
-            // check if it's linked to a raster product
+	    	//final URI remoteURI = URI.create(remoteRepository.getUrlPrefix() + "://" + remoteRepository.resolve(buildRelativePath(relativePath.toString().replace("\\", "/"))));
+			final String location = remoteRepository.getUrlPrefix() + "://" + remoteRepository.resolve(buildRelativePath(relativePath.toString().replace("\\", "/")));
+			// check if it's linked to a raster product
             final List<EOProduct> products = productProvider.getByLocation(localPath.toUri().toString());
             if (products != null && !products.isEmpty()) {
                 for (EOProduct product : products) {
                     try {
                     	// update location
-                    	product.setLocation(remoteURI.toString());
+                    	product.setLocation(location);
                         productProvider.save(product);
                     } catch (PersistenceException e) {
                         logger.warning(String.format("Failed to update raster product %s. Reason: %s",
@@ -265,7 +264,7 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
                     for (VectorData product : vectorProducts) {
                         try {
                         	// update location
-                        	product.setLocation(remoteURI.toString());
+                        	product.setLocation(location);
                             vectorDataProvider.save(product);
                         } catch (PersistenceException e) {
                             logger.warning(String.format("Failed to update vector product %s. Reason: %s",
@@ -281,7 +280,7 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
                     if (data != null) {
                         try {
                         	// update location
-                        	data.setLocation(remoteURI.toString());
+                        	data.setLocation(location);
                             auxiliaryDataProvider.save(data);
                         } catch (PersistenceException e) {
                             logger.warning(String.format("Failed to update auxiliary data %s. Reason: %s",
