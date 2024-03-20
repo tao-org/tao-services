@@ -58,6 +58,7 @@ public class MessageConverter implements Converter<Message, WSNotification> {
                 }
             } catch (Exception ignored) {
                 final String key = entry.getKey();
+                data = new HashMap<>();
                 data.put(key != null ? key : "unknown", entryValue);
             }
             if (value instanceof DownloadProgress) {
