@@ -28,7 +28,9 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,6 +69,9 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
 
     /** File transfer service. */
     private final TransferService transferService;
+    
+    /** The files that are to be transfered. */
+    private final Set<String> files = new HashSet<>();
     
 	/**
 	 * Constructor.
@@ -124,16 +129,20 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
    			!localRepository.equals(remoteRepository)) {
         	
         	// create a list of transferable items containing only the files from the terminal nodes.
+    		// also add the remote path to the internal set.
         	final List<TransferableItem> items = producedItems.stream().filter(fo -> !fo.isFolder() && isTransferableFile(fo, filters))
-        			.map(fo -> new TransferableItem(job.getUserId(), 
+        			.map(fo -> {
+        				final String remoterelativePath = buildRelativePath(fo.getRelativePath());
+        				files.add(remoterelativePath);
+        				return new TransferableItem(job.getUserId(), 
         					job.getUserId() + "/" + job.getId(), 
         					localRepository, 
         					fo, 
         					remoteRepository, 
         					//Paths.get(job.getUserId(), fo.getRelativePath()).toString().replace('\\', '/'),
-    						buildRelativePath(fo.getRelativePath()),
+        					remoterelativePath,
         					false, 
-        					true)).collect(Collectors.toList());
+        					true);}).collect(Collectors.toList());
 
         	transferService.request(items.toArray(new TransferableItem[items.size()]));
 
@@ -239,65 +248,71 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
 	    	final Path localPath = Paths.get(localRepository.resolve(fileName));
 	    	final Path localRepositoryPath = Paths.get(localRepository.root());
 	    	final Path relativePath = localRepositoryPath.relativize(localPath);
-	    	//final URI remoteURI = URI.create(remoteRepository.getUrlPrefix() + "://" + remoteRepository.resolve(buildRelativePath(relativePath.toString().replace("\\", "/"))));
-			final String location = remoteRepository.getUrlPrefix() + "://" + remoteRepository.resolve(buildRelativePath(relativePath.toString().replace("\\", "/")));
-			// check if it's linked to a raster product
-            final List<EOProduct> products = productProvider.getByLocation(localPath.toUri().toString());
-            if (products != null && !products.isEmpty()) {
-                for (EOProduct product : products) {
-                    try {
-                    	// update location
-                    	product.setLocation(location);
-                        productProvider.save(product);
-                    } catch (PersistenceException e) {
-                        logger.warning(String.format("Failed to update raster product %s. Reason: %s",
-                                                     product.getName(), e.getMessage()));
-                    } catch (URISyntaxException e) {
-                        logger.warning(String.format("Failed to update raster product %s. Reason: %s",
-                                product.getName(), e.getMessage()));
-					}
-                }
-            } else {
-                // If not, maybe it's linked to a vector product
-                final List<VectorData> vectorProducts = vectorDataProvider.getByLocation(localPath.toUri().toString());
-                if (vectorProducts != null && !vectorProducts.isEmpty()) {
-                    for (VectorData product : vectorProducts) {
-                        try {
-                        	// update location
-                        	product.setLocation(location);
-                            vectorDataProvider.save(product);
-                        } catch (PersistenceException e) {
-                            logger.warning(String.format("Failed to update vector product %s. Reason: %s",
-                                                         product.getName(), e.getMessage()));
-                        } catch (URISyntaxException e) {
-                            logger.warning(String.format("Failed to update vector product %s. Reason: %s",
-                                    product.getName(), e.getMessage()));
-                        }
-                    }
-                } else {
-                    // If not, maybe it's linked to an auxiliary file
-                    AuxiliaryData data = auxiliaryDataProvider.getByLocation(localPath.toUri().toString());
-                    if (data != null) {
-                        try {
-                        	// update location
-                        	data.setLocation(location);
-                            auxiliaryDataProvider.save(data);
-                        } catch (PersistenceException e) {
-                            logger.warning(String.format("Failed to update auxiliary data %s. Reason: %s",
-                                                         data.getLocation(), e.getMessage()));
-                        }
-                    }
-                }
-            }
+	    	final String remoteRelativePath = buildRelativePath(relativePath.toString().replace("\\", "/"));
+	    	// process only the files that were added for transfer by this object.
+	    	if (files.contains(remoteRelativePath)) {
+	    		files.remove(remoteRelativePath);
+		    	//final URI remoteURI = URI.create(remoteRepository.getUrlPrefix() + "://" + remoteRepository.resolve(buildRelativePath(relativePath.toString().replace("\\", "/"))));
+				final String location = remoteRepository.getUrlPrefix() + "://" + remoteRepository.resolve(remoteRelativePath.substring(0, remoteRelativePath.indexOf('/')));
+				// check if it's linked to a raster product
+	            final List<EOProduct> products = productProvider.getByLocation(localPath.toUri().toString());
+	            if (products != null && !products.isEmpty()) {
+	                for (EOProduct product : products) {
+	                    try {
+	                    	// update location
+	                    	product.setLocation(location);
+	                        productProvider.save(product);
+	                    } catch (PersistenceException e) {
+	                        logger.warning(String.format("Failed to update raster product %s. Reason: %s",
+	                                                     product.getName(), e.getMessage()));
+	                    } catch (URISyntaxException e) {
+	                        logger.warning(String.format("Failed to update raster product %s. Reason: %s",
+	                                product.getName(), e.getMessage()));
+						}
+	                }
+	            } else {
+	                // If not, maybe it's linked to a vector product
+	                final List<VectorData> vectorProducts = vectorDataProvider.getByLocation(localPath.toUri().toString());
+	                if (vectorProducts != null && !vectorProducts.isEmpty()) {
+	                    for (VectorData product : vectorProducts) {
+	                        try {
+	                        	// update location
+	                        	product.setLocation(location);
+	                            vectorDataProvider.save(product);
+	                        } catch (PersistenceException e) {
+	                            logger.warning(String.format("Failed to update vector product %s. Reason: %s",
+	                                                         product.getName(), e.getMessage()));
+	                        } catch (URISyntaxException e) {
+	                            logger.warning(String.format("Failed to update vector product %s. Reason: %s",
+	                                    product.getName(), e.getMessage()));
+	                        }
+	                    }
+	                } else {
+	                    // If not, maybe it's linked to an auxiliary file
+	                    AuxiliaryData data = auxiliaryDataProvider.getByLocation(localPath.toUri().toString());
+	                    if (data != null) {
+	                        try {
+	                        	// update location
+	                        	data.setLocation(location);
+	                            auxiliaryDataProvider.save(data);
+	                        } catch (PersistenceException e) {
+	                            logger.warning(String.format("Failed to update auxiliary data %s. Reason: %s",
+	                                                         data.getLocation(), e.getMessage()));
+	                        }
+	                    }
+	                }
+	            }
 
-            // delete the local file
-            try {
-				Files.delete(localPath);
-	            logger.finest("Removed file " + fileName);
-			} catch (IOException e) {
-                logger.warning(String.format("Failed to delete file %s. Reason: %s",
-                		fileName, e.getMessage()));
-			}
+	            // delete the local file 
+	            try {
+					Files.delete(localPath);
+		            logger.finest("Removed file " + fileName);
+				} catch (IOException e) {
+	                logger.warning(String.format("Failed to delete file %s. Reason: %s",
+	                		fileName, e.getMessage()));
+				}	
+	    	}
+
 		}
 	}
 }
