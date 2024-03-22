@@ -270,7 +270,7 @@ public class ViewerController extends ControllerBase {
             final List<String> outFiles = new ArrayList<>();
             for (Path file : paths) {
                 try {
-                    ProductDescriptor productDescriptor = ProductDescriptorFactory.getDescriptor(file);
+                    ProductDescriptor productDescriptor = getCompositeDescriptor(file);
                     double[] scale = TileReader.getScale(file);
                     if (scale != null && scale.length == 2) {
                         FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
@@ -287,6 +287,36 @@ public class ViewerController extends ControllerBase {
         } catch (Exception e) {
             return handleException(e);
         }
+    }
+
+    private ProductDescriptor getCompositeDescriptor(Path file) throws IOException {
+        final String bandPatterns;
+        final String namePattern;
+        final String subfolderPattern;
+        if (ConfigurationManager.getInstance().getBooleanValue("downloader.use.esa.l2a")) {
+            bandPatterns = ConfigurationManager.getInstance().getValue("series.composite.band.patterns", "B04_10m,B03_10m,B02_10m");
+            namePattern = "S2[ABCD]_MSIL2A_\\d{8}T\\d{6}_N\\d{4}_R\\d{3}_T\\d{2}\\w{3}_\\d{8}T\\d{6}.SAFE";
+            subfolderPattern = null;
+        } else {
+            bandPatterns = ConfigurationManager.getInstance().getValue("series.composite.band.patterns", "FRE_B4,FRE_B3,FRE_B2");
+            namePattern = "S2[ABCD]_MSIL2A_(\\d{8})T\\d{6}_N\\d{4}_R\\d{3}_T(\\d{2}\\w{3})_\\d{8}T\\d{6}.SAFE";
+            subfolderPattern = "SENTINEL2[A-D]_\\d{8}-\\d{6}-\\d{3}_L2A_T\\d{2}[A-Z]{3}.*";
+        }
+        final List<FormatDescriptor.Band> bands = Arrays.stream(bandPatterns.split(",")).map(p -> {
+            final FormatDescriptor.Band band = new FormatDescriptor.Band();
+            band.setPattern(p);
+            band.setIndexInRaster(1);
+            return band;
+        }).collect(Collectors.toList());
+        FormatDescriptor formatDescriptor = new FormatDescriptor();
+        formatDescriptor.setBands(bands);
+        formatDescriptor.setPriority(1);
+        formatDescriptor.setPixelMaxScale(0);
+        formatDescriptor.setPixelMaxScale(8191);
+        formatDescriptor.setNoDataValue(-1000);
+        formatDescriptor.setNamePatterns(new ArrayList<>() {{ add(namePattern); }});
+        formatDescriptor.setBands(bands);
+        return new ProductDescriptor(formatDescriptor, file);
     }
 
     private Repository getLocalRepository() {
