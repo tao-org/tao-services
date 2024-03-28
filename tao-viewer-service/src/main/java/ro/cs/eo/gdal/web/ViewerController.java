@@ -1,6 +1,11 @@
 package ro.cs.eo.gdal.web;
 
 import org.apache.commons.compress.utils.IOUtils;
+import org.geotools.geometry.jts.JTS;
+import org.geotools.geometry.jts.WKTReader2;
+import org.geotools.referencing.CRS;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.HttpHeaders;
@@ -40,6 +45,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @RestController
@@ -239,7 +246,9 @@ public class ViewerController extends ControllerBase {
         }
     }
 
-    @RequestMapping(value = "/series/images", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/series/images", method = RequestMethod.POST,
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> extractSeries(@RequestParam("id") String id,
                                                             @RequestParam("geometry") String geometryWKT,
                                                             @RequestParam("files") List<String> files) {
@@ -260,25 +269,61 @@ public class ViewerController extends ControllerBase {
                 Files.createDirectories(cachePath);
             }
             List<Path> paths = files.stream().map(Paths::get).collect(Collectors.toList());
+            final Matcher matcher = Pattern.compile("_T(\\d{2}\\w{3})_").matcher(files.get(0));
+            final String utmZone;
+            if (matcher.find()) {
+                utmZone = matcher.group(1);
+            } else {
+                utmZone = null;
+            }
             final ServiceRegistry<FileGeometryFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(FileGeometryFilter.class);
             final Set<FileGeometryFilter> services = registry.getServices();
+            final FileGeometryFilter filter;
             if (services.isEmpty()) {
-                throw new Exception("Not implemented");
+                //throw new Exception("Not implemented");
+                filter = new FileGeometryFilter() {
+
+                    private int getEpsgCode() {
+                        return 32600 + (utmZone.charAt(2) >= 70 ? 100 : 0) + Integer.parseInt(utmZone.substring(0, 2));
+                    }
+
+                    @Override
+                    public Extent computeEnvelope(String geometryWKT) {
+                        Extent envelope = null;
+                        WKTReader2 reader = new WKTReader2();
+                        try {
+                            final Geometry geometry = reader.read(geometryWKT);
+                            Geometry env = geometry.getEnvelope();
+                            env = JTS.transform(env, CRS.findMathTransform(CRS.decode("EPSG:4326", true),
+                                                                           CRS.decode("EPSG:" + getEpsgCode(), true)));
+                            final Envelope internal = env.buffer(100).getEnvelopeInternal();
+                            envelope = new Extent();
+                            envelope.xmin = internal.getMinX();
+                            envelope.ymin = internal.getMinY();
+                            envelope.xmax = internal.getMaxX();
+                            envelope.ymax = internal.getMaxY();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                        return envelope;
+                    }
+
+                    @Override
+                    public List<Path> filter(String geometryWKT) {
+                        return new ArrayList<>();
+                    }
+                };
+            } else {
+                filter = services.iterator().next();
             }
-            final FileGeometryFilter filter = services.iterator().next();
             final Extent extent = filter.computeEnvelope(geometryWKT);
             final List<String> outFiles = new ArrayList<>();
             for (Path file : paths) {
                 try {
                     ProductDescriptor productDescriptor = getCompositeDescriptor(file);
-                    double[] scale = TileReader.getScale(file);
-                    if (scale != null && scale.length == 2) {
-                        FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
-                        formatDescriptor.setPixelMinScale((int) scale[0]);
-                        formatDescriptor.setPixelMaxScale((int) scale[1]);
-                        formatDescriptor.setPriority(1);
-                    }
-                    outFiles.add("/series/" + id + "/" + gdalTileMapService.extractSubset(productDescriptor, extent, id));
+                    FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
+                    formatDescriptor.setPriority(1);
+                    outFiles.add("/series/" + id + "/" + gdalTileMapService.extractSubset(productDescriptor, extent, geometryWKT, id));
                 } catch (Exception e) {
                     warn(e.getMessage());
                 }
@@ -293,7 +338,7 @@ public class ViewerController extends ControllerBase {
         final String bandPatterns;
         final String namePattern;
         final String subfolderPattern;
-        if (ConfigurationManager.getInstance().getBooleanValue("downloader.use.esa.l2a")) {
+        if (Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("downloader.use.esa.l2a", "true"))) {
             bandPatterns = ConfigurationManager.getInstance().getValue("series.composite.band.patterns", "B04_10m,B03_10m,B02_10m");
             namePattern = "S2[ABCD]_MSIL2A_\\d{8}T\\d{6}_N\\d{4}_R\\d{3}_T\\d{2}\\w{3}_\\d{8}T\\d{6}.SAFE";
             subfolderPattern = null;
@@ -311,7 +356,7 @@ public class ViewerController extends ControllerBase {
         FormatDescriptor formatDescriptor = new FormatDescriptor();
         formatDescriptor.setBands(bands);
         formatDescriptor.setPriority(1);
-        formatDescriptor.setPixelMaxScale(0);
+        formatDescriptor.setPixelMinScale(0);
         formatDescriptor.setPixelMaxScale(8191);
         formatDescriptor.setNoDataValue(-1000);
         formatDescriptor.setNamePatterns(new ArrayList<>() {{ add(namePattern); }});

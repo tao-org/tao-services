@@ -89,7 +89,7 @@ public class TileReader {
         }
     }
 
-    public void extractSubset(ProductDescriptor productDescriptor, Path filePath, double x, double y, double width, double height) throws IOException {
+    public void extractSubset(ProductDescriptor productDescriptor, Path filePath, double x, double y, double width, double height, String wkt) throws IOException {
         Dataset[] gdalDatasets = null;
         Dataset vrtDataset = null;
         Dataset warpDataset = null;
@@ -100,11 +100,12 @@ public class TileReader {
             if (config.reverseY) {
                 y = - y;
             }
-            final Extent extent = new Extent(x, y, x + width, x + height);
-            gdalDatasets = prepareDatasets(productDescriptor, extent);
+            final Extent extent = new Extent(x, y, x + width, y + height);
+            gdalDatasets = prepareDatasets2(productDescriptor, extent);
             vrtDataset = buildVRTDataset(productDescriptor, gdalDatasets);
             final String tmpFileName = "/vsimem/" + System.currentTimeMillis() + ".tif";
-            warpDataset = buildWarpedDataset(productDescriptor, extent, vrtDataset, tmpFileName);
+            warpDataset = buildWarpedDataset2(productDescriptor, extent, vrtDataset, tmpFileName);
+            //warpDataset = buildRasterizedDataset(productDescriptor, warpDataset, wkt);
             translateDataset = buildTranslatedDataset(productDescriptor, warpDataset, filePath.toString());
         } finally {
             if (gdalDatasets != null) {
@@ -197,6 +198,21 @@ public class TileReader {
         return imageExtent;
     }
 
+    private static Extent getImageExtent(Dataset gdalDataset) {
+        final Extent imageExtent = new Extent();
+        final double[] geoTransform = new double[6];
+        gdalDataset.getGeoTransform(geoTransform);
+        // some products have the Y step incorrectly placed as z
+        final double stepY = geoTransform[4] != 0 ? geoTransform[4] : geoTransform[5];
+        final double[] minPoint = new double[] { geoTransform[0], geoTransform[3] + stepY * gdalDataset.getRasterYSize() };
+        final double[] maxPoint = new double[] { geoTransform[0] + geoTransform[1] * gdalDataset.getRasterXSize(), geoTransform[3] };
+        imageExtent.xmin = minPoint[0];
+        imageExtent.ymin = minPoint[1];
+        imageExtent.xmax = maxPoint[0];
+        imageExtent.ymax = maxPoint[1];
+        return imageExtent;
+    }
+
     private static boolean tileInsideImage(Extent imageExtent, Extent tileExtent) {
         return Math.max(tileExtent.xmin, imageExtent.xmin) < Math.min(tileExtent.xmax, imageExtent.xmax) ||
                Math.max(tileExtent.ymin, imageExtent.ymin) < Math.min(tileExtent.ymax, imageExtent.ymax);
@@ -231,6 +247,24 @@ public class TileReader {
             } else {
                 deleteDataset(gdalDataset, false);
             }
+        }
+        if (gdalDatasets.isEmpty()) {
+            throw new IndexOutOfBoundsException("Tile out of bounds.");
+        }
+
+        return gdalDatasets.toArray(new Dataset[0]);
+    }
+
+    private static Dataset[] prepareDatasets2(ProductDescriptor productDescriptor, Extent tileExtent) {
+        final List<Dataset> gdalDatasets = new ArrayList<>();
+        final Path[] productBandsPaths = productDescriptor.getBandPaths();
+        final Path productPath = productDescriptor.getProductPath();
+        for (Path productBandsPath : productBandsPaths) {
+            final Dataset gdalDataset = GDAL.open(productBandsPath.toAbsolutePath().toString(), GDALConst.gaReadonly());
+            if (gdalDataset == null) {
+                throw new IllegalStateException("Fail to open Dataset for file: " + productBandsPath + ". " + GDAL.getLastErrorMsg());
+            }
+            gdalDatasets.add(gdalDataset);
         }
         if (gdalDatasets.isEmpty()) {
             throw new IndexOutOfBoundsException("Tile out of bounds.");
@@ -292,6 +326,51 @@ public class TileReader {
         return warpDataset;
     }
 
+    private static Dataset buildWarpedDataset2(ProductDescriptor productDescriptor, Extent tileExtent, Dataset gdalDataset, String tileFilePath) {
+        final Vector<String> warpOptions = new Vector<>();
+        warpOptions.add("-te");
+        warpOptions.add(String.valueOf(tileExtent.xmin));
+        warpOptions.add(String.valueOf(tileExtent.ymin));
+        warpOptions.add(String.valueOf(tileExtent.xmax));
+        warpOptions.add(String.valueOf(tileExtent.ymax));
+        //warpOptions.add("-tap");
+        if (productDescriptor.getNoDataValue() != null) {
+            warpOptions.add("-srcnodata");
+            warpOptions.add(String.valueOf(productDescriptor.getNoDataValue()));
+            warpOptions.add("-dstnodata");
+            warpOptions.add("0");
+        }
+        warpOptions.add("-multi");
+        warpOptions.add("-wo");
+        warpOptions.add("NUM_THREADS=ALL_CPUS");
+        if (gdalDataset.getRasterCount() == 1 || gdalDataset.getRasterCount() == 3) {
+            warpOptions.add("-dstalpha");
+        }
+        final Dataset warpDataset = GDAL.warp(tileFilePath, new Dataset[]{gdalDataset}, new WarpOptions(warpOptions));
+        if (warpDataset == null) {
+            throw new IllegalStateException("Fail to warp dataset. " + GDAL.getLastErrorMsg());
+        }
+        return warpDataset;
+    }
+
+    private static Dataset buildRasterizedDataset(ProductDescriptor productDescriptor, Dataset warpedDataset, String wkt) {
+        final Vector<String> rasterizeOptions = new Vector<>();
+        final String burnValue = "255";
+        final Integer count = warpedDataset.getRasterCount();
+        for (int i = 1; i <= count; i++) {
+            rasterizeOptions.add("-burn");
+            rasterizeOptions.add(burnValue);
+            rasterizeOptions.add("-b");
+            rasterizeOptions.add(String.valueOf(i));
+        }
+        Dataset dst = GDAL.open(wkt, GDALConst.gaReadonly());
+        final Dataset warpDataset = GDAL.rasterize(warpedDataset, dst, new RasterizeOptions(rasterizeOptions));
+        if (warpDataset == null) {
+            throw new IllegalStateException("Fail to warp dataset. " + GDAL.getLastErrorMsg());
+        }
+        return warpDataset;
+    }
+
     private static Dataset buildTranslatedDataset(ProductDescriptor productDescriptor, Dataset warpDataset, String tileFilePath) {
         final Vector<String> translateOptions = new Vector<>();
         double min, max;
@@ -300,7 +379,7 @@ public class TileReader {
         final Path productPath = productDescriptor.getProductPath();
         if (productDescriptor.getFormatDescriptor().getPriority() == 1 &&
                 productDescriptor.getPixelMinScale() != null && productDescriptor.getPixelMaxScale() != null &&
-                productDescriptor.getPixelMinScale() != 0 && productDescriptor.getPixelMaxScale() != 0) {
+                productDescriptor.getPixelMinScale() >= 0 && productDescriptor.getPixelMaxScale() > 0) {
             min = productDescriptor.getPixelMinScale();
             max = productDescriptor.getPixelMaxScale();
         } else {
