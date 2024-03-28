@@ -55,6 +55,10 @@ public class PersistenceInjecter extends BaseLifeCycle {
                     final ResourceUsageManager resourceUsageManager = persistenceManager.resourceUsage();
                     ResourceUsage usage = resourceUsageManager.getByTask(task.getId());
                     if (ExecutionStatus.RUNNING == status) {
+                        if (task.getJob().getTasks().stream().filter(t -> t.getExecutionStatus().equals(status)).count() == 1) {
+                            // this is the first task running
+                            persistenceManager.jobs().update(task.getJob());
+                        }
                         if (usage == null) {
                             usage = new ResourceUsage();
                             usage.setUserId(task.getJob().getUserId());
