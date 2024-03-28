@@ -73,7 +73,7 @@ public class GDALTileMapService {
         }
     }
 
-    public String extractSubset(ProductDescriptor productDescriptor, Extent extent, String name) throws FileNotFoundException {
+    public String extractSubset(ProductDescriptor productDescriptor, Extent extent, String wkt, String name) throws FileNotFoundException {
         try {
             if (this.seriesPath == null) {
                 this.seriesPath = Paths.get(ConfigurationManager.getInstance().getValue("site.path")).resolve("series");
@@ -83,7 +83,8 @@ public class GDALTileMapService {
                 final String imageFileName = sourceLocalFilePath.getFileName().toString().replaceAll(regEx, "$1") + ".png";
                 this.tileReader.extractSubset(productDescriptor,
                                               this.seriesPath.resolve(name).resolve(imageFileName),
-                                              extent.xmin, extent.ymin, extent.xmax - extent.xmin, extent.ymax - extent.ymin);
+                                              extent.xmin, extent.ymin, extent.xmax - extent.xmin, extent.ymax - extent.ymin,
+                                              wkt);
                 return imageFileName;
             } else {
                 throw new FileNotFoundException("Product path not exists.");
