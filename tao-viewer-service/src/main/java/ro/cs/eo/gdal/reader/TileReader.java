@@ -1,12 +1,20 @@
 package ro.cs.eo.gdal.reader;
 
+import org.geotools.geojson.geom.GeometryJSON;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKTReader;
 import ro.cs.eo.gdal.dataio.GDALTileCache;
 import ro.cs.eo.gdal.dataio.drivers.*;
 import ro.cs.eo.gdal.reader.info.FormatDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
 import ro.cs.tao.utils.Triple;
+import ro.cs.tao.utils.executors.Executor;
+import ro.cs.tao.utils.executors.ExecutorType;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -89,7 +97,20 @@ public class TileReader {
         }
     }
 
-    public void extractSubset(ProductDescriptor productDescriptor, Path filePath, double x, double y, double width, double height, String wkt) throws IOException {
+    private void writeGeoJSON(String wkt, Path outFile) throws IOException, ParseException {
+        try (OutputStream out = Files.newOutputStream(outFile)) {
+            WKTReader reader = new WKTReader();
+            Geometry geom = reader.read(wkt);
+            GeometryJSON gJson = new GeometryJSON();
+            if (geom.getNumGeometries() > 1) {
+                geom = geom.getEnvelope();
+            }
+            gJson.writePolygon((Polygon) geom, out);
+        }
+    }
+
+
+    public void extractSubset(ProductDescriptor productDescriptor, Path filePath, double x, double y, double width, double height, String wkt) throws Exception {
         Dataset[] gdalDatasets = null;
         Dataset vrtDataset = null;
         Dataset warpDataset = null;
@@ -97,16 +118,21 @@ public class TileReader {
         try {
             GDAL.useExceptions();
             Files.createDirectories(filePath.getParent());
+            final Path shapeFile = filePath.getParent().resolve("wkt.shp");
+            writeGeoJSON(wkt, shapeFile);
             if (config.reverseY) {
                 y = - y;
             }
             final Extent extent = new Extent(x, y, x + width, y + height);
             gdalDatasets = prepareDatasets2(productDescriptor);
             vrtDataset = buildVRTDataset(productDescriptor, gdalDatasets);
-            final String tmpFileName = "/vsimem/" + System.currentTimeMillis() + ".tif";
-            warpDataset = buildWarpedDataset2(productDescriptor, extent, vrtDataset, tmpFileName);
-            //warpDataset = buildRasterizedDataset(productDescriptor, warpDataset, wkt);
-            translateDataset = buildTranslatedDataset(productDescriptor, warpDataset, filePath.toString());
+            //final String tmpFileName = "/vsimem/" + System.currentTimeMillis() + ".tif";
+            final String warpFileName = filePath.getParent().resolve("warped.tif").toString();
+            warpDataset = buildWarpedDataset2(productDescriptor, extent, vrtDataset, warpFileName);
+            buildRasterizedDataset(shapeFile, warpFileName, warpDataset.getRasterCount());
+            warpDataset = GDAL.open(warpFileName, GDALConst.gaReadonly());
+            translateDataset = buildTranslatedDataset(productDescriptor, warpDataset, filePath.toString().replace(".tif", ".png"));
+            Files.deleteIfExists(shapeFile);
         } finally {
             if (gdalDatasets != null) {
                 for (Dataset gdalDataset : gdalDatasets) {
@@ -355,22 +381,18 @@ public class TileReader {
         return warpDataset;
     }
 
-    private static Dataset buildRasterizedDataset(ProductDescriptor productDescriptor, Dataset warpedDataset, String wkt) {
-        final Vector<String> rasterizeOptions = new Vector<>();
-        final String burnValue = "255";
-        final Integer count = warpedDataset.getRasterCount();
-        for (int i = 1; i <= count; i++) {
-            rasterizeOptions.add("-burn");
-            rasterizeOptions.add(burnValue);
-            rasterizeOptions.add("-b");
-            rasterizeOptions.add(String.valueOf(i));
+    private static Dataset buildRasterizedDataset(Path vectorFile, String raster, int bands) throws Exception {
+        final List<String> args = new ArrayList<>();
+        args.add("gdal_rasterize");
+        args.add("-burn");
+        for (int i = 1; i <= bands; i++) {
+            args.add("32767");
         }
-        Dataset dst = GDAL.open(wkt, GDALConst.gaReadonly());
-        final Dataset warpDataset = GDAL.rasterize(warpedDataset, dst, new RasterizeOptions(rasterizeOptions));
-        if (warpDataset == null) {
-            throw new IllegalStateException("Fail to warp dataset. " + GDAL.getLastErrorMsg());
-        }
-        return warpDataset;
+        args.add(vectorFile.toString());
+        args.add(raster);
+        Executor executor = Executor.create(ExecutorType.PROCESS, null, args);
+        executor.execute(false);
+        return GDAL.open(raster, GDALConst.gaReadonly());
     }
 
     private static Dataset buildTranslatedDataset(ProductDescriptor productDescriptor, Dataset warpDataset, String tileFilePath) {
