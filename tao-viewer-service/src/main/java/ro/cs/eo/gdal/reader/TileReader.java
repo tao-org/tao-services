@@ -101,7 +101,7 @@ public class TileReader {
                 y = - y;
             }
             final Extent extent = new Extent(x, y, x + width, y + height);
-            gdalDatasets = prepareDatasets2(productDescriptor, extent);
+            gdalDatasets = prepareDatasets2(productDescriptor);
             vrtDataset = buildVRTDataset(productDescriptor, gdalDatasets);
             final String tmpFileName = "/vsimem/" + System.currentTimeMillis() + ".tif";
             warpDataset = buildWarpedDataset2(productDescriptor, extent, vrtDataset, tmpFileName);
@@ -255,7 +255,7 @@ public class TileReader {
         return gdalDatasets.toArray(new Dataset[0]);
     }
 
-    private static Dataset[] prepareDatasets2(ProductDescriptor productDescriptor, Extent tileExtent) {
+    private static Dataset[] prepareDatasets2(ProductDescriptor productDescriptor) {
         final List<Dataset> gdalDatasets = new ArrayList<>();
         final Path[] productBandsPaths = productDescriptor.getBandPaths();
         final Path productPath = productDescriptor.getProductPath();
@@ -328,6 +328,8 @@ public class TileReader {
 
     private static Dataset buildWarpedDataset2(ProductDescriptor productDescriptor, Extent tileExtent, Dataset gdalDataset, String tileFilePath) {
         final Vector<String> warpOptions = new Vector<>();
+        warpOptions.add("-t_srs");
+        warpOptions.add("EPSG:4326");
         warpOptions.add("-te");
         warpOptions.add(String.valueOf(tileExtent.xmin));
         warpOptions.add(String.valueOf(tileExtent.ymin));

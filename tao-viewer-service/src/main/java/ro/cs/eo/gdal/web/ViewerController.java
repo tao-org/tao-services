@@ -1,9 +1,7 @@
 package ro.cs.eo.gdal.web;
 
 import org.apache.commons.compress.utils.IOUtils;
-import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.WKTReader2;
-import org.geotools.referencing.CRS;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -294,9 +292,9 @@ public class ViewerController extends ControllerBase {
                         try {
                             final Geometry geometry = reader.read(geometryWKT);
                             Geometry env = geometry.getEnvelope();
-                            env = JTS.transform(env, CRS.findMathTransform(CRS.decode("EPSG:4326", true),
-                                                                           CRS.decode("EPSG:" + getEpsgCode(), true)));
-                            final Envelope internal = env.buffer(100).getEnvelopeInternal();
+                            /*env = JTS.transform(env, CRS.findMathTransform(CRS.decode("EPSG:4326", true),
+                                                                           CRS.decode("EPSG:" + getEpsgCode(), true)));*/
+                            final Envelope internal = env.buffer(0.01).getEnvelopeInternal();
                             envelope = new Extent();
                             envelope.xmin = internal.getMinX();
                             envelope.ymin = internal.getMinY();
