@@ -25,6 +25,7 @@ public class TopologyInitializer extends BaseLifeCycle {
     public void onStartUp() {
         final DefaultNodeProvider nodeProvider = new DefaultNodeProvider();
         TopologyManager.getInstance().setLocalNodeProvider(nodeProvider);
+        TopologyManager.getInstance().setVolatileInstanceProvider(persistenceManager.volatileInstances());
         final NodeManager nodeManager = NodeManager.getInstance();
         final ConfigurationProvider cfgManager = ConfigurationManager.getInstance();
         if (nodeManager != null) {
