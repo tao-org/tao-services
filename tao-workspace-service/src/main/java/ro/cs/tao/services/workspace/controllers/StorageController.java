@@ -529,12 +529,20 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
             final String path = workspace.resolve(file);
             DataSubscription subscription = dataSubscriptionProvider.get(currentUser(), workspaceId, file);
+            // Already shared
             if (subscription != null) {
                 throw new Exception(file + " is already shared");
             }
             subscription = dataSubscriptionProvider.get(currentUser(), name);
+            // Unique share name
             if (subscription != null) {
                 throw new Exception("A share with the name '" + name + "' already exists");
+            }
+            final String checkSum = getRepositoryService(workspace).computeHash(path);
+            subscription = dataSubscriptionProvider.get(checkSum);
+            // Checksum verification
+            if (subscription != null) {
+                throw new Exception("An dataset with the same contents is already shared [" + subscription.getName() + "]");
             }
             subscription = new DataSubscription();
             subscription.setName(StringUtilities.isNullOrEmpty(name) ? workspace.fileName(path) : name);
@@ -542,6 +550,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             subscription.setRepositoryId(workspaceId);
             subscription.setDataRootPath(path);
             subscription.setCreated(LocalDateTime.now());
+            subscription.setCheckSum(checkSum);
             subscription = dataSubscriptionProvider.save(subscription);
             if (subscription.getId() > 0) {
                 responseEntity = prepareResult(String.format("Share %s created", name), ResponseStatus.SUCCEEDED);
