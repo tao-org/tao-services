@@ -44,6 +44,7 @@ import java.io.*;
 import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -614,6 +615,11 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
                    ? stream.skip(skipLines).limit(lines).collect(Collectors.joining("\n"))
                    : stream.collect(Collectors.joining("\n"));
         }
+    }
+
+    @Override
+    public String computeHash(String path) throws IOException, NoSuchAlgorithmException {
+        return FileUtilities.computeHash(Path.of(path), "MD5");
     }
 
     private List<FileObject> getResults(Long workflowId, Long jobId) {
