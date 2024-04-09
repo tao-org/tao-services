@@ -11,7 +11,7 @@ import ro.cs.tao.utils.StringUtilities;
 public class TopologyInitializer extends BaseLifeCycle {
     private static final String MASTER_USER = "topology.master.user";
     private static final String MASTER_PASSWORD = "topology.master.password";
-    private static final String MASTER_SSH_KEY = "topology.master.ssh.key";
+    private static final String MASTER_SSH_KEY = "topology.node.ssh.key";
     private static final String NODE_NAME_PREFIX = "topology.node.name.prefix";
     private static final String NODE_DEFAULT_DESCRIPTION = "topology.node.default.description";
     private static final String NODE_LIMIT = "topology.node.limit";
