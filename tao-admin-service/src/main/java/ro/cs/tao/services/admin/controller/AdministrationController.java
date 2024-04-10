@@ -316,10 +316,10 @@ public class AdministrationController extends BaseController {
                     return prepareResult("Invalid flavor '" + flavor.getKey() + "'", ResponseStatus.FAILED);
                 }
                 ResourceSubscription subscription = new ResourceSubscription();
-                subscription.setUserId(request.getUserId());
+                subscription.setUserId(userId);
                 subscription.setFlavor(nodeFlavor);
                 subscription.setType(request.getType());
-                subscription.setCreated(request.getCreated());
+                subscription.setCreated(request.getCreated() != null ? request.getCreated() : LocalDateTime.now());
                 subscription.setEnded(null);
                 subscription.setPaid(request.isPaid());
                 subscription.setFlavorHddSizeGB(values.getOrDefault("hdd", 0));
@@ -390,10 +390,10 @@ public class AdministrationController extends BaseController {
                     return prepareResult("Invalid flavor '" + flavor.getKey() + "'", ResponseStatus.FAILED);
                 }
                 ResourceSubscription subscription = new ResourceSubscription();
-                subscription.setUserId(request.getUserId());
+                subscription.setUserId(userId);
                 subscription.setFlavor(nodeFlavor);
                 subscription.setType(request.getType());
-                subscription.setCreated(request.getCreated());
+                subscription.setCreated(request.getCreated() != null ? request.getCreated() : LocalDateTime.now());
                 subscription.setEnded(null);
                 subscription.setPaid(request.isPaid());
                 subscription.setFlavorHddSizeGB(values.getOrDefault("hdd", 0));
