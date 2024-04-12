@@ -132,15 +132,15 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
     		// also add the remote path to the internal set.
         	final List<TransferableItem> items = producedItems.stream().filter(fo -> !fo.isFolder() && isTransferableFile(fo, filters))
         			.map(fo -> {
-        				final String remoterelativePath = buildRelativePath(fo.getRelativePath());
-        				files.add(remoterelativePath);
+        				final String remoteRelativePath = buildRelativePath(fo.getRelativePath());
+        				files.add(remoteRelativePath);
         				return new TransferableItem(job.getUserId(), 
         					job.getUserId() + "/" + job.getId(), 
         					localRepository, 
         					fo, 
         					remoteRepository, 
         					//Paths.get(job.getUserId(), fo.getRelativePath()).toString().replace('\\', '/'),
-        					remoterelativePath,
+        					remoteRelativePath,
         					false, 
         					true);}).collect(Collectors.toList());
 
@@ -178,13 +178,18 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
 	private String buildRelativePath(final String initialRelativePath) {
 		
 		final Path initialPath = Path.of(initialRelativePath);
-		// if the path is smaller than three labels, return the intial path
+		// if the path is smaller than three labels, return the initial path
 		if (initialPath.getNameCount() < 3) {
 			return initialRelativePath;
 		}
 		
-		// build the relative path from the first and last elements only.
-		return initialPath.getName(0) + "/" + initialPath.getName(initialPath.getNameCount() - 1);
+		// build the relative path ignoring the second element (the task folder)
+		final StringBuilder sb = new StringBuilder(initialPath.getName(0).toString());
+		for (int i = 2; i < initialPath.getNameCount(); i++) {
+			sb.append('/').append(initialPath.getName(i).toString());
+		}
+		
+		return sb.toString();
 	}
 	
 	/**
