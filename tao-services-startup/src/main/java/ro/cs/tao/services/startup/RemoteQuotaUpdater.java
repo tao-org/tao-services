@@ -8,6 +8,8 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.execution.model.ResourceUsage;
 import ro.cs.tao.execution.model.ResourceUsageReport;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.TransactionalMethod;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.topology.openstack.SwiftService;
 import ro.cs.tao.user.SessionDuration;
@@ -103,13 +105,25 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 //		/** The label for the container size attribute. */
 //		private static final String CONTAINER_SIZE = "container.size";
 		
+		private List<User> users;
+		
 		@Override
 		public void run() {
 			// Get the list of registered users that have quota enabled
-			final List<User> users = persistenceManager.users().list()
-													   .stream()
-													   .filter(u -> u.getProcessingQuota() > 0)
-													   .collect(Collectors.toList());
+			try {
+				TransactionalMethod.withExceptionType(PersistenceException.class).execute(() -> {
+					users = persistenceManager.users().list()
+					   .stream()
+					   .filter(u -> u.getProcessingQuota() > 0)
+					   .collect(Collectors.toList());
+				});
+			} catch (PersistenceException e) {
+				logger.severe(() -> "Error reading the users list. Received message: " + e.getMessage());
+				// stop the execution
+				return;
+			}
+			
+			
 			
 			// Get all remote container sizes
 			Map<String, Long> userContainerSizes = null;
