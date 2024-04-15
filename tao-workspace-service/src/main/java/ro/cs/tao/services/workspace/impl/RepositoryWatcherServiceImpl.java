@@ -306,9 +306,9 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
                     if (userId != null) {
                         final int usedSpace = getUsedSpace(userId);
                         updateUserInputQuota(userId, usedSpace);
-                    } else {
+                    }/* else {
                         logger.warning("Cannot determine user from entry '" + entry + "'");
-                    }
+                    }*/
                 } catch (InterruptedException e) {
                     logger.severe(String.format("The thread %s has been interrupted. Reason: %s",
                             this.getName(), ExceptionUtils.getStackTrace(e)));
