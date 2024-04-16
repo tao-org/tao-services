@@ -30,13 +30,13 @@ public class MessageConverter implements Converter<Message, WSNotification> {
         final long id = value.getId() != null && value.getId() != 0 ? value.getId() : calendar.getTimeInMillis();
         final Map<String, String> rawData = value.getRawData();
         rawData.keySet().removeAll(exclusions);
-        Map<String, Object> data = new HashMap<>();
+        Map<String, Object> finalData = new HashMap<>();
         for (Map.Entry<String, String> entry : rawData.entrySet()) {
             final String entryValue = entry.getValue();
             try {
                 if (entryValue != null) {
                     Iterator<String> iterator;
-                    data = JsonMapper.instance().readValue(entryValue, data.getClass());
+                    Map<String, Object> data = JsonMapper.instance().readValue(entryValue, finalData.getClass());
                     iterator = data.keySet().iterator();
                     while (iterator.hasNext()) {
                         String key = iterator.next();
@@ -55,18 +55,18 @@ public class MessageConverter implements Converter<Message, WSNotification> {
                             }
                         }
                     }
+                    finalData.putAll(data);
                 }
             } catch (Exception ignored) {
                 final String key = entry.getKey();
-                data = new HashMap<>();
-                data.put(key != null ? key : "unknown", entryValue);
+                finalData.put(key != null ? key : "unknown", entryValue);
             }
             if (value instanceof DownloadProgress) {
-                data.put("speed", ((DownloadProgress) value).getTransferSpeedMB());
-                data.put("remaining", String.valueOf(((DownloadProgress) value).getRemaining()));
+                finalData.put("speed", ((DownloadProgress) value).getTransferSpeedMB());
+                finalData.put("remaining", String.valueOf(((DownloadProgress) value).getRemaining()));
             }
         }
-        WSNotification notification = new WSNotification(id , calendar, user, value.getItem(Message.SOURCE_KEY), topic, data);
+        WSNotification notification = new WSNotification(id , calendar, user, value.getItem(Message.SOURCE_KEY), topic, finalData);
         notification.setRead(value.isRead());
         return notification;
     }
