@@ -16,6 +16,7 @@
 
 package ro.cs.tao.services.entity.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
@@ -44,6 +45,7 @@ import java.util.Base64;
 
 @RestController
 @RequestMapping("/product")
+@Tag(name = "Local Products", description = "Operations related to local products")
 public class ProductController extends DataEntityController<EOProduct, String, ProductService> {
 
     @Autowired
