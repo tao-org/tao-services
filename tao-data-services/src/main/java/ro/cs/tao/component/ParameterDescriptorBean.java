@@ -4,7 +4,9 @@ import ro.cs.tao.component.enums.ParameterType;
 import ro.cs.tao.component.validation.Validator;
 import ro.cs.tao.datasource.param.JavaType;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ParameterDescriptorBean {
     private ParameterDescriptor descriptor;
@@ -72,6 +74,17 @@ public class ParameterDescriptorBean {
         return descriptor.getId();
     }
 
+    public List<ParameterDescriptorBean> getParameters() {
+        final ParameterDescriptor dsc = descriptor();
+        if (dsc instanceof TemplateParameterDescriptor) {
+            final List<ParameterDescriptor> parameters = ((TemplateParameterDescriptor) dsc).getParameters();
+            if (parameters != null) {
+                return parameters.stream().map(ParameterDescriptorBean::new).collect(Collectors.toList());
+            }
+        }
+        return new ArrayList<>();
+    }
+
     public void setName(String value) {
         descriptor().setName(value);
     }
@@ -126,6 +139,13 @@ public class ParameterDescriptorBean {
 
     public void setId(String id) {
         descriptor().setId(id);
+    }
+
+    public void setParameters(List<ParameterDescriptor> parameters) {
+        final ParameterDescriptor dsc = descriptor();
+        if (dsc instanceof TemplateParameterDescriptor) {
+            ((TemplateParameterDescriptor) dsc).setParameters(parameters);
+        }
     }
 
     public ParameterDescriptor toParameterDescriptor() {

@@ -23,7 +23,7 @@
             <outputFileNameMapping>${artifact.artifactId}-${artifact.version}.${artifact.extension}
             </outputFileNameMapping>
             <excludes>
-                <exclude>ro.cs.tao:tao-*</exclude>
+                <exclude>ro.c-s.tao:tao-*</exclude>
                 <!-- Unwanted dependencies -->
                 <exclude>commons-lang:commons-lang:jar:2.4</exclude>
                 <exclude>org.apache.httpcomponents:httpclient:jar:4.5.13</exclude>
@@ -56,61 +56,62 @@
                 <!--<exclude>org.slf4j:slf4j-api:jar:1.7.32</exclude>-->
                 <!--<exclude>org.slf4j:slf4j-api:jar:1.7.33</exclude>-->
                 <exclude>org.yaml:snakeyaml:jar:1.30</exclude>
+                <exclude>com.zaxxer:HikariCP-java6:jar:2.3.13</exclude>
             </excludes>
         </dependencySet>
         <dependencySet>
             <outputDirectory>services</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.version}.${artifact.extension}</outputFileNameMapping>
             <includes>
-                <include>ro.cs.tao:*</include>
+                <include>ro.c-s.tao:*</include>
             </includes>
             <excludes>
-                <exclude>ro.cs.tao:tao-config</exclude>
-                <exclude>ro.cs.tao:tao-data-model</exclude>
-                <exclude>ro.cs.tao:tao-data-sources</exclude>
-                <exclude>ro.cs.tao:tao-drmaa-api</exclude>
-                <exclude>ro.cs.tao:tao-execution</exclude>
-                <exclude>ro.cs.tao:tao-execution-api</exclude>
-                <exclude>ro.cs.tao:tao-execution-model</exclude>
-                <exclude>ro.cs.tao:tao-gdal</exclude>
-                <exclude>ro.cs.tao:tao-mail</exclude>
-                <exclude>ro.cs.tao:tao-notification</exclude>
-                <exclude>ro.cs.tao:tao-orchestration</exclude>
-                <exclude>ro.cs.tao:tao-persistence</exclude>
-                <exclude>ro.cs.tao:tao-quota</exclude>
-                <exclude>ro.cs.tao:tao-scheduling</exclude>
-                <exclude>ro.cs.tao:tao-service-api</exclude>
-                <exclude>ro.cs.tao:tao-service-base-api</exclude>
-                <exclude>ro.cs.tao:tao-service-registry</exclude>
-                <exclude>ro.cs.tao:tao-spring-bridge</exclude>
-                <exclude>ro.cs.tao:tao-topology</exclude>
-                <exclude>ro.cs.tao:tao-transfer</exclude>
-                <exclude>ro.cs.tao:tao-utils</exclude>
-                <exclude>ro.cs.tao:tao-workflow-optimizer</exclude>
-                <exclude>ro.cs.tao:tao-datasources-*</exclude>
-                <exclude>ro.cs.tao:tao-docker-*</exclude>
-                <exclude>ro.cs.tao:tao-drmaa-*</exclude>
-                <exclude>ro.cs.tao:tao-integration-*</exclude>
-                <exclude>ro.cs.tao:tao-products-*</exclude>
-                <exclude>ro.cs.tao:tao-eo-search</exclude>
-                <exclude>ro.cs.tao:tao-executor-wps</exclude>
-                <exclude>ro.cs.tao:tao-gdalinfo</exclude>
-                <exclude>ro.cs.tao:tao-keycloak</exclude>
-                <exclude>ro.cs.tao:tao-ldap</exclude>
-                <exclude>ro.cs.tao:tao-muscate-metadata</exclude>
-                <exclude>ro.cs.tao:tao-openstack</exclude>
-                <exclude>ro.cs.tao:tao-otb-optimizer</exclude>
-                <exclude>ro.cs.tao:tao-quicklook</exclude>
-                <exclude>ro.cs.tao:tao-quota-database</exclude>
-                <exclude>ro.cs.tao:tao-snap-converter</exclude>
-                <exclude>ro.cs.tao:tao-stac-client</exclude>
-                <exclude>ro.cs.tao:tao-workflow-cwl</exclude>
-                <exclude>ro.cs.tao:tao-workflow-json</exclude>
-                <exclude>ro.cs.tao:tao-workspace-aws</exclude>
-                <exclude>ro.cs.tao:tao-workspace-fpt</exclude>
-                <exclude>ro.cs.tao:tao-workspace-smb</exclude>
-                <exclude>ro.cs.tao:tao-workspace-stac</exclude>
-                <exclude>ro.cs.tao:tao-zarr-metadata</exclude>
+                <exclude>ro.c-s.tao:tao-config</exclude>
+                <exclude>ro.c-s.tao:tao-data-model</exclude>
+                <exclude>ro.c-s.tao:tao-data-sources</exclude>
+                <exclude>ro.c-s.tao:tao-drmaa-api</exclude>
+                <exclude>ro.c-s.tao:tao-execution</exclude>
+                <exclude>ro.c-s.tao:tao-execution-api</exclude>
+                <!--<exclude>ro.c-s.tao:tao-execution-model</exclude>-->
+                <exclude>ro.c-s.tao:tao-gdal</exclude>
+                <exclude>ro.c-s.tao:tao-mail</exclude>
+                <exclude>ro.c-s.tao:tao-notification</exclude>
+                <exclude>ro.c-s.tao:tao-orchestration</exclude>
+                <exclude>ro.c-s.tao:tao-persistence</exclude>
+                <exclude>ro.c-s.tao:tao-quota</exclude>
+                <exclude>ro.c-s.tao:tao-scheduling</exclude>
+                <exclude>ro.c-s.tao:tao-service-api</exclude>
+                <exclude>ro.c-s.tao:tao-service-base-api</exclude>
+                <exclude>ro.c-s.tao:tao-service-registry</exclude>
+                <exclude>ro.c-s.tao:tao-spring-bridge</exclude>
+                <exclude>ro.c-s.tao:tao-topology</exclude>
+                <exclude>ro.c-s.tao:tao-transfer</exclude>
+                <exclude>ro.c-s.tao:tao-utils</exclude>
+                <exclude>ro.c-s.tao:tao-workflow-optimizer</exclude>
+                <exclude>ro.c-s.tao:tao-datasources-*</exclude>
+                <exclude>ro.c-s.tao:tao-docker-*</exclude>
+                <exclude>ro.c-s.tao:tao-drmaa-*</exclude>
+                <exclude>ro.c-s.tao:tao-integration-*</exclude>
+                <exclude>ro.c-s.tao:tao-products-*</exclude>
+                <exclude>ro.c-s.tao:tao-eo-search</exclude>
+                <exclude>ro.c-s.tao:tao-executor-wps</exclude>
+                <exclude>ro.c-s.tao:tao-gdalinfo</exclude>
+                <exclude>ro.c-s.tao:tao-keycloak</exclude>
+                <exclude>ro.c-s.tao:tao-ldap</exclude>
+                <exclude>ro.c-s.tao:tao-muscate-metadata</exclude>
+                <exclude>ro.c-s.tao:tao-openstack</exclude>
+                <exclude>ro.c-s.tao:tao-otb-optimizer</exclude>
+                <exclude>ro.c-s.tao:tao-quicklook</exclude>
+                <exclude>ro.c-s.tao:tao-quota-database</exclude>
+                <exclude>ro.c-s.tao:tao-snap-converter</exclude>
+                <exclude>ro.c-s.tao:tao-stac-client</exclude>
+                <exclude>ro.c-s.tao:tao-workflow-cwl</exclude>
+                <exclude>ro.c-s.tao:tao-workflow-json</exclude>
+                <exclude>ro.c-s.tao:tao-workspace-aws</exclude>
+                <exclude>ro.c-s.tao:tao-workspace-fpt</exclude>
+                <exclude>ro.c-s.tao:tao-workspace-smb</exclude>
+                <exclude>ro.c-s.tao:tao-workspace-stac</exclude>
+                <exclude>ro.c-s.tao:tao-zarr-metadata</exclude>
             </excludes>
         </dependencySet>
     </dependencySets>

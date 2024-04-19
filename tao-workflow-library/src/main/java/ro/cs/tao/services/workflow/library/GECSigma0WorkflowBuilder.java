@@ -22,7 +22,7 @@ public class GECSigma0WorkflowBuilder extends WorkflowBuilderBase {
         WorkflowDescriptor descriptor = createWorkflowDescriptor();
         descriptor.setVisibility(Visibility.PUBLIC);
         descriptor.setStatus(Status.PUBLISHED);
-        descriptor.setUserName(SystemPrincipal.instance().getName());
+        descriptor.setUserId(SystemPrincipal.instance().getName());
         return persistenceManager.workflows().update(descriptor);
     }
 

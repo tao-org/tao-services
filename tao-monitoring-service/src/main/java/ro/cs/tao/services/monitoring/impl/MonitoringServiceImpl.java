@@ -25,12 +25,13 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.NotifiableComponent;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.MessageProvider;
-import ro.cs.tao.persistence.NodeProvider;
+import ro.cs.tao.persistence.NodeDBProvider;
 import ro.cs.tao.services.commons.MessageConverter;
 import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.interfaces.MonitoringService;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.TopologyManager;
+import ro.cs.tao.utils.executors.AuthenticationType;
 import ro.cs.tao.utils.executors.Executor;
 import ro.cs.tao.utils.executors.ExecutorType;
 
@@ -50,7 +51,7 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     @Autowired
     private MessageProvider messageProvider;
     @Autowired
-    private NodeProvider nodeProvider;
+    private NodeDBProvider nodeDBProvider;
 
     private String[] topics;
 
@@ -95,7 +96,8 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
             if (NodeManager.isAvailable()) {
                 runtimeInfo = NodeManager.getInstance().getNodeSnapshot(nodeInfo.getId());
             } else {
-                OSRuntimeInfo<?> inspector = OSRuntimeInfo.createInspector(nodeInfo.getId(), nodeInfo.getUserName(), nodeInfo.getUserPass(), RuntimeInfo.class);
+                OSRuntimeInfo<?> inspector = OSRuntimeInfo.createInspector(nodeInfo.getId(), nodeInfo.getUserName(), nodeInfo.getUserPass(),
+                                                                           AuthenticationType.PASSWORD, RuntimeInfo.class);
                 runtimeInfo = inspector.getInfo();
             }
         } catch (Exception e) {
@@ -112,7 +114,11 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
                 runtimeInfo = NodeManager.getInstance().getNodeSnapshot(hostName);
             } else {
                 NodeDescription node = TopologyManager.getInstance().getNode(hostName);
-                runtimeInfo = OSRuntimeInfo.createInspector(node.getId(), node.getUserName(), node.getUserPass(), RuntimeInfo.class).getSnapshot();
+                AuthenticationType type = node.getSshKey() != null ? AuthenticationType.CERTIFICATE : AuthenticationType.PASSWORD;
+                runtimeInfo = OSRuntimeInfo.createInspector(node.getId(), node.getUserName(),
+                                                            type == AuthenticationType.PASSWORD ? node.getUserPass() : node.getSshKey(),
+                                                            type,
+                                                            RuntimeInfo.class).getSnapshot();
             }
         } catch (Throwable ex) {
             logger.warning(ex.getMessage());
@@ -121,20 +127,20 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
-    public List<Notification> getLiveNotifications() {
+    public List<Notification> getLiveNotifications(String userId) {
         final MessageConverter converter = new MessageConverter();
         List<Notification> notifications = new ArrayList<>();
         try {
-            notifications = getLastMessages().stream().map(converter::to).collect(Collectors.toList());
+            notifications = getLastMessages().stream().filter(m -> userId == null || m.getUserId().equals(userId)).map(converter::to).collect(Collectors.toList());
         } catch (Exception e){
         }
         return notifications;
     }
 
     @Override
-    public Map<String, List<Notification>> getUnreadNotifications(String userName) {
+    public Map<String, List<Notification>> getUnreadNotifications(String userId) {
         Map<String, List<Notification>>  messages = new LinkedHashMap<>();
-        List<Message> unread = messageProvider.getUnreadMessages(userName);
+        List<Message> unread = messageProvider.getUnreadMessages(userId);
         final MessageConverter converter = new MessageConverter();
         if (unread != null) {
             messages.put(Topic.INFORMATION.value(), new ArrayList<>());
@@ -155,8 +161,8 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
-    public List<Notification> getNotifications(String user, int page) {
-        final List<Message> userMessages = messageProvider.getUserMessages(user, page);
+    public List<Notification> getNotifications(String userId, int page) {
+        final List<Message> userMessages = messageProvider.getUserMessages(userId, page);
         return userMessages != null ?
                 userMessages.stream()
                         .map(m -> new MessageConverter().to(m))
@@ -164,16 +170,16 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
     }
 
     @Override
-    public List<Notification> acknowledgeNotification(List<Notification> notifications) {
-        if (notifications != null) {
-            messageProvider.acknowledge(notifications.stream().map(Notification::getId).collect(Collectors.toList()));
+    public List<Long> acknowledgeNotification(List<Long> ids, String userId) {
+        if (ids != null) {
+            messageProvider.acknowledge(ids, userId);
         }
-        return notifications;
+        return ids;
     }
 
     @Override
-    public void deleteAll(String userName) {
-        messageProvider.clear(userName);
+    public void deleteAll(String userId) {
+        messageProvider.clear(userId);
     }
 
     @Override
@@ -193,8 +199,8 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
                         master.setServicesStatus(node.getServicesStatus());
                         master.setFlavor(node.getFlavor());
                         master.setActive(true);
-                        master = nodeProvider.save(master);
-                        nodeProvider.delete(node.getId());
+                        master = nodeDBProvider.save(master);
+                        nodeDBProvider.delete(node.getId());
                         node = master;
                         logger.fine(String.format("Node [localhost] has been renamed to [%s]", masterHost));
                     }

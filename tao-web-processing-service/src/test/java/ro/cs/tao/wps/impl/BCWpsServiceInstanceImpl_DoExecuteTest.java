@@ -180,7 +180,7 @@ public class BCWpsServiceInstanceImpl_DoExecuteTest {
         final WorkflowDescriptor workflowDescriptor = new WorkflowDescriptor();
         workflowDescriptor.setId(1234L);
         workflowDescriptor.setName("WorkflowName");
-        processInfo.setWorkflowInfo(new WorkflowInfo(workflowDescriptor));
+        processInfo.setWorkflowInfo(new WorkflowInfo(workflowDescriptor, null));
         when(taoWebProcessingServiceMock.describeProcess(1234L)).thenReturn(processInfo);
 
         //execution

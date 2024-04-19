@@ -15,21 +15,27 @@
  */
 package ro.cs.tao.services.user.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.persistence.AuditProvider;
+import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
-import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.interfaces.RepositoryWatcherService;
 import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
+import ro.cs.tao.services.user.impl.UserInfo;
+import ro.cs.tao.user.SessionDuration;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
 import ro.cs.tao.user.UserType;
@@ -47,6 +53,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/user")
+@Tag(name = "User Management", description = "Operations related to user management")
 public class UserController extends BaseController {
 
     @Autowired
@@ -59,25 +66,35 @@ public class UserController extends BaseController {
     private RepositoryWatcherService repositoryWatcherService;
 
     @Autowired
-    private RepositoryService repositoryService;
+    private RepositoryProvider repositoryProvider;
 
-    @RequestMapping(value = "/groups/", method = RequestMethod.GET, produces = "application/json")
+    @Autowired
+    private AuditProvider auditProvider;
+
+    /**
+     * Returns the groups of users.
+     */
+    @RequestMapping(value = "/groups/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getGroups() {
         return prepareResult(userService.getGroups());
     }
 
-    @RequestMapping(value = "/activate/{username}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> activate(@PathVariable("username") String username) {
-        if (StringUtilities.isNullOrEmpty(username)) {
+    /**
+     * Activates the given user account.
+     * @param userId    The user account identifier
+     */
+    @RequestMapping(value = "/activate/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> activate(@PathVariable("userId") String userId) {
+        if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
-            userService.activateUser(username);
+            userService.activateUser(userId);
 
             // we need to know if the user is TAO internal or external
-            final User userInfo = userService.getUserInfo(username);
+            final User userInfo = userService.getUserInfo(userId);
             final ConfigurationProvider configManager = ConfigurationManager.getInstance();
-            repositoryWatcherService.registerUser(username);
+            repositoryWatcherService.registerUser(userId);
             if (userInfo.getUserType() == UserType.INTERNAL) {
                 // internal TAO authenticated users need to set a password
                 // we need a redirect to TAO reset password page from activation email within email that hits this endpoint
@@ -106,14 +123,46 @@ public class UserController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{username}/reset", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> resetPassword(@PathVariable("username") String username, @RequestBody ResetPasswordInfo resetPasswordInfo) {
-        if (StringUtilities.isNullOrEmpty(username) || resetPasswordInfo == null ||
+    /**
+     * Initializes the default repositories for the given user account.
+     * If the repositories were already initialized, nothing happens.
+     * Only an administrator is allowed to call this endpoint.
+     *
+     * @param userId The user account identifier
+     */
+    @RequestMapping(value = "/initialize", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> createWorkspaces(@RequestParam("userId") String userId) {
+        try {
+            if (StringUtilities.isNullOrEmpty(userId)) {
+                throw new IllegalArgumentException("Invalid user id");
+            }
+            if (isCurrentUserAdmin() || SystemPrincipal.instance().getName().equals(currentUser())) {
+                userService.createWorkspaces(userId);
+            } else {
+                return prepareResult("Not authorized", HttpStatus.UNAUTHORIZED);
+            }
+            return prepareResult("Workspace initialized", ResponseStatus.SUCCEEDED);
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
+     * Resets the password of the given user account
+     * @param userId    The user account identifier
+     * @param resetPasswordInfo Structure holding the reset key and the new password
+     */
+    @RequestMapping(value = "/{userId}/reset", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> resetPassword(@PathVariable("userId") String userId, @RequestBody ResetPasswordInfo resetPasswordInfo) {
+        if (StringUtilities.isNullOrEmpty(userId) || resetPasswordInfo == null ||
                 StringUtilities.isNullOrEmpty(resetPasswordInfo.getResetKey()) || StringUtilities.isNullOrEmpty(resetPasswordInfo.getNewPassword())) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
+        if (!currentUser().equals(userId) || !isCurrentUserAdmin()) {
+            return prepareResult("Not allowed", ResponseStatus.FAILED);
+        }
         try {
-            userService.resetPassword(username, resetPasswordInfo);
+            userService.resetPassword(userId, resetPasswordInfo);
             return prepareResult("Password reset successfully!", ResponseStatus.SUCCEEDED);
 
         } catch (Exception ex) {
@@ -121,14 +170,22 @@ public class UserController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{username}", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("username") String username) {
-        if (StringUtilities.isNullOrEmpty(username)) {
+    /**
+     * Returns the user profile
+     * @param userId    The user account identifier
+     */
+    @RequestMapping(value = "/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId) {
+        if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
-            final User userInfo = userService.getUserInfo(username);
-            if (userInfo != null) {
+            final User user = userService.getUserInfo(userId);
+            if (user != null) {
+                final int processingTime = auditProvider.getAggregatedUserProcessingTime(userId);
+                final List<SessionDuration> sessions = auditProvider.getUserSessions(userId);
+                int sessionTime = sessions != null ? (int) sessions.stream().mapToDouble(SessionDuration::getDuration).sum() : 0;
+                final UserInfo userInfo = new UserInfo(user, sessionTime, processingTime);
                 if (userInfo.getActualInputQuota() == -1) {
                     Repository repository = getLocalRepository(currentUser());
                     userInfo.setActualInputQuota((int) (FileUtilities.folderSize(Paths.get(repository.root())) >> 20));
@@ -142,7 +199,32 @@ public class UserController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{username}", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    /**
+     * Returns the user login name
+     * @param userId    The user account identifier
+     */
+    @RequestMapping(value = "/name/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getUserName(@PathVariable("userId") String userId) {
+        if (StringUtilities.isNullOrEmpty(userId)) {
+            return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
+        }
+        try {
+            final User user = userService.getUserInfo(userId);
+            if (user != null) {
+                return prepareResult(user.getUsername());
+            } else {
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
+            }
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    /**
+     * Updates the user profile
+     * @param updatedUserInfo   The user profile structure
+     */
+    @RequestMapping(value = "/{userId}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateUserInfo(@RequestBody User updatedUserInfo) {
         if (updatedUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
@@ -159,14 +241,20 @@ public class UserController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/prefs", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> saveOrUpdateUserPreferences(@RequestBody List<UserPreference> userPreferences, @RequestHeader("X-Auth-Token") String authToken) {
+    /**
+     * Saves the preferences of an account
+     * @param userPreferences   The preferences list as the body of the request
+     * @param authToken         The authentication token as header
+     */
+    @RequestMapping(value = "/prefs", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> saveOrUpdateUserPreferences(@RequestBody List<UserPreference> userPreferences,
+                                                         @RequestHeader("X-Auth-Token") String authToken) {
         if (userPreferences == null || userPreferences.isEmpty() || StringUtilities.isNullOrEmpty(authToken)) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
         try {
-            final String username = tokenService.retrieve(authToken).getPrincipal().toString();
-            final List<UserPreference> userUpdatedPrefs = userService.saveOrUpdateUserPreferences(username, userPreferences);
+            final String userId = tokenService.retrieve(authToken).getPrincipal().toString();
+            final List<UserPreference> userUpdatedPrefs = userService.saveOrUpdateUserPreferences(userId, userPreferences);
             if (userUpdatedPrefs != null && !userUpdatedPrefs.isEmpty()) {
                 return prepareResult(userUpdatedPrefs);
             } else {
@@ -177,20 +265,26 @@ public class UserController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/prefs", method = RequestMethod.DELETE, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> removeUserPreferences(@RequestBody List<String> userPrefsKeysToDelete, @RequestHeader("X-Auth-Token") String authToken) {
+    /**
+     * Deletes the preferences of an account
+     * @param userPrefsKeysToDelete The preferences list as the body of the request
+     * @param authToken The authentication token as header
+     */
+    @RequestMapping(value = "/prefs", method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> removeUserPreferences(@RequestBody List<String> userPrefsKeysToDelete,
+                                                                    @RequestHeader("X-Auth-Token") String authToken) {
         if (StringUtilities.isNullOrEmpty(authToken)) {
             return prepareResult("Invalid token!", ResponseStatus.FAILED);
         }
         try {
-            final String username = tokenService.retrieve(authToken).getPrincipal().toString();
-            return prepareResult(userService.removeUserPreferences(username, userPrefsKeysToDelete));
+            final String userId = tokenService.retrieve(authToken).getPrincipal().toString();
+            return prepareResult(userService.removeUserPreferences(userId, userPrefsKeysToDelete));
         } catch (Exception ex) {
             return handleException(ex);
         }
     }
 
-    private Repository getLocalRepository(String user) {
-        return repositoryService.getByUser(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
+    private Repository getLocalRepository(String userId) {
+        return repositoryProvider.getUserSystemRepositories(userId).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
     }
 }

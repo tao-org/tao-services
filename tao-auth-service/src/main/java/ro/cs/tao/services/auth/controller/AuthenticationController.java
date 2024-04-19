@@ -16,24 +16,30 @@
 package ro.cs.tao.services.auth.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.persistence.AuditProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
+import ro.cs.tao.user.LogEvent;
+import ro.cs.tao.user.User;
+import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.StringTokenizer;
+import java.time.LocalDateTime;
 
 /**
  * @author Oana H.
@@ -45,24 +51,48 @@ public class AuthenticationController extends BaseController {
 
     @Autowired
     private AuthenticationService authenticationService;
+    @Autowired
+    private AuditProvider auditProvider;
+    @Autowired
+    private UserProvider userProvider;
 
     /**
      * Logs in a user
      * @param user      The user account
      * @param password  The user password
      */
-    @RequestMapping(value = "/login", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> login(@RequestParam("username") String user,
-                                                    @RequestParam("password") String password) {
+    @RequestMapping(value = "/login", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> login(@RequestParam(name = "username", required = false) String user,
+                                                    @RequestParam(name = "password", required = false) String password,
+                                                    @RequestParam(name = "code", required = false) String code) {
         boolean success = true;
         try {
-            final AuthInfo authInfo = authenticationService.login(user, password);
-            if (authInfo != null && authInfo.isAuthenticated()) {
+            final AuthInfo authInfo;
+            if (!StringUtilities.isNullOrEmpty(code)) {
+                authInfo = authenticationService.loginWithCode(currentUser());
+            } else {
+                authInfo = authenticationService.login(user, password);
+            }
+            final User userObj = userProvider.get(currentUser());
+            if (authInfo != null && authInfo.isAuthenticated() && userObj.getStatus() == UserStatus.ACTIVE) {
+                final LogEvent event = new LogEvent();
+                event.setUserId(authInfo.getUserId());
+                event.setTimestamp(LocalDateTime.now());
+                event.setEvent("Login");
+                try {
+                    auditProvider.save(event);
+                } catch (PersistenceException e) {
+                    error(e.getMessage());
+                }
+                if (StringUtilities.isNullOrEmpty(user)) {
+                    user = userObj.getUsername();
+                }
                 if (authInfo.getRefreshToken() != null) {
                     HttpHeaders headers = new HttpHeaders();
                     headers.add("Set-Cookie", "refreshToken=" + authInfo.getRefreshToken() + ";Max-Age=" + authInfo.getExpiration());
                     return ResponseEntity.status(HttpStatus.OK).headers(headers).body(new ServiceResponse<>(authInfo));
                 } else {
+                    Messaging.send(currentUser(), Topic.AUTHENTICATION.value(), "Login " + currentUser());
                     return prepareResult(authInfo);
                 }
             } else {
@@ -85,13 +115,16 @@ public class AuthenticationController extends BaseController {
      * Logs out a user
      * @param authToken The authentication token
      */
-    @RequestMapping(value = "/logout", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> logout(@RequestHeader("X-Auth-Token") String authToken) {
+    @RequestMapping(value = "/logout", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> logout(@RequestHeader("X-Auth-Token") String authToken,
+                                                     HttpServletRequest request) {
         if (StringUtilities.isNullOrEmpty(authToken)) {
             return prepareResult("Expected request header absent!", ResponseStatus.FAILED);
         }
         try {
             if (authenticationService.logout(authToken)) {
+                Messaging.send(currentUser(), Topic.AUTHENTICATION.value(), "Logout " + currentUser());
+                request.getSession().invalidate();
                 return prepareResult("Logout successful", HttpStatus.OK);
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -103,17 +136,17 @@ public class AuthenticationController extends BaseController {
 
     /**
      * Refreshes the authentication token for a user
-     * @param userName      The user login
+     * @param userId      The user identifier
      * @param refreshToken  The refresh token to be used
      */
-    @RequestMapping(value = "/refresh", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> refresh(@RequestParam(name = "user") String userName,
+    @RequestMapping(value = "/refresh", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> refresh(@RequestParam(name = "user") String userId,
                                                       @RequestParam(name = "token") String refreshToken,
                                                       HttpServletRequest request) {
         boolean success = false;
         final String remoteAddr = request.getRemoteAddr();
         try {
-            final Token newToken = authenticationService.getNewToken(userName, refreshToken);
+            final Token newToken = authenticationService.getNewToken(userId, refreshToken);
             if (newToken != null) {
                 HttpHeaders headers = new HttpHeaders();
                 headers.add("Set-Cookie", "refreshToken=" + newToken.getRefreshToken() + ";Max-Age=" + newToken.getExpiresInSeconds());
@@ -123,33 +156,13 @@ public class AuthenticationController extends BaseController {
                 return prepareResult(null, HttpStatus.BAD_REQUEST);
             }
         } catch (Exception ex) {
-            //return handleException(ex);
             return prepareResult(ex.getMessage(), ResponseStatus.FAILED);
         } finally {
             if (success) {
-                trace("Token refreshed [user: %s, addr: %s]", userName, remoteAddr);
+                trace("Token refreshed [user: %s, addr: %s]", userId, remoteAddr);
             } else {
-                warn("Token refresh failed [user: %s, addr: %s]", userName);
+                warn("Token refresh failed [user: %s, addr: %s]", userId, remoteAddr);
             }
         }
     }
-
-    private String getUsernameFromBasicAuthHeader(String authHeader) throws UnsupportedEncodingException {
-        String username = null;
-        if (authHeader != null) {
-            StringTokenizer st = new StringTokenizer(authHeader);
-            if (st.hasMoreTokens()) {
-                String basic = st.nextToken();
-                if (basic.equalsIgnoreCase("Basic")) {
-                    String credentials = new String(Base64.decodeBase64(st.nextToken()), StandardCharsets.UTF_8);
-                    int separatorPosition = credentials.indexOf(":");
-                    if (separatorPosition != -1) {
-                        username = credentials.substring(0, separatorPosition).trim();
-                    }
-                }
-            }
-        }
-        return username;
-    }
-
 }

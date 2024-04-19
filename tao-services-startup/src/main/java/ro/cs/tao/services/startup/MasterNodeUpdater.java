@@ -10,6 +10,7 @@ import ro.cs.tao.execution.monitor.OSRuntimeInfo;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
 import ro.cs.tao.topology.*;
 import ro.cs.tao.utils.DockerHelper;
+import ro.cs.tao.utils.executors.AuthenticationType;
 import ro.cs.tao.utils.executors.MemoryUnit;
 
 import java.net.InetAddress;
@@ -35,7 +36,7 @@ public class MasterNodeUpdater extends BaseLifeCycle {
             if (master == null) {
                 NodeDescription node = persistenceManager.nodes().get("localhost");
                 List<Tag> nodeTags = persistenceManager.tags().list(TagType.TOPOLOGY_NODE);
-                if (nodeTags == null || nodeTags.size() == 0) {
+                if (nodeTags == null || nodeTags.isEmpty()) {
                     for (TagType tagType : TagType.values()) {
                         persistenceManager.tags().save(new Tag(TagType.TOPOLOGY_NODE, tagType.friendlyName()));
                     }
@@ -50,7 +51,7 @@ public class MasterNodeUpdater extends BaseLifeCycle {
                 master.setUserName(user);
                 String pwd = ConfigurationManager.getInstance().getValue("topology.master.password", node.getUserPass());
                 master.setUserPass(pwd);
-                OSRuntimeInfo<?> inspector = OSRuntimeInfo.createInspector(masterHost, user, pwd, RuntimeInfo.class);
+                OSRuntimeInfo<?> inspector = OSRuntimeInfo.createInspector(masterHost, user, pwd, AuthenticationType.PASSWORD, RuntimeInfo.class);
                 master.setDescription(node.getDescription());
                 master.setServicesStatus(node.getServicesStatus());
                 final NodeFlavor masterFlavor = persistenceManager.nodeFlavors().getMasterFlavor();
@@ -60,8 +61,9 @@ public class MasterNodeUpdater extends BaseLifeCycle {
                 master.setFlavor(masterFlavor);
                 master.setActive(true);
                 master.setRole(NodeRole.MASTER);
+                master.setVolatile(false);
                 master.addTag(masterTag.getText());
-                if (master.getServicesStatus() == null || master.getServicesStatus().size() == 0) {
+                if (master.getServicesStatus() == null || master.getServicesStatus().isEmpty()) {
                     // check docker service on master
                     String name = "Docker";
                     String version = DockerHelper.getDockerVersion();

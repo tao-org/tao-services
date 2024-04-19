@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 
 @Service("downloadListener")
 public class DownloadListener implements ProductStatusListener {
-    private Logger logger = Logger.getLogger(DownloadListener.class.getName());
+    private final Logger logger = Logger.getLogger(DownloadListener.class.getName());
 
     @Autowired
     private EOProductProvider productProvider;

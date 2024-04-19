@@ -27,14 +27,14 @@ public class LocalRepositoryHandler extends BaseLifeCycle {
         if (activeUsers != null) {
             final Path rootPath = Paths.get(SystemVariable.ROOT.value());
             for (User user : activeUsers) {
-                if (!SystemPrincipal.instance().getName().equals(user.getUsername())) {
+                if (!SystemPrincipal.instance().getName().equals(user.getId())) {
                     try {
-                        Path userPath = rootPath.resolve(user.getUsername());
+                        Path userPath = rootPath.resolve(user.getId());
                         Files.createDirectories(userPath);
                         Files.createDirectories(userPath.resolve("files"));
                     } catch (IOException e) {
                         logger.severe(String.format("Failed to create user workspace [user=%s, reason=%s]",
-                                                    user.getUsername(), e.getMessage()));
+                                                    user.getId(), e.getMessage()));
                     }
                 }
             }

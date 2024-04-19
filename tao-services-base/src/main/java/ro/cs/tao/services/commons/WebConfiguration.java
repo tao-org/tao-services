@@ -1,6 +1,7 @@
 package ro.cs.tao.services.commons;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
@@ -58,7 +59,7 @@ public abstract class WebConfiguration implements WebMvcConfigurer {
 
     protected abstract String defaultPage();
 
-    private MappingJackson2HttpMessageConverter jacksonMessageConverter(){
+    protected MappingJackson2HttpMessageConverter jacksonMessageConverter(){
         MappingJackson2HttpMessageConverter messageConverter = new MappingJackson2HttpMessageConverter();
         ObjectMapper mapper = new ObjectMapper();
         //Registering Hibernate5Module to support lazy objects
@@ -69,6 +70,7 @@ public abstract class WebConfiguration implements WebMvcConfigurer {
         mapper.registerModule(new JavaTimeModule());
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
         mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         messageConverter.setObjectMapper(mapper);

@@ -17,13 +17,13 @@ package ro.cs.tao.services.entity.util;
 
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.ProcessingComponent;
-import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.component.enums.AuthenticationType;
+import ro.cs.tao.component.ogc.WMSComponent;
+import ro.cs.tao.component.ogc.WPSComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.docker.Container;
-import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.services.entity.beans.RepositoryBean;
@@ -41,6 +41,7 @@ import ro.cs.tao.workspaces.RepositoryType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Oana H.
@@ -86,6 +87,14 @@ public final class ServiceTransformUtils {
         return results;
     }
 
+    public static List<WMSComponentInfo> toWMSComponentInfos(final List<WMSComponent> components) {
+        final List<WMSComponentInfo> results = new ArrayList<>();
+        for (WMSComponent component : components) {
+            results.add(new WMSComponentInfo(component));
+        }
+        return results;
+    }
+
     public static List<DataSourceInfo> toDataSourceInfos(final List<DataSourceComponent> components) {
         final List<DataSourceInfo> results = new ArrayList<>();
         for (DataSourceComponent component : components) {
@@ -112,16 +121,17 @@ public final class ServiceTransformUtils {
         return results;
     }
 
-    public static List<WorkflowInfo> toWorkflowInfos(final List<WorkflowDescriptor> descriptors){
+    public static List<WorkflowInfo> toWorkflowInfos(final List<WorkflowDescriptor> descriptors,
+                                                     final Map<Long, String> images){
         final List<WorkflowInfo> results = new ArrayList<>();
         for(WorkflowDescriptor workflowDescriptor : descriptors){
-            results.add(new WorkflowInfo(workflowDescriptor));
+            results.add(new WorkflowInfo(workflowDescriptor, images != null ? images.get(workflowDescriptor.getId()) : null));
         }
         return results;
     }
 
-    public static WorkflowInfo toWorkflowInfo(WorkflowDescriptor descriptor){
-        return new WorkflowInfo(descriptor);
+    public static WorkflowInfo toWorkflowInfo(WorkflowDescriptor descriptor, String image){
+        return new WorkflowInfo(descriptor, image);
     }
 
     public static RepositoryTypeBean toBean(RepositoryType type) {
@@ -147,6 +157,7 @@ public final class ServiceTransformUtils {
         entity.setReadOnly(bean.isReadOnly());
         entity.setEditable(bean.isEditable());
         entity.setType(EnumUtils.getEnumConstantByName(RepositoryType.class, bean.getType()));
+        entity.setPersistentStorage(bean.isPersistent());
         return entity;
     }
 
@@ -162,6 +173,9 @@ public final class ServiceTransformUtils {
         bean.setReadOnly(entity.isReadOnly());
         bean.setSystem(entity.isSystem());
         bean.setEditable(entity.isEditable());
+        bean.setOrder(entity.getOrder());
+        bean.setPersistent(entity.isPersistentStorage());
+        bean.setPageItem(entity.getType().pageItem());
         return bean;
     }
 

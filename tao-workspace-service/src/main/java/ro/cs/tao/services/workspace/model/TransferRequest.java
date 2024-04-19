@@ -10,6 +10,7 @@ public class TransferRequest {
     private String destinationPath;
     private Boolean move;
     private Boolean overwrite;
+    private Boolean fromAnotherUser;
     private List<FileObject> fileObjects;
     private String filter;
 
@@ -67,5 +68,13 @@ public class TransferRequest {
 
     public void setFilter(String filter) {
         this.filter = filter;
+    }
+
+    public Boolean getFromAnotherUser() {
+        return fromAnotherUser;
+    }
+
+    public void setFromAnotherUser(Boolean fromAnotherUser) {
+        this.fromAnotherUser = fromAnotherUser;
     }
 }

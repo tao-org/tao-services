@@ -14,7 +14,10 @@
 # with this program; if not, see http://www.gnu.org/licenses/
 #
 
-ro.cs.tao.services.workflow.library.GECSigma0WorkflowBuilder
-ro.cs.tao.services.workflow.library.GTCSigma0WorkflowBuilder
-ro.cs.tao.services.workflow.library.BackscatterWorkflow
-ro.cs.tao.services.workflow.library.CoherenceWorkflow
+#ro.cs.tao.services.workflow.library.GECSigma0WorkflowBuilder
+#ro.cs.tao.services.workflow.library.GTCSigma0WorkflowBuilder
+#ro.cs.tao.services.workflow.library.BackscatterWorkflow
+#ro.cs.tao.services.workflow.library.CoherenceWorkflow
+ro.cs.tao.services.workflow.library.VegetationIndicesWorkflowBuilder
+ro.cs.tao.services.workflow.library.WaterIndicesWorkflowBuilder
+ro.cs.tao.services.workflow.library.FloodDetectionWorkflowBuilder

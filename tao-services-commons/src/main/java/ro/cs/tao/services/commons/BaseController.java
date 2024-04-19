@@ -16,22 +16,27 @@
 package ro.cs.tao.services.commons;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.AuditProvider;
 import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.user.LogEvent;
 import ro.cs.tao.user.User;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -43,6 +48,8 @@ public abstract class BaseController extends ControllerBase {
     private static final Timer groupRefreshTimer;
     private static AdministrationService administrationService;
     private static AuditProvider auditProvider;
+    private static UserProvider userProvider;
+    private static final Map<String, String> userTokens = new HashMap<>();
 
     static {
         groupRefreshTimer = new Timer(true);
@@ -52,14 +59,26 @@ public abstract class BaseController extends ControllerBase {
             public void run() {
                 if (administrationService != null) {
                     admins.clear();
-                    admins.addAll(administrationService.getAdministrators().stream().map(User::getUsername).collect(Collectors.toSet()));
+                    admins.addAll(administrationService.getAdministrators().stream().map(User::getId).collect(Collectors.toSet()));
                 }
             }
-        }, 10000, 10000);
+        }, 0, 10000);
     }
 
     public static ServletUriComponentsBuilder currentURL() {
         return ServletUriComponentsBuilder.fromCurrentRequestUri();
+    }
+
+    public static String tokenOf(String userId) {
+        return userTokens.get(userId);
+    }
+
+    public static void storeToken(String userId, String token) {
+        userTokens.put(userId, token);
+    }
+
+    public static void clearToken(String userId) {
+        userTokens.remove(userId);
     }
 
     @Autowired
@@ -67,6 +86,15 @@ public abstract class BaseController extends ControllerBase {
         if (administrationService == null) {
             synchronized (admins) {
                 administrationService = service;
+            }
+        }
+    }
+
+    @Autowired
+    public final void setUserProvider(UserProvider provider) {
+        if (userProvider == null) {
+            synchronized (admins) {
+                userProvider = provider;
             }
         }
     }
@@ -80,17 +108,38 @@ public abstract class BaseController extends ControllerBase {
         }
     }
 
+    @ExceptionHandler(Exception.class)
+    public void handleUncaughtException(Exception exception, WebRequest request) {
+        error(exception.getMessage());
+       final StringWriter writer = new StringWriter();
+        final PrintWriter printWriter = new PrintWriter(writer);
+        exception.printStackTrace(printWriter);
+        Messaging.send(request.getUserPrincipal(), Topic.ERROR.getCategory(),
+                       request.getContextPath(), exception.getMessage(), writer.toString());
+    }
+
     protected String currentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication.getName();
+        return currentPrincipal().getName();
     }
 
     protected Principal currentPrincipal() {
-        return SessionStore.currentContext().getPrincipal();
+        final Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return principal instanceof Principal
+               ? (Principal) principal
+               : new UserPrincipal(userProvider.getId((String) principal));
+
     }
 
     protected boolean isCurrentUserAdmin() {
-        return admins.contains(SessionStore.currentContext().getPrincipal().getName());
+        return admins.contains(currentUser());
+    }
+
+    protected boolean isAdmin(String userId) {
+        return admins.contains(userId);
+    }
+
+    protected Set<String> getAdministrators() {
+        return Collections.unmodifiableSet(admins);
     }
 
     protected void record(String event) {
@@ -99,5 +148,9 @@ public abstract class BaseController extends ControllerBase {
         } catch (PersistenceException e) {
             Logger.getLogger(getClass().getName()).warning(e.getMessage());
         }
+    }
+
+    protected ResponseEntity<ServiceResponse<?>> unauthorizedResponse() {
+        return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
     }
 }

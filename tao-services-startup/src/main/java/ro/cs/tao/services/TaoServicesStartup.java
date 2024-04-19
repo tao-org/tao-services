@@ -18,12 +18,15 @@ package ro.cs.tao.services;
 import org.ggf.drmaa.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.session.HttpSessionDestroyedEvent;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.component.RuntimeOptimizer;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
@@ -32,28 +35,43 @@ import ro.cs.tao.datasource.DataSource;
 import ro.cs.tao.eodata.OutputDataHandler;
 import ro.cs.tao.eodata.metadata.MetadataInspector;
 import ro.cs.tao.execution.Executor;
+import ro.cs.tao.execution.model.ResourceUsage;
+import ro.cs.tao.execution.model.ResourceUsageReport;
 import ro.cs.tao.execution.model.TaskSelector;
+import ro.cs.tao.execution.persistence.ResourceUsageProvider;
+import ro.cs.tao.execution.persistence.ResourceUsageReportProvider;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.messaging.system.StartupCompletedMessage;
+import ro.cs.tao.persistence.AuditProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.TransactionalMethod;
 import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.StartupBase;
+import ro.cs.tao.services.interfaces.LogoutListener;
 import ro.cs.tao.services.startup.LifeCycleProcessor;
 import ro.cs.tao.services.startup.LifeCycleProcessorListener;
 import ro.cs.tao.spi.OutputDataHandlerManager;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
+import ro.cs.tao.user.LogEvent;
+import ro.cs.tao.user.SessionDuration;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.executors.FileProcessFactory;
 import ro.cs.tao.utils.executors.MemoryUnit;
 
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,14 +85,20 @@ import java.util.stream.Stream;
  * @author Cosmin Cara
  */
 
-@SpringBootApplication
+@SpringBootApplication(exclude = {SolrAutoConfiguration.class})
 @EnableScheduling
-@EnableWebMvc
+
 public class TaoServicesStartup extends StartupBase implements LifeCycleProcessorListener {
     @Autowired
     private LifeCycleProcessor lifeCycleProcessor;
     @Autowired
     private PlatformTransactionManager transactionManager;
+    @Autowired
+    private AuditProvider auditProvider;
+    @Autowired
+    private ResourceUsageProvider resourceUsageProvider;
+    @Autowired
+    private ResourceUsageReportProvider resourceUsageReportProvider;
 
     private final static Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
     private static final Map<String, Class> plugins = new LinkedHashMap<String, Class>() {{
@@ -114,6 +138,49 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
             }
             TransactionalMethod.setTransactionManager(transactionManager);
             lifeCycleProcessor.activate(this);
+        } else if (event instanceof HttpSessionDestroyedEvent) {
+            final LogEvent evt = new LogEvent();
+            final HttpSession session = ((HttpSessionDestroyedEvent) event).getSession();
+            SecurityContext context = (SecurityContext) session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+            // There may be initial sessions that don't have a security context. Ignore them.
+            if (context != null && context.getAuthentication() != null && context.getAuthentication().getPrincipal() != null) {
+                final String userId = ((Principal) context.getAuthentication().getPrincipal()).getName();
+                if (userId == null) {
+                    return;
+                }
+                evt.setUserId(userId);
+                evt.setTimestamp(LocalDateTime.now());
+                evt.setEvent("Logout");
+                try {
+                    auditProvider.save(evt);
+                    final Set<LogoutListener> listeners = ServiceRegistryManager.getInstance().getServiceRegistry(LogoutListener.class).getServices();
+                    if (listeners != null) {
+                        for (LogoutListener listener : listeners) {
+                            final SessionDuration sessionDuration = auditProvider.getLastUserSession(userId);
+                            final ResourceUsageReport report = resourceUsageReportProvider.getByUserId(userId);
+                            int processingTime = 0;
+                            final List<ResourceUsage> usages;
+                            if (report != null) {
+                                usages = resourceUsageProvider.getByUserIdSince(userId, report.getLastReportTime());
+                            } else {
+                                usages = resourceUsageProvider.getByUserId(userId);
+                            }
+                            if (usages != null) {
+                                for (ResourceUsage usage : usages) {
+                                    processingTime += (int) Duration.between(usage.getStartTime(),
+                                                                             usage.getEndTime() != null
+                                                                                ? usage.getEndTime()
+                                                                                : LocalDateTime.now()).toSeconds();
+                                }
+                            }
+                            listener.doAction(userId, BaseController.tokenOf(userId), sessionDuration, processingTime);
+                        }
+                        BaseController.clearToken(userId);
+                    }
+                } catch (PersistenceException e) {
+                    logger.severe(e.getMessage());
+                }
+            }
         }
     }
 
@@ -127,7 +194,28 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
                                                                .sorted().collect(Collectors.joining(","))));
         }
         OutputDataHandlerManager.getInstance().setFileProcessFactory(FileProcessFactory.createLocal());
-        final String url = ConfigurationManager.getInstance().getValue("tao.services.base");
+        final ConfigurationProvider cfgProvider = ConfigurationManager.getInstance();
+        final String url = cfgProvider.getValue("tao.services.base");
+        final String path = cfgProvider.getValue("site.path");
+        Path configJsPath = Paths.get(path).resolve("assets").resolve("dist").resolve("js").resolve("config.js");
+        try (Stream<String> stream = Files.lines(configJsPath)) {
+            final List<String> lines = stream.map(line -> {
+                if (line.contains("baseWssUrl") &&
+                        (!line.contains("ws:") || !line.contains("wss:"))) {
+                    return line.substring(0, line.indexOf("'") + 1) +
+                            (url.endsWith("/") ? url : url + "/").replace("http", "ws") +
+                            line.substring(line.lastIndexOf("'"));
+                } else if (line.contains("openStackPresent")) {
+                    return line.substring(0, line.indexOf("=") + 1) +
+                            TopologyManager.getInstance().isExternalProviderAvailable() + ";";
+                } else {
+                    return line;
+                }
+            }).collect(Collectors.toList());
+            Files.write(configJsPath, lines);
+        } catch (IOException e) {
+            logger.severe(e.getMessage());
+        }
         logger.info(String.format("Web interface is accessible at %s", url));
         Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.value(), new StartupCompletedMessage());
     }

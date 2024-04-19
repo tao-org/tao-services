@@ -96,12 +96,17 @@ public class DataSourceRegistrar extends BaseLifeCycle {
             if (newDs != null) {
                 logger.finest(String.format("Registered %s new data source components", newDs.size()));
             }
-            if (existing.size() > 0) {
+            if (!existing.isEmpty()) {
                 logger.warning(String.format("There are %s data source components in the database that have not been found: %s",
                                              existing.size(), String.join(",", existing)));
+                try {
+                    persistenceManager.dataSourceComponents().delete(existing);
+                } catch (PersistenceException e) {
+                    logger.severe(e.getMessage());
+                }
             }
             final List<Container> stacServices = persistenceManager.containers().getByType(ContainerType.STAC);
-            if (stacServices != null && stacServices.size() > 0) {
+            if (stacServices != null && !stacServices.isEmpty()) {
                 STACSource.setConfigurationProvider(persistenceManager.dataSourceConfigurationProvider());
                 for (Container service : stacServices) {
                     DataSourceManager.getInstance().registerDataSource(new STACSource(service.getName()));

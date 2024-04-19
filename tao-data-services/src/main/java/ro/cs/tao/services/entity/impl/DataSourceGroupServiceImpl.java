@@ -1,6 +1,5 @@
 package ro.cs.tao.services.entity.impl;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +44,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     @Autowired
     private DataSourceComponentService dataSourceComponentService;
 
-    private Logger logger = Logger.getLogger(DataSourceGroupService.class.getName());
+    private final Logger logger = Logger.getLogger(DataSourceGroupService.class.getName());
 
     @Override
     public DataSourceComponentGroup findById(String id) {
@@ -111,8 +110,8 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
     }
 
     @Override
-    public List<DataSourceComponentGroup> getUserDataSourceComponentGroups(String userName) {
-        return groupProvider.listByUser(userName);
+    public List<DataSourceComponentGroup> getUserDataSourceComponentGroups(String userId) {
+        return groupProvider.listByUser(userId);
     }
 
     @Override
@@ -221,19 +220,19 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         return tagProvider.list(TagType.DATASOURCE);
     }
 
-    private DataSourceComponentGroup createGroup(String userName, String label) throws PersistenceException {
+    private DataSourceComponentGroup createGroup(String userId, String label) throws PersistenceException {
         DataSourceComponentGroup group = new DataSourceComponentGroup();
         group.setId(UUID.randomUUID().toString());
-        group.setUserName(userName);
+        group.setUserId(userId);
         group.setLabel(label);
         group.setVersion("1.0");
         group.setDescription(group.getLabel());
-        group.setAuthors(userName);
-        group.setCopyright("(C) " + userName);
+        group.setAuthors(userId);
+        group.setCopyright("(C) " + userId);
         group.setNodeAffinity("Any");
         group = groupProvider.save(group);
         logger.finest(String.format("Created data source group [userName=%s, label=%s, id=%s",
-                                    userName, label, group.getId()));
+                                    userId, label, group.getId()));
         return group;
     }
 
@@ -262,22 +261,22 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         // remove from the list the products that are already in database
         candidatesToSave.removeIf(p -> existingProducts.contains(p.getName()));
         if (previousNames != null) {
-            Collection<String> candidatesToRemove = CollectionUtils.subtract(previousNames,
-                                                                             products.stream().map(EOProduct::getName).collect(Collectors.toSet()));
+            final Set<String> pNames = products.stream().map(EOProduct::getName).collect(Collectors.toSet());
+            Collection<String> candidatesToRemove = previousNames.stream().filter(n -> !pNames.contains(n)).collect(Collectors.toList());
             for (String product : candidatesToRemove) {
                 logger.finest(String.format("Product [%s] will be removed from database if not already downloaded or referenced by another component",
                                             product));
                 productProvider.deleteIfNotReferenced(componentId, product);
             }
         }
-        if (candidatesToSave.size() > 0) {
+        if (!candidatesToSave.isEmpty()) {
             ProductPersister persister = new ProductPersister();
             persister.handle(candidatesToSave);
         }
         return candidatesToSave;
     }
 
-    private Query updateQuery(Query incomingQuery, Query dbQuery, String userName) throws PersistenceException {
+    private Query updateQuery(Query incomingQuery, Query dbQuery, String userId) throws PersistenceException {
         if (dbQuery != null) {
             dbQuery.setLabel(incomingQuery.getLabel());
             dbQuery.setLimit(incomingQuery.getLimit());
@@ -287,7 +286,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
             dbQuery.setPassword(incomingQuery.getPassword());
             dbQuery.setSensor(incomingQuery.getSensor());
             dbQuery.setUser(incomingQuery.getUser());
-            dbQuery.setUserId(userName);
+            dbQuery.setUserId(userId);
             dbQuery.setComponentId(incomingQuery.getComponentId());
             Map<String, String> parameters = dbQuery.getValues();
             if (parameters == null) {
