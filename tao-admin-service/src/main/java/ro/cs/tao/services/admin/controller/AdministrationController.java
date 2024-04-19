@@ -247,6 +247,7 @@ public class AdministrationController extends BaseController {
                     flavor.setQuantity(subscription.getFlavorQuantity());
                     flavor.setHdd(subscription.getFlavorHddSizeGB());
                     flavor.setSsd(subscription.getFlavorSsdSizeGB());
+                    flavors.add(flavor);
                 }
                 response.setFlavors(flavors);
                 return prepareResult(response);
@@ -282,7 +283,7 @@ public class AdministrationController extends BaseController {
     /**
      * Creates a resource subscription of a user account
      * @param userId  The user identifier
-     * @param subscription The subscription entity
+     * @param request The subscription entity request
      */
     @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createUserSubscription(@PathVariable("userId") String userId,
@@ -348,7 +349,7 @@ public class AdministrationController extends BaseController {
     /**
      * Updates a resource subscription of a user account
      * @param userId  The user identifier
-     * @param subscription The subscription entity
+     * @param request The subscription entity request
      */
     @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateUserSubscription(@PathVariable("userId") String userId,

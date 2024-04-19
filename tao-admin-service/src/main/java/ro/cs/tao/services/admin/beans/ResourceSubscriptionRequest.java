@@ -6,20 +6,11 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 public class ResourceSubscriptionRequest {
-    private String userId;
     private SubscriptionType type;
     private Map<String, Map<String, Integer>> flavors;
     private Integer objectStorageGB;
     private boolean paid;
     private LocalDateTime created;
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
 
     public SubscriptionType getType() {
         return type;
