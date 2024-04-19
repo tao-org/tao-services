@@ -112,7 +112,7 @@ public class UpdateChecker {
     private int performUpdates(Map<String, String> remoteFiles) throws IOException {
         int changes = 0;
         final Map<String, List<String>> differences = computeKeyDifferences(this.localChecksums, remoteFiles);
-        if (differences.values().size() > 0) {
+        if (!differences.values().isEmpty()) {
             final Path targetPath = ConfigurationManager.getInstance().getApplicationHome();
             List<String> files = differences.get(UPDATE);
             int updated = 0;

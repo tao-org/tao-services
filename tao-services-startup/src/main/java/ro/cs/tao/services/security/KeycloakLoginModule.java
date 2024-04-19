@@ -2,14 +2,16 @@ package ro.cs.tao.services.security;
 
 import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.AuthenticationMode;
 import ro.cs.tao.security.TaoLoginModule;
 import ro.cs.tao.security.TokenCache;
-import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class KeycloakLoginModule extends TaoLoginModule {
@@ -20,7 +22,13 @@ public class KeycloakLoginModule extends TaoLoginModule {
         super();
         this.client = new KeycloakClient();
         final TokenCache cache = TokenCacheManager.getCache();
-        this.client.setTokenKeeper(cache::put);
+        this.client.setTokenKeeper(cache);
+        this.client.setUserProvider(new Supplier<UserProvider>() {
+            @Override
+            public UserProvider get() {
+                return userProvider;
+            }
+        });
     }
 
     @Override
@@ -35,18 +43,21 @@ public class KeycloakLoginModule extends TaoLoginModule {
 
     @Override
     protected User loginImpl(String user, String password) {
-        if (subject.getPrincipals().contains(new UserPrincipal(user))) {
-            return new User();
-        }
         if (userProvider == null) {
             throw new RuntimeException("[userProvider] not set");
         }
-        User userEntity = this.client.checkLoginCredentials(username, password);
+        if (!subject.getPrincipals().isEmpty() && subject.getPrincipals().stream().anyMatch(p -> p.getName().equals(user))) {
+            return new User();
+        }
+        User userEntity = !StringUtilities.isNullOrEmpty(password)
+                          ? this.client.checkLoginCredentials(username, password)
+                          : this.client.checkLoginCredentials(username);
         if (userEntity != null) {
-            User existing = userProvider.getByName(user);
+            this.username = userEntity.getUsername();
+            User existing = userProvider.getByName(userEntity.getUsername());
             try {
                 if (existing == null) {
-                    final boolean isAdmin = username.equals(this.client.getAdminUser());
+                    final boolean isAdmin = password != null && username.equals(this.client.getAdminUser());
                     final List<Group> groups = userProvider.listGroups().stream()
                             .filter(g -> (isAdmin ? "ADMIN" : "USER").equalsIgnoreCase(g.getName())).collect(Collectors.toList());
                     userEntity.setGroups(groups);
@@ -57,6 +68,9 @@ public class KeycloakLoginModule extends TaoLoginModule {
                     }
                     existing = userEntity;
                     userProvider.save(existing);
+                } else if (StringUtilities.isNullOrEmpty(existing.getPassword())){
+                    existing.setPassword(password);
+                    userProvider.update(existing);
                 }
                 userEntity = existing;
                 logger.finest("Keycloak login: " + user);

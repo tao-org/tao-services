@@ -1,8 +1,12 @@
 package ro.cs.tao.services.entity.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.RepositoryBean;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
@@ -19,9 +23,13 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/workspace")
+@Tag(name = "Repositories", description = "Operations related to repository management")
 public class RepositoryEntityController extends DataEntityController<Repository, String, RepositoryService> {
 
-    @RequestMapping(value = "/types/", method = RequestMethod.GET, produces = "application/json")
+    /**
+     * Returns the list of types of supported repositories.
+     */
+    @RequestMapping(value = "/types/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getWorkspaceTypes() {
         try {
             return prepareResult(Arrays.stream(RepositoryType.values()).map(ServiceTransformUtils::toBean).collect(Collectors.toList()));
@@ -30,6 +38,14 @@ public class RepositoryEntityController extends DataEntityController<Repository,
         }
     }
 
+    /**
+     * Returns a (paged) list of repositories definition.
+     *
+     * @param pageNumber    (optional) The page number. Default is 0.
+     * @param pageSize      (optional) Items per page. Default is the list size.
+     * @param sortByField   (optional) The sort field. Default is 'name'.
+     * @param sortDirection (optional) The sort direction (ASC or DESC). Default is ASC.
+     */
     @Override
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
@@ -41,13 +57,21 @@ public class RepositoryEntityController extends DataEntityController<Repository,
                 List<Repository> userRepositories = this.service.getByUser(currentUser());
                 for (Repository repository : userRepositories) {
                     final RepositoryBean bean = ServiceTransformUtils.toBean(repository);
-                    final StorageService storageService = StorageServiceFactory.getInstance(repository);
-                    List<ItemAction> actions = storageService.getRegisteredActions();
-                    if (actions != null) {
-                        bean.setActions(actions.stream().map(a -> new RepositoryBean.Action(a.name(), a.supportedFiles()))
-                                               .sorted(Comparator.comparing(RepositoryBean.Action::getName)).collect(Collectors.toList()));
+                    try {
+                        final StorageService storageService = StorageServiceFactory.getInstance(repository);
+                        List<ItemAction> actions = storageService.getRegisteredActions();
+                        if (actions != null) {
+                            bean.setActions(actions.stream().map(a -> new RepositoryBean.Action(a.name(), a.supportedFiles()))
+                                                   .sorted(Comparator.comparing(RepositoryBean.Action::getName)).collect(Collectors.toList()));
+                        }
+                        repositories.add(bean);
+                    } catch (Exception e) {
+                        final String msg = "Could not connect to repository " + repository.getName() + ". " + e.getMessage();
+                        warn(msg);
+                        Messaging.send(currentUser(),
+                                       Topic.WARNING.value(),
+                                       msg);
                     }
-                    repositories.add(bean);
                 }
                 return prepareResult(repositories);
             } catch (Exception e) {
@@ -77,11 +101,17 @@ public class RepositoryEntityController extends DataEntityController<Repository,
         }
     }
 
+    /**
+     * Returns the definition of a repository.
+     * Only an administrator or the owner of the repository can retrieve the information.
+     *
+     * @param id    The repository identifier
+     */
     @Override
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") String id) {
         try {
             final Repository entity = this.service.findById(id);
-            if (entity == null || !entity.getUserName().equals(currentUser())) {
+            if (entity == null || !entity.getUserId().equals(currentUser())) {
                 throw new IllegalArgumentException("You cannot access this workspace");
             }
             final RepositoryBean bean = ServiceTransformUtils.toBean(entity);
@@ -97,10 +127,15 @@ public class RepositoryEntityController extends DataEntityController<Repository,
         }
     }
 
+    /**
+     * Creates a new repository definition.
+     *
+     * @param entity    The repository definition structure
+     */
     @Override
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Repository entity) {
         try {
-            entity.setUserName(currentUser());
+            entity.setUserId(currentUser());
             entity.setSystem(false);
             return super.save(entity);
         } catch (Exception e) {
@@ -108,11 +143,16 @@ public class RepositoryEntityController extends DataEntityController<Repository,
         }
     }
 
+    /**
+     * Updates an existing repository definition.
+     *
+     * @param entity    The repository definition structure
+     */
     @Override
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody Repository entity) {
         try {
-            if (StringUtilities.isNullOrEmpty(entity.getUserName()) ||
-                !entity.getUserName().equals(currentUser())) {
+            if (StringUtilities.isNullOrEmpty(entity.getUserId()) ||
+                !entity.getUserId().equals(currentUser())) {
                 throw new IllegalArgumentException("Cannot update this workspace");
             }
             entity.setSystem(false);

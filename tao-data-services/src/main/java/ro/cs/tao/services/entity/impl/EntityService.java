@@ -39,7 +39,7 @@ public abstract class EntityService<T> {
                 errors.add(t.getMessage());
             }
         }
-        if (errors.size() > 0) {
+        if (!errors.isEmpty()) {
             ValidationException ex = new ValidationException("Entity has validation errors");
             errors.forEach(e -> ex.addAdditionalInfo(e, null));
             throw ex;

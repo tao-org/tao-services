@@ -40,13 +40,13 @@ public class RepositoryServiceImpl
     }
 
     @Override
-    public List<Repository> getByUser(String userName) {
-        return workspaceProvider.getByUser(userName);
+    public List<Repository> getByUser(String userId) {
+        return workspaceProvider.getByUser(userId);
     }
 
     @Override
-    public Repository getByUserAndName(String userName, String repositoryName) {
-        return workspaceProvider.getByUserAndName(userName, repositoryName);
+    public Repository getByUserAndName(String userId, String repositoryName) {
+        return workspaceProvider.getByUserAndName(userId, repositoryName);
     }
 
     @Override

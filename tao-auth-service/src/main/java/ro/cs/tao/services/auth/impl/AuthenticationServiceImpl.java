@@ -24,6 +24,7 @@ import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.services.auth.token.TokenManagementService;
+import ro.cs.tao.services.commons.WorkspaceCreator;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
 import ro.cs.tao.user.Group;
@@ -31,12 +32,15 @@ import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryFactory;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -61,41 +65,90 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public AuthInfo login(String userName, String password) {
 
-        Token authenticationToken = tokenService.getUserToken(userName);
-        logger.finest("Token " + authenticationToken.getToken());
+        final String userId = userProvider.getId(userName);
+        Token authenticationToken = tokenService.getUserToken(userId);
+        if (authenticationToken != null) {
+            logger.finest("Token " + authenticationToken.getToken());
 
-        // check if user is still active in TAO
-        final User user = userProvider.getByName(userName);
-        if (user != null && user.getStatus() == UserStatus.ACTIVE) {
-            try {
-                // update user last login date
-                userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
-                final List<Repository> list = workspaceProvider.getByUser(userName);
-                if (list == null || list.isEmpty()) {
-                    userProvider.createWorkspaces(userName);
+            // check if user is still active in TAO
+            final User user = userProvider.getByName(userName);
+            if (user != null && user.getStatus() == UserStatus.ACTIVE) {
+                try {
+                    // update user last login date
+                    userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
+                    final List<Repository> list = workspaceProvider.getByUser(user.getId());
+                    final Set<RepositoryType> types = RepositoryFactory.getDefaultRepositoryTypes();
+                    if (list == null || list.isEmpty()) {
+                        userProvider.createWorkspaces(user, new WorkspaceCreator());
+                    } else {
+                        for (Repository repository : list) {
+                            types.remove(repository.getType());
+                        }
+                        // Some of the default repository types were not created for user
+                        if (!types.isEmpty()) {
+                            userProvider.createWorkspaces(user, new WorkspaceCreator());
+                        }
+                    }
+                    Path path = Paths.get(SystemVariable.ROOT.value()).resolve(user.getId());
+                    FileUtilities.ensureExists(path);
+                    FileUtilities.ensureExists(path.resolve("files"));
+                } catch (Exception e) {
+                    logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
+                                                user.getId(), ExceptionUtils.getStackTrace(e)));
                 }
-                Path path = Paths.get(SystemVariable.ROOT.value()).resolve(userName);
-                FileUtilities.ensureExists(path);
-                FileUtilities.ensureExists(path.resolve("files"));
-            } catch (Exception e) {
-                logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
-                                            userName, ExceptionUtils.getStackTrace(e)));
+                // retrieve user groups and send them as profiles
+                return new AuthInfo(true, userId, userName, authenticationToken.getToken(),
+                                    authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
+                                    user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
             }
-            // retrieve user groups and send them as profiles
-            return new AuthInfo(true, authenticationToken.getToken(),
-                                authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
-                                user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
         }
         // unauthorized
-        return new AuthInfo(false, null, null, -1, null);
+        return new AuthInfo(false, null, null, null, null, -1, null);
+    }
+
+    @Override
+    public AuthInfo loginWithCode(String userId) {
+        Token authenticationToken = tokenService.getUserToken(userId);
+        if (authenticationToken != null) {
+            logger.finest("Token " + authenticationToken.getToken());
+
+            // check if user is still active in TAO
+            final Authentication authentication = tokenService.retrieve(authenticationToken.getToken());
+            if (authentication != null) {
+                //final String userId = userProvider.getId(authentication.getName());
+                final User user = userProvider.get(userId);
+                if (user != null && user.getStatus() == UserStatus.ACTIVE) {
+                    try {
+                        // update user last login date
+                        userProvider.updateLastLoginDate(user.getId(), LocalDateTime.now(Clock.systemUTC()));
+                        final List<Repository> list = workspaceProvider.getByUser(user.getId());
+                        if (list == null || list.isEmpty()) {
+                            userProvider.createWorkspaces(user, new WorkspaceCreator());
+                        }
+                        Path path = Paths.get(SystemVariable.ROOT.value()).resolve(user.getId());
+                        FileUtilities.ensureExists(path);
+                        FileUtilities.ensureExists(path.resolve("files"));
+                    } catch (Exception e) {
+                        logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
+                                                    user.getId(), ExceptionUtils.getStackTrace(e)));
+                    }
+                    // retrieve user groups and send them as profiles
+                    return new AuthInfo(true, userId, user.getUsername(), authenticationToken.getToken(),
+                                        authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
+                                        user.getGroups().stream().map(Group::getName).collect(Collectors.toList()));
+                }
+            }
+        }
+        // unauthorized
+        return new AuthInfo(false, null, null, null, null, -1, null);
     }
 
     @Override
     public boolean logout(String authToken) {
         if (tokenService.isValid(authToken)) {
-            final String username = tokenService.retrieve(authToken).getPrincipal().toString();
-            logger.finest("Logging out (" + username + ")...");
-            tokenService.removeUserTokens(username);
+            final String userId = tokenService.retrieve(authToken).getPrincipal().toString();
+            logger.finest("Logging out (" + userId + ")...");
+            tokenService.removeUserTokens(userId);
             return true;
         }
         else {
@@ -105,10 +158,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public Token getNewToken(String userName, String refreshToken) {
-        final User user = userProvider.getByName(userName);
+    public Token getNewToken(String userId, String refreshToken) {
+        final User user = userProvider.get(userId);
         if (user != null && user.getStatus() == UserStatus.ACTIVE) {
-            Token authenticationToken = tokenService.getUserToken(userName);
+            Token authenticationToken = tokenService.getUserToken(userId);
             if (authenticationToken == null) {
                 authenticationToken = tokenService.getFromRefreshToken(refreshToken);
             }
@@ -118,7 +171,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     final Token token = tokenService.generateNewToken(refreshToken);
                     if (token != null) {
                         final Authentication authentication = tokenService.retrieveFromRefreshToken(refreshToken);
-                        tokenService.removeUserTokens(userName);
+                        tokenService.removeUserTokens(userId);
                         tokenService.store(token, authentication);
                         return token;
                     }
@@ -127,4 +180,5 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
         return null;
     }
+
 }

@@ -1,14 +1,16 @@
 package ro.cs.tao.services.entity.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
-import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.component.WPSComponentBean;
+import ro.cs.tao.component.ogc.WPSComponent;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.services.commons.BaseController;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/wpscomponent")
+@Tag(name = "WPS Components", description = "Operations related to WPS components managements")
 public class WPSComponentController extends BaseController {
 
     @Autowired
@@ -36,8 +39,17 @@ public class WPSComponentController extends BaseController {
     @Autowired
     private RepositoryService repositoryService;
 
+    /**
+     * Returns a (paged) list of WPS components.
+     * The optional parameters are either all set or none is set.
+     *
+     * @param pageNumber    (optional) The page number
+     * @param pageSize      (optional) Items per page
+     * @param sortByField   (optional) The sort field
+     * @param sortDirection (optional) The sort direction (ASC or DESC)
+     */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
@@ -52,7 +64,12 @@ public class WPSComponentController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    /**
+     * Creates a new WPS component.
+     *
+     * @param entity    The WPS component structure
+     */
+    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody WPSComponentBean entity) {
         try {
             if (entity == null) {
@@ -84,7 +101,7 @@ public class WPSComponentController extends BaseController {
                     if (repository == null) {
                         repository = JacksonUtil.fromString(target.getDataDescriptor().getLocation(), Repository.class);
                         repository.setName(repoName);
-                        repository.setUserName(currentUser());
+                        repository.setUserId(currentUser());
                         repositoryService.save(repository);
                     }
                 } catch (Exception e) {
@@ -97,7 +114,12 @@ public class WPSComponentController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    /**
+     * Updates an existing WPS component.
+     *
+     * @param entity    The WPS component structure
+     */
+    @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody WPSComponentBean entity) {
         try {
             if (entity == null) {
@@ -124,7 +146,7 @@ public class WPSComponentController extends BaseController {
                     if (repository == null) {
                         repository = JacksonUtil.fromString(target.getDataDescriptor().getLocation(), Repository.class);
                         repository.setName(repoName);
-                        repository.setUserName(currentUser());
+                        repository.setUserId(currentUser());
                         repositoryService.save(repository);
                     }
                 } catch (Exception e) {
@@ -137,7 +159,12 @@ public class WPSComponentController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.DELETE, produces = "application/json")
+    /**
+     * Removes a WPS component.
+     *
+     * @param id    The WPS component identifier
+     */
+    @RequestMapping(value = "/", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> delete(@RequestParam("id") String id) {
         try {
             final WPSComponent entity = wpsComponentService.findById(id);

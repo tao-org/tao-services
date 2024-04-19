@@ -30,9 +30,11 @@ import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.EOProductProvider;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.interfaces.ProductService;
 import ro.cs.tao.spi.OutputDataHandlerManager;
 import ro.cs.tao.spi.ServiceRegistryManager;
@@ -64,6 +66,9 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 	@Autowired
 	private EOProductProvider productProvider;
 
+	@Autowired
+	private UserProvider userProvider;
+
 	@Override
 	protected void validateFields(EOProduct entity, List<String> errors) {
 
@@ -80,7 +85,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		try {
 			products = productProvider.list();
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.warning(e.getMessage());
 		}
 		return products;
 	}
@@ -152,91 +157,79 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		logger.fine("Inspection of " + sourcePath + " starting");
 		List<EOProduct> results = new ArrayList<>();
 		Path source = Paths.get(repository.resolve(sourcePath));
-		Principal principal = SessionStore.currentContext().getPrincipal();
+		final String userId = repository.getUserId();
+		Principal principal = new UserPrincipal(userId);
 		final ProgressListener progressListener = new ProgressNotifier(principal,
 																	   sourcePath,
 																	   Topic.TRANSFER_PROGRESS,
 																	   new HashMap<String, String>() {{
 																		   put("Repository", repository.getId());
 																	   }});
-		try (Stream<Path> stream = Files.walk(Paths.get(repository.resolve(sourcePath)), 1)){
-			List<Path> files = stream.collect(Collectors.toList());
-			files.removeIf(f -> f.equals(source));
-			Path userFolder = Paths.get(repository.root());
-			final double size = files.size();
-			int count = 1;
+		try {
 			progressListener.started(sourcePath);
-			for (Path file : files) {
-				try {
-					if (inspectionExclusions.stream().anyMatch(file::endsWith)) {
-						continue;
-					}
-					Path targetPath;
-					if (!file.toString().startsWith(userFolder.toString())) {
-						targetPath = userFolder.resolve(file.getFileName());
-						if (!Files.exists(targetPath)) {
-							Logger.getLogger(ProductService.class.getName())
-									.fine(String.format("Copying %s to %s", file, userFolder.toFile()));
-							if (Files.isDirectory(file)) {
-								FileUtils.copyDirectoryToDirectory(file.toFile(), userFolder.toFile());
-							} else {
-								FileUtils.copyFile(file.toFile(), userFolder.toFile());
-							}
-							FileUtilities.ensurePermissions(targetPath);
-						}
-					} else {
-						targetPath = file;
-					}
-					List<EOProduct> list = productProvider.getByLocation(targetPath.toAbsolutePath().toUri().toString());
-					EOProduct product = null;
-					inspector = services.stream()
-							.filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath)).findFirst()
-							.orElse(services.stream()
-									.filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
-									.findFirst().orElse(null));
-					if (inspector == null) {
-						logger.warning("No inspector suitable found for " + file);
-						continue;
-					}
-					if (list.size() == 0) {
-						MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
-						if (metadata != null) {
-							product = metadata.toProductDescriptor(targetPath);
-							product.setEntryPoint(metadata.getEntryPoint());
-							product.addReference(principal.getName());
-							product.setVisibility(Visibility.PUBLIC);
-							product.setAcquisitionDate(metadata.getAquisitionDate());
-							if (metadata.getSize() != null) {
-								product.setApproximateSize(metadata.getSize());
-							}
-							if (metadata.getProductId() != null) {
-								product.setId(metadata.getProductId());
-							}
-							product.setProductStatus(ProductStatus.PRODUCED);
-						}
-					} else {
-						product = list.get(0);
-					}
-					if (product != null) {
-						try {
-							Path quicklook = OutputDataHandlerManager.getInstance().applyHandlers(file);
-							if (quicklook != null) {
-								product.setQuicklookLocation(quicklook.toString());
-							}
-						} catch (Exception e) {
-							logger.warning(String.format("Unable to create quicklook for %s. Reason: %s", file, e.getMessage()));
-						}
-						product = productProvider.save(product);
-						results.add(product);
-						logger.finest("Inspection of " + file + " completed");
-						if (Files.isRegularFile(file)) {
-							Files.deleteIfExists(Paths.get(file + ".aux.xml"));
-						}
-					}
-				} catch (Exception e1) {
-					logger.warning(String.format("Import for %s failed. Reason: %s", file, e1.getMessage()));
+			int count = 1;
+			inspector = services.stream()
+					.filter(i -> DecodeStatus.INTENDED == i.decodeQualification(source)).findFirst()
+					.orElse(services.stream()
+							.filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(source))
+							.findFirst().orElse(null));
+			if (inspector == null) {
+				logger.warning("No inspector suitable found for " + source);
+			} else {
+				final EOProduct eoProduct = inspectProduct(inspector, principal, source);
+				if (eoProduct != null) {
+					results.add(eoProduct);
 				}
-				progressListener.notifyProgress((double) count++ / size);
+				progressListener.notifyProgress(count);
+			}
+			if (results.isEmpty()) {
+				try (Stream<Path> stream = Files.walk(Paths.get(repository.resolve(sourcePath)), 1)) {
+					List<Path> files = stream.collect(Collectors.toList());
+					files.removeIf(f -> f.equals(source));
+					Path userFolder = Paths.get(repository.root());
+					final double size = files.size();
+					for (Path file : files) {
+						try {
+							if (inspectionExclusions.stream().anyMatch(file::endsWith)) {
+								continue;
+							}
+							Path targetPath;
+							if (!file.toString().startsWith(userFolder.toString())) {
+								targetPath = userFolder.resolve(file.getFileName());
+								if (!Files.exists(targetPath)) {
+									Logger.getLogger(ProductService.class.getName())
+											.fine(String.format("Copying %s to %s", file, userFolder.toFile()));
+									if (Files.isDirectory(file)) {
+										FileUtils.copyDirectoryToDirectory(file.toFile(), userFolder.toFile());
+									} else {
+										FileUtils.copyFile(file.toFile(), userFolder.toFile());
+									}
+									FileUtilities.ensurePermissions(targetPath);
+								}
+							} else {
+								targetPath = file;
+							}
+							inspector = services.stream()
+									.filter(i -> DecodeStatus.INTENDED == i.decodeQualification(targetPath)).findFirst()
+									.orElse(services.stream()
+											.filter(i -> DecodeStatus.SUITABLE == i.decodeQualification(targetPath))
+											.findFirst().orElse(null));
+							if (inspector == null) {
+								logger.warning("No inspector suitable found for " + file);
+								continue;
+							}
+							final EOProduct eoProduct = inspectProduct(inspector, principal, targetPath);
+							if (eoProduct != null) {
+								results.add(eoProduct);
+							}
+						} catch (Exception e1) {
+							logger.warning(String.format("Import for %s failed. Reason: %s", file, e1.getMessage()));
+						}
+						progressListener.notifyProgress((double) count++ / size);
+					}
+				} catch (Exception e) {
+					throw new IOException(e);
+				}
 			}
 		} catch (Exception e) {
 			throw new IOException(e);
@@ -383,5 +376,45 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 	@Override
 	public List<String> checkExisting(String... names) {
 		return productProvider.getExistingProductNames(names);
+	}
+
+	private EOProduct inspectProduct (MetadataInspector inspector, Principal principal, Path targetPath) throws Exception {
+		List<EOProduct> list = productProvider.getByLocation(targetPath.toAbsolutePath().toUri().toString());
+		EOProduct product = null;
+		if (list.isEmpty()) {
+			MetadataInspector.Metadata metadata = inspector.getMetadata(targetPath);
+			if (metadata != null) {
+				product = metadata.toProductDescriptor(targetPath);
+				product.setEntryPoint(metadata.getEntryPoint());
+				product.addReference(principal.getName());
+				product.setVisibility(Visibility.PUBLIC);
+				product.setAcquisitionDate(metadata.getAquisitionDate());
+				if (metadata.getSize() != null) {
+					product.setApproximateSize(metadata.getSize());
+				}
+				if (metadata.getProductId() != null) {
+					product.setId(metadata.getProductId());
+				}
+				product.setProductStatus(ProductStatus.PRODUCED);
+			}
+		} else {
+			product = list.get(0);
+		}
+		if (product != null) {
+			try {
+				Path quicklook = OutputDataHandlerManager.getInstance().applyHandlers(targetPath);
+				if (quicklook != null) {
+					product.setQuicklookLocation(quicklook.toString());
+				}
+			} catch (Exception e) {
+				logger.warning(String.format("Unable to create quicklook for %s. Reason: %s", targetPath, e.getMessage()));
+			}
+			product = productProvider.save(product);
+			logger.finest("Inspection of " + targetPath + " completed");
+			if (Files.isRegularFile(targetPath)) {
+				Files.deleteIfExists(Paths.get(targetPath + ".aux.xml"));
+			}
+		}
+		return product;
 	}
 }

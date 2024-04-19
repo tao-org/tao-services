@@ -23,6 +23,7 @@ import ro.cs.tao.security.ExternalSessionContextProvider;
 import ro.cs.tao.security.SessionContext;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.UserPrincipal;
+import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
 
 import java.security.Principal;
@@ -41,7 +42,16 @@ public class SpringSessionProvider implements ExternalSessionContextProvider {
             public Principal setPrincipal(Principal value) {
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 Object principal = auth != null ? auth.getPrincipal() : SystemPrincipal.instance();
-                return new UserPrincipal(principal instanceof Principal ? ((Principal) principal).getName() : principal.toString());
+                if (principal instanceof String) {
+                    final User user = persistenceManager.users().getByName(principal.toString());
+                    if (user != null) {
+                        principal =  new UserPrincipal(user.getId());
+                    }
+                }
+                return principal instanceof UserPrincipal
+                       ? (UserPrincipal) principal
+                       : new UserPrincipal(principal instanceof Principal ? ((Principal) principal).getName() : principal.toString());
+
             }
 
             @Override

@@ -17,13 +17,16 @@ package ro.cs.tao.services.user.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.services.commons.WorkspaceCreator;
 import ro.cs.tao.services.interfaces.UserService;
 import ro.cs.tao.services.model.user.ResetPasswordInfo;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.util.List;
 
@@ -36,24 +39,45 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserProvider userProvider;
 
+    @Autowired
+    private ExecutionTaskProvider taskProvider;
+
     @Override
     public List<Group> getGroups() {
         return userProvider.listGroups();
     }
 
     @Override
-    public void activateUser(String username) throws PersistenceException {
-        userProvider.activate(username);
+    public void activateUser(String userId) throws PersistenceException {
+        userProvider.activate(userId);
     }
 
     @Override
-    public void resetPassword(String username, ResetPasswordInfo resetInfo) throws PersistenceException {
-        userProvider.resetPassword(username, resetInfo.getResetKey(), resetInfo.getNewPassword());
+    public void createWorkspaces(String userId) {
+        final User user = userProvider.get(userId);
+        if (user != null) {
+            userProvider.createWorkspaces(user, new WorkspaceCreator());
+        } else {
+            userProvider.createWorkspaces(userId, new WorkspaceCreator());
+        }
     }
 
     @Override
-    public User getUserInfo(String username) {
-        return userProvider.getByName(username);
+    public void resetPassword(String userId, ResetPasswordInfo resetInfo) throws PersistenceException {
+        userProvider.resetPassword(userId, resetInfo.getResetKey(), resetInfo.getNewPassword());
+    }
+
+    @Override
+    public User getUserInfo(String userId) {
+        User user = null;
+        if (!StringUtilities.isNullOrEmpty(userId)) {
+            user = userProvider.get(userId);
+            if (user == null) {
+                user = userProvider.getByName(userId);
+            }
+            user.setActualProcessingQuota(taskProvider.getCPUsForUser(user.getId()));
+        }
+        return user;
     }
 
     @Override
@@ -62,12 +86,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserPreference> saveOrUpdateUserPreferences(String username, List<UserPreference> userPreferences) throws PersistenceException {
-        return userProvider.save(username, userPreferences);
+    public List<UserPreference> saveOrUpdateUserPreferences(String userId, List<UserPreference> userPreferences) throws PersistenceException {
+        return userProvider.save(userId, userPreferences);
     }
 
     @Override
-    public List<UserPreference> removeUserPreferences(String username, List<String> userPrefsKeysToDelete) throws PersistenceException {
-        return userProvider.remove(username, userPrefsKeysToDelete);
+    public List<UserPreference> removeUserPreferences(String userId, List<String> userPrefsKeysToDelete) throws PersistenceException {
+        return userProvider.remove(userId, userPrefsKeysToDelete);
     }
 }

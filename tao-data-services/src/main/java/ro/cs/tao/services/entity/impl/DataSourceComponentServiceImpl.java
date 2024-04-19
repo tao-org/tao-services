@@ -77,6 +77,11 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
+    public List<DataSourceComponent> getOhterDataSourceComponents(Set<String> ids) {
+        return dataSourceComponentProvider.getOtherDataSourceComponents(ids);
+    }
+
+    @Override
     public List<DataSourceComponent> getBySource(String dataSourceName) throws PersistenceException {
         return dataSourceComponentProvider.getBySource(dataSourceName);
     }
@@ -102,8 +107,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
-    public List<DataSourceComponent> getUserDataSourceComponents(String userName) {
-        return dataSourceComponentProvider.getUserDataSourceComponents(userName);
+    public List<DataSourceComponent> getUserDataSourceComponents(String userId) {
+        return dataSourceComponentProvider.getUserDataSourceComponents(userId);
     }
 
     @Override
@@ -274,7 +279,10 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             throw new IllegalArgumentException("Invalid principal (null)");
         }
         final Repository repository = this.repositoryProvider.getByUserAndName(principal.getName(), "LOCAL");
-        List<EOProduct> products = this.productProvider.getByLocation(productPaths.toArray(new String[0]));
+        final List<String> list = productPaths.stream()
+                                              .map(n -> Paths.get(repository.resolve(n)).toUri().toString())
+                                              .collect(Collectors.toList());
+        List<EOProduct> products = this.productProvider.getByLocation(list.toArray(new String[0]));
         final String sensor = products != null && products.size() == productPaths.size()
                               && products.stream().map(EOProduct::getProductType).distinct().count() == 1
                 ? products.get(0).getProductType() : "n/a";
@@ -294,9 +302,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         userDSC.setLabel(label != null && !label.isEmpty() ? label : newId);
         SourceDescriptor sourceDescriptor = userDSC.getSources().stream().filter(s -> s.getName().equals(DataSourceComponent.QUERY_PARAMETER)).findFirst().get();
         sourceDescriptor.getDataDescriptor().setSensorType(SensorType.UNKNOWN);
-        sourceDescriptor.getDataDescriptor().setLocation(productPaths.stream()
-                                                                     .map(n -> Paths.get(repository.resolve(n)).toUri().toString())
-                                                                     .collect(Collectors.joining(",")));
+        sourceDescriptor.getDataDescriptor().setLocation(String.join(",", list));
         sourceDescriptor.setCardinality(productPaths.size());
         sourceDescriptorRepository.save(sourceDescriptor);
         TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
@@ -319,7 +325,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         if (entity == null) {
             throw new PersistenceException(String.format("Datasource with id '%s' not found", id));
         }
-        if (tags != null && tags.size() > 0) {
+        if (tags != null && !tags.isEmpty()) {
             Set<String> existingTags = tagProvider.list(TagType.DATASOURCE).stream()
                     .map(Tag::getText).collect(Collectors.toSet());
             for (String value : tags) {
@@ -339,7 +345,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         if (entity == null) {
             throw new PersistenceException(String.format("Datasource with id '%s' not found", id));
         }
-        if (tags != null && tags.size() > 0) {
+        if (tags != null && !tags.isEmpty()) {
             List<String> entityTags = entity.getTags();
             if (entityTags != null) {
                 for (String value : tags) {
@@ -379,8 +385,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
-    public List<DataSourceComponent> getProductSets(String userName) throws PersistenceException {
-        return this.dataSourceComponentProvider.getProductSets(userName);
+    public List<DataSourceComponent> getProductSets(String userId) throws PersistenceException {
+        return this.dataSourceComponentProvider.getProductSets(userId);
     }
 
     @Override

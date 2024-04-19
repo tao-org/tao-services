@@ -15,15 +15,19 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.StringIdentifiable;
+import ro.cs.tao.orchestration.Orchestrator;
+import ro.cs.tao.persistence.NodeDBProvider;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
+import ro.cs.tao.topology.ServiceDescription;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -35,9 +39,16 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/topology")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Topology", description = "Operations related to TAO worker nodes")
 public class TopologyController extends DataEntityController<NodeDescription, String, TopologyService> {
 
-    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = "application/json")
+    @Autowired
+    private NodeDBProvider nodeDBProvider;
+
+    /**
+     * List all the tags associated with topology nodes.
+     */
+    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getNodeTags();
         if (objects == null ) {
@@ -46,27 +57,44 @@ public class TopologyController extends DataEntityController<NodeDescription, St
         return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 
-    @RequestMapping(value = "/active", method = RequestMethod.GET, produces = "application/json")
+    /**
+     * Returns the worker nodes that are active.
+     */
+    @RequestMapping(value = "/active", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getActiveNodes() {
         return prepareResult(service.getNodes(true));
     }
-
-    @RequestMapping(value = "/inactive", method = RequestMethod.GET, produces = "application/json")
+    /**
+     * Returns the worker nodes that are not active.
+     */
+    @RequestMapping(value = "/inactive", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getInactiveNodes() {
-        return prepareResult(service.getNodes(false));
+        final List<NodeDescription> nodes = service.getNodes(false);
+        nodes.removeIf(n -> n.getId().equalsIgnoreCase("localhost"));
+        return prepareResult(nodes);
     }
-
-    @RequestMapping(value = "/flavors", method = RequestMethod.GET, produces = "application/json")
+    /**
+     * Returns the list of supported node flavors.
+     * Note: if the OpenStack provider is activated, it is the list provided by the remote environment.
+     * Otherwise, it is a list of current nodes hardware configuration.
+     */
+    @RequestMapping(value = "/flavors", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNodeFlavors() {
         return prepareResult(service.getNodeFlavors());
     }
 
-    @RequestMapping(value = "/external", method = RequestMethod.GET, produces = "application/json")
+    /**
+     * Checks if the OpenStack (or other) external provider is active or not.
+     */
+    @RequestMapping(value = "/external", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> isExternalProviderAvailable() {
         return prepareResult(service.isExternalProviderAvailable());
     }
 
-    @RequestMapping(value = "/available", method = RequestMethod.GET, produces = "application/json")
+    /**
+     * Returns a list of active node names (and 'Any') that will serve for assigning a component to be executed on a specific node.
+     */
+    @RequestMapping(value = "/available", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNodeAffinities() {
         List<NodeDescription> activeNodes = service.getNodes(true);
         List<String> names = activeNodes.stream().map(StringIdentifiable::getId).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
@@ -74,42 +102,61 @@ public class TopologyController extends DataEntityController<NodeDescription, St
         return prepareResult(names);
     }
 
-    /*@RequestMapping(path = "/{host:.+}", method = RequestMethod.GET, produces = "application/json")
-    public void tunnelWebSSH(@PathVariable("host") String host, HttpServletRequest request, HttpServletResponse response) {
+    /**
+     * Installs a necessary service on a node.
+     * If the service name is not given, it will try to install all the necessary services.
+     * If the service version is not given (but the service is given), it is assumed to be 1.0.
+     *
+     * @param nodeId The node (host) name
+     * @param serviceName The name of the service
+     * @param version   The version of the service
+     */
+    @RequestMapping(value = "/install", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> installServices(@RequestParam("nodeId") String nodeId,
+                                                              @RequestParam(name = "service", required = false) String serviceName,
+                                                              @RequestParam(name = "version", required = false) String version) {
         try {
-            HttpUriRequest proxiedRequest = createHttpUriRequest(request, host);
-            CloseableHttpClient httpClient = HttpClients.createMinimal();
-            HttpResponse proxiedResponse = httpClient.execute(proxiedRequest);
-            writeToResponse(proxiedResponse, response);
-        } catch (URISyntaxException | IOException e) {
-            e.printStackTrace();
+            final NodeDescription node = service.findById(nodeId);
+            if (node == null) {
+                throw new IllegalArgumentException("No such node");
+            }
+            final ServiceDescription serviceDescription;
+            if (!StringUtilities.isNullOrEmpty(serviceName)) {
+                if (StringUtilities.isNullOrEmpty(version)) {
+                    version = "1.0";
+                }
+                serviceDescription = nodeDBProvider.getServiceDescription(serviceName, version);
+            } else {
+                serviceDescription = null;
+            }
+            asyncExecute(() -> service.installServices(node, serviceDescription));
+            return prepareResult("Services installation started on node " + nodeId);
+        } catch (Exception e) {
+            return handleException(e);
         }
     }
 
-    private HttpUriRequest createHttpUriRequest(HttpServletRequest request, String host) throws URISyntaxException {
-        final URI uri = new URI("http://" + host + ":4200/");
-        final RequestBuilder rb = RequestBuilder.create(request.getMethod());
-        rb.setUri(uri);
-        final Enumeration<String> headerNames = request.getHeaderNames();
-        while(headerNames.hasMoreElements()){
-            String headerName = headerNames.nextElement();
-            if(!headerName.equalsIgnoreCase("accept-encoding")) {
-                rb.addHeader(headerName, request.getHeader(headerName));
-            }
-        }
-
-        return rb.build();
+    @Override
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> save(@RequestBody NodeDescription entity) {
+        entity.setAppId(Orchestrator.getInstance().getId());
+        return super.save(entity);
     }
 
-    private void writeToResponse(HttpResponse proxiedResponse, HttpServletResponse response) throws IOException {
-        for (Header header : proxiedResponse.getAllHeaders()) {
-            if ((! header.getName().equals("Transfer-Encoding")) || (! header.getValue().equals("chunked"))) {
-                response.addHeader(header.getName(), header.getValue());
-            }
+    @Override
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody NodeDescription entity) {
+        final NodeDescription initial = service.findById(entity.getId());
+        entity.setFlavor(initial.getFlavor());
+        if (entity.getAppId() == null) {
+            entity.setAppId(initial.getAppId());
         }
-        try (InputStream is = proxiedResponse.getEntity().getContent();
-             OutputStream os = response.getOutputStream()) {
-            IOUtils.copy(is, os);
+        if (entity.getServerId() == null) {
+            entity.setServerId(initial.getServerId());
         }
-    }*/
+        if (entity.getOwner() == null) {
+            entity.setOwner(initial.getOwner());
+        }
+        return super.update(id, entity);
+    }
 }

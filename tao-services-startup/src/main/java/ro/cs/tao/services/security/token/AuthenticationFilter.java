@@ -33,6 +33,7 @@ import ro.cs.tao.messaging.system.StartupCompletedMessage;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.Endpoints;
 import ro.cs.tao.utils.ExceptionUtils;
+import ro.cs.tao.utils.StringUtilities;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -43,6 +44,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,10 +58,14 @@ public class AuthenticationFilter extends GenericFilterBean {
     private static volatile boolean systemInitialised = false;
     private final AuthenticationManager authenticationManager;
     private final SystemMessageReceiver receiver;
+    private final HashSet<String> excludedEndpoints;
 
     public AuthenticationFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
         this.receiver = new SystemMessageReceiver();
+        this.excludedEndpoints = new HashSet<>();
+        this.excludedEndpoints.add(Endpoints.DOWNLOAD_ENDPOINT);
+        this.excludedEndpoints.add(Endpoints.TUNNEL_ENDPOINT);
     }
 
     @Override
@@ -69,25 +75,49 @@ public class AuthenticationFilter extends GenericFilterBean {
         if (!systemInitialised && !httpResponse.isCommitted()) {
             httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "The system is not able yet to serve http requests");
         }
-        final Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
+        Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
         final String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
 
         try {
             ServletRequest request = servletRequest;
             if (postToAuthenticate(httpRequest, resourcePath)) {
-                final String username = httpRequest.getParameter("username");
-                final String password = httpRequest.getParameter("password");
+                String username = httpRequest.getParameter("username");
+                if (username == null) {
+                    username = httpRequest.getParameter("code");
+                }
+                String password = httpRequest.getParameter("password");
+                if (password == null) {
+                    password = "";
+                }
                 MutableHttpServletRequest wrapper = new MutableHttpServletRequest(httpRequest);
                 wrapper.putHeader("Authorization", "Basic " + new String(Base64.encodeBase64((username + ":" + password).getBytes(StandardCharsets.US_ASCII))));
                 request = wrapper;
             } else if (token.isPresent()) {
                 processTokenAuthentication(token.get(), request);
             } else {
-                if (isExcludedResource(httpRequest, resourcePath)) {
-                    SecurityContextHolder.getContext().setAuthentication(new SystemAuthentication());
+                // Plain websocket first connection workaround
+                final String upgrade = httpRequest.getHeader("upgrade");
+                if (!StringUtilities.isNullOrEmpty(upgrade) && "websocket".equals(upgrade)) {
+                    final String cookie = httpRequest.getHeader("cookie");
+                    int idx;
+                    if (!StringUtilities.isNullOrEmpty(cookie) && (idx = cookie.indexOf("tokenKey")) > -1) {
+                        int idxE = cookie.indexOf(";", idx);
+                        final String tokenKey = cookie.substring(idx + 9, idxE > 0 ? cookie.indexOf(";", idx) : cookie.length()).trim();
+                        processTokenAuthentication(tokenKey, request);
+                    } else {
+                        final String queryString = httpRequest.getQueryString();
+                        if (!StringUtilities.isNullOrEmpty(queryString) && (idx = queryString.indexOf("tokenKey")) > -1) {
+                            final String tokenKey = queryString.substring(idx + 9).trim();
+                            processTokenAuthentication(tokenKey, request);
+                        }
+                    }
                 } else {
-                    if (requiresToken(resourcePath)) {
-                        throw new AuthenticationCredentialsNotFoundException(resourcePath);
+                    if (isExcludedResource(httpRequest, resourcePath)) {
+                        SecurityContextHolder.getContext().setAuthentication(new SystemAuthentication());
+                    } else {
+                        if (requiresToken(resourcePath)) {
+                            throw new AuthenticationCredentialsNotFoundException(resourcePath);
+                        }
                     }
                 }
             }
@@ -132,10 +162,8 @@ public class AuthenticationFilter extends GenericFilterBean {
     }
 
     private boolean isExcludedResource(HttpServletRequest httpRequest, String resourcePath){
-        return  (Endpoints.REFRESH_ENDPOINT.equalsIgnoreCase(resourcePath)
-                    && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD)) ||
-                (resourcePath.startsWith(Endpoints.DOWNLOAD_ENDPOINT)
-                    && httpRequest.getMethod().equals("GET"));
+        return (this.excludedEndpoints.contains (resourcePath) && httpRequest.getMethod().equals("GET")) ||
+               (resourcePath.equalsIgnoreCase(Endpoints.REFRESH_ENDPOINT) && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD));
     }
 
     private static class SystemMessageReceiver extends Notifiable {

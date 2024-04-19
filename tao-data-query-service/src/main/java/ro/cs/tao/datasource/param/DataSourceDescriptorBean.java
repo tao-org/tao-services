@@ -62,4 +62,16 @@ public class DataSourceDescriptorBean {
                 .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), new DataSourceParameterBean(e.getValue())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
+
+    public boolean isRequiresAuthentication() {
+        return descriptor.isRequiresAuthentication();
+    }
+
+    public String getSecret() {
+        return descriptor.getSecret();
+    }
+
+    public boolean isRequires2FA() {
+        return descriptor.isRequires2FA();
+    }
 }

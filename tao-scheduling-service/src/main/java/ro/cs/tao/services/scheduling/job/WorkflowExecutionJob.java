@@ -153,7 +153,7 @@ public class WorkflowExecutionJob extends AbstractJob {
 		return SpringContextBridge.services().getService(PersistenceManager.class);
 	}
 
-	private void updateInputs(final String userName, final Map<String, Map<String, String>> inputs) {
+	private void updateInputs(final String userId, final Map<String, Map<String, String>> inputs) {
 		
 		// look for the nodes that define a start date
 		for (final Entry<String,Map<String, String>> nodeData : inputs.entrySet()) {
@@ -165,7 +165,7 @@ public class WorkflowExecutionJob extends AbstractJob {
 				}
 				
 				// get the date of the last product
-				LocalDateTime date = persistenceManager.rasterData().getNewestProductDateForUser(userName, footprint);
+				LocalDateTime date = persistenceManager.rasterData().getNewestProductDateForUser(userId, footprint);
 				if (date == null) {
 					// no product defined for the user. Continue with existing values
 					continue;

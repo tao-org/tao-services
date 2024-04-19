@@ -121,7 +121,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
         }
         final ExecutionJob job = jobProvider.get(jobId);
         if (job != null) {
-            return getLocalRepositoryService(job.getUserName()).getJobResults(jobId);
+            return getLocalRepositoryService(job.getUserId()).getJobResults(jobId);
         } else {
             return null;
         }
@@ -132,7 +132,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
             final WorkflowDescriptor descriptor = new WorkflowDescriptor();
             descriptor.setId(workflowId);
             descriptor.setName("MockWorkflowName");
-            return new WorkflowInfo(descriptor);
+            return new WorkflowInfo(descriptor, null);
         }
         try {
             return workflowService.getWorkflowInfo(workflowId);
@@ -191,7 +191,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
         }
     }
 
-    private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService(String userName) {
-        return StorageServiceFactory.getInstance(repositoryProvider.getByUser(userName).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
+    private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService(String userId) {
+        return StorageServiceFactory.getInstance(repositoryProvider.getUserSystemRepositories(userId).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
     }
 }

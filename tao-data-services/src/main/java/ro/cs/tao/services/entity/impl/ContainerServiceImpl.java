@@ -28,6 +28,9 @@ import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
+import ro.cs.tao.docker.ContainerVisibility;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.ContainerProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
@@ -85,6 +88,21 @@ public class ContainerServiceImpl
     }
 
     @Override
+    public List<Container> listByTypeAndVisibility(ContainerType type, ContainerVisibility visibility) {
+        return containerProvider.getByTypeAndVisibility(type, visibility);
+    }
+
+    @Override
+    public List<Container> listContainersVisibleToUser(String userId) {
+        return containerProvider.listContainersVisibleToUser(userId);
+    }
+
+    @Override
+    public List<Container> listUserContainers(String userId) {
+        return containerProvider.listUserContainers(userId);
+    }
+
+    @Override
     public Container save(Container object) {
         if (object != null) {
             try {
@@ -124,7 +142,8 @@ public class ContainerServiceImpl
     @Override
     public String registerContainer(Path dockerFile, Container container, ProcessingComponent[] components) {
         String containerId;
-        if (DockerManager.getDockerImage(container.getName()) == null) {
+        final Container dockerImage = DockerManager.getDockerImage(container.getName());
+        if (dockerImage == null) {
             // build Docker image and put it in Docker registry
             containerId = DockerManager.registerImage(dockerFile, container.getName(), container.getDescription());
             // update database with container and applications information
@@ -132,7 +151,18 @@ public class ContainerServiceImpl
         } else {
             // the image is already registered with Docker, and should be also registered in the database
             Container c = containerProvider.getByName(container.getName());
-            containerId = c != null ? c.getId() : null;
+            if (c == null) {
+                container.setId(dockerImage.getId());
+                try {
+                    containerProvider.save(container);
+                } catch (PersistenceException e) {
+                    logger.warning(String.format("Container %s could not be registered. Reason: %s",
+                                                 container.getName(), e.getMessage()));
+                }
+                containerId = container.getId();
+            } else {
+                containerId = c.getId();
+            }
         }
         // if provided, register the components of this container
         if (containerId != null && components != null) {
@@ -206,6 +236,11 @@ public class ContainerServiceImpl
                 }
             }
         }
+        if (containerId != null) {
+            Messaging.send(SystemPrincipal.instance(), Topic.CONTAINER.value(),
+                           String.format("Container %s has been added. Visibility: %s",
+                                         containerId, container.getVisibility().friendlyName()));
+        }
         return containerId;
     }
 
@@ -272,12 +307,12 @@ public class ContainerServiceImpl
         if (value == null || value.trim().isEmpty()) {
             errors.add("[name] cannot be empty");
         }
-        value = entity.getTag();
+        /*value = entity.getTag();
         if (value == null || value.trim().isEmpty()) {
             errors.add("[tag] cannot be empty");
-        }
+        }*/
         List<Application> applications = entity.getApplications();
-        if (applications.size() == 0) {
+        if (applications.isEmpty()) {
             errors.add("[applications] cannot be empty");
         }
         applications.forEach(app -> {

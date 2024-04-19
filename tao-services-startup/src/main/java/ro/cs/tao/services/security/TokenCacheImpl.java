@@ -37,8 +37,12 @@ public class TokenCacheImpl implements TokenCache {
         if (authentication == null || authentication.getPrincipal() == null) {
             logger.warning(String.format("Token %s has no corresponding authentication", token.getToken()));
         } else {
-            final String user = authentication.getPrincipal().toString();
-            cache.put(user, new Tuple<>(token, authentication));
+            /*Principal principal = null;
+            if (authentication instanceof AuthenticationWithToken) {
+                principal = ((AuthenticationWithToken) authentication).getLoginContext().getSubject().getPrincipals().stream().findFirst().orElse(null);
+            }
+            final String user = principal != null ? principal.getName() : authentication.getPrincipal().toString();*/
+            cache.put(authentication.getPrincipal().toString(), new Tuple<>(token, authentication));
         }
     }
 
@@ -51,6 +55,13 @@ public class TokenCacheImpl implements TokenCache {
     public Token getToken(String user) {
         final Tuple<Token, Authentication> tuple = cache.get(user);
         return tuple != null ? tuple.getKeyOne() : null;
+    }
+
+    @Override
+    public String getUser(String token) {
+        final Map.Entry<String, Tuple<Token, Authentication>> entry = cache.entrySet().stream().filter(e -> e.getValue().getKeyOne().getToken()
+                                                                                                             .equals(token)).findFirst().orElse(null);
+        return entry != null ? entry.getKey() : null;
     }
 
     @Override
@@ -71,7 +82,7 @@ public class TokenCacheImpl implements TokenCache {
         for (Map.Entry<String, Tuple<Token, Authentication>> entry : cache.entrySet()) {
             final Token t = entry.getValue().getKeyOne();
             if ((!t.isExpired() && t.getToken().equals(token)) ||
-                t.getRefreshToken().equals(token)) {
+                    (t.getRefreshToken() != null && t.getRefreshToken().equals(token))) {
                 authentication = entry.getValue().getKeyTwo();
             }
         }

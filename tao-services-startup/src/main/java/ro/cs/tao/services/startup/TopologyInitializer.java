@@ -11,6 +11,7 @@ import ro.cs.tao.utils.StringUtilities;
 public class TopologyInitializer extends BaseLifeCycle {
     private static final String MASTER_USER = "topology.master.user";
     private static final String MASTER_PASSWORD = "topology.master.password";
+    private static final String MASTER_SSH_KEY = "topology.node.ssh.key";
     private static final String NODE_NAME_PREFIX = "topology.node.name.prefix";
     private static final String NODE_DEFAULT_DESCRIPTION = "topology.node.default.description";
     private static final String NODE_LIMIT = "topology.node.limit";
@@ -24,6 +25,7 @@ public class TopologyInitializer extends BaseLifeCycle {
     public void onStartUp() {
         final DefaultNodeProvider nodeProvider = new DefaultNodeProvider();
         TopologyManager.getInstance().setLocalNodeProvider(nodeProvider);
+        TopologyManager.getInstance().setVolatileInstanceProvider(persistenceManager.volatileInstances());
         final NodeManager nodeManager = NodeManager.getInstance();
         final ConfigurationProvider cfgManager = ConfigurationManager.getInstance();
         if (nodeManager != null) {
@@ -31,11 +33,12 @@ public class TopologyInitializer extends BaseLifeCycle {
             final String description = cfgManager.getValue(NODE_DEFAULT_DESCRIPTION);
             final String user = cfgManager.getValue(MASTER_USER);
             final String pwd = cfgManager.getValue(MASTER_PASSWORD);
+            final String key = cfgManager.getValue(MASTER_SSH_KEY);
             if (StringUtilities.isNullOrEmpty(prefix) || StringUtilities.isNullOrEmpty(description) ||
-                    StringUtilities.isNullOrEmpty(user) || StringUtilities.isNullOrEmpty(pwd)) {
+                    StringUtilities.isNullOrEmpty(user) || StringUtilities.isNullOrEmpty(pwd) || StringUtilities.isNullOrEmpty(key)) {
                 nodeManager.setDefaultNodeInfo(null);
             } else {
-                nodeManager.setDefaultNodeInfo(new DefaultNodeInfo(prefix, description, user, pwd));
+                nodeManager.setDefaultNodeInfo(new DefaultNodeInfo(prefix, description, user, pwd, key));
             }
             nodeManager.setNodeProvider(nodeProvider);
             nodeManager.setTaskProvider(persistenceManager.tasks());

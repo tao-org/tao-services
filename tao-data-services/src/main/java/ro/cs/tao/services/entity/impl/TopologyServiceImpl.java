@@ -21,12 +21,13 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.docker.Container;
-import ro.cs.tao.persistence.NodeProvider;
+import ro.cs.tao.persistence.NodeDBProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.NodeFlavor;
+import ro.cs.tao.topology.ServiceDescription;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.topology.docker.DockerManager;
 
@@ -47,7 +48,7 @@ public class TopologyServiceImpl
     @Autowired
     private TagProvider tagProvider;
     @Autowired
-    private NodeProvider nodeProvider;
+    private NodeDBProvider nodeDBProvider;
 
     public boolean isExternalProviderAvailable() {
         return topologyManager().isExternalProviderAvailable();
@@ -79,7 +80,7 @@ public class TopologyServiceImpl
 
     @Override
     public List<NodeDescription> getNodes(boolean active) {
-        return nodeProvider.list(active);
+        return nodeDBProvider.list(active);
     }
 
     @Override
@@ -149,7 +150,7 @@ public class TopologyServiceImpl
         if (entity == null) {
             throw new PersistenceException(String.format("Node with id '%s' not found", id));
         }
-        if (tags != null && tags.size() > 0) {
+        if (tags != null && !tags.isEmpty()) {
             Set<String> existingTags = tagProvider.list(TagType.TOPOLOGY_NODE).stream()
                     .map(Tag::getText).collect(Collectors.toSet());
             for (String value : tags) {
@@ -169,7 +170,7 @@ public class TopologyServiceImpl
         if (entity == null) {
             throw new PersistenceException(String.format("Node with id '%s' not found", id));
         }
-        if (tags != null && tags.size() > 0) {
+        if (tags != null && !tags.isEmpty()) {
             List<String> entityTags = entity.getTags();
             if (entityTags != null) {
                 for (String value : tags) {
@@ -189,6 +190,11 @@ public class TopologyServiceImpl
     @Override
     public List<Tag> getNodeTags() {
         return tagProvider.list(TagType.TOPOLOGY_NODE);
+    }
+
+    @Override
+    public void installServices(NodeDescription node, ServiceDescription service) {
+        TopologyManager.getInstance().installServices(node, service);
     }
 
     @Override

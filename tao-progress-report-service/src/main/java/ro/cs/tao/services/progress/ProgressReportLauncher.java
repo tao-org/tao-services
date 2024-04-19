@@ -18,12 +18,11 @@ package ro.cs.tao.services.progress;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.services.commons.ServiceLauncher;
 
 @Configuration
 @ImportResource("classpath:progress-report-service-context.xml")
-@EnableWebMvc
+
 public class ProgressReportLauncher implements ServiceLauncher {
 
     public static void main(String[] args) {

@@ -70,11 +70,11 @@ public class WPSClient {
         workflowDescriptor.setId(Long.parseLong(pdt.getIdentifier().getValue()));
         final String title = pdt.getTitle().getValue();
         workflowDescriptor.setName(title);
-        workflowDescriptor.setUserName(this.currentPrincipal.getName());
+        workflowDescriptor.setUserId(this.currentPrincipal.getName());
         workflowDescriptor.setActive(true);
         workflowDescriptor.setStatus(Status.PUBLISHED);
         workflowDescriptor.setPath(url);
-        info.setWorkflowInfo(new WorkflowInfo(workflowDescriptor));
+        info.setWorkflowInfo(new WorkflowInfo(workflowDescriptor, null));
         Map<String, List<Parameter>> parameters = new HashMap<>();
         final EList paramList = pdt.getDataInputs().getInput();
         for (Object o : paramList) {

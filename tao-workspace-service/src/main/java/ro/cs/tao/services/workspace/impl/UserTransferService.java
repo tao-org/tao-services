@@ -3,10 +3,13 @@ package ro.cs.tao.services.workspace.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.core.io.FileSystemResource;
+import ro.cs.tao.ListenableInputStream;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
@@ -44,7 +47,7 @@ public class UserTransferService {
     UserTransferService(Principal user) {
         this.logger = Logger.getLogger(TransferService.class.getName());
         this.queue = new LinkedBlockingDeque<>();
-        this.queueWorker = new BlockingQueueWorker<>(this.queue, this::processRequest);
+        this.queueWorker = new BlockingQueueWorker<>(this.queue, this::processRequest, 1, "transfer-worker", 250);
         this.principal = user;
         this.stateFile = Paths.get(SystemVariable.ROOT.value()).resolve("transfer").resolve(user.getName()).resolve("transfer_queue.json");
         restoreState();
@@ -84,8 +87,8 @@ public class UserTransferService {
         try {
             if (this.progressListener == null) {
                 this.progressListener = new ProgressNotifier(this.principal, item.getBatch(),
-                        Topic.TRANSFER_PROGRESS, new HashMap<String, String>() {{
-                            put("Repository", item.getDestinationRepository().getId());
+                        Topic.TRANSFER_PROGRESS, new HashMap<>() {{
+                    put("Repository", item.getDestinationRepository().getId());
                 }});
                 this.progressListener.started(item.getBatch());
             }
@@ -108,7 +111,9 @@ public class UserTransferService {
             } else {
                 srcPath = srcWorkspace.resolve(fileObject.getRelativePath());
             }
-            this.progressListener.subActivityStarted(srcPath);
+            if (this.progressListener != null) {
+            	this.progressListener.subActivityStarted(srcPath);
+            }
             if (srcWorkspace.getId().equals(dstWorkspace.getId())) {
                 destinationService.move(srcPath, item.getDestinationPath());
             } else {
@@ -121,6 +126,11 @@ public class UserTransferService {
                         sourceStream = (InputStream) source;
                     }
                     logger.finest("Begin transferring file " + srcPath);
+                    if (fileObject.getSize() > 0) {
+                        sourceStream = new ListenableInputStream(sourceStream,
+                                                                 fileObject.getSize(),
+                                                                 listener);
+                    }
                     if (item.isForce() || !destinationService.exists(item.getDestinationPath())) {
                         destinationService.storeFile(sourceStream, fileObject.getSize(), item.getDestinationPath(), srcPath);
                     } else {
@@ -137,19 +147,27 @@ public class UserTransferService {
                     logger.finest("Removed file " + srcPath);
                 }
             }
-            this.progressListener.subActivityEnded(srcPath);
+            if (this.progressListener != null) {
+            	this.progressListener.subActivityEnded(srcPath, true);
+            }
             //decrement(item.getBatch());
-            this.progressListener.notifyProgress(getBatchProgress(item.getBatch()));
+            if (this.progressListener != null) {
+                this.progressListener.notifyProgress(getBatchProgress(item.getBatch()));
+            }
             final TransferableItem next = this.queue.peek();
             if (next == null || !item.getBatch().equals(next.getBatch())) {
-                this.progressListener.ended();
-                this.progressListener = null;
-                logger.finest("Transfer batch [" + item.getBatch() + "] completed");
+                if (this.progressListener != null) {
+                    this.progressListener.ended(true);
+                    this.progressListener = null;
+                }
+                final String msg = "Transfer batch [" + item.getBatch() + "] completed";
+                Messaging.send(new UserPrincipal(item.getUser()), Topic.INFORMATION.value(), this, msg);
+                logger.finest(msg);
             }
         } catch (Exception e) {
             logger.severe(ExceptionUtils.getStackTrace(logger, e));
             if (this.progressListener != null) {
-                this.progressListener.ended();
+                this.progressListener.ended(false);
             }
             this.queueWorker.setPaused(true);
             initRetryTimer();
@@ -175,8 +193,8 @@ public class UserTransferService {
         if (this.saveState) {
             try {
                 Files.createDirectories(this.stateFile.getParent());
-                if (Files.exists(this.stateFile)) {
-                    Files.delete(this.stateFile);
+                if (Files.notExists(this.stateFile)) {
+                    Files.createFile(this.stateFile);
                 }
                 final TransferableItem[] requests = queue.toArray(new TransferableItem[0]);
                 try (OutputStream stream = Files.newOutputStream(this.stateFile)) {

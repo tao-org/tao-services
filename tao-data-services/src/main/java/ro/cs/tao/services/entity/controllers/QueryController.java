@@ -16,9 +16,10 @@
 
 package ro.cs.tao.services.entity.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.datasource.beans.Query;
@@ -33,39 +34,40 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/datasource/query")
+@Tag(name = "Saved Queries", description = "Operations related to the management of saved queries")
 public class QueryController extends BaseController {
 
     @Autowired
     private QueryService queryService;
 
+    /**
+     * Returns a list of saved queries according to the given filters.
+     * @param sensor    The sensor (or collection) name
+     * @param dataSource    The data source name
+     * @param workflowNodeId    The workflow node identifier
+     */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<ServiceResponse<?>> getQuery(@RequestParam(name = "userId", required = false) Optional<String> userId,
-                                                       @RequestParam(name = "sensor", required = false) Optional<String> sensor,
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getQuery(@RequestParam(name = "sensor", required = false) Optional<String> sensor,
                                                        @RequestParam(name = "dataSource", required = false) Optional<String> dataSource,
                                                        @RequestParam(name = "nodeId", required = false) Optional<Long> workflowNodeId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            if (!userId.isPresent() && !sensor.isPresent() && !dataSource.isPresent() && !workflowNodeId.isPresent()) {
+            if (sensor.isEmpty() && dataSource.isEmpty() && workflowNodeId.isEmpty()) {
                 responseEntity = prepareResult(queryService.list());
             } else {
-                if (!userId.isPresent()) {
-                    responseEntity = prepareResult("Missing userId", ResponseStatus.FAILED);
+                final String userId = currentUser();
+                if (sensor.isPresent() && dataSource.isPresent() && workflowNodeId.isPresent()) {
+                    responseEntity = prepareResult(queryService.getQuery(userId, sensor.get(),
+                                                                         dataSource.get(), workflowNodeId.get()));
+                } else if (sensor.isPresent() && dataSource.isPresent()) {
+                    responseEntity = prepareResult(queryService.getQueries(userId, sensor.get(), dataSource.get()));
+                } else if (sensor.isPresent()) {
+                    responseEntity = prepareResult(queryService.getQueriesBySensor(userId, sensor.get()));
+                } else if (dataSource.isPresent()) {
+                    responseEntity = prepareResult(queryService.getQueriesByDataSource(userId, dataSource.get()));
                 } else {
-                    if (sensor.isPresent() && dataSource.isPresent() && workflowNodeId.isPresent()) {
-                        responseEntity = prepareResult(queryService.getQuery(userId.get(), sensor.get(),
-                                                                             dataSource.get(), workflowNodeId.get()));
-                    } else if (sensor.isPresent() && dataSource.isPresent()) {
-                        responseEntity = prepareResult(queryService.getQueries(userId.get(), sensor.get(), dataSource.get()));
-                    } else if (sensor.isPresent()) {
-                        responseEntity = prepareResult(queryService.getQueriesBySensor(userId.get(), sensor.get()));
-                    } else if (dataSource.isPresent()) {
-                        responseEntity = prepareResult(queryService.getQueriesByDataSource(userId.get(), dataSource.get()));
-                    } else if (workflowNodeId.isPresent()) {
-                        responseEntity = prepareResult(queryService.getQueries(userId.get(), workflowNodeId.get()));
-                    } else {
-                        responseEntity = prepareResult(queryService.getQueries(userId.get()));
-                    }
+                    responseEntity = prepareResult(queryService.getQueries(userId, workflowNodeId.get()));
                 }
             }
         } catch (Exception e) {
@@ -74,7 +76,7 @@ public class QueryController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/paged", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/paged", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAllQueries(@RequestParam("page") int pageNumber,
                                                             @RequestParam("pageSize") int size,
                                                             @RequestParam("sort") String sortDirection) {
@@ -83,22 +85,22 @@ public class QueryController extends BaseController {
         return prepareResult(queries);
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> findById(@PathVariable("id") long id) {
         return prepareResult(queryService.getQueryById(id));
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Query object) {
         try {
-            object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
+            object.setUserId(currentUser());
             return prepareResult(queryService.save(object));
         } catch (Exception ex) {
             return handleException(ex);
         }
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> deleteById(@PathVariable("id") long id) {
         try {
             queryService.delete(id);
@@ -108,10 +110,10 @@ public class QueryController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = "application/json", produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody Query object) {
         try {
-            object.setUserId(SecurityContextHolder.getContext().getAuthentication().getName());
+            object.setUserId(currentUser());
             return prepareResult(queryService.update(object));
         } catch (Exception pex) {
             return handleException(pex);

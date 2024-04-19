@@ -17,8 +17,10 @@ package ro.cs.tao.services.security.token;
 
 import org.springframework.security.authentication.jaas.JaasAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
+import ro.cs.tao.security.UserPrincipal;
 
 import javax.security.auth.login.LoginContext;
+import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
 
@@ -42,6 +44,12 @@ public class AuthenticationWithToken extends JaasAuthenticationToken {
 
     public String getToken() {
         return (String)getDetails();
+    }
+
+    @Override
+    public Object getPrincipal() {
+        final Principal principal = getLoginContext().getSubject().getPrincipals().stream().filter(p -> p instanceof UserPrincipal).findFirst().orElse(null);
+        return principal != null ? principal : super.getPrincipal();
     }
 
     @Override

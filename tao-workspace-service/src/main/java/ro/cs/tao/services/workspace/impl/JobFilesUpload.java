@@ -1,0 +1,323 @@
+package ro.cs.tao.services.workspace.impl;
+
+import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.eodata.AuxiliaryData;
+import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.eodata.VectorData;
+import ro.cs.tao.execution.JobCompletedListener;
+import ro.cs.tao.execution.model.ExecutionJob;
+import ro.cs.tao.execution.model.ExecutionStatus;
+import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.execution.util.TaskUtilities;
+import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Notifiable;
+import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.persistence.*;
+import ro.cs.tao.security.UserPrincipal;
+import ro.cs.tao.services.bridge.spring.SpringContextBridge;
+import ro.cs.tao.services.factory.StorageServiceFactory;
+import ro.cs.tao.services.interfaces.StorageService;
+import ro.cs.tao.services.model.FileObject;
+import ro.cs.tao.services.workspace.model.TransferableItem;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+/**
+ * Upload a job's files to the user's remote repository.
+ * 
+ * <p>
+ * The user's remote repository is configurable. If none is specified, no upload takes place.
+ */
+public class JobFilesUpload extends Notifiable implements JobCompletedListener {
+    /** Key for removing intermediate file option. */
+    private static final String REMOVE_INTERMEDIATE_FILES_KEY = "tao.remove.intermediate.files";
+
+    /** Pattern to identify a successful transfer.*/
+    private static final Pattern TRANSFER_SUCCESSFULL = Pattern.compile("^\\[.+\\]\\sCompleted\\stransfer\\sfor\\s(.+)$");
+    
+	/**	Upload results to bucket. */
+	private static final String UPLOAD_RESULTS_TO_BUCKET = "tao.upload.to.bucket";
+
+    /** Class logger. */
+	private final Logger logger;
+
+    /** Repository provider. */
+	private final RepositoryProvider repositoryProvider;
+
+	/** Raster product provider. */
+	private EOProductProvider productProvider;
+
+	/** Vector data provider. */
+    private VectorDataProvider vectorDataProvider;
+	
+    /** Auxiliary data provider. */
+    private AuxiliaryDataProvider auxiliaryDataProvider;
+
+    /** File transfer service. */
+    private final TransferService transferService;
+    
+    /** The files that are to be transfered. */
+    private final Set<String> files = new HashSet<>();
+    
+	/**
+	 * Constructor.
+	 */
+	public JobFilesUpload() {
+		this.logger = Logger.getLogger(this.getClass().getName());
+		this.repositoryProvider = SpringContextBridge.services().getService(RepositoryProvider.class);
+		this.productProvider = SpringContextBridge.services().getService(EOProductProvider.class);
+		this.vectorDataProvider = SpringContextBridge.services().getService(VectorDataProvider.class);
+		this.auxiliaryDataProvider = SpringContextBridge.services().getService(AuxiliaryDataProvider.class);
+		this.transferService = SpringContextBridge.services().getService(TransferService.class);
+		subscribe(Topic.TRANSFER_PROGRESS.value());
+	}
+	
+	@Override
+	public void onCompleted(ExecutionJob job) {
+		// only process jobs which finished successfully
+		if (job.getExecutionStatus() != ExecutionStatus.DONE) {
+			return;
+		}
+    	final Repository remoteRepository = getRemoteRepository(job.getUserId());
+    	if (remoteRepository == null) {
+    		logger.fine("No remote repository defined for user " + job.getUserId() + ". No files will be transfered.");
+    		return;
+    	}
+    	final Repository localRepository = getLocalRepository(job.getUserId());
+    	if (localRepository == null) {
+    		logger.warning("Cannot find local repository for user " + job.getUserId() + ". No files will be transfered.");
+    		return;
+    	}
+    	
+    	final StorageService<?, ?> localStorage = StorageServiceFactory.getInstance(localRepository);
+    	
+    	// get all produced files and folders
+    	final List<FileObject> producedItems;
+    	try {
+    		final Path workspaceRoot = Paths.get(localRepository.root());
+    		final Path jobOutputhPath = Paths.get(job.getJobOutputPath());
+    		producedItems = localStorage.listTree(workspaceRoot.relativize(jobOutputhPath).toString());
+    	} catch (IOException ex) {
+    		logger.warning("Cannot list the generated files for job " + job.getId() + ". No files will be transfered.");
+    		return;
+    	}
+		// get a list of terminal nodes
+    	final List<ExecutionTask> terminalTasks = job.getTasks().stream()
+      										 	 .filter(t -> TaskUtilities.isTerminalTask(t) && t.getExecutionStatus() == ExecutionStatus.DONE)
+      											 .collect(Collectors.toList());
+   
+    	// create the filters for the files and folders generated by the terminal nodes
+    	final List<String> filters = terminalTasks.stream().map(t -> { return job.getId() + "-" + t.getId() + "-";}).collect(Collectors.toList());
+    	
+    	// if remote transfer is enabled and the remote repository is not identical to the local repository
+    	// perform the transfer
+    	if (ConfigurationManager.getInstance().getBooleanValue(UPLOAD_RESULTS_TO_BUCKET) &&
+   			!localRepository.equals(remoteRepository)) {
+        	
+        	// create a list of transferable items containing only the files from the terminal nodes.
+    		// also add the remote path to the internal set.
+        	final List<TransferableItem> items = producedItems.stream().filter(fo -> !fo.isFolder() && isTransferableFile(fo, filters))
+        			.map(fo -> {
+        				final String remoteRelativePath = buildRelativePath(fo.getRelativePath());
+        				files.add(remoteRelativePath);
+        				return new TransferableItem(job.getUserId(), 
+        					job.getUserId() + "/" + job.getId(), 
+        					localRepository, 
+        					fo, 
+        					remoteRepository, 
+        					//Paths.get(job.getUserId(), fo.getRelativePath()).toString().replace('\\', '/'),
+        					remoteRelativePath,
+        					false, 
+        					true);}).collect(Collectors.toList());
+
+        	transferService.request(items.toArray(new TransferableItem[items.size()]));
+
+    		Messaging.send(new UserPrincipal(job.getUserId()),
+    					   Topic.EXECUTION.value(),
+    					   this,
+    					   String.format("Results of [%s] will be transferred to %s. You can follow the progress in Repositories section.",
+    									 job.getName(), remoteRepository.getName()));
+    	}
+    	
+    	// if required, delete all intermediate folders (their content should also be deleted, by implementation
+    	if (ConfigurationManager.getInstance().getBooleanValue(REMOVE_INTERMEDIATE_FILES_KEY)) {
+    		
+    		producedItems.stream()
+    				.filter(fo -> fo.isFolder() && !isTransferableFile(fo, filters))
+    	    		.forEach(fo -> {
+		    			try {
+							localStorage.remove(fo.getRelativePath());
+						} catch (IOException e) {
+							logger.warning("Cannot remove item " + fo.getRelativePath() + ". Message: " + e.getMessage());
+						}
+    	    		});
+    	}
+    	
+	}
+	
+	/**
+	 * Build the relative path to contain only the first and last tokens of the original path.
+	 * 
+	 * @param initialRelativePath the initial relative path
+	 * @return the target path
+	 */
+	private String buildRelativePath(final String initialRelativePath) {
+		
+		final Path initialPath = Path.of(initialRelativePath);
+		// if the path is smaller than three labels, return the initial path
+		if (initialPath.getNameCount() < 3) {
+			return initialRelativePath;
+		}
+		
+		// build the relative path ignoring the second element (the task folder)
+		final StringBuilder sb = new StringBuilder(initialPath.getName(0).toString());
+		for (int i = 2; i < initialPath.getNameCount(); i++) {
+			sb.append('/').append(initialPath.getName(i).toString());
+		}
+		
+		return sb.toString();
+	}
+	
+	/**
+	 * Check if the file should be transfered.
+	 * 
+	 * <p>
+	 *  A file should be transfered if its path contains one of the filter sequences
+	 * 
+	 * @param fo
+	 * @param filters
+	 * @return
+	 */
+	private boolean isTransferableFile(final FileObject fo, final List<String> filters) {
+		
+		final String filePath = fo.getRelativePath();
+		for (final String filter : filters) {
+			if (filePath.contains(filter)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Get the user's local system repository. 
+	 * 
+	 * @param userID the user id
+	 * @return the local repository or null if none defined
+	 */
+	private Repository getLocalRepository(final String userID) {
+		return repositoryProvider.getUserSystemRepositories(userID).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
+	}
+
+	/**
+	 * Get the user's configured remote repository.
+	 * 
+	 * @param userID the user id
+	 * @return the remote repository or null if none defined.
+	 */
+	private Repository getRemoteRepository(final String userID) {
+		return repositoryProvider.getUserPersistentRepository(userID);
+	}
+
+	@Override
+	protected void onMessageReceived(Message message) {
+		final String payload = message.getPayload();
+		if (payload == null) {
+			return;
+		}
+		final Matcher matcher = TRANSFER_SUCCESSFULL.matcher(payload);
+		
+		if (matcher.matches() && (matcher.groupCount() == 1)) {
+			// extract the file name
+			final String fileName = matcher.group(1);
+			
+			// get the user's local and remote system repositories
+	    	final Repository localRepository = getLocalRepository(message.getUserId());
+	    	final Repository remoteRepository = getRemoteRepository(message.getUserId());
+	    	
+	    	// get the local and remote file paths
+	    	final Path localPath = Paths.get(localRepository.resolve(fileName));
+	    	final Path localRepositoryPath = Paths.get(localRepository.root());
+	    	final Path relativePath = localRepositoryPath.relativize(localPath);
+	    	final String remoteRelativePath = buildRelativePath(relativePath.toString().replace("\\", "/"));
+	    	// process only the files that were added for transfer by this object.
+	    	if (files.contains(remoteRelativePath)) {
+	    		files.remove(remoteRelativePath);
+		    	//final URI remoteURI = URI.create(remoteRepository.getUrlPrefix() + "://" + remoteRepository.resolve(buildRelativePath(relativePath.toString().replace("\\", "/"))));
+				final String location = remoteRepository.getUrlPrefix() + "://" + remoteRepository.resolve(remoteRelativePath.substring(0, remoteRelativePath.indexOf('/')));
+				// check if it's linked to a raster product
+	            final List<EOProduct> products = productProvider.getByLocation(localPath.toUri().toString());
+	            if (products != null && !products.isEmpty()) {
+	                for (EOProduct product : products) {
+	                    try {
+	                    	// update location
+	                    	product.setLocation(location);
+	                        productProvider.save(product);
+	                    } catch (PersistenceException e) {
+	                        logger.warning(String.format("Failed to update raster product %s. Reason: %s",
+	                                                     product.getName(), e.getMessage()));
+	                    } catch (URISyntaxException e) {
+	                        logger.warning(String.format("Failed to update raster product %s. Reason: %s",
+	                                product.getName(), e.getMessage()));
+						}
+	                }
+	            } else {
+	                // If not, maybe it's linked to a vector product
+	                final List<VectorData> vectorProducts = vectorDataProvider.getByLocation(localPath.toUri().toString());
+	                if (vectorProducts != null && !vectorProducts.isEmpty()) {
+	                    for (VectorData product : vectorProducts) {
+	                        try {
+	                        	// update location
+	                        	product.setLocation(location);
+	                            vectorDataProvider.save(product);
+	                        } catch (PersistenceException e) {
+	                            logger.warning(String.format("Failed to update vector product %s. Reason: %s",
+	                                                         product.getName(), e.getMessage()));
+	                        } catch (URISyntaxException e) {
+	                            logger.warning(String.format("Failed to update vector product %s. Reason: %s",
+	                                    product.getName(), e.getMessage()));
+	                        }
+	                    }
+	                } else {
+	                    // If not, maybe it's linked to an auxiliary file
+	                    AuxiliaryData data = auxiliaryDataProvider.getByLocation(localPath.toUri().toString());
+	                    if (data != null) {
+	                        try {
+	                        	// update location
+	                        	data.setLocation(location);
+	                            auxiliaryDataProvider.save(data);
+	                        } catch (PersistenceException e) {
+	                            logger.warning(String.format("Failed to update auxiliary data %s. Reason: %s",
+	                                                         data.getLocation(), e.getMessage()));
+	                        }
+	                    }
+	                }
+	            }
+
+	            // delete the local file 
+	            try {
+					Files.delete(localPath);
+		            logger.finest("Removed file " + fileName);
+				} catch (IOException e) {
+	                logger.warning(String.format("Failed to delete file %s. Reason: %s",
+	                		fileName, e.getMessage()));
+				}	
+	    	}
+
+		}
+	}
+}

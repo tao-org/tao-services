@@ -18,7 +18,6 @@ package ro.cs.tao.services.user.service;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import ro.cs.tao.services.commons.ServiceLauncher;
 
 /**
@@ -26,7 +25,7 @@ import ro.cs.tao.services.commons.ServiceLauncher;
  */
 @Configuration
 @ImportResource("classpath:user-service-context.xml")
-@EnableWebMvc
+
 public class UserServiceLauncher implements ServiceLauncher {
 
     public static void main(String[] args) {

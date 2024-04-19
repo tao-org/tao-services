@@ -26,6 +26,7 @@ import com.bc.wps.exceptions.InvalidRequestException;
 import com.bc.wps.responses.ExceptionResponse;
 import com.bc.wps.utilities.JaxbHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -33,14 +34,16 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.TargetDescriptor;
-import ro.cs.tao.component.WPSComponent;
 import ro.cs.tao.component.WPSComponentBean;
 import ro.cs.tao.component.WebServiceAuthentication;
+import ro.cs.tao.component.enums.AuthenticationType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
+import ro.cs.tao.component.ogc.WPSComponent;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -64,6 +67,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/wps")
+@Tag(name = "WPS Endpoint", description = "Endpoint exposing TAO workflows as WPS operations and for remote WPS operations")
 public class WPSController extends BaseController {
 
     private final static Set<String> allowedRequests = new HashSet<String>() {{
@@ -82,15 +86,10 @@ public class WPSController extends BaseController {
     @Autowired
     private WorkflowService workflowService;
 
-    @RequestMapping(value = {"/list","/list/{type}"}, method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<?> list(@PathVariable(required = false) String type) {
+    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> list() {
         try {
-            ContainerType containerType = ContainerType.WPS;
-            if (type != null && type.equalsIgnoreCase("STAC")) {
-                containerType = ContainerType.STAC;
-            }
-
-            final List<Container> containers = containerService.listByType(containerType);
+            final List<Container> containers = containerService.listByType(ContainerType.WPS);
             final List<WebServiceBean> results = new ArrayList<>();
             for (Container container : containers) {
                 results.add(ServiceTransformUtils.toBean(container,
@@ -102,26 +101,24 @@ public class WPSController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getById(@PathVariable("id") String id) {
         try {
-            final Container container = containerService.findById(id);
-            final WebServiceAuthentication auth = webServiceAuthenticationService.findById(id);
-            return prepareResult(ServiceTransformUtils.toBean(container, auth));
+            return prepareResult(wpsComponentService.findById(id));
         } catch (Exception e) {
             return handleException(e);
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> save(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
                 throw new IllegalArgumentException("Empty body");
             }
-            if (bean.getType() != ContainerType.WPS) {
+            /*if (bean.getType() != ContainerType.WPS) {
                 throw new IllegalArgumentException("Wrong container type");
-            }
+            }*/
             if (StringUtilities.isNullOrEmpty(bean.getId())) {
                 bean.setId(UUID.randomUUID().toString());
             }
@@ -139,15 +136,15 @@ public class WPSController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = "application/json")
+    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> update(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
                 throw new IllegalArgumentException("Empty body");
             }
-            if (bean.getType() != ContainerType.WPS) {
+            /*if (bean.getType() != ContainerType.WPS) {
                 throw new IllegalArgumentException("Wrong container type");
-            }
+            }*/
             if (StringUtilities.isNullOrEmpty(bean.getId())) {
                 throw new IllegalArgumentException("Wrong HTTP verb");
             }
@@ -157,14 +154,23 @@ public class WPSController extends BaseController {
             }
             WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
             container = containerService.update(container);
-            auth = webServiceAuthenticationService.update(auth);
+            if (webServiceAuthenticationService.findById(auth.getId()) != null) {
+                // Don't persist the NONE authentication since it's irrelevant
+                if (auth.getType() != AuthenticationType.NONE) {
+                    auth = webServiceAuthenticationService.update(auth);
+                } else {
+                    webServiceAuthenticationService.delete(auth.getId());
+                }
+            } else {
+                auth = webServiceAuthenticationService.save(auth);
+            }
             return prepareResult(ServiceTransformUtils.toBean(container, auth));
         } catch (Exception e) {
             return handleException(e);
         }
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = "application/json")
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> delete(@PathVariable("id") String id) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -177,7 +183,7 @@ public class WPSController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> inspectRemote(@RequestParam(name = "request") String requestType,
                                            @RequestParam(name = "remoteAddress") String endpoint,
                                            @RequestParam(name = "capability", required = false) String capability,
@@ -197,6 +203,7 @@ public class WPSController extends BaseController {
             if ("GetCapabilities".equalsIgnoreCase(requestType)) {
                 Container capabilities = client.getCapabilities();
                 if (Boolean.TRUE.equals(save)) {
+                    capabilities.setOwnerId(SystemPrincipal.instance().getName());
                     capabilities = containerService.save(capabilities);
                 }
                 return prepareResult(capabilities);
@@ -223,7 +230,7 @@ public class WPSController extends BaseController {
                 component.setOwner(currentUser());
                 component.setVersion("WPS 1.0");
                 final Map<String, List<Parameter>> parameters = processInfo.getParameters();
-                if (parameters.size() > 0) {
+                if (!parameters.isEmpty()) {
                     Iterator<Map.Entry<String, List<Parameter>>> iterator = parameters.entrySet().iterator();
                     List<Parameter> params = new ArrayList<>();
                     while (iterator.hasNext()) {

@@ -58,6 +58,10 @@ public class TokenManagementService {
         return tokenProvider.newToken(refreshToken);
     }
 
+    public Token generateNewTokenFromCode(String code) {
+        return tokenProvider.newTokenFromCode(code);
+    }
+
     public void store(Token token, Authentication authentication) {
         tokenCache.put(token, authentication);
     }
@@ -84,8 +88,8 @@ public class TokenManagementService {
         return tokenCache.getPreviousAuthentication(token);
     }
 
-    public Token getUserToken(String user) {
-        return tokenCache.getToken(user);
+    public Token getUserToken(String userId) {
+        return tokenCache.getToken(userId);
     }
 
     public Token getFromRefreshToken(String refreshToken) {

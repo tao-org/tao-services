@@ -4,40 +4,40 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.persistence.WPSAuthenticationProvider;
+import ro.cs.tao.persistence.WebServiceAuthenticationProvider;
 import ro.cs.tao.services.interfaces.WebServiceAuthenticationService;
 
 import java.util.List;
 import java.util.logging.Logger;
 
-@Service("wpsAuthenticationService")
+@Service("webServiceAuthenticationService")
 public class WebServiceAuthenticationServiceImpl
         extends EntityService<WebServiceAuthentication> implements WebServiceAuthenticationService {
 
     @Autowired
-    private WPSAuthenticationProvider wpsAuthenticationProvider;
+    private WebServiceAuthenticationProvider webServiceAuthenticationProvider;
 
     private Logger logger = Logger.getLogger(WebServiceAuthenticationService.class.getName());
 
     @Override
     public WebServiceAuthentication findById(String id) {
-        return wpsAuthenticationProvider.get(id);
+        return webServiceAuthenticationProvider.get(id);
     }
 
     @Override
     public List<WebServiceAuthentication> list() {
-        return wpsAuthenticationProvider.list();
+        return webServiceAuthenticationProvider.list();
     }
 
     @Override
     public List<WebServiceAuthentication> list(Iterable<String> ids) {
-        return wpsAuthenticationProvider.list(ids);
+        return webServiceAuthenticationProvider.list(ids);
     }
 
     @Override
     public WebServiceAuthentication save(WebServiceAuthentication object) {
         try {
-            return wpsAuthenticationProvider.save(object);
+            return webServiceAuthenticationProvider.save(object);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
             return null;
@@ -46,12 +46,12 @@ public class WebServiceAuthenticationServiceImpl
 
     @Override
     public WebServiceAuthentication update(WebServiceAuthentication object) throws PersistenceException {
-        return wpsAuthenticationProvider.update(object);
+        return webServiceAuthenticationProvider.update(object);
     }
 
     @Override
     public void delete(String id) throws PersistenceException {
-        wpsAuthenticationProvider.delete(id);
+        webServiceAuthenticationProvider.delete(id);
     }
 
     @Override
