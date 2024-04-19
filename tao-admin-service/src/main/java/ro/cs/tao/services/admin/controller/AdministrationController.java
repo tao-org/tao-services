@@ -231,15 +231,10 @@ public class AdministrationController extends BaseController {
                 final ResourceSubscription first = subscriptions.get(0);
                 final ResourceSubscriptionResponse response = new ResourceSubscriptionResponse();
                 response.setUserId(userId);
-                response.setCreated(subscriptions.stream().min(new Comparator<ResourceSubscription>() {
-                    @Override
-                    public int compare(ResourceSubscription o1, ResourceSubscription o2) {
-                        return o1.getCreated().compareTo(o2.getCreated());
-                    }
-                }).get().getCreated());
+                response.setCreated(subscriptions.stream().min(Comparator.comparing(ResourceSubscription::getCreated)).get().getCreated());
                 response.setPaid(first.isPaid());
                 response.setType(first.getType());
-                response.setObjectStorageGB(subscriptions.stream().mapToInt(s -> s.getObjectStorageGB()).sum());
+                response.setObjectStorageGB(subscriptions.stream().mapToInt(s -> s.getObjectStorageGB() != null ? s.getObjectStorageGB() : 0).sum());
                 final List<Flavor> flavors = new ArrayList<>();
                 for (ResourceSubscription subscription : subscriptions) {
                     Flavor flavor = new Flavor();
