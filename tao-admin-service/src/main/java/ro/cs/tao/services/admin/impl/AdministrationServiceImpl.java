@@ -130,11 +130,33 @@ public class AdministrationServiceImpl implements AdministrationService {
     @Override
     public void initializeSubscription(ResourceSubscription subscription) throws TopologyException, PersistenceException {
         final TopologyManager topologyManager = TopologyManager.getInstance();
-        if (topologyManager.isExternalProviderAvailable() && subscription.getType() == SubscriptionType.FIXED_RESOURCES) {
-            final NodeFlavor flavor = subscription.getFlavor();
-            final int existing = nodeDBProvider.countUsableNodes(subscription.getUserId());
-            final NodeDescription node = NodeManager.getInstance().getNewNodeDescription(existing, subscription.getUserId(), flavor);
-            topologyManager.addNode(node);
+        if (!topologyManager.isExternalProviderAvailable()) {
+            return;
         }
+        final NodeFlavor flavor = subscription.getFlavor();
+        final int existing = nodeDBProvider.countUsableNodes(subscription.getUserId());
+        final NodeDescription node = NodeManager.getInstance().getNewNodeDescription(existing, subscription.getUserId(), flavor);
+        node.setVolatile(false);
+        topologyManager.addNode(node);
+    }
+
+    @Override
+    public void deleteSubscription(ResourceSubscription subscription) throws TopologyException, PersistenceException {
+        final TopologyManager topologyManager = TopologyManager.getInstance();
+        if (!topologyManager.isExternalProviderAvailable()) {
+            return;
+        }
+        NodeFlavor flavor = subscription.getFlavor();
+        int existing = nodeDBProvider.countUsableNodes(subscription.getUserId());
+        if(existing <= 0)
+            return;
+        List<NodeDescription> topologyNodes = nodeDBProvider.list();
+        topologyNodes.removeIf(node -> node.getOwner() == null || !node.getOwner().equals(subscription.getUserId()) || !node.getFlavor().equals(flavor));
+        if(topologyNodes.isEmpty()){
+            return;
+        }
+        String nodeToDeleteId = topologyNodes.getFirst().getId();
+        topologyManager.removeNode(nodeToDeleteId);
+        nodeDBProvider.delete(topologyNodes.getFirst());
     }
 }

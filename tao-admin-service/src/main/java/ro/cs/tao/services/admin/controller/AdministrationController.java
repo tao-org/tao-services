@@ -290,26 +290,19 @@ public class AdministrationController extends BaseController {
         if (request == null || (flavors = request.getFlavors()) == null || flavors.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
         }
-        final TriConsumer<String, Exception, String> callback = (u, e, s) -> {
-            String topic;
-            String message;
-            if (e == null) {
-                topic = Topic.INFORMATION.getCategory();
-                message = s;
-            } else {
-                topic = Topic.WARNING.getCategory();
-                message = e.getMessage();
-            }
-
-            Messaging.send(userId, topic, message);
-        };
+        final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
         try {
-            int idx = 0;
+            final List<ResourceSubscription> subscriptions = resourceSubscriptionProvider.getByUser(userId);
             for (Map.Entry<String, Map<String, Integer>> flavor : flavors.entrySet()) {
                 final NodeFlavor nodeFlavor = nodeFlavorProvider.get(flavor.getKey());
                 final Map<String, Integer> values = flavor.getValue();
-                if (nodeFlavor == null || values.getOrDefault("quantity", 0) <= 0) {
+                int quantity = values.getOrDefault("quantity", 0);
+                if (nodeFlavor == null || quantity  <= 0) {
                     return prepareResult("Invalid flavor '" + flavor.getKey() + "'", ResponseStatus.FAILED);
+                }
+                //do not create nodes for the already existing subscriptions
+                if(subscriptions.stream().anyMatch(s -> s.getFlavor().equals(nodeFlavor))){
+                    continue;
                 }
                 ResourceSubscription subscription = new ResourceSubscription();
                 subscription.setUserId(userId);
@@ -321,19 +314,22 @@ public class AdministrationController extends BaseController {
                 subscription.setFlavorHddSizeGB(values.getOrDefault("hdd", 0));
                 subscription.setFlavorSsdSizeGB(values.getOrDefault("ssd", 0));
                 subscription.setFlavorQuantity(values.get("quantity"));
-                if (idx == 0) {
+                if(subscriptions.stream().noneMatch(s -> s.getObjectStorageGB()!= null)) {
                     subscription.setObjectStorageGB(request.getObjectStorageGB());
                 }
                 resourceSubscriptionProvider.save(subscription);
                 final String successMessage = "Node with flavor " + nodeFlavor.getId() + " created";
                 asyncExecute(() -> {
                     try {
-                        adminService.initializeSubscription(subscription);
+                        if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                            for(int i=0; i < quantity; i++) {
+                                adminService.initializeSubscription(subscription);
+                            }
+                        }
                     } catch (PersistenceException e) {
                         throw new TopologyException(e);
                     }
                 }, successMessage, callback);
-                idx++;
             }
             return prepareResult("Subscriptions created");
         } catch (Exception ex) {
@@ -362,19 +358,87 @@ public class AdministrationController extends BaseController {
             for (ResourceSubscription subscription : subscriptions) {
                 final String flavorId = subscription.getFlavor().getId();
                 final Map<String, Integer> flavorEntry = flavors.get(flavorId);
+                if(subscription.getObjectStorageGB() != null) {
+                    subscription.setObjectStorageGB(request.getObjectStorageGB());
+                }
+                subscription.setType(request.getType());
+                subscription.setPaid(request.isPaid());
+                // Flavor has been deleted
                 if (flavorEntry == null || flavorEntry.getOrDefault("quantity", 0) <= 0) {
-                    // Flavor has been deleted
                     subscription.setEnded(LocalDateTime.now());
-                    resourceSubscriptionProvider.update(subscription);
-                    removed++;
-                } else {
-                    final Integer quantity = flavorEntry.get("quantity");
-                    if (subscription.getFlavorQuantity() != quantity) {
-                        // Flavor has been updated
-                        subscription.setFlavorQuantity(quantity);
-                        resourceSubscriptionProvider.update(subscription);
-                        updated++;
+                    if(subscription.getObjectStorageGB() != null){
+                        List<ResourceSubscription> otherSubscriptions = new ArrayList<>(subscriptions);
+                        otherSubscriptions.remove(subscription);
+                        if(!otherSubscriptions.isEmpty()){
+                            otherSubscriptions.get(0).setObjectStorageGB(subscription.getObjectStorageGB());
+                            resourceSubscriptionProvider.update(otherSubscriptions.get(0));
+                        }
                     }
+                    resourceSubscriptionProvider.update(subscription);
+                    // Delete nodes if Fixed Resources
+                    NodeFlavor subscriptionNodeFlavor = subscription.getFlavor();
+                    final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
+                    final String successMessage = "Node with flavor " + subscriptionNodeFlavor.getId() + " deleted";
+                    int subscriptionQuantity = subscription.getFlavorQuantity();
+                    asyncExecute(() -> {
+                        try {
+                            if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                for (int i = 0; i < subscriptionQuantity; i++) {
+                                    adminService.deleteSubscription(subscription);
+                                }
+                            }
+                        } catch (PersistenceException | TopologyException e) {
+                            throw new TopologyException(e);
+                        }
+                    }, successMessage, callback);
+                    removed++;
+                // Flavor has been updated
+                } else {
+                    final Integer updatedQuantity = flavorEntry.get("quantity");
+                    int currentQuantity = subscription.getFlavorQuantity();
+                    NodeFlavor subscriptionNodeFlavor = subscription.getFlavor();
+                    subscription.setFlavorQuantity(updatedQuantity);
+                    subscription.setPaid(request.isPaid());
+                    subscription.setFlavorHddSizeGB(flavorEntry.getOrDefault("hdd", 0));
+                    subscription.setFlavorSsdSizeGB(flavorEntry.getOrDefault("ssd", 0));
+                    resourceSubscriptionProvider.update(subscription);
+                    if (currentQuantity != updatedQuantity) {
+                        final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
+                        // Add nodes if the new quantity is higher
+                        if(updatedQuantity > currentQuantity){
+                            int quantityDifference = updatedQuantity - currentQuantity;
+                            final String successMessage = "Node with flavor " + subscriptionNodeFlavor.getId() + " had "
+                                    + quantityDifference + " quantity added";
+                            asyncExecute(() -> {
+                                try {
+                                    if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                        for(int i = 0; i < quantityDifference; i++) {
+                                            adminService.initializeSubscription(subscription);
+                                        }
+                                    }
+                                } catch (PersistenceException | TopologyException e) {
+                                    throw new TopologyException(e);
+                                }
+                            }, successMessage, callback);
+                        } else {
+                            //Delete nodes if new quantity is lower
+                            int quantityDifference = currentQuantity - updatedQuantity;
+                            final String successMessage = "Node with flavor " + subscriptionNodeFlavor.getId() + " had "
+                                    + quantityDifference + " quantity deleted";
+                            asyncExecute(() -> {
+                                try {
+                                    if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                        for(int i = 0; i < quantityDifference; i++) {
+                                            adminService.deleteSubscription(subscription);
+                                        }
+                                    }
+                                } catch (PersistenceException | TopologyException e) {
+                                    throw new TopologyException(e);
+                                }
+                            }, successMessage, callback);
+                        }
+                    }
+                    updated++;
                 }
                 flavors.remove(flavorId);
             }
@@ -385,6 +449,8 @@ public class AdministrationController extends BaseController {
                 if (nodeFlavor == null || values.getOrDefault("quantity", 0) <= 0) {
                     return prepareResult("Invalid flavor '" + flavor.getKey() + "'", ResponseStatus.FAILED);
                 }
+                final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
+                int quantity = values.get("quantity");
                 ResourceSubscription subscription = new ResourceSubscription();
                 subscription.setUserId(userId);
                 subscription.setFlavor(nodeFlavor);
@@ -393,10 +459,24 @@ public class AdministrationController extends BaseController {
                 subscription.setEnded(null);
                 subscription.setPaid(request.isPaid());
                 subscription.setFlavorHddSizeGB(values.getOrDefault("hdd", 0));
-                subscription.setFlavorSsdSizeGB(values.getOrDefault("sdd", 0));
-                subscription.setFlavorQuantity(values.get("quantity"));
-                subscription.setObjectStorageGB(request.getObjectStorageGB());
+                subscription.setFlavorSsdSizeGB(values.getOrDefault("ssd", 0));
+                subscription.setFlavorQuantity(quantity);
+                if(subscriptions.stream().noneMatch(s -> s.getObjectStorageGB()!= null)) {
+                    subscription.setObjectStorageGB(request.getObjectStorageGB());
+                }
                 resourceSubscriptionProvider.save(subscription);
+                final String successMessage = "Node with flavor " + nodeFlavor.getId() + " created";
+                asyncExecute(() -> {
+                    try {
+                        if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                            for(int i=0; i < quantity; i++) {
+                                adminService.initializeSubscription(subscription);
+                            }
+                        }
+                    } catch (PersistenceException | TopologyException e) {
+                        throw new TopologyException(e);
+                    }
+                }, successMessage, callback);
                 created++;
             }
             return prepareResult(String.format("Subscriptions: %d created, %d updated, %d removed",
@@ -658,5 +738,21 @@ public class AdministrationController extends BaseController {
 
     private String constructEmailContentForAccountActivation(String userFullName, String activationLink){
         return Constants.MAIL_CONTENTS.replace("$USERNAME", userFullName).replace("$LINK", activationLink);
+    }
+
+    private TriConsumer<String, Exception, String> makeCallbackMessage(String userId){
+        return (u, e, s) -> {
+            String topic;
+            String message;
+            if (e == null) {
+                topic = Topic.INFORMATION.getCategory();
+                message = s;
+            } else {
+                topic = Topic.WARNING.getCategory();
+                message = e.getMessage();
+            }
+
+            Messaging.send(userId, topic, message);
+        };
     }
 }
