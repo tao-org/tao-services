@@ -45,6 +45,7 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.model.user.DisableUserInfo;
+import ro.cs.tao.subscription.FlavorSubscription;
 import ro.cs.tao.subscription.ResourceSubscription;
 import ro.cs.tao.subscription.SubscriptionType;
 import ro.cs.tao.topology.NodeFlavor;
@@ -214,8 +215,8 @@ public class AdministrationController extends BaseController {
      * Returns the resource subscriptions of a user account
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> getUserSubscriptions(@PathVariable("userId") String userId) {
+    @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getUserActiveSubscription(@PathVariable("userId") String userId) {
         if (!adminService.isDevModeEnabled()) {
             if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -224,25 +225,28 @@ public class AdministrationController extends BaseController {
                 return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
             }
             try {
-                final List<ResourceSubscription> subscriptions = resourceSubscriptionProvider.getByUser(userId);
-                if (subscriptions.isEmpty()) {
-                    return prepareResult(new ArrayList<>());
+                final ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
+                if (subscription == null) {
+                    return prepareResult(null);
                 }
-                final ResourceSubscription first = subscriptions.get(0);
                 final ResourceSubscriptionResponse response = new ResourceSubscriptionResponse();
                 response.setUserId(userId);
-                response.setCreated(subscriptions.stream().min(Comparator.comparing(ResourceSubscription::getCreated)).get().getCreated());
-                response.setPaid(first.isPaid());
-                response.setType(first.getType());
-                response.setObjectStorageGB(subscriptions.stream().mapToInt(s -> s.getObjectStorageGB() != null ? s.getObjectStorageGB() : 0).sum());
+                response.setCreated(subscription.getCreated());
+                response.setPaid(subscription.isPaid());
+                response.setType(subscription.getType());
+                response.setObjectStorageGB(subscription.getObjectStorageGB());
                 final List<Flavor> flavors = new ArrayList<>();
-                for (ResourceSubscription subscription : subscriptions) {
-                    Flavor flavor = new Flavor();
-                    flavor.setFlavor(subscription.getFlavor());
-                    flavor.setQuantity(subscription.getFlavorQuantity());
-                    flavor.setHdd(subscription.getFlavorHddSizeGB());
-                    flavor.setSsd(subscription.getFlavorSsdSizeGB());
-                    flavors.add(flavor);
+                final Map<String, FlavorSubscription> flavorMap = subscription.getFlavors();
+                if (flavorMap != null) {
+                    for (Map.Entry<String, FlavorSubscription> entry : flavorMap.entrySet()) {
+                        final FlavorSubscription value = entry.getValue();
+                        Flavor flavor = new Flavor();
+                        flavor.setFlavor(nodeFlavorProvider.get(value.getFlavorId()));
+                        flavor.setQuantity(value.getQuantity());
+                        flavor.setHdd(value.getHddGB());
+                        flavor.setSsd(value.getSsdGB());
+                        flavors.add(flavor);
+                    }
                 }
                 response.setFlavors(flavors);
                 return prepareResult(response);
@@ -292,46 +296,40 @@ public class AdministrationController extends BaseController {
         }
         final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
         try {
-            final List<ResourceSubscription> subscriptions = resourceSubscriptionProvider.getByUser(userId);
+            ResourceSubscription subscription = new ResourceSubscription();
+            subscription.setUserId(userId);
+            subscription.setType(request.getType());
+            subscription.setCreated(request.getCreated() != null ? request.getCreated() : LocalDateTime.now());
+            subscription.setEnded(null);
+            subscription.setPaid(request.isPaid());
+            subscription.setObjectStorageGB(request.getObjectStorageGB());
+            final Map<String, FlavorSubscription> flavorMap = new LinkedHashMap<>();
             for (Map.Entry<String, Map<String, Integer>> flavor : flavors.entrySet()) {
                 final NodeFlavor nodeFlavor = nodeFlavorProvider.get(flavor.getKey());
                 final Map<String, Integer> values = flavor.getValue();
                 int quantity = values.getOrDefault("quantity", 0);
-                if (nodeFlavor == null || quantity  <= 0) {
+                if (nodeFlavor == null || quantity <= 0) {
                     return prepareResult("Invalid flavor '" + flavor.getKey() + "'", ResponseStatus.FAILED);
                 }
-                //do not create nodes for the already existing subscriptions
-                if(subscriptions.stream().anyMatch(s -> s.getFlavor().equals(nodeFlavor))){
-                    continue;
-                }
-                ResourceSubscription subscription = new ResourceSubscription();
-                subscription.setUserId(userId);
-                subscription.setFlavor(nodeFlavor);
-                subscription.setType(request.getType());
-                subscription.setCreated(request.getCreated() != null ? request.getCreated() : LocalDateTime.now());
-                subscription.setEnded(null);
-                subscription.setPaid(request.isPaid());
-                subscription.setFlavorHddSizeGB(values.getOrDefault("hdd", 0));
-                subscription.setFlavorSsdSizeGB(values.getOrDefault("ssd", 0));
-                subscription.setFlavorQuantity(values.get("quantity"));
-                if(subscriptions.stream().noneMatch(s -> s.getObjectStorageGB()!= null)) {
-                    subscription.setObjectStorageGB(request.getObjectStorageGB());
-                }
-                resourceSubscriptionProvider.save(subscription);
-                final String successMessage = "Node with flavor " + nodeFlavor.getId() + " created";
-                asyncExecute(() -> {
-                    try {
-                        if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
-                            for(int i=0; i < quantity; i++) {
-                                adminService.initializeSubscription(subscription);
-                            }
-                        }
-                    } catch (PersistenceException e) {
-                        throw new TopologyException(e);
-                    }
-                }, successMessage, callback);
+                FlavorSubscription flavorSubscription = new FlavorSubscription();
+                flavorSubscription.setFlavorId(flavor.getKey());
+                flavorSubscription.setQuantity(quantity);
+                flavorSubscription.setHddGB(values.getOrDefault("hdd", 0));
+                flavorSubscription.setSsdGB(values.getOrDefault("ssd", 0));
+                flavorMap.put(flavor.getKey(), flavorSubscription);
             }
-            return prepareResult("Subscriptions created");
+            subscription.setFlavors(flavorMap);
+            resourceSubscriptionProvider.save(subscription);
+            asyncExecute(() -> {
+                try {
+                    if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                        adminService.initializeSubscription(subscription);
+                    }
+                } catch (PersistenceException e) {
+                    throw new TopologyException(e);
+                }
+            }, "User subscription initialized", callback);
+            return prepareResult("Subscriptions are being initialized");
         } catch (Exception ex) {
             return handleException(ex);
         }
@@ -342,7 +340,7 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      * @param request The subscription entity request
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
         if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
@@ -354,8 +352,8 @@ public class AdministrationController extends BaseController {
         }
         int created = 0, removed = 0, updated = 0;
         try {
-            final List<ResourceSubscription> subscriptions = resourceSubscriptionProvider.getByUser(userId);
-            for (ResourceSubscription subscription : subscriptions) {
+            ResourceSubscription subscriptions = resourceSubscriptionProvider.getUserOpenSubscription(userId);
+            /*for (ResourceSubscription subscription : subscriptions) {
                 final String flavorId = subscription.getFlavor().getId();
                 final Map<String, Integer> flavorEntry = flavors.get(flavorId);
                 if(subscription.getObjectStorageGB() != null) {
@@ -478,7 +476,7 @@ public class AdministrationController extends BaseController {
                     }
                 }, successMessage, callback);
                 created++;
-            }
+            }*/
             return prepareResult(String.format("Subscriptions: %d created, %d updated, %d removed",
                                                created, updated, removed));
         } catch (Exception ex) {
