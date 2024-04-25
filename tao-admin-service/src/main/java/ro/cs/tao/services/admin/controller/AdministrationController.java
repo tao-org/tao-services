@@ -212,7 +212,7 @@ public class AdministrationController extends BaseController {
     }
 
     /**
-     * Returns the resource subscriptions of a user account
+     * Returns the resource subscription of a user account
      * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -227,7 +227,7 @@ public class AdministrationController extends BaseController {
             try {
                 final ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
                 if (subscription == null) {
-                    return prepareResult(null);
+                    return prepareResult(new ArrayList<>());
                 }
                 final ResourceSubscriptionResponse response = new ResourceSubscriptionResponse();
                 response.setUserId(userId);
@@ -284,7 +284,7 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      * @param request The subscription entity request
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
         if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
@@ -329,7 +329,7 @@ public class AdministrationController extends BaseController {
                     throw new TopologyException(e);
                 }
             }, "User subscription initialized", callback);
-            return prepareResult("Subscriptions are being initialized");
+            return prepareResult("Subscription is being initialized");
         } catch (Exception ex) {
             return handleException(ex);
         }
@@ -346,74 +346,58 @@ public class AdministrationController extends BaseController {
         if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
-        Map<String, Map<String, Integer>> flavors;
-        if (request == null || (flavors = request.getFlavors()) == null || flavors.isEmpty()) {
+        Map<String, Map<String, Integer>> flavorsRequest;
+        if (request == null || (flavorsRequest = request.getFlavors()) == null || flavorsRequest.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
         }
         int created = 0, removed = 0, updated = 0;
         try {
-            ResourceSubscription subscriptions = resourceSubscriptionProvider.getUserOpenSubscription(userId);
-            /*for (ResourceSubscription subscription : subscriptions) {
-                final String flavorId = subscription.getFlavor().getId();
-                final Map<String, Integer> flavorEntry = flavors.get(flavorId);
-                if(subscription.getObjectStorageGB() != null) {
-                    subscription.setObjectStorageGB(request.getObjectStorageGB());
-                }
-                subscription.setType(request.getType());
-                subscription.setPaid(request.isPaid());
+            ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
+            if(subscription == null){
+                return prepareResult("Subscription is not valid", ResponseStatus.FAILED);
+            }
+            subscription.setObjectStorageGB(request.getObjectStorageGB());
+            subscription.setType(request.getType());
+            subscription.setPaid(request.isPaid());
+            if(!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                resourceSubscriptionProvider.update(subscription);
+                return prepareResult("Subscription information updated. Pay per use subscription cannot update node information");
+            }
+            // de continuat modificari, un singur subscription cu mai multe Flavors, de sters,adaugat,scazut in functie de quantity
+            for (Iterator<Map.Entry<String, FlavorSubscription>> it = subscription.getFlavors().entrySet().iterator(); it.hasNext(); ) {
+                Map.Entry<String, FlavorSubscription> flavorEntry = it.next();
+                String flavorId = flavorEntry.getKey();
+                final Map<String, Integer> flavorResponseEntry = flavorsRequest.get(flavorId);
+                FlavorSubscription flavorSubscription = flavorEntry.getValue();
                 // Flavor has been deleted
-                if (flavorEntry == null || flavorEntry.getOrDefault("quantity", 0) <= 0) {
-                    subscription.setEnded(LocalDateTime.now());
-                    if(subscription.getObjectStorageGB() != null){
-                        List<ResourceSubscription> otherSubscriptions = new ArrayList<>(subscriptions);
-                        otherSubscriptions.remove(subscription);
-                        if(!otherSubscriptions.isEmpty()){
-                            otherSubscriptions.get(0).setObjectStorageGB(subscription.getObjectStorageGB());
-                            resourceSubscriptionProvider.update(otherSubscriptions.get(0));
-                        }
-                    }
-                    resourceSubscriptionProvider.update(subscription);
-                    // Delete nodes if Fixed Resources
-                    NodeFlavor subscriptionNodeFlavor = subscription.getFlavor();
+                if (flavorSubscription.getQuantity() <= 0) {
+                    //subscription.setEnded(LocalDateTime.now());
+                    it.remove();
                     final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
-                    final String successMessage = "Node with flavor " + subscriptionNodeFlavor.getId() + " deleted";
-                    int subscriptionQuantity = subscription.getFlavorQuantity();
                     asyncExecute(() -> {
                         try {
-                            if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
-                                for (int i = 0; i < subscriptionQuantity; i++) {
-                                    adminService.deleteSubscription(subscription);
-                                }
-                            }
+                            adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, flavorSubscription.getQuantity());
                         } catch (PersistenceException | TopologyException e) {
                             throw new TopologyException(e);
                         }
-                    }, successMessage, callback);
+                    }, flavorSubscription.getQuantity() + " nodes with flavor " + flavorId + " deleted", callback);
                     removed++;
-                // Flavor has been updated
+                    // Flavor has been updated
                 } else {
-                    final Integer updatedQuantity = flavorEntry.get("quantity");
-                    int currentQuantity = subscription.getFlavorQuantity();
-                    NodeFlavor subscriptionNodeFlavor = subscription.getFlavor();
-                    subscription.setFlavorQuantity(updatedQuantity);
-                    subscription.setPaid(request.isPaid());
-                    subscription.setFlavorHddSizeGB(flavorEntry.getOrDefault("hdd", 0));
-                    subscription.setFlavorSsdSizeGB(flavorEntry.getOrDefault("ssd", 0));
-                    resourceSubscriptionProvider.update(subscription);
+                    final Integer updatedQuantity = flavorResponseEntry.get("quantity");
+                    int currentQuantity = flavorSubscription.getQuantity();
+                    flavorSubscription.setQuantity(updatedQuantity);
+                    flavorSubscription.setHddGB(flavorResponseEntry.getOrDefault("hdd", 0));
+                    flavorSubscription.setSsdGB(flavorResponseEntry.getOrDefault("ssd", 0));
                     if (currentQuantity != updatedQuantity) {
                         final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
-                        // Add nodes if the new quantity is higher
-                        if(updatedQuantity > currentQuantity){
+                        if (updatedQuantity > currentQuantity) {
                             int quantityDifference = updatedQuantity - currentQuantity;
-                            final String successMessage = "Node with flavor " + subscriptionNodeFlavor.getId() + " had "
+                            final String successMessage = "Nodes with flavor " + flavorId + " had "
                                     + quantityDifference + " quantity added";
                             asyncExecute(() -> {
                                 try {
-                                    if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
-                                        for(int i = 0; i < quantityDifference; i++) {
-                                            adminService.initializeSubscription(subscription);
-                                        }
-                                    }
+                                    adminService.createFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
                                 } catch (PersistenceException | TopologyException e) {
                                     throw new TopologyException(e);
                                 }
@@ -421,15 +405,12 @@ public class AdministrationController extends BaseController {
                         } else {
                             //Delete nodes if new quantity is lower
                             int quantityDifference = currentQuantity - updatedQuantity;
-                            final String successMessage = "Node with flavor " + subscriptionNodeFlavor.getId() + " had "
+                            final String successMessage = "Nodes with flavor " + flavorId + " had "
                                     + quantityDifference + " quantity deleted";
                             asyncExecute(() -> {
                                 try {
-                                    if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
-                                        for(int i = 0; i < quantityDifference; i++) {
-                                            adminService.deleteSubscription(subscription);
-                                        }
-                                    }
+                                    adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
+
                                 } catch (PersistenceException | TopologyException e) {
                                     throw new TopologyException(e);
                                 }
@@ -438,9 +419,9 @@ public class AdministrationController extends BaseController {
                     }
                     updated++;
                 }
-                flavors.remove(flavorId);
+                flavorsRequest.remove(flavorId);
             }
-            for (Map.Entry<String, Map<String, Integer>> flavor : flavors.entrySet()) {
+            for (Map.Entry<String, Map<String, Integer>> flavor : flavorsRequest.entrySet()) {
                 // New flavors have been added
                 final NodeFlavor nodeFlavor = nodeFlavorProvider.get(flavor.getKey());
                 final Map<String, Integer> values = flavor.getValue();
@@ -449,34 +430,23 @@ public class AdministrationController extends BaseController {
                 }
                 final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
                 int quantity = values.get("quantity");
-                ResourceSubscription subscription = new ResourceSubscription();
-                subscription.setUserId(userId);
-                subscription.setFlavor(nodeFlavor);
-                subscription.setType(request.getType());
-                subscription.setCreated(request.getCreated() != null ? request.getCreated() : LocalDateTime.now());
-                subscription.setEnded(null);
-                subscription.setPaid(request.isPaid());
-                subscription.setFlavorHddSizeGB(values.getOrDefault("hdd", 0));
-                subscription.setFlavorSsdSizeGB(values.getOrDefault("ssd", 0));
-                subscription.setFlavorQuantity(quantity);
-                if(subscriptions.stream().noneMatch(s -> s.getObjectStorageGB()!= null)) {
-                    subscription.setObjectStorageGB(request.getObjectStorageGB());
-                }
-                resourceSubscriptionProvider.save(subscription);
+                FlavorSubscription newFlavorSubscription = new FlavorSubscription();
+                newFlavorSubscription.setFlavorId(flavor.getKey());
+                newFlavorSubscription.setHddGB(values.getOrDefault("hdd", 0));
+                newFlavorSubscription.setSsdGB(values.getOrDefault("ssd", 0));
+                newFlavorSubscription.setQuantity(quantity);
+                subscription.getFlavors().put(flavor.getKey(), newFlavorSubscription);
                 final String successMessage = "Node with flavor " + nodeFlavor.getId() + " created";
                 asyncExecute(() -> {
                     try {
-                        if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
-                            for(int i=0; i < quantity; i++) {
-                                adminService.initializeSubscription(subscription);
-                            }
-                        }
+                        adminService.createFlavorNodesForSubscription(subscription, newFlavorSubscription, quantity);
                     } catch (PersistenceException | TopologyException e) {
                         throw new TopologyException(e);
                     }
                 }, successMessage, callback);
                 created++;
-            }*/
+            }
+            resourceSubscriptionProvider.update(subscription);
             return prepareResult(String.format("Subscriptions: %d created, %d updated, %d removed",
                                                created, updated, removed));
         } catch (Exception ex) {
@@ -488,7 +458,7 @@ public class AdministrationController extends BaseController {
      * Closes a resource subscription of a user account
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions/{subscriptionId}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/users/{userId}/subscription/{subscriptionId}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId,
                                                                     @PathVariable("subscriptionId") long subscriptionId) {
         if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
