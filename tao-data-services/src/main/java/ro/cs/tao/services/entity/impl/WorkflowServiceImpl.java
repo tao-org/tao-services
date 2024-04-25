@@ -1357,11 +1357,18 @@ public class WorkflowServiceImpl
                     // Validate custom parameter values for the attached component
                     if (customValues != null && !customValues.isEmpty()) {
                         List<ParameterDescriptor> descriptors = null;
+                        List<TemplateParameterDescriptor> templateDescriptors = null;
                         if (component instanceof ProcessingComponent) {
                             descriptors = ((ProcessingComponent) component).getParameterDescriptors();
+                            templateDescriptors = ((ProcessingComponent) component).getParameterDescriptors()
+                                                                                   .stream()
+                                                                                   .filter(p -> p instanceof TemplateParameterDescriptor)
+                                                                                   .map(p -> (TemplateParameterDescriptor) p)
+                                                                                   .collect(Collectors.toList());
                         }
                         if (descriptors != null && !descriptors.isEmpty()) {
                             final List<ParameterDescriptor> descriptorList = new ArrayList<>(descriptors);
+                            final List<TemplateParameterDescriptor> templateDescriptorList = new ArrayList<>(templateDescriptors);
                             component.getTargets().forEach(t -> {
                                 descriptorList.addAll(t.toParameter());
                             });
@@ -1371,6 +1378,17 @@ public class WorkflowServiceImpl
                                     ParameterDescriptor descriptor = descriptorList.stream()
                                             .filter(d -> d.getName().equals(v.getParameterName()))
                                             .findFirst().orElse(null);
+                                    if (descriptor == null) {
+                                        for (TemplateParameterDescriptor templateDescriptor : templateDescriptorList) {
+                                            final List<ParameterDescriptor> parameters = templateDescriptor.getParameters();
+                                            descriptor = parameters.stream()
+                                                                   .filter(d -> d.getName().equals(v.getParameterName()))
+                                                                   .findFirst().orElse(null);
+                                            if (descriptor != null) {
+                                                break;
+                                            }
+                                        }
+                                    }
                                     if (descriptor == null) {
                                         errors.add(String.format("[node.customValues.parameterName] invalid parameter name '%s'",
                                                 v.getParameterName()));
