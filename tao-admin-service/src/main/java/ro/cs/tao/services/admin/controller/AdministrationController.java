@@ -363,17 +363,16 @@ public class AdministrationController extends BaseController {
                 resourceSubscriptionProvider.update(subscription);
                 return prepareResult("Subscription information updated. Pay per use subscription cannot update node information");
             }
-            // de continuat modificari, un singur subscription cu mai multe Flavors, de sters,adaugat,scazut in functie de quantity
+            final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
             for (Iterator<Map.Entry<String, FlavorSubscription>> it = subscription.getFlavors().entrySet().iterator(); it.hasNext(); ) {
                 Map.Entry<String, FlavorSubscription> flavorEntry = it.next();
                 String flavorId = flavorEntry.getKey();
                 final Map<String, Integer> flavorResponseEntry = flavorsRequest.get(flavorId);
                 FlavorSubscription flavorSubscription = flavorEntry.getValue();
                 // Flavor has been deleted
-                if (flavorSubscription.getQuantity() <= 0) {
+                if (flavorResponseEntry == null || flavorSubscription.getQuantity() <= 0) {
                     //subscription.setEnded(LocalDateTime.now());
                     it.remove();
-                    final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
                     asyncExecute(() -> {
                         try {
                             adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, flavorSubscription.getQuantity());
@@ -390,7 +389,6 @@ public class AdministrationController extends BaseController {
                     flavorSubscription.setHddGB(flavorResponseEntry.getOrDefault("hdd", 0));
                     flavorSubscription.setSsdGB(flavorResponseEntry.getOrDefault("ssd", 0));
                     if (currentQuantity != updatedQuantity) {
-                        final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
                         if (updatedQuantity > currentQuantity) {
                             int quantityDifference = updatedQuantity - currentQuantity;
                             final String successMessage = "Nodes with flavor " + flavorId + " had "
@@ -428,7 +426,6 @@ public class AdministrationController extends BaseController {
                 if (nodeFlavor == null || values.getOrDefault("quantity", 0) <= 0) {
                     return prepareResult("Invalid flavor '" + flavor.getKey() + "'", ResponseStatus.FAILED);
                 }
-                final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
                 int quantity = values.get("quantity");
                 FlavorSubscription newFlavorSubscription = new FlavorSubscription();
                 newFlavorSubscription.setFlavorId(flavor.getKey());
@@ -458,22 +455,34 @@ public class AdministrationController extends BaseController {
      * Closes a resource subscription of a user account
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/users/{userId}/subscription/{subscriptionId}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId,
-                                                                    @PathVariable("subscriptionId") long subscriptionId) {
+    @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId) {
         if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         try {
-            final ResourceSubscription subscription = resourceSubscriptionProvider.get(subscriptionId);
+            ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
             if (subscription == null) {
                 throw new IllegalArgumentException("No such subscription");
             }
             if (subscription.getEnded() != null) {
                 throw new IllegalAccessException("Subscription already closed");
-            } else {
-                subscription.setEnded(LocalDateTime.now());
-                resourceSubscriptionProvider.save(subscription);
+            }
+            subscription.setEnded(LocalDateTime.now());
+            resourceSubscriptionProvider.update(subscription);
+            //delete nodes as required
+            if(!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                return prepareResult("Subscription information deleted. Pay per use subscription cannot delete nodes.");
+            }
+            for(Map.Entry<String, FlavorSubscription> entry : subscription.getFlavors().entrySet()){
+                final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
+                asyncExecute(() -> {
+                    try {
+                        adminService.deleteFlavorNodesForSubscription(subscription, entry.getValue(), entry.getValue().getQuantity());
+                    } catch (PersistenceException | TopologyException e) {
+                        throw new TopologyException(e);
+                    }
+                }, "All nodes deleted for user subscription", callback);
             }
             return prepareResult("Subscription closed", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
