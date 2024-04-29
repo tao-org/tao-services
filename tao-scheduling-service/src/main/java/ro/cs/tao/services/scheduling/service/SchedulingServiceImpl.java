@@ -67,20 +67,22 @@ public class SchedulingServiceImpl implements SchedulingService {
 				final WorkflowDescriptor workflowDescriptor = workflowProvider.get(workflowId);
 				info.setWorkflowName(workflowDescriptor.getName());
 				
-				final List<Long> jobIds =(List<Long>)jobDataMap.get(WorkflowExecutionJob.JOB_ID_KEY);
+				final List<String> batchIds =(List<String>)jobDataMap.get(WorkflowExecutionJob.BATCH_ID_KEY);
 				final List<JobInfo> jobs = new LinkedList<JobInfo>();
-				if (jobIds != null) {
-					for (Long jobId : jobIds) {
-						final ExecutionJob job = jobProvider.get(jobId);
-						final JobInfo jobInfo = new JobInfo();
+				if (batchIds != null) {
+					final List<ExecutionJob> executionJobs = jobProvider.list(batchIds);
+					if (executionJobs != null) {
+						executionJobs.stream().forEach(job -> {
+							final JobInfo jobInfo = new JobInfo();
 
-						jobInfo.setJobId(jobId);
-						jobInfo.setName(job.getName());
-						jobInfo.setStartTime(job.getStartTime());
-						jobInfo.setEndTime(job.getEndTime());
-						jobInfo.setStatus(job.getExecutionStatus());
+							jobInfo.setJobId(job.getId());
+							jobInfo.setName(job.getName());
+							jobInfo.setStartTime(job.getStartTime());
+							jobInfo.setEndTime(job.getEndTime());
+							jobInfo.setStatus(job.getExecutionStatus());
 
-						jobs.add(jobInfo);
+							jobs.add(jobInfo);
+						});
 					}
 				}
 				
@@ -107,7 +109,8 @@ public class SchedulingServiceImpl implements SchedulingService {
 		parameters.put(WorkflowExecutionJob.INPUTS_KEY, inputs);
 		parameters.put(WorkflowExecutionJob.EXECUTION_MODE_KEY, mode);
 		parameters.put(AbstractJob.FRIENDLY_NAME_KEY, name);
-		parameters.put(AbstractJob.USER_AUTHENTICATION_KEY, SecurityContextHolder.getContext().getAuthentication());
+		parameters.put(WorkflowExecutionJob.USER_ID_KEY, SecurityContextHolder.getContext().getAuthentication().getName());
+		//parameters.put(AbstractJob.USER_AUTHENTICATION_KEY, SecurityContextHolder.getContext().getAuthentication());
 		
 		WorkflowExecutionJob job = new WorkflowExecutionJob();
 
@@ -127,7 +130,8 @@ public class SchedulingServiceImpl implements SchedulingService {
 		parameters.put(WorkflowExecutionJob.INPUTS_KEY, inputs);
 		parameters.put(WorkflowExecutionJob.EXECUTION_MODE_KEY, mode);
 		parameters.put(AbstractJob.FRIENDLY_NAME_KEY, name);
-		parameters.put(AbstractJob.USER_AUTHENTICATION_KEY, SecurityContextHolder.getContext().getAuthentication());
+		parameters.put(WorkflowExecutionJob.USER_ID_KEY, SecurityContextHolder.getContext().getAuthentication().getName());
+		//parameters.put(AbstractJob.USER_AUTHENTICATION_KEY, SecurityContextHolder.getContext().getAuthentication());
 		
 		WorkflowExecutionJob job = new WorkflowExecutionJob();
 
