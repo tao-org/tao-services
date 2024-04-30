@@ -16,6 +16,7 @@
 package ro.cs.tao.services.admin.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.messaging.Message;
@@ -24,12 +25,13 @@ import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.NodeDBProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.persistence.repository.NodeFlavorRepository;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.model.user.DisableUserInfo;
 import ro.cs.tao.services.model.user.UserMapping;
 import ro.cs.tao.services.model.user.UserUnicityInfo;
+import ro.cs.tao.subscription.FlavorSubscription;
 import ro.cs.tao.subscription.ResourceSubscription;
-import ro.cs.tao.subscription.SubscriptionType;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.NodeFlavor;
 import ro.cs.tao.topology.TopologyException;
@@ -38,10 +40,7 @@ import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -54,6 +53,9 @@ public class AdministrationServiceImpl implements AdministrationService {
     private UserProvider userProvider;
     @Autowired
     private NodeDBProvider nodeDBProvider;
+    @Autowired
+    @Qualifier("nodeFlavorRepository")
+    private NodeFlavorRepository nodeFlavorRepository;
 
     @Override
     public User addNewUser(User newUserInfo) throws PersistenceException {
@@ -133,30 +135,58 @@ public class AdministrationServiceImpl implements AdministrationService {
         if (!topologyManager.isExternalProviderAvailable()) {
             return;
         }
-        final NodeFlavor flavor = subscription.getFlavor();
         final int existing = nodeDBProvider.countUsableNodes(subscription.getUserId());
-        final NodeDescription node = NodeManager.getInstance().getNewNodeDescription(existing, subscription.getUserId(), flavor);
-        node.setVolatile(false);
-        topologyManager.addNode(node);
+        final Map<String, FlavorSubscription> flavors = subscription.getFlavors();
+        for (FlavorSubscription value : flavors.values()) {
+            final Optional<NodeFlavor> flavor = nodeFlavorRepository.findById(value.getFlavorId());
+            if(flavor.isEmpty())
+                throw new RuntimeException("Node flavor not found");
+            for(int i = 0; i < value.getQuantity(); i++) {
+                final NodeDescription node = NodeManager.getInstance().getNewNodeDescription(existing, subscription.getUserId(), flavor.get());
+                node.setVolatile(false);
+                topologyManager.addNode(node);
+            }
+        }
     }
 
     @Override
-    public void deleteSubscription(ResourceSubscription subscription) throws TopologyException, PersistenceException {
+    public void createFlavorNodesForSubscription(ResourceSubscription subscription, FlavorSubscription flavor, int nodesToCreate){
         final TopologyManager topologyManager = TopologyManager.getInstance();
         if (!topologyManager.isExternalProviderAvailable()) {
             return;
         }
-        NodeFlavor flavor = subscription.getFlavor();
+        final int existing = nodeDBProvider.countUsableNodes(subscription.getUserId());
+        final Optional<NodeFlavor> nodeFlavorOptional = nodeFlavorRepository.findById(flavor.getFlavorId());
+        if(nodeFlavorOptional.isEmpty())
+            throw new RuntimeException("Node flavor not found");
+        for (int i = 0; i < nodesToCreate; i++) {
+            final NodeDescription node = NodeManager.getInstance().getNewNodeDescription(existing, subscription.getUserId(), nodeFlavorOptional.get());
+            node.setVolatile(false);
+            topologyManager.addNode(node);
+        }
+    }
+
+    @Override
+    public void deleteFlavorNodesForSubscription(ResourceSubscription subscription, FlavorSubscription flavor, int nodesToDelete) throws TopologyException, PersistenceException {
+        final TopologyManager topologyManager = TopologyManager.getInstance();
+        if (!topologyManager.isExternalProviderAvailable()) {
+            return;
+        }
         int existing = nodeDBProvider.countUsableNodes(subscription.getUserId());
         if(existing <= 0)
             return;
         List<NodeDescription> topologyNodes = nodeDBProvider.list();
-        topologyNodes.removeIf(node -> node.getOwner() == null || !node.getOwner().equals(subscription.getUserId()) || !node.getFlavor().equals(flavor));
-        if(topologyNodes.isEmpty()){
-            return;
+        topologyNodes.removeIf(node -> node.getOwner() == null || !node.getOwner().equals(subscription.getUserId())
+                || !node.getFlavor().getId().equals(flavor.getFlavorId()));
+        if(topologyNodes.isEmpty() || topologyNodes.size() < nodesToDelete){
+            throw new TopologyException("There are not enough nodes to delete ("
+                    + topologyNodes.size() + ") as per required amount: " + nodesToDelete);
         }
-        String nodeToDeleteId = topologyNodes.getFirst().getId();
-        topologyManager.removeNode(nodeToDeleteId);
-        nodeDBProvider.delete(topologyNodes.getFirst());
+        for (int i = 0; i < nodesToDelete; i++) {
+            String nodeToDeleteId = topologyNodes.get(i).getId();
+            nodeDBProvider.delete(nodeToDeleteId);
+            topologyManager.removeNode(nodeToDeleteId);
+        }
+
     }
 }
