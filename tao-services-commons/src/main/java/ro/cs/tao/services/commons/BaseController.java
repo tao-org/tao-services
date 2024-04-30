@@ -27,6 +27,7 @@ import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.AuditProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.LogEvent;
@@ -106,7 +107,8 @@ public abstract class BaseController extends ControllerBase {
     }
 
     protected boolean isCurrentUserAdmin() {
-        return ((UserPrincipal) currentPrincipal()).hasRole("admin");
+        final Principal principal = currentPrincipal();
+        return principal instanceof SystemPrincipal || ((UserPrincipal) principal).hasRole("admin");
     }
 
     protected boolean isAdmin(String userId) {
