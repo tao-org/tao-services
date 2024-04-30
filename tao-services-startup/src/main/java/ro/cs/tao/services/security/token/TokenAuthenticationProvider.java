@@ -32,10 +32,12 @@ import ro.cs.tao.security.Token;
 import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.security.TokenCacheManager;
+import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -73,7 +75,8 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
                 final Token fullToken = TokenCacheManager.getCache().getFullToken(token);
                 final String userId = TokenCacheManager.getCache().getUser(token);
                 final User user = userProvider.get(userId);
-                final UserPrincipal principal = new UserPrincipal(userId);
+                final UserPrincipal principal = new UserPrincipal(userId,
+                                                                  user.getGroups().stream().map(Group::getName).collect(Collectors.toSet()));
                 GrantedAuthority authority = new JaasGrantedAuthority(user.getGroups().get(0).getName(), principal);
                 auth = new JaasAuthenticationToken(principal, token, new ArrayList<>() {{ add(authority); }}, null);
                 TokenCacheManager.getCache().put(fullToken, auth);
