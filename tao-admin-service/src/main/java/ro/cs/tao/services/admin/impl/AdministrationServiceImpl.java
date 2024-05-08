@@ -184,8 +184,8 @@ public class AdministrationServiceImpl implements AdministrationService {
         }
         for (int i = 0; i < nodesToDelete; i++) {
             String nodeToDeleteId = topologyNodes.get(i).getId();
-            nodeDBProvider.delete(nodeToDeleteId);
             topologyManager.removeNode(nodeToDeleteId);
+            nodeDBProvider.delete(nodeToDeleteId);
         }
 
     }
