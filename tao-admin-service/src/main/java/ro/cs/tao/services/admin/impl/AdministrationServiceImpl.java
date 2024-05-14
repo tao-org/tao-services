@@ -175,9 +175,7 @@ public class AdministrationServiceImpl implements AdministrationService {
         int existing = nodeDBProvider.countUsableNodes(subscription.getUserId());
         if(existing <= 0)
             return;
-        List<NodeDescription> topologyNodes = nodeDBProvider.list();
-        topologyNodes.removeIf(node -> node.getOwner() == null || !node.getOwner().equals(subscription.getUserId())
-                || !node.getFlavor().getId().equals(flavor.getFlavorId()));
+        List<NodeDescription> topologyNodes = nodeDBProvider.getByUserWithFlavor(subscription.getUserId(), flavor.getFlavorId());
         if(topologyNodes.isEmpty() || topologyNodes.size() < nodesToDelete){
             throw new TopologyException("There are not enough nodes to delete ("
                     + topologyNodes.size() + ") as per required amount: " + nodesToDelete);
@@ -185,9 +183,6 @@ public class AdministrationServiceImpl implements AdministrationService {
         for (int i = 0; i < nodesToDelete; i++) {
             String nodeToDeleteId = topologyNodes.get(i).getId();
             topologyManager.removeNode(nodeToDeleteId);
-            // Redundant call, delete(id) is called from within the above method
-            // nodeDBProvider.delete(nodeToDeleteId);
         }
-
     }
 }
