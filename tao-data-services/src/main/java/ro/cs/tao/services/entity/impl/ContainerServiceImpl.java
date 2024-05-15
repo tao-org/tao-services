@@ -142,6 +142,10 @@ public class ContainerServiceImpl
     @Override
     public String registerContainer(Path dockerFile, Container container, ProcessingComponent[] components) {
         String containerId;
+        // Prevent accidental overwritting of an already registered container
+        if (containerProvider.getByName(container.getName()) != null ) {
+            throw new IllegalArgumentException("Container '" + container.getName() + "' already registered, use another name");
+        }
         final Container dockerImage = DockerManager.getDockerImage(container.getName());
         if (dockerImage == null) {
             // build Docker image and put it in Docker registry
