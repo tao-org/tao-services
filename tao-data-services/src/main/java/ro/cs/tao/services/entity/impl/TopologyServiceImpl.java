@@ -149,7 +149,7 @@ public class TopologyServiceImpl
         NodeDescription node = findById(hostName);
         String userId = node.getOwner();
         ResourceSubscription userSubscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
-        if(userSubscription.getType() == SubscriptionType.FIXED_RESOURCES){
+        if(userSubscription != null && userSubscription.getType() == SubscriptionType.FIXED_RESOURCES){
             Optional<FlavorSubscription> optionalUserFlavor =  userSubscription.getFlavors().values().stream().filter(
                     flavor -> flavor.getFlavorId().equals(node.getFlavor().getId())).findFirst();
             if(optionalUserFlavor.isPresent()){
