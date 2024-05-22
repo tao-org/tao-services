@@ -125,11 +125,13 @@ public class DataSourceServiceImpl implements DataSourceService {
                             descriptor = new DataSourceDescriptor(mission, sensor, n, cd.getSensorType().friendlyName(),
                                                                   cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
                                                                   parameters, requiresAuthentication,
-                                                                  dataSource.is2FAEnabled() & requiresAuthentication);
+                                                                  dataSource.is2FAEnabled() & requiresAuthentication,
+                                                                  cd.isTokenNeeded() & requiresAuthentication);
                         } else {
                             descriptor = new DataSourceDescriptor(sensor, sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
                                                                   parameters, requiresAuthentication,
-                                                                  dataSource.is2FAEnabled() & requiresAuthentication);
+                                                                  dataSource.is2FAEnabled() & requiresAuthentication,
+                                                                  false);
                         }
                         instances.add(descriptor);
                         //final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(sensor + "-" + n)).findFirst().orElse(null);
@@ -227,7 +229,7 @@ public class DataSourceServiceImpl implements DataSourceService {
             if (!StringUtilities.isNullOrEmpty(query.getUserId())) {
                 dsComponent.setPrincipal(query::getUserId);
             }
-            dsComponent.setUserCredentials(query.getUser(), query.getPassword());
+            dsComponent.setUserCredentials(query.getUser(), query.getPassword(), query.getSecret());
             final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(dsComponent.getId());
             String localRepositoryRoot;
             final Properties properties = new Properties();
@@ -321,7 +323,7 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     private DataSourceComponent cloneComponent(DataSourceComponent source, ProductStatusListener listener) throws CloneNotSupportedException {
         DataSourceComponent clone = source.clone();
-        clone.setUserCredentials(source.getUserName(), source.getPassword());
+        clone.setUserCredentials(source.getUserName(), source.getPassword(), source.getSecret());
         clone.setFetchMode(source.getFetchMode());
         clone.setProductStatusListener(listener);
         return clone;
