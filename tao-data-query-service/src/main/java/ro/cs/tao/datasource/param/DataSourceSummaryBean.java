@@ -45,6 +45,10 @@ public class DataSourceSummaryBean {
         return descriptor.isRequires2FA();
     }
 
+    public boolean isRequiresBearerToken() {
+        return descriptor.isRequiresBearerToken();
+    }
+
     public String getDataSourceLabel() {
         final String sensor = descriptor.getSensor();
         return sensor.indexOf('(') > 0 ?
