@@ -19,8 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.execution.monitor.NodeManager;
-import ro.cs.tao.execution.monitor.OSRuntimeInfo;
+import ro.cs.tao.execution.monitor.NodeRuntimeInspector;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
+import ro.cs.tao.execution.monitor.RuntimeInspectorFactory;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.NotifiableComponent;
 import ro.cs.tao.messaging.Topic;
@@ -30,6 +31,7 @@ import ro.cs.tao.services.commons.MessageConverter;
 import ro.cs.tao.services.commons.Notification;
 import ro.cs.tao.services.interfaces.MonitoringService;
 import ro.cs.tao.topology.NodeDescription;
+import ro.cs.tao.topology.NodeRole;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.utils.executors.AuthenticationType;
 import ro.cs.tao.utils.executors.Executor;
@@ -96,8 +98,9 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
             if (NodeManager.isAvailable()) {
                 runtimeInfo = NodeManager.getInstance().getNodeSnapshot(nodeInfo.getId());
             } else {
-                OSRuntimeInfo<?> inspector = OSRuntimeInfo.createInspector(nodeInfo.getId(), nodeInfo.getUserName(), nodeInfo.getUserPass(),
-                                                                           AuthenticationType.PASSWORD, RuntimeInfo.class);
+                NodeRuntimeInspector inspector = RuntimeInspectorFactory.getInstance().get(nodeInfo.getId(), NodeRole.MASTER,
+                                                                                           AuthenticationType.PASSWORD,
+                                                                                           nodeInfo.getUserName(), nodeInfo.getUserPass());
                 runtimeInfo = inspector.getInfo();
             }
         } catch (Exception e) {
@@ -115,10 +118,11 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
             } else {
                 NodeDescription node = TopologyManager.getInstance().getNode(hostName);
                 AuthenticationType type = node.getSshKey() != null ? AuthenticationType.CERTIFICATE : AuthenticationType.PASSWORD;
-                runtimeInfo = OSRuntimeInfo.createInspector(node.getId(), node.getUserName(),
-                                                            type == AuthenticationType.PASSWORD ? node.getUserPass() : node.getSshKey(),
-                                                            type,
-                                                            RuntimeInfo.class).getSnapshot();
+                NodeRuntimeInspector inspector = RuntimeInspectorFactory.getInstance().get(node.getId(), node.getRole(),
+                                                                                           type,
+                                                                                           node.getUserName(),
+                                                                                           type == AuthenticationType.PASSWORD ? node.getUserPass() : node.getSshKey());
+                runtimeInfo = inspector.getSnapshot();
             }
         } catch (Throwable ex) {
             logger.warning(ex.getMessage());

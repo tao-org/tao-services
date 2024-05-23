@@ -113,7 +113,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     public CorsConfigurationSource corsConfigurationSource() {
         final CorsConfiguration configuration = new CorsConfiguration();
         //configuration.setAllowedOrigins(Collections.unmodifiableList(new ArrayList<String>() {{ add("*"); }}));
-        configuration.addAllowedOriginPattern("*");
+        //configuration.addAllowedOriginPattern("*");
+        String value = ConfigurationManager.getInstance().getValue("tao.services.base");
+        if (value.startsWith("http:")) {
+            value = value.replace("http:", "https:");
+        }
+        configuration.addAllowedOrigin(value);
         configuration.setAllowedMethods(Collections.unmodifiableList(new ArrayList<String>() {{
             add("HEAD"); add("GET"); add("POST"); add("PUT"); add("DELETE"); add("PATCH"); add("OPTIONS"); }}));
         // setAllowCredentials(true) is important, otherwise:
@@ -122,7 +127,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
         // setAllowedHeaders is important! Without it, OPTIONS preflight request
         // will fail with 403 Invalid CORS request
         configuration.setAllowedHeaders(Collections.unmodifiableList(new ArrayList<String>() {{
-            add("Authorization"); add("Cache-Control"); add("Content-Type"); add("x-auth-token"); add("user"); }}));
+            add("Authorization"); add("Cache-Control"); add("Content-Type"); add("content-type");
+            add("x-auth-token"); add("X-Auth-Token"); add("user"); }}));
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
