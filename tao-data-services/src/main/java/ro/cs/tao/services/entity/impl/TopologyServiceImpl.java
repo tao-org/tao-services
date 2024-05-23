@@ -32,6 +32,7 @@ import ro.cs.tao.subscription.SubscriptionType;
 import ro.cs.tao.topology.*;
 import ro.cs.tao.topology.docker.DockerManager;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -155,6 +156,9 @@ public class TopologyServiceImpl
             if(optionalUserFlavor.isPresent()){
                 FlavorSubscription userFlavor = optionalUserFlavor.get();
                 userFlavor.setQuantity(userFlavor.getQuantity()-1);
+                if(userSubscription.getFlavors().size() == 1 && userFlavor.getQuantity() == 0){
+                    userSubscription.setEnded(LocalDateTime.now());
+                }
                 resourceSubscriptionProvider.update(userSubscription);
             }
         }
