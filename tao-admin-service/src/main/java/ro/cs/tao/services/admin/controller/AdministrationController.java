@@ -371,7 +371,6 @@ public class AdministrationController extends BaseController {
                 FlavorSubscription flavorSubscription = flavorEntry.getValue();
                 // Flavor has been deleted
                 if (flavorResponseEntry == null || flavorSubscription.getQuantity() <= 0) {
-                    //subscription.setEnded(LocalDateTime.now());
                     it.remove();
                     asyncExecute(() -> {
                         try {
