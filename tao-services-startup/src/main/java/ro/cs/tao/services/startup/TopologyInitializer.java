@@ -42,6 +42,8 @@ public class TopologyInitializer extends BaseLifeCycle {
             }
             nodeManager.setNodeProvider(nodeProvider);
             nodeManager.setTaskProvider(persistenceManager.tasks());
+            nodeManager.setResourceSubscriptionProvider(persistenceManager.resourceSubscription());
+            nodeManager.setFlavorProvider(persistenceManager.nodeFlavors());
             nodeManager.setNodeLimit(Integer.parseInt(cfgManager.getValue(NODE_LIMIT, "0")));
             nodeManager.initialize();
             TopologyManager.getInstance().registerListener(nodeManager);
