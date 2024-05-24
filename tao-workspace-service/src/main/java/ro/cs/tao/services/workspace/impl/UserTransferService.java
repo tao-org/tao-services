@@ -19,6 +19,7 @@ import ro.cs.tao.utils.executors.BlockingQueueWorker;
 import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.Repository;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -114,6 +115,7 @@ public class UserTransferService {
             if (this.progressListener != null) {
             	this.progressListener.subActivityStarted(srcPath);
             }
+            boolean hasException = false;
             if (srcWorkspace.getId().equals(dstWorkspace.getId())) {
                 destinationService.move(srcPath, item.getDestinationPath());
             } else {
@@ -136,6 +138,11 @@ public class UserTransferService {
                     } else {
                         logger.fine(String.format("File %s exists at the destination and no overwrite flag is set", srcPath));
                     }
+                } catch (FileNotFoundException fnfex) {
+                    final String msg = "File '" + srcPath + "' was not found in the [" + srcWorkspace.getName() + "] repository";
+                    logger.warning(msg);
+                    hasException = true;
+                    Messaging.send(new UserPrincipal(item.getUser()), Topic.WARNING.value(), this, msg);
                 } finally {
                     if (sourceStream != null) {
                         sourceStream.close();
@@ -148,7 +155,7 @@ public class UserTransferService {
                 }
             }
             if (this.progressListener != null) {
-            	this.progressListener.subActivityEnded(srcPath, true);
+            	this.progressListener.subActivityEnded(srcPath, hasException);
             }
             //decrement(item.getBatch());
             if (this.progressListener != null) {
@@ -157,7 +164,7 @@ public class UserTransferService {
             final TransferableItem next = this.queue.peek();
             if (next == null || !item.getBatch().equals(next.getBatch())) {
                 if (this.progressListener != null) {
-                    this.progressListener.ended(true);
+                    this.progressListener.ended(hasException);
                     this.progressListener = null;
                 }
                 final String msg = "Transfer batch [" + item.getBatch() + "] completed";
