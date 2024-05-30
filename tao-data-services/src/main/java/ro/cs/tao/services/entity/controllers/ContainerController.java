@@ -540,7 +540,7 @@ public class ContainerController extends DataEntityController<Container, String,
             component.setComponentType(ProcessingComponentType.EXECUTABLE);
             containerApplications.stream().filter(a -> a.getName().equals(component.getId())).findFirst()
                                  .ifPresent(application -> component.setFileLocation(application.getPath()));
-            List<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
+            Set<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
             if (parameterDescriptors != null) {
                 parameterDescriptors.forEach(p -> {
                     if (p.getName() == null) {

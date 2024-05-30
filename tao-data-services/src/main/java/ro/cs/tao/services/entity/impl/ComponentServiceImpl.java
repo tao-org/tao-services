@@ -334,7 +334,7 @@ public class ComponentServiceImpl
                 }
             }
         }
-        List<ParameterDescriptor> parameterDescriptors = entity.getParameterDescriptors();
+        Set<ParameterDescriptor> parameterDescriptors = entity.getParameterDescriptors();
         if (parameterDescriptors != null) {
             for (ParameterDescriptor descriptor : parameterDescriptors) {
                 String descriptorId = descriptor.getId();

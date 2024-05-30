@@ -66,7 +66,7 @@ public class OrchestrationController extends BaseController {
 
     /**
      * Returns the available parameters for a workflow
-     * @param workflowId    The workflow identifier
+     *
      */
     @RequestMapping(value = "/environment", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getEnvironments() {

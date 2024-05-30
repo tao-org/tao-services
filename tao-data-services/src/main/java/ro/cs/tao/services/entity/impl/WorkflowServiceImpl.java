@@ -1095,7 +1095,7 @@ public class WorkflowServiceImpl
                     break;
                 case PROCESSING:
                     ProcessingComponent processingComponent = (ProcessingComponent) component;
-                    List<ParameterDescriptor> descriptors = processingComponent.getParameterDescriptors();
+                    Set<ParameterDescriptor> descriptors = processingComponent.getParameterDescriptors();
                     for (ParameterDescriptor descriptor : descriptors) {
                         paramType = descriptor.getDataType();
                         componentParams.add(new Parameter(descriptor.getName(),
