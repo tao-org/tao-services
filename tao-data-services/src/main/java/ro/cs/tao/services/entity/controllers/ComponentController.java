@@ -363,7 +363,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             }
             final ProcessingComponent component = service.findById(id);
             if (currentUser().equals(component.getOwner()) || isCurrentUserAdmin()) {
-                final List<ParameterDescriptor> descriptors = component.getParameterDescriptors();
+                final Set<ParameterDescriptor> descriptors = component.getParameterDescriptors();
                 descriptors.removeIf(p -> p.getId().equals(paramId));
                 descriptors.add(parameter);
                 return super.update(id, component);
@@ -418,7 +418,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     }
     /**
      * Clones an existing processing component for the current user
-     * @param entity    The descriptor of the processing component
+     * @param componentId    The id of the processing component
      *
      */
     @RequestMapping(value = "/clone", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)

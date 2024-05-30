@@ -42,6 +42,7 @@ import ro.cs.tao.topology.docker.DockerManager;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -183,7 +184,7 @@ public class ContainerServiceImpl
                     component.setLabel(component.getId());
                     component.setComponentType(ProcessingComponentType.EXECUTABLE);
                     component.setFileLocation(containerApplications.stream().filter(a -> a.getName().equals(component.getId())).findFirst().get().getPath());
-                    List<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
+                    Set<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
                     if (parameterDescriptors != null) {
                         parameterDescriptors.forEach(p -> {
                             if (p.getName() == null) {
