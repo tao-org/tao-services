@@ -377,10 +377,10 @@ public class ComponentController extends DataEntityController<ProcessingComponen
 
     /**
      * Import a processing component descriptor from a json file.
-     * @param id    The component identifier
+     * @param file    The JSON file containing the processing component
      *
      */
-    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ServiceResponse<?>> importFile(@RequestParam("file") MultipartFile file) {
         try {
             if (file == null || file.getOriginalFilename() == null) {
