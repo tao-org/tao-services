@@ -35,8 +35,6 @@ import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.persistence.WorkflowNodeProvider;
-import ro.cs.tao.serialization.BaseSerializer;
-import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
@@ -56,6 +54,8 @@ import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
 import ro.cs.tao.workflow.enums.Status;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -665,12 +665,29 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                 response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                 response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + entity.getId());
                 response.setStatus(HttpStatus.OK.value());
-                final BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, ro.cs.tao.serialization.MediaType.JSON);
-                final String jsonString = serializer.serialize(entity);
-                response.getOutputStream().write(jsonString.getBytes());
+                response.getOutputStream().write(service.exportWorkflow(entity).getBytes());
             }
         } catch (Exception e) {
             error(e.getMessage());
+        }
+    }
+
+    /**
+     * Import a workflow descriptor from a json file.
+     * @param file    The JSON file containing the workflow descriptor
+     *
+     */
+    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ServiceResponse<?>> importFile(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file == null || file.getOriginalFilename() == null) {
+                throw new IOException("Empty file");
+            }
+            try (InputStream stream = file.getInputStream()) {
+                return prepareResult(service.importWorkflow(stream));
+            }
+        } catch (Exception e) {
+            return handleException(e);
         }
     }
 
