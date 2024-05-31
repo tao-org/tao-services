@@ -1106,6 +1106,18 @@ public class WorkflowServiceImpl
                                                                   Parameter.stringValueSet(paramType.getEnumConstants()) :
                                                                   Parameter.stringValueSet(descriptor.getValueSet()),
                                                           descriptor.isNotNull()));
+                        if(descriptor instanceof TemplateParameterDescriptor){
+                            for(ParameterDescriptor param : ((TemplateParameterDescriptor) descriptor).getParameters()){
+                                Class<?> descriptorParamType = param.getDataType();
+                                componentParams.add(new Parameter(param.getName(),
+                                        param.typeFriendlyName(),
+                                        !"null".equals(param.getDefaultValue()) ? param.getDefaultValue() : null,
+                                        descriptorParamType.isEnum() ?
+                                                Parameter.stringValueSet(descriptorParamType.getEnumConstants()) :
+                                                Parameter.stringValueSet(param.getValueSet()),
+                                        param.isNotNull()));
+                            }
+                        }
                     }
                     break;
                 case GROUP:
@@ -1356,7 +1368,7 @@ public class WorkflowServiceImpl
                     List<ParameterValue> customValues = node.getCustomValues();
                     // Validate custom parameter values for the attached component
                     if (customValues != null && !customValues.isEmpty()) {
-                        List<ParameterDescriptor> descriptors = null;
+                        Set<ParameterDescriptor> descriptors = null;
                         List<TemplateParameterDescriptor> templateDescriptors = null;
                         if (component instanceof ProcessingComponent) {
                             descriptors = ((ProcessingComponent) component).getParameterDescriptors();
