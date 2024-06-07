@@ -29,6 +29,7 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.TemplateParameterDescriptor;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.enums.Visibility;
@@ -696,17 +697,29 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         if (customValues != null) {
             List<String> errors = null;
             final ProcessingComponent component = componentService.findById(node.getComponentId());
-            for (ParameterValue value : customValues) {
-                final ParameterDescriptor descriptor = component.getParameterDescriptors()
-                                                                .stream()
-                                                                .filter(p -> p.getName().equals(value.getParameterName()))
-                                                                .findFirst().orElse(null);
+            for (ParameterValue customValue : customValues) {
+                ParameterDescriptor descriptor = null;
+                for(ParameterDescriptor componentParam : component.getParameterDescriptors()){
+                    if(componentParam.getName().equals(customValue.getParameterName())) {
+                        descriptor = componentParam;
+                        break;
+                    }
+                    if(componentParam instanceof TemplateParameterDescriptor){
+                        descriptor = ((TemplateParameterDescriptor) componentParam).getParameters()
+                                .stream()
+                                .filter(innerParam -> customValue.getParameterName()
+                                        .equals(componentParam.getName() + "~" + innerParam.getName()))
+                                .findFirst().orElse(null);
+                        if(descriptor != null)
+                            break;
+                    }
+                }
                 if (descriptor != null) {
                     try {
                         if (!descriptor.javaType().isArrayType()) {
-                            descriptor.javaType().parse(value.getParameterValue());
+                            descriptor.javaType().parse(customValue.getParameterValue());
                         } else {
-                            descriptor.javaType().parseArray(value.getParameterValue());
+                            descriptor.javaType().parseArray(customValue.getParameterValue());
                         }
                     } catch (Exception e) {
                         if (errors == null) {
@@ -714,8 +727,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                         }
                         errors.add(String.format("[%s.%s] %s is not of expected type (%s)",
                                                  node.getName(),
-                                                 value.getParameterName(),
-                                                 value.getParameterValue(),
+                                                 customValue.getParameterName(),
+                                                 customValue.getParameterValue(),
                                                  descriptor.javaType().friendlyName()));
                     }
                 }

@@ -1109,7 +1109,7 @@ public class WorkflowServiceImpl
                         if(descriptor instanceof TemplateParameterDescriptor){
                             for(ParameterDescriptor param : ((TemplateParameterDescriptor) descriptor).getParameters()){
                                 Class<?> descriptorParamType = param.getDataType();
-                                componentParams.add(new Parameter(param.getName(),
+                                componentParams.add(new Parameter(descriptor.getName() + "~" + param.getName(),
                                         param.typeFriendlyName(),
                                         !"null".equals(param.getDefaultValue()) ? param.getDefaultValue() : null,
                                         descriptorParamType.isEnum() ?
@@ -1394,7 +1394,7 @@ public class WorkflowServiceImpl
                                         for (TemplateParameterDescriptor templateDescriptor : templateDescriptorList) {
                                             final List<ParameterDescriptor> parameters = templateDescriptor.getParameters();
                                             descriptor = parameters.stream()
-                                                                   .filter(d -> d.getName().equals(v.getParameterName()))
+                                                                   .filter(d -> v.getParameterName().equals(templateDescriptor.getName()+ "~"+ d.getName()))
                                                                    .findFirst().orElse(null);
                                             if (descriptor != null) {
                                                 break;
