@@ -15,6 +15,11 @@
  */
 package ro.cs.tao.services.entity.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -63,7 +68,6 @@ import ro.cs.tao.subscription.WorkflowSubscription;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.Tuple;
-import ro.cs.tao.utils.executors.MemoryUnit;
 import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
@@ -74,8 +78,6 @@ import ro.cs.tao.workflow.enums.Status;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -1194,15 +1196,11 @@ public class WorkflowServiceImpl
 
     @Override
     public WorkflowDescriptor importWorkflow(InputStream source) throws IOException, SerializationException, PersistenceException {
-        final BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, MediaType.JSON);
-        final char[] buffer = new char[MemoryUnit.KB.value().intValue()];
-        final StringBuilder builder = new StringBuilder();
-        try (Reader reader = new InputStreamReader(source)) {
-            for (int numRead; (numRead = reader.read(buffer, 0, buffer.length)) > 0;) {
-                builder.append(buffer, 0, numRead);
-            }
-        }
-        WorkflowDescriptor descriptor = serializer.deserialize(builder.toString());
+        final ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModules(new JavaTimeModule());
+        mapper.setAnnotationIntrospector(new JaxbAnnotationIntrospector());
+        final ObjectReader objectReader = mapper.readerFor(WorkflowDescriptor.class);
+        WorkflowDescriptor descriptor = objectReader.readValue(source);
         WorkflowDescriptor existing;
         if (descriptor.getId() != null) {
             existing = getFullDescriptor(descriptor.getId());
@@ -1223,6 +1221,7 @@ public class WorkflowServiceImpl
             if (StringUtilities.isNullOrEmpty(componentId) || componentService.findById(componentId) == null) {
                 throw new IOException("Component for node [" + node.getName() + "] is missing or not registered");
             }
+            node.setId(null);
         }
         return workflowProvider.save(descriptor);
     }
@@ -1230,6 +1229,7 @@ public class WorkflowServiceImpl
     @Override
     public String exportWorkflow(WorkflowDescriptor descriptor) throws SerializationException {
         final BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, MediaType.JSON);
+        serializer.enable(SerializationFeature.EAGER_SERIALIZER_FETCH);
         return serializer.serialize(descriptor);
     }
 
