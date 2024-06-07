@@ -44,6 +44,7 @@ import ro.cs.tao.services.interfaces.GroupComponentService;
 import ro.cs.tao.services.interfaces.NameTokenService;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 import ro.cs.tao.utils.AutoEvictableCache;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.GenericComparator;
 import ro.cs.tao.utils.StringUtilities;
 
@@ -301,7 +302,9 @@ public class ComponentController extends DataEntityController<ProcessingComponen
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
             } else {
                 response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + entity.getId() + ".json");
+                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="
+                        + FileUtilities.ensureValidFileName(entity.getId())
+                        + ".json");
                 response.setStatus(HttpStatus.OK.value());
                 response.getOutputStream().write(service.exportComponent(entity).getBytes());
             }
