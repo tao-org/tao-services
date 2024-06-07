@@ -47,6 +47,7 @@ import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.user.User;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
@@ -664,7 +665,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
             } else {
                 response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + entity.getId() + ".json");
+                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="
+                        + FileUtilities.ensureValidFileName(entity.getName())
+                        + ".json");
                 response.setStatus(HttpStatus.OK.value());
                 response.getOutputStream().write(service.exportWorkflow(entity).getBytes());
             }
