@@ -29,6 +29,7 @@ import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.docker.ContainerVisibility;
+import ro.cs.tao.export.Package;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.ContainerProvider;
@@ -36,9 +37,11 @@ import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
 import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.docker.DockerManager;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -300,6 +303,23 @@ public class ContainerServiceImpl
             logger.severe(e.getMessage());
         }
         return container;
+    }
+
+    @Override
+    public Path exportContainer(Container descriptor, Path targetFolder) throws IOException {
+        final Package pack = new Package(descriptor.getId());
+        pack.setContainerDescriptor(descriptor);
+        pack.setComponentDescriptors(componentProvider.listByContainer(descriptor.getId()));
+        try {
+            return pack.toFile(targetFolder);
+        } catch (SerializationException e) {
+            throw new IOException(e);
+        }
+    }
+
+    @Override
+    public String importContainer(Path taoPackage) throws IOException {
+        return "";
     }
 
     @Override
