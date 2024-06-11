@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.datasource.util.Zipper;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.messaging.Messaging;
