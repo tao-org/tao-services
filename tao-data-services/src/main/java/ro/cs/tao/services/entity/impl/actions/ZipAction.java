@@ -1,8 +1,8 @@
 package ro.cs.tao.services.entity.impl.actions;
 
-import ro.cs.tao.datasource.util.Zipper;
 import ro.cs.tao.services.model.ItemAction;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.utils.Zipper;
 import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.RepositoryType;
 
