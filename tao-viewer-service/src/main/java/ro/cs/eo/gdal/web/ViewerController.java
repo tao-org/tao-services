@@ -315,6 +315,8 @@ public class ViewerController extends ControllerBase {
                 filter = services.iterator().next();
             }
             final Extent extent = filter.computeEnvelope(geometryWKT);
+            // Convert polygon to multilinestring so that vector will not be filled when rasterized
+            geometryWKT = geometryWKT.replace("POLYGON", "MULTILINESTRING");
             final List<String> outFiles = new ArrayList<>();
             for (Path file : paths) {
                 try {
