@@ -2,7 +2,6 @@ package ro.cs.eo.gdal.reader;
 
 import org.geotools.geojson.geom.GeometryJSON;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
 import ro.cs.eo.gdal.dataio.GDALTileCache;
@@ -105,7 +104,7 @@ public class TileReader {
             if (geom.getNumGeometries() > 1) {
                 geom = geom.getEnvelope();
             }
-            gJson.writePolygon((Polygon) geom, out);
+            gJson.write(geom, out);
         }
     }
 
