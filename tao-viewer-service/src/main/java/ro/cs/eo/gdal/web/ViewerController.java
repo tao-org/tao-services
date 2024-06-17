@@ -200,7 +200,6 @@ public class ViewerController extends ControllerBase {
                                                                 @RequestParam("geometry") String geometryWKT) {
         GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
         try {
-            Map<String, Map<String, Object>> outFiles = new LinkedHashMap<>();
             final ServiceRegistry<FileGeometryFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(FileGeometryFilter.class);
             final Set<FileGeometryFilter> services = registry.getServices();
             if (services.isEmpty()) {
@@ -227,18 +226,13 @@ public class ViewerController extends ControllerBase {
                     return h1.getSensingDate().compareTo(h2.getSensingDate());
                 }
             });
-            String relPath;
-            Map<String, Object> innerMap;
+            final Map<String, String> innerMap = new LinkedHashMap<>();
             for (Path file : files) {
-                final String fileName = file.getFileName().toString();
-                relPath = "/series/" + id + "/" + fileName.replaceAll("^(.*?)\\..*$", "$1") + ".png";
-                final ProductHelper helper = ProductHelperFactory.getHelper(fileName);
-                innerMap = new LinkedHashMap<>();
+                final ProductHelper helper = ProductHelperFactory.getHelper(file.getFileName().toString());
                 innerMap.put("date", helper != null ? helper.getSensingDate() : null);
-                innerMap.put("image", relPath);
-                outFiles.put(fileName, innerMap);
+                innerMap.put("image", file.toString());
             }
-            return prepareResult(outFiles);
+            return prepareResult(innerMap);
         } catch (Exception e) {
             return handleException(e);
         }
