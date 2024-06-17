@@ -80,7 +80,7 @@ public class GDALTileMapService {
             }
             final Path sourceLocalFilePath = productDescriptor.getProductPath();
             if (Files.exists(sourceLocalFilePath)) {
-                final String imageFileName = sourceLocalFilePath.getFileName().toString().replaceAll(regEx, "$1") + ".tif";
+                final String imageFileName = sourceLocalFilePath.getFileName().toString().replaceAll(regEx, "$1") + ".png";
                 this.tileReader.extractSubset(productDescriptor,
                                               this.seriesPath.resolve(name).resolve(imageFileName),
                                               extent.xmin, extent.ymin, extent.xmax - extent.xmin, extent.ymax - extent.ymin,
