@@ -243,9 +243,9 @@ public class ComponentServiceImpl
         if (existing != null) {
             throw new IOException("Processing component already exists");
         }
-        Container container = containerProvider.get(existing.getContainerId());
+        Container container = containerProvider.get(entity.getContainerId());
         if (container == null) {
-            container = containerProvider.getByName(existing.getContainerId());
+            container = containerProvider.getByName(entity.getContainerId());
             if (container == null) {
                 throw new IOException("The container of the component is not registered");
             } else {
