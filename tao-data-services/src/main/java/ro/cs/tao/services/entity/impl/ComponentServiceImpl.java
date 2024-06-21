@@ -239,6 +239,13 @@ public class ComponentServiceImpl
             }
         }
         final ProcessingComponent entity = serializer.deserialize(builder.toString());
+        for(SourceDescriptor sourceDescriptor : entity.getSources()){
+            sourceDescriptor.setParentId(entity.getId());
+        }
+        for(TargetDescriptor targetDescriptor : entity.getTargets()){
+            targetDescriptor.setParentId(entity.getId());
+        }
+        entity.setTemplateType(TemplateType.VELOCITY);
         final ProcessingComponent existing = findById(entity.getId());
         if (existing != null) {
             throw new IOException("Processing component already exists");
