@@ -218,7 +218,7 @@ public class AdministrationController extends BaseController {
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserActiveSubscription(@PathVariable("userId") String userId) {
         if (!adminService.isDevModeEnabled()) {
-            if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+            if (!isCurrentUserAdmin()) {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
             if (StringUtilities.isNullOrEmpty(userId)) {
@@ -287,7 +287,7 @@ public class AdministrationController extends BaseController {
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
-        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+        if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         Map<String, Map<String, Integer>> flavors;
@@ -343,7 +343,7 @@ public class AdministrationController extends BaseController {
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
-        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+        if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         Map<String, Map<String, Integer>> flavorsRequest;
@@ -456,7 +456,7 @@ public class AdministrationController extends BaseController {
      */
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId) {
-        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+        if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         try {
