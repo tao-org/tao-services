@@ -131,7 +131,7 @@ public final class ServiceTransformUtils {
     }
 
     public static WorkflowInfo toWorkflowInfo(WorkflowDescriptor descriptor, String image){
-        return new WorkflowInfo(descriptor, image);
+        return descriptor != null ? new WorkflowInfo(descriptor, image) : null;
     }
 
     public static RepositoryTypeBean toBean(RepositoryType type) {
