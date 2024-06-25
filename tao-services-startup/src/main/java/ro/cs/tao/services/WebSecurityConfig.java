@@ -113,12 +113,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     public CorsConfigurationSource corsConfigurationSource() {
         final CorsConfiguration configuration = new CorsConfiguration();
         //configuration.setAllowedOrigins(Collections.unmodifiableList(new ArrayList<String>() {{ add("*"); }}));
-        //configuration.addAllowedOriginPattern("*");
-        String value = ConfigurationManager.getInstance().getValue("tao.services.base");
-        if (value.startsWith("http:")) {
-            value = value.replace("http:", "https:");
-        }
-        configuration.addAllowedOrigin(value);
+        configuration.addAllowedOriginPattern("*");
         configuration.setAllowedMethods(Collections.unmodifiableList(new ArrayList<String>() {{
             add("HEAD"); add("GET"); add("POST"); add("PUT"); add("DELETE"); add("PATCH"); add("OPTIONS"); }}));
         // setAllowCredentials(true) is important, otherwise:
