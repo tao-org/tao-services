@@ -147,7 +147,7 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 
                 // update batch data
                 //updateUserData(userId, BaseController.tokenOf(userId), sessionDuration, processingTime, containerSize);
-				processingTime += includeSessionTime * sessionDuration.getDuration();
+				processingTime += includeSessionTime * (sessionDuration != null ? sessionDuration.getDuration() : 0);
 				if (processingTime > 0 && containerSize > 0) {
 					userData.add(String.format(JSON_USER, userId, processingTime, containerSize));
 				} else {
