@@ -75,7 +75,7 @@ public class OrchestrationController extends BaseController {
             if (environments == null) {
                 environments = new HashSet<>();
             }
-            final List<Environment> list = environments.stream().sorted().toList();
+            final List<Environment> list = environments.stream().sorted().collect(Collectors.toList());
             return prepareResult(list);
         } catch (Exception ex) {
             return handleException(ex);
