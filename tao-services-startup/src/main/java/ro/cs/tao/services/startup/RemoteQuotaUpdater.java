@@ -146,9 +146,9 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
                 long containerSize = userContainerSizes.get(userId);
 
                 // update batch data
-                //updateUserData(userId, BaseController.tokenOf(userId), sessionDuration, processingTime, containerSize);
 				processingTime += includeSessionTime * (sessionDuration != null ? sessionDuration.getDuration() : 0);
-				if (processingTime > 0 && containerSize > 0) {
+				// Either one must be non-zero
+				if (processingTime > 0 || containerSize > 0) {
 					userData.add(String.format(JSON_USER, userId, processingTime, containerSize));
 				} else {
 					logger.finest(() -> String.format("User %s has no storage and/or no processing time, skipping", userId));
@@ -178,7 +178,8 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 					logger.fine("API token for quota update is not configured and the user " + userId + " is offline");
 					return;
 				}
-				if (usedStorage > 0 && processingTime > 0) {
+				// Either one must be non-zero
+				if (usedStorage > 0 || processingTime > 0) {
 					final String json = String.format(JSON_USER, userId, includeSessionTime * sessionDuration.getDuration() + processingTime, usedStorage);
 					try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.POST, serviceAPIUrl, header, token, json)) {
 						if (response.getStatusLine().getStatusCode() > 201) {
