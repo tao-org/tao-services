@@ -11,10 +11,18 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.utils.executors.MemoryUnit;
 
+import javax.imageio.ImageIO;
+import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageOutputStream;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 @Service("TileMap")
 public class GDALTileMapService {
@@ -94,6 +102,23 @@ public class GDALTileMapService {
         } catch (Exception ex) {
             throw new IllegalStateException(ex);
         }
+    }
+
+    public InputStream createAnimatedSeries(List<String> inputImages, int delayMillis, String outFile) throws IOException {
+        if (inputImages != null && !inputImages.isEmpty()) {
+            BufferedImage first = ImageIO.read(new File(inputImages.get(0)));
+            try (ImageOutputStream output = new FileImageOutputStream(new File(outFile))) {
+                GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), delayMillis, true);
+                writer.writeToSequence(first);
+                for (int i = 1; i < inputImages.size(); i++) {
+                    BufferedImage next = ImageIO.read(new File(inputImages.get(i)));
+                    writer.writeToSequence(next);
+                }
+                writer.close();
+            }
+            return Files.newInputStream(Paths.get(outFile));
+        }
+        return null;
     }
 
 }
