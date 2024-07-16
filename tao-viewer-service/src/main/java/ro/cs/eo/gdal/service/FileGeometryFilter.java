@@ -7,6 +7,10 @@ import java.util.List;
 
 public interface FileGeometryFilter {
 
-    Extent computeEnvelope(String geometryWKT);
+    default Extent computeEnvelope(String geometryWKT) {
+        return computeEnvelope(geometryWKT, 0.01);
+    }
+    Extent computeEnvelope(String geometryWKT, double buffer);
+
     List<Path> filter(String geometryWKT);
 }
