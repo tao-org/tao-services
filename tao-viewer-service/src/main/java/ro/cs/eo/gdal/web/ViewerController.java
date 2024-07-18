@@ -1,5 +1,6 @@
 package ro.cs.eo.gdal.web;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.compress.utils.IOUtils;
 import org.geotools.geometry.jts.WKTReader2;
 import org.locationtech.jts.geom.Envelope;
@@ -23,14 +24,19 @@ import ro.cs.eo.gdal.reader.info.ProductDescriptorFactory;
 import ro.cs.eo.gdal.service.FileGeometryFilter;
 import ro.cs.eo.gdal.service.GDALTileMapService;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.ProductHelperFactory;
 import ro.cs.tao.eodata.util.ProductHelper;
 import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.persistence.repository.UserRepository;
 import ro.cs.tao.services.commons.ControllerBase;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.interfaces.DataSourceComponentService;
+import ro.cs.tao.services.model.component.ProductSetInfo;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.user.User;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
@@ -43,6 +49,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,6 +58,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/view")
+@Tag(name = "Raster Viewer", description = "Endpoint for web visualization of raster products")
 public class ViewerController extends ControllerBase {
 
     private final AnnotationConfigApplicationContext context;
@@ -57,6 +66,10 @@ public class ViewerController extends ControllerBase {
 
     @Autowired
     private RepositoryProvider repositoryProvider;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private DataSourceComponentService dataSourceComponentService;
 
     public ViewerController() {
         this.context = new AnnotationConfigApplicationContext();
@@ -64,6 +77,10 @@ public class ViewerController extends ControllerBase {
         this.context.refresh();
     }
 
+    /**
+     * Returns the minimum and maximul pixel values from a raster.
+     * @param relativePath  The path of the raster, relative to the user workspace
+     */
     @RequestMapping(value = "/scale", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getScale(@RequestParam("file") String relativePath) {
         final Repository localRepository = getLocalRepository();
@@ -71,6 +88,13 @@ public class ViewerController extends ControllerBase {
         return prepareResult(TileReader.getScale(Paths.get(path)));
     }
 
+    /**
+     * Associates minimum and maximum values to a raster.
+     * @param relativePath  The path of the raster, relative to the user workspace
+     * @param min   The minimum pixel value
+     * @param max   The maximum pixel value
+     * @return
+     */
     @RequestMapping(value = "/scale", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> changeScale(@RequestParam("file") String relativePath,
                                                           @RequestParam("min") double min,
@@ -81,6 +105,14 @@ public class ViewerController extends ControllerBase {
         return prepareResult("New scale set", ResponseStatus.SUCCEEDED);
     }
 
+    /**
+     * Returns a xyz tile from a raster
+     * @param relativePath  The path of the raster, relative to the user workspace
+     * @param z     The z coordinate in the viewport cube (0 if planar viewport)
+     * @param x     The x coordinate in the viewport cube
+     * @param y     The y coodinate in the viewport cube
+     * @return
+     */
     @RequestMapping(value = "/tile", method = RequestMethod.GET)
     public ResponseEntity<byte[]> viewTileData(@RequestParam("file") String relativePath,
                                                @RequestParam("z") byte z,
@@ -122,18 +154,18 @@ public class ViewerController extends ControllerBase {
         }
     }
 
+    /**
+     * Returns information about a raster
+     * @param relativePath  The path of the raster, relative to the user workspace
+     * @return
+     */
     @RequestMapping(value = "info", method = RequestMethod.GET)
-    public ResponseEntity<String> viewTileInfo(@RequestParam("relativePath") String relativePath) {
+    public ResponseEntity<String> getImageInfo(@RequestParam("relativePath") String relativePath) {
         GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
 
         try {
-            /*List<EOProduct> products = persistenceManager.rasterData().getProductsByNames(name);
-            if (products == null || products.size() == 0) {
-                throw new FileNotFoundException("Product not found.");
-            }
-            String path = products.get(0).getLocation();*/
             final Repository localRepository = getLocalRepository();
             final String path = localRepository.resolve(relativePath);
             final String name = relativePath.substring(relativePath.lastIndexOf('/') + 1);
@@ -178,8 +210,28 @@ public class ViewerController extends ControllerBase {
         }
     }
 
+    /**
+     * Sets a new location for the cache directory.
+     * This method is callable only by an administrator.
+     * @param newCacheDir   The absolute path of the cache directory.
+     */
     @RequestMapping(value = "config", method = RequestMethod.POST)
     public ResponseEntity<String> setCacheDir(@RequestParam("cache-dir") String newCacheDir) {
+        final AtomicBoolean forbidden = new AtomicBoolean(false);
+        userRepository.findById(currentUser()).ifPresentOrElse(new Consumer<User>() {
+            @Override
+            public void accept(User user) {
+                forbidden.set(user.getGroups().stream().noneMatch(g -> "admin".equalsIgnoreCase(g.getName())));
+            }
+        }, new Runnable() {
+            @Override
+            public void run() {
+                forbidden.set(true);
+            }
+        });
+        if (forbidden.get()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
         try {
@@ -239,6 +291,53 @@ public class ViewerController extends ControllerBase {
         }
     }
 
+    /**
+     * Extracts a spatial subset from a product set.
+     * @param id    The product set identifier
+     * @param geometryWKT   The geometry to be extracted
+     *
+     * @return  A list of resulting subsetted images (as PNG), as absolute web paths.
+     */
+    @RequestMapping(value = "/productset/images", method = RequestMethod.POST,
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> extractSeries(@RequestParam("id") String id,
+                                                            @RequestParam("geometry") String geometryWKT) {
+        GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
+        try {
+            if (StringUtilities.isNullOrEmpty(id)) {
+                throw new IllegalArgumentException("[id] cannot be empty");
+            }
+            final String sitePath = ConfigurationManager.getInstance().getValue("site.path");
+            if (sitePath == null || sitePath.isEmpty()) {
+                throw new IOException("Cannot determine site path");
+            }
+            Path cachePath = Paths.get(sitePath).resolve("series");
+            if (!Files.exists(cachePath)) {
+                Files.createDirectories(cachePath);
+            }
+            final DataSourceComponent dsc = dataSourceComponentService.findById(id);
+            if (dsc == null) {
+                throw new IllegalArgumentException("Productset does not exist");
+            }
+            final ProductSetInfo productSet = new ProductSetInfo(dsc, currentUser());
+            if (productSet.getProducts() == null || productSet.getProducts().isEmpty()) {
+                throw new IOException("Empty productset");
+            }
+            return prepareResult(extractSubsetImages(id, productSet.getProducts(), geometryWKT));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    /**
+     * Extracts a spatial subset from a time series of rasters.
+     * @param id    An identifier for the spatial subset
+     * @param geometryWKT   The geometry to be extracted
+     * @param files The list of raster paths
+     *
+     * @return  A list of resulting subsetted images (as PNG), as absolute web paths.
+     */
     @RequestMapping(value = "/series/images", method = RequestMethod.POST,
             consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -261,74 +360,63 @@ public class ViewerController extends ControllerBase {
             if (!Files.exists(cachePath)) {
                 Files.createDirectories(cachePath);
             }
-            List<Path> paths = files.stream().map(Paths::get).collect(Collectors.toList());
-            final Matcher matcher = Pattern.compile("_T(\\d{2}\\w{3})_").matcher(files.get(0));
-            final String utmZone;
-            if (matcher.find()) {
-                utmZone = matcher.group(1);
-            } else {
-                utmZone = null;
-            }
-            final ServiceRegistry<FileGeometryFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(FileGeometryFilter.class);
-            final Set<FileGeometryFilter> services = registry.getServices();
-            final FileGeometryFilter filter;
-            if (services.isEmpty()) {
-                //throw new Exception("Not implemented");
-                filter = new FileGeometryFilter() {
-
-                    private int getEpsgCode() {
-                        return 32600 + (utmZone.charAt(2) >= 70 ? 100 : 0) + Integer.parseInt(utmZone.substring(0, 2));
-                    }
-
-                    @Override
-                    public Extent computeEnvelope(String geometryWKT, double buffer) {
-                        Extent envelope = null;
-                        WKTReader2 reader = new WKTReader2();
-                        try {
-                            final Geometry geometry = reader.read(geometryWKT);
-                            Geometry env = geometry.getEnvelope();
-                            /*env = JTS.transform(env, CRS.findMathTransform(CRS.decode("EPSG:4326", true),
-                                                                           CRS.decode("EPSG:" + getEpsgCode(), true)));*/
-                            final Envelope internal = env.buffer(buffer).getEnvelopeInternal();
-                            envelope = new Extent();
-                            envelope.xmin = internal.getMinX();
-                            envelope.ymin = internal.getMinY();
-                            envelope.xmax = internal.getMaxX();
-                            envelope.ymax = internal.getMaxY();
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                        return envelope;
-                    }
-
-                    @Override
-                    public List<Path> filter(String geometryWKT) {
-                        return new ArrayList<>();
-                    }
-                };
-            } else {
-                filter = services.iterator().next();
-            }
-            final Extent extent = filter.computeEnvelope(geometryWKT);
-            // Convert polygon to multilinestring so that vector will not be filled when rasterized
-            geometryWKT = geometryWKT.replace("POLYGON", "MULTILINESTRING");
-            final List<String> outFiles = new ArrayList<>();
-            for (Path file : paths) {
-                try {
-                    ProductDescriptor productDescriptor = getCompositeDescriptor(file);
-                    FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
-                    formatDescriptor.setPriority(1);
-                    outFiles.add("/series/" + id + "/" + gdalTileMapService.extractSubset(productDescriptor, extent, geometryWKT, id));
-                } catch (Exception e) {
-                    warn(e.getMessage());
-                }
-            }
-            return prepareResult(outFiles);
+            return prepareResult(extractSubsetImages(id, files, geometryWKT));
         } catch (Exception e) {
             return handleException(e);
         }
     }
 
+    /**
+     * Creates an animated GIF from a spatial subset extracted from a product set, optionally specifying a buffer.
+     * @param id    The productset identifier
+     * @param geometryWKT   The geometry to be extracted
+     * @param buffer A spatial buffer for the subset
+     *
+     * @return  An animated GIF file contents, named [id.gif]
+     */
+    @RequestMapping(value = "/productset/animation", method = RequestMethod.POST,
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public void extractAnimation(@RequestParam("id") String id,
+                                 @RequestParam("geometry") String geometryWKT,
+                                 @RequestParam(name = "buffer", required = false) Integer buffer,
+                                 HttpServletResponse response) {
+        try {
+            if (StringUtilities.isNullOrEmpty(id)) {
+                throw new IllegalArgumentException("[id] cannot be empty");
+            }
+            final String sitePath = ConfigurationManager.getInstance().getValue("site.path");
+            if (sitePath == null || sitePath.isEmpty()) {
+                throw new IOException("Cannot determine site path");
+            }
+            Path cachePath = Paths.get(sitePath).resolve("series");
+            if (!Files.exists(cachePath)) {
+                Files.createDirectories(cachePath);
+            }
+            final DataSourceComponent dsc = dataSourceComponentService.findById(id);
+            if (dsc == null) {
+                throw new IllegalArgumentException("Productset does not exist");
+            }
+            final ProductSetInfo productSet = new ProductSetInfo(dsc, currentUser());
+            if (productSet.getProducts() == null || productSet.getProducts().isEmpty()) {
+                throw new IOException("Empty productset");
+            }
+            final List<String> outFiles = extractSubsetImages(id, productSet.getProducts(), geometryWKT);
+            createAnimation(cachePath, id, outFiles, response);
+        } catch (Exception e) {
+            error(e.getMessage());
+        }
+    }
+
+    /**
+     * Creates an animated GIF from a spatial subset extracted from a time series of rasters, optionally specifying a buffer.
+     * @param id    An identifier for the spatial subset
+     * @param geometryWKT   The geometry to be extracted
+     * @param files The list of raster paths
+     * @param buffer A spatial buffer for the subset
+     *
+     * @return  An animated GIF file contents, named [id.gif]
+     */
     @RequestMapping(value = "/series/animation", method = RequestMethod.POST,
             consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -337,7 +425,6 @@ public class ViewerController extends ControllerBase {
                                  @RequestParam("files") List<String> files,
                                  @RequestParam(name = "buffer", required = false) Integer buffer,
                                  HttpServletResponse response) {
-        GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
         try {
             if (files == null || files.isEmpty()) {
                 throw new IllegalArgumentException("[files] cannot be empty");
@@ -353,76 +440,8 @@ public class ViewerController extends ControllerBase {
             if (!Files.exists(cachePath)) {
                 Files.createDirectories(cachePath);
             }
-            List<Path> paths = files.stream().map(Paths::get).collect(Collectors.toList());
-            final Matcher matcher = Pattern.compile("_T(\\d{2}\\w{3})_").matcher(files.get(0));
-            final String utmZone;
-            if (matcher.find()) {
-                utmZone = matcher.group(1);
-            } else {
-                utmZone = null;
-            }
-            final ServiceRegistry<FileGeometryFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(FileGeometryFilter.class);
-            final Set<FileGeometryFilter> services = registry.getServices();
-            final FileGeometryFilter filter;
-            if (services.isEmpty()) {
-                //throw new Exception("Not implemented");
-                filter = new FileGeometryFilter() {
-
-                    private int getEpsgCode() {
-                        return 32600 + (utmZone.charAt(2) >= 70 ? 100 : 0) + Integer.parseInt(utmZone.substring(0, 2));
-                    }
-
-                    @Override
-                    public Extent computeEnvelope(String geometryWKT, double buffer) {
-                        Extent envelope = null;
-                        WKTReader2 reader = new WKTReader2();
-                        try {
-                            final Geometry geometry = reader.read(geometryWKT);
-                            Geometry env = geometry.getEnvelope();
-                            /*env = JTS.transform(env, CRS.findMathTransform(CRS.decode("EPSG:4326", true),
-                                                                           CRS.decode("EPSG:" + getEpsgCode(), true)));*/
-                            final Envelope internal = env.buffer(buffer).getEnvelopeInternal();
-                            envelope = new Extent();
-                            envelope.xmin = internal.getMinX();
-                            envelope.ymin = internal.getMinY();
-                            envelope.xmax = internal.getMaxX();
-                            envelope.ymax = internal.getMaxY();
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                        return envelope;
-                    }
-
-                    @Override
-                    public List<Path> filter(String geometryWKT) {
-                        return new ArrayList<>();
-                    }
-                };
-            } else {
-                filter = services.iterator().next();
-            }
-            final Extent extent = filter.computeEnvelope(geometryWKT, buffer != null ? buffer : 0.01);
-            // Convert polygon to multilinestring so that vector will not be filled when rasterized
-            geometryWKT = geometryWKT.replace("POLYGON", "MULTILINESTRING");
-            final List<String> outFiles = new ArrayList<>();
-            for (Path file : paths) {
-                try {
-                    ProductDescriptor productDescriptor = getCompositeDescriptor(file);
-                    FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
-                    formatDescriptor.setPriority(1);
-                    outFiles.add(cachePath.resolve(id).resolve(gdalTileMapService.extractSubset(productDescriptor, extent, geometryWKT, id)).toString());
-                } catch (Exception e) {
-                    warn(e.getMessage());
-                }
-            }
-            final Path outFile = cachePath.resolve(id).resolve(id + ".gif");
-            try (InputStream stream = gdalTileMapService.createAnimatedSeries(outFiles, 1000, outFile.toString())) {
-                response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + outFile.getFileName());
-                response.setStatus(HttpServletResponse.SC_OK);
-                org.apache.commons.io.IOUtils.copy(stream, response.getOutputStream());
-                response.flushBuffer();
-            }
+            final List<String> outFiles = extractSubsetImages(id, files, geometryWKT);
+            createAnimation(cachePath, id, outFiles, response);
         } catch (Exception e) {
             error(e.getMessage());
         }
@@ -456,6 +475,84 @@ public class ViewerController extends ControllerBase {
         formatDescriptor.setNamePatterns(new ArrayList<>() {{ add(namePattern); }});
         formatDescriptor.setBands(bands);
         return new ProductDescriptor(formatDescriptor, file);
+    }
+
+    private List<String> extractSubsetImages(String id, List<String> input, String geometryWKT) {
+        GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
+        List<Path> paths = input.stream().map(Paths::get).collect(Collectors.toList());
+        final Matcher matcher = Pattern.compile("_T(\\d{2}\\w{3})_").matcher(input.get(0));
+        final String utmZone;
+        if (matcher.find()) {
+            utmZone = matcher.group(1);
+        } else {
+            utmZone = null;
+        }
+        final ServiceRegistry<FileGeometryFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(FileGeometryFilter.class);
+        final Set<FileGeometryFilter> services = registry.getServices();
+        final FileGeometryFilter filter;
+        if (services.isEmpty()) {
+            filter = new FileGeometryFilter() {
+
+                private int getEpsgCode() {
+                    return 32600 + (utmZone.charAt(2) >= 70 ? 100 : 0) + Integer.parseInt(utmZone.substring(0, 2));
+                }
+
+                @Override
+                public Extent computeEnvelope(String geometryWKT, double buffer) {
+                    Extent envelope = null;
+                    WKTReader2 reader = new WKTReader2();
+                    try {
+                        final Geometry geometry = reader.read(geometryWKT);
+                        Geometry env = geometry.getEnvelope();
+                            /*env = JTS.transform(env, CRS.findMathTransform(CRS.decode("EPSG:4326", true),
+                                                                           CRS.decode("EPSG:" + getEpsgCode(), true)));*/
+                        final Envelope internal = env.buffer(buffer).getEnvelopeInternal();
+                        envelope = new Extent();
+                        envelope.xmin = internal.getMinX();
+                        envelope.ymin = internal.getMinY();
+                        envelope.xmax = internal.getMaxX();
+                        envelope.ymax = internal.getMaxY();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    return envelope;
+                }
+
+                @Override
+                public List<Path> filter(String geometryWKT) {
+                    return new ArrayList<>();
+                }
+            };
+        } else {
+            filter = services.iterator().next();
+        }
+        final Extent extent = filter.computeEnvelope(geometryWKT);
+        // Convert polygon to multilinestring so that vector will not be filled when rasterized
+        geometryWKT = geometryWKT.replace("POLYGON", "MULTILINESTRING");
+        final List<String> outFiles = new ArrayList<>();
+        for (Path file : paths) {
+            try {
+                ProductDescriptor productDescriptor = getCompositeDescriptor(file);
+                FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
+                formatDescriptor.setPriority(1);
+                outFiles.add("/series/" + id + "/" + gdalTileMapService.extractSubset(productDescriptor, extent, geometryWKT, id));
+            } catch (Exception e) {
+                warn(e.getMessage());
+            }
+        }
+        return outFiles;
+    }
+
+    private void createAnimation(Path cachePath, String id, List<String> input, HttpServletResponse response) throws IOException {
+        final Path outFile = cachePath.resolve(id).resolve(id + ".gif");
+        GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
+        try (InputStream stream = gdalTileMapService.createAnimatedSeries(input, 1000, outFile.toString())) {
+            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+            response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + outFile.getFileName());
+            response.setStatus(HttpServletResponse.SC_OK);
+            org.apache.commons.io.IOUtils.copy(stream, response.getOutputStream());
+            response.flushBuffer();
+        }
     }
 
     private Repository getLocalRepository() {
