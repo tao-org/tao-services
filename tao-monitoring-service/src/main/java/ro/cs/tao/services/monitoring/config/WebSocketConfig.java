@@ -11,6 +11,6 @@ import ro.cs.tao.services.monitoring.impl.WebSocketHandler;
 public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(new WebSocketHandler(), "/queue").setAllowedOriginPatterns("*");
+        registry.addHandler(new WebSocketHandler(), "/queue").setAllowedOriginPatterns("*").withSockJS();
     }
 }
