@@ -208,6 +208,11 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
                 } else if (line.contains("openStackPresent")) {
                     return line.substring(0, line.indexOf("=") + 1) +
                             TopologyManager.getInstance().isExternalProviderAvailable() + ";";
+                } else if (line.contains("baseRestApiURL") &&
+                        (!line.contains("http:") || !line.contains("https:"))) {
+                    return line.substring(0, line.indexOf("'") + 1) +
+                            (url.endsWith("/") ? url : url + "/") +
+                            line.substring(line.lastIndexOf("'"));
                 } else {
                     return line;
                 }
