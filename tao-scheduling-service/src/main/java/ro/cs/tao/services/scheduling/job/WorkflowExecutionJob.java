@@ -1,18 +1,8 @@
 package ro.cs.tao.services.scheduling.job;
 
-import java.security.Principal;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.PersistJobDataAfterExecution;
-
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionRequest;
 import ro.cs.tao.orchestration.Orchestrator;
@@ -25,6 +15,15 @@ import ro.cs.tao.services.bridge.spring.SpringContextBridge;
 import ro.cs.tao.services.model.scheduling.SchedulingMode;
 import ro.cs.tao.user.UserPreference;
 import ro.cs.tao.utils.DateUtils;
+
+import java.security.Principal;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * @author Lucian Barbulescu
@@ -97,7 +96,7 @@ public class WorkflowExecutionJob extends AbstractJob {
 		// check if this job has already started once
 		if (!batchIds.isEmpty()) {
 			// get the last batch id
-			final String batchId = batchIds.getLast();
+			final String batchId = batchIds.get(batchIds.size() - 1);
 			
 			// check if any job associated with this batch is still running
 			if (persistenceManager.jobs().isBatchRunning(batchId)) {
@@ -141,7 +140,7 @@ public class WorkflowExecutionJob extends AbstractJob {
 		
 		// save the job id to the job details map
 		if (job != null) {
-			batchIds.addLast(job.getBatchId());
+			batchIds.add(job.getBatchId());
 			jobDetail.getJobDataMap().put(BATCH_ID_KEY, batchIds);
 			logger.info("Started job " + job.getId());
 		} else {
