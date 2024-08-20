@@ -65,7 +65,7 @@ public class OrchestrationController extends BaseController {
     private ExecutionTaskProvider executionTaskProvider;
 
     /**
-     * Returns the available parameters for a workflow
+     * Returns the available DRMAA execution environments
      *
      */
     @RequestMapping(value = "/environment", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -75,8 +75,7 @@ public class OrchestrationController extends BaseController {
             if (environments == null) {
                 environments = new HashSet<>();
             }
-            final List<Environment> list = environments.stream().sorted().collect(Collectors.toList());
-            return prepareResult(list);
+            return prepareResult(environments.stream().sorted().collect(Collectors.toList()));
         } catch (Exception ex) {
             return handleException(ex);
         }
