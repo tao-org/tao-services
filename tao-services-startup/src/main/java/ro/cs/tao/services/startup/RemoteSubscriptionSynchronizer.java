@@ -12,7 +12,6 @@ import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.subscription.ExternalResourceSubscription;
 import ro.cs.tao.subscription.FlavorSubscription;
 import ro.cs.tao.user.User;
-import ro.cs.tao.user.UserPreference;
 import ro.cs.tao.user.UserType;
 import ro.cs.tao.utils.CloseableHttpResponse;
 import ro.cs.tao.utils.HttpMethod;
@@ -20,12 +19,7 @@ import ro.cs.tao.utils.NetUtils;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 /**
  * Periodically inspect the remote subscriptions and save it to the local database.
@@ -82,7 +76,7 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 	 */
 	private class SynchronizeSubscriptionsTask extends TimerTask {
 
-		static class UserPlan {
+		class UserPlan {
 			String userPlan;
 			int cpu;
 			int ram;
