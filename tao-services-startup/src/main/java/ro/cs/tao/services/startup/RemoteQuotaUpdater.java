@@ -150,6 +150,8 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 				// Either one must be non-zero
 				if (processingTime > 0 || containerSize > 0) {
 					userData.add(String.format(JSON_USER, userId, processingTime, containerSize));
+					logger.fine(String.format("User %s has %dMB storage and %ds processing time",
+											  userId, containerSize >> 20, processingTime));
 				} else {
 					logger.finest(() -> String.format("User %s has no storage and/or no processing time, skipping", userId));
 				}
