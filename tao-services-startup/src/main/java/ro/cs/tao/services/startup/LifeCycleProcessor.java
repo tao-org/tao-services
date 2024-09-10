@@ -72,14 +72,14 @@ public class LifeCycleProcessor {
         final List<Callable<Void>> tasks = detectedComponents.stream().map(c -> (Callable<Void>) () -> {
             try {
                 c.onStartUp();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
             return null;
         }).collect(Collectors.toList());
         try {
             executor.invokeAll(tasks);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
         if (processorListener != null) {
@@ -92,7 +92,7 @@ public class LifeCycleProcessor {
             executor.submit(() -> {
                 try {
                     c.onShutdown();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     e.printStackTrace();
                 }
             });
