@@ -9,6 +9,7 @@ import ro.cs.tao.datasource.remote.result.json.JSonResponseHandler;
 import ro.cs.tao.datasource.remote.result.json.JsonResponseParser;
 import ro.cs.tao.keycloak.KeycloakClient;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.subscription.ExternalFlavorSubscription;
 import ro.cs.tao.subscription.ExternalResourceSubscription;
 import ro.cs.tao.subscription.FlavorSubscription;
 import ro.cs.tao.user.User;
@@ -86,12 +87,13 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 
 		@Override
 		public void run() {
-//			saveNewSubscription();
-//			addNewUser();
 			updateExternalSubscriptions();
 			updateUserExternalSubscriptions();
 		}
 
+		/**
+		 * Synchronize external subscriptions to local database
+		 */
 		private void updateExternalSubscriptions() {
 			List<UserPlan> userPlans = getUserPlanDetails();
 			if(userPlans != null) {
@@ -104,16 +106,18 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 					}
 					externalResourceSubscription.getFlavors().clear();
 
-					externalResourceSubscription.setObjectStorageGB(userPlan.disk);
-					// TODO use another class for flavor with CPU, RAM, DISK ?
-					FlavorSubscription flavorSubscription = new FlavorSubscription();
-					flavorSubscription.setFlavorId(userPlan.flavor);
-					flavorSubscription.setQuantity(userPlan.cpu);
-					flavorSubscription.setHddGB(userPlan.disk);
-					externalResourceSubscription.addFlavor(flavorSubscription);
+					//externalResourceSubscription.setObjectStorageGB(userPlan.disk);
+
+					ExternalFlavorSubscription flavor = new ExternalFlavorSubscription();
+					flavor.setFlavorId(userPlan.flavor);
+					flavor.setCpu(userPlan.cpu);
+					flavor.setRamGb(userPlan.ram);
+					flavor.setDiskGB(userPlan.disk);
+					externalResourceSubscription.addFlavor(flavor);
 
 					try {
 						persistenceManager.externalResourceSubscription().save(externalResourceSubscription);
+						logger.finest("External resource subscriptions synchronized");
 					} catch (PersistenceException e) {
 						logger.severe("Error saving external resource subscription: " + e.getMessage());
 					}
@@ -121,6 +125,10 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 			}
 		}
 
+		/**
+		 * Retrieve all user plans
+		 * @return user plan list or null
+		 */
 		private List<UserPlan> getUserPlanDetails() {
 			final String serviceAPIUrl = ConfigurationManager.getInstance().getValue(RemoteSubscriptionSynchronizer.SUBSCRIPTIONS_API_URL);
 
@@ -157,6 +165,9 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 			}
 		}
 
+		/**
+		 * Checks Keycloak users plan and assign an external subscription if one is founded.
+		 */
 		private void updateUserExternalSubscriptions() {
 			try {
 				KeycloakClient client = new KeycloakClient();
@@ -190,51 +201,12 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 				for(ExternalResourceSubscription externalResourceSubscription : externalResourceSubscriptionMap.values()) {
 					persistenceManager.externalResourceSubscription().update(externalResourceSubscription);
 				}
+				logger.finest("Users external subscriptions updated");
 
 			} catch (Exception e) {
 				logger.severe(e.getMessage());
 			}
 		}
-
-//		private void saveNewSubscription() {
-//			logger.info("Updating external subscriptions.");
-//
-//			ExternalResourceSubscription externalResourceSubscription = persistenceManager.externalResourceSubscription().getSubscriptionByName("VIP");
-//
-//			if(externalResourceSubscription == null) {
-//				externalResourceSubscription = new ExternalResourceSubscription();
-//				externalResourceSubscription.setName("VIP");
-//				externalResourceSubscription.setObjectStorageGB(100);
-//				FlavorSubscription flavorSubscription = new FlavorSubscription();
-//				flavorSubscription.setFlavorId("small");
-//				flavorSubscription.setQuantity(1);
-//				flavorSubscription.setHddGB(20);
-//				externalResourceSubscription.addFlavor(flavorSubscription);
-//
-//				try
-//				{
-//					persistenceManager.externalResourceSubscription().save(externalResourceSubscription);
-//				} catch (PersistenceException e) {
-//					logger.severe("Error saving external resource subscription: " + e.getMessage());
-//				}
-//			}
-//		}
-//
-//		private void addNewUser() {
-//			logger.info("Updating user subscriptions.");
-//			ExternalResourceSubscription externalResourceSubscription = persistenceManager.externalResourceSubscription().getSubscriptionByName("VIP");
-//			User user = persistenceManager.users().getByName("admin");
-//			if(user != null && !externalResourceSubscription.getUsers().contains(user)) {
-//				externalResourceSubscription.addUser(user);
-//			}
-//
-//			try
-//			{
-//				persistenceManager.externalResourceSubscription().update(externalResourceSubscription);
-//			} catch (PersistenceException e) {
-//				logger.severe("Error saving external resource subscription: " + e.getMessage());
-//			}
-//		}
 
 	}
 }
