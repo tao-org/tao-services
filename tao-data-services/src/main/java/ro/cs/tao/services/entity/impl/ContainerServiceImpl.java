@@ -42,6 +42,7 @@ import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.docker.DockerManager;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -306,12 +307,12 @@ public class ContainerServiceImpl
     }
 
     @Override
-    public Path exportContainer(Container descriptor, Path targetFolder) throws IOException {
+    public Path exportContainer(Container descriptor, boolean includeImageFile, Path targetFolder) throws IOException {
         final Package pack = new Package(descriptor.getId());
         pack.setContainerDescriptor(descriptor);
         pack.setComponentDescriptors(componentProvider.listByContainer(descriptor.getId()));
         try {
-            return pack.toFile(targetFolder);
+            return pack.toFile(targetFolder, includeImageFile);
         } catch (SerializationException e) {
             throw new IOException(e);
         }
@@ -319,7 +320,20 @@ public class ContainerServiceImpl
 
     @Override
     public String importContainer(Path taoPackage) throws IOException {
-        return "";
+        if (taoPackage == null && Files.notExists(taoPackage)) {
+            throw new IOException("Inexistent package");
+        }
+        taoPackage.getParent().resolve(taoPackage.toString().replace(".zip", ""));
+        try {
+            final Package pack = Package.fromFile(taoPackage, taoPackage.getParent());
+            return pack != null
+                   ? pack.getContainerDescriptor() != null
+                     ? pack.getContainerDescriptor().getId()
+                     : null
+                   : null;
+        } catch (SerializationException e) {
+            throw new IOException(e);
+        }
     }
 
     @Override
