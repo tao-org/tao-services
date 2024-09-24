@@ -280,6 +280,19 @@ public class ContainerController extends DataEntityController<Container, String,
     }
 
     /**
+     * Checks if a Docker image exists in the Docker Hub repository
+     * @param image     The name of the image
+     */
+    @RequestMapping(value = "/check", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> checkExists(@RequestParam("image") String image) {
+        try {
+            return prepareResult(DockerManager.publicImageExists(image));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    /**
      * Pulls a Docker image to the local repository
      * @param image     The name of the Docker image
      */
