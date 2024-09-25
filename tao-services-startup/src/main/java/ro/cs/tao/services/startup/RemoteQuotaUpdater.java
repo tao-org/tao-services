@@ -50,6 +50,8 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 	/**	OpenStack swift service */
 	private final SwiftService swiftService = new SwiftService();
 
+	private String serviceAPIUrl;
+
 	@Override
 	public int priority() {
 		// lowest priority task
@@ -70,9 +72,11 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
         	// fall back to the 1-hour delay
         	executionRate = 3600000;
         }
-        
-        // run the task
-        this.timer.scheduleAtFixedRate(periodicTask, 0, executionRate);
+		this.serviceAPIUrl = ConfigurationManager.getInstance().getValue("dunia.service.api.url");
+		if (!StringUtilities.isNullOrEmpty(this.serviceAPIUrl)) {
+			// run the task
+			this.timer.scheduleAtFixedRate(periodicTask, 0, executionRate);
+		}
 	}
 
 	@Override
@@ -161,40 +165,36 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 		
 	    private void updateUserData(String userId, String token, SessionDuration sessionDuration, int processingTime, long usedStorage) {
 	        final ConfigurationProvider cfgProvider = ConfigurationManager.getInstance();
-	        final String serviceAPIUrl = cfgProvider.getValue("dunia.service.api.url");
-			// If external URL is not defined, do nothing
-			if (!StringUtilities.isNullOrEmpty(serviceAPIUrl)) {
-				final String serviceAPIHeader = cfgProvider.getValue("dunia.service.api.key");
-				final int includeSessionTime = cfgProvider.getBooleanValue("quota.include.session.time") ? 1 : 0;
-				final String header;
-				if (serviceAPIHeader != null) {
-					// The configuration value should be in the form header_name:header_value
-					final String[] items = serviceAPIHeader.split(":");
-					header = items[0];
-					token = items[1];
-				} else {
-					header = "X-Auth-Token";
-				}
-				if (StringUtilities.isNullOrEmpty(token)) {
-					// The API token is not configured, and hence if the user is not logged into TAO, there is no token
-					logger.fine("API token for quota update is not configured and the user " + userId + " is offline");
-					return;
-				}
-				// Either one must be non-zero
-				if (usedStorage > 0 || processingTime > 0) {
-					final String json = String.format(JSON_USER, userId, includeSessionTime * sessionDuration.getDuration() + processingTime, usedStorage);
-					try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.POST, serviceAPIUrl, header, token, json)) {
-						if (response.getStatusLine().getStatusCode() > 201) {
-							throw new IOException(EntityUtils.toString(response.getEntity()));
-						} else {
-							logger.finest(() -> String.format("Storace and processing quota updated for user %s", userId));
-						}
-					} catch (Exception e) {
-						logger.severe(e.getMessage());
+			final String serviceAPIHeader = cfgProvider.getValue("dunia.service.api.key");
+			final int includeSessionTime = cfgProvider.getBooleanValue("quota.include.session.time") ? 1 : 0;
+			final String header;
+			if (serviceAPIHeader != null) {
+				// The configuration value should be in the form header_name:header_value
+				final String[] items = serviceAPIHeader.split(":");
+				header = items[0];
+				token = items[1];
+			} else {
+				header = "X-Auth-Token";
+			}
+			if (StringUtilities.isNullOrEmpty(token)) {
+				// The API token is not configured, and hence if the user is not logged into TAO, there is no token
+				logger.fine("API token for quota update is not configured and the user " + userId + " is offline");
+				return;
+			}
+			// Either one must be non-zero
+			if (usedStorage > 0 || processingTime > 0) {
+				final String json = String.format(JSON_USER, userId, includeSessionTime * sessionDuration.getDuration() + processingTime, usedStorage);
+				try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.POST, serviceAPIUrl, header, token, json)) {
+					if (response.getStatusLine().getStatusCode() > 201) {
+						throw new IOException(EntityUtils.toString(response.getEntity()));
+					} else {
+						logger.finest(() -> String.format("Storace and processing quota updated for user %s", userId));
 					}
-				} else {
-					logger.finest(() -> String.format("User %s has no storage and/or no processing time, skipping", userId));
+				} catch (Exception e) {
+					logger.severe(e.getMessage());
 				}
+			} else {
+				logger.finest(() -> String.format("User %s has no storage and/or no processing time, skipping", userId));
 			}
 	    }
 

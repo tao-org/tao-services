@@ -47,6 +47,7 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 	private final SynchronizeSubscriptionsTask periodicTask = new SynchronizeSubscriptionsTask();
 	/** The timer used to run the periodic task. */
 	private final Timer timer = new Timer();
+	private String serviceAPIUrl;
 
 	@Override
 	public int priority() {
@@ -68,9 +69,11 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
         	// fall back to the 1-hour delay
         	executionRate = 3600000;
         }
-        
-        // run the task
-        this.timer.scheduleAtFixedRate(periodicTask, 0, executionRate);
+		this.serviceAPIUrl = ConfigurationManager.getInstance().getValue(RemoteSubscriptionSynchronizer.SUBSCRIPTIONS_API_URL);
+		if (!StringUtilities.isNullOrEmpty(this.serviceAPIUrl)) {
+			// run the task
+			this.timer.scheduleAtFixedRate(periodicTask, 0, executionRate);
+		}
 	}
 
 	@Override
@@ -136,46 +139,39 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 		 */
 		private List<UserPlan> getUserPlanDetails() {
 			final ConfigurationProvider configurationProvider = ConfigurationManager.getInstance();
-			final String serviceAPIUrl = configurationProvider.getValue(RemoteSubscriptionSynchronizer.SUBSCRIPTIONS_API_URL);
-
-			if (!StringUtilities.isNullOrEmpty(serviceAPIUrl)) {
-				String header = null;
-				String token = null;
-				final String user = configurationProvider.getValue(KEYCLOAK_API_USER);
-				if (!StringUtilities.isNullOrEmpty(user)) {
-					final String pass = configurationProvider.getValue(KEYCLOAK_API_PWD);
-					KeycloakClient client = new KeycloakClient();
-					final Token kToken = client.newToken(user, pass);
-					header = "Authorization";
-					token = "Bearer " + kToken.getToken();
-				} else {
-					final String serviceAPIHeader = configurationProvider.getValue(RemoteSubscriptionSynchronizer.SUBSCRIPTION_API_KEY);
-					if (serviceAPIHeader != null) {
-						// The configuration value should be in the form header_name:header_value
-						final String[] items = serviceAPIHeader.split(":");
-						header = items[0];
-						token = items[1];
-					}
-				}
-				if (StringUtilities.isNullOrEmpty(token)) {
-					// The API token is not configured, and hence if the user is not logged into TAO, there is no token
-					logger.warning("Invalid API token for remote subscriptions synchronize");
-					return null;
-				}
-
-				try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.GET, serviceAPIUrl, header, token, null)) {
-					if (response.getStatusLine().getStatusCode() > 201) {
-						throw new IOException(EntityUtils.toString(response.getEntity()));
-					} else {
-						final BaseSerializer<UserPlan> serializer = SerializerFactory.create(UserPlan.class, MediaType.JSON);
-						return serializer.deserialize(UserPlan.class, EntityUtils.toString(response.getEntity()));
-					}
-				} catch (Exception e) {
-					logger.severe(e.getMessage());
-					return null;
-				}
+			String header = null;
+			String token = null;
+			final String user = configurationProvider.getValue(KEYCLOAK_API_USER);
+			if (!StringUtilities.isNullOrEmpty(user)) {
+				final String pass = configurationProvider.getValue(KEYCLOAK_API_PWD);
+				KeycloakClient client = new KeycloakClient();
+				final Token kToken = client.newToken(user, pass);
+				header = "Authorization";
+				token = "Bearer " + kToken.getToken();
 			} else {
-				logger.warning("Invalid API URL for remote subscriptions synchronize");
+				final String serviceAPIHeader = configurationProvider.getValue(RemoteSubscriptionSynchronizer.SUBSCRIPTION_API_KEY);
+				if (serviceAPIHeader != null) {
+					// The configuration value should be in the form header_name:header_value
+					final String[] items = serviceAPIHeader.split(":");
+					header = items[0];
+					token = items[1];
+				}
+			}
+			if (StringUtilities.isNullOrEmpty(token)) {
+				// The API token is not configured, and hence if the user is not logged into TAO, there is no token
+				logger.warning("Invalid API token for remote subscriptions synchronize");
+				return null;
+			}
+
+			try (CloseableHttpResponse response = NetUtils.openConnection(HttpMethod.GET, serviceAPIUrl, header, token, null)) {
+				if (response.getStatusLine().getStatusCode() > 201) {
+					throw new IOException(EntityUtils.toString(response.getEntity()));
+				} else {
+					final BaseSerializer<UserPlan> serializer = SerializerFactory.create(UserPlan.class, MediaType.JSON);
+					return serializer.deserialize(UserPlan.class, EntityUtils.toString(response.getEntity()));
+				}
+			} catch (Exception e) {
+				logger.severe(e.getMessage());
 				return null;
 			}
 		}
