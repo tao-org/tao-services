@@ -161,7 +161,7 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 		
 	    private void updateUserData(String userId, String token, SessionDuration sessionDuration, int processingTime, long usedStorage) {
 	        final ConfigurationProvider cfgProvider = ConfigurationManager.getInstance();
-	        final String serviceAPIUrl = cfgProvider.getValue("dunia.service.api.url", "https://dunia.esa.int/api/quota/tao");
+	        final String serviceAPIUrl = cfgProvider.getValue("dunia.service.api.url");
 			// If external URL is not defined, do nothing
 			if (!StringUtilities.isNullOrEmpty(serviceAPIUrl)) {
 				final String serviceAPIHeader = cfgProvider.getValue("dunia.service.api.key");
