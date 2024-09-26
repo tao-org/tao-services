@@ -15,6 +15,7 @@ import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.workspace.model.TransferableItem;
 import ro.cs.tao.utils.ExceptionUtils;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
 import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.Repository;
@@ -199,7 +200,7 @@ public class UserTransferService {
     private void saveState(BlockingQueue<TransferableItem> queue) {
         if (this.saveState) {
             try {
-                Files.createDirectories(this.stateFile.getParent());
+                FileUtilities.createDirectories(this.stateFile.getParent());
                 if (Files.notExists(this.stateFile)) {
                     Files.createFile(this.stateFile);
                 }
@@ -220,7 +221,7 @@ public class UserTransferService {
     private synchronized void restoreState() {
         if (this.saveState) {
             try {
-                Files.createDirectories(this.stateFile.getParent());
+                FileUtilities.createDirectories(this.stateFile.getParent());
                 if (Files.exists(this.stateFile)) {
                     this.queue.clear();
                     try (InputStream stream = Files.newInputStream(this.stateFile)) {
