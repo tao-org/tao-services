@@ -9,6 +9,7 @@ import ro.cs.tao.component.Variable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.entity.beans.FetchFilesRequest;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.NetStreamResponse;
 import ro.cs.tao.utils.NetUtils;
 import ro.cs.tao.utils.StringUtilities;
@@ -44,7 +45,7 @@ public class UtilityController extends BaseController {
             }
             Path cachePath = Paths.get(sitePath).resolve("previews");
             if (!Files.exists(cachePath)) {
-                Files.createDirectories(cachePath);
+                FileUtilities.createDirectories(cachePath);
             }
             Path file = getFile(cachePath, url, productName, user, password);
             if (file == null) {
@@ -67,7 +68,7 @@ public class UtilityController extends BaseController {
             }
             Path cachePath = Paths.get(sitePath).resolve("previews");
             if (!Files.exists(cachePath)) {
-                Files.createDirectories(cachePath);
+                FileUtilities.createDirectories(cachePath);
             }
             final String user = request.getUser();
             final String password = request.getPassword();

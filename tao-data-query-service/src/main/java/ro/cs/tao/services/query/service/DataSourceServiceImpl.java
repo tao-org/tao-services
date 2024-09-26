@@ -37,9 +37,9 @@ import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.utils.Crypto;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -256,7 +256,7 @@ public class DataSourceServiceImpl implements DataSourceService {
                                                            new String[] { "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_" });
                 Path pPath = Paths.get(path).resolve(subfolder);
                 try {
-                    Files.createDirectories(pPath);
+                    FileUtilities.createDirectories(pPath);
                     path = pPath.toString();
                 } catch (Exception e) {
                     Logger.getLogger(DataSourceService.class.getName()).warning("Cannot create folder " + pPath);
