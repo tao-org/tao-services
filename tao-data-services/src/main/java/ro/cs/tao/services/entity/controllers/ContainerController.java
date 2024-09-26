@@ -614,6 +614,7 @@ public class ContainerController extends DataEntityController<Container, String,
         }
         Files.createDirectories(targetBase);
         Path destination = targetBase.resolve(fileName);
+        Files.createDirectories(destination.getParent());
         file.transferTo(destination.toAbsolutePath().toFile());
         return destination;
     }
