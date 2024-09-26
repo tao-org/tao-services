@@ -15,20 +15,27 @@ import ro.cs.tao.serialization.MediaType;
 import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.subscription.ExternalFlavorSubscription;
 import ro.cs.tao.subscription.ExternalResourceSubscription;
+import ro.cs.tao.subscription.FlavorSubscription;
+import ro.cs.tao.subscription.ResourceSubscription;
+import ro.cs.tao.subscription.SubscriptionType;
 import ro.cs.tao.subscription.UserPlan;
+import ro.cs.tao.topology.NodeFlavor;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserType;
 import ro.cs.tao.utils.CloseableHttpResponse;
+import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.HttpMethod;
 import ro.cs.tao.utils.NetUtils;
 import ro.cs.tao.utils.StringUtilities;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * Periodically inspect the remote subscriptions and save it to the local database.
- *
+ * Periodically inspects the remote subscriptions and saves them to the local database.
+ * Subscriptions are assigned to users of type Keycloak if they have one set in the Keycloak attribute "user_plan".
+ * Internal subscriptions are updated according to external subscriptions.
  */
 public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 	/** Execution rate for synchronization, defined in configuration */
@@ -92,6 +99,7 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 		public void run() {
 			updateExternalSubscriptions();
 			updateUserExternalSubscriptions();
+			updateUsersSubscriptionsFromExternalSubscriptions();
 		}
 
 		/**
@@ -110,6 +118,7 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 					}
 					externalResourceSubscription.getFlavors().clear();
 
+					// TODO User's plan disk represents disk or object storage?
 					//externalResourceSubscription.setObjectStorageGB(userPlan.disk);
 
 					ExternalFlavorSubscription flavor = new ExternalFlavorSubscription();
@@ -125,11 +134,11 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 						} else {
 							subscriptionManager.update(externalResourceSubscription);
 						}
-						logger.finest("External resource subscriptions synchronized");
 					} catch (PersistenceException e) {
 						logger.severe("Error saving external resource subscription: " + e.getMessage());
 					}
 				}
+				logger.fine("External resource subscriptions synchronized");
 			}
 		}
 
@@ -142,21 +151,20 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 			String header = null;
 			String token = null;
 			final String user = configurationProvider.getValue(KEYCLOAK_API_USER);
-			if (!StringUtilities.isNullOrEmpty(user)) {
+			final String serviceAPIHeader = configurationProvider.getValue(RemoteSubscriptionSynchronizer.SUBSCRIPTION_API_KEY);
+			if (!StringUtilities.isNullOrEmpty(serviceAPIHeader)) {
+				// The configuration value should be in the form header_name:header_value
+				final String[] items = serviceAPIHeader.split(":");
+				header = items[0];
+				token = items[1];
+			} else if (!StringUtilities.isNullOrEmpty(user)) {
 				final String pass = configurationProvider.getValue(KEYCLOAK_API_PWD);
 				KeycloakClient client = new KeycloakClient();
 				final Token kToken = client.newToken(user, pass);
 				header = "Authorization";
 				token = "Bearer " + kToken.getToken();
-			} else {
-				final String serviceAPIHeader = configurationProvider.getValue(RemoteSubscriptionSynchronizer.SUBSCRIPTION_API_KEY);
-				if (serviceAPIHeader != null) {
-					// The configuration value should be in the form header_name:header_value
-					final String[] items = serviceAPIHeader.split(":");
-					header = items[0];
-					token = items[1];
-				}
 			}
+
 			if (StringUtilities.isNullOrEmpty(token)) {
 				// The API token is not configured, and hence if the user is not logged into TAO, there is no token
 				logger.warning("Invalid API token for remote subscriptions synchronize");
@@ -172,6 +180,7 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 				}
 			} catch (Exception e) {
 				logger.severe(e.getMessage());
+				logger.severe(ExceptionUtils.getStackTrace(logger, e));
 				return null;
 			}
 		}
@@ -212,11 +221,61 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 				for (ExternalResourceSubscription externalResourceSubscription : externalResourceSubscriptionMap.values()) {
 					persistenceManager.externalResourceSubscription().update(externalResourceSubscription);
 				}
-				logger.finest("Users external subscriptions updated");
+				logger.fine("Users external subscriptions updated");
 
 			} catch (Exception e) {
 				logger.severe(e.getMessage());
+				logger.severe(ExceptionUtils.getStackTrace(logger, e));
 			}
+		}
+
+		private void updateUsersSubscriptionsFromExternalSubscriptions() {
+			try {
+				// Get external subscriptions
+				List<ExternalResourceSubscription> externalResourceSubscriptionList = persistenceManager.externalResourceSubscription().list();
+				for (ExternalResourceSubscription externalResourceSubscription : externalResourceSubscriptionList) {
+					// Get users with external subscriptions
+					Set<User> userSet = externalResourceSubscription.getUsers();
+					for (User user : userSet) {
+						Map<String, ExternalFlavorSubscription> externalFlavorSubscriptionMap = externalResourceSubscription.getFlavors();
+						Optional<ExternalFlavorSubscription> externalFlavorSubscriptionOptional = externalFlavorSubscriptionMap.values().stream().findFirst();
+						if(externalFlavorSubscriptionOptional.isPresent()) {
+							// Get flavor based on external subscription flavor characteristics
+							NodeFlavor nodeFlavor = persistenceManager.nodeFlavors().getMatchingFlavor(externalFlavorSubscriptionOptional.get().getCpu(), externalFlavorSubscriptionOptional.get().getRamGb());
+							if(nodeFlavor != null) {
+								// Get user's active subscription
+								ResourceSubscription resourceSubscription = persistenceManager.resourceSubscription().getUserOpenSubscription(user.getId());
+								if(resourceSubscription == null) {
+									// New subscription
+									resourceSubscription = new ResourceSubscription();
+									resourceSubscription.setUserId(user.getId());
+									resourceSubscription.setCreated(LocalDateTime.now());
+									resourceSubscription.setEnded(null);
+								}
+								// Override properties
+								resourceSubscription.setType(SubscriptionType.PAY_PER_USE);
+								resourceSubscription.setPaid(false);
+
+								final Map<String, FlavorSubscription> flavorMap = new LinkedHashMap<>();
+								FlavorSubscription flavorSubscription = new FlavorSubscription();
+								flavorSubscription.setFlavorId(nodeFlavor.getId());
+								flavorSubscription.setQuantity(1);
+								flavorSubscription.setHddGB(0);
+								flavorSubscription.setSsdGB(0);
+								flavorMap.put(nodeFlavor.getId(), flavorSubscription);
+
+								resourceSubscription.setFlavors(flavorMap);
+								persistenceManager.resourceSubscription().save(resourceSubscription);
+							}
+						}
+					}
+				}
+				logger.fine("Users subscriptions updated from external subscriptions");
+			} catch (Exception e) {
+				logger.severe(e.getMessage());
+				logger.severe(ExceptionUtils.getStackTrace(logger, e));
+			}
+
 		}
 
 	}
