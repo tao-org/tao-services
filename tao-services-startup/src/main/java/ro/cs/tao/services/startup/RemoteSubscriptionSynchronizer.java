@@ -313,7 +313,7 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 
 			Map<String, FlavorSubscription> flavorSubscriptionMap = resourceSubscription.getFlavors();
 			Map<String, ExternalFlavorSubscription> externalFlavorSubscriptionMap = externalResourceSubscription.getFlavors();
-			if(flavorSubscriptionMap == null || externalFlavorSubscriptionMap == null || flavorSubscriptionMap.keySet().size() == externalFlavorSubscriptionMap.keySet().size()) return false;
+			if(flavorSubscriptionMap == null || externalFlavorSubscriptionMap == null || flavorSubscriptionMap.keySet().size() != externalFlavorSubscriptionMap.keySet().size()) return false;
 
 			Optional<FlavorSubscription> flavorSubscriptionOptional = flavorSubscriptionMap.values().stream().findFirst();
 			Optional<ExternalFlavorSubscription> externalFlavorSubscriptionOptional = externalFlavorSubscriptionMap.values().stream().findFirst();
