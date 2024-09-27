@@ -37,6 +37,7 @@ import ro.cs.tao.services.model.component.ProductSetInfo;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.user.User;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
@@ -264,7 +265,7 @@ public class ViewerController extends ControllerBase {
             }
             Path cachePath = Paths.get(sitePath).resolve("series");
             if (!Files.exists(cachePath)) {
-                Files.createDirectories(cachePath);
+                FileUtilities.createDirectories(cachePath);
             }
             final FileGeometryFilter filter = services.iterator().next();
             final Extent extent = filter.computeEnvelope(geometryWKT);
@@ -314,7 +315,7 @@ public class ViewerController extends ControllerBase {
             }
             Path cachePath = Paths.get(sitePath).resolve("series");
             if (!Files.exists(cachePath)) {
-                Files.createDirectories(cachePath);
+                FileUtilities.createDirectories(cachePath);
             }
             final DataSourceComponent dsc = dataSourceComponentService.findById(id);
             if (dsc == null) {
@@ -358,7 +359,7 @@ public class ViewerController extends ControllerBase {
             }
             Path cachePath = Paths.get(sitePath).resolve("series");
             if (!Files.exists(cachePath)) {
-                Files.createDirectories(cachePath);
+                FileUtilities.createDirectories(cachePath);
             }
             return prepareResult(extractSubsetImages(id, files, geometryWKT));
         } catch (Exception e) {
@@ -391,7 +392,7 @@ public class ViewerController extends ControllerBase {
             }
             Path cachePath = Paths.get(sitePath).resolve("series");
             if (!Files.exists(cachePath)) {
-                Files.createDirectories(cachePath);
+                FileUtilities.createDirectories(cachePath);
             }
             final DataSourceComponent dsc = dataSourceComponentService.findById(id);
             if (dsc == null) {
@@ -438,7 +439,7 @@ public class ViewerController extends ControllerBase {
             }
             Path cachePath = Paths.get(sitePath).resolve("series");
             if (!Files.exists(cachePath)) {
-                Files.createDirectories(cachePath);
+                FileUtilities.createDirectories(cachePath);
             }
             final List<String> outFiles = extractSubsetImages(id, files, geometryWKT);
             createAnimation(cachePath, id, outFiles, response);
