@@ -8,6 +8,7 @@ import ro.cs.eo.gdal.dataio.GDALTileCache;
 import ro.cs.eo.gdal.dataio.drivers.*;
 import ro.cs.eo.gdal.reader.info.FormatDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.Triple;
 import ro.cs.tao.utils.executors.Executor;
 import ro.cs.tao.utils.executors.ExecutorType;
@@ -63,7 +64,7 @@ public class TileReader {
         try {
             GDAL.useExceptions();
             //if (!Files.exists(tileFilePath)) {
-            Files.createDirectories(tileFilePath.getParent());
+            FileUtilities.createDirectories(tileFilePath.getParent());
             if (config.reverseY) {
                 y = (1 << z) - 1 - y;
             }
@@ -116,7 +117,7 @@ public class TileReader {
         Dataset translateDataset = null;
         try {
             GDAL.useExceptions();
-            Files.createDirectories(filePath.getParent());
+            FileUtilities.createDirectories(filePath.getParent());
             final Path shapeFile = filePath.getParent().resolve("wkt.shp");
             writeGeoJSON(wkt, shapeFile);
             if (config.reverseY) {

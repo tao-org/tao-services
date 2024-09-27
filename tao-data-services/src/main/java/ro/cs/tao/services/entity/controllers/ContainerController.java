@@ -60,6 +60,7 @@ import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
 import ro.cs.tao.topology.docker.DockerManager;
 import ro.cs.tao.topology.docker.SingletonContainer;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 
 import javax.servlet.http.HttpServletRequest;
@@ -69,7 +70,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Inet4Address;
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
@@ -612,9 +612,9 @@ public class ContainerController extends DataEntityController<Container, String,
             // This is a security check
             throw new IOException( "Cannot store docker file with relative path outside image directory " + fileName);
         }
-        Files.createDirectories(targetBase);
+        FileUtilities.createDirectories(targetBase);
         Path destination = targetBase.resolve(fileName);
-        Files.createDirectories(destination.getParent());
+        FileUtilities.createDirectories(destination.getParent());
         file.transferTo(destination.toAbsolutePath().toFile());
         return destination;
     }

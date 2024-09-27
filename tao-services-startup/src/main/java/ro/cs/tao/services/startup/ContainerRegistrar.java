@@ -5,6 +5,7 @@ import ro.cs.tao.docker.Container;
 import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
 import ro.cs.tao.topology.docker.SingletonContainer;
+import ro.cs.tao.utils.FileUtilities;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,7 +49,7 @@ public class ContainerRegistrar extends BaseLifeCycle {
                                                 .resolve("workflow").resolve("media")
                                                 .resolve(container.getId() + ".png");
                             if (!Files.exists(imgPath)) {
-                                Files.createDirectories(imgPath.getParent());
+                                FileUtilities.createDirectories(imgPath.getParent());
                                 Files.write(imgPath, Base64.getDecoder().decode(container.getLogo().trim()));
                             }
                         }

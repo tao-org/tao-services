@@ -25,6 +25,7 @@ import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
 import ro.cs.tao.services.commons.config.FileProcessor;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.executors.Executor;
 
 import java.io.IOException;
@@ -43,9 +44,9 @@ public abstract class StartupBase implements ApplicationListener {
     protected static Properties initialize() throws IOException {
         home = new ApplicationHome();
         Path configDirectory = homeDirectory().resolve("config");
-        Files.createDirectories(configDirectory);
+        FileUtilities.createDirectories(configDirectory);
         Path scriptsDirectory = homeDirectory().resolve("scripts");
-        Files.createDirectories(scriptsDirectory);
+        FileUtilities.createDirectories(scriptsDirectory);
         System.out.printf("Configuration files will be read from %s%n", configDirectory.toString());
         if (!Files.exists(configDirectory)) {
             Files.createDirectory(configDirectory);
