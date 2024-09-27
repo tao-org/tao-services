@@ -118,8 +118,8 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 					}
 					externalResourceSubscription.getFlavors().clear();
 
-					// TODO User's plan disk represents disk or object storage?
-					//externalResourceSubscription.setObjectStorageGB(userPlan.disk);
+					// User's plan disk represents disk or object storage
+					externalResourceSubscription.setObjectStorageGB(userPlan.getDisk());
 
 					ExternalFlavorSubscription flavor = new ExternalFlavorSubscription();
 					flavor.setFlavorId(userPlan.getFlavor());
@@ -231,6 +231,7 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 
 		private void updateUsersSubscriptionsFromExternalSubscriptions() {
 			try {
+				// Create or update users subscriptions
 				// Get external subscriptions
 				List<ExternalResourceSubscription> externalResourceSubscriptionList = persistenceManager.externalResourceSubscription().list();
 				for (ExternalResourceSubscription externalResourceSubscription : externalResourceSubscriptionList) {
@@ -255,13 +256,14 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 								// Override properties
 								resourceSubscription.setType(SubscriptionType.PAY_PER_USE);
 								resourceSubscription.setPaid(false);
+								resourceSubscription.setObjectStorageGB(externalResourceSubscription.getObjectStorageGB());
 
 								final Map<String, FlavorSubscription> flavorMap = new LinkedHashMap<>();
 								FlavorSubscription flavorSubscription = new FlavorSubscription();
 								flavorSubscription.setFlavorId(nodeFlavor.getId());
 								flavorSubscription.setQuantity(1);
-								flavorSubscription.setHddGB(0);
-								flavorSubscription.setSsdGB(0);
+								flavorSubscription.setHddGB(null);
+								flavorSubscription.setSsdGB(null);
 								flavorMap.put(nodeFlavor.getId(), flavorSubscription);
 
 								resourceSubscription.setFlavors(flavorMap);
@@ -274,6 +276,27 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 						}
 					}
 				}
+
+				// End users subscriptions if matching external subscription and user doesn't have an external subscription assigned
+				List<User> users = persistenceManager.users().list();
+				for (User user : users) {
+					if(UserType.KEYCLOAK.equals(user.getUserType())) {
+						ResourceSubscription activeResourceSubscription = persistenceManager.resourceSubscription().getUserOpenSubscription(user.getId());
+						if(activeResourceSubscription != null) {
+							for (ExternalResourceSubscription externalResourceSubscription : externalResourceSubscriptionList) {
+								Set<User> externalResourceSubscriptionUsers = externalResourceSubscription.getUsers();
+								// If the user is assigned to this external subscription
+								if(externalResourceSubscriptionUsers != null && !externalResourceSubscriptionUsers.contains(user)) {
+									if(subscriptionIsMatchingExternalSubscription(activeResourceSubscription, externalResourceSubscription)) {
+										// End active subscription
+										activeResourceSubscription.setEnded(LocalDateTime.now());
+										persistenceManager.resourceSubscription().update(activeResourceSubscription);
+									}
+								}
+							}
+						}
+					}
+				}
 				logger.fine("Users subscriptions updated from external subscriptions");
 			} catch (Exception e) {
 				logger.severe(e.getMessage());
@@ -281,6 +304,30 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 			}
 
 		}
+
+		private boolean subscriptionIsMatchingExternalSubscription(ResourceSubscription resourceSubscription, ExternalResourceSubscription externalResourceSubscription) {
+			if(resourceSubscription == null || externalResourceSubscription == null) return false;
+
+			// Subscriptions created from external subscriptions have the type PAY_PER_USE
+			if(!SubscriptionType.PAY_PER_USE.equals(resourceSubscription.getType())) return false;
+
+			Map<String, FlavorSubscription> flavorSubscriptionMap = resourceSubscription.getFlavors();
+			Map<String, ExternalFlavorSubscription> externalFlavorSubscriptionMap = externalResourceSubscription.getFlavors();
+			if(flavorSubscriptionMap == null || externalFlavorSubscriptionMap == null || flavorSubscriptionMap.keySet().size() == externalFlavorSubscriptionMap.keySet().size()) return false;
+
+			Optional<FlavorSubscription> flavorSubscriptionOptional = flavorSubscriptionMap.values().stream().findFirst();
+			Optional<ExternalFlavorSubscription> externalFlavorSubscriptionOptional = externalFlavorSubscriptionMap.values().stream().findFirst();
+			if(externalFlavorSubscriptionOptional.isPresent() && flavorSubscriptionOptional.isPresent()) {
+				// Get flavor based on external subscription flavor characteristics
+				NodeFlavor nodeFlavor = persistenceManager.nodeFlavors().getMatchingFlavor(externalFlavorSubscriptionOptional.get().getCpu(), externalFlavorSubscriptionOptional.get().getRamGb());
+				// Same number of flavors (currently one for external subscriptions)
+				if (nodeFlavor != null) {
+                    return flavorSubscriptionOptional.get().getFlavorId().equals(nodeFlavor.getId());
+				}
+			}
+			return false;
+		}
+
 
 	}
 }
