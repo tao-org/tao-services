@@ -2,7 +2,9 @@ package ro.cs.tao.services.query.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.EnumUtils;
 import ro.cs.tao.datasource.ProductStatusListener;
+import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.messaging.Messaging;
@@ -32,8 +34,14 @@ public class DownloadListener implements ProductStatusListener {
         	if (product.getRefs() != null && !product.getRefs().contains(principal.getName())) {
         		// do not allow for the download to start if quota exceeded
                 if (!UserQuotaManager.getInstance().checkUserInputQuota(principal, product.getApproximateSize())) {
-                    Messaging.send(principal, Topic.WARNING.getCategory(), "Quota exceeded");
-                    return false;
+                    // For symlinks, the quota is not affected and hence should continue
+                    final String fetchMode = product.getAttributeValue("fetch");
+                    if (fetchMode != null && EnumUtils.getEnumConstantByName(FetchMode.class, fetchMode).value() < 4) {
+                        Messaging.send(principal, Topic.WARNING.getCategory(), "Quota exceeded");
+                        return false;
+                    } else {
+                        product.removeAttribute("fetch");
+                    }
                 }
         	}
     	
