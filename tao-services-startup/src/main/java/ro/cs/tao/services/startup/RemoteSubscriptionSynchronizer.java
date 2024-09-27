@@ -265,7 +265,11 @@ public class RemoteSubscriptionSynchronizer extends BaseLifeCycle {
 								flavorMap.put(nodeFlavor.getId(), flavorSubscription);
 
 								resourceSubscription.setFlavors(flavorMap);
-								persistenceManager.resourceSubscription().save(resourceSubscription);
+								if(resourceSubscription.getId() == null) {
+									persistenceManager.resourceSubscription().save(resourceSubscription);
+								} else {
+									persistenceManager.resourceSubscription().update(resourceSubscription);
+								}
 							}
 						}
 					}
