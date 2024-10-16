@@ -37,6 +37,7 @@ import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.persistence.WorkflowNodeProvider;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
 import ro.cs.tao.services.interfaces.ComponentService;
@@ -194,11 +195,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
      *
      */
     @RequestMapping(value = "/visibility/{visibility}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByVisibility(@PathVariable("visibility") Visibility visibility,
                                                                            @RequestParam(name = "userId", required = false) String userId) {
-        if (!StringUtilities.isNullOrEmpty(userId) && !isCurrentUserAdmin()) {
+        /*if (!StringUtilities.isNullOrEmpty(userId) && !isCurrentUserAdmin()) {
             return unauthorizedResponse();
-        }
+        }*/
         return prepareResult(service.getUserPublishedWorkflowsByVisibility(currentUser(), visibility));
     }
 

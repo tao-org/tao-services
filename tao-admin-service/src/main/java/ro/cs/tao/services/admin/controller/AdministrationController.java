@@ -42,6 +42,7 @@ import ro.cs.tao.services.admin.mail.Constants;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.model.user.DisableUserInfo;
@@ -94,10 +95,11 @@ public class AdministrationController extends BaseController {
      * @param newUserInfo   The user account information
      */
     @RequestMapping(value = "/users", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> addNewUser(@RequestBody User newUserInfo) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (newUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
@@ -122,18 +124,20 @@ public class AdministrationController extends BaseController {
     }
 
     @RequestMapping(value = "/users/unicity", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getAllUsersUnicityInfo() {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         return prepareResult(adminService.getAllUsersUnicityInfo());
     }
 
     @RequestMapping(value = "/users/ids", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getAllUserNames() {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         return prepareResult(adminService.getAllUserNames());
     }
 
@@ -142,10 +146,11 @@ public class AdministrationController extends BaseController {
      * @param activationStatus  The user status
      */
     @RequestMapping(value = "/users", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> findUsersByStatus(@RequestParam("status") UserStatus activationStatus) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (activationStatus == null) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -164,10 +169,11 @@ public class AdministrationController extends BaseController {
      * Lists the currently logged-in users
      */
     @RequestMapping(value = "/users/logged", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> findLoggedUsers() {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         final List<User> users = new ArrayList<>();
         final Set<String> ids = sessionRegistry.getAllPrincipals().stream().filter(u -> !sessionRegistry.getAllSessions(u, false).isEmpty()).map(Object::toString).collect(Collectors.toSet());
         if (!ids.isEmpty()) {
@@ -180,10 +186,11 @@ public class AdministrationController extends BaseController {
      * Lists the existing user groups
      */
     @RequestMapping(value = "/users/groups", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getGroups() {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         return prepareResult(adminService.getGroups());
     }
 
@@ -192,10 +199,11 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -216,11 +224,12 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getUserActiveSubscription(@PathVariable("userId") String userId) {
         if (!adminService.isDevModeEnabled()) {
-            if (!isCurrentUserAdmin()) {
+            /*if (!isCurrentUserAdmin()) {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
-            }
+            }*/
             if (StringUtilities.isNullOrEmpty(userId)) {
                 return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
             }
@@ -285,11 +294,12 @@ public class AdministrationController extends BaseController {
      * @param request The subscription entity request
      */
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> createUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         Map<String, Map<String, Integer>> flavors;
         if (request == null || (flavors = request.getFlavors()) == null || flavors.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
@@ -341,11 +351,12 @@ public class AdministrationController extends BaseController {
      * @param request The subscription entity request
      */
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> updateUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         Map<String, Map<String, Integer>> flavorsRequest;
         if (request == null || (flavorsRequest = request.getFlavors()) == null || flavorsRequest.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
@@ -455,10 +466,11 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         try {
             ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
             if (subscription == null) {
@@ -494,11 +506,12 @@ public class AdministrationController extends BaseController {
      * @param updatedUserInfo   The user account information
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> updateUserInfo(@PathVariable("userId") String userId,
                                                              @RequestBody User updatedUserInfo) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (updatedUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
@@ -532,10 +545,11 @@ public class AdministrationController extends BaseController {
      * @param additionalDisableActions  Additional actions to be performed
      */
     @RequestMapping(value = "/users/{userId}/disable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> disableUser(@PathVariable("userId") String userId, @RequestBody DisableUserInfo additionalDisableActions) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (StringUtilities.isNullOrEmpty(userId) || additionalDisableActions == null) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -553,10 +567,11 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("userId") String userId) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -579,11 +594,12 @@ public class AdministrationController extends BaseController {
      * @param message The message
      */
     @RequestMapping(value = "/message", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> messageUser(@RequestParam("userId") String userId,
                                                           @RequestParam("message") String message) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -605,10 +621,11 @@ public class AdministrationController extends BaseController {
      * @param message The message
      */
     @RequestMapping(value = "/message/all", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> messageUsers(@RequestParam("message") String message) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         try {
             final List<String> activeUsers = sessionRegistry.getAllPrincipals().stream()
                                                         .filter(u -> !sessionRegistry.getAllSessions(u, false).isEmpty())
@@ -631,11 +648,12 @@ public class AdministrationController extends BaseController {
      * @param userId    The user to impersonate
      */
     @RequestMapping(value = "/impersonate", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> impersonate(@RequestParam("userId") String userId, HttpServletRequest request) throws IOException {
         try {
-            if (!isCurrentUserAdmin()) {
+            /*if (!isCurrentUserAdmin()) {
                 throw new IllegalArgumentException();
-            } else {
+            } else {*/
                 final AuthenticationMode authMode = EnumUtils.getEnumConstantByName(AuthenticationMode.class,
                                                                                     ConfigurationManager.getInstance()
                                                                                                         .getValue("authentication.mode", "local")
@@ -650,7 +668,7 @@ public class AdministrationController extends BaseController {
                 return prepareResult(url + "/realms/" + realm + "/protocol/openid-connect/auth?response_type=code&scope=openid&client_id="
                         + client + "&redirect_uri=" + ConfigurationManager.getInstance().getValue("tao.services.base") + "/ui/login.html");
 
-            }
+            //}
         } catch (Exception e) {
             return handleException(e);
         }
