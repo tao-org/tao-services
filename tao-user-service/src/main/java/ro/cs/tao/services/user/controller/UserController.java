@@ -26,10 +26,10 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.persistence.AuditProvider;
 import ro.cs.tao.persistence.RepositoryProvider;
-import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.RepositoryWatcherService;
 import ro.cs.tao.services.interfaces.UserService;
@@ -131,16 +131,17 @@ public class UserController extends BaseController {
      * @param userId The user account identifier
      */
     @RequestMapping(value = "/initialize", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> createWorkspaces(@RequestParam("userId") String userId) {
         try {
             if (StringUtilities.isNullOrEmpty(userId)) {
                 throw new IllegalArgumentException("Invalid user id");
             }
-            if (isCurrentUserAdmin() || SystemPrincipal.instance().getName().equals(currentUser())) {
+            //if (isCurrentUserAdmin() || SystemPrincipal.instance().getName().equals(currentUser())) {
                 userService.createWorkspaces(userId);
-            } else {
+            /*} else {
                 return prepareResult("Not authorized", HttpStatus.UNAUTHORIZED);
-            }
+            }*/
             return prepareResult("Workspace initialized", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             return handleException(ex);

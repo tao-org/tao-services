@@ -52,6 +52,7 @@ import ro.cs.tao.security.Token;
 import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.ContainerRequest;
 import ro.cs.tao.services.entity.beans.ContainerUploadRequest;
@@ -181,12 +182,13 @@ public class ContainerController extends DataEntityController<Container, String,
      * @param request   The structure containing the necessary information
      */
     @RequestMapping(value = "/upload", method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> upload(HttpServletRequest servletRequest,
                                                      @ModelAttribute ContainerUploadRequest request,
                                                      Model model) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         try {
             final List<MultipartFile> dockerFiles = request.getDockerFiles();
             if (dockerFiles == null || dockerFiles.isEmpty()) {
