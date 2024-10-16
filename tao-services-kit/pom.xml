@@ -104,7 +104,12 @@
             <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-cleanup-service</artifactId>
             <version>${project.version}</version>
-        </dependency>        
+        </dependency>
+        <dependency>
+            <groupId>ro.c-s.tao</groupId>
+            <artifactId>tao-ogc-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
