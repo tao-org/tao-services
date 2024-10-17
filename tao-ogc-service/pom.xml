@@ -19,6 +19,16 @@
             <artifactId>tao-services-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.c-s.tao</groupId>
+            <artifactId>tao-data-services</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.c-s.tao</groupId>
+            <artifactId>tao-orchestration-services</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

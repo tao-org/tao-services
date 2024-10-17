@@ -1,5 +1,6 @@
 package ro.cs.tao.ogc.model.common;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ConfClasses {
@@ -11,5 +12,12 @@ public class ConfClasses {
 
     public void setConformsTo(List<String> conformsTo) {
         this.conformsTo = conformsTo;
+    }
+
+    public void addConformance(String conformsTo) {
+        if (this.conformsTo == null) {
+            this.conformsTo = new ArrayList<>();
+        }
+        this.conformsTo.add(conformsTo);
     }
 }
