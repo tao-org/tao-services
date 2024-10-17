@@ -1,5 +1,6 @@
 package ro.cs.tao.ogc.model.common;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LandingPage {
@@ -30,6 +31,13 @@ public class LandingPage {
 
     public void setLinks(List<Link> links) {
         this.links = links;
+    }
+
+    public void addLink(Link link) {
+        if (this.links == null) {
+            this.links = new ArrayList<>();
+        }
+        this.links.add(link);
     }
 
     public String getTitle() {
