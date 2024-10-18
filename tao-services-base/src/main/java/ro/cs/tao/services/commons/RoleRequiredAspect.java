@@ -27,7 +27,7 @@ public class RoleRequiredAspect {
     private UserProvider userProvider;
 
     @Around("@annotation(ro.cs.tao.services.commons.RoleRequired)")
-    public void validate(ProceedingJoinPoint pjp) throws Throwable {
+    public Object validate(ProceedingJoinPoint pjp) throws Throwable {
         MethodSignature signature = (MethodSignature) pjp.getSignature();
         Method method = signature.getMethod();
         final RoleRequired annotation = method.getAnnotation(RoleRequired.class);
@@ -39,21 +39,23 @@ public class RoleRequiredAspect {
                                               user.getGroups().stream().map(Group::getName).collect(Collectors.toSet()));
             }
             if (principal instanceof SystemPrincipal) {
-                pjp.proceed();
-                return;
+                return pjp.proceed();
             } else if (principal instanceof UserPrincipal) {
                 final String roles = annotation.roles();
                 if (!StringUtilities.isNullOrEmpty(roles)) {
                     final String[] userRoles = roles.split(",");
                     for (String role : userRoles) {
                         if (((UserPrincipal) principal).hasRole(role)) {
-                            pjp.proceed();
-                            return;
+                            return pjp.proceed();
                         }
                     }
+                } else {
+                    throw new AuthorizationServiceException("Admin role required");
                 }
             }
             throw new AuthorizationServiceException("Admin role required");
+        } else {
+            return pjp.proceed();
         }
     }
 }
