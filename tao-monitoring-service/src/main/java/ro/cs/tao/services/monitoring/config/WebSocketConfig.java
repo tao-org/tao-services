@@ -15,9 +15,11 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Autowired
     private SSHController sshController;
 
+    private static final String socksJsUrl = "https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js";
+
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(new WebSocketHandler(), "/queue").setAllowedOriginPatterns("*").withSockJS();
-        registry.addHandler(sshController.getWsHandler(), "/ws-terminal").withSockJS();
+        registry.addHandler(new WebSocketHandler(), "/queue").setAllowedOriginPatterns("*").withSockJS().setClientLibraryUrl(socksJsUrl);
+        registry.addHandler(sshController.getWsHandler(), "/ws-terminal").setAllowedOriginPatterns("*").withSockJS().setClientLibraryUrl(socksJsUrl);
     }
 }

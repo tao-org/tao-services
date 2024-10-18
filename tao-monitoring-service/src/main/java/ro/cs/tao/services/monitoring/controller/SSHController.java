@@ -5,9 +5,11 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import org.apache.sshd.client.SshClient;
+import org.apache.sshd.client.auth.password.PasswordIdentityProvider;
 import org.apache.sshd.client.channel.ChannelShell;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
+import org.apache.sshd.common.session.SessionContext;
 import org.json.JSONObject;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Encoder;
 import java.util.Optional;
@@ -170,11 +174,53 @@ public class SSHController implements DisposableBean {
                 }
                 ClientSession session = cf.getSession();
                 this.sshSession.complete(session);
-                askForPassword();
+                CompletableFuture<Void> authenticaded = new CompletableFuture<Void>();
+                try {
+                    session.auth().addListener(authFuture->{
+                        try {
+                            authFuture.verify();
+                            this.shellChannel = session.createShellChannel();
+                            shellChannel.setPtyType("xterm-256color");
+                            shellChannel.setOut(new StreamOutputStream(UpdateListener.Stream.STDOUT));
+                            shellChannel.setErr(new StreamOutputStream(UpdateListener.Stream.STDERR));
+                            shellChannel.open().addListener(o->{
+                                try {
+                                    if (o.getException() != null) {
+                                        throw o.getException();
+                                    }
+                                    o.verify();
+                                    if (o.isOpened()) {
+                                        log.info("Channel opened");
+                                    } else {
+                                        throw new IOException("Channel not opened");
+                                    }
+                                } catch (Throwable e) {
+                                    authenticaded.completeExceptionally(e);
+                                }
+                                authenticaded.complete(null);
+                            });
+                        } catch (Exception e) {
+                            authenticaded.completeExceptionally(e);
+                        }
+                    });
+                } catch (IOException e) {
+                    authenticaded.completeExceptionally(e);
+                }
+                authenticaded.handle((r, e) -> {
+                    if (e == null) {
+                        log.info("Authenticated!");
+                        sendTextToTerminal(UpdateListener.Stream.STDERR, "Authenticated successfuly.\r\n");
+                    } else {
+                        log.severe("Not authenticated: " + e.getMessage());
+                        sendTextToTerminal(UpdateListener.Stream.STDERR, "Error authenticating.\r\n");
+                    }
+                    return null;
+                });
+                //askForPassword();
             });
         }
 
-        /*public void enteredPassword(String password) {
+        public void enteredPassword(String password) {
             PasswordIdentityProvider provider = new PasswordIdentityProvider() {
 
                 @Override
@@ -227,7 +273,7 @@ public class SSHController implements DisposableBean {
                     return null;
                 });
             });
-        }*/
+        }
 
         private void sendTextToTerminal(UpdateListener.Stream stderr, String text) {
             updateListener.update(new UpdateListener.BytesEvent(stderr, text.getBytes(StandardCharsets.UTF_8)));
