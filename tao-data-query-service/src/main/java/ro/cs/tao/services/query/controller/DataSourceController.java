@@ -466,7 +466,7 @@ public class DataSourceController extends BaseController {
                         }
                         final String label = StringUtilities.isNullOrEmpty(query.getLabel()) ? results.get(0).getProductType() : query.getLabel();
                         dataSourceComponentService.createForLocations(productPaths, label, currentPrincipal());
-                        Messaging.send(currentUser(), Topic.INFORMATION.getCategory(),
+                        Messaging.send(userId, Topic.INFORMATION.getCategory(),
                                        "Product set [" + label + "] was added to the user [" + userId + "] workspace");
                     } catch (Exception e) {
                         warn(e.getMessage());
