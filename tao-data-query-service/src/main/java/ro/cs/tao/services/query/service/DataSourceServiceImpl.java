@@ -28,10 +28,7 @@ import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.SensorType;
-import ro.cs.tao.persistence.ContainerProvider;
-import ro.cs.tao.persistence.DataSourceCredentialsProvider;
-import ro.cs.tao.persistence.EOProductProvider;
-import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.*;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
@@ -39,6 +36,7 @@ import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.utils.Crypto;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,6 +65,9 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     @Autowired
     private ContainerProvider containerProvider;
+
+    @Autowired
+    private RepositoryProvider repositoryProvider;
 
     @Override
     public SortedSet<String> getSupportedSensors() {
@@ -226,7 +227,8 @@ public class DataSourceServiceImpl implements DataSourceService {
         final List<EOProduct> results;
         if (products != null) {
             final DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
-            if (!StringUtilities.isNullOrEmpty(query.getUserId())) {
+            boolean userIdPresent = !StringUtilities.isNullOrEmpty(query.getUserId());
+            if (userIdPresent) {
                 dsComponent.setPrincipal(query::getUserId);
             }
             dsComponent.setUserCredentials(query.getUser(), query.getPassword(), query.getSecret());
@@ -249,7 +251,12 @@ public class DataSourceServiceImpl implements DataSourceService {
             }
             dsComponent.setProductStatusListener(downloadListener);
             boolean createSubfolder = Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("fetch.products.in.subfolders", "true"));
-            String path = SystemVariable.USER_WORKSPACE.value();
+            // This may yield unexpected results i.e. mingling userId -> String path = SystemVariable.USER_WORKSPACE.value();
+            String path = userIdPresent
+                          ? repositoryProvider.getUserSystemRepositories(query.getUserId())
+                                              .stream().filter(r -> RepositoryType.LOCAL.equals(r.getType()))
+                                              .findFirst().get().root()
+                          : SystemVariable.USER_WORKSPACE.value();
             if (createSubfolder) {
                 String subfolder = StringUtils.replaceEach(query.getLabel(),
                                                            new String[] { "/", "<", ">", "\\", "|", ":", "&", ";", " ", "?", "*" },
