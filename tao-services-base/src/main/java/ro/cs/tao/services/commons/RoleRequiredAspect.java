@@ -26,7 +26,7 @@ public class RoleRequiredAspect {
     @Autowired
     private UserProvider userProvider;
 
-    @Around(" @annotation(ro.cs.tao.services.commons.AdminRequired)")
+    @Around("@annotation(ro.cs.tao.services.commons.RoleRequired)")
     public void validate(ProceedingJoinPoint pjp) throws Throwable {
         MethodSignature signature = (MethodSignature) pjp.getSignature();
         Method method = signature.getMethod();
