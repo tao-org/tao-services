@@ -24,6 +24,28 @@ public abstract class InputDescription<D extends Descriptor<?>> extends Descript
         return of(Arrays.asList(value));
     }
 
+    public static InputDescription of(Type type) {
+        final InputDescription result;
+        switch (type) {
+            case NUMBER:
+            case INTEGER:
+                result = new NumericInputDescriptor();
+                break;
+            case BOOLEAN:
+            case STRING:
+                result = new StringInputDescriptor();
+                break;
+            case ARRAY:
+                result = new ListInputDescriptor();
+                break;
+            case OBJECT:
+            default:
+                result = new StringInputDescriptor();
+                break;
+        }
+        return result;
+    }
+
     public InputDescription() {
     }
 
@@ -63,7 +85,7 @@ public abstract class InputDescription<D extends Descriptor<?>> extends Descript
         }
     }
 
-    public static class ListInputDescriptor extends ListDescriptor {
+    public static class ListInputDescriptor extends InputDescription<ListDescriptor> {
         public ListInputDescriptor() {
             super();
         }
