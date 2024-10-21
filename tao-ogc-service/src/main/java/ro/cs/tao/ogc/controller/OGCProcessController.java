@@ -6,9 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ro.cs.tao.component.DataDescriptor;
-import ro.cs.tao.component.TargetDescriptor;
+import ro.cs.tao.component.*;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.param.JavaType;
 import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.eodata.enums.SensorType;
 import ro.cs.tao.ogc.model.common.ConfClasses;
@@ -23,12 +23,14 @@ import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.services.utils.WorkflowUtilities;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/process")
@@ -125,11 +127,89 @@ public class OGCProcessController extends BaseController {
         try {
             final WorkflowDescriptor workflow = workflowService.findById(Long.parseLong(processId));
             final Process process = new Process();
-            // TODO: Describe inputs
-
+            final List<WorkflowNodeDescriptor> nodes = workflow.getNodes();
+            // Describe inputs
+            final List<InputDescription<?>> inputs = new ArrayList<>();
+            final List<WorkflowNodeDescriptor> firstLevelNodes = WorkflowUtilities.findFirstLevel(nodes);
+            for (WorkflowNodeDescriptor node : nodes) {
+                final TaoComponent component = WorkflowUtilities.findComponent(node);
+                // Parameters that are required and have no default value should be inputs
+                if (component instanceof ProcessingComponent) {
+                    final Set<ParameterDescriptor> descriptors = ((ProcessingComponent) component).getParameterDescriptors();
+                    for (ParameterDescriptor descriptor : descriptors) {
+                        if (descriptor.isNotNull() && StringUtilities.isNullOrEmpty(descriptor.getDefaultValue())) {
+                            final InputDescription input;
+                            if (descriptor.javaType().isArrayType()) {
+                                input = InputDescription.of(Type.ARRAY);
+                            } else if (descriptor.javaType() == JavaType.BOOLEAN) {
+                                input = InputDescription.of(Type.BOOLEAN);
+                            } else if (descriptor.javaType() == JavaType.DATE ||
+                                       descriptor.javaType() == JavaType.PATH ||
+                                       descriptor.javaType() == JavaType.POLYGON ||
+                                       descriptor.javaType() == JavaType.STRING) {
+                                input = InputDescription.of(Type.STRING);
+                            } else {
+                                input = InputDescription.of(Type.NUMBER);
+                            }
+                            inputs.add(input);
+                        }
+                    }
+                }
+                // Sources of the first level nodes
+                final List<SourceDescriptor> sources = component.getSources();
+                for (SourceDescriptor source : sources) {
+                    final InputDescription input = InputDescription.of(Type.STRING);
+                    input.setTitle(source.getId());
+                    input.setDescription(source.getName());
+                    Descriptor schema;
+                    final DataDescriptor dataDescriptor = source.getDataDescriptor();
+                    if (source.getCardinality() == 1) {
+                        schema = InputDescription.of(new ArrayList<>() {{ add(dataDescriptor.getLocation()); }});
+                        schema.setType(Type.ARRAY);
+                    } else {
+                        schema = InputDescription.of(dataDescriptor.getLocation());
+                        schema.setType(Type.STRING);
+                    }
+                    schema.setFormat(dataDescriptor.getFormatName());
+                    input.setSchema(schema);
+                    final List<Metadata> metadata = new ArrayList<>();
+                    Metadata m = new Metadata();
+                    m.setTitle("cardinality");
+                    m.setValue(source.getCardinality());
+                    metadata.add(m);
+                    Object value = null;
+                    if ((value = dataDescriptor.getCrs()) != null) {
+                        m = new Metadata();
+                        m.setTitle("crs");
+                        m.setValue(value);
+                        metadata.add(m);
+                    }
+                    if ((value = dataDescriptor.getGeometry()) != null) {
+                        m = new Metadata();
+                        m.setTitle("geometry");
+                        m.setValue(value);
+                        metadata.add(m);
+                    }
+                    if ((value = dataDescriptor.getFormatType()) != null) {
+                        m = new Metadata();
+                        m.setTitle("format");
+                        m.setValue(((DataFormat) value).friendlyName());
+                        metadata.add(m);
+                    }
+                    if ((value = dataDescriptor.getSensorType()) != null) {
+                        m = new Metadata();
+                        m.setTitle("sensor");
+                        m.setValue(((SensorType) value).friendlyName());
+                        metadata.add(m);
+                    }
+                    input.setMetadata(metadata);
+                    inputs.add(input);
+                }
+            }
+            process.setInputDescription(inputs);
 
             // Describe outputs
-            final List<WorkflowNodeDescriptor> terminalNodes = WorkflowUtilities.findTerminals(workflow.getNodes());
+            final List<WorkflowNodeDescriptor> terminalNodes = WorkflowUtilities.findTerminals(nodes);
             final List<OutputDescription> outputs = new ArrayList<>();
             for (WorkflowNodeDescriptor node : terminalNodes) {
                 final List<TargetDescriptor> targets = WorkflowUtilities.findComponent(node).getTargets();
