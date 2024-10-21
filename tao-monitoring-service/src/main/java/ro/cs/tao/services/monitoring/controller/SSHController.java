@@ -61,6 +61,15 @@ public class SSHController implements DisposableBean {
 
     }
 
+    @PostMapping(path = "/session/{id}/close")
+    public void close(@PathVariable("id") String id) throws IOException, InterruptedException {
+        SSHSession s = sessions.getIfPresent(UUID.fromString(id));
+        if (s != null) {
+            s.destroy();
+        }
+
+    }
+
     @Override
     public void destroy() throws Exception {
         sessions.invalidateAll();
