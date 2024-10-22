@@ -197,6 +197,30 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
+    public ExecutionJobSummary getJobInfo(long jobId) {
+        final ExecutionJob job = jobProvider.get(jobId);
+        ExecutionJobSummary summary = null;
+        if (job != null) {
+            List<ExecutionTaskSummary> tasksStatus = getTasksStatus(jobId);
+            summary = new ExecutionJobSummary();
+            summary.setId(job.getId());
+            summary.setJobName(job.getName());
+            summary.setUserId(job.getUserId());
+            if (job.getWorkflowId() != null) {
+                final String workflowName = !tasksStatus.isEmpty() ?
+                                            tasksStatus.get(0).getWorkflowName() :
+                                            workflowService.getFullDescriptor(job.getWorkflowId()).getName();
+                summary.setWorkflowName(workflowName);
+            }
+            summary.setJobStatus(job.getExecutionStatus());
+            summary.setJobStart(job.getStartTime());
+            summary.setJobEnd(job.getEndTime());
+            summary.setTaskSummaries(tasksStatus);
+        }
+        return summary;
+    }
+
+    @Override
     public List<ExecutionJobSummary> getCompletedJobs(String userId) {
         final List<ExecutionJobSummary> summaries = new ArrayList<>();
         final Set<ExecutionStatus> statuses = new HashSet<>();
