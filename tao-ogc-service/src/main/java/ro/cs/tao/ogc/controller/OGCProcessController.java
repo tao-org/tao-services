@@ -11,6 +11,9 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.param.JavaType;
 import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.eodata.enums.SensorType;
+import ro.cs.tao.execution.model.ExecutionJobSummary;
+import ro.cs.tao.execution.model.ExecutionStatus;
+import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.ogc.model.common.ConfClasses;
 import ro.cs.tao.ogc.model.common.Exception;
 import ro.cs.tao.ogc.model.common.LandingPage;
@@ -28,8 +31,10 @@ import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 @RestController
@@ -103,10 +108,10 @@ public class OGCProcessController extends BaseController {
                 p.setVersion("1.0");
                 Link self = new Link();
                 self.setTitle("Process description");
-                link.setType(MediaType.APPLICATION_JSON_VALUE);
-                link.setRel("self");
-                link.setHref(request.getRequestURI() + "/" + w.getId());
-                list.addLink(link);
+                self.setType(MediaType.APPLICATION_JSON_VALUE);
+                self.setRel("self");
+                self.setHref(request.getRequestURI() + "/" + w.getId());
+                list.addLink(self);
                 p.addJobControlOption(JobControlOptions.ASYNC_EXECUTE);
                 p.addOutputTransmission(TransmissionMode.VALUE);
                 return p;
@@ -275,22 +280,128 @@ public class OGCProcessController extends BaseController {
     }
 
     @RequestMapping(value = "/jobs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getJobs() {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> getJobs(HttpServletRequest request) {
+        final List<StatusInfo> jobInfos = new ArrayList<>();
+        List<ExecutionJobSummary> jobs = orchestratorService.getRunningJobs(isCurrentUserAdmin() ? null : currentUser());
+        if (jobs == null) {
+            jobs = new ArrayList<>();
+        }
+        List<ExecutionJobSummary> list = orchestratorService.getCompletedJobs(isCurrentUserAdmin() ? null : currentUser());
+        if (list != null) {
+            jobs.addAll(list);
+        }
+        Queue<ExecutionJobSummary> queue = isCurrentUserAdmin() ? orchestratorService.getQueuedJobs() : orchestratorService.getQueuedJobs(currentUser());
+        if (queue != null) {
+            jobs.addAll(queue);
+        }
+        if (jobs != null) {
+            for (ExecutionJobSummary summary : jobs) {
+                final StatusInfo info = new StatusInfo();
+                info.setProcessID(summary.getWorkflowName());
+                info.setJobID(String.valueOf(summary.getId()));
+                StatusCode status;
+                switch (summary.getJobStatus()) {
+                    case ExecutionStatus.QUEUED_ACTIVE:
+                        status = StatusCode.ACCEPTED;
+                        break;
+                    case ExecutionStatus.RUNNING:
+                    case ExecutionStatus.PENDING_FINALISATION:
+                        status = StatusCode.RUNNING;
+                        break;
+                    case ExecutionStatus.DONE:
+                        status = StatusCode.SUCCESSFUL;
+                        break;
+                    case ExecutionStatus.CANCELLED:
+                    case ExecutionStatus.FAILED:
+                        status = StatusCode.FAILED;
+                        break;
+                    default:
+                        status = StatusCode.DISMISSED;
+                        break;
+                }
+                info.setStatus(status);
+                info.setCreated(summary.getJobStart());
+                info.setStarted(summary.getJobStart());
+                info.setUpdated(status != StatusCode.RUNNING ? summary.getJobEnd() : LocalDateTime.now());
+                double progress = 0;
+                final List<ExecutionTaskSummary> tasks = summary.getTaskSummaries();
+                for (int i = 1; i <= tasks.size(); i++) {
+                    progress = ((double) 1 / i) * (i - 1) * progress + tasks.get(i).getPercentComplete();
+                }
+                info.setProgress((int) (progress * 100));
+                info.setLinks(new ArrayList<>() {{
+                    Link self = new Link();
+                    self.setTitle("Job information");
+                    self.setType(MediaType.APPLICATION_JSON_VALUE);
+                    self.setRel("self");
+                    self.setHref(request.getRequestURI() + "/" + info.getJobID());
+                    add(self);
+                }});
+                jobInfos.add(info);
+            }
+        }
+        return ResponseEntity.ok(jobInfos);
     }
 
     @RequestMapping(value = "/jobs/{id:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getJobInfo(@PathVariable("id") String jobId) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> getJobInfo(@PathVariable("id") String jobId,
+                                        HttpServletRequest request) {
+        final ExecutionJobSummary summary = orchestratorService.getJobInfo(Long.parseLong(jobId));
+        if (summary != null) {
+            final StatusInfo info = new StatusInfo();
+            info.setProcessID(summary.getWorkflowName());
+            info.setJobID(String.valueOf(summary.getId()));
+            StatusCode status;
+            switch (summary.getJobStatus()) {
+                case ExecutionStatus.QUEUED_ACTIVE:
+                    status = StatusCode.ACCEPTED;
+                    break;
+                case ExecutionStatus.RUNNING:
+                case ExecutionStatus.PENDING_FINALISATION:
+                    status = StatusCode.RUNNING;
+                    break;
+                case ExecutionStatus.DONE:
+                    status = StatusCode.SUCCESSFUL;
+                    break;
+                case ExecutionStatus.CANCELLED:
+                case ExecutionStatus.FAILED:
+                    status = StatusCode.FAILED;
+                    break;
+                default:
+                    status = StatusCode.DISMISSED;
+                    break;
+            }
+            info.setStatus(status);
+            info.setCreated(summary.getJobStart());
+            info.setStarted(summary.getJobStart());
+            info.setUpdated(status != StatusCode.RUNNING ? summary.getJobEnd() : LocalDateTime.now());
+            double progress = 0;
+            final List<ExecutionTaskSummary> tasks = summary.getTaskSummaries();
+            for (int i = 1; i <= tasks.size(); i++) {
+                progress = ((double) 1 / i) * (i - 1) * progress + tasks.get(i).getPercentComplete();
+            }
+            info.setProgress((int) (progress * 100));
+            info.setLinks(new ArrayList<>() {{
+                Link self = new Link();
+                self.setTitle("Job information");
+                self.setType(MediaType.APPLICATION_JSON_VALUE);
+                self.setRel("self");
+                self.setHref(request.getRequestURI() + "/" + info.getJobID());
+                add(self);
+            }});
+        }
+        return ResponseEntity.ok(summary);
     }
 
     @RequestMapping(value = "/jobs/{id:.+}/results", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getJobResults(@PathVariable("id") String jobId) {
+        // TODO
         return ResponseEntity.ok().build();
     }
 
     @RequestMapping(value = "/jobs", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> execute(@RequestBody ExecutionRequest request) {
+        // TODO
         return ResponseEntity.ok().build();
     }
 
