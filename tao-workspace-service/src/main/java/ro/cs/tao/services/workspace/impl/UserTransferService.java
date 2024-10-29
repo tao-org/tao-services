@@ -144,6 +144,10 @@ public class UserTransferService {
                     logger.warning(msg);
                     hasException = true;
                     Messaging.send(new UserPrincipal(item.getUser()), Topic.WARNING.value(), this, msg);
+                } catch (RuntimeException ex) {
+                    final String msg = "File '" + srcPath + "' was not transferred [reason: " + ex.getMessage() + "]";
+                    logger.warning(msg);
+                    hasException = true;
                 } finally {
                     if (sourceStream != null) {
                         sourceStream.close();
@@ -168,8 +172,10 @@ public class UserTransferService {
                     this.progressListener.ended(hasException);
                     this.progressListener = null;
                 }
-                final String msg = "Transfer batch [" + item.getBatch() + "] completed";
-                Messaging.send(new UserPrincipal(item.getUser()), Topic.INFORMATION.value(), this, msg);
+                final String msg = "Transfer batch [" + item.getBatch() + "] completed" + (hasException ? " with errors" : "");
+                Messaging.send(new UserPrincipal(item.getUser()),
+                               hasException ? Topic.WARNING.value() : Topic.INFORMATION.value(),
+                               this, msg);
                 logger.finest(msg);
             }
         } catch (Exception e) {
