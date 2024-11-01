@@ -30,6 +30,7 @@ import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.SensorType;
 import ro.cs.tao.persistence.*;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
@@ -229,7 +230,7 @@ public class DataSourceServiceImpl implements DataSourceService {
             final DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
             boolean userIdPresent = !StringUtilities.isNullOrEmpty(query.getUserId());
             if (userIdPresent) {
-                dsComponent.setPrincipal(query::getUserId);
+                dsComponent.setPrincipal(new UserPrincipal(query.getUserId()));
             }
             dsComponent.setUserCredentials(query.getUser(), query.getPassword(), query.getSecret());
             final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(dsComponent.getId());
