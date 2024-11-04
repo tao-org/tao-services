@@ -1,5 +1,6 @@
 package ro.cs.tao.services.workflow.library;
 
+import ro.cs.tao.component.NodeAffinity;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.datasource.beans.Query;
@@ -53,7 +54,7 @@ public class DSGroupSnapWorkflowBuilder extends WorkflowBuilderBase {
         group.setDescription(group.getLabel());
         group.setAuthors("TAO Team");
         group.setCopyright("(C) TAO Team");
-        group.setNodeAffinity("Any");
+        group.setNodeAffinity(NodeAffinity.Any);
         group.addDataSourceComponent(dataSourceComponent1);
         group.addDataSourceComponent(dataSourceComponent2);
         group = persistenceManager.dataSourceGroups().save(group);

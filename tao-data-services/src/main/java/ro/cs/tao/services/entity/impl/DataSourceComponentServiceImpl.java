@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.Sort;
 import ro.cs.tao.Tag;
+import ro.cs.tao.component.NodeAffinity;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.TagType;
@@ -211,7 +212,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
                 userDSC.setDescription(sensor + " from " + dataSource);
                 userDSC.setAuthors("TAO Team");
                 userDSC.setCopyright("(C) TAO Team");
-                userDSC.setNodeAffinity("Any");
+                userDSC.setNodeAffinity(NodeAffinity.Any);
                 //dataSourceComponentProvider.save(systemDSC);
             }
             try {
@@ -292,7 +293,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         userDSC.setDescription(label + " (local product set)");
         userDSC.setAuthors("AVL Team");
         userDSC.setCopyright("(C) AVL Team");
-        userDSC.setNodeAffinity("Any");
+        userDSC.setNodeAffinity(NodeAffinity.Any);
         LocalDateTime time = LocalDateTime.now();
         final String newId = String.join("-", "product", "set", principal.getName(),
                                          time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
