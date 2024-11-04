@@ -47,10 +47,7 @@ import java.io.Reader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -239,6 +236,9 @@ public class ComponentServiceImpl
             }
         }
         final ProcessingComponent entity = serializer.deserialize(builder.toString());
+        if (StringUtilities.isNullOrEmpty(entity.getId())) {
+            entity.setId(UUID.randomUUID().toString());
+        }
         for(SourceDescriptor sourceDescriptor : entity.getSources()){
             sourceDescriptor.setParentId(entity.getId());
         }
