@@ -1,5 +1,6 @@
 package ro.cs.tao.services.entity.impl;
 
+import ro.cs.tao.component.NodeAffinity;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.TaoComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
@@ -80,7 +81,7 @@ public class WorkflowBuildHelper {
             dataSourceComponent.setDescription(dataSourceComponent.getId());
             dataSourceComponent.setAuthors("TAO Team");
             dataSourceComponent.setCopyright("(C) TAO Team");
-            dataSourceComponent.setNodeAffinity("Any");
+            dataSourceComponent.setNodeAffinity(NodeAffinity.Any);
             dataSourceService.save(dataSourceComponent);
         }
         WorkflowNodeDescriptor dsNode = addNode(name, dataSourceComponent.getId(), ComponentType.DATASOURCE, null, null, null, null);

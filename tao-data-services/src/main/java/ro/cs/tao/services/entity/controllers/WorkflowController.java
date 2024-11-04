@@ -122,7 +122,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                     ProcessingComponent component = componentService.findById(n.getComponentId());
                     if (component != null
                             && (n.getAdditionalInfo() == null || n.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))) {
-                        n.addInfo("nodeAffinity", component.getNodeAffinity());
+                        n.addInfo("nodeAffinity", component.getNodeAffinity().getValue());
                     }
                 }
             });
@@ -302,7 +302,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             node.setPreserveOutput(true);
             final ProcessingComponent component = componentService.findById(node.getComponentId());
             if (component != null && (node.getAdditionalInfo() == null || node.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))) {
-                node.addInfo("nodeAffinity", component.getNodeAffinity());
+                node.addInfo("nodeAffinity", component.getNodeAffinity().getValue());
             }
             responseEntity = prepareResult(service.addNode(workflowId, node));
             record("Node " + node.getName() + " added to workflow " + workflowId);
