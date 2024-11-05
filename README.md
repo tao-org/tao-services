@@ -1,8 +1,8 @@
 ## Dependencies
 ### Java
-- Install JDK 21 or later
+- Install JDK 17 or later (JDK 21 recommended)
 ### Maven
-- Install an instance of Maven following the instructions from the Maven website.
+- Install an instance of Maven for the installed JDK following the instructions from the Maven website.
 ### PostgreSQL
 - Install a fresh instance of PostgreSQL 13 or higher.
 - Install PostGis extension for the respective server instance.
@@ -35,4 +35,4 @@ mvn clean install -DskipTests=true
 
 ### Known issues
 When OpenStack and Kubernetes plugins are used together, one of them may fail. This is due to different Jackson configurations applied to the same instance.
-In order to use them together, please contact the developers.
+In order to use them together, please check out the forked **openstack4j** repository, build this version from sources and use the resulted jars instead of the Maven published ones.
