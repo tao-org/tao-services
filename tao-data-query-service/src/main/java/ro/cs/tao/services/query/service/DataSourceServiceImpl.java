@@ -28,18 +28,17 @@ import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.SensorType;
-import ro.cs.tao.persistence.ContainerProvider;
-import ro.cs.tao.persistence.DataSourceCredentialsProvider;
-import ro.cs.tao.persistence.EOProductProvider;
-import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.*;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.utils.Crypto;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.workspaces.RepositoryType;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -67,6 +66,9 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     @Autowired
     private ContainerProvider containerProvider;
+
+    @Autowired
+    private RepositoryProvider repositoryProvider;
 
     @Override
     public SortedSet<String> getSupportedSensors() {
@@ -125,11 +127,13 @@ public class DataSourceServiceImpl implements DataSourceService {
                             descriptor = new DataSourceDescriptor(mission, sensor, n, cd.getSensorType().friendlyName(),
                                                                   cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
                                                                   parameters, requiresAuthentication,
-                                                                  dataSource.is2FAEnabled() & requiresAuthentication);
+                                                                  dataSource.is2FAEnabled() & requiresAuthentication,
+                                                                  cd.isTokenNeeded() & requiresAuthentication);
                         } else {
                             descriptor = new DataSourceDescriptor(sensor, sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
                                                                   parameters, requiresAuthentication,
-                                                                  dataSource.is2FAEnabled() & requiresAuthentication);
+                                                                  dataSource.is2FAEnabled() & requiresAuthentication,
+                                                                  false);
                         }
                         instances.add(descriptor);
                         //final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(sensor + "-" + n)).findFirst().orElse(null);
@@ -224,10 +228,11 @@ public class DataSourceServiceImpl implements DataSourceService {
         final List<EOProduct> results;
         if (products != null) {
             final DataSourceComponent dsComponent = new DataSourceComponent(query.getSensor(), query.getDataSource());
-            if (!StringUtilities.isNullOrEmpty(query.getUserId())) {
-                dsComponent.setPrincipal(query::getUserId);
+            boolean userIdPresent = !StringUtilities.isNullOrEmpty(query.getUserId());
+            if (userIdPresent) {
+                dsComponent.setPrincipal(new UserPrincipal(query.getUserId()));
             }
-            dsComponent.setUserCredentials(query.getUser(), query.getPassword());
+            dsComponent.setUserCredentials(query.getUser(), query.getPassword(), query.getSecret());
             final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(dsComponent.getId());
             String localRepositoryRoot;
             final Properties properties = new Properties();
@@ -247,14 +252,19 @@ public class DataSourceServiceImpl implements DataSourceService {
             }
             dsComponent.setProductStatusListener(downloadListener);
             boolean createSubfolder = Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("fetch.products.in.subfolders", "true"));
-            String path = SystemVariable.USER_WORKSPACE.value();
+            // This may yield unexpected results i.e. mingling userId -> String path = SystemVariable.USER_WORKSPACE.value();
+            String path = userIdPresent
+                          ? repositoryProvider.getUserSystemRepositories(query.getUserId())
+                                              .stream().filter(r -> RepositoryType.LOCAL.equals(r.getType()))
+                                              .findFirst().get().root()
+                          : SystemVariable.USER_WORKSPACE.value();
             if (createSubfolder) {
                 String subfolder = StringUtils.replaceEach(query.getLabel(),
                                                            new String[] { "/", "<", ">", "\\", "|", ":", "&", ";", " ", "?", "*" },
                                                            new String[] { "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_" });
                 Path pPath = Paths.get(path).resolve(subfolder);
                 try {
-                    Files.createDirectories(pPath);
+                    FileUtilities.createDirectories(pPath);
                     path = pPath.toString();
                 } catch (Exception e) {
                     Logger.getLogger(DataSourceService.class.getName()).warning("Cannot create folder " + pPath);
@@ -321,7 +331,7 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     private DataSourceComponent cloneComponent(DataSourceComponent source, ProductStatusListener listener) throws CloneNotSupportedException {
         DataSourceComponent clone = source.clone();
-        clone.setUserCredentials(source.getUserName(), source.getPassword());
+        clone.setUserCredentials(source.getUserName(), source.getPassword(), source.getSecret());
         clone.setFetchMode(source.getFetchMode());
         clone.setProductStatusListener(listener);
         return clone;

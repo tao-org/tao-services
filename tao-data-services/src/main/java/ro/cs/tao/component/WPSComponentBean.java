@@ -15,7 +15,7 @@ public class WPSComponentBean {
     private String description;
     private String authors;
     private String copyright;
-    private String nodeAffinity;
+    private NodeAffinity nodeAffinity;
     private List<SourceDescriptor> sources;
     private List<TargetDescriptor> targets;
     private List<String> tags;
@@ -106,11 +106,11 @@ public class WPSComponentBean {
         this.copyright = copyright;
     }
 
-    public String getNodeAffinity() {
+    public NodeAffinity getNodeAffinity() {
         return nodeAffinity;
     }
 
-    public void setNodeAffinity(String nodeAffinity) {
+    public void setNodeAffinity(NodeAffinity nodeAffinity) {
         this.nodeAffinity = nodeAffinity;
     }
 

@@ -42,9 +42,11 @@ import ro.cs.tao.services.admin.mail.Constants;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.model.user.DisableUserInfo;
+import ro.cs.tao.subscription.FlavorSubscription;
 import ro.cs.tao.subscription.ResourceSubscription;
 import ro.cs.tao.subscription.SubscriptionType;
 import ro.cs.tao.topology.NodeFlavor;
@@ -93,10 +95,11 @@ public class AdministrationController extends BaseController {
      * @param newUserInfo   The user account information
      */
     @RequestMapping(value = "/users", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> addNewUser(@RequestBody User newUserInfo) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (newUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
@@ -121,18 +124,20 @@ public class AdministrationController extends BaseController {
     }
 
     @RequestMapping(value = "/users/unicity", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getAllUsersUnicityInfo() {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         return prepareResult(adminService.getAllUsersUnicityInfo());
     }
 
     @RequestMapping(value = "/users/ids", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getAllUserNames() {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         return prepareResult(adminService.getAllUserNames());
     }
 
@@ -141,10 +146,11 @@ public class AdministrationController extends BaseController {
      * @param activationStatus  The user status
      */
     @RequestMapping(value = "/users", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> findUsersByStatus(@RequestParam("status") UserStatus activationStatus) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (activationStatus == null) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -163,10 +169,11 @@ public class AdministrationController extends BaseController {
      * Lists the currently logged-in users
      */
     @RequestMapping(value = "/users/logged", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> findLoggedUsers() {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         final List<User> users = new ArrayList<>();
         final Set<String> ids = sessionRegistry.getAllPrincipals().stream().filter(u -> !sessionRegistry.getAllSessions(u, false).isEmpty()).map(Object::toString).collect(Collectors.toSet());
         if (!ids.isEmpty()) {
@@ -179,10 +186,11 @@ public class AdministrationController extends BaseController {
      * Lists the existing user groups
      */
     @RequestMapping(value = "/users/groups", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getGroups() {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         return prepareResult(adminService.getGroups());
     }
 
@@ -191,10 +199,11 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -211,38 +220,42 @@ public class AdministrationController extends BaseController {
     }
 
     /**
-     * Returns the resource subscriptions of a user account
+     * Returns the resource subscription of a user account
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> getUserSubscriptions(@PathVariable("userId") String userId) {
+    @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
+    public ResponseEntity<ServiceResponse<?>> getUserActiveSubscription(@PathVariable("userId") String userId) {
         if (!adminService.isDevModeEnabled()) {
-            if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+            /*if (!isCurrentUserAdmin()) {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
-            }
+            }*/
             if (StringUtilities.isNullOrEmpty(userId)) {
                 return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
             }
             try {
-                final List<ResourceSubscription> subscriptions = resourceSubscriptionProvider.getByUser(userId);
-                if (subscriptions.isEmpty()) {
+                final ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
+                if (subscription == null) {
                     return prepareResult(new ArrayList<>());
                 }
-                final ResourceSubscription first = subscriptions.get(0);
                 final ResourceSubscriptionResponse response = new ResourceSubscriptionResponse();
                 response.setUserId(userId);
-                response.setCreated(subscriptions.stream().min(Comparator.comparing(ResourceSubscription::getCreated)).get().getCreated());
-                response.setPaid(first.isPaid());
-                response.setType(first.getType());
-                response.setObjectStorageGB(subscriptions.stream().mapToInt(s -> s.getObjectStorageGB() != null ? s.getObjectStorageGB() : 0).sum());
+                response.setCreated(subscription.getCreated());
+                response.setPaid(subscription.isPaid());
+                response.setType(subscription.getType());
+                response.setObjectStorageGB(subscription.getObjectStorageGB());
                 final List<Flavor> flavors = new ArrayList<>();
-                for (ResourceSubscription subscription : subscriptions) {
-                    Flavor flavor = new Flavor();
-                    flavor.setFlavor(subscription.getFlavor());
-                    flavor.setQuantity(subscription.getFlavorQuantity());
-                    flavor.setHdd(subscription.getFlavorHddSizeGB());
-                    flavor.setSsd(subscription.getFlavorSsdSizeGB());
-                    flavors.add(flavor);
+                final Map<String, FlavorSubscription> flavorMap = subscription.getFlavors();
+                if (flavorMap != null) {
+                    for (Map.Entry<String, FlavorSubscription> entry : flavorMap.entrySet()) {
+                        final FlavorSubscription value = entry.getValue();
+                        Flavor flavor = new Flavor();
+                        flavor.setFlavor(nodeFlavorProvider.get(value.getFlavorId()));
+                        flavor.setQuantity(value.getQuantity());
+                        flavor.setHdd(value.getHddGB());
+                        flavor.setSsd(value.getSsdGB());
+                        flavors.add(flavor);
+                    }
                 }
                 response.setFlavors(flavors);
                 return prepareResult(response);
@@ -280,62 +293,53 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      * @param request The subscription entity request
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> createUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
-        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         Map<String, Map<String, Integer>> flavors;
         if (request == null || (flavors = request.getFlavors()) == null || flavors.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
         }
-        final TriConsumer<String, Exception, String> callback = (u, e, s) -> {
-            String topic;
-            String message;
-            if (e == null) {
-                topic = Topic.INFORMATION.getCategory();
-                message = s;
-            } else {
-                topic = Topic.WARNING.getCategory();
-                message = e.getMessage();
-            }
-
-            Messaging.send(userId, topic, message);
-        };
+        final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
         try {
-            int idx = 0;
+            ResourceSubscription subscription = new ResourceSubscription();
+            subscription.setUserId(userId);
+            subscription.setType(request.getType());
+            subscription.setCreated(request.getCreated() != null ? request.getCreated() : LocalDateTime.now());
+            subscription.setEnded(null);
+            subscription.setPaid(request.isPaid());
+            subscription.setObjectStorageGB(request.getObjectStorageGB());
+            final Map<String, FlavorSubscription> flavorMap = new LinkedHashMap<>();
             for (Map.Entry<String, Map<String, Integer>> flavor : flavors.entrySet()) {
                 final NodeFlavor nodeFlavor = nodeFlavorProvider.get(flavor.getKey());
                 final Map<String, Integer> values = flavor.getValue();
-                if (nodeFlavor == null || values.getOrDefault("quantity", 0) <= 0) {
+                int quantity = values.getOrDefault("quantity", 0);
+                if (nodeFlavor == null || quantity <= 0) {
                     return prepareResult("Invalid flavor '" + flavor.getKey() + "'", ResponseStatus.FAILED);
                 }
-                ResourceSubscription subscription = new ResourceSubscription();
-                subscription.setUserId(userId);
-                subscription.setFlavor(nodeFlavor);
-                subscription.setType(request.getType());
-                subscription.setCreated(request.getCreated() != null ? request.getCreated() : LocalDateTime.now());
-                subscription.setEnded(null);
-                subscription.setPaid(request.isPaid());
-                subscription.setFlavorHddSizeGB(values.getOrDefault("hdd", 0));
-                subscription.setFlavorSsdSizeGB(values.getOrDefault("ssd", 0));
-                subscription.setFlavorQuantity(values.get("quantity"));
-                if (idx == 0) {
-                    subscription.setObjectStorageGB(request.getObjectStorageGB());
-                }
-                resourceSubscriptionProvider.save(subscription);
-                final String successMessage = "Node with flavor " + nodeFlavor.getId() + " created";
-                asyncExecute(() -> {
-                    try {
-                        adminService.initializeSubscription(subscription);
-                    } catch (PersistenceException e) {
-                        throw new TopologyException(e);
-                    }
-                }, successMessage, callback);
-                idx++;
+                FlavorSubscription flavorSubscription = new FlavorSubscription();
+                flavorSubscription.setFlavorId(flavor.getKey());
+                flavorSubscription.setQuantity(quantity);
+                flavorSubscription.setHddGB(values.getOrDefault("hdd", 0));
+                flavorSubscription.setSsdGB(values.getOrDefault("ssd", 0));
+                flavorMap.put(flavor.getKey(), flavorSubscription);
             }
-            return prepareResult("Subscriptions created");
+            subscription.setFlavors(flavorMap);
+            resourceSubscriptionProvider.save(subscription);
+            asyncExecute(() -> {
+                try {
+                    if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                        adminService.initializeSubscription(subscription);
+                    }
+                } catch (PersistenceException e) {
+                    throw new TopologyException(e);
+                }
+            }, "User subscription initialized", callback);
+            return prepareResult("Subscription is being initialized");
         } catch (Exception ex) {
             return handleException(ex);
         }
@@ -346,59 +350,110 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      * @param request The subscription entity request
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> updateUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
-        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
-        Map<String, Map<String, Integer>> flavors;
-        if (request == null || (flavors = request.getFlavors()) == null || flavors.isEmpty()) {
+        }*/
+        Map<String, Map<String, Integer>> flavorsRequest;
+        if (request == null || (flavorsRequest = request.getFlavors()) == null || flavorsRequest.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
         }
         int created = 0, removed = 0, updated = 0;
         try {
-            final List<ResourceSubscription> subscriptions = resourceSubscriptionProvider.getByUser(userId);
-            for (ResourceSubscription subscription : subscriptions) {
-                final String flavorId = subscription.getFlavor().getId();
-                final Map<String, Integer> flavorEntry = flavors.get(flavorId);
-                if (flavorEntry == null || flavorEntry.getOrDefault("quantity", 0) <= 0) {
-                    // Flavor has been deleted
-                    subscription.setEnded(LocalDateTime.now());
-                    resourceSubscriptionProvider.update(subscription);
-                    removed++;
-                } else {
-                    final Integer quantity = flavorEntry.get("quantity");
-                    if (subscription.getFlavorQuantity() != quantity) {
-                        // Flavor has been updated
-                        subscription.setFlavorQuantity(quantity);
-                        resourceSubscriptionProvider.update(subscription);
-                        updated++;
-                    }
-                }
-                flavors.remove(flavorId);
+            ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
+            if(subscription == null){
+                return prepareResult("Subscription is not valid", ResponseStatus.FAILED);
             }
-            for (Map.Entry<String, Map<String, Integer>> flavor : flavors.entrySet()) {
+            subscription.setObjectStorageGB(request.getObjectStorageGB());
+            subscription.setType(request.getType());
+            subscription.setPaid(request.isPaid());
+            if(!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                resourceSubscriptionProvider.update(subscription);
+                return prepareResult("Subscription information updated. Pay per use subscription cannot update node information");
+            }
+            final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
+            for (Iterator<Map.Entry<String, FlavorSubscription>> it = subscription.getFlavors().entrySet().iterator(); it.hasNext(); ) {
+                Map.Entry<String, FlavorSubscription> flavorEntry = it.next();
+                String flavorId = flavorEntry.getKey();
+                final Map<String, Integer> flavorResponseEntry = flavorsRequest.get(flavorId);
+                FlavorSubscription flavorSubscription = flavorEntry.getValue();
+                // Flavor has been deleted
+                if (flavorResponseEntry == null || flavorSubscription.getQuantity() <= 0) {
+                    it.remove();
+                    asyncExecute(() -> {
+                        try {
+                            adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, flavorSubscription.getQuantity());
+                        } catch (PersistenceException | TopologyException e) {
+                            throw new TopologyException(e);
+                        }
+                    }, flavorSubscription.getQuantity() + " nodes with flavor " + flavorId + " deleted", callback);
+                    removed++;
+                    // Flavor has been updated
+                } else {
+                    final Integer updatedQuantity = flavorResponseEntry.get("quantity");
+                    int currentQuantity = flavorSubscription.getQuantity();
+                    flavorSubscription.setQuantity(updatedQuantity);
+                    flavorSubscription.setHddGB(flavorResponseEntry.getOrDefault("hdd", 0));
+                    flavorSubscription.setSsdGB(flavorResponseEntry.getOrDefault("ssd", 0));
+                    if (currentQuantity != updatedQuantity) {
+                        if (updatedQuantity > currentQuantity) {
+                            int quantityDifference = updatedQuantity - currentQuantity;
+                            final String successMessage = "Nodes with flavor " + flavorId + " had "
+                                    + quantityDifference + " quantity added";
+                            asyncExecute(() -> {
+                                try {
+                                    adminService.createFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
+                                } catch (PersistenceException | TopologyException e) {
+                                    throw new TopologyException(e);
+                                }
+                            }, successMessage, callback);
+                        } else {
+                            //Delete nodes if new quantity is lower
+                            int quantityDifference = currentQuantity - updatedQuantity;
+                            final String successMessage = "Nodes with flavor " + flavorId + " had "
+                                    + quantityDifference + " quantity deleted";
+                            asyncExecute(() -> {
+                                try {
+                                    adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
+
+                                } catch (PersistenceException | TopologyException e) {
+                                    throw new TopologyException(e);
+                                }
+                            }, successMessage, callback);
+                        }
+                    }
+                    updated++;
+                }
+                flavorsRequest.remove(flavorId);
+            }
+            for (Map.Entry<String, Map<String, Integer>> flavor : flavorsRequest.entrySet()) {
                 // New flavors have been added
                 final NodeFlavor nodeFlavor = nodeFlavorProvider.get(flavor.getKey());
                 final Map<String, Integer> values = flavor.getValue();
                 if (nodeFlavor == null || values.getOrDefault("quantity", 0) <= 0) {
                     return prepareResult("Invalid flavor '" + flavor.getKey() + "'", ResponseStatus.FAILED);
                 }
-                ResourceSubscription subscription = new ResourceSubscription();
-                subscription.setUserId(userId);
-                subscription.setFlavor(nodeFlavor);
-                subscription.setType(request.getType());
-                subscription.setCreated(request.getCreated() != null ? request.getCreated() : LocalDateTime.now());
-                subscription.setEnded(null);
-                subscription.setPaid(request.isPaid());
-                subscription.setFlavorHddSizeGB(values.getOrDefault("hdd", 0));
-                subscription.setFlavorSsdSizeGB(values.getOrDefault("sdd", 0));
-                subscription.setFlavorQuantity(values.get("quantity"));
-                subscription.setObjectStorageGB(request.getObjectStorageGB());
-                resourceSubscriptionProvider.save(subscription);
+                int quantity = values.get("quantity");
+                FlavorSubscription newFlavorSubscription = new FlavorSubscription();
+                newFlavorSubscription.setFlavorId(flavor.getKey());
+                newFlavorSubscription.setHddGB(values.getOrDefault("hdd", 0));
+                newFlavorSubscription.setSsdGB(values.getOrDefault("ssd", 0));
+                newFlavorSubscription.setQuantity(quantity);
+                subscription.getFlavors().put(flavor.getKey(), newFlavorSubscription);
+                final String successMessage = "Node with flavor " + nodeFlavor.getId() + " created";
+                asyncExecute(() -> {
+                    try {
+                        adminService.createFlavorNodesForSubscription(subscription, newFlavorSubscription, quantity);
+                    } catch (PersistenceException | TopologyException e) {
+                        throw new TopologyException(e);
+                    }
+                }, successMessage, callback);
                 created++;
             }
+            resourceSubscriptionProvider.update(subscription);
             return prepareResult(String.format("Subscriptions: %d created, %d updated, %d removed",
                                                created, updated, removed));
         } catch (Exception ex) {
@@ -410,22 +465,35 @@ public class AdministrationController extends BaseController {
      * Closes a resource subscription of a user account
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/users/{userId}/subscriptions/{subscriptionId}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId,
-                                                                    @PathVariable("subscriptionId") long subscriptionId) {
-        if (!isCurrentUserAdmin() || !currentUser().equals(userId)) {
+    @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
+    public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         try {
-            final ResourceSubscription subscription = resourceSubscriptionProvider.get(subscriptionId);
+            ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
             if (subscription == null) {
                 throw new IllegalArgumentException("No such subscription");
             }
             if (subscription.getEnded() != null) {
                 throw new IllegalAccessException("Subscription already closed");
-            } else {
-                subscription.setEnded(LocalDateTime.now());
-                resourceSubscriptionProvider.save(subscription);
+            }
+            subscription.setEnded(LocalDateTime.now());
+            resourceSubscriptionProvider.update(subscription);
+            //delete nodes as required
+            if(!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                return prepareResult("Subscription information deleted. Pay per use subscription cannot delete nodes.");
+            }
+            for(Map.Entry<String, FlavorSubscription> entry : subscription.getFlavors().entrySet()){
+                final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
+                asyncExecute(() -> {
+                    try {
+                        adminService.deleteFlavorNodesForSubscription(subscription, entry.getValue(), entry.getValue().getQuantity());
+                    } catch (PersistenceException | TopologyException e) {
+                        throw new TopologyException(e);
+                    }
+                }, "All nodes deleted for user subscription", callback);
             }
             return prepareResult("Subscription closed", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
@@ -438,11 +506,12 @@ public class AdministrationController extends BaseController {
      * @param updatedUserInfo   The user account information
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> updateUserInfo(@PathVariable("userId") String userId,
                                                              @RequestBody User updatedUserInfo) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (updatedUserInfo == null) {
             return prepareResult("The expected request body is empty!", ResponseStatus.FAILED);
         }
@@ -476,10 +545,11 @@ public class AdministrationController extends BaseController {
      * @param additionalDisableActions  Additional actions to be performed
      */
     @RequestMapping(value = "/users/{userId}/disable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> disableUser(@PathVariable("userId") String userId, @RequestBody DisableUserInfo additionalDisableActions) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (StringUtilities.isNullOrEmpty(userId) || additionalDisableActions == null) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -497,10 +567,11 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("userId") String userId) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -523,11 +594,12 @@ public class AdministrationController extends BaseController {
      * @param message The message
      */
     @RequestMapping(value = "/message", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> messageUser(@RequestParam("userId") String userId,
                                                           @RequestParam("message") String message) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -549,10 +621,11 @@ public class AdministrationController extends BaseController {
      * @param message The message
      */
     @RequestMapping(value = "/message/all", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> messageUsers(@RequestParam("message") String message) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         try {
             final List<String> activeUsers = sessionRegistry.getAllPrincipals().stream()
                                                         .filter(u -> !sessionRegistry.getAllSessions(u, false).isEmpty())
@@ -575,11 +648,12 @@ public class AdministrationController extends BaseController {
      * @param userId    The user to impersonate
      */
     @RequestMapping(value = "/impersonate", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> impersonate(@RequestParam("userId") String userId, HttpServletRequest request) throws IOException {
         try {
-            if (!isCurrentUserAdmin()) {
+            /*if (!isCurrentUserAdmin()) {
                 throw new IllegalArgumentException();
-            } else {
+            } else {*/
                 final AuthenticationMode authMode = EnumUtils.getEnumConstantByName(AuthenticationMode.class,
                                                                                     ConfigurationManager.getInstance()
                                                                                                         .getValue("authentication.mode", "local")
@@ -594,7 +668,7 @@ public class AdministrationController extends BaseController {
                 return prepareResult(url + "/realms/" + realm + "/protocol/openid-connect/auth?response_type=code&scope=openid&client_id="
                         + client + "&redirect_uri=" + ConfigurationManager.getInstance().getValue("tao.services.base") + "/ui/login.html");
 
-            }
+            //}
         } catch (Exception e) {
             return handleException(e);
         }
@@ -658,5 +732,21 @@ public class AdministrationController extends BaseController {
 
     private String constructEmailContentForAccountActivation(String userFullName, String activationLink){
         return Constants.MAIL_CONTENTS.replace("$USERNAME", userFullName).replace("$LINK", activationLink);
+    }
+
+    private TriConsumer<String, Exception, String> makeCallbackMessage(String userId){
+        return (u, e, s) -> {
+            String topic;
+            String message;
+            if (e == null) {
+                topic = Topic.INFORMATION.getCategory();
+                message = s;
+            } else {
+                topic = Topic.WARNING.getCategory();
+                message = e.getMessage();
+            }
+
+            Messaging.send(userId, topic, message);
+        };
     }
 }

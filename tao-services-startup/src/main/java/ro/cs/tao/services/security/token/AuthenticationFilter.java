@@ -134,6 +134,10 @@ public class AuthenticationFilter extends GenericFilterBean {
                 httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, authenticationException.getMessage());
             }
         } catch (Throwable t) {
+            SecurityContextHolder.clearContext();
+            if (!httpResponse.isCommitted()) {
+                httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, t.getMessage());
+            }
             ExceptionUtils.getStackTrace(logger, t);
         }
 

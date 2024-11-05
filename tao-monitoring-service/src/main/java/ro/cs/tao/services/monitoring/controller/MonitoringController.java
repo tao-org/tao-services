@@ -46,6 +46,7 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.MonitoringService;
 import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.monitoring.beans.Metric;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
@@ -362,7 +363,7 @@ public class MonitoringController extends BaseController {
                         }
                     }
                     if (!Files.exists(logFile)) {
-                        Files.createDirectories(logFile.getParent());
+                        FileUtilities.createDirectories(logFile.getParent());
                         Files.writeString(logFile, "datetime;" + String.join(";", metricNames) + "\n");
                     }
                     final String values = metricNames.stream().map(m -> endpoint.metric(m, null))

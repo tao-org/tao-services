@@ -15,6 +15,11 @@
  */
 package ro.cs.tao.services.entity.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -63,7 +68,6 @@ import ro.cs.tao.subscription.WorkflowSubscription;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.Tuple;
-import ro.cs.tao.utils.executors.MemoryUnit;
 import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
@@ -74,8 +78,6 @@ import ro.cs.tao.workflow.enums.Status;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -1095,7 +1097,7 @@ public class WorkflowServiceImpl
                     break;
                 case PROCESSING:
                     ProcessingComponent processingComponent = (ProcessingComponent) component;
-                    List<ParameterDescriptor> descriptors = processingComponent.getParameterDescriptors();
+                    Set<ParameterDescriptor> descriptors = processingComponent.getParameterDescriptors();
                     for (ParameterDescriptor descriptor : descriptors) {
                         paramType = descriptor.getDataType();
                         componentParams.add(new Parameter(descriptor.getName(),
@@ -1106,6 +1108,18 @@ public class WorkflowServiceImpl
                                                                   Parameter.stringValueSet(paramType.getEnumConstants()) :
                                                                   Parameter.stringValueSet(descriptor.getValueSet()),
                                                           descriptor.isNotNull()));
+                        if(descriptor instanceof TemplateParameterDescriptor){
+                            for(ParameterDescriptor param : ((TemplateParameterDescriptor) descriptor).getParameters()){
+                                Class<?> descriptorParamType = param.getDataType();
+                                componentParams.add(new Parameter(descriptor.getName() + "~" + param.getName(),
+                                        param.typeFriendlyName(),
+                                        !"null".equals(param.getDefaultValue()) ? param.getDefaultValue() : null,
+                                        descriptorParamType.isEnum() ?
+                                                Parameter.stringValueSet(descriptorParamType.getEnumConstants()) :
+                                                Parameter.stringValueSet(param.getValueSet()),
+                                        param.isNotNull()));
+                            }
+                        }
                     }
                     break;
                 case GROUP:
@@ -1182,15 +1196,11 @@ public class WorkflowServiceImpl
 
     @Override
     public WorkflowDescriptor importWorkflow(InputStream source) throws IOException, SerializationException, PersistenceException {
-        final BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, MediaType.JSON);
-        final char[] buffer = new char[MemoryUnit.KB.value().intValue()];
-        final StringBuilder builder = new StringBuilder();
-        try (Reader reader = new InputStreamReader(source)) {
-            for (int numRead; (numRead = reader.read(buffer, 0, buffer.length)) > 0;) {
-                builder.append(buffer, 0, numRead);
-            }
-        }
-        WorkflowDescriptor descriptor = serializer.deserialize(builder.toString());
+        final ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModules(new JavaTimeModule());
+        mapper.setAnnotationIntrospector(new JaxbAnnotationIntrospector());
+        final ObjectReader objectReader = mapper.readerFor(WorkflowDescriptor.class);
+        WorkflowDescriptor descriptor = objectReader.readValue(source);
         WorkflowDescriptor existing;
         if (descriptor.getId() != null) {
             existing = getFullDescriptor(descriptor.getId());
@@ -1211,6 +1221,7 @@ public class WorkflowServiceImpl
             if (StringUtilities.isNullOrEmpty(componentId) || componentService.findById(componentId) == null) {
                 throw new IOException("Component for node [" + node.getName() + "] is missing or not registered");
             }
+            node.setId(null);
         }
         return workflowProvider.save(descriptor);
     }
@@ -1218,6 +1229,7 @@ public class WorkflowServiceImpl
     @Override
     public String exportWorkflow(WorkflowDescriptor descriptor) throws SerializationException {
         final BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, MediaType.JSON);
+        serializer.enable(SerializationFeature.EAGER_SERIALIZER_FETCH);
         return serializer.serialize(descriptor);
     }
 
@@ -1356,12 +1368,19 @@ public class WorkflowServiceImpl
                     List<ParameterValue> customValues = node.getCustomValues();
                     // Validate custom parameter values for the attached component
                     if (customValues != null && !customValues.isEmpty()) {
-                        List<ParameterDescriptor> descriptors = null;
+                        Set<ParameterDescriptor> descriptors = null;
+                        List<TemplateParameterDescriptor> templateDescriptors = null;
                         if (component instanceof ProcessingComponent) {
                             descriptors = ((ProcessingComponent) component).getParameterDescriptors();
+                            templateDescriptors = ((ProcessingComponent) component).getParameterDescriptors()
+                                                                                   .stream()
+                                                                                   .filter(p -> p instanceof TemplateParameterDescriptor)
+                                                                                   .map(p -> (TemplateParameterDescriptor) p)
+                                                                                   .collect(Collectors.toList());
                         }
                         if (descriptors != null && !descriptors.isEmpty()) {
                             final List<ParameterDescriptor> descriptorList = new ArrayList<>(descriptors);
+                            final List<TemplateParameterDescriptor> templateDescriptorList = new ArrayList<>(templateDescriptors);
                             component.getTargets().forEach(t -> {
                                 descriptorList.addAll(t.toParameter());
                             });
@@ -1371,6 +1390,17 @@ public class WorkflowServiceImpl
                                     ParameterDescriptor descriptor = descriptorList.stream()
                                             .filter(d -> d.getName().equals(v.getParameterName()))
                                             .findFirst().orElse(null);
+                                    if (descriptor == null) {
+                                        for (TemplateParameterDescriptor templateDescriptor : templateDescriptorList) {
+                                            final List<ParameterDescriptor> parameters = templateDescriptor.getParameters();
+                                            descriptor = parameters.stream()
+                                                                   .filter(d -> v.getParameterName().equals(templateDescriptor.getName()+ "~"+ d.getName()))
+                                                                   .findFirst().orElse(null);
+                                            if (descriptor != null) {
+                                                break;
+                                            }
+                                        }
+                                    }
                                     if (descriptor == null) {
                                         errors.add(String.format("[node.customValues.parameterName] invalid parameter name '%s'",
                                                 v.getParameterName()));

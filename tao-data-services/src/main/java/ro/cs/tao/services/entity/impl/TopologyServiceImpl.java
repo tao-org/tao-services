@@ -23,16 +23,19 @@ import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.persistence.NodeDBProvider;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.ResourceSubscriptionProvider;
 import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.services.interfaces.TopologyService;
-import ro.cs.tao.topology.NodeDescription;
-import ro.cs.tao.topology.NodeFlavor;
-import ro.cs.tao.topology.ServiceDescription;
-import ro.cs.tao.topology.TopologyManager;
+import ro.cs.tao.subscription.FlavorSubscription;
+import ro.cs.tao.subscription.ResourceSubscription;
+import ro.cs.tao.subscription.SubscriptionType;
+import ro.cs.tao.topology.*;
 import ro.cs.tao.topology.docker.DockerManager;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -49,6 +52,9 @@ public class TopologyServiceImpl
     private TagProvider tagProvider;
     @Autowired
     private NodeDBProvider nodeDBProvider;
+
+    @Autowired
+    private ResourceSubscriptionProvider resourceSubscriptionProvider;
 
     public boolean isExternalProviderAvailable() {
         return topologyManager().isExternalProviderAvailable();
@@ -140,7 +146,22 @@ public class TopologyServiceImpl
     }
 
     @Override
-    public void delete(String hostName) {
+    public void delete(String hostName) throws PersistenceException {
+        NodeDescription node = findById(hostName);
+        String userId = node.getOwner();
+        ResourceSubscription userSubscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
+        if(userSubscription != null && userSubscription.getType() == SubscriptionType.FIXED_RESOURCES){
+            Optional<FlavorSubscription> optionalUserFlavor =  userSubscription.getFlavors().values().stream().filter(
+                    flavor -> flavor.getFlavorId().equals(node.getFlavor().getId())).findFirst();
+            if(optionalUserFlavor.isPresent()){
+                FlavorSubscription userFlavor = optionalUserFlavor.get();
+                userFlavor.setQuantity(userFlavor.getQuantity()-1);
+                if(userSubscription.getFlavors().size() == 1 && userFlavor.getQuantity() == 0){
+                    userSubscription.setEnded(LocalDateTime.now());
+                }
+                resourceSubscriptionProvider.update(userSubscription);
+            }
+        }
         topologyManager().removeNode(hostName);
     }
 

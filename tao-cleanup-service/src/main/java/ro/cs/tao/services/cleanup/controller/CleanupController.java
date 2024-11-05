@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.CleanupService;
 
@@ -33,7 +34,7 @@ import ro.cs.tao.services.interfaces.CleanupService;
  */
 @RestController
 @RequestMapping("/cleanup")
-@Tag(name ="Cleanup", description = "Endpoint for removig the products with no valid files attached from the database")
+@Tag(name ="Cleanup", description = "Endpoint for removing the products with no valid files attached from the database")
 public class CleanupController extends BaseController {
 
 	/**	Cleanup service. */
@@ -44,13 +45,14 @@ public class CleanupController extends BaseController {
      * Perform the cleanup operation.
      */
     @RequestMapping(value = "/database/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> cleanupDatabase() {
-        if (isCurrentUserAdmin()) {
+//        if (isCurrentUserAdmin()) {
         	final long deletedProducts = cleanupService.cleanupDatabase();
         	
             return prepareResult("Finished successfully. Number of deleted products: " + deletedProducts, ResponseStatus.SUCCEEDED, HttpStatus.OK);
-        } else {
-            return prepareResult("Not authorized", ResponseStatus.FAILED, HttpStatus.FORBIDDEN);
-        }
+//        } else {
+//            return prepareResult("Not authorized", ResponseStatus.FAILED, HttpStatus.FORBIDDEN);
+//        }
     }
 }

@@ -29,6 +29,7 @@ import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.docker.ContainerType;
 import ro.cs.tao.docker.ContainerVisibility;
+import ro.cs.tao.export.Package;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.ContainerProvider;
@@ -36,12 +37,16 @@ import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
 import ro.cs.tao.persistence.TagProvider;
 import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.ContainerService;
 import ro.cs.tao.topology.docker.DockerManager;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -142,6 +147,10 @@ public class ContainerServiceImpl
     @Override
     public String registerContainer(Path dockerFile, Container container, ProcessingComponent[] components) {
         String containerId;
+        // Prevent accidental overwritting of an already registered container
+        if (containerProvider.getByName(container.getName()) != null ) {
+            throw new IllegalArgumentException("Container '" + container.getName() + "' already registered, use another name");
+        }
         final Container dockerImage = DockerManager.getDockerImage(container.getName());
         if (dockerImage == null) {
             // build Docker image and put it in Docker registry
@@ -179,7 +188,7 @@ public class ContainerServiceImpl
                     component.setLabel(component.getId());
                     component.setComponentType(ProcessingComponentType.EXECUTABLE);
                     component.setFileLocation(containerApplications.stream().filter(a -> a.getName().equals(component.getId())).findFirst().get().getPath());
-                    List<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
+                    Set<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
                     if (parameterDescriptors != null) {
                         parameterDescriptors.forEach(p -> {
                             if (p.getName() == null) {
@@ -295,6 +304,36 @@ public class ContainerServiceImpl
             logger.severe(e.getMessage());
         }
         return container;
+    }
+
+    @Override
+    public Path exportContainer(Container descriptor, boolean includeImageFile, Path targetFolder) throws IOException {
+        final Package pack = new Package(descriptor.getId());
+        pack.setContainerDescriptor(descriptor);
+        pack.setComponentDescriptors(componentProvider.listByContainer(descriptor.getId()));
+        try {
+            return pack.toFile(targetFolder, includeImageFile);
+        } catch (SerializationException e) {
+            throw new IOException(e);
+        }
+    }
+
+    @Override
+    public String importContainer(Path taoPackage) throws IOException {
+        if (taoPackage == null && Files.notExists(taoPackage)) {
+            throw new IOException("Inexistent package");
+        }
+        taoPackage.getParent().resolve(taoPackage.toString().replace(".zip", ""));
+        try {
+            final Package pack = Package.fromFile(taoPackage, taoPackage.getParent());
+            return pack != null
+                   ? pack.getContainerDescriptor() != null
+                     ? pack.getContainerDescriptor().getId()
+                     : null
+                   : null;
+        } catch (SerializationException e) {
+            throw new IOException(e);
+        }
     }
 
     @Override

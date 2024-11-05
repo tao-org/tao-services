@@ -64,7 +64,8 @@ public class AuthenticationController extends BaseController {
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> login(@RequestParam(name = "username", required = false) String user,
                                                     @RequestParam(name = "password", required = false) String password,
-                                                    @RequestParam(name = "code", required = false) String code) {
+                                                    @RequestParam(name = "code", required = false) String code,
+                                                    HttpServletRequest request) {
         boolean success = true;
         try {
             final AuthInfo authInfo;
@@ -97,7 +98,10 @@ public class AuthenticationController extends BaseController {
                 }
             } else {
                 success = false;
-                return prepareResult(null, HttpStatus.UNAUTHORIZED);
+                request.getSession().invalidate();
+                HttpHeaders headers = new HttpHeaders();
+                headers.add("Set-Cookie", "JSESSIONID=;Expires=" + LocalDateTime.now().minusMinutes(1));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).headers(headers).body(new ServiceResponse<>());
             }
         } catch (Exception ex) {
             success = false;

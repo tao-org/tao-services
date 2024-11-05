@@ -44,6 +44,7 @@ import ro.cs.tao.services.interfaces.GroupComponentService;
 import ro.cs.tao.services.interfaces.NameTokenService;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 import ro.cs.tao.utils.AutoEvictableCache;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.GenericComparator;
 import ro.cs.tao.utils.StringUtilities;
 
@@ -301,7 +302,9 @@ public class ComponentController extends DataEntityController<ProcessingComponen
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
             } else {
                 response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + entity.getId());
+                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="
+                        + FileUtilities.ensureValidFileName(entity.getId())
+                        + ".json");
                 response.setStatus(HttpStatus.OK.value());
                 response.getOutputStream().write(service.exportComponent(entity).getBytes());
             }
@@ -363,7 +366,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             }
             final ProcessingComponent component = service.findById(id);
             if (currentUser().equals(component.getOwner()) || isCurrentUserAdmin()) {
-                final List<ParameterDescriptor> descriptors = component.getParameterDescriptors();
+                final Set<ParameterDescriptor> descriptors = component.getParameterDescriptors();
                 descriptors.removeIf(p -> p.getId().equals(paramId));
                 descriptors.add(parameter);
                 return super.update(id, component);
@@ -377,10 +380,10 @@ public class ComponentController extends DataEntityController<ProcessingComponen
 
     /**
      * Import a processing component descriptor from a json file.
-     * @param id    The component identifier
+     * @param file    The JSON file containing the processing component
      *
      */
-    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ServiceResponse<?>> importFile(@RequestParam("file") MultipartFile file) {
         try {
             if (file == null || file.getOriginalFilename() == null) {
@@ -418,7 +421,7 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     }
     /**
      * Clones an existing processing component for the current user
-     * @param entity    The descriptor of the processing component
+     * @param componentId    The id of the processing component
      *
      */
     @RequestMapping(value = "/clone", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)

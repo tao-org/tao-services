@@ -3,6 +3,7 @@ package ro.cs.tao.services.commons.update;
 import org.springframework.beans.factory.annotation.Autowired;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.NetStreamResponse;
 import ro.cs.tao.utils.NetUtils;
 
@@ -92,7 +93,7 @@ public class UpdateChecker {
         final Path targetFile = targetFolder.resolve(fileName);
         Path backupFile = null;
         if (Files.exists(targetFile)) {
-            Files.createDirectories(backupFolder);
+            FileUtilities.createDirectories(backupFolder);
             backupFile = backupFolder.resolve(fileName + ".prev");
             Files.move(targetFile, backupFile);
         }

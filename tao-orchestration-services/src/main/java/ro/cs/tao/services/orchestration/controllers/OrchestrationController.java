@@ -42,6 +42,7 @@ import ro.cs.tao.serialization.GeometryAdapter;
 import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.orchestration.beans.TaskOutput;
@@ -65,8 +66,8 @@ public class OrchestrationController extends BaseController {
     private ExecutionTaskProvider executionTaskProvider;
 
     /**
-     * Returns the available parameters for a workflow
-     * @param workflowId    The workflow identifier
+     * Returns the available DRMAA execution environments
+     *
      */
     @RequestMapping(value = "/environment", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getEnvironments() {
@@ -75,8 +76,7 @@ public class OrchestrationController extends BaseController {
             if (environments == null) {
                 environments = new HashSet<>();
             }
-            final List<Environment> list = environments.stream().sorted().toList();
-            return prepareResult(list);
+            return prepareResult(environments.stream().sorted().collect(Collectors.toList()));
         } catch (Exception ex) {
             return handleException(ex);
         }
@@ -184,14 +184,15 @@ public class OrchestrationController extends BaseController {
      * @param userId    The user identifier
      */
     @RequestMapping(value = "/purge", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> purgeJobs(@RequestParam(name = "userId", required = false) String userId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
-            if (!isCurrentUserAdmin()) {
+            /*if (!isCurrentUserAdmin()) {
                 response = prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
-            } else {
+            } else {*/
                 response = prepareResult(orchestrationService.purgeJobs(userId));
-            }
+            //}
         } catch (ExecutionException ex) {
             response = handleException(ex);
         }
@@ -265,10 +266,11 @@ public class OrchestrationController extends BaseController {
      * Returns the queued jobs for all the users (only if the current user is an admin)
      */
     @RequestMapping(value = "/queued/jobs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getQueuedJobs(@RequestParam(name = "grouped", required = false) Boolean grouped) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         if (grouped != null && grouped) {
             Map<String, Queue<ExecutionJobSummary>> summaries = orchestrationService.getQueuedUserJobs();
             if (summaries == null) {
