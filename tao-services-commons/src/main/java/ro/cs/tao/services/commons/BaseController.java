@@ -27,8 +27,9 @@ import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.AuditProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.UserPrincipal;
-import ro.cs.tao.services.interfaces.AdministrationService;
+import ro.cs.tao.user.Group;
 import ro.cs.tao.user.LogEvent;
 import ro.cs.tao.user.User;
 
@@ -36,7 +37,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -44,26 +46,10 @@ import java.util.stream.Collectors;
  * @author Cosmin Cara
  */
 public abstract class BaseController extends ControllerBase {
-    private static final Set<String> admins;
-    private static final Timer groupRefreshTimer;
-    private static AdministrationService administrationService;
+
     private static AuditProvider auditProvider;
     private static UserProvider userProvider;
     private static final Map<String, String> userTokens = new HashMap<>();
-
-    static {
-        groupRefreshTimer = new Timer(true);
-        admins = new HashSet<>();
-        groupRefreshTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if (administrationService != null) {
-                    admins.clear();
-                    admins.addAll(administrationService.getAdministrators().stream().map(User::getId).collect(Collectors.toSet()));
-                }
-            }
-        }, 0, 10000);
-    }
 
     public static ServletUriComponentsBuilder currentURL() {
         return ServletUriComponentsBuilder.fromCurrentRequestUri();
@@ -82,29 +68,16 @@ public abstract class BaseController extends ControllerBase {
     }
 
     @Autowired
-    public final void setAdministrationService(AdministrationService service) {
-        if (administrationService == null) {
-            synchronized (admins) {
-                administrationService = service;
-            }
-        }
-    }
-
-    @Autowired
     public final void setUserProvider(UserProvider provider) {
         if (userProvider == null) {
-            synchronized (admins) {
-                userProvider = provider;
-            }
+            userProvider = provider;
         }
     }
 
     @Autowired
     public final void setAuditProvider(AuditProvider provider) {
         if (auditProvider == null) {
-            synchronized (admins) {
-                auditProvider = provider;
-            }
+            auditProvider = provider;
         }
     }
 
@@ -123,23 +96,23 @@ public abstract class BaseController extends ControllerBase {
     }
 
     protected Principal currentPrincipal() {
-        final Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return principal instanceof Principal
-               ? (Principal) principal
-               : new UserPrincipal(userProvider.getId((String) principal));
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!(principal instanceof Principal)) {
+            final User user = userProvider.get((String) principal);
+            principal = new UserPrincipal(user.getId(),
+                                          user.getGroups().stream().map(Group::getName).collect(Collectors.toSet()));
+        }
+        return (Principal) principal;
 
     }
 
     protected boolean isCurrentUserAdmin() {
-        return admins.contains(currentUser());
+        final Principal principal = currentPrincipal();
+        return principal instanceof SystemPrincipal || ((UserPrincipal) principal).hasRole("admin");
     }
 
     protected boolean isAdmin(String userId) {
-        return admins.contains(userId);
-    }
-
-    protected Set<String> getAdministrators() {
-        return Collections.unmodifiableSet(admins);
+        return userProvider.get(userId).getGroups().stream().anyMatch(g -> "admin".equalsIgnoreCase(g.getName()));
     }
 
     protected void record(String event) {

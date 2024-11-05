@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
-import ro.cs.tao.datasource.util.Zipper;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.messaging.Messaging;
@@ -55,6 +54,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -838,7 +838,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
             final String[] items = item.split(";");
             final String successMessage = String.format("%s [%s] completed", action, item);
-            final String user = currentUser();
+            final Principal principal = currentPrincipal();
             final TriConsumer<String, Exception, String> callback = (u, e, s) -> {
                 String topic;
                 String message;
@@ -850,7 +850,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     message = e.getMessage();
                 }
 
-                Messaging.send(user, topic, message);
+                Messaging.send(principal.getName(), topic, message);
             };
             final boolean oneArg = StringUtilities.isNullOrEmpty(destination);
             if (!oneArg) {
@@ -860,8 +860,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 if (StringUtilities.isNullOrEmpty(item)) {
                     throw new IllegalArgumentException("Not a file");
                 }
-                final Repository workspace = getLocalWorkspace(user);
-                final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(user);
+                final Repository workspace = getLocalWorkspace(principal.getName());
+                final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(principal.getName());
                 final List<ItemAction> actions = repositoryService.getRegisteredActions();
                 if (actions != null) {
                     final ItemAction itemAction = actions.stream().filter(a -> a.name().equals(action)).findFirst().orElse(null);
@@ -869,13 +869,13 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                         try {
                             checkPath(item);
                             final Path resolvedPath = Paths.get(workspace.resolve(item));
-                            final ProgressListener listener = new ProgressNotifier(currentPrincipal(),
+                            final ProgressListener listener = new ProgressNotifier(principal,
                                                                                    this,
                                                                                    Topic.TRANSFER_PROGRESS,
                                                                                    new HashMap<>() {{
                                                                                        put("Repository", workspace.getId());
                                                                                    }});
-                            itemAction.setActionUser(user);
+                            itemAction.setActionUser(principal.getName());
                             itemAction.setProgressListener(listener);
                             if (oneArg) {
                                 itemAction.doAction(resolvedPath);

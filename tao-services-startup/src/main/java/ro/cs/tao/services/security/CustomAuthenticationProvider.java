@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Custom JAAS authentication provider
@@ -100,13 +101,14 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             if (user == null) {
                 throw new RuntimeException(String.format("No such user '%s'", userId));
             }
-            final UserPrincipal userPrincipal = new UserPrincipal(user.getId());
+            final List<Group> userGroups = user.getGroups();
+            final UserPrincipal userPrincipal = new UserPrincipal(user.getId(),
+                                                                  userGroups.stream().map(Group::getName).collect(Collectors.toSet()));
             final Set<Principal> principals = jaasAuthenticationToken.getLoginContext().getSubject().getPrincipals();
             if (principals.stream().noneMatch(p -> p.getName().equals(userPrincipal.getName()))) {
                 principals.add(userPrincipal);
             }
             // add user groups as roles
-            final List<Group> userGroups = user.getGroups();
             if (userGroups != null) {
                 for (Group group : userGroups) {
                     principals.add(new GroupPrincipal(group.getName()));

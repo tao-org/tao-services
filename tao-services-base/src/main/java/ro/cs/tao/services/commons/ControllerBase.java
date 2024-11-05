@@ -67,7 +67,7 @@ public abstract class ControllerBase {
         executorService.initialize();
     }
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 
     protected String currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

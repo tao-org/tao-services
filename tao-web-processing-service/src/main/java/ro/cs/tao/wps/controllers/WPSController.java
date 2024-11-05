@@ -62,7 +62,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @RestController
@@ -74,7 +73,6 @@ public class WPSController extends BaseController {
         add("GetCapabilities"); add("DescribeProcess");
     }};
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
     @Autowired
     private WpsServiceInstance wpsServiceInstance;
     @Autowired

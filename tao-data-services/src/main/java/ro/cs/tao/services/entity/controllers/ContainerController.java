@@ -52,6 +52,7 @@ import ro.cs.tao.security.Token;
 import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.ContainerRequest;
 import ro.cs.tao.services.entity.beans.ContainerUploadRequest;
@@ -60,6 +61,7 @@ import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.topology.docker.DockerImageInstaller;
 import ro.cs.tao.topology.docker.DockerManager;
 import ro.cs.tao.topology.docker.SingletonContainer;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 
 import javax.servlet.http.HttpServletRequest;
@@ -69,7 +71,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Inet4Address;
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
@@ -181,12 +182,13 @@ public class ContainerController extends DataEntityController<Container, String,
      * @param request   The structure containing the necessary information
      */
     @RequestMapping(value = "/upload", method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> upload(HttpServletRequest servletRequest,
                                                      @ModelAttribute ContainerUploadRequest request,
                                                      Model model) {
-        if (!isCurrentUserAdmin()) {
+        /*if (!isCurrentUserAdmin()) {
             return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
-        }
+        }*/
         try {
             final List<MultipartFile> dockerFiles = request.getDockerFiles();
             if (dockerFiles == null || dockerFiles.isEmpty()) {
@@ -274,6 +276,19 @@ public class ContainerController extends DataEntityController<Container, String,
             }, "Docker image registration completed", this::exceptionCallbackHandler);
             return prepareResult("Docker image registration started. A notification will be send when the process completes",
                                  ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    /**
+     * Checks if a Docker image exists in the Docker Hub repository
+     * @param image     The name of the image
+     */
+    @RequestMapping(value = "/check", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> checkExists(@RequestParam("image") String image) {
+        try {
+            return prepareResult(DockerManager.publicImageExists(image));
         } catch (Exception e) {
             return handleException(e);
         }
@@ -540,7 +555,7 @@ public class ContainerController extends DataEntityController<Container, String,
             component.setComponentType(ProcessingComponentType.EXECUTABLE);
             containerApplications.stream().filter(a -> a.getName().equals(component.getId())).findFirst()
                                  .ifPresent(application -> component.setFileLocation(application.getPath()));
-            List<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
+            Set<ParameterDescriptor> parameterDescriptors = component.getParameterDescriptors();
             if (parameterDescriptors != null) {
                 parameterDescriptors.forEach(p -> {
                     if (p.getName() == null) {
@@ -599,8 +614,9 @@ public class ContainerController extends DataEntityController<Container, String,
             // This is a security check
             throw new IOException( "Cannot store docker file with relative path outside image directory " + fileName);
         }
-        Files.createDirectories(targetBase);
+        FileUtilities.createDirectories(targetBase);
         Path destination = targetBase.resolve(fileName);
+        FileUtilities.createDirectories(destination.getParent());
         file.transferTo(destination.toAbsolutePath().toFile());
         return destination;
     }

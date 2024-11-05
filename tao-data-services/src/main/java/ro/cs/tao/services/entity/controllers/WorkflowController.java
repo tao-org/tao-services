@@ -29,15 +29,15 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.ComponentLink;
 import ro.cs.tao.component.ParameterDescriptor;
 import ro.cs.tao.component.ProcessingComponent;
+import ro.cs.tao.component.TemplateParameterDescriptor;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.persistence.WorkflowNodeProvider;
-import ro.cs.tao.serialization.BaseSerializer;
-import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
 import ro.cs.tao.services.interfaces.ComponentService;
@@ -48,6 +48,7 @@ import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.user.User;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
@@ -56,6 +57,8 @@ import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
 import ro.cs.tao.workflow.enums.Status;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -119,7 +122,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                     ProcessingComponent component = componentService.findById(n.getComponentId());
                     if (component != null
                             && (n.getAdditionalInfo() == null || n.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))) {
-                        n.addInfo("nodeAffinity", component.getNodeAffinity());
+                        n.addInfo("nodeAffinity", component.getNodeAffinity().getValue());
                     }
                 }
             });
@@ -192,11 +195,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
      *
      */
     @RequestMapping(value = "/visibility/{visibility}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByVisibility(@PathVariable("visibility") Visibility visibility,
                                                                            @RequestParam(name = "userId", required = false) String userId) {
-        if (!StringUtilities.isNullOrEmpty(userId) && !isCurrentUserAdmin()) {
+        /*if (!StringUtilities.isNullOrEmpty(userId) && !isCurrentUserAdmin()) {
             return unauthorizedResponse();
-        }
+        }*/
         return prepareResult(service.getUserPublishedWorkflowsByVisibility(currentUser(), visibility));
     }
 
@@ -298,7 +302,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             node.setPreserveOutput(true);
             final ProcessingComponent component = componentService.findById(node.getComponentId());
             if (component != null && (node.getAdditionalInfo() == null || node.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))) {
-                node.addInfo("nodeAffinity", component.getNodeAffinity());
+                node.addInfo("nodeAffinity", component.getNodeAffinity().getValue());
             }
             responseEntity = prepareResult(service.addNode(workflowId, node));
             record("Node " + node.getName() + " added to workflow " + workflowId);
@@ -663,14 +667,33 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
             } else {
                 response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + entity.getId());
+                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="
+                        + FileUtilities.ensureValidFileName(entity.getName())
+                        + ".json");
                 response.setStatus(HttpStatus.OK.value());
-                final BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, ro.cs.tao.serialization.MediaType.JSON);
-                final String jsonString = serializer.serialize(entity);
-                response.getOutputStream().write(jsonString.getBytes());
+                response.getOutputStream().write(service.exportWorkflow(entity).getBytes());
             }
         } catch (Exception e) {
             error(e.getMessage());
+        }
+    }
+
+    /**
+     * Import a workflow descriptor from a json file.
+     * @param file    The JSON file containing the workflow descriptor
+     *
+     */
+    @RequestMapping(value = "/import", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ServiceResponse<?>> importFile(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file == null || file.getOriginalFilename() == null) {
+                throw new IOException("Empty file");
+            }
+            try (InputStream stream = file.getInputStream()) {
+                return prepareResult(service.importWorkflow(stream));
+            }
+        } catch (Exception e) {
+            return handleException(e);
         }
     }
 
@@ -679,17 +702,29 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         if (customValues != null) {
             List<String> errors = null;
             final ProcessingComponent component = componentService.findById(node.getComponentId());
-            for (ParameterValue value : customValues) {
-                final ParameterDescriptor descriptor = component.getParameterDescriptors()
-                                                                .stream()
-                                                                .filter(p -> p.getName().equals(value.getParameterName()))
-                                                                .findFirst().orElse(null);
+            for (ParameterValue customValue : customValues) {
+                ParameterDescriptor descriptor = null;
+                for(ParameterDescriptor componentParam : component.getParameterDescriptors()){
+                    if(componentParam.getName().equals(customValue.getParameterName())) {
+                        descriptor = componentParam;
+                        break;
+                    }
+                    if(componentParam instanceof TemplateParameterDescriptor){
+                        descriptor = ((TemplateParameterDescriptor) componentParam).getParameters()
+                                .stream()
+                                .filter(innerParam -> customValue.getParameterName()
+                                        .equals(componentParam.getName() + "~" + innerParam.getName()))
+                                .findFirst().orElse(null);
+                        if(descriptor != null)
+                            break;
+                    }
+                }
                 if (descriptor != null) {
                     try {
                         if (!descriptor.javaType().isArrayType()) {
-                            descriptor.javaType().parse(value.getParameterValue());
+                            descriptor.javaType().parse(customValue.getParameterValue());
                         } else {
-                            descriptor.javaType().parseArray(value.getParameterValue());
+                            descriptor.javaType().parseArray(customValue.getParameterValue());
                         }
                     } catch (Exception e) {
                         if (errors == null) {
@@ -697,8 +732,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                         }
                         errors.add(String.format("[%s.%s] %s is not of expected type (%s)",
                                                  node.getName(),
-                                                 value.getParameterName(),
-                                                 value.getParameterValue(),
+                                                 customValue.getParameterName(),
+                                                 customValue.getParameterValue(),
                                                  descriptor.javaType().friendlyName()));
                     }
                 }

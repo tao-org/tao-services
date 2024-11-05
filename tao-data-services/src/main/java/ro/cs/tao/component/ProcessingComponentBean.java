@@ -122,7 +122,8 @@ public class ProcessingComponentBean {
     }
 
     public String getNodeAffinity() {
-        return component.getNodeAffinity();
+        final NodeAffinity affinity = component.getNodeAffinity();
+        return affinity != null ? affinity.getValue() : null;
     }
 
     public ComponentCategory getCategory() { return component.getCategory(); }

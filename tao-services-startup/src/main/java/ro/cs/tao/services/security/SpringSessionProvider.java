@@ -23,11 +23,13 @@ import ro.cs.tao.security.ExternalSessionContextProvider;
 import ro.cs.tao.security.SessionContext;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.UserPrincipal;
+import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserPreference;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SpringSessionProvider implements ExternalSessionContextProvider {
     public static PersistenceManager persistenceManager;
@@ -45,8 +47,16 @@ public class SpringSessionProvider implements ExternalSessionContextProvider {
                 if (principal instanceof String) {
                     final User user = persistenceManager.users().getByName(principal.toString());
                     if (user != null) {
-                        principal =  new UserPrincipal(user.getId());
+                        principal =  new UserPrincipal(user.getId(),
+                                                       user.getGroups().stream().map(Group::getName).collect(Collectors.toSet()));
                     }
+                } else if (!(principal instanceof UserPrincipal)) {
+                    final User user = persistenceManager.users().getByName(principal.toString());
+                    if (user != null) {
+                        principal =  new UserPrincipal(user.getId(),
+                                                       user.getGroups().stream().map(Group::getName).collect(Collectors.toSet()));
+                    }
+
                 }
                 return principal instanceof UserPrincipal
                        ? (UserPrincipal) principal

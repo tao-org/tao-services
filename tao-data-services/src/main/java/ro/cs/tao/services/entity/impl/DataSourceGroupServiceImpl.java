@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.cs.tao.Tag;
+import ro.cs.tao.component.NodeAffinity;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
@@ -229,7 +230,7 @@ public class DataSourceGroupServiceImpl implements DataSourceGroupService {
         group.setDescription(group.getLabel());
         group.setAuthors(userId);
         group.setCopyright("(C) " + userId);
-        group.setNodeAffinity("Any");
+        group.setNodeAffinity(NodeAffinity.Any);
         group = groupProvider.save(group);
         logger.finest(String.format("Created data source group [userName=%s, label=%s, id=%s",
                                     userId, label, group.getId()));

@@ -2,6 +2,7 @@ package ro.cs.tao.services.startup;
 
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.Identifiable;
+import ro.cs.tao.component.NodeAffinity;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceManager;
@@ -72,7 +73,7 @@ public class DataSourceRegistrar extends BaseLifeCycle {
                         dataSourceComponent.setDescription(dataSourceComponent.getId());
                         dataSourceComponent.setAuthors("TAO Team");
                         dataSourceComponent.setCopyright("(C) TAO Team");
-                        dataSourceComponent.setNodeAffinity("Any");
+                        dataSourceComponent.setNodeAffinity(NodeAffinity.Any);
                         dataSourceComponent.setSystem(true);
                         if (sensorTag != null) {
                             dataSourceComponent.addTags(sensorTag.getText());

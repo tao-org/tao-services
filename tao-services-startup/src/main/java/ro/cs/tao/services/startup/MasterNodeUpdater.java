@@ -6,8 +6,8 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.execution.ExecutionsManager;
 import ro.cs.tao.execution.Executor;
 import ro.cs.tao.execution.drmaa.DRMAAExecutor;
-import ro.cs.tao.execution.monitor.OSRuntimeInfo;
-import ro.cs.tao.execution.monitor.RuntimeInfo;
+import ro.cs.tao.execution.monitor.NodeRuntimeInspector;
+import ro.cs.tao.execution.monitor.RuntimeInspectorFactory;
 import ro.cs.tao.topology.*;
 import ro.cs.tao.utils.DockerHelper;
 import ro.cs.tao.utils.executors.AuthenticationType;
@@ -51,7 +51,8 @@ public class MasterNodeUpdater extends BaseLifeCycle {
                 master.setUserName(user);
                 String pwd = ConfigurationManager.getInstance().getValue("topology.master.password", node.getUserPass());
                 master.setUserPass(pwd);
-                OSRuntimeInfo<?> inspector = OSRuntimeInfo.createInspector(masterHost, user, pwd, AuthenticationType.PASSWORD, RuntimeInfo.class);
+                NodeRuntimeInspector inspector = RuntimeInspectorFactory.getInstance().get(masterHost, NodeRole.MASTER,
+                                                                                           AuthenticationType.PASSWORD, user, pwd);
                 master.setDescription(node.getDescription());
                 master.setServicesStatus(node.getServicesStatus());
                 final NodeFlavor masterFlavor = persistenceManager.nodeFlavors().getMasterFlavor();

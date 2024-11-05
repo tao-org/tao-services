@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ro.cs.tao.component.NodeAffinity;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.WebServiceAuthentication;
@@ -109,7 +110,7 @@ public class STACServiceController extends BaseController {
                     component.setDescription(bean.getDescription());
                     component.setAuthors("AVL Team");
                     component.setCopyright("(C) AVL Team");
-                    component.setNodeAffinity("Any");
+                    component.setNodeAffinity(NodeAffinity.Any);
                     final String newId = String.join("-", "stac", "service", container.getName(), application.getPath(), currentUser());
                     component.setId(newId);
                     component.getSources().forEach(s -> s.setParentId(newId));
@@ -180,7 +181,7 @@ public class STACServiceController extends BaseController {
                     component.setDescription(bean.getDescription());
                     component.setAuthors("AVL Team");
                     component.setCopyright("(C) AVL Team");
-                    component.setNodeAffinity("Any");
+                    component.setNodeAffinity(NodeAffinity.Any);
                     final String newId = String.join("-", "stac", "service", container.getName(), application.getPath(), currentUser());
                     component.setId(newId);
                     component.getSources().forEach(s -> s.setParentId(newId));

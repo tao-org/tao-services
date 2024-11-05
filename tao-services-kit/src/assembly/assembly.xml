@@ -112,6 +112,7 @@
                 <exclude>ro.c-s.tao:tao-workspace-smb</exclude>
                 <exclude>ro.c-s.tao:tao-workspace-stac</exclude>
                 <exclude>ro.c-s.tao:tao-zarr-metadata</exclude>
+                <exclude>ro.c-s.tao:tao-functions</exclude>
             </excludes>
         </dependencySet>
     </dependencySets>

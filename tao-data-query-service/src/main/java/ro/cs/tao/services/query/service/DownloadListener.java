@@ -2,7 +2,9 @@ package ro.cs.tao.services.query.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.EnumUtils;
 import ro.cs.tao.datasource.ProductStatusListener;
+import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.messaging.Messaging;
@@ -12,8 +14,10 @@ import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.quota.QuotaException;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.UserPrincipal;
 
 import java.security.Principal;
+import java.util.Set;
 import java.util.logging.Logger;
 
 @Service("downloadListener")
@@ -25,15 +29,27 @@ public class DownloadListener implements ProductStatusListener {
 
     @Override
     public boolean downloadStarted(EOProduct product) {
-    	final Principal principal = SessionStore.currentContext().getPrincipal();
+    	final Principal principal;
+        if (product.getAttributeValue("principal") != null) {
+            principal = new UserPrincipal(product.getAttributeValue("principal"));
+        } else {
+            principal = SessionStore.currentContext().getPrincipal();
+        }
     	
         try {
         	// check input quota before download
-        	if (product.getRefs() != null && !product.getRefs().contains(principal.getName())) {
+            Set<String> refs = null;
+        	if ((refs = product.getRefs()) != null && !refs.contains(principal.getName())) {
         		// do not allow for the download to start if quota exceeded
                 if (!UserQuotaManager.getInstance().checkUserInputQuota(principal, product.getApproximateSize())) {
-                    Messaging.send(principal, Topic.WARNING.getCategory(), "Quota exceeded");
-                    return false;
+                    // For symlinks, the quota is not affected and hence should continue
+                    final String fetchMode = product.getAttributeValue("fetch");
+                    if (fetchMode != null && EnumUtils.getEnumConstantByName(FetchMode.class, fetchMode).value() < 4) {
+                        Messaging.send(principal, Topic.WARNING.getCategory(), "Quota exceeded");
+                        return false;
+                    } else {
+                        product.removeAttribute("fetch");
+                    }
                 }
         	}
     	
@@ -73,8 +89,13 @@ public class DownloadListener implements ProductStatusListener {
 
     @Override
     public void downloadCompleted(EOProduct product) {
-    	
-    	final Principal principal = SessionStore.currentContext().getPrincipal();
+        final Principal principal;
+        if (product.getAttributeValue("principal") != null) {
+            principal = new UserPrincipal(product.getAttributeValue("principal"));
+            product.removeAttribute("principal");
+        } else {
+            principal = SessionStore.currentContext().getPrincipal();
+        }
         try {
         	// re-update the references, in case some other user tried to download this product after 
         	// the current user started
@@ -99,7 +120,13 @@ public class DownloadListener implements ProductStatusListener {
 
     @Override
     public void downloadFailed(EOProduct product, String reason) {
-    	final Principal principal = SessionStore.currentContext().getPrincipal();
+        final Principal principal;
+        if (product.getAttributeValue("principal") != null) {
+            principal = new UserPrincipal(product.getAttributeValue("principal"));
+            product.removeAttribute("principal");
+        } else {
+            principal = SessionStore.currentContext().getPrincipal();
+        }
     	
         try {
         	product.removeReference(principal.getName());

@@ -3,18 +3,14 @@ package ro.cs.tao.services.scheduling.job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.PersistJobDataAfterExecution;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.context.SecurityContextImpl;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionRequest;
-import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.scheduling.AbstractJob;
 import ro.cs.tao.security.SessionContext;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.bridge.spring.SpringContextBridge;
 import ro.cs.tao.services.model.scheduling.SchedulingMode;
 import ro.cs.tao.user.UserPreference;
@@ -37,11 +33,12 @@ import java.util.Map.Entry;
 public class WorkflowExecutionJob extends AbstractJob {
 
 	/** The keys for the parameters used */
-	public static final String JOB_ID_KEY = "taoJobId";
+	public static final String BATCH_ID_KEY = "taoBatchId";
 	public static final String WORKFLOW_ID_KEY = "workflowId";
 	public static final String DESCRIPTION_KEY = "description";
 	public static final String INPUTS_KEY = "inputs";
 	public static final String EXECUTION_MODE_KEY = "executionMode";
+	public static final String USER_ID_KEY = "userId";
 
 	@Override
 	public String groupName() {
@@ -51,11 +48,13 @@ public class WorkflowExecutionJob extends AbstractJob {
 	@Override
 	protected void executeImpl(JobDataMap dataMap, JobDetail jobDetail) {
 		
-		final Authentication userAuthentication = (Authentication) dataMap.get(AbstractJob.USER_AUTHENTICATION_KEY);
+		//final Authentication userAuthentication = (Authentication) dataMap.get(AbstractJob.USER_AUTHENTICATION_KEY);
+		final String userId = dataMap.getString(WorkflowExecutionJob.USER_ID_KEY);
 		SessionContext context = new SessionContext() {
             @Override
             public Principal setPrincipal(Principal principal) {
-                return userAuthentication;
+                //return userAuthentication;
+            	return new UserPrincipal(userId);
             }
 
             @Override
@@ -80,27 +79,27 @@ public class WorkflowExecutionJob extends AbstractJob {
             }
         };
 		
-        final SecurityContext securityContext = new SecurityContextImpl(userAuthentication); 
-        SecurityContextHolder.setContext(securityContext);
+//        final SecurityContext securityContext = new SecurityContextImpl(userAuthentication); 
+//        SecurityContextHolder.setContext(securityContext);
         
 		final JobDataMap jobParams = jobDetail.getJobDataMap();
-		final List<Long> jobIds;
-        if (!jobParams.containsKey(JOB_ID_KEY)) {
-        	// initialise an empty list because this is the first time the job is executed
-        	jobIds = new ArrayList<Long>();
+		final List<String> batchIds;
+        if (!jobParams.containsKey(BATCH_ID_KEY)) {
+        	// create an empty list
+        	batchIds = new ArrayList<>();
         } else {
-        	// get the current list
-        	jobIds = (List<Long>) jobParams.get(JOB_ID_KEY); 
+        	// get the list of batch ids
+        	batchIds = (List<String>) jobParams.get(BATCH_ID_KEY); 
         }
         
 		final Map<String, Map<String, String>> inputs;
-		// check if this job has already a TAO job id associated
-		if (!jobIds.isEmpty()) {
-			// a job was already started. Check if it is still running
-			// get last job id.
- 			final long jobId = jobIds.get(jobIds.size() - 1);
-			final ExecutionJob taoJob = persistenceManager.jobs().get(jobId);
-			if (taoJob != null && taoJob.getExecutionStatus().value() < ExecutionStatus.DONE.value()) {
+		// check if this job has already started once
+		if (!batchIds.isEmpty()) {
+			// get the last batch id
+			final String batchId = batchIds.get(batchIds.size() - 1);
+			
+			// check if any job associated with this batch is still running
+			if (persistenceManager.jobs().isBatchRunning(batchId)) {
 				// the job is not done. do nothing
 				logger.info("The job named " + jobDetail.getKey().getName() + " for user " + jobDetail.getKey().getGroup() + " is already running!");
 				return;
@@ -114,7 +113,8 @@ public class WorkflowExecutionJob extends AbstractJob {
 			switch(mode) {
 				case INCREMENTAL:
 					// Update the startDate value from the inputs
-					updateInputs(userAuthentication.getName(), inputs);
+					//updateInputs(userAuthentication.getName(), inputs);
+					updateInputs(userId, inputs);
 					break;
 				case NORMAL:
 				default:
@@ -140,8 +140,8 @@ public class WorkflowExecutionJob extends AbstractJob {
 		
 		// save the job id to the job details map
 		if (job != null) {
-			jobIds.add(job.getId());
-			jobDetail.getJobDataMap().put(JOB_ID_KEY, jobIds);
+			batchIds.add(job.getBatchId());
+			jobDetail.getJobDataMap().put(BATCH_ID_KEY, batchIds);
 			logger.info("Started job " + job.getId());
 		} else {
 			throw new RuntimeException("No job was created");

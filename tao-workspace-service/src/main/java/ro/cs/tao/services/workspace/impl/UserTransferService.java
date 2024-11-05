@@ -15,10 +15,12 @@ import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.workspace.model.TransferableItem;
 import ro.cs.tao.utils.ExceptionUtils;
+import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
 import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.Repository;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -114,6 +116,7 @@ public class UserTransferService {
             if (this.progressListener != null) {
             	this.progressListener.subActivityStarted(srcPath);
             }
+            boolean hasException = false;
             if (srcWorkspace.getId().equals(dstWorkspace.getId())) {
                 destinationService.move(srcPath, item.getDestinationPath());
             } else {
@@ -136,6 +139,15 @@ public class UserTransferService {
                     } else {
                         logger.fine(String.format("File %s exists at the destination and no overwrite flag is set", srcPath));
                     }
+                } catch (FileNotFoundException fnfex) {
+                    final String msg = "File '" + srcPath + "' was not found in the [" + srcWorkspace.getName() + "] repository";
+                    logger.warning(msg);
+                    hasException = true;
+                    Messaging.send(new UserPrincipal(item.getUser()), Topic.WARNING.value(), this, msg);
+                } catch (RuntimeException ex) {
+                    final String msg = "File '" + srcPath + "' was not transferred [reason: " + ex.getMessage() + "]";
+                    logger.warning(msg);
+                    hasException = true;
                 } finally {
                     if (sourceStream != null) {
                         sourceStream.close();
@@ -148,7 +160,7 @@ public class UserTransferService {
                 }
             }
             if (this.progressListener != null) {
-            	this.progressListener.subActivityEnded(srcPath, true);
+            	this.progressListener.subActivityEnded(srcPath, hasException);
             }
             //decrement(item.getBatch());
             if (this.progressListener != null) {
@@ -157,11 +169,13 @@ public class UserTransferService {
             final TransferableItem next = this.queue.peek();
             if (next == null || !item.getBatch().equals(next.getBatch())) {
                 if (this.progressListener != null) {
-                    this.progressListener.ended(true);
+                    this.progressListener.ended(hasException);
                     this.progressListener = null;
                 }
-                final String msg = "Transfer batch [" + item.getBatch() + "] completed";
-                Messaging.send(new UserPrincipal(item.getUser()), Topic.INFORMATION.value(), this, msg);
+                final String msg = "Transfer batch [" + item.getBatch() + "] completed" + (hasException ? " with errors" : "");
+                Messaging.send(new UserPrincipal(item.getUser()),
+                               hasException ? Topic.WARNING.value() : Topic.INFORMATION.value(),
+                               this, msg);
                 logger.finest(msg);
             }
         } catch (Exception e) {
@@ -192,7 +206,7 @@ public class UserTransferService {
     private void saveState(BlockingQueue<TransferableItem> queue) {
         if (this.saveState) {
             try {
-                Files.createDirectories(this.stateFile.getParent());
+                FileUtilities.createDirectories(this.stateFile.getParent());
                 if (Files.notExists(this.stateFile)) {
                     Files.createFile(this.stateFile);
                 }
@@ -213,7 +227,7 @@ public class UserTransferService {
     private synchronized void restoreState() {
         if (this.saveState) {
             try {
-                Files.createDirectories(this.stateFile.getParent());
+                FileUtilities.createDirectories(this.stateFile.getParent());
                 if (Files.exists(this.stateFile)) {
                     this.queue.clear();
                     try (InputStream stream = Files.newInputStream(this.stateFile)) {

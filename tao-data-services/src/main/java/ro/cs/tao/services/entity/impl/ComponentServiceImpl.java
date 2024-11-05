@@ -47,10 +47,7 @@ import java.io.Reader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -239,13 +236,23 @@ public class ComponentServiceImpl
             }
         }
         final ProcessingComponent entity = serializer.deserialize(builder.toString());
+        if (StringUtilities.isNullOrEmpty(entity.getId())) {
+            entity.setId(UUID.randomUUID().toString());
+        }
+        for(SourceDescriptor sourceDescriptor : entity.getSources()){
+            sourceDescriptor.setParentId(entity.getId());
+        }
+        for(TargetDescriptor targetDescriptor : entity.getTargets()){
+            targetDescriptor.setParentId(entity.getId());
+        }
+        entity.setTemplateType(TemplateType.VELOCITY);
         final ProcessingComponent existing = findById(entity.getId());
         if (existing != null) {
             throw new IOException("Processing component already exists");
         }
-        Container container = containerProvider.get(existing.getContainerId());
+        Container container = containerProvider.get(entity.getContainerId());
         if (container == null) {
-            container = containerProvider.getByName(existing.getContainerId());
+            container = containerProvider.getByName(entity.getContainerId());
             if (container == null) {
                 throw new IOException("The container of the component is not registered");
             } else {
@@ -334,7 +341,7 @@ public class ComponentServiceImpl
                 }
             }
         }
-        List<ParameterDescriptor> parameterDescriptors = entity.getParameterDescriptors();
+        Set<ParameterDescriptor> parameterDescriptors = entity.getParameterDescriptors();
         if (parameterDescriptors != null) {
             for (ParameterDescriptor descriptor : parameterDescriptors) {
                 String descriptorId = descriptor.getId();

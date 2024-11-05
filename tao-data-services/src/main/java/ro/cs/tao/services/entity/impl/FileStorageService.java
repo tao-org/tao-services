@@ -89,7 +89,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     @Override
     public Path createFolder(String folderRelativePath, boolean userOnly) throws IOException {
         String cleanPath = StringUtils.cleanPath(folderRelativePath);
-        return Files.createDirectories(Paths.get(repository().resolve(cleanPath)));
+        return FileUtilities.createDirectories(Paths.get(repository().resolve(cleanPath)));
     }
 
     @Override
@@ -679,7 +679,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         }
         Path filePath;
         try (InputStream stream = wrapStream(file.getInputStream())) {
-            Files.createDirectories(uploadPath);
+            FileUtilities.createDirectories(uploadPath);
             // Resolve filename when coming from IE
             filePath = uploadPath.resolve(Paths.get(file.getOriginalFilename()).getFileName());
             Files.copy(stream, filePath, StandardCopyOption.REPLACE_EXISTING);
@@ -707,7 +707,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
             return;
         }
         if (!Files.exists(uploadPath.getParent())) {
-            Files.createDirectories(uploadPath.getParent());
+            FileUtilities.createDirectories(uploadPath.getParent());
         }
         // Resolve filename when coming from IE
         try (InputStream inputStream = wrapStream(stream)) {
