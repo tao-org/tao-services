@@ -24,7 +24,7 @@ public interface FileProcessor {
             for (Map.Entry<String, String> entry : map.entrySet()) {
                 final Path configFile = configDirectory.resolve(entry.getKey());
                 if (!Files.exists(configFile)) {
-                    byte[] buffer = new byte[MemoryUnit.KB.value().intValue()];
+                    byte[] buffer = new byte[(int) MemoryUnit.KB.value()];
                     try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream(entry.getValue()));
                          OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile))) {
                         int read;
