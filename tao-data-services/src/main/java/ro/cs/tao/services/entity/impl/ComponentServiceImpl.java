@@ -228,7 +228,7 @@ public class ComponentServiceImpl
     @Override
     public ProcessingComponent importComponent(InputStream source) throws IOException, SerializationException {
         final BaseSerializer<ProcessingComponent> serializer = SerializerFactory.create(ProcessingComponent.class, MediaType.JSON);
-        final char[] buffer = new char[MemoryUnit.KB.value().intValue()];
+        final char[] buffer = new char[(int) MemoryUnit.KB.value()];
         final StringBuilder builder = new StringBuilder();
         try (Reader reader = new InputStreamReader(source)) {
             for (int numRead; (numRead = reader.read(buffer, 0, buffer.length)) > 0;) {
@@ -344,11 +344,11 @@ public class ComponentServiceImpl
         Set<ParameterDescriptor> parameterDescriptors = entity.getParameterDescriptors();
         if (parameterDescriptors != null) {
             for (ParameterDescriptor descriptor : parameterDescriptors) {
-                String descriptorId = descriptor.getId();
-                if (descriptorId == null || descriptorId.trim().isEmpty()) {
+                String descriptorId = descriptor.getName();
+                /*if (descriptorId == null || descriptorId.trim().isEmpty()) {
                     errors.add("Invalid parameter found (missing id)");
                     continue;
-                }
+                }*/
                 value = descriptor.getLabel();
                 if (value == null || value.trim().isEmpty()) {
                     errors.add(String.format("[$%s] label cannot be empty", descriptorId));

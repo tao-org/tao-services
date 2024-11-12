@@ -432,7 +432,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                 response.setContentLengthLong(file.contentLength());
                                 response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename());
                                 response.setStatus(HttpStatus.OK.value());
-                                byte[] buffer = new byte[MemoryUnit.MB.value().intValue()];
+                                byte[] buffer = new byte[(int) MemoryUnit.MB.value()];
                                 try (InputStream in = file.getInputStream()) {
                                     int read;
                                     while ((read = in.read(buffer)) > 0) {

@@ -55,6 +55,7 @@ import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.TriConsumer;
+import ro.cs.tao.utils.executors.MemoryUnit;
 import ro.cs.tao.utils.mail.MailSender;
 
 import javax.servlet.http.HttpServletRequest;
@@ -278,6 +279,7 @@ public class AdministrationController extends BaseController {
             nodeFlavor.setDisk(512);
             nodeFlavor.setSwap(16384);
             nodeFlavor.setRxtxFactor(0.5f);
+            nodeFlavor.setMemoryUnit(MemoryUnit.MB);
             flavor.setFlavor(nodeFlavor);
             flavor.setQuantity(1);
             flavor.setHdd(2048);
