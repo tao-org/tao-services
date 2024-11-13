@@ -71,6 +71,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -431,6 +432,7 @@ public class DataSourceController extends BaseController {
     @RequestMapping(value = "/fetch", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> doFetch(@RequestBody FetchRequest request) {
         final String userId = currentUser();
+        final Principal principal = currentPrincipal();
         final StorageService repositoryService = getLocalRepositoryService();
         final Repository localWorkspace = getLocalRepository(currentUser());
         asyncExecute(() -> {
@@ -465,7 +467,7 @@ public class DataSourceController extends BaseController {
                             productPaths.set(i, path);
                         }
                         final String label = StringUtilities.isNullOrEmpty(query.getLabel()) ? results.get(0).getProductType() : query.getLabel();
-                        dataSourceComponentService.createForLocations(productPaths, label, currentPrincipal());
+                        dataSourceComponentService.createForLocations(productPaths, label, principal);
                         Messaging.send(userId, Topic.INFORMATION.getCategory(),
                                        "Product set [" + label + "] was added to the user [" + userId + "] workspace");
                     } catch (Exception e) {
