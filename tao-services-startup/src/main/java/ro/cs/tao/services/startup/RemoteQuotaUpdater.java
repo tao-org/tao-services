@@ -93,26 +93,25 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 
 		@Override
 		public void run() {
-			final List<User> users = new ArrayList<>();
-			// Get the list of registered users that have quota enabled
-			try {
-				TransactionalMethod.withExceptionType(PersistenceException.class).execute(() -> {
-					users.addAll(persistenceManager.users().list(UserStatus.ACTIVE));
-				});
-			} catch (PersistenceException e) {
-				logger.severe(() -> "Error reading the users list. Received message: " + e.getMessage());
-				// stop the execution
-				return;
-			}
-			
 			// Get all remote container sizes
-			Map<String, Long> userContainerSizes = null;
+			final Map<String, Long> userContainerSizes = new HashMap<>();
 			try {
-				userContainerSizes = swiftService.getContainerSizes();
+				userContainerSizes.putAll(swiftService.getContainerSizes());
 			} catch (IOException e) {
 				logger.severe(() -> "Error reading the container sizes. Received message: " + e.getMessage());
 				// stop the execution because no container size can be determined,
 				// thus nothing can be uploaded
+				return;
+			}
+			final List<User> users = new ArrayList<>();
+			// Get the list of registered users that have quota enabled
+			try {
+				TransactionalMethod.withExceptionType(PersistenceException.class).execute(() -> {
+					users.addAll(persistenceManager.users().list(userContainerSizes.keySet(), UserStatus.ACTIVE));
+				});
+			} catch (PersistenceException e) {
+				logger.severe(() -> "Error reading the users list. Received message: " + e.getMessage());
+				// stop the execution
 				return;
 			}
 			final List<String> userData = new ArrayList<>();
@@ -120,14 +119,6 @@ public class RemoteQuotaUpdater extends BaseLifeCycle {
 			for (User user : users) {
 				// get the user ID
 				final String userId = user.getId();
-				
-				// check if a container size was determined for this user
-				if (userContainerSizes == null || !userContainerSizes.containsKey(userId)) {
-					// go to next user
-					logger.fine(() -> String.format("User %s has no storage, skipping", userId));
-					continue;
-				}
-				
                 final SessionDuration sessionDuration = persistenceManager.audit().getLastUserSession(userId);
                 final ResourceUsageReport report = persistenceManager.resourceUsageReport().getByUserId(userId);
                 int processingTime = 0;
