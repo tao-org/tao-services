@@ -394,7 +394,6 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                                                          @RequestBody WorkflowNodeDescriptor node) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            final List<ParameterValue> customValues = node.getCustomValues();
             validateValueTypes(node);
             responseEntity = prepareResult(service.updateNode(workflowId, node));
             record("Node " + node.getName() + " in workflow " + workflowId + " modified");
@@ -704,12 +703,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             final ProcessingComponent component = componentService.findById(node.getComponentId());
             for (ParameterValue customValue : customValues) {
                 ParameterDescriptor descriptor = null;
-                for(ParameterDescriptor componentParam : component.getParameterDescriptors()){
-                    if(componentParam.getName().equals(customValue.getParameterName())) {
+                for (ParameterDescriptor componentParam : component.getParameterDescriptors()){
+                    if (componentParam.getName().equals(customValue.getParameterName())) {
                         descriptor = componentParam;
                         break;
                     }
-                    if(componentParam instanceof TemplateParameterDescriptor){
+                    if (componentParam instanceof TemplateParameterDescriptor){
                         descriptor = ((TemplateParameterDescriptor) componentParam).getParameters()
                                 .stream()
                                 .filter(innerParam -> customValue.getParameterName()
@@ -720,11 +719,20 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                     }
                 }
                 if (descriptor != null) {
+                    final String value = customValue.getParameterValue();
                     try {
                         if (!descriptor.javaType().isArrayType()) {
-                            descriptor.javaType().parse(customValue.getParameterValue());
+                            // Remove empty value
+                            if (StringUtilities.isNullOrEmpty(value)) {
+                                customValues.remove(customValue.getParameterName());
+                            }
+                            descriptor.javaType().parse(value);
                         } else {
-                            descriptor.javaType().parseArray(customValue.getParameterValue());
+                            // Remove empty array
+                            if (StringUtilities.isNullOrEmpty(value) || "[]".equals(value)) {
+                                customValues.remove(customValue.getParameterName());
+                            }
+                            descriptor.javaType().parseArray(value);
                         }
                     } catch (Exception e) {
                         if (errors == null) {
@@ -733,7 +741,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                         errors.add(String.format("[%s.%s] %s is not of expected type (%s)",
                                                  node.getName(),
                                                  customValue.getParameterName(),
-                                                 customValue.getParameterValue(),
+                                                 value,
                                                  descriptor.javaType().friendlyName()));
                     }
                 }
