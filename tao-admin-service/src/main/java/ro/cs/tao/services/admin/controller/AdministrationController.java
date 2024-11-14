@@ -299,9 +299,6 @@ public class AdministrationController extends BaseController {
     @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> createUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
-        /*if (!isCurrentUserAdmin()) {
-            return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }*/
         Map<String, Map<String, Integer>> flavors;
         if (request == null || (flavors = request.getFlavors()) == null || flavors.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
@@ -340,7 +337,7 @@ public class AdministrationController extends BaseController {
                 } catch (PersistenceException e) {
                     throw new TopologyException(e);
                 }
-            }, "User subscription initialized", callback);
+            }, "Fixed Resources user nodes are being initialized!", callback);
             return prepareResult("Subscription is being initialized");
         } catch (Exception ex) {
             return handleException(ex);
@@ -356,9 +353,6 @@ public class AdministrationController extends BaseController {
     @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> updateUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
-        /*if (!isCurrentUserAdmin()) {
-            return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }*/
         Map<String, Map<String, Integer>> flavorsRequest;
         if (request == null || (flavorsRequest = request.getFlavors()) == null || flavorsRequest.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
@@ -372,10 +366,8 @@ public class AdministrationController extends BaseController {
             subscription.setObjectStorageGB(request.getObjectStorageGB());
             subscription.setType(request.getType());
             subscription.setPaid(request.isPaid());
-            if(!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
-                resourceSubscriptionProvider.update(subscription);
-                return prepareResult("Subscription information updated. Pay per use subscription cannot update node information");
-            }
+            //resourceSubscriptionProvider.update(subscription);
+            //return prepareResult("Subscription information updated. Pay per use subscription cannot update node information");
             final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
             for (Iterator<Map.Entry<String, FlavorSubscription>> it = subscription.getFlavors().entrySet().iterator(); it.hasNext(); ) {
                 Map.Entry<String, FlavorSubscription> flavorEntry = it.next();
@@ -387,7 +379,9 @@ public class AdministrationController extends BaseController {
                     it.remove();
                     asyncExecute(() -> {
                         try {
-                            adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, flavorSubscription.getQuantity());
+                            if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, flavorSubscription.getQuantity());
+                            }
                         } catch (PersistenceException | TopologyException e) {
                             throw new TopologyException(e);
                         }
@@ -407,7 +401,9 @@ public class AdministrationController extends BaseController {
                                     + quantityDifference + " quantity added";
                             asyncExecute(() -> {
                                 try {
-                                    adminService.createFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
+                                    if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                        adminService.createFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
+                                    }
                                 } catch (PersistenceException | TopologyException e) {
                                     throw new TopologyException(e);
                                 }
@@ -419,15 +415,16 @@ public class AdministrationController extends BaseController {
                                     + quantityDifference + " quantity deleted";
                             asyncExecute(() -> {
                                 try {
-                                    adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
-
+                                    if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                        adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
+                                    }
                                 } catch (PersistenceException | TopologyException e) {
                                     throw new TopologyException(e);
                                 }
                             }, successMessage, callback);
                         }
+                        updated++;
                     }
-                    updated++;
                 }
                 flavorsRequest.remove(flavorId);
             }
@@ -448,7 +445,9 @@ public class AdministrationController extends BaseController {
                 final String successMessage = "Node with flavor " + nodeFlavor.getId() + " created";
                 asyncExecute(() -> {
                     try {
-                        adminService.createFlavorNodesForSubscription(subscription, newFlavorSubscription, quantity);
+                        if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                            adminService.createFlavorNodesForSubscription(subscription, newFlavorSubscription, quantity);
+                        }
                     } catch (PersistenceException | TopologyException e) {
                         throw new TopologyException(e);
                     }
@@ -470,9 +469,6 @@ public class AdministrationController extends BaseController {
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId) {
-        /*if (!isCurrentUserAdmin()) {
-            return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }*/
         try {
             ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
             if (subscription == null) {
@@ -483,15 +479,13 @@ public class AdministrationController extends BaseController {
             }
             subscription.setEnded(LocalDateTime.now());
             resourceSubscriptionProvider.update(subscription);
-            //delete nodes as required
-            if(!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
-                return prepareResult("Subscription information deleted. Pay per use subscription cannot delete nodes.");
-            }
             for(Map.Entry<String, FlavorSubscription> entry : subscription.getFlavors().entrySet()){
                 final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
                 asyncExecute(() -> {
                     try {
-                        adminService.deleteFlavorNodesForSubscription(subscription, entry.getValue(), entry.getValue().getQuantity());
+                        if(!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                            adminService.deleteFlavorNodesForSubscription(subscription, entry.getValue(), entry.getValue().getQuantity());
+                        }
                     } catch (PersistenceException | TopologyException e) {
                         throw new TopologyException(e);
                     }
