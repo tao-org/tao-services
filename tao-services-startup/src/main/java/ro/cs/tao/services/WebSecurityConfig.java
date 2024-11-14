@@ -15,6 +15,7 @@
  */
 package ro.cs.tao.services;
 
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -34,9 +35,11 @@ import org.springframework.security.web.firewall.HttpStatusRequestRejectedHandle
 import org.springframework.security.web.firewall.RequestRejectedException;
 import org.springframework.security.web.firewall.RequestRejectedHandler;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.GenericFilterBean;
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.security.AuthenticationMode;
@@ -48,14 +51,16 @@ import ro.cs.tao.services.security.token.AuthenticationFilter;
 import ro.cs.tao.services.security.token.TokenAuthenticationProvider;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
+import ro.cs.tao.utils.Tuple;
 
-import javax.servlet.Filter;
+import javax.servlet.*;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -65,7 +70,15 @@ import java.util.logging.Logger;
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implements ApplicationContextAware {
 
+    private final int maxRejectedRequests = Integer.parseInt(ConfigurationManager.getInstance()
+                                                                                 .getValue("tao.max.rejected.requests", "10"));
+    private final boolean enableBlockRequests = ConfigurationManager.getInstance().getBooleanValue("enable.block.bad.requests");
+    private final int blockInterval = Integer.parseInt(ConfigurationManager.getInstance().getValue("tao.blocked.ip.interval", "10"));
+    private Map<String, Tuple<Integer, LocalDateTime>> rejectedRequestCounter;
+
     private final Logger logger = Logger.getLogger(WebSecurityConfig.class.getName());
+
+    private Timer timer;
 
     @Autowired
     private AuthenticationEntryPoint entryPoint;
@@ -140,11 +153,65 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
     }
 
     @Bean
+    public RequestContextListener requestContextListener() {
+        return new RequestContextListener();
+    }
+
+    public Filter blockFilter() {
+        return new GenericFilterBean() {
+            @Override
+            public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+                if (enableBlockRequests) {
+                    final HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
+                    final HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
+                    final String ip = getRequestIp(httpRequest);
+                    Tuple<Integer, LocalDateTime> cnt;
+                    if (rejectedRequestCounter == null) {
+                        rejectedRequestCounter = Collections.synchronizedMap(new HashMap<>());
+                    }
+                    if ((cnt = rejectedRequestCounter.get(ip)) != null && cnt.getKeyOne() == maxRejectedRequests) {
+                        if (!httpResponse.isCommitted()) {
+                            httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                            httpRequest.getSession().invalidate();
+                        }
+                        throw new BadRequestException(ip + " has been blocked for " + blockInterval + " minutes");
+                    }
+                }
+                filterChain.doFilter(servletRequest, servletResponse);
+            }
+        };
+    }
+
+    @Bean
     public RequestRejectedHandler requestRejectedHandler() {
         return new HttpStatusRequestRejectedHandler() {
             @Override
             public void handle(HttpServletRequest request, HttpServletResponse response, RequestRejectedException requestRejectedException) throws IOException {
-                logger.warning(requestRejectedException.getMessage() + " from " + request.getRequestURL());
+                logger.warning(requestRejectedException.getMessage() + ". Request details:\n" + prettyPrint(request));
+                if (enableBlockRequests) {
+                    final HttpSession session = request.getSession();
+                    final String ip = getRequestIp(request);
+                    if (rejectedRequestCounter == null) {
+                        rejectedRequestCounter = Collections.synchronizedMap(new HashMap<>());
+                    }
+                    if (!rejectedRequestCounter.containsKey(ip)) {
+                        rejectedRequestCounter.put(ip, new Tuple<>(0, LocalDateTime.now()));
+                    }
+                    rejectedRequestCounter.put(ip, new Tuple<>(rejectedRequestCounter.get(ip).getKeyOne() + 1, LocalDateTime.now()));
+                    if (timer == null) {
+                        long interval = blockInterval * 60000;
+                        timer = new Timer();
+                        timer.scheduleAtFixedRate(new TimerTask() {
+                            @Override
+                            public void run() {
+                                final Tuple<Integer, LocalDateTime> tuple = rejectedRequestCounter.get(ip);
+                                if (tuple.getKeyTwo().isBefore(LocalDateTime.now().minusMinutes(10))) {
+                                    rejectedRequestCounter.remove(ip);
+                                }
+                            }
+                        }, interval, interval);
+                    }
+                }
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             }
         };
@@ -152,29 +219,32 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http
+        final HttpSecurity httpSecurity = http
                 .sessionManagement()
                     .maximumSessions(2).maxSessionsPreventsLogin(false).sessionRegistry(sessionRegistry())
-                    .and()
+                .and()
                     .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
-                    .and()
-                .headers().frameOptions().sameOrigin()
-                    .and()
+                .and()
+                    .headers().frameOptions().sameOrigin()
+                .and()
                     .authorizeRequests()
                         .antMatchers(Endpoints.REFRESH_ENDPOINT, Endpoints.DOWNLOAD_ENDPOINT)
                             .permitAll()
                         .antMatchers(Endpoints.LOGIN_ENDPOINT)
                             .authenticated()
-                    .and()
+                .and()
                     .httpBasic()
-                    .and()
+                .and()
                     .authenticationProvider(customAuthenticationProvider)
                         .authorizeRequests()
-                            .antMatchers(apiEndpointsWithAuthToken())
-                                .authenticated()
-                        .and()
-                        .authenticationProvider(tokenProvider)
-                            .addFilterBefore(new AuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
+                        .antMatchers(apiEndpointsWithAuthToken())
+                        .authenticated()
+                .and()
+                    .authenticationProvider(tokenProvider)
+                .addFilterBefore(new AuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
+        if (enableBlockRequests) {
+            httpSecurity.addFilterBefore(blockFilter(), BasicAuthenticationFilter.class);
+        }
         if (ConfigurationManager.getInstance().getBooleanValue("enable.tunnel.filters")) {
             final ServiceRegistry<TunnelFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(TunnelFilter.class);
             final Set<TunnelFilter> tunnelFilters = registry.getServices();
@@ -188,21 +258,20 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                 }
             }
         }
-        http    .authorizeRequests()
-                    .antMatchers(Endpoints.GLOBAL_PATH_EXPRESSION)
-                                // permit all after token management
+        http.authorizeRequests()
+                .antMatchers(Endpoints.GLOBAL_PATH_EXPRESSION)
+                    // permit all after token management
                     .permitAll()
-                    .and()
-
+            .and()
                 // replace code above to bypass token management
                 /*.authenticated()
                 .and()
                 .httpBasic()
                 .and()
                 .authenticationProvider(customAuthProvider())*/
-                    .csrf()
-                        .disable();
-        http.cors();
+                .csrf()
+                    .disable()
+            .cors();
     }
 
     private String[] apiEndpointsWithAuthToken() {
@@ -215,5 +284,46 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {//implement
                                                         ConfigurationManager.getInstance().getValue("authentication.mode", "local")
                                                                             .toUpperCase()).friendlyName());
         return expressions;
+    }
+
+    private String prettyPrint(HttpServletRequest request) {
+        final StringBuilder builder = new StringBuilder();
+        builder.append("URL=").append(request.getRequestURL()).append("\n");
+        builder.append("SessionID=").append(request.getSession().getId()).append("\n");
+        builder.append("Headers=[");
+        final Enumeration<String> names = request.getHeaderNames();
+        if (names != null) {
+            String name = null;
+            while (names.hasMoreElements()) {
+                name = names.nextElement();
+                builder.append(name).append(":").append(request.getHeader(name)).append(",");
+            }
+            if (name != null) {
+                builder.setLength(builder.length() - 1);
+            }
+        }
+        builder.append("]\n").append("Cookies=[");
+        final Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                builder.append(cookie.getName()).append(":").append(cookie.getValue()).append(",");
+            }
+            if (cookies.length > 0) {
+                builder.setLength(builder.length() - 1);
+            }
+        }
+        builder.append("]\n");
+        return builder.toString();
+    }
+
+    private String getRequestIp(HttpServletRequest httpRequest) {
+        final String xfHeader = httpRequest.getHeader("X-Forwarded-For");
+        final String ip;
+        if (xfHeader != null) {
+            ip = xfHeader.split(",")[0];
+        } else {
+            ip = httpRequest.getRemoteAddr();
+        }
+        return ip;
     }
 }
