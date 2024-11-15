@@ -701,7 +701,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         if (customValues != null) {
             List<String> errors = null;
             final ProcessingComponent component = componentService.findById(node.getComponentId());
-            for (ParameterValue customValue : customValues) {
+            for (Iterator<ParameterValue> it = customValues.iterator(); it.hasNext(); ) {
+                ParameterValue customValue = it.next();
                 ParameterDescriptor descriptor = null;
                 for (ParameterDescriptor componentParam : component.getParameterDescriptors()){
                     if (componentParam.getName().equals(customValue.getParameterName())) {
@@ -724,13 +725,13 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                         if (!descriptor.javaType().isArrayType()) {
                             // Remove empty value
                             if (StringUtilities.isNullOrEmpty(value)) {
-                                customValues.remove(customValue.getParameterName());
+                                it.remove();
                             }
                             descriptor.javaType().parse(value);
                         } else {
                             // Remove empty array
                             if (StringUtilities.isNullOrEmpty(value) || "[]".equals(value)) {
-                                customValues.remove(customValue.getParameterName());
+                                it.remove();
                             }
                             descriptor.javaType().parseArray(value);
                         }
