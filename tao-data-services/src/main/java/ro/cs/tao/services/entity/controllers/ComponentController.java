@@ -364,9 +364,12 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             if (parameter == null) {
                 throw new IllegalArgumentException("empty body");
             }
-            for(ParameterDescriptor parameterDescriptor : parameter.getParameters()){
-                if(StringUtilities.isNullOrEmpty(parameterDescriptor.getId()))
-                    parameterDescriptor.setId(UUID.randomUUID().toString());
+            final List<ParameterDescriptor> parameters = parameter.getParameters();
+            if (parameters != null) {
+                for (ParameterDescriptor parameterDescriptor : parameters) {
+                    if (StringUtilities.isNullOrEmpty(parameterDescriptor.getId()))
+                        parameterDescriptor.setId(UUID.randomUUID().toString());
+                }
             }
             final ProcessingComponent component = service.findById(id);
             if (currentUser().equals(component.getOwner()) || isCurrentUserAdmin()) {
