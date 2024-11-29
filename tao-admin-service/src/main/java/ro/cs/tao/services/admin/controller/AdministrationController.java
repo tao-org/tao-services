@@ -471,27 +471,26 @@ public class AdministrationController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId) {
         try {
             ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
-            if (subscription == null) {
-                throw new IllegalArgumentException("No such subscription");
-            }
-            if (subscription.getEnded() != null) {
-                throw new IllegalAccessException("Subscription already closed");
-            }
-            subscription.setEnded(LocalDateTime.now());
-            resourceSubscriptionProvider.update(subscription);
-            for(Map.Entry<String, FlavorSubscription> entry : subscription.getFlavors().entrySet()){
-                final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
-                asyncExecute(() -> {
-                    try {
-                        if(!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
-                            adminService.deleteFlavorNodesForSubscription(subscription, entry.getValue(), entry.getValue().getQuantity());
+            if (subscription != null) {
+                if (subscription.getEnded() != null) {
+                    throw new IllegalAccessException("Subscription already closed");
+                }
+                subscription.setEnded(LocalDateTime.now());
+                resourceSubscriptionProvider.update(subscription);
+                for (Map.Entry<String, FlavorSubscription> entry : subscription.getFlavors().entrySet()) {
+                    final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
+                    asyncExecute(() -> {
+                        try {
+                            if (!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                adminService.deleteFlavorNodesForSubscription(subscription, entry.getValue(), entry.getValue().getQuantity());
+                            }
+                        } catch (PersistenceException | TopologyException e) {
+                            throw new TopologyException(e);
                         }
-                    } catch (PersistenceException | TopologyException e) {
-                        throw new TopologyException(e);
-                    }
-                }, "All nodes deleted for user subscription", callback);
+                    }, "All nodes deleted for user subscription", callback);
+                }
             }
-            return prepareResult("Subscription closed", ResponseStatus.SUCCEEDED);
+            return prepareResult("Any open subscription closed", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             return handleException(ex);
         }
