@@ -246,6 +246,7 @@ public class ComponentServiceImpl
             targetDescriptor.setParentId(entity.getId());
         }
         entity.setTemplateType(TemplateType.VELOCITY);
+        entity.setNodeAffinity(NodeAffinity.Any);
         final ProcessingComponent existing = findById(entity.getId());
         if (existing != null) {
             throw new IOException("Processing component already exists");
