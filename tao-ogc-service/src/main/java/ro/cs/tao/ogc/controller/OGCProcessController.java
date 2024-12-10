@@ -11,9 +11,9 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.param.JavaType;
 import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.eodata.enums.SensorType;
-import ro.cs.tao.execution.model.ExecutionJobSummary;
-import ro.cs.tao.execution.model.ExecutionStatus;
-import ro.cs.tao.execution.model.ExecutionTaskSummary;
+import ro.cs.tao.execution.model.*;
+import ro.cs.tao.execution.persistence.ExecutionJobProvider;
+import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.ogc.model.common.ConfClasses;
 import ro.cs.tao.ogc.model.common.Exception;
 import ro.cs.tao.ogc.model.common.LandingPage;
@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/process")
@@ -46,6 +47,8 @@ public class OGCProcessController extends BaseController {
     private WorkflowService workflowService;
     @Autowired
     private OrchestratorService orchestratorService;
+    @Autowired
+    private ExecutionJobProvider executionJobProvider;
 
     //region Core operations
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -395,13 +398,41 @@ public class OGCProcessController extends BaseController {
 
     @RequestMapping(value = "/jobs/{id:.+}/results", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getJobResults(@PathVariable("id") String jobId) {
-        // TODO
-        return ResponseEntity.ok().build();
+        try {
+            final ExecutionJob job = executionJobProvider.get(Long.parseLong(jobId));
+            if (job == null) {
+                return ResponseEntity.notFound().build();
+            }
+            if (job.getExecutionStatus() != ExecutionStatus.DONE) {
+                return ResponseEntity.noContent().build();
+            }
+            final String batchId = job.getBatchId();
+            final List<String> terminalTasksOutputs = new ArrayList<>();
+            if (StringUtilities.isNullOrEmpty(batchId)) {
+                terminalTasksOutputs.addAll(job.getTasks().stream()
+                                               .filter(t -> TaskUtilities.isTerminalTask(t) && t.getExecutionStatus() == ExecutionStatus.DONE)
+                                               .map(ExecutionTask::getInstanceTargetOutput)
+                                               .collect(Collectors.toList()));
+            } else {
+                final List<ExecutionJob> jobs = executionJobProvider.list(new ArrayList<String>() {{
+                    add(batchId);
+                }});
+                for (ExecutionJob eJob : jobs) {
+                    terminalTasksOutputs.addAll(eJob.getTasks().stream()
+                                                   .filter(t -> TaskUtilities.isTerminalTask(t) && t.getExecutionStatus() == ExecutionStatus.DONE)
+                                                   .map(ExecutionTask::getInstanceTargetOutput)
+                                                   .collect(Collectors.toList()));
+                }
+            }
+            return ResponseEntity.ok(terminalTasksOutputs);
+        } catch (Throwable e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @RequestMapping(value = "/jobs", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> execute(@RequestBody ExecutionRequest request) {
-        // TODO
+
         return ResponseEntity.ok().build();
     }
 
