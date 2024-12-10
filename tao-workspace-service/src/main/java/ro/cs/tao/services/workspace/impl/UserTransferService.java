@@ -29,6 +29,8 @@ import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Logger;
 
@@ -39,14 +41,20 @@ public class UserTransferService {
     private final Principal principal;
     private Timer retryTimer;
     private final BlockingQueueWorker<TransferableItem> queueWorker;
+    private final ExecutorService callbackExecutor;
 
     private final Map<String, Integer> batches;
     private final boolean saveState;
     private ProgressListener progressListener;
+    private final UserTransferListener transferListener;
     private final Logger logger;
 
 
     UserTransferService(Principal user) {
+        this(user, null);
+    }
+
+    UserTransferService(Principal user, UserTransferListener listener) {
         this.logger = Logger.getLogger(TransferService.class.getName());
         this.queue = new LinkedBlockingDeque<>();
         this.queueWorker = new BlockingQueueWorker<>(this.queue, this::processRequest, 1, "transfer-worker", 250);
@@ -56,6 +64,8 @@ public class UserTransferService {
         this.queueWorker.setStatePersister(this::saveState);
         this.batches = new HashMap<>();
         this.saveState = Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("allow.resumable.transfers", "false"));
+        this.transferListener = listener;
+        this.callbackExecutor = this.transferListener != null ? Executors.newSingleThreadExecutor() : null;
         queueWorker.start();
     }
 
@@ -136,6 +146,12 @@ public class UserTransferService {
                     }
                     if (item.isForce() || !destinationService.exists(item.getDestinationPath())) {
                         destinationService.storeFile(sourceStream, fileObject.getSize(), item.getDestinationPath(), srcPath);
+                        if (this.transferListener != null) {
+                            final String sourcePath = srcPath;
+                            this.callbackExecutor.execute(() -> this.transferListener.onTransferCompleted(this.principal.getName(),
+                                                                                                          sourcePath,
+                                                                                                          dstWorkspace.resolve(item.getDestinationPath())));
+                        }
                     } else {
                         logger.fine(String.format("File %s exists at the destination and no overwrite flag is set", srcPath));
                     }
