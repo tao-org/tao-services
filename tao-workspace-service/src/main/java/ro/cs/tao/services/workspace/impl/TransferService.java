@@ -10,9 +10,14 @@ import java.util.Map;
 @Service("transferService")
 public class TransferService {
     private final Map<Principal, UserTransferService> serviceMap;
+    private UserTransferListener listener;
 
     private TransferService() {
         this.serviceMap = new HashMap<>();
+    }
+
+    public void setTransferListener(UserTransferListener listener) {
+        this.listener = listener;
     }
 
     /**
@@ -23,7 +28,7 @@ public class TransferService {
         if (requests != null && requests.length > 0) {
             final Principal user = () -> requests[0].getUser();
             if (!this.serviceMap.containsKey(user)) {
-                this.serviceMap.put(user, new UserTransferService(user));
+                this.serviceMap.put(user, new UserTransferService(user, this.listener));
             }
             this.serviceMap.get(user).request(requests);
         }

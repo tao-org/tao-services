@@ -8,6 +8,7 @@ import ro.cs.tao.execution.JobCompletedListener;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
@@ -67,8 +68,12 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
     /** Auxiliary data provider. */
     private AuxiliaryDataProvider auxiliaryDataProvider;
 
+	private ExecutionTaskProvider executionTaskProvider;
+
     /** File transfer service. */
     private final TransferService transferService;
+
+	private final TransferListener transferListener;
     
     /** The files that are to be transfered. */
     private final Set<String> files = new HashSet<>();
@@ -83,6 +88,8 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
 		this.vectorDataProvider = SpringContextBridge.services().getService(VectorDataProvider.class);
 		this.auxiliaryDataProvider = SpringContextBridge.services().getService(AuxiliaryDataProvider.class);
 		this.transferService = SpringContextBridge.services().getService(TransferService.class);
+		this.executionTaskProvider = SpringContextBridge.services().getService(ExecutionTaskProvider.class);
+		this.transferListener = new TransferListener();
 		subscribe(Topic.TRANSFER_PROGRESS.value());
 	}
 	
@@ -144,6 +151,7 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
         					false, 
         					true);}).collect(Collectors.toList());
 
+			transferService.setTransferListener(this.transferListener);
         	transferService.request(items.toArray(new TransferableItem[items.size()]));
 
     		Messaging.send(new UserPrincipal(job.getUserId()),
@@ -318,6 +326,37 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
 				}	
 	    	}
 
+		}
+	}
+
+	private class TransferListener implements UserTransferListener {
+
+		@Override
+		public void onTransferCompleted(String user, String srcPath, String dstPath) {
+			final ExecutionTask task = TaskUtilities.findTaskByOutput(srcPath);
+			if (task != null) {
+				String targetOutput = task.getInstanceTargetOutput();
+				if (targetOutput == null) {
+					targetOutput = dstPath;
+				} else {
+					targetOutput = targetOutput.replace(srcPath, dstPath);
+				}
+				task.setInstanceTargetOutput(targetOutput);
+                try {
+                    JobFilesUpload.this.executionTaskProvider.update(task);
+					logger.fine("Output for task " + task.getId() + " updated to " + targetOutput);
+					final List<EOProduct> products = JobFilesUpload.this.productProvider.getByLocation(srcPath);
+					if (products != null) {
+						for (EOProduct product : products) {
+							product.setLocation(dstPath.substring(0, srcPath.lastIndexOf('/')));
+							JobFilesUpload.this.productProvider.update(product);
+							logger.fine("Product location for " + product.getName() + " updated to " + dstPath);
+						}
+					}
+				} catch (Exception e) {
+                    logger.warning(e.getMessage());
+                }
+            }
 		}
 	}
 }
