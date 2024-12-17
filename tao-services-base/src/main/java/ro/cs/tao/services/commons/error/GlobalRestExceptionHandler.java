@@ -39,6 +39,7 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -131,12 +132,23 @@ public class GlobalRestExceptionHandler extends ResponseEntityExceptionHandler {
     private ResponseEntity<Object> handle(Exception exception, WebRequest request, HttpStatus status) {
         ServletWebRequest req = (ServletWebRequest) request;
         logger.severe(String.format(detail, exception.getMessage(),
-                                    req.getRequest().getRemoteAddr(),
+                                    getRequestIp(req.getRequest()),
                                     req.getUserPrincipal() != null ? req.getUserPrincipal().getName() : "anonymous",
                                     req.getRequest().getRequestURI()));
         Map<String, Object> body = new HashMap<>();
         body.put("error", exception.getMessage());
         body.put("requestParameters", request.getParameterMap());
         return new ResponseEntity<>(body, status);
+    }
+
+    private String getRequestIp(HttpServletRequest httpRequest) {
+        final String xfHeader = httpRequest.getHeader("X-Forwarded-For");
+        final String ip;
+        if (xfHeader != null) {
+            ip = xfHeader.split(",")[0];
+        } else {
+            ip = httpRequest.getRemoteAddr();
+        }
+        return ip;
     }
 }

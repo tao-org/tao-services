@@ -96,8 +96,9 @@ public class TokenManagementService {
         return tokenCache.getFromRefreshToken(refreshToken);
     }
 
-    public void removeUserTokens(String user) {
-        tokenCache.remove(user);
+    public void removeUserTokens(String userId) {
+        tokenCache.remove(userId);
+        tokenProvider.logout(userId);
     }
 
 }
