@@ -266,6 +266,8 @@ public class ComponentServiceImpl
     @Override
     public String exportComponent(ProcessingComponent component) throws SerializationException {
         final BaseSerializer<ProcessingComponent> serializer = SerializerFactory.create(ProcessingComponent.class, MediaType.JSON);
+        serializer.addMixIn(ParameterDescriptor.class, DataTypeMixIn.class);
+        serializer.setIgnoreNullFields();
         return serializer.serialize(component);
     }
 
