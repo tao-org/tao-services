@@ -44,6 +44,7 @@ import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
+import javax.servlet.http.HttpServletRequest;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
@@ -176,7 +177,8 @@ public class UserController extends BaseController {
      * @param userId    The user account identifier
      */
     @RequestMapping(value = "/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId) {
+    public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId,
+                                                          HttpServletRequest request) {
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
@@ -193,6 +195,9 @@ public class UserController extends BaseController {
                 }
                 return prepareResult(userInfo);
             } else {
+                if (currentPrincipal() == null) {
+                    request.getSession().invalidate();
+                }
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
         } catch (Exception ex) {
