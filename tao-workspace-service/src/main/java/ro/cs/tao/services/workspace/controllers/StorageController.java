@@ -347,13 +347,24 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             String[] files = file.split(",");
-            final Repository workspace = getOwnedWorkspace(currentUser(), workspaceId);
-            for (String f : files) {
-                checkPath(f);
-                if (f.startsWith("/")) {
-                    throw new IOException("The path must be relative [" + f + "]");
+            final String userId = currentUser();
+            final Repository workspace = getOwnedWorkspace(userId, workspaceId);
+            if (workspace.getType().equals(RepositoryType.LOCAL)) {
+                asyncExecute(() -> {
+                    try {
+                        FileUtilities.deleteTreesUnix(files);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }, null, errorCallback(userId));
+            } else {
+                for (String f : files) {
+                    checkPath(f);
+                    if (f.startsWith("/")) {
+                        throw new IOException("The path must be relative [" + f + "]");
+                    }
+                    deletionQueue.put(new Tuple<>(workspace, f));
                 }
-                deletionQueue.put(new Tuple<>(workspace, f));
             }
             responseEntity = prepareResult(String.format("%d items marked for deletion", files.length), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
@@ -1045,6 +1056,22 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
             maliciousAttempts.remove(userId);
         }
+    }
+
+    private TriConsumer<String, Exception, String> errorCallback(String userId){
+        return (u, e, s) -> {
+            String topic;
+            String message;
+            if (e == null) {
+                topic = Topic.INFORMATION.getCategory();
+                message = s;
+            } else {
+                topic = Topic.WARNING.getCategory();
+                message = e.getMessage();
+            }
+
+            Messaging.send(userId, topic, message);
+        };
     }
 
     private static class DeleteOperation implements Function<Tuple<Repository, String>, Void> {
