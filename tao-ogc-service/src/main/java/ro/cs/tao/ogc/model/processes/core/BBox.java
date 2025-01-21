@@ -5,6 +5,8 @@ import java.util.List;
 public class BBox {
     private List<Double> bbox;
 
+    private String crs;
+
     public List<Double> getBbox() {
         return bbox;
     }
@@ -14,5 +16,13 @@ public class BBox {
             throw new IllegalArgumentException("Must have either 4 or 6 values");
         }
         this.bbox = bbox;
+    }
+
+    public String getCrs() {
+        return crs;
+    }
+
+    public void setCrs(String crs) {
+        this.crs = crs;
     }
 }

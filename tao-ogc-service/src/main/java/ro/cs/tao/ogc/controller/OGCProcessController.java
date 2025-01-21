@@ -115,6 +115,12 @@ public class OGCProcessController extends BaseController {
                 self.setRel("self");
                 self.setHref(request.getRequestURI() + "/" + w.getId());
                 list.addLink(self);
+                Link linkExecution = new Link();
+                linkExecution.setTitle("Process execution");
+                linkExecution.setType(MediaType.APPLICATION_JSON_VALUE);
+                linkExecution.setRel("http://www.opengis.net/def/rel/ogc/1.0/execute");
+                linkExecution.setHref(request.getRequestURI() + "/" + w.getId() + "/execution");
+                list.addLink(linkExecution);
                 p.addJobControlOption(JobControlOptions.ASYNC_EXECUTE);
                 p.addOutputTransmission(TransmissionMode.VALUE);
                 return p;
@@ -282,6 +288,23 @@ public class OGCProcessController extends BaseController {
         }
     }
 
+    @RequestMapping(value = "/processes/{id:.+}/execution", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> execute(@PathVariable("id") String processId, @RequestBody ExecutionRequest request) {
+
+        try{
+            final WorkflowDescriptor workflow = workflowService.findById(Long.parseLong(processId));
+            //TODO continue workflow execution
+        }
+        catch (Throwable e) {
+            Exception exception = new Exception();
+            exception.setTitle(e.getClass().getSimpleName());
+            exception.setDetail(e.getMessage());
+            exception.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.internalServerError().body(exception);
+        }
+        return ResponseEntity.ok().build();
+    }
+
     @RequestMapping(value = "/jobs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getJobs(HttpServletRequest request) {
         final List<StatusInfo> jobInfos = new ArrayList<>();
@@ -430,11 +453,6 @@ public class OGCProcessController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/jobs", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> execute(@RequestBody ExecutionRequest request) {
-
-        return ResponseEntity.ok().build();
-    }
 
     @RequestMapping(value = "/jobs/{id:.+}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> deleteJob(@PathVariable("id") String jobId) {
