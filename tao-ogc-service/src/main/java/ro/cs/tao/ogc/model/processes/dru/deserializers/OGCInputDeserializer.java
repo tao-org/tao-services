@@ -1,4 +1,4 @@
-package ro.cs.tao.ogc.model.processes.dru;
+package ro.cs.tao.ogc.model.processes.dru.deserializers;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import ro.cs.tao.ogc.model.common.Link;
-import ro.cs.tao.ogc.model.processes.core.*;
+import ro.cs.tao.ogc.model.processes.core.execution.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,72 +14,25 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class InputDescriptionDeserializer extends StdDeserializer<Input> {
+public class OGCInputDeserializer extends StdDeserializer<Input> {
 
-    public InputDescriptionDeserializer(){
+    public OGCInputDeserializer(){
         this(null);
     }
 
-    public InputDescriptionDeserializer(Class<?> vc) {
+    public OGCInputDeserializer(Class<?> vc) {
         super(vc);
     }
 
     @Override
     public Input deserialize(JsonParser jp, DeserializationContext deserializationContext) throws IOException, JacksonException {
         Input inputs = initializeInput();
-        List<InputValueNoObject> inputValueNoObjects = inputs.getInputValueNoObjects();
-        List<QualifiedInputValue> qualifiedInputValues = inputs.getQualifiedInputValues();
-        List<Link> links = inputs.getLinks();
         try {
             JsonNode node = jp.getCodec().readTree(jp);
             Iterator<Map.Entry<String, JsonNode>> iterator = node.fields();
             while (iterator.hasNext()) {
                 Map.Entry<String, JsonNode> entry = iterator.next();
-                String key = entry.getKey();
-                JsonNode value = entry.getValue();
-                if (value.isArray()) {
-                    List<InputValueNoObject<?>> arrayList = new ArrayList<>();
-                    for(JsonNode element : value){
-                        if(element.isObject()) {
-                            if(element.get("bbox") != null){
-                                InputValueNoObject<?> input = checkAndGetItemNoObject(null, element);
-                                arrayList.add(input);
-                                continue;
-                            }
-                            if(element.get("href") != null){
-                                Link link = parseAndGetLink(null, element);
-                                InputValueNoObject<Link> input = InputValueNoObject.of(link);
-                                arrayList.add(input);
-                                continue;
-                            }
-                            arrayList.add(getQualifiedInputValue(null, element));
-                        }else {
-                            arrayList.add(checkAndGetItemNoObject(null, element));
-                        }
-                    }
-                    InputValueNoObject<?> input = InputValueNoObject.of(arrayList);
-                    input.setName(key);
-                    inputValueNoObjects.add(input);
-                } else
-                if (value.isObject()) {
-                    if(value.get("bbox") != null){
-                        InputValueNoObject<?> input = checkAndGetItemNoObject(key, value);
-                        inputValueNoObjects.add(input);
-                        continue;
-                    }
-                    if(value.get("href") != null){
-                        Link input = parseAndGetLink(key, value);
-                        links.add(input);
-                        continue;
-                    }
-                    QualifiedInputValue<?> inputObject = getQualifiedInputValue(key, value);
-                    qualifiedInputValues.add(inputObject);
-                }
-                else{
-                    InputValueNoObject<?> input = checkAndGetItemNoObject(key, value);
-                    if(input != null)
-                        inputValueNoObjects.add(input);
-                }
+                addEntryInputToInputs(entry, inputs);
             }
         } catch (IOException e){
             throw new IOException(e.getMessage());
@@ -87,7 +40,55 @@ public class InputDescriptionDeserializer extends StdDeserializer<Input> {
         return inputs;
     }
 
-
+    private void addEntryInputToInputs(Map.Entry<String, JsonNode> entry, Input inputs) {
+        String name = entry.getKey();
+        JsonNode jsonInput = entry.getValue();
+        List<InputValueNoObject<?>> inputValueNoObjects = inputs.getInputValueNoObjects();
+        List<QualifiedInputValue<?>> qualifiedInputValues = inputs.getQualifiedInputValues();
+        List<Link> links = inputs.getLinks();
+        if (jsonInput.isArray()) {
+            List<InputValueNoObject<?>> listInput = new ArrayList<>();
+            for(JsonNode element : jsonInput){
+                if(element.isObject()) {
+                    if(element.get("bbox") != null){
+                        InputValueNoObject<?> input = getInputValueNoObject(null, element);
+                        listInput.add(input);
+                        continue;
+                    }
+                    if(element.get("href") != null){
+                        Link link = getLink(null, element);
+                        InputValueNoObject<Link> input = InputValueNoObject.of(link);
+                        listInput.add(input);
+                        continue;
+                    }
+                    listInput.add(getQualifiedInputValue(null, element));
+                }else {
+                    listInput.add(getInputValueNoObject(null, element));
+                }
+            }
+            InputValueNoObject<?> input = InputValueNoObject.of(listInput);
+            input.setName(name);
+            inputValueNoObjects.add(input);
+        } else if (jsonInput.isObject()) {
+            if(jsonInput.get("bbox") != null){
+                InputValueNoObject<?> input = getInputValueNoObject(name, jsonInput);
+                inputValueNoObjects.add(input);
+                return;
+            }
+            if(jsonInput.get("href") != null){
+                Link input = getLink(name, jsonInput);
+                links.add(input);
+                return;
+            }
+            QualifiedInputValue<?> inputObject = getQualifiedInputValue(name, jsonInput);
+            qualifiedInputValues.add(inputObject);
+        }
+        else{
+            InputValueNoObject<?> input = getInputValueNoObject(name, jsonInput);
+            if(input != null)
+                inputValueNoObjects.add(input);
+        }
+    }
 
     private Input initializeInput() {
         Input input = new Input();
@@ -97,17 +98,16 @@ public class InputDescriptionDeserializer extends StdDeserializer<Input> {
         return input;
     }
 
-    private InputValueNoObject<?> checkAndGetItemNoObject(String key, JsonNode value) {
+    private InputValueNoObject<?> getInputValueNoObject(String name, JsonNode value) {
         InputValueNoObject<?> input = null;
         if(value.isArray()){
             List<InputValueNoObject<?>> arrayList = new ArrayList<>();
             for(JsonNode element : value){
                 if(element.isObject()) {
-                    //see obj
                     String key2 = element.fields().next().getKey();
                     arrayList.add(getQualifiedInputValue(key2, element));
                 }else{
-                    arrayList.add(checkAndGetItemNoObject(null, element));
+                    arrayList.add(getInputValueNoObject(null, element));
                 }
             }
             input = InputValueNoObject.of(arrayList);
@@ -128,8 +128,9 @@ public class InputDescriptionDeserializer extends StdDeserializer<Input> {
         } else if (value.isTextual()) {
             input = InputValueNoObject.of(value.textValue());
         }
-        if(input != null && key != null && !key.isEmpty()){
-            input.setName(key);
+        // if name is null it means it's an array element
+        if(input != null && name != null && !name.isEmpty()){
+            input.setName(name);
         }
         return input;
     }
@@ -146,7 +147,6 @@ public class InputDescriptionDeserializer extends StdDeserializer<Input> {
             }
         } else
             inputObject = new QualifiedInputValue<>();
-
         inputObject.setName(key);
         List<InputValueNoObject<?>> additionalProperties = new ArrayList<>();
         inputObject.setAdditionalProperties(additionalProperties);
@@ -161,8 +161,21 @@ public class InputDescriptionDeserializer extends StdDeserializer<Input> {
                 inputObject.setFormat(format);
             } else {
                 //TODO check for obj inside obj
-                InputValueNoObject<?> inputValueNoObject = checkAndGetItemNoObject(keyObj, valueObj);
-                additionalProperties.add(inputValueNoObject);
+                if(valueObj.isObject()) {
+                    if (valueObj.get("bbox") != null) {
+                        InputValueNoObject<?> inputValueNoObject = getInputValueNoObject(null, valueObj);
+                        additionalProperties.add(inputValueNoObject);
+                        continue;
+                    }
+                    if (valueObj.get("href") != null) {
+                        Link link = getLink(null, valueObj);
+                        InputValueNoObject<Link> input = InputValueNoObject.of(link);
+                        additionalProperties.add(input);
+                        continue;
+                    }
+                    InputValueNoObject<?> inputValueNoObject = getInputValueNoObject(keyObj, valueObj);
+                    additionalProperties.add(inputValueNoObject);
+                }
             }
         }
         return inputObject;
@@ -174,7 +187,7 @@ public class InputDescriptionDeserializer extends StdDeserializer<Input> {
         Iterator<Map.Entry<String, JsonNode>> iterator = node.fields();
         while (iterator.hasNext()) {
             Map.Entry<String, JsonNode> entry = iterator.next();
-            InputValueNoObject input = checkAndGetItemNoObject(entry.getKey(), entry.getValue());
+            InputValueNoObject input = getInputValueNoObject(entry.getKey(), entry.getValue());
             if(input != null)
                 inputs.add(input);
         }
@@ -203,7 +216,7 @@ public class InputDescriptionDeserializer extends StdDeserializer<Input> {
         return bbox;
     }
 
-    private Link parseAndGetLink(String name, JsonNode jsonNode) {
+    private Link getLink(String name, JsonNode jsonNode) {
         Link link = new Link();
         link.setHref(jsonNode.get("href").asText());
         if(jsonNode.get("rel") != null)

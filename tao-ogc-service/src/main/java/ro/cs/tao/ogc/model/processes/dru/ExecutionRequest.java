@@ -1,16 +1,18 @@
 package ro.cs.tao.ogc.model.processes.dru;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import ro.cs.tao.ogc.model.processes.core.Input;
-import ro.cs.tao.ogc.model.processes.core.Output;
-import ro.cs.tao.ogc.model.processes.core.Subscriber;
+import ro.cs.tao.ogc.model.processes.core.execution.Input;
+import ro.cs.tao.ogc.model.processes.core.execution.Output;
+import ro.cs.tao.ogc.model.processes.core.execution.Subscriber;
+import ro.cs.tao.ogc.model.processes.dru.deserializers.OGCInputDeserializer;
+import ro.cs.tao.ogc.model.processes.dru.deserializers.OGCOutputDeserializer;
 
 import java.util.List;
 
 public class ExecutionRequest {
-    @JsonDeserialize(using = InputDescriptionDeserializer.class)
+    @JsonDeserialize(using = OGCInputDeserializer.class)
     private Input inputs;
-    @JsonDeserialize(using = OutputDeserializer.class)
+    @JsonDeserialize(using = OGCOutputDeserializer.class)
     private List<Output> outputs;
     private ResponseType response;
     private Subscriber subscriber;

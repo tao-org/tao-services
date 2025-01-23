@@ -20,6 +20,7 @@ import ro.cs.tao.ogc.model.common.LandingPage;
 import ro.cs.tao.ogc.model.common.Link;
 import ro.cs.tao.ogc.model.processes.core.Process;
 import ro.cs.tao.ogc.model.processes.core.*;
+import ro.cs.tao.ogc.model.processes.core.execution.TransmissionMode;
 import ro.cs.tao.ogc.model.processes.dru.ExecutionRequest;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.OrchestratorService;

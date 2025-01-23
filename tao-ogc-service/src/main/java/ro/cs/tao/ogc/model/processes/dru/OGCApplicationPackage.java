@@ -2,7 +2,7 @@ package ro.cs.tao.ogc.model.processes.dru;
 
 import ro.cs.tao.ogc.model.common.Link;
 import ro.cs.tao.ogc.model.processes.core.Process;
-import ro.cs.tao.ogc.model.processes.core.QualifiedInputValue;
+import ro.cs.tao.ogc.model.processes.core.execution.QualifiedInputValue;
 
 import java.util.Arrays;
 import java.util.List;
