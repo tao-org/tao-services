@@ -1,13 +1,13 @@
-package ro.cs.tao.ogc.model.processes.dru;
+package ro.cs.tao.ogc.model.processes.dru.deserializers;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import ro.cs.tao.ogc.model.processes.core.Format;
-import ro.cs.tao.ogc.model.processes.core.Output;
-import ro.cs.tao.ogc.model.processes.core.TransmissionMode;
+import ro.cs.tao.ogc.model.processes.core.execution.Format;
+import ro.cs.tao.ogc.model.processes.core.execution.Output;
+import ro.cs.tao.ogc.model.processes.core.execution.TransmissionMode;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,12 +15,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class OutputDeserializer extends StdDeserializer<List<Output>> {
-    public OutputDeserializer(){
+public class OGCOutputDeserializer extends StdDeserializer<List<Output>> {
+    public OGCOutputDeserializer(){
         this(null);
     }
 
-    public OutputDeserializer(Class<?> vc) {
+    public OGCOutputDeserializer(Class<?> vc) {
         super(vc);
     }
 
@@ -32,7 +32,7 @@ public class OutputDeserializer extends StdDeserializer<List<Output>> {
             Iterator<Map.Entry<String, JsonNode>> iterator = node.fields();
             while(iterator.hasNext()){
                 Map.Entry<String, JsonNode> entry = iterator.next();
-                Output output = getOutput(entry.getValue());
+                Output output = parseOutput(entry.getValue());
                 output.setName(entry.getKey());
                 outputsList.add(output);
             }
@@ -43,7 +43,7 @@ public class OutputDeserializer extends StdDeserializer<List<Output>> {
         return outputsList;
     }
 
-    private Output getOutput(JsonNode node){
+    private Output parseOutput(JsonNode node){
         Output output = new Output();
         Iterator<Map.Entry<String, JsonNode>> iterator = node.fields();
         while(iterator.hasNext()){
@@ -52,12 +52,12 @@ public class OutputDeserializer extends StdDeserializer<List<Output>> {
                 output.setTransmissionMode(entry.getValue().textValue().equals(TransmissionMode.VALUE.friendlyName())
                         ? TransmissionMode.VALUE : TransmissionMode.REFERENCE);
             if(entry.getKey().equals("format"))
-                output.setFormat(deserializeFormat(entry.getValue()));
+                output.setFormat(parseFormat(entry.getValue()));
         }
         return output;
     }
 
-    private Format deserializeFormat(JsonNode jsonNode){
+    private Format parseFormat(JsonNode jsonNode){
         Format format = new Format();
         if(jsonNode.get("mediaType") != null)
             format.setMediaType(jsonNode.get("mediaType").asText());

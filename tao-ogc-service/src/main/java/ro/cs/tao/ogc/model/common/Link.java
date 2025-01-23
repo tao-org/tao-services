@@ -1,6 +1,6 @@
 package ro.cs.tao.ogc.model.common;
 
-import ro.cs.tao.ogc.model.processes.core.InputBase;
+import ro.cs.tao.ogc.model.processes.core.execution.InputBase;
 
 public class Link extends InputBase {
     private String href;

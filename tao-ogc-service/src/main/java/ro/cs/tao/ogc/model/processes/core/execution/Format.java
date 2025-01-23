@@ -1,4 +1,4 @@
-package ro.cs.tao.ogc.model.processes.core;
+package ro.cs.tao.ogc.model.processes.core.execution;
 
 public class Format {
     private String mediaType;
