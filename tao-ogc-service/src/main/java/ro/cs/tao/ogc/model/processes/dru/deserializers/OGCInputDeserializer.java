@@ -104,6 +104,17 @@ public class OGCInputDeserializer extends StdDeserializer<Input> {
             List<InputValueNoObject<?>> arrayList = new ArrayList<>();
             for(JsonNode element : value){
                 if(element.isObject()) {
+                    if(element.get("bbox") != null){
+                        InputValueNoObject<?> bboxVal = getInputValueNoObject(null, element);
+                        arrayList.add(bboxVal);
+                        continue;
+                    }
+                    if(element.get("href") != null){
+                        Link link = getLink(null, element);
+                        InputValueNoObject<Link> linkArr = InputValueNoObject.of(link);
+                        arrayList.add(linkArr);
+                        continue;
+                    }
                     String key2 = element.fields().next().getKey();
                     arrayList.add(getQualifiedInputValue(key2, element));
                 }else{
@@ -160,19 +171,21 @@ public class OGCInputDeserializer extends StdDeserializer<Input> {
                 Format format = deserializeFormat(valueObj);
                 inputObject.setFormat(format);
             } else {
-                //TODO check for obj inside obj
                 if(valueObj.isObject()) {
                     if (valueObj.get("bbox") != null) {
-                        InputValueNoObject<?> inputValueNoObject = getInputValueNoObject(null, valueObj);
+                        InputValueNoObject<?> inputValueNoObject = getInputValueNoObject(keyObj, valueObj);
                         additionalProperties.add(inputValueNoObject);
                         continue;
                     }
                     if (valueObj.get("href") != null) {
-                        Link link = getLink(null, valueObj);
+                        Link link = getLink(keyObj, valueObj);
                         InputValueNoObject<Link> input = InputValueNoObject.of(link);
                         additionalProperties.add(input);
                         continue;
                     }
+                    InputValueNoObject<?> qualifiedInputValue = getQualifiedInputValue(keyObj, valueObj);
+                    additionalProperties.add(qualifiedInputValue);
+                } else {
                     InputValueNoObject<?> inputValueNoObject = getInputValueNoObject(keyObj, valueObj);
                     additionalProperties.add(inputValueNoObject);
                 }
