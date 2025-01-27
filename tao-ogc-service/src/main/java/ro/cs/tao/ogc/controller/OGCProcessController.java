@@ -149,23 +149,47 @@ public class OGCProcessController extends BaseController {
             for (WorkflowNodeDescriptor node : nodes) {
                 final TaoComponent component = WorkflowUtilities.findComponent(node);
                 // Parameters that are required and have no default value should be inputs
+                // Parameters with default Values should be inputs as well
                 if (component instanceof ProcessingComponent) {
                     final Set<ParameterDescriptor> descriptors = ((ProcessingComponent) component).getParameterDescriptors();
                     for (ParameterDescriptor descriptor : descriptors) {
-                        if (descriptor.isNotNull() && StringUtilities.isNullOrEmpty(descriptor.getDefaultValue())) {
+                        if (descriptor.isNotNull()){// && StringUtilities.isNullOrEmpty(descriptor.getDefaultValue())) {
                             final InputDescription input;
                             if (descriptor.javaType().isArrayType()) {
                                 input = InputDescription.of(Type.ARRAY);
+                                ListDescriptor schema = new ListDescriptor();
+                                input.setSchema(schema);
+                                schema.setType(Type.ARRAY);
                             } else if (descriptor.javaType() == JavaType.BOOLEAN) {
                                 input = InputDescription.of(Type.BOOLEAN);
+                                StringDescriptor schema = new StringDescriptor();
+                                input.setSchema(schema);
+                                schema.setType(Type.BOOLEAN);
                             } else if (descriptor.javaType() == JavaType.DATE ||
                                        descriptor.javaType() == JavaType.PATH ||
                                        descriptor.javaType() == JavaType.POLYGON ||
                                        descriptor.javaType() == JavaType.STRING) {
                                 input = InputDescription.of(Type.STRING);
+                                StringDescriptor schema = new StringDescriptor();
+                                input.setSchema(schema);
+                                schema.setType(Type.STRING);
+                                if(descriptor.javaType() == JavaType.DATE){
+                                    schema.setFormat("yyyy-MM-ddTHH:mm:ss");
+                                }
                             } else {
                                 input = InputDescription.of(Type.NUMBER);
+                                NumericDescriptor schema = new NumericDescriptor();
+                                input.setSchema(schema);
+                                schema.setType(Type.NUMBER);
                             }
+                            Descriptor schema = input.getSchema();
+                            schema.setDefaultValue(descriptor.getDefaultValue());
+                            schema.setNullable(!descriptor.isNotNull());
+                            schema.setTitle("Parameter Schema");
+                            schema.setDescription(descriptor.getDescription());
+                            input.setMinOccurs(1);
+                            input.setTitle(descriptor.getId());
+                            input.setDescription(descriptor.getName());
                             inputs.add(input);
                         }
                     }
