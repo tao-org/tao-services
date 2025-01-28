@@ -20,7 +20,7 @@ import ro.cs.tao.ogc.model.common.LandingPage;
 import ro.cs.tao.ogc.model.common.Link;
 import ro.cs.tao.ogc.model.processes.core.Process;
 import ro.cs.tao.ogc.model.processes.core.*;
-import ro.cs.tao.ogc.model.processes.core.execution.TransmissionMode;
+import ro.cs.tao.ogc.model.processes.core.execution.*;
 import ro.cs.tao.ogc.model.processes.dru.ExecutionRequest;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.interfaces.OrchestratorService;
@@ -33,10 +33,7 @@ import ro.cs.tao.workflow.WorkflowNodeDescriptor;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -315,10 +312,78 @@ public class OGCProcessController extends BaseController {
 
     @RequestMapping(value = "/processes/{id:.+}/execution", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> execute(@PathVariable("id") String processId, @RequestBody ExecutionRequest request) {
-
         try{
             final WorkflowDescriptor workflow = workflowService.findById(Long.parseLong(processId));
-            //TODO continue workflow execution
+            final List<WorkflowNodeDescriptor> nodes = workflow.getNodes();
+            final Input inputs = request.getInputs();
+            //parameters
+            for (WorkflowNodeDescriptor node : nodes) {
+                final TaoComponent component = WorkflowUtilities.findComponent(node);
+                if (component instanceof ProcessingComponent) {
+                    final Set<ParameterDescriptor> descriptors = ((ProcessingComponent) component).getParameterDescriptors();
+                    for (ParameterDescriptor descriptor : descriptors) {
+                        if (descriptor.isNotNull()) {
+                            InputBase requestInput= getRequestInput(descriptor.getName(), inputs);
+                            if(requestInput instanceof QualifiedInputValue<?> requestQualifiedValue){
+                                descriptor.setDefaultValue(requestQualifiedValue.getValue().toString());
+                            } else if(requestInput instanceof InputValueNoObject<?> requestInputValueNoObject){
+                                descriptor.setDefaultValue(requestInputValueNoObject.getValue().toString());
+                            } else if (requestInput instanceof Link requestLink) {
+                                // href is required, the rest are not
+                                descriptor.setDefaultValue(requestLink.getHref());
+                            }
+                        }
+                    }
+                }
+                //sources
+                final List<SourceDescriptor> sources = component.getSources();
+                final Set<ComponentLink> links = node.getIncomingLinks();
+                for (SourceDescriptor source : sources) {
+                    // if there is already a link pass the setting of the Source Input
+                    if(links.stream().anyMatch(link -> link.getOutput().equals(source))){
+                        continue;
+                    }
+
+                    final DataDescriptor dataDescriptor = source.getDataDescriptor();
+                    InputBase requestInput= getRequestInput(source.getName(), inputs);
+                    // create a new Node as input for this
+                    if(requestInput instanceof QualifiedInputValue<?> requestQualifiedValue){
+
+                    } else if(requestInput instanceof InputValueNoObject<?> requestInputValueNoObject){
+
+                    } else if (requestInput instanceof Link requestLink) {
+
+                    }
+                }
+            }
+
+            //outputs
+            final List<WorkflowNodeDescriptor> terminalNodes = WorkflowUtilities.findTerminals(nodes);
+            final List<Output> outputs = request.getOutputs();
+            for (WorkflowNodeDescriptor node : terminalNodes) {
+                final List<TargetDescriptor> targets = WorkflowUtilities.findComponent(node).getTargets();
+                for (TargetDescriptor target : targets) {
+                    Output output = getRequestOutput(node.getName(), outputs);
+                    DataDescriptor targetDataDescriptor = target.getDataDescriptor();
+                    if(output.getTransmissionMode().value().equals("value")){
+                        //value
+                    } else {
+                        //reference
+                    }
+                    if(output.getFormat() != null) {
+                        Format outputFormat = output.getFormat();
+                        if (outputFormat.getMediaType() != null && outputFormat.getMediaType().contains("json")) {
+                            targetDataDescriptor.setFormatType(DataFormat.JSON);
+                        } else if (outputFormat.getMediaType() != null && (outputFormat.getMediaType().contains("tiff") ||
+                                outputFormat.getMediaType().contains("jp2"))){
+                            targetDataDescriptor.setFormatType(DataFormat.RASTER);
+                        }
+                    }
+                }
+
+            }
+
+            //ExecutionJob job = orchestratorService.scriptJob()
         }
         catch (Throwable e) {
             Exception exception = new Exception();
@@ -328,6 +393,36 @@ public class OGCProcessController extends BaseController {
             return ResponseEntity.internalServerError().body(exception);
         }
         return ResponseEntity.ok().build();
+    }
+
+    private InputBase getRequestInput(String nodeInputName, Input inputs) {
+        Optional<InputValueNoObject<?>> requestInputValue = inputs.getInputValueNoObjects()
+                .stream()
+                .filter(input -> input.getName().equals(nodeInputName))
+                .findFirst();
+        if(requestInputValue.isPresent())
+            return requestInputValue.get();
+        Optional<QualifiedInputValue<?>> requestQualifiedInputValue = inputs.getQualifiedInputValues()
+                .stream()
+                .filter(input -> input.getName().equals(nodeInputName))
+                .findFirst();
+        if(requestQualifiedInputValue.isPresent())
+            return requestQualifiedInputValue.get();
+        Optional<Link> requestLink = inputs.getLinks()
+                .stream()
+                .filter(input -> input.getName().equals(nodeInputName))
+                .findFirst();
+        if(requestLink.isPresent())
+            return requestLink.get();
+        else
+            throw new IllegalArgumentException("No node input corresponds to this request input");
+    }
+
+    private Output getRequestOutput(String nodeOutputName, List<Output> outputs){
+        return outputs.stream()
+                .filter(output -> output.getName().equals(nodeOutputName))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No node output corresponds to this request output"));
     }
 
     @RequestMapping(value = "/jobs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
