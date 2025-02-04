@@ -8,12 +8,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.*;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.param.JavaType;
 import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.eodata.enums.SensorType;
 import ro.cs.tao.execution.model.*;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.execution.util.TaskUtilities;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.ogc.model.common.ConfClasses;
 import ro.cs.tao.ogc.model.common.Exception;
 import ro.cs.tao.ogc.model.common.LandingPage;
@@ -22,18 +25,34 @@ import ro.cs.tao.ogc.model.processes.core.Process;
 import ro.cs.tao.ogc.model.processes.core.*;
 import ro.cs.tao.ogc.model.processes.core.execution.*;
 import ro.cs.tao.ogc.model.processes.dru.ExecutionRequest;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.services.commons.BaseController;
+import ro.cs.tao.services.entity.beans.RepositoryBean;
+import ro.cs.tao.services.entity.util.ServiceTransformUtils;
+import ro.cs.tao.services.factory.StorageServiceFactory;
+import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.interfaces.OrchestratorService;
+import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.services.utils.WorkflowUtilities;
+import ro.cs.tao.services.workspace.impl.TransferService;
+import ro.cs.tao.services.workspace.model.TransferableItem;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 @RestController
@@ -41,12 +60,21 @@ import java.util.stream.Collectors;
 @Tag(name = "OGC Process API Endpoint", description = "Endpoint compliant with OGC Process API for exposing TAO workflows")
 public class OGCProcessController extends BaseController {
 
+//    private static final Pattern maliciousPathRegEx = Pattern.compile("\\.\\.\\/|\\.\\.|\\/\\/|\\\\\\\\|\\/\\.\\/|\\\\\\.\\\\|%|;");
     @Autowired
     private WorkflowService workflowService;
+    @Autowired
+    private RepositoryProvider repositoryProvider;
+    @Autowired
+    private TransferService transferService;
     @Autowired
     private OrchestratorService orchestratorService;
     @Autowired
     private ExecutionJobProvider executionJobProvider;
+    @Autowired
+    private DataSourceComponentService dataSourceComponentService;
+
+
 
     //region Core operations
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -316,47 +344,6 @@ public class OGCProcessController extends BaseController {
             final WorkflowDescriptor workflow = workflowService.findById(Long.parseLong(processId));
             final List<WorkflowNodeDescriptor> nodes = workflow.getNodes();
             final Input inputs = request.getInputs();
-            //parameters
-            for (WorkflowNodeDescriptor node : nodes) {
-                final TaoComponent component = WorkflowUtilities.findComponent(node);
-                if (component instanceof ProcessingComponent) {
-                    final Set<ParameterDescriptor> descriptors = ((ProcessingComponent) component).getParameterDescriptors();
-                    for (ParameterDescriptor descriptor : descriptors) {
-                        if (descriptor.isNotNull()) {
-                            InputBase requestInput= getRequestInput(descriptor.getName(), inputs);
-                            if(requestInput instanceof QualifiedInputValue<?> requestQualifiedValue){
-                                descriptor.setDefaultValue(requestQualifiedValue.getValue().toString());
-                            } else if(requestInput instanceof InputValueNoObject<?> requestInputValueNoObject){
-                                descriptor.setDefaultValue(requestInputValueNoObject.getValue().toString());
-                            } else if (requestInput instanceof Link requestLink) {
-                                // href is required, the rest are not
-                                descriptor.setDefaultValue(requestLink.getHref());
-                            }
-                        }
-                    }
-                }
-                //sources
-                final List<SourceDescriptor> sources = component.getSources();
-                final Set<ComponentLink> links = node.getIncomingLinks();
-                for (SourceDescriptor source : sources) {
-                    // if there is already a link pass the setting of the Source Input
-                    if(links.stream().anyMatch(link -> link.getOutput().equals(source))){
-                        continue;
-                    }
-
-                    final DataDescriptor dataDescriptor = source.getDataDescriptor();
-                    InputBase requestInput= getRequestInput(source.getName(), inputs);
-                    // create a new Node as input for this
-                    if(requestInput instanceof QualifiedInputValue<?> requestQualifiedValue){
-
-                    } else if(requestInput instanceof InputValueNoObject<?> requestInputValueNoObject){
-
-                    } else if (requestInput instanceof Link requestLink) {
-
-                    }
-                }
-            }
-
             //outputs
             final List<WorkflowNodeDescriptor> terminalNodes = WorkflowUtilities.findTerminals(nodes);
             final List<Output> outputs = request.getOutputs();
@@ -365,12 +352,7 @@ public class OGCProcessController extends BaseController {
                 for (TargetDescriptor target : targets) {
                     Output output = getRequestOutput(node.getName(), outputs);
                     DataDescriptor targetDataDescriptor = target.getDataDescriptor();
-                    if(output.getTransmissionMode().value().equals("value")){
-                        //value
-                    } else {
-                        //reference
-                    }
-                    if(output.getFormat() != null) {
+                    if(output != null && output.getFormat() != null) {
                         Format outputFormat = output.getFormat();
                         if (outputFormat.getMediaType() != null && outputFormat.getMediaType().contains("json")) {
                             targetDataDescriptor.setFormatType(DataFormat.JSON);
@@ -382,8 +364,103 @@ public class OGCProcessController extends BaseController {
                 }
 
             }
-
-            //ExecutionJob job = orchestratorService.scriptJob()
+            String user = currentUser();
+            List<Repository> userRepos = repositoryProvider.getByUser(currentUser());
+            if (userRepos.isEmpty()) {
+                throw new IOException("Workspaces do not exist");
+            }
+            Repository localRepo = userRepos.stream()
+                    .filter(repo -> repo.getType() == RepositoryType.LOCAL)
+                    .findFirst().orElseThrow(() -> new IOException("Local Workspace does not exist"));
+            checkDestRepo(user, localRepo);
+            for (WorkflowNodeDescriptor node : nodes) {
+                //parameters
+                final TaoComponent component = WorkflowUtilities.findComponent(node);
+                setParametersFromInputs(component, inputs);
+                //sources
+                final List<SourceDescriptor> sources = component.getSources();
+                final Set<ComponentLink> incomingLinks = node.getIncomingLinks();
+                for (SourceDescriptor source : sources) {
+                    // if there is already a link pass the setting of the Source Input
+                    if(incomingLinks.stream().anyMatch(link -> link.getOutput().equals(source))){
+                        continue;
+                    }
+                    List<String> localPaths = new ArrayList<>();
+                    InputBase requestInput = getRequestInput(source.getName(), inputs);
+                    List<Link> imageLinks = getImageLinks(requestInput);
+                    List<String> imagesPaths = imageLinks.stream().map(Link::getHref).toList();
+                    if (imagesPaths.isEmpty())
+                        throw new IllegalArgumentException("Source Input is invalid. Image link or Array of Image Links are required.");
+                    for (var imagePath : imagesPaths) {
+                        checkPath(imagePath);
+                        boolean isFolder = imageLinks.stream().filter(link -> link.getHref().equals(imagePath)).findFirst().get().getType().equals("folder");
+                        Repository sourceRepo = userRepos.stream()
+                                .filter(repo -> imagePath.startsWith(repo.getUrlPrefix()))
+                                .findFirst()
+                                .orElseThrow(() -> new IOException("Workspace does not exist for path " + imagePath));
+                        if (!user.equals(sourceRepo.getUserId())) {
+                            throw new AccessDeniedException("Operation not allowed");
+                        }
+                        final RepositoryBean bean = ServiceTransformUtils.toBean(sourceRepo);
+                        Future<?> emptyFuture = asyncExecute(() -> {
+                            String fullPath = sourceRepo.relativizeToRoot(imagePath);
+                            String bucketName = sourceRepo.getParameters().get(bean.getRootKey());
+                            String relativeToBucket = fullPath.split(bucketName + "/")[1];
+                            FileObject fileObject = new FileObject(sourceRepo.getUrlPrefix(), relativeToBucket, isFolder, 0, relativeToBucket);
+                            fileObject.addAttribute("remotePath", fullPath);
+                            final StorageService service = getRepositoryService(sourceRepo);
+                            int count = 0;
+                            long size = 0;
+                            String dstFolder = localRepo.root();
+                            if (!dstFolder.endsWith("/")) {
+                                dstFolder += "/";
+                            }
+                            String objectPath = fileObject.getRelativePath();
+                            String targetFolder = dstFolder;
+                            if (fileObject.isFolder()) {
+                                targetFolder += sourceRepo.fileName(objectPath);
+                                final List<FileObject> files = service.listTree(fileObject.getRelativePath());
+                                final List<TransferableItem> items = new ArrayList<>();
+                                for (FileObject fObject : files) {
+                                    if (!fObject.isFolder()) {
+                                        String path = sourceRepo.relativize(objectPath, fObject.getRelativePath());
+                                        path = targetFolder + (path.startsWith("/") ? "" : (targetFolder.endsWith("/") ? "" : "/") + path);
+                                        items.add(new TransferableItem(user, objectPath, sourceRepo, fObject, localRepo, path, false, true));
+                                        size += fObject.getSize();
+                                        count++;
+                                        localPaths.add(path);
+                                    }
+                                }
+                                queueFiles(items.toArray(new TransferableItem[0]));
+                            } else {
+                                queueFile(objectPath, fileObject, sourceRepo, localRepo, targetFolder + sourceRepo.fileName(objectPath), false, true);
+                                localPaths.add(targetFolder + sourceRepo.fileName(objectPath));
+                                count = 1;
+                            }
+                            return String.format("Transfer queued (%d files, %d bytes)", count, size);
+                        }, message -> Messaging.send(user, Topic.INFORMATION.getCategory(), message), null);
+                        emptyFuture.get();
+                    }
+                    final StorageService localService = getRepositoryService(localRepo);
+                    //wait for all the downloads before proceeding, very BAD code, will refactor :(
+                    for(String path : localPaths){
+                        while(!localService.exists(localRepo.resolve(path))){
+                            System.out.println(path + " is not downloaded yet");
+                            Thread.sleep(5000);
+                        }
+                    }
+                    for (String path : localPaths) {
+                        if (!localService.exists(localRepo.resolve(path))) {
+                            throw new FileNotFoundException(path + " does not exist");
+                        }
+                    }
+                    //TODO create a virtual product set that is not saved in the db
+                    final DataSourceComponent virtualProductSet = dataSourceComponentService.createForLocations(localPaths, node.getName()+"_"+source.getName(), currentPrincipal());
+                    dataSourceComponentService.delete(virtualProductSet.getId());
+                }
+            }
+            //TODO execution job
+            //ExecutionJob job = orchestratorService.scriptJob();
         }
         catch (Throwable e) {
             Exception exception = new Exception();
@@ -393,6 +470,80 @@ public class OGCProcessController extends BaseController {
             return ResponseEntity.internalServerError().body(exception);
         }
         return ResponseEntity.ok().build();
+    }
+
+    private void setParametersFromInputs(TaoComponent component, Input inputs) throws PersistenceException {
+        if (component instanceof ProcessingComponent) {
+            final Set<ParameterDescriptor> descriptors = ((ProcessingComponent) component).getParameterDescriptors();
+            for (ParameterDescriptor descriptor : descriptors) {
+                if (descriptor.isNotNull()) {
+                    InputBase requestInput= getRequestInput(descriptor.getName(), inputs);
+                    if(requestInput instanceof QualifiedInputValue<?> requestQualifiedValue){
+                        descriptor.setDefaultValue(requestQualifiedValue.getValue().toString());
+                    } else if(requestInput instanceof InputValueNoObject<?> requestInputValueNoObject){
+                        descriptor.setDefaultValue(requestInputValueNoObject.getValue().toString());
+                    } else if (requestInput instanceof Link requestLink) {
+                        // href is required, the rest are not
+                        descriptor.setDefaultValue(requestLink.getHref());
+                    }
+                }
+            }
+        }
+    }
+
+    private static StorageService getRepositoryService(Repository workspace) {
+        StorageService instance = StorageServiceFactory.getInstance(workspace);
+        instance.associate(workspace);
+        return instance;
+    }
+
+    private void queueFile(String batchId, FileObject file, Repository source, Repository destination, String folder, boolean move, boolean overwrite) {
+        final TransferableItem request = new TransferableItem(currentUser(), batchId, source, file, destination, folder, move, overwrite);
+        transferService.request(request);
+    }
+
+    private void queueFiles(TransferableItem[] items) {
+        transferService.request(items);
+    }
+
+    private void checkDestRepo(String user, Repository destRepo) throws AccessDeniedException {
+        if (!user.equals(destRepo.getUserId())) {
+            throw new AccessDeniedException("Operation not allowed");
+        }
+        if (destRepo.isReadOnly()) {
+            throw new AccessDeniedException("Destination is read-only");
+        }
+    }
+
+    private List<Link> getImageLinks(InputBase requestInput) throws IOException {
+        List<Link> imageLinks = new ArrayList<>();
+        if(requestInput instanceof Link imageLink){
+            imageLinks.add(imageLink);
+        } else if(requestInput instanceof InputValueNoObject<?> arrImages){
+            // only accept arrays of images with links for source inputs at this time
+            List<InputValueNoObject<Link>> imagesInputArr = (List<InputValueNoObject<Link>>) arrImages.getValue();
+            for(var imageVal : imagesInputArr){
+                imageLinks.add(imageVal.getValue());
+            }
+        } else {
+            throw new IOException("Invalid format for Source input");
+        }
+        return imageLinks;
+    }
+
+    private void checkPath(String path) {
+        IllegalArgumentException ex = null;
+        if (StringUtilities.isNullOrEmpty(path)) {
+            ex = new IllegalArgumentException("Empty path");
+        }
+//        if (path.startsWith(".") || maliciousPathRegEx.matcher(path).find()) {
+//            ex = new IllegalArgumentException("Not allowed");
+//        }
+//        if (ex != null) {
+//            final String userId = currentUser();
+//            warn("User [%s] submitted a malicious path: %s", userId, path);
+//            throw ex;
+//        }
     }
 
     private InputBase getRequestInput(String nodeInputName, Input inputs) {
@@ -422,7 +573,8 @@ public class OGCProcessController extends BaseController {
         return outputs.stream()
                 .filter(output -> output.getName().equals(nodeOutputName))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No node output corresponds to this request output"));
+                .orElse(null);
+                //.orElseThrow(() -> new IllegalArgumentException("No node output corresponds to this request output"));
     }
 
     @RequestMapping(value = "/jobs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
