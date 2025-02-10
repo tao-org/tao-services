@@ -448,21 +448,7 @@ public class OGCProcessController extends BaseController {
                     node.getIncomingLinks().add(newLink);
                 }
             }
-            ro.cs.tao.execution.model.ExecutionRequest executionRequest = new ro.cs.tao.execution.model.ExecutionRequest();
-            executionRequest.setWorkflowId(workflow.getId());
-            executionRequest.setName(workflow.getName());
-            executionRequest.setJobType("EXECUTION");
-            executionRequest.setEnvironment("DEFAULT");
-            executionRequest.setInputs(new HashMap<>());
-            Map<String, Map<String, String>> parametersMap = new HashMap<>();
-            executionRequest.setParameters(parametersMap);
-            for(WorkflowNodeDescriptor nodeDescriptor : nodes){
-                String name = nodeDescriptor.getName();
-                Map<String, String> parameterMap = nodeDescriptor.getCustomValues().stream()
-                        .collect(Collectors.groupingBy(ParameterValue::getParameterName, Collectors.mapping(ParameterValue::getParameterValue, Collectors.joining())));
-                parametersMap.put(name, parameterMap);
-            }
-            jobId = orchestratorService.startWorkflow(executionRequest);
+            jobId = orchestratorService.startWorkflow(getExecutionRequest(workflow, nodes));
         }
         catch (Throwable e) {
             Exception exception = new Exception();
@@ -472,6 +458,24 @@ public class OGCProcessController extends BaseController {
             return ResponseEntity.internalServerError().body(exception);
         }
         return prepareResult(jobId);
+    }
+
+    private ro.cs.tao.execution.model.ExecutionRequest getExecutionRequest(WorkflowDescriptor workflow, List<WorkflowNodeDescriptor> nodes) {
+        ro.cs.tao.execution.model.ExecutionRequest executionRequest = new ro.cs.tao.execution.model.ExecutionRequest();
+        executionRequest.setWorkflowId(workflow.getId());
+        executionRequest.setName(workflow.getName());
+        executionRequest.setJobType("EXECUTION");
+        executionRequest.setEnvironment("DEFAULT");
+        executionRequest.setInputs(new HashMap<>());
+        Map<String, Map<String, String>> parametersMap = new HashMap<>();
+        executionRequest.setParameters(parametersMap);
+        for(WorkflowNodeDescriptor nodeDescriptor : nodes){
+            String name = nodeDescriptor.getName();
+            Map<String, String> parameterMap = nodeDescriptor.getCustomValues().stream()
+                    .collect(Collectors.groupingBy(ParameterValue::getParameterName, Collectors.mapping(ParameterValue::getParameterValue, Collectors.joining())));
+            parametersMap.put(name, parameterMap);
+        }
+        return executionRequest;
     }
 
     private DataSourceComponent createVirtualComponent(List<String> productPaths, String label, Principal principal){
