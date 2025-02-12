@@ -25,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.drmaa.Environment;
 import ro.cs.tao.execution.ExecutionException;
@@ -76,7 +77,13 @@ public class OrchestrationController extends BaseController {
             if (environments == null) {
                 environments = new HashSet<>();
             }
-            return prepareResult(environments.stream().sorted().collect(Collectors.toList()));
+            Environment defaultEnv = Environment.valueOf(ConfigurationManager.getInstance()
+                                                                             .getValue("execution.environment",
+                                                                                       Environment.DEFAULT.friendlyName()));
+            environments.remove(defaultEnv);
+            final List<Environment> results = environments.stream().sorted().collect(Collectors.toList());
+            results.add(0, defaultEnv);
+            return prepareResult(results);
         } catch (Exception ex) {
             return handleException(ex);
         }
