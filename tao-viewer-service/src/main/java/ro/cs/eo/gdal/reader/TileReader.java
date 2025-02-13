@@ -6,9 +6,11 @@ import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
 import ro.cs.eo.gdal.dataio.GDALTileCache;
 import ro.cs.eo.gdal.dataio.drivers.*;
+import ro.cs.eo.gdal.reader.info.ExpressionEvaluator;
 import ro.cs.eo.gdal.reader.info.FormatDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
 import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.Triple;
 import ro.cs.tao.utils.executors.Executor;
 import ro.cs.tao.utils.executors.ExecutorType;
@@ -401,7 +403,8 @@ public class TileReader {
         translateOptions.add("-scale");
         final Band rasterBand = warpDataset.getRasterBand(1);
         final Path productPath = productDescriptor.getProductPath();
-        if (productDescriptor.getFormatDescriptor().getPriority() == 1 &&
+        final FormatDescriptor formatDescriptor = productDescriptor.getFormatDescriptor();
+        if (formatDescriptor.getPriority() == 1 &&
                 productDescriptor.getPixelMinScale() != null && productDescriptor.getPixelMaxScale() != null &&
                 productDescriptor.getPixelMinScale() >= 0 && productDescriptor.getPixelMaxScale() > 0) {
             min = productDescriptor.getPixelMinScale();
@@ -434,6 +437,27 @@ public class TileReader {
         if (!GDALConstConstants.gdtByte().equals(rasterBand.getDataType())) {
             translateOptions.add("-ot");
             translateOptions.add("Byte");
+        }
+        // Apply any band transformation if expression is defined
+        final List<FormatDescriptor.Band> bands = formatDescriptor.getBands();
+        for (FormatDescriptor.Band band : bands) {
+            String expression;
+            if (!StringUtilities.isNullOrEmpty(expression = band.getExpression())) {
+                try {
+                    final Band gdalBand = warpDataset.getRasterBand(band.getIndexInRaster());
+                    final int xSize = gdalBand.getXSize();
+                    final int ySize = gdalBand.getYSize();
+                    double[] buffer = new double[xSize * ySize];
+                    // TODO: based on the pixel type, Band.readRaster handles for different types should be implemented in GDAL class
+                    for (int i = 0; i < buffer.length; i++) {
+                        buffer[i] = ExpressionEvaluator.evaluate(buffer[i], expression);
+                    }
+                    // TODO: based on the pixel type, decide
+                    gdalBand.writeRaster(0, 0, xSize, ySize, GDALConstConstants.gdtFloat64(), buffer);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
         final Dataset translateDataset = GDAL.translate(tileFilePath, warpDataset, new TranslateOptions(translateOptions));
         if (translateDataset == null) {
