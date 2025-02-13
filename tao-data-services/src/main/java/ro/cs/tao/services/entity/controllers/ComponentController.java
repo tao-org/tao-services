@@ -421,7 +421,9 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             return handleException(new IllegalArgumentException("Invalid identifier"));
         }
         if (currentUser().equals(component.getOwner()) || isCurrentUserAdmin()) {
-            return super.delete(id);
+            final ResponseEntity<ServiceResponse<?>> deleted = super.delete(id);
+            this.componentCache.remove(id);
+            return prepareResult(deleted);
         } else {
             return prepareResult("Not authorized", ResponseStatus.FAILED);
         }
@@ -438,12 +440,15 @@ public class ComponentController extends DataEntityController<ProcessingComponen
                 throw new IllegalArgumentException("[componentId] Missing");
             }
             final ProcessingComponent original = service.findById(componentId);
-            final ProcessingComponent cloned = original.clone();
+            ProcessingComponent cloned = original.clone();
+            cloned.setLabel("Clone of " + cloned.getLabel());
             cloned.setVisibility(ProcessingComponentVisibility.USER);
             cloned.setId(UUID.randomUUID().toString());
             cloned.setContainerId(original.getContainerId());
             cloned.setOwner(currentUser());
-            return prepareResult(service.save(cloned));
+            cloned = service.save(cloned);
+            this.componentCache.put(cloned.getId(), new ProcessingComponentInfo(cloned));
+            return prepareResult(cloned);
         } catch (Exception e) {
             return handleException(e);
         }
