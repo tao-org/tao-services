@@ -122,8 +122,6 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * Lists the content of a remote workspace that is linked to the current user.
      *
      * @param workspaceId       The workspace identifier
-     *
-     * @param lastItem          [Optional] The item to start from (in case of paged results)
      */
     @PostMapping(value = "persistent", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> markPersistent(@RequestParam("workspaceId") String workspaceId) {
@@ -181,19 +179,24 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     }
     /**
      * Uploads a file into the given folder of the user workspace
-     * @param file          The file to be uploaded
+     * @param files         The file/files to be uploaded
      * @param folder        The folder into which the file will be uploaded
      * @param description   A description of the file
      */
     @PostMapping(value = "upload/", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile file,
+    public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile[] files,
                                         @RequestParam("folder") String folder,
                                         @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             checkPath(folder);
-            checkFile(file.getOriginalFilename());
-            getLocalRepositoryService(currentUser()).storeUserFile(file, folder, description);
+            if(files == null || files.length == 0){
+                throw new IllegalArgumentException("No files sent to upload");
+            }
+            for(MultipartFile file : files) {
+                checkFile(file.getOriginalFilename());
+                getLocalRepositoryService(currentUser()).storeUserFile(file, folder, description);
+            }
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
