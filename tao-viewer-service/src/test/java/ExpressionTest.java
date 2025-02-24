@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import ro.cs.eo.gdal.reader.info.ExpressionEvaluator;
 
 public class ExpressionTest {
+    private static final int LENGTH = 1024*1024;
     private double[] values;
     private double[] values2;
     private String simpleExpression;
@@ -11,9 +12,9 @@ public class ExpressionTest {
 
     @BeforeEach
     void setUp() {
-        values = new double[1024];
-        values2 = new double[1024];
-        for (int i = 0; i < 1024; i++) {
+        values = new double[LENGTH];
+        values2 = new double[LENGTH];
+        for (int i = 0; i < LENGTH; i++) {
             values[i] = Math.random();
             values2[i] = Math.random();
         }
@@ -29,7 +30,7 @@ public class ExpressionTest {
             for (int i = 0; i < values.length; i++) {
                 results[i] = evaluator.evaluate(values[i], simpleExpression);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
         Assert.assertNotEquals(results[0], values[0]);
@@ -43,7 +44,7 @@ public class ExpressionTest {
             for (int i = 0; i < values.length; i++) {
                 results[i] = evaluator.evaluate(values[i], values2[i], doubleExpression);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
         Assert.assertNotEquals(0.0, results[0]);
