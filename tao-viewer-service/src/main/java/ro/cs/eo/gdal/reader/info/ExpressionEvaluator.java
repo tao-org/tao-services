@@ -24,6 +24,7 @@ public class ExpressionEvaluator<T> {
     private static final String[] mathMethods;
     private static final String[] replacements;
     private static final ClassPool classPool;
+    private static final Map<Class<?>, Class<?>> primitiveTypeMap;
     private static final String singleDeclaration;
     private static final String doubleDeclaration;
     private Class<T> pixelType;
@@ -31,6 +32,12 @@ public class ExpressionEvaluator<T> {
     static {
         bandVariablePattern = Pattern.compile("\\$(\\d{1})");
         compiledExpressions = new HashMap<>();
+        primitiveTypeMap = new HashMap<>();
+        primitiveTypeMap.put(Byte.class, byte.class);
+        primitiveTypeMap.put(Short.class, short.class);
+        primitiveTypeMap.put(Integer.class, int.class);
+        primitiveTypeMap.put(Float.class, float.class);
+        primitiveTypeMap.put(Double.class, double.class);
         classPool = ClassPool.getDefault();
         classPool.importPackage("java.lang.Math");
         final Method[] methods = Math.class.getDeclaredMethods();
@@ -61,7 +68,13 @@ public class ExpressionEvaluator<T> {
      * @param expression    The expression to be computed
      */
     public double evaluate(T pixelValue, String expression) throws Throwable {
-        final MethodHandle invoker = compiledExpressions.computeIfAbsent(expression, new BasicInvoker(1));
+        final String key = expression + ":" + pixelType.getSimpleName();
+        synchronized (compiledExpressions) {
+            if (!compiledExpressions.containsKey(key)) {
+                compiledExpressions.put(key, createHandle(expression, 1));
+            }
+        }
+        final MethodHandle invoker = compiledExpressions.get(key);
         return (double) invoker.invoke(pixelValue);
     }
     /**
@@ -73,7 +86,13 @@ public class ExpressionEvaluator<T> {
      * @param expression    The expression to be computed
      */
     public double evaluateAll(T[] pixelValues, String expression) throws Throwable {
-        final MethodHandle invoker = compiledExpressions.computeIfAbsent(expression, new BasicInvoker(1));
+        final String key = expression + ":" + pixelType.getSimpleName();
+        synchronized (compiledExpressions) {
+            if (!compiledExpressions.containsKey(key)) {
+                compiledExpressions.put(key, createHandle(expression, 1));
+            }
+        }
+        final MethodHandle invoker = compiledExpressions.get(key);
         return (double) invoker.invoke(pixelValues);
     }
     /**
@@ -86,7 +105,13 @@ public class ExpressionEvaluator<T> {
      * @param expression    The expression to be computed
      */
     public double evaluate(T pixelA, T pixelB, String expression) throws Throwable {
-        final MethodHandle invoker = compiledExpressions.computeIfAbsent(expression, new BasicInvoker(2));
+        final String key = expression + ":" + pixelType.getSimpleName();
+        synchronized (compiledExpressions) {
+            if (!compiledExpressions.containsKey(key)) {
+                compiledExpressions.put(key, createHandle(expression, 2));
+            }
+        }
+        final MethodHandle invoker = compiledExpressions.get(key);
         return (double) invoker.invoke(pixelA, pixelB);
     }
 
@@ -107,17 +132,21 @@ public class ExpressionEvaluator<T> {
     }
 
     private MethodHandle createHandle(String code, int nbArgs) throws CannotCompileException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        final CtClass clazz = classPool.makeClass(ExpressionEvaluator.class.getPackageName() + ".ExprInvoker" + compiledExpressions.size());
+        final String className = ExpressionEvaluator.class.getPackageName() + ".ExprInvoker" + compiledExpressions.size();
+        CtClass clazz = classPool.makeClass(className);
         clazz.setModifiers(Modifier.PUBLIC);
         String exp = code;
+        final Class<?> actualType = primitiveTypeMap.getOrDefault(pixelType, pixelType);
+        final boolean includeCast = !double.class.equals(actualType);
         for (int i = 1; i <= nbArgs; i++) {
-            exp = exp.replace("$" + i, nbArgs == 1 ? "value" : "value" + i);
+            exp = exp.replace("$" + i,
+                              (includeCast ? "(double)value" : "value") + (nbArgs == 1 ? "" : i));
         }
         exp = StringUtils.replaceEach(exp, mathMethods, replacements);
         final CtMethod method;
         final String decl = nbArgs == 1
-                            ? String.format(singleDeclaration, pixelType.getSimpleName().toLowerCase(), exp)
-                            : String.format(doubleDeclaration, pixelType.getSimpleName().toLowerCase(), pixelType.getSimpleName().toLowerCase(), exp);
+                            ? String.format(singleDeclaration, actualType.getSimpleName(), exp)
+                            : String.format(doubleDeclaration, actualType.getSimpleName(), actualType.getSimpleName(), exp);
         method = CtNewMethod.make(decl, clazz);
         clazz.addMethod(method);
         final Class<?> loadedClass = clazz.toClass();
@@ -135,7 +164,7 @@ public class ExpressionEvaluator<T> {
         @Override
         public MethodHandle apply(String value) {
             try {
-                return createHandle(value, 2);
+                return createHandle(value, arity);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

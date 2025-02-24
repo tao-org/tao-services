@@ -17,6 +17,7 @@ import ro.cs.tao.utils.executors.ExecutorType;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -447,14 +448,44 @@ public class TileReader {
                     final Band gdalBand = warpDataset.getRasterBand(band.getIndexInRaster());
                     final int xSize = gdalBand.getXSize();
                     final int ySize = gdalBand.getYSize();
-                    double[] buffer = new double[xSize * ySize];
-                    // TODO: based on the pixel type, Band.readRaster handles for different types should be implemented in GDAL class
-                    ExpressionEvaluator evaluator = new ExpressionEvaluator<>(double.class);
-                    for (int i = 0; i < buffer.length; i++) {
-                        buffer[i] = evaluator.evaluate(buffer[i], expression);
+                    final int type = gdalBand.getDataType();
+                    ExpressionEvaluator evaluator;
+                    double[] results = new double[xSize * ySize];
+                    if (type == GDALConstConstants.gdtByte()) {
+                        evaluator = new ExpressionEvaluator<>(byte.class);
+                        byte[] values = gdalBand.readRasterByte(0, 0, xSize, ySize);
+                        for (int i = 0; i < results.length; i++) {
+                            results[i] = evaluator.evaluate(values[i], expression);
+                        }
+                    } else if (type == GDALConstConstants.gdtUint16() || type == GDALConstConstants.gdtInt16()) {
+                        evaluator = new ExpressionEvaluator<>(short.class);
+                        short[] values = gdalBand.readRasterShort(0, 0, xSize, ySize);
+                        for (int i = 0; i < results.length; i++) {
+                            results[i] = evaluator.evaluate(values[i], expression);
+                        }
+                    } else if (type == GDALConstConstants.gdtUint32() || type == GDALConstConstants.gdtInt32()) {
+                        evaluator = new ExpressionEvaluator<>(int.class);
+                        int[] values = gdalBand.readRasterInt(0, 0, xSize, ySize);
+                        for (int i = 0; i < results.length; i++) {
+                            results[i] = evaluator.evaluate(values[i], expression);
+                        }
+                    } else if (type == GDALConstConstants.gdtFloat32()) {
+                        evaluator = new ExpressionEvaluator<>(float.class);
+                        float[] values = gdalBand.readRasterFloat(0, 0, xSize, ySize);
+                        for (int i = 0; i < results.length; i++) {
+                            results[i] = evaluator.evaluate(values[i], expression);
+                        }
+                    } else if (type == GDALConstConstants.gdtFloat64()) {
+                        evaluator = new ExpressionEvaluator<>(double.class);
+                        double[] values = gdalBand.readRasterDouble(0, 0, xSize, ySize);
+                        for (int i = 0; i < results.length; i++) {
+                            results[i] = evaluator.evaluate(values[i], expression);
+                        }
                     }
-                    // TODO: based on the pixel type, decide
-                    gdalBand.writeRaster(0, 0, xSize, ySize, GDALConstConstants.gdtFloat64(), buffer);
+                    //gdalBand.writeRaster(0, 0, xSize, ySize, GDALConstConstants.gdtFloat64(), results);
+                    ByteBuffer buffer = ByteBuffer.allocateDirect(xSize * ySize * 8);
+                    buffer.asDoubleBuffer().put(results);
+                    gdalBand.writeRasterDirect(0, 0, xSize, ySize, GDALConstConstants.gdtFloat64(), buffer);
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
