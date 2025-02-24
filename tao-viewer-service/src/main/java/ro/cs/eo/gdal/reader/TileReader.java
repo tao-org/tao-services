@@ -455,7 +455,7 @@ public class TileReader {
                     }
                     // TODO: based on the pixel type, decide
                     gdalBand.writeRaster(0, 0, xSize, ySize, GDALConstConstants.gdtFloat64(), buffer);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
             }
