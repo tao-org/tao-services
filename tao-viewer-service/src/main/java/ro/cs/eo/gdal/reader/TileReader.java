@@ -449,8 +449,9 @@ public class TileReader {
                     final int ySize = gdalBand.getYSize();
                     double[] buffer = new double[xSize * ySize];
                     // TODO: based on the pixel type, Band.readRaster handles for different types should be implemented in GDAL class
+                    ExpressionEvaluator evaluator = new ExpressionEvaluator<>(double.class);
                     for (int i = 0; i < buffer.length; i++) {
-                        buffer[i] = ExpressionEvaluator.evaluate(buffer[i], expression);
+                        buffer[i] = evaluator.evaluate(buffer[i], expression);
                     }
                     // TODO: based on the pixel type, decide
                     gdalBand.writeRaster(0, 0, xSize, ySize, GDALConstConstants.gdtFloat64(), buffer);
