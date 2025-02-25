@@ -17,7 +17,7 @@ import ro.cs.tao.utils.executors.ExecutorType;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
+import java.nio.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -449,43 +449,51 @@ public class TileReader {
                     final int xSize = gdalBand.getXSize();
                     final int ySize = gdalBand.getYSize();
                     final int type = gdalBand.getDataType();
-                    ExpressionEvaluator evaluator;
-                    double[] results = new double[xSize * ySize];
+                    ByteBuffer buffer = null;
+                    int size;
                     if (type == GDALConstConstants.gdtByte()) {
-                        evaluator = new ExpressionEvaluator<>(byte.class);
-                        byte[] values = gdalBand.readRasterByte(0, 0, xSize, ySize);
-                        for (int i = 0; i < results.length; i++) {
-                            results[i] = evaluator.evaluate(values[i], expression);
+                        ExpressionEvaluator<Byte, Byte> evaluator = new ExpressionEvaluator<>(byte.class, byte.class);
+                        buffer = gdalBand.readRasterByte(0, 0, xSize, ySize);
+                        size = buffer.limit();
+                        for (int i = 0; i < size; i++) {
+                            buffer.put(i, evaluator.evaluate(buffer.get(i), expression));
                         }
                     } else if (type == GDALConstConstants.gdtUint16() || type == GDALConstConstants.gdtInt16()) {
-                        evaluator = new ExpressionEvaluator<>(short.class);
-                        short[] values = gdalBand.readRasterShort(0, 0, xSize, ySize);
-                        for (int i = 0; i < results.length; i++) {
-                            results[i] = evaluator.evaluate(values[i], expression);
+                        ExpressionEvaluator<Short, Short> evaluator = new ExpressionEvaluator<>(short.class, short.class);
+                        buffer = gdalBand.readRasterShort(0, 0, xSize, ySize);
+                        final ShortBuffer sBuffer = buffer.asShortBuffer();
+                        size = sBuffer.limit();
+                        for (int i = 0; i < size; i++) {
+                            sBuffer.put(i, evaluator.evaluate(sBuffer.get(i), expression));
                         }
                     } else if (type == GDALConstConstants.gdtUint32() || type == GDALConstConstants.gdtInt32()) {
-                        evaluator = new ExpressionEvaluator<>(int.class);
-                        int[] values = gdalBand.readRasterInt(0, 0, xSize, ySize);
-                        for (int i = 0; i < results.length; i++) {
-                            results[i] = evaluator.evaluate(values[i], expression);
+                        ExpressionEvaluator<Integer, Integer> evaluator = new ExpressionEvaluator<>(int.class, int.class);
+                        buffer = gdalBand.readRasterInt(0, 0, xSize, ySize);
+                        final IntBuffer iBuffer = buffer.asIntBuffer();
+                        size = iBuffer.limit();
+                        for (int i = 0; i < size; i++) {
+                            iBuffer.put(i, evaluator.evaluate(iBuffer.get(i), expression));
                         }
                     } else if (type == GDALConstConstants.gdtFloat32()) {
-                        evaluator = new ExpressionEvaluator<>(float.class);
-                        float[] values = gdalBand.readRasterFloat(0, 0, xSize, ySize);
-                        for (int i = 0; i < results.length; i++) {
-                            results[i] = evaluator.evaluate(values[i], expression);
+                        ExpressionEvaluator<Float, Float> evaluator = new ExpressionEvaluator<>(float.class, float.class);
+                        buffer = gdalBand.readRasterFloat(0, 0, xSize, ySize);
+                        final FloatBuffer fBuffer = buffer.asFloatBuffer();
+                        size = fBuffer.limit();
+                        for (int i = 0; i < size; i++) {
+                            fBuffer.put(i, evaluator.evaluate(fBuffer.get(i), expression));
                         }
                     } else if (type == GDALConstConstants.gdtFloat64()) {
-                        evaluator = new ExpressionEvaluator<>(double.class);
-                        double[] values = gdalBand.readRasterDouble(0, 0, xSize, ySize);
-                        for (int i = 0; i < results.length; i++) {
-                            results[i] = evaluator.evaluate(values[i], expression);
+                        ExpressionEvaluator<Double, Double> evaluator = new ExpressionEvaluator<>(double.class, double.class);
+                        buffer = gdalBand.readRasterDouble(0, 0, xSize, ySize);
+                        final DoubleBuffer dBuffer = buffer.asDoubleBuffer();
+                        size = dBuffer.limit();
+                        for (int i = 0; i < size; i++) {
+                            dBuffer.put(i, evaluator.evaluate(dBuffer.get(i), expression));
                         }
                     }
-                    //gdalBand.writeRaster(0, 0, xSize, ySize, GDALConstConstants.gdtFloat64(), results);
-                    ByteBuffer buffer = ByteBuffer.allocateDirect(xSize * ySize * 8);
-                    buffer.asDoubleBuffer().put(results);
-                    gdalBand.writeRasterDirect(0, 0, xSize, ySize, GDALConstConstants.gdtFloat64(), buffer);
+                    if (buffer != null) {
+                        gdalBand.writeRasterDirect(0, 0, xSize, ySize, type, buffer);
+                    }
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }

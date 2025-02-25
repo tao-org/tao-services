@@ -20,14 +20,14 @@ public class ExpressionTest {
             values[i] = (short) new Random().nextInt();
             values2[i] = (short) new Random().nextInt();
         }
-        simpleExpression = "sqrt($1) + 2";
+        simpleExpression = "($1 > 1500 ? cbrt($1*0.00006) : (short) 0.00029876031644 * $1)*10000";
         doubleExpression = "($1 + $2) / 2";
     }
 
     @Test
     void testSimpleExpression() {
-        double[] results = new double[values.length];
-        ExpressionEvaluator evaluator = new ExpressionEvaluator<>(short.class);
+        short[] results = new short[values.length];
+        ExpressionEvaluator<Short, Short> evaluator = new ExpressionEvaluator<>(short.class, short.class);
         try {
             for (int i = 0; i < values.length; i++) {
                 results[i] = evaluator.evaluate(values[i], simpleExpression);
@@ -40,8 +40,8 @@ public class ExpressionTest {
 
     @Test
     void testDoubleExpression() {
-        double[] results = new double[values.length];
-        ExpressionEvaluator evaluator = new ExpressionEvaluator<>(short.class);
+        short[] results = new short[values.length];
+        ExpressionEvaluator<Short, Short> evaluator = new ExpressionEvaluator<>(short.class, short.class);
         try {
             for (int i = 0; i < values.length; i++) {
                 results[i] = evaluator.evaluate(values[i], values2[i], doubleExpression);
