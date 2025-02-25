@@ -98,17 +98,17 @@
       {
         "indexInRaster": 1,
         "pattern": "B04_10m",
-        "expression": "($1 > 1500 ? cbrt($1*0.00006) : 0.00029876031644 * $1)*10000"
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
       },
       {
         "indexInRaster": 1,
         "pattern": "B03_10m",
-        "expression": "($1 > 1500 ? cbrt($1*0.00006) : 0.00029876031644 * $1)*10000"
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
       },
       {
         "indexInRaster": 1,
         "pattern": "B02_10m",
-        "expression": "($1 > 1500 ? cbrt($1*0.00006) : 0.00029876031644 * $1)*10000"
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
       }
     ],
     "pixelMinScale": 0,
@@ -124,17 +124,17 @@
       {
         "indexInRaster": 1,
         "pattern": "B04",
-        "expression": "($1 > 1500 ? cbrt($1*0.00006) : 0.00029876031644 * $1)*10000"
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
       },
       {
         "indexInRaster": 1,
         "pattern": "B03",
-        "expression": "($1 > 1500 ? cbrt($1*0.00006) : 0.00029876031644 * $1)*10000"
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
       },
       {
         "indexInRaster": 1,
         "pattern": "B02",
-        "expression": "($1 > 1500 ? cbrt($1*0.00006) : 0.00029876031644 * $1)*10000"
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
       }
     ],
     "pixelMinScale": 0,
