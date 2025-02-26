@@ -357,16 +357,24 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 asyncExecute(() -> {
                     try {
                         if(SystemUtils.IS_OS_WINDOWS){
-                            deleteFilesFromWorkspace(files, workspace);
+                            for(String f : files){
+                                FileUtilities.deleteTree(Path.of(workspace.resolve(f)));
+                            }
                         } else {
                             FileUtilities.deleteTreesUnix(files);
                         }
-                    } catch (IOException | InterruptedException e){
+                    } catch (IOException e){
                         throw new RuntimeException(e);
                     }
                 }, null, errorCallback(userId));
             } else {
-                deleteFilesFromWorkspace(files, workspace);
+                for (String f : files) {
+                    checkPath(f);
+                    if (f.startsWith("/")) {
+                        throw new IOException("The path must be relative [" + f + "]");
+                    }
+                    deletionQueue.put(new Tuple<>(workspace, f));
+                }
             }
             responseEntity = prepareResult(String.format("%d items marked for deletion", files.length), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
@@ -375,15 +383,6 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return responseEntity;
     }
 
-    private void deleteFilesFromWorkspace(String[] files, Repository workspace) throws IOException, InterruptedException {
-        for (String f : files) {
-            checkPath(f);
-            if (f.startsWith("/")) {
-                throw new IOException("The path must be relative [" + f + "]");
-            }
-            deletionQueue.put(new Tuple<>(workspace, f));
-        }
-    }
 
     /**
      * Requests a download url for a file or a folder from one of the user workspaces
