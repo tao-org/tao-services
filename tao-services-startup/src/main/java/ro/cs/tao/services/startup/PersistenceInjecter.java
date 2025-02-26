@@ -1,5 +1,6 @@
 package ro.cs.tao.services.startup;
 
+import ro.cs.tao.component.constraints.ConstraintFactory;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.execution.Executor;
@@ -132,6 +133,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
             action.setProductProvider(this.persistenceManager.rasterData());
         }
         ContainerTunnelFilter.setContainerInstanceProvider(this.persistenceManager.containerInstance());
+        ConstraintFactory.setNamingRuleProvider(this.persistenceManager.namingRules());
     }
 
     @Override
