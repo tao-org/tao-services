@@ -77,9 +77,9 @@ public class OrchestrationController extends BaseController {
             if (environments == null) {
                 environments = new HashSet<>();
             }
-            Environment defaultEnv = Environment.valueOf(ConfigurationManager.getInstance()
-                                                                             .getValue("execution.environment",
-                                                                                       Environment.DEFAULT.friendlyName()));
+            Environment defaultEnv = EnumUtils.getEnumConstantByFriendlyName(Environment.class, ConfigurationManager.getInstance()
+                    .getValue("execution.environment",
+                            Environment.DEFAULT.friendlyName()));
             environments.remove(defaultEnv);
             final List<Environment> results = environments.stream().sorted().collect(Collectors.toList());
             results.add(0, defaultEnv);
