@@ -3,6 +3,7 @@ package ro.cs.tao.services.workspace.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -355,19 +356,17 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (workspace.getType().equals(RepositoryType.LOCAL)) {
                 asyncExecute(() -> {
                     try {
-                        FileUtilities.deleteTreesUnix(files);
-                    } catch (IOException e) {
+                        if(SystemUtils.IS_OS_WINDOWS){
+                            deleteFilesFromWorkspace(files, workspace);
+                        } else {
+                            FileUtilities.deleteTreesUnix(files);
+                        }
+                    } catch (IOException | InterruptedException e){
                         throw new RuntimeException(e);
                     }
                 }, null, errorCallback(userId));
             } else {
-                for (String f : files) {
-                    checkPath(f);
-                    if (f.startsWith("/")) {
-                        throw new IOException("The path must be relative [" + f + "]");
-                    }
-                    deletionQueue.put(new Tuple<>(workspace, f));
-                }
+                deleteFilesFromWorkspace(files, workspace);
             }
             responseEntity = prepareResult(String.format("%d items marked for deletion", files.length), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
@@ -375,6 +374,17 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         }
         return responseEntity;
     }
+
+    private void deleteFilesFromWorkspace(String[] files, Repository workspace) throws IOException, InterruptedException {
+        for (String f : files) {
+            checkPath(f);
+            if (f.startsWith("/")) {
+                throw new IOException("The path must be relative [" + f + "]");
+            }
+            deletionQueue.put(new Tuple<>(workspace, f));
+        }
+    }
+
     /**
      * Requests a download url for a file or a folder from one of the user workspaces
      *
