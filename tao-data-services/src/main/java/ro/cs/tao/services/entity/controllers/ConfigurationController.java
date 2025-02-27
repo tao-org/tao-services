@@ -247,6 +247,7 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
                     message.addItem(item.getId(), item.getValue());
                 }
                 size = items.size();
+                message.setTopic(Topic.CONFIGURATION.value());
                 Messaging.send(message);
             }
             return prepareResult(size + " configuration items saved", ResponseStatus.SUCCEEDED);
