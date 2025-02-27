@@ -1,5 +1,8 @@
 package ro.cs.tao.services.commons;
 
+import org.apache.catalina.Context;
+import org.springframework.boot.web.embedded.tomcat.TomcatContextCustomizer;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
@@ -34,19 +37,32 @@ public abstract class ServletConfiguration {
 
     @Bean
     public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> containerCustomizer() {
-        return (container -> {
-            String strPort = ConfigurationManager.getInstance().getValue("server.port");
-            int port = strPort != null ? Integer.parseInt(strPort) : 8080;
-            final Logger logger = Logger.getLogger(ServletConfiguration.class.getName());
-            final Map<String, String> map = versionInfo();
-            if (map != null) {
-                for (Map.Entry<String, String> entry : map.entrySet()) {
-                    logger.info(String.format("%s version: %s", entry.getKey(), entry.getValue()));
+        return new WebServerFactoryCustomizer<ConfigurableServletWebServerFactory>() {
+            @Override
+            public void customize(ConfigurableServletWebServerFactory factory) {
+                String strPort = ConfigurationManager.getInstance().getValue("server.port");
+                int port = strPort != null ? Integer.parseInt(strPort) : 8080;
+                final Logger logger = Logger.getLogger(ServletConfiguration.class.getName());
+                final Map<String, String> map = versionInfo();
+                if (map != null) {
+                    for (Map.Entry<String, String> entry : map.entrySet()) {
+                        logger.info(String.format("%s version: %s", entry.getKey(), entry.getValue()));
+                    }
+                }
+                logger.info("Using server port " + port);
+                factory.setPort(port);
+                if (factory instanceof TomcatServletWebServerFactory) {
+                    ((TomcatServletWebServerFactory) factory).addContextCustomizers(
+                            new TomcatContextCustomizer() {
+                                @Override
+                                public void customize(Context context) {
+                                    context.setReloadable(false);
+                                }
+                            }
+                    );
                 }
             }
-            logger.info("Using server port " + port);
-            container.setPort(port);
-        });
+        };
     }
 
     @Bean
