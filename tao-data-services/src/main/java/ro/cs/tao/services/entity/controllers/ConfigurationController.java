@@ -17,9 +17,14 @@ package ro.cs.tao.services.entity.controllers;
 
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import ro.cs.tao.TaoEnum;
 import ro.cs.tao.configuration.ConfigurationCategory;
 import ro.cs.tao.configuration.ConfigurationItem;
@@ -33,6 +38,7 @@ import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.commons.ResponseStatus;
+import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.ExtendedKeyValuePair;
 import ro.cs.tao.services.interfaces.ConfigurationService;
@@ -252,6 +258,24 @@ public class ConfigurationController
                 send(Topic.CONFIGURATION, message);
             }
             return prepareResult(size + " configuration items saved", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/log", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
+    public ResponseEntity<ServiceResponse<?>> changeLogLevel(@RequestParam("level") String level) {
+        try {
+            final RestTemplate template = new RestTemplate();
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            final MultiValueMap<String, String> map = new LinkedMultiValueMap<>() {{
+                add("configuredLevel", level.toUpperCase());
+            }};
+            // The request will be forwaded to the actuator's /loggers endpoint
+            template.postForEntity("/actuator/loggers", new HttpEntity<>(map, headers), String.class);
+            return prepareResult("Log level changed to " + level);
         } catch (Exception e) {
             return handleException(e);
         }
