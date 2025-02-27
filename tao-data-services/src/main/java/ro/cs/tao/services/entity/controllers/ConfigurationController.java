@@ -28,6 +28,8 @@ import ro.cs.tao.eodata.Projection;
 import ro.cs.tao.eodata.sorting.Association;
 import ro.cs.tao.eodata.sorting.DataFilter;
 import ro.cs.tao.eodata.sorting.DataSorter;
+import ro.cs.tao.messaging.Message;
+import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.commons.ResponseStatus;
@@ -237,12 +239,15 @@ public class ConfigurationController extends DataEntityController<KeyValuePair, 
     public ResponseEntity<ServiceResponse<?>> saveConfigurationItems(@RequestBody List<ConfigurationItem> items) {
         try {
             int size = 0;
-            if (items != null) {
+            if (items != null && !items.isEmpty()) {
+                final Message message = Message.create(currentUser(), getClass().getSimpleName(), "Configuration changed", false);
                 for (ConfigurationItem item : items) {
                     item.setLastUpdated(LocalDateTime.now());
                     persistenceManager.configuration().saveItem(item);
+                    message.addItem(item.getId(), item.getValue());
                 }
                 size = items.size();
+                Messaging.send(message);
             }
             return prepareResult(size + " configuration items saved", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
