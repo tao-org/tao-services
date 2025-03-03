@@ -684,22 +684,6 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
             filePath = uploadPath.resolve(Paths.get(file.getOriginalFilename()).getFileName());
             Files.copy(stream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
-        String userId = principal.getName();
-        String location = filePath.toUri().toString(); //workspacePath.relativize(filePath).toString();
-        List<AuxiliaryData> listData = auxiliaryDataProvider.list(userId, location);
-        AuxiliaryData data;
-        if (listData != null && listData.size() == 1) {
-            data = listData.get(0);
-        } else {
-            data = new AuxiliaryData();
-            data.setId(UUID.randomUUID().toString());
-        }
-        data.setLocation(location);
-        data.setDescription(description);
-        data.setUserId(userId);
-        data.setCreated(LocalDateTime.now());
-        data.setModified(data.getCreated());
-        auxiliaryDataProvider.save(data);
     }
 
     private void storeFile(InputStream stream, Path uploadPath) throws IOException {
