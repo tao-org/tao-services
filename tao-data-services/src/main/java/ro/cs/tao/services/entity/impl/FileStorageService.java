@@ -45,7 +45,6 @@ import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -95,8 +94,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     @Override
     public void storeUserFile(MultipartFile file, String relativeFolder, String description) throws Exception {
         checkParameters(file, relativeFolder);
-        storeFile(file, Paths.get(repository().resolve(relativeFolder)),
-                  description, SessionStore.currentContext().getPrincipal());
+        storeFile(file, Paths.get(repository().resolve(relativeFolder)));
         
         // Update user processing quota
         UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
@@ -673,7 +671,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         }
     }
 
-    private void storeFile(MultipartFile file, Path uploadPath, String description, Principal principal) throws IOException, PersistenceException {
+    private void storeFile(MultipartFile file, Path uploadPath) throws IOException, PersistenceException {
         if (file == null || file.getOriginalFilename() == null) {
             return;
         }
