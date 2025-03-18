@@ -77,11 +77,15 @@ public class OrchestrationController extends BaseController {
             if (environments == null) {
                 environments = new HashSet<>();
             }
-            Environment defaultEnv = EnumUtils.getEnumConstantByFriendlyName(Environment.class, ConfigurationManager.getInstance()
-                    .getValue("execution.environment",
-                            Environment.DEFAULT.friendlyName()));
-            environments.remove(defaultEnv);
-            final List<Environment> results = environments.stream().sorted().collect(Collectors.toList());
+            Environment defaultEnv = EnumUtils
+                    .getEnumConstantByFriendlyName(Environment.class,
+                                                   ConfigurationManager.getInstance()
+                                                                       .getValue("execution.environment",
+                                                                                 Environment.DEFAULT.friendlyName()));
+            final List<Environment> results = environments.stream()
+                                                          .filter(e -> e != defaultEnv)
+                                                          .sorted()
+                                                          .collect(Collectors.toList());
             results.add(0, defaultEnv);
             return prepareResult(results);
         } catch (Exception ex) {
