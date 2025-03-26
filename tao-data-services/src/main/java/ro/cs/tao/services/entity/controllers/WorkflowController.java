@@ -26,10 +26,7 @@ import ro.cs.tao.BaseException;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.Tag;
-import ro.cs.tao.component.ComponentLink;
-import ro.cs.tao.component.ParameterDescriptor;
-import ro.cs.tao.component.ProcessingComponent;
-import ro.cs.tao.component.TemplateParameterDescriptor;
+import ro.cs.tao.component.*;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.enums.Visibility;
@@ -302,7 +299,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             node.setPreserveOutput(true);
             final ProcessingComponent component = componentService.findById(node.getComponentId());
             if (component != null && (node.getAdditionalInfo() == null || node.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))) {
-                node.addInfo("nodeAffinity", component.getNodeAffinity().getValue());
+                node.addInfo("nodeAffinity", component.getNodeAffinity() != null? component.getNodeAffinity().getValue() : NodeAffinity.Any.getValue());
             }
             responseEntity = prepareResult(service.addNode(workflowId, node));
             record("Node " + node.getName() + " added to workflow " + workflowId);
