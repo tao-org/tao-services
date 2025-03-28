@@ -113,7 +113,7 @@ public class WPSIntegrationTest_SpringMocking {
         dataDescriptor.setLocation("dataLocation");
         final TargetDescriptor output = new TargetDescriptor("9108h1f0nqndq");
         output.setDataDescriptor(dataDescriptor);
-        given(orchestratorService.getWorkflowOutputs(24))
+        given(orchestratorService.getWorkflowOutputDescriptors(24))
                 .willReturn(Arrays.asList(new TargetDescriptor[]{output}));
 
         //execution
