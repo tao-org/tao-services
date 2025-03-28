@@ -92,12 +92,17 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<TargetDescriptor> getWorkflowOutputs(long workflowId) throws PersistenceException {
+    public List<TargetDescriptor> getWorkflowOutputDescriptors(long workflowId) throws PersistenceException {
         if (!isDevModeEnabled()) {
             return workflowService.getWorkflowOutputs(workflowId);
         } else {
             return MockData.getMockOutputs().get(workflowId);
         }
+    }
+
+    @Override
+    public List<ExecutionTaskOutput> getWorkflowOutputs(long workflowId) throws PersistenceException {
+        return jobProvider.getWorkflowOutputs(workflowId);
     }
 
     @Override

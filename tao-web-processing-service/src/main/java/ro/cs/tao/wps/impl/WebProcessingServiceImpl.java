@@ -143,7 +143,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
 
     private List<TargetDescriptor> getWorkflowOutputsSave(long workflowId) {
         try {
-            return orchestratorService.getWorkflowOutputs(workflowId);
+            return orchestratorService.getWorkflowOutputDescriptors(workflowId);
         } catch (Exception e) {
             return new ArrayList<>();
         }
