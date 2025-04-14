@@ -1,10 +1,12 @@
 package ro.cs.tao.services.startup;
 
+import ro.cs.tao.component.ConditionComponent;
 import ro.cs.tao.component.constraints.ConstraintFactory;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.execution.Executor;
 import ro.cs.tao.execution.TaskStatusListener;
+import ro.cs.tao.execution.drmaa.ConditionExecutor;
 import ro.cs.tao.execution.drmaa.DRMAAExecutor;
 import ro.cs.tao.execution.local.NullExecutor;
 import ro.cs.tao.execution.local.QueryExecutor;
@@ -14,6 +16,7 @@ import ro.cs.tao.execution.model.ResourceUsage;
 import ro.cs.tao.execution.wms.WMSExecutor;
 import ro.cs.tao.execution.wps.WPSExecutor;
 import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.managers.ResourceUsageManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
@@ -113,6 +116,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
         WMSExecutor.setAuthenticationProvider(persistenceManager.webServiceAuthentication());
         NullExecutor.setWorkflowNodeProvider(persistenceManager.workflowNodes());
         NullExecutor.setComponentProvider(persistenceManager.processingComponents());
+        ConditionExecutor.setTaskProvider(persistenceManager.tasks());
         Messaging.setPersister(this.persistenceManager.notifications());
         logger.fine("Persistence injection completed");
         SpringSessionProvider.setPersistenceManager(this.persistenceManager);
@@ -134,6 +138,27 @@ public class PersistenceInjecter extends BaseLifeCycle {
         }
         ContainerTunnelFilter.setContainerInstanceProvider(this.persistenceManager.containerInstance());
         ConstraintFactory.setNamingRuleProvider(this.persistenceManager.namingRules());
+        // Condition components
+        ConditionComponent component = this.persistenceManager.conditionComponentManager()
+                                                              .get(ConditionComponent.ONE_CONDITION_COMPONENT_ID);
+        if (component == null) {
+            component = ConditionComponent.oneConditionComponent();
+            try {
+                this.persistenceManager.conditionComponentManager().save(component);
+            } catch (PersistenceException e) {
+                logger.warning(e.getMessage());
+            }
+        }
+        component = this.persistenceManager.conditionComponentManager()
+                                           .get(ConditionComponent.TWO_CONDITIONS_COMPONENT_ID);
+        if (component == null) {
+            component = ConditionComponent.twoConditionsComponent();
+            try {
+                this.persistenceManager.conditionComponentManager().save(component);
+            } catch (PersistenceException e) {
+                logger.warning(e.getMessage());
+            }
+        }
     }
 
     @Override
