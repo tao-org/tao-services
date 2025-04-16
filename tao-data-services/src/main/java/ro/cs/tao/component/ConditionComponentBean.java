@@ -38,6 +38,7 @@ public class ConditionComponentBean {
         this.visibility = src.getVisibility();
         this.active = src.isActive();
         this.owner = src.getOwner();
+        this.category = src.getCategory();
     }
 
     public String getId() {
@@ -134,6 +135,14 @@ public class ConditionComponentBean {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public ComponentCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(ComponentCategory category) {
+        this.category = category;
     }
 
     public String getOwner() {
