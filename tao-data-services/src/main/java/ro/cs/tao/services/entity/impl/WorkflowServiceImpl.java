@@ -1378,6 +1378,14 @@ public class WorkflowServiceImpl
                                                                                    .map(p -> (TemplateParameterDescriptor) p)
                                                                                    .collect(Collectors.toList());
                         }
+                        if (component instanceof ConditionComponent) {
+                            descriptors = ((ConditionComponent) component).getParameterDescriptors();
+                            templateDescriptors = ((ConditionComponent) component).getParameterDescriptors()
+                                    .stream()
+                                    .filter(p -> p instanceof TemplateParameterDescriptor)
+                                    .map(p -> (TemplateParameterDescriptor) p)
+                                    .collect(Collectors.toList());
+                        }
                         if (descriptors != null && !descriptors.isEmpty()) {
                             final List<ParameterDescriptor> descriptorList = new ArrayList<>(descriptors);
                             final List<TemplateParameterDescriptor> templateDescriptorList = new ArrayList<>(templateDescriptors);
@@ -1451,7 +1459,7 @@ public class WorkflowServiceImpl
                                 errors.add(String.format("[node.incomingLinks] the input format of '%s' is not compatible with the output format of '%s'",
                                                          component.getLabel(), linkedComponent.getLabel()));
                             }
-                            if (linkedComponent instanceof ProcessingComponent && component instanceof ProcessingComponent) {
+                            if (linkedComponent instanceof ProcessingComponent && component instanceof ProcessingComponent){
                                 if (!ComponentCategory.isCompatibleWith(((ProcessingComponent) component).getCategory(),
                                                                         ((ProcessingComponent) linkedComponent).getCategory())) {
                                     errors.add(String.format("[node.incomingLinks] component '%s' is not compatible with component '%s'",

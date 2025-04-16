@@ -37,10 +37,7 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
-import ro.cs.tao.services.interfaces.ComponentService;
-import ro.cs.tao.services.interfaces.DataSourceComponentService;
-import ro.cs.tao.services.interfaces.WorkflowBuilder;
-import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.services.interfaces.*;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
@@ -80,6 +77,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     @Autowired
     private UserProvider userProvider;
 
+    @Autowired
+    private ConditionComponentService conditionComponentService;
+
     /**
      * Lists the workflows that are visible to the current user, optionally specifying the pagination of results.
      *
@@ -116,7 +116,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         } else {
             entity.getNodes().forEach(n -> {
                 if (n.getComponentId() != null) {
-                    ProcessingComponent component = componentService.findById(n.getComponentId());
+                    TaoComponent component = componentService.findById(n.getComponentId());
+                    if(component == null)
+                        component = conditionComponentService.findById(n.getComponentId());
                     if (component != null
                             && (n.getAdditionalInfo() == null || n.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))) {
                         n.addInfo("nodeAffinity", component.getNodeAffinity().getValue());
@@ -297,7 +299,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         try {
             // until UI exposes this, default preserveOutput to true;
             node.setPreserveOutput(true);
-            final ProcessingComponent component = componentService.findById(node.getComponentId());
+            TaoComponent component = componentService.findById(node.getComponentId());
+            if(component == null)
+                component = conditionComponentService.findById(node.getComponentId());
             if (component != null && (node.getAdditionalInfo() == null || node.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))) {
                 node.addInfo("nodeAffinity", component.getNodeAffinity() != null? component.getNodeAffinity().getValue() : NodeAffinity.Any.getValue());
             }
@@ -698,10 +702,13 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         if (customValues != null) {
             List<String> errors = null;
             final ProcessingComponent component = componentService.findById(node.getComponentId());
+            ConditionComponent conditionComponent = component == null ? conditionComponentService.findById(node.getComponentId()) : null;
+            Set<ParameterDescriptor> parameters = component != null ? component.getParameterDescriptors()
+                    : conditionComponent.getParameterDescriptors();
             for (Iterator<ParameterValue> it = customValues.iterator(); it.hasNext(); ) {
                 ParameterValue customValue = it.next();
                 ParameterDescriptor descriptor = null;
-                for (ParameterDescriptor componentParam : component.getParameterDescriptors()){
+                for (ParameterDescriptor componentParam : parameters){
                     if (componentParam.getName().equals(customValue.getParameterName())) {
                         descriptor = componentParam;
                         break;
