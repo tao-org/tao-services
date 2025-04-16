@@ -139,22 +139,22 @@ public class PersistenceInjecter extends BaseLifeCycle {
         ContainerTunnelFilter.setContainerInstanceProvider(this.persistenceManager.containerInstance());
         ConstraintFactory.setNamingRuleProvider(this.persistenceManager.namingRules());
         // Condition components
-        ConditionComponent component = this.persistenceManager.conditionComponentManager()
+        ConditionComponent component = this.persistenceManager.conditionComponents()
                                                               .get(ConditionComponent.ONE_CONDITION_COMPONENT_ID);
         if (component == null) {
             component = ConditionComponent.oneConditionComponent();
             try {
-                this.persistenceManager.conditionComponentManager().save(component);
+                this.persistenceManager.conditionComponents().save(component);
             } catch (PersistenceException e) {
                 logger.warning(e.getMessage());
             }
         }
-        component = this.persistenceManager.conditionComponentManager()
+        component = this.persistenceManager.conditionComponents()
                                            .get(ConditionComponent.TWO_CONDITIONS_COMPONENT_ID);
         if (component == null) {
             component = ConditionComponent.twoConditionsComponent();
             try {
-                this.persistenceManager.conditionComponentManager().save(component);
+                this.persistenceManager.conditionComponents().save(component);
             } catch (PersistenceException e) {
                 logger.warning(e.getMessage());
             }
