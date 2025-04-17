@@ -34,7 +34,7 @@ public class ConditionComponentBean {
         this.sources = src.getSources();
         this.targets = src.getTargets();
         this.tags = src.getTags();
-        final List<ParameterDescriptor> parameters = src.getParameterDescriptors().stream().toList();
+        this.parameters = src.getParameterDescriptors().stream().map(ParameterDescriptorBean::new).collect(Collectors.toList());
         this.visibility = src.getVisibility();
         this.active = src.isActive();
         this.owner = src.getOwner();
