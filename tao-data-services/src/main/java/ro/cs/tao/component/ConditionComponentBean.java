@@ -16,7 +16,7 @@ public class ConditionComponentBean {
     private List<SourceDescriptor> sources;
     private List<TargetDescriptor> targets;
     private List<String> tags;
-    private List<ParameterDescriptorBean> parameters;
+    private List<ParameterDescriptorBean> parameterDescriptors;
     private ProcessingComponentVisibility visibility;
     private ComponentCategory category;
     private boolean active;
@@ -34,7 +34,7 @@ public class ConditionComponentBean {
         this.sources = src.getSources();
         this.targets = src.getTargets();
         this.tags = src.getTags();
-        this.parameters = src.getParameterDescriptors().stream().map(ParameterDescriptorBean::new).collect(Collectors.toList());
+        this.parameterDescriptors = src.getParameterDescriptors().stream().map(ParameterDescriptorBean::new).collect(Collectors.toList());
         this.visibility = src.getVisibility();
         this.active = src.isActive();
         this.owner = src.getOwner();
@@ -113,12 +113,12 @@ public class ConditionComponentBean {
         this.tags = tags;
     }
 
-    public List<ParameterDescriptorBean> getParameters() {
-        return parameters;
+    public List<ParameterDescriptorBean> getParameterDescriptors() {
+        return parameterDescriptors;
     }
 
-    public void setParameters(List<ParameterDescriptorBean> parameters) {
-        this.parameters = parameters;
+    public void setParameterDescriptors(List<ParameterDescriptorBean> parameterDescriptors) {
+        this.parameterDescriptors = parameterDescriptors;
     }
 
     public ProcessingComponentVisibility getVisibility() {
@@ -164,8 +164,8 @@ public class ConditionComponentBean {
         entity.setSources(this.sources);
         entity.setTargets(this.targets);
         entity.setTags(this.tags);
-        if (this.parameters != null) {
-            entity.setParameterDescriptors(this.parameters.stream().map(ParameterDescriptorBean::toParameterDescriptor).collect(Collectors.toSet()));
+        if (this.parameterDescriptors != null) {
+            entity.setParameterDescriptors(this.parameterDescriptors.stream().map(ParameterDescriptorBean::toParameterDescriptor).collect(Collectors.toSet()));
         }
         entity.setVisibility(this.visibility);
         entity.setActive(this.active);

@@ -18,6 +18,7 @@ import ro.cs.tao.services.interfaces.ConditionComponentService;
 import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.utils.StringUtilities;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -53,6 +54,21 @@ public class ConditionComponentController extends BaseController {
         } else {
             return prepareResult(conditionComponentService.list().stream().map(ConditionComponentBean::new).collect(Collectors.toList()));
         }
+    }
+
+    /**
+     * Returns the descriptors of one or more condition components, given their ids.
+     * @param idList    The list of identifiers
+     */
+    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "id") String idList) {
+        if (idList == null || idList.isEmpty()) {
+            return prepareResult("Invalid id list", ResponseStatus.FAILED);
+        }
+        String[] ids = idList.split(",");
+        return prepareResult(conditionComponentService.list(Arrays.asList(ids)).stream()
+                .map(ConditionComponentBean::new)
+                .collect(Collectors.toList()));
     }
 
     /**
