@@ -1122,6 +1122,33 @@ public class WorkflowServiceImpl
                         }
                     }
                     break;
+                case CONDITION:
+                    ConditionComponent conditionComponent = (ConditionComponent) component;
+                    Set<ParameterDescriptor> descriptorsCondition = conditionComponent.getParameterDescriptors();
+                    for (ParameterDescriptor descriptor : descriptorsCondition) {
+                        paramType = descriptor.getDataType();
+                        componentParams.add(new Parameter(descriptor.getName(),
+                                //paramType.getName(),
+                                descriptor.typeFriendlyName(),
+                                !"null".equals(descriptor.getDefaultValue()) ? descriptor.getDefaultValue() : null,
+                                paramType.isEnum() ?
+                                        Parameter.stringValueSet(paramType.getEnumConstants()) :
+                                        Parameter.stringValueSet(descriptor.getValueSet()),
+                                descriptor.isNotNull()));
+                        if(descriptor instanceof TemplateParameterDescriptor){
+                            for(ParameterDescriptor param : ((TemplateParameterDescriptor) descriptor).getParameters()){
+                                Class<?> descriptorParamType = param.getDataType();
+                                componentParams.add(new Parameter(descriptor.getName() + "~" + param.getName(),
+                                        param.typeFriendlyName(),
+                                        !"null".equals(param.getDefaultValue()) ? param.getDefaultValue() : null,
+                                        descriptorParamType.isEnum() ?
+                                                Parameter.stringValueSet(descriptorParamType.getEnumConstants()) :
+                                                Parameter.stringValueSet(param.getValueSet()),
+                                        param.isNotNull()));
+                            }
+                        }
+                    }
+                    break;
                 case GROUP:
                     continue;
             }
