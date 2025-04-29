@@ -247,31 +247,33 @@ public class RepositoryWatcherServiceImpl implements RepositoryWatcherService {
                 for (WatchEvent<?> event : key.pollEvents()) {
                     WatchEvent.Kind<?> kind = event.kind();
                     Path name = ((WatchEvent<Path>) event).context();
-                    Path child = directory.resolve(name);
+                    if (name != null) {
+                        Path child = directory.resolve(name);
 
-                    //logger.finest(String.format("Filesystem event %s: %s\n", event.kind().name(), child));
+                        //logger.finest(String.format("Filesystem event %s: %s\n", event.kind().name(), child));
 
-                    if (kind == ENTRY_CREATE) { // if directory is created, and watching recursively, then register it and its sub-directories
-                        try {
-                            if (directory.equals(Paths.get(ROOT))) {
-                                final BasicFileAttributes attributes = Files.readAttributes(child, BasicFileAttributes.class);
-                                if (attributes.isRegularFile() || Files.isRegularFile(child)) {
-                                    logger.warning(String.format("File %s created outside users folders", child));
-                                }
-                            } else {
-
-                                if (!Files.isSymbolicLink(child)) {
+                        if (kind == ENTRY_CREATE) { // if directory is created, and watching recursively, then register it and its sub-directories
+                            try {
+                                if (directory.equals(Paths.get(ROOT))) {
                                     final BasicFileAttributes attributes = Files.readAttributes(child, BasicFileAttributes.class);
-                                    if (attributes.isDirectory() || Files.isDirectory(child)) {
-                                        walkAndRegisterDirectories(child);
+                                    if (attributes.isRegularFile() || Files.isRegularFile(child)) {
+                                        logger.warning(String.format("File %s created outside users folders", child));
+                                    }
+                                } else {
+
+                                    if (!Files.isSymbolicLink(child)) {
+                                        final BasicFileAttributes attributes = Files.readAttributes(child, BasicFileAttributes.class);
+                                        if (attributes.isDirectory() || Files.isDirectory(child)) {
+                                            walkAndRegisterDirectories(child);
+                                        }
                                     }
                                 }
+                            } catch (NoSuchFileException | NotDirectoryException ignored) {
+                                // a file may throw this exception if it's not fully "created"
+                            } catch (IOException e) {
+                                logger.severe(String.format("Cannot register directory %s. Reason: %s",
+                                                            child, ExceptionUtils.getStackTrace(e)));
                             }
-                        } catch (NoSuchFileException | NotDirectoryException ignored) {
-                        // a file may throw this exception if it's not fully "created"
-                        } catch (IOException e) {
-                            logger.severe(String.format("Cannot register directory %s. Reason: %s",
-                                                        child, ExceptionUtils.getStackTrace(e)));
                         }
                     }
                 }
