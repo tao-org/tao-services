@@ -6,7 +6,7 @@
     <parent>
         <groupId>ro.c-s.tao</groupId>
         <artifactId>tao-services</artifactId>
-        <version>1.5.2</version>
+        <version>1.5.3</version>
     </parent>
 
     <artifactId>tao-ogc-service</artifactId>
@@ -32,7 +32,7 @@
         <dependency>
             <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-workspace-service</artifactId>
-            <version>1.5.2</version>
+            <version>1.5.3</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
