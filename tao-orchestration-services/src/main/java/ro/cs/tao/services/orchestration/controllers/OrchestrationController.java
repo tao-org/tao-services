@@ -550,6 +550,23 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
+    @RequestMapping(value = "/simpipe", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> executeSimPipe(@RequestBody ExecutionRequest request) {
+        ResponseEntity<ServiceResponse<?>> response;
+        try {
+            final ExecutionJob job = orchestrationService.executeSimpipe(request);
+            if (job == null) {
+                throw new ExecutionException("Failed to create JSON");
+            }
+            response = prepareResult(job.getJobOutputPath(),
+                    "The script model for the job should be available in the path",
+                    ResponseStatus.SUCCEEDED, HttpStatus.OK);
+        } catch (ExecutionException ex) {
+            response = handleException(ex);
+        }
+        return response;
+    }
+
     /**
      * Callback to signal the status change of a task.
      * This is intended to be used by external systems calling TAO.
