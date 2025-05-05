@@ -40,6 +40,7 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WorkflowService;
+import ro.cs.tao.simpipe.SIMPIPEClient;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
@@ -48,6 +49,7 @@ import ro.cs.tao.workflow.ExternalGraphConverter;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 
 import javax.annotation.PostConstruct;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -118,6 +120,26 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         return Orchestrator.getInstance().createJob(SessionStore.currentContext(),
                                                     modified.getWorkflowId(), modified.getName(),
                                                     modified.getParameters(), type);
+    }
+
+    @Override
+    public ExecutionJob executeSimpipe(ExecutionRequest request) throws ExecutionException {
+        ExecutionJob job = scriptJob(request);
+        while (job.getExecutionStatus() != ExecutionStatus.DONE && job.getExecutionStatus() != ExecutionStatus.FAILED && job.getExecutionStatus() != ExecutionStatus.CANCELLED){
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e){
+                //nothing
+            }
+            job = jobProvider.get(job.getId());
+        }
+        if(job.getExecutionStatus() == ExecutionStatus.DONE) {
+            Path lastPart = Path.of(job.getJobOutputPath()).getFileName();
+            Path yamlPath = Path.of(job.getJobOutputPath(), lastPart.toString() + ".yaml");
+            SIMPIPEClient client = new SIMPIPEClient(job.getName().toLowerCase(), yamlPath);
+            client.runClient();
+        }
+        return job;
     }
 
     @Override
