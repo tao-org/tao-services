@@ -68,7 +68,7 @@
         <dependency>
             <groupId>ro.c-s.tao</groupId>
             <artifactId>tao-executor-simpipe</artifactId>
-            <version>1.5.2</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
