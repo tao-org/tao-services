@@ -550,16 +550,22 @@ public class OrchestrationController extends BaseController {
         return response;
     }
 
+    /**
+     * Exports a workflow execution in ARGO format and then executes a dry run on the SIM-PIPE app.
+     * The workflow is not actually executed, but its execution is simulated in a dry run in order to calculate the metrics
+     * required for choosing an appropriate node flavor for future executions of the components
+     * @param request   The execution request
+     */
     @RequestMapping(value = "/simpipe", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> executeSimPipe(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
             final ExecutionJob job = orchestrationService.executeSimpipe(request);
             if (job == null) {
-                throw new ExecutionException("Failed to create JSON");
+                throw new ExecutionException("Failed to create ARGO Workflow and Dry run on SIMPIPE");
             }
             response = prepareResult(job.getJobOutputPath(),
-                    "The script model for the job should be available in the path",
+                    "The script model for the job should be available in the path and the metrics of execution created!",
                     ResponseStatus.SUCCEEDED, HttpStatus.OK);
         } catch (ExecutionException ex) {
             response = handleException(ex);
