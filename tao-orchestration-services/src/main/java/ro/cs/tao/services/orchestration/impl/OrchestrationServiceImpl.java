@@ -23,6 +23,7 @@ import org.springframework.security.concurrent.DelegatingSecurityContextRunnable
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.EnumUtils;
+import ro.cs.tao.component.DryRunMetrics;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.ExecutionConfiguration;
@@ -54,10 +55,13 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Service("orchestrationService")
 public class OrchestrationServiceImpl implements OrchestratorService {
+
+    private static final Logger logger = Logger.getLogger(OrchestrationServiceImpl.class.getName());
 
     @Autowired
     private ExecutionJobProvider jobProvider;
@@ -70,6 +74,9 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Autowired
     private UserProvider userProvider;
+//
+//    @Autowired
+//    private DryRunMetricsProvider dryRunMetricsProvider;
 
     @Override
     public long startWorkflow(ExecutionRequest request) throws ExecutionException {
@@ -125,19 +132,21 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Override
     public ExecutionJob executeSimpipe(ExecutionRequest request) throws ExecutionException {
         ExecutionJob job = scriptJob(request);
-        while (job.getExecutionStatus() != ExecutionStatus.DONE && job.getExecutionStatus() != ExecutionStatus.FAILED && job.getExecutionStatus() != ExecutionStatus.CANCELLED){
+        while (job.getExecutionStatus() != ExecutionStatus.DONE && job.getExecutionStatus() != ExecutionStatus.FAILED
+                && job.getExecutionStatus() != ExecutionStatus.CANCELLED){
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException e){
-                //nothing
+                logger.warning(e.getMessage());
             }
             job = jobProvider.get(job.getId());
         }
         if(job.getExecutionStatus() == ExecutionStatus.DONE) {
-            Path lastPart = Path.of(job.getJobOutputPath()).getFileName();
-            Path yamlPath = Path.of(job.getJobOutputPath(), lastPart.toString() + ".yaml");
+            logger.fine("SIM-PIPE dry run execution starting for job " + job.getName());
+            Path yamlPath = Path.of(job.getJobOutputPath(), Path.of(job.getJobOutputPath()).getFileName().toString() + ".yaml");
             SIMPIPEClient client = new SIMPIPEClient(job.getName().toLowerCase(), yamlPath);
-            client.runClient();
+            List<DryRunMetrics> metrics = client.runClient();
+            //System.out.println(metrics);
         }
         return job;
     }
