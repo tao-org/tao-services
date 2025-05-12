@@ -35,6 +35,7 @@ import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
+import ro.cs.tao.persistence.DryRunMetricsProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.SessionStore;
@@ -74,9 +75,9 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Autowired
     private UserProvider userProvider;
-//
-//    @Autowired
-//    private DryRunMetricsProvider dryRunMetricsProvider;
+
+    @Autowired
+    private DryRunMetricsProvider dryRunMetricsProvider;
 
     @Override
     public long startWorkflow(ExecutionRequest request) throws ExecutionException {
@@ -130,7 +131,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public ExecutionJob executeSimpipe(ExecutionRequest request) throws ExecutionException {
+    public ExecutionJob executeSimpipe(ExecutionRequest request) throws ExecutionException, PersistenceException {
         ExecutionJob job = scriptJob(request);
         while (job.getExecutionStatus() != ExecutionStatus.DONE && job.getExecutionStatus() != ExecutionStatus.FAILED
                 && job.getExecutionStatus() != ExecutionStatus.CANCELLED){
@@ -141,12 +142,14 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             }
             job = jobProvider.get(job.getId());
         }
-        if(job.getExecutionStatus() == ExecutionStatus.DONE) {
+        if (job.getExecutionStatus() == ExecutionStatus.DONE) {
             logger.fine("SIM-PIPE dry run execution starting for job " + job.getName());
             Path yamlPath = Path.of(job.getJobOutputPath(), Path.of(job.getJobOutputPath()).getFileName().toString() + ".yaml");
-            SIMPIPEClient client = new SIMPIPEClient(job.getName().toLowerCase(), yamlPath);
+            SIMPIPEClient client = new SIMPIPEClient(job.getName().toLowerCase(), yamlPath, workflowService.getFullDescriptor(job.getWorkflowId()));
             List<DryRunMetrics> metrics = client.runClient();
-            //System.out.println(metrics);
+            for (DryRunMetrics metric : metrics) {
+                dryRunMetricsProvider.save(metric);
+            }
         }
         return job;
     }
