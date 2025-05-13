@@ -567,7 +567,7 @@ public class OrchestrationController extends BaseController {
             response = prepareResult(job.getJobOutputPath(),
                     "The script model for the job should be available in the path and the metrics of execution created!",
                     ResponseStatus.SUCCEEDED, HttpStatus.OK);
-        } catch (ExecutionException ex) {
+        } catch (Exception ex) {
             response = handleException(ex);
         }
         return response;
