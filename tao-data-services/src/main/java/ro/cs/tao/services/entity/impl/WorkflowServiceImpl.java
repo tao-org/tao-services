@@ -361,6 +361,7 @@ public class WorkflowServiceImpl
             throw new PersistenceException(String.format("Node contains errors: [%s]",
                                                          String.join(",", validationErrors)));
         }
+        nodeDescriptor.setLevel(1);
         return workflowNodeProvider.save(nodeDescriptor, workflow);
     }
 
@@ -530,6 +531,7 @@ public class WorkflowServiceImpl
                 }
                 links.add(link);
                 targetNode.setIncomingLinks(links);
+                targetNode.setLevel(sourceNode.getLevel() + 1);
                 return updateNode(targetNode.getWorkflow().getId(), targetNode);
             } catch (Exception e) {
                 throw new PersistenceException(e);
@@ -559,6 +561,9 @@ public class WorkflowServiceImpl
             throw new PersistenceException("Parent node does not exist");
         }
         node.getIncomingLinks().removeIf(l -> l.equals(link));
+        if (node.getIncomingLinks().size() == 0) {
+            node.setLevel(1);
+        }
         return workflowNodeProvider.update(node);
     }
     //endregion
@@ -847,7 +852,7 @@ public class WorkflowServiceImpl
                     node.setComponentType(ComponentType.DATASOURCE);
                     node.setPreserveOutput(true);
                     node.setCreated(LocalDateTime.now());
-                    node.setLevel(0);
+                    node.setLevel(1);
                     node = addNode(clone.getId(), node);
                 } else {
                     node = descriptors.get(0);

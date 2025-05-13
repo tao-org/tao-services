@@ -23,7 +23,6 @@ import org.springframework.security.concurrent.DelegatingSecurityContextRunnable
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.EnumUtils;
-import ro.cs.tao.component.DryRunMetrics;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.ExecutionConfiguration;
@@ -145,7 +144,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             logger.fine("SIM-PIPE dry run execution starting for job " + job.getName());
             Path yamlPath = Path.of(job.getJobOutputPath(), Path.of(job.getJobOutputPath()).getFileName().toString() + ".yaml");
             SIMPIPEClient client = new SIMPIPEClient(job.getName().toLowerCase(), yamlPath);
-            List<DryRunMetrics> metrics = client.runClient();
+            //List<DryRunMetrics> metrics = client.runClient();
             //System.out.println(metrics);
         }
         return job;
@@ -392,7 +391,11 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Override
     public void deleteJobFromQueue(String userId, long jobId) throws PersistenceException {
         Orchestrator.getInstance().removeJob(userId, jobId);
-        jobProvider.delete(jobId);
+        try {
+            jobProvider.delete(jobId);
+        } catch (PersistenceException e) {
+            logger.warning("Failed to delete job " + jobId + " from database: " + e.getMessage());
+        }
     }
 
     @Override
