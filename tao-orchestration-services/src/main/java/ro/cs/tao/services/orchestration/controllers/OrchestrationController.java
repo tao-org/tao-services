@@ -54,6 +54,21 @@ import ro.cs.tao.utils.StringUtilities;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * The OrchestrationController class provides RESTful endpoints for managing and orchestrating
+ * workflow executions, job management, and interactions with external services such as
+ * Web Processing Service (WPS) and Web Map Service (WMS). It supports functionalities
+ * for starting, stopping, pausing, resuming, and monitoring jobs, as well as managing
+ * job history and task statuses.
+ *
+ * This class extends the BaseController and serves as a centralized controller
+ * for workflow orchestration and job execution-related operations.
+ *
+ * Fields:
+ * - orchestrationService: Service to handle orchestration logic and workflow execution.
+ * - executionJobManager: Manages the execution and lifecycle of jobs.
+ * - executionTaskProvider: Provides task-related operations within a workflow.
+ */
 @RestController
 @RequestMapping("/orchestrator")
 @Tag(name = "Orchestration", description = "Operations related to workflow execution")

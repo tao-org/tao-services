@@ -16,6 +16,12 @@
 
 package ro.cs.tao.services.commons;
 
+/**
+ * Enumeration representing the possible statuses for a response.
+ *
+ * This can be used to indicate whether an operation was successful
+ * or if it failed.
+ */
 public enum ResponseStatus {
     SUCCEEDED,
     FAILED

@@ -30,6 +30,9 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.CleanupService;
 
 /**
+ * REST controller providing an endpoint to clean up products
+ * with no attached valid files from the database.
+ *
  * @author Lucian Barbulescu
  */
 @RestController

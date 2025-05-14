@@ -57,6 +57,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * Controller for managing operations on raster data and spatial subsets.
+ */
 @RestController
 @RequestMapping("/view")
 @Tag(name = "Raster Viewer", description = "Endpoint for web visualization of raster products")

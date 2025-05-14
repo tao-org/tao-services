@@ -2,6 +2,16 @@ package ro.cs.tao.services.orchestration.beans;
 
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
 
+/**
+ * The TaskOutput class represents the output of a specific task.
+ * It encapsulates details about the task such as its unique identifier (taskId),
+ * the corresponding output generated during task execution, and the command
+ * associated with the task.
+ *
+ * This class provides constructors for initialization, getters and setters for
+ * accessing and modifying task attributes, and a static factory method to create
+ * a TaskOutput instance from an ExecutionTaskSummary instance.
+ */
 public class TaskOutput {
     private long taskId;
     private String output;

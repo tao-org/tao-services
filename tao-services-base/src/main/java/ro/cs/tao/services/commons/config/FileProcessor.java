@@ -14,6 +14,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+/**
+ * Defines an interface for processing files by mapping predefined resource paths to a target
+ * directory and ensuring that these files exist in the specified location.
+ *
+ * Implementations of this interface must define the `getFileMap` method, which provides a
+ * mapping of resource identifiers (keys) to their corresponding resource paths (values).
+ * The `processFiles` method uses this mapping to copy resources from their source location
+ * to the target directory if they do not already exist.
+ *
+ * The default implementation of `processFiles` performs the following tasks:
+ * - Reads the file mapping provided by the implementing class's `getFileMap` method.
+ * - Checks if each target file exists in the specified directory.
+ * - If a file is missing, it retrieves the corresponding resource, reads its content, and
+ *   writes it to the target directory.
+ * - Returns a list of paths for all processed files in the target directory.
+ *
+ * Methods:
+ * - `getFileMap`: Abstract method that must be implemented to provide a map of file names
+ *   to their resource paths.
+ * - `processFiles`: Default method for handling file processing, which handles the retrieval,
+ *   validation, and copying of resources and returns the resulting file paths.
+ *
+ * Error Handling:
+ * - If a resource cannot be found or read during processing, an error is logged, but the
+ *   method will continue processing other files.
+ */
 public interface FileProcessor {
     Map<String, String> getFileMap();
     default List<Path> processFiles(Path configDirectory) throws IOException {

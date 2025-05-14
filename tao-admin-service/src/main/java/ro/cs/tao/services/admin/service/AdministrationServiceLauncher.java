@@ -21,11 +21,27 @@ import org.springframework.context.annotation.ImportResource;
 import ro.cs.tao.services.commons.ServiceLauncher;
 
 /**
- * @author Oana H.
+ * Configuration class responsible for initializing and launching the
+ * User Administration Service within the application. This class is a
+ * Spring Boot entry point that sets up the necessary context using
+ * pre-defined XML configuration.
+ *
+ * The class implements the {@code ServiceLauncher} interface, providing
+ * a unique name for the service it represents.
+ *
+ * Features:
+ * - Loads additional Spring configuration defined in an external XML file.
+ * - Implements the {@code serviceName()} method to provide the service's name.
+ * - Defines the main method to bootstrap the Spring Boot application.
+ *
+ * Annotations:
+ * - {@code @Configuration}: Indicates that this class contains one or more
+ *   Spring bean definitions.
+ * - {@code @ImportResource}: Loads an external XML Spring configuration file
+ *   into the application context.
  */
 @Configuration
 @ImportResource("classpath:admin-service-context.xml")
-
 public class AdministrationServiceLauncher implements ServiceLauncher {
 
     public static void main(String[] args) {
