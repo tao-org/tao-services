@@ -5,6 +5,22 @@ import ro.cs.tao.subscription.SubscriptionType;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Represents a response for a resource subscription, providing details about
+ * the subscription configuration, status, and timeline.
+ *
+ * This class is used to encapsulate information about a user's resource subscription,
+ * including the type of subscription, associated flavors, storage allocation, and
+ * payment status, along with the subscription's creation and end timestamps.
+ *
+ * Key functionalities include:
+ * - Retrieving and setting the user ID associated with the subscription.
+ * - Getting and defining the subscription type (e.g., fixed resources or pay-per-use).
+ * - Managing the list of resource flavors involved in the subscription.
+ * - Retrieving and updating the allocated storage in gigabytes.
+ * - Managing the payment status of the subscription.
+ * - Tracking the creation time and end time of the subscription.
+ */
 public class ResourceSubscriptionResponse {
     private String userId;
     private SubscriptionType type;

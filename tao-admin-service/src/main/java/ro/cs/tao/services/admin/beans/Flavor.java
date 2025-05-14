@@ -2,6 +2,12 @@ package ro.cs.tao.services.admin.beans;
 
 import ro.cs.tao.topology.NodeFlavor;
 
+/**
+ * Represents a flavor configuration with additional details about storage and quantity.
+ *
+ * This class is primarily used to define the specifications of a resource flavor,
+ * including its type, quantity, and storage details (both HDD and SSD).
+ */
 public class Flavor {
     private NodeFlavor flavor;
     private int quantity;

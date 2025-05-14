@@ -24,6 +24,12 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.logging.Logger;
 
+/**
+ * Abstract class that provides configuration for a servlet-based application.
+ * This class contains methods for configuring the web server, scheduling tasks,
+ * setting up task executors, and retrieving version information.
+ * It utilizes the Spring Framework for configuration beans.
+ */
 public abstract class ServletConfiguration {
 
     private static final int MAGIC = 0xcafebabe;

@@ -16,6 +16,14 @@
 
 package ro.cs.tao.services.orchestration.beans;
 
+/**
+ * The {@code JobResponse} class represents a response that includes
+ * information about a job execution, such as the associated message
+ * and the job identifier.
+ *
+ * It provides getter and setter methods to access and modify the
+ * message and job information.
+ */
 public class JobResponse {
     private String message;
     private Long job;

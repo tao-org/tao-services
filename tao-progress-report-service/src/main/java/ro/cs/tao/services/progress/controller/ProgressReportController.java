@@ -32,6 +32,10 @@ import ro.cs.tao.utils.StringUtilities;
 
 import java.util.Base64;
 
+/**
+ * Controller for handling progress reporting of long-running tasks and downloads.
+ * Provides endpoints to fetch information about tasks in progress and download statistics.
+ */
 @RestController
 @RequestMapping("/progress")
 @Tag(name = "Progress", description = "Reports the progress of lengthy operations")

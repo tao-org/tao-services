@@ -16,6 +16,14 @@
 
 package ro.cs.tao.services.commons;
 
+/**
+ * Defines a contract for launching a service within the application.
+ * Implementations of this interface are responsible for providing
+ * a unique name that represents the service being launched.
+ *
+ * This interface is typically implemented by classes that serve
+ * as entry points for different modular services in the application.
+ */
 public interface ServiceLauncher {
     String serviceName();
 }

@@ -21,6 +21,15 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+/**
+ * Controller responsible for managing SSH sessions and communicating via WebSocket.
+ * This class facilitates establishing new SSH sessions, sending and receiving messages,
+ * resizing sessions, and closing sessions. It also integrates with WebSocketHandler for
+ * managing text messages from WebSocket connections.
+ *
+ * Implements {@link DisposableBean} for lifecycle management, ensuring all resources are
+ * cleaned up when the bean is destroyed.
+ */
 @RestController
 public class SSHController implements DisposableBean {
 
@@ -44,6 +53,15 @@ public class SSHController implements DisposableBean {
                                                                                  .expireAfterAccess(60, TimeUnit.MINUTES)
                                                                                  .removalListener(removalListener()).build();
 
+    /**
+     * Handles the resizing of a session's terminal window based on the provided dimensions.
+     *
+     * @param id the unique identifier of the session to be resized
+     * @param payload the JSON-encoded string containing the new dimensions (e.g., columns and rows)
+     * @return a JSON-formatted string indicating the request details or an error message if the session is not found
+     * @throws IOException if an input/output error occurs during resizing
+     * @throws InterruptedException if the thread handling the request is interrupted
+     */
     @PostMapping(path = "/session/{id}/resized")
     public @ResponseBody String resized(@PathVariable("id") String id, @RequestBody String payload) throws IOException, InterruptedException {
         SSHSession s = sessions.getIfPresent(UUID.fromString(id));
@@ -61,6 +79,14 @@ public class SSHController implements DisposableBean {
 
     }
 
+    /**
+     * Closes an active SSH session associated with the given session identifier.
+     * If a session matching the provided identifier is found, it is terminated.
+     *
+     * @param id the unique identifier of the session to be closed
+     * @throws IOException if an input/output error occurs during the session termination
+     * @throws InterruptedException if the operation is interrupted during the execution
+     */
     @PostMapping(path = "/session/{id}/close")
     public void close(@PathVariable("id") String id) throws IOException, InterruptedException {
         SSHSession s = sessions.getIfPresent(UUID.fromString(id));
@@ -82,6 +108,17 @@ public class SSHController implements DisposableBean {
         return session;
     }
 
+    /**
+     * Handles incoming WebSocket messages for managing SSH sessions and communications.
+     * Processes both textual data and JSON objects to execute specific operations such as
+     * initiating new sessions, connecting to a target, or sending input to an active session.
+     *
+     * @param wss the WebSocket session associated with the client
+     * @param message the incoming message received by the WebSocket
+     * @param data the parsed content of the message, which can be a String or JSONObject
+     *             to represent commands or event data
+     * @throws IOException if an input/output error occurs while sending responses or processing the session
+     */
     public void handleMessage(WebSocketSession wss, TextMessage message, Object data) throws IOException {
         UUID uuid = (UUID) wss.getAttributes().get(SESSION_KEY_TERM_UUID);
         SSHSession ts = uuid == null ? null : sessions.getIfPresent(uuid);
@@ -151,6 +188,13 @@ public class SSHController implements DisposableBean {
         return wsHandler;
     }
 
+    /**
+     * Sends a text-based message through a WebSocket session.
+     *
+     * @param wss the WebSocket session to which the message will be sent
+     * @param msg the message content to be sent, specified as a character sequence
+     * @throws IOException if an input/output error occurs during the message sending process
+     */
     public void sendMessage(WebSocketSession wss, CharSequence msg) throws IOException {
         synchronized (wss) {
             wss.sendMessage(new TextMessage(msg));

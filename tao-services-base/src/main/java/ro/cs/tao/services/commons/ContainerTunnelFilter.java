@@ -28,6 +28,15 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
 
+/**
+ * An abstract implementation of the {@link TunnelFilter} interface, designed to filter incoming
+ * requests in a containerized tunneling environment. It processes HTTP requests and routes them
+ * to the appropriate container instance based on the user context.
+ *
+ * This class provides common functionality, such as logging, configuration management, and
+ * proxying HTTP requests to target container instances. Concrete implementations are expected
+ * to define the specific filter expression through the {@link #filterExpression()} method.
+ */
 public abstract class ContainerTunnelFilter implements TunnelFilter {
 
     protected static ContainerInstanceProvider containerInstanceProvider;

@@ -66,7 +66,40 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author Oana H.
+ * Controller responsible for administrative operations related to user accounts, subscriptions,
+ * user sessions, and messaging. Provides endpoints for managing users and groups, retrieving
+ * session and processing metrics, and sending administrative notifications.
+ *
+ * Inherits common functionality from the {@code BaseController} class.
+ *
+ * Fields:
+ * - adminService: Service for managing administrative operations.
+ * - tokenService: Service for working with authentication tokens.
+ * - sessionRegistry: Registry for tracking user sessions.
+ * - auditManager: Service for auditing actions and events.
+ * - resourceSubscriptionProvider: Provider to manage resource subscriptions for users.
+ * - nodeFlavorProvider: Service for managing node configurations or types.
+ *
+ * Methods:
+ * - addNewUser: Endpoint to create a new user account.
+ * - getAllUsersUnicityInfo: Endpoint to retrieve all user uniqueness information.
+ * - getAllUserNames: Endpoint to retrieve all user IDs or names.
+ * - findUsersByStatus: Endpoint to list user accounts by their activation status.
+ * - findLoggedUsers: Endpoint to list currently logged-in users.
+ * - getGroups: Endpoint to list all existing user groups.
+ * - getUserInfo: Endpoint to retrieve detailed information about a specific user.
+ * - getUserActiveSubscription: Endpoint to retrieve a user's active resource subscription details.
+ * - createUserSubscription: Endpoint to create a new resource subscription for a user.
+ * - updateUserSubscription: Endpoint to update an existing resource subscription for a user.
+ * - closeUserSubscription: Endpoint to terminate a user's resource subscription.
+ * - updateUserInfo: Endpoint to update a user's account information.
+ * - disableUser: Endpoint to disable a specific user account along with any additional actions.
+ * - deleteUser: Endpoint to permanently delete a specific user account.
+ * - messageUser: Endpoint to send a message from the administrator to a logged-in user.
+ * - messageUsers: Endpoint to send a message from the administrator to all logged-in users.
+ * - impersonate: Endpoint to trigger Keycloak redirection after an impersonation action.
+ * - getSessionsTime: Endpoint to retrieve aggregated time spent by users within a specified interval.
+ * - getTotalProcessingTime: Endpoint to retrieve the total processing time of users, in minutes.
  */
 @RestController
 @RequestMapping("/admin")
@@ -124,6 +157,12 @@ public class AdministrationController extends BaseController {
         }
     }
 
+    /**
+     * Retrieves information regarding the uniqueness of all user accounts.
+     * This method is accessible only to users with the "admin" role.
+     *
+     * @return ResponseEntity containing a ServiceResponse with details about the uniqueness of all users.
+     */
     @RequestMapping(value = "/users/unicity", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getAllUsersUnicityInfo() {
@@ -133,6 +172,12 @@ public class AdministrationController extends BaseController {
         return prepareResult(adminService.getAllUsersUnicityInfo());
     }
 
+    /**
+     * Retrieves the list of all user names.
+     * This method can only be accessed by users with the "admin" role.
+     *
+     * @return ResponseEntity containing a ServiceResponse object with the list of user names.
+     */
     @RequestMapping(value = "/users/ids", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getAllUserNames() {

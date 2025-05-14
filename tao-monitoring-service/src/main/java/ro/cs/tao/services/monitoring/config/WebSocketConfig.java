@@ -8,6 +8,18 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import ro.cs.tao.services.monitoring.controller.SSHController;
 import ro.cs.tao.services.monitoring.impl.WebSocketHandler;
 
+/**
+ * Configuration class for setting up WebSocket functionality in the application.
+ * This class enables WebSocket features and defines the mappings and handlers
+ * necessary to manage WebSocket communication.
+ *
+ * This configuration uses SockJS as a fallback option for clients that do not support
+ * native WebSocket connections. It also integrates with SSHController to handle
+ * WebSocket interactions specific to SSH sessions.
+ *
+ * Implements the {@link WebSocketConfigurer} interface to customize the WebSocket
+ * endpoint registration.
+ */
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
