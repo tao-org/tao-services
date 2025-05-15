@@ -25,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
+import ro.cs.tao.component.DryRunMetricsBean;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.drmaa.Environment;
@@ -586,6 +587,19 @@ public class OrchestrationController extends BaseController {
             response = handleException(ex);
         }
         return response;
+    }
+
+    /**
+     * Returns the dry run metrics of one or more components, given their ids.
+     * @param idList    The list of identifiers
+     */
+    @RequestMapping(value = "/metrics", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> metrics(@RequestParam(name = "id") String idList) {
+        if (idList == null || idList.isEmpty()) {
+            return prepareResult("Invalid id list", ResponseStatus.FAILED);
+        }
+        String[] ids = idList.split(",");
+        return prepareResult(orchestrationService.getDryRunMetricsForComponentIds(List.of(ids)).stream().map(DryRunMetricsBean::new).collect(Collectors.toList()));
     }
 
     /**

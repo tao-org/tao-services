@@ -37,6 +37,7 @@ import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
 import ro.cs.tao.persistence.DryRunMetricsProvider;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.ProcessingComponentProvider;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.dev.MockData;
@@ -78,6 +79,9 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Autowired
     private DryRunMetricsProvider dryRunMetricsProvider;
+
+    @Autowired
+    private ProcessingComponentProvider componentProvider;
 
     @Override
     public long startWorkflow(ExecutionRequest request) throws ExecutionException {
@@ -152,6 +156,17 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             }
         }
         return job;
+    }
+
+    @Override
+    public List<DryRunMetrics> getDryRunMetricsForComponentIds(List<String> componentIds){
+        if(componentIds == null || componentIds.isEmpty())
+            throw new IllegalArgumentException("List of component IDs is null or empty");
+        List<DryRunMetrics> metrics = new ArrayList<>();
+        for (String componentId : componentIds) {
+            metrics.add(dryRunMetricsProvider.getByComponentId(componentId));
+        }
+        return metrics;
     }
 
     @Override
