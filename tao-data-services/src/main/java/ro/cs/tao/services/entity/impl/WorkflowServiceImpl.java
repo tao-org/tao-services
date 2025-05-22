@@ -1106,8 +1106,8 @@ public class WorkflowServiceImpl
                     for (ParameterDescriptor descriptor : descriptors) {
                         paramType = descriptor.getDataType();
                         componentParams.add(new Parameter(descriptor.getName(),
-                                                          //paramType.getName(),
                                                           descriptor.typeFriendlyName(),
+                                                          descriptor.dataTypeFriendlyName(),
                                                           !"null".equals(descriptor.getDefaultValue()) ? descriptor.getDefaultValue() : null,
                                                           paramType.isEnum() ?
                                                                   Parameter.stringValueSet(paramType.getEnumConstants()) :
@@ -1118,6 +1118,7 @@ public class WorkflowServiceImpl
                                 Class<?> descriptorParamType = param.getDataType();
                                 componentParams.add(new Parameter(descriptor.getName() + "~" + param.getName(),
                                         param.typeFriendlyName(),
+                                        param.dataTypeFriendlyName(),
                                         !"null".equals(param.getDefaultValue()) ? param.getDefaultValue() : null,
                                         descriptorParamType.isEnum() ?
                                                 Parameter.stringValueSet(descriptorParamType.getEnumConstants()) :
@@ -1133,8 +1134,8 @@ public class WorkflowServiceImpl
                     for (ParameterDescriptor descriptor : descriptorsCondition) {
                         paramType = descriptor.getDataType();
                         componentParams.add(new Parameter(descriptor.getName(),
-                                //paramType.getName(),
                                 descriptor.typeFriendlyName(),
+                                descriptor.dataTypeFriendlyName(),
                                 !"null".equals(descriptor.getDefaultValue()) ? descriptor.getDefaultValue() : null,
                                 paramType.isEnum() ?
                                         Parameter.stringValueSet(paramType.getEnumConstants()) :
@@ -1145,6 +1146,7 @@ public class WorkflowServiceImpl
                                 Class<?> descriptorParamType = param.getDataType();
                                 componentParams.add(new Parameter(descriptor.getName() + "~" + param.getName(),
                                         param.typeFriendlyName(),
+                                        param.dataTypeFriendlyName(),
                                         !"null".equals(param.getDefaultValue()) ? param.getDefaultValue() : null,
                                         descriptorParamType.isEnum() ?
                                                 Parameter.stringValueSet(descriptorParamType.getEnumConstants()) :
