@@ -23,7 +23,6 @@ import org.springframework.security.concurrent.DelegatingSecurityContextRunnable
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.EnumUtils;
-import ro.cs.tao.component.DryRunMetrics;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.ExecutionConfiguration;
@@ -43,7 +42,6 @@ import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.WorkflowService;
-import ro.cs.tao.simpipe.SIMPIPEClient;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
@@ -52,7 +50,6 @@ import ro.cs.tao.workflow.ExternalGraphConverter;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 
 import javax.annotation.PostConstruct;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -134,40 +131,6 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                                                     modified.getParameters(), type);
     }
 
-    @Override
-    public ExecutionJob executeSimpipe(ExecutionRequest request) throws ExecutionException, PersistenceException {
-        ExecutionJob job = scriptJob(request);
-        while (job.getExecutionStatus() != ExecutionStatus.DONE && job.getExecutionStatus() != ExecutionStatus.FAILED
-                && job.getExecutionStatus() != ExecutionStatus.CANCELLED){
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e){
-                logger.warning(e.getMessage());
-            }
-            job = jobProvider.get(job.getId());
-        }
-        if (job.getExecutionStatus() == ExecutionStatus.DONE) {
-            logger.fine("SIM-PIPE dry run execution starting for job " + job.getName());
-            Path yamlPath = Path.of(job.getJobOutputPath(), Path.of(job.getJobOutputPath()).getFileName().toString() + ".yaml");
-            SIMPIPEClient client = new SIMPIPEClient(job.getName().toLowerCase(), yamlPath, workflowService.getFullDescriptor(job.getWorkflowId()));
-            List<DryRunMetrics> metrics = client.runClient();
-            for (DryRunMetrics metric : metrics) {
-                dryRunMetricsProvider.save(metric);
-            }
-        }
-        return job;
-    }
-
-    @Override
-    public List<DryRunMetrics> getDryRunMetricsForComponentIds(List<String> componentIds){
-        if(componentIds == null || componentIds.isEmpty())
-            throw new IllegalArgumentException("List of component IDs is null or empty");
-        List<DryRunMetrics> metrics = new ArrayList<>();
-        for (String componentId : componentIds) {
-            metrics.add(dryRunMetricsProvider.getByComponentId(componentId));
-        }
-        return metrics;
-    }
 
     @Override
     public void stopJob(long jobId) throws ExecutionException {

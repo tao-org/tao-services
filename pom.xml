@@ -37,6 +37,7 @@
         <module>tao-jupyter-service</module>
         <module>tao-cleanup-service</module>
         <module>tao-ogc-service</module>
+        <module>tao-simpipe-service</module>
         <!--<module>tao-openeo-service</module>-->
     </modules>
 
