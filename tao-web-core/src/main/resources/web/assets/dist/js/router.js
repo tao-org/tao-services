@@ -224,7 +224,11 @@ $(function () {
         var username = _settings.readCookie("TaoUserName");
         var pageName = routeTags[0] +'-'+ routeTags[1];
         var currentPref = [];
-        $.when(_userPref.getUserPreferences(username))
+        var extended;
+        if (hash == "admin/dashboard") {
+            extended = true;
+        }
+        $.when(_userPref.getUserPreferences(username, extended))
         .done(function(responseProfile){
             var r = responseProfile.data;
             currentPref = r.preferences;

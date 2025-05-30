@@ -505,11 +505,12 @@ var _settings = {
 };
 
 var _userPref = {
-    getUserPreferences: function(id){
+    getUserPreferences: function(id, extended){
         //var username = _settings.readCookie("TaoUserName");
+        var param = (typeof extended === 'undefined') ? '' : '?extended=true'
         return $.ajax({
             cache: false,
-            url: baseRestApiURL + "user/"+id,
+            url: baseRestApiURL + "user/"+id+param,
             dataType : 'json',
             type: 'GET',
             async: false,
