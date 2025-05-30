@@ -3,10 +3,11 @@ package ro.cs.tao.services.commons.menu;
 import ro.cs.tao.TaoEnum;
 
 public enum Section implements TaoEnum<Integer> {
-    DATASETS("My Datasets", 1),
-    WORKFLOWS("My Workflows", 2),
-    COMPONENTS("My Components", 3),
-    ADMINISTRATION("Admin area", 4);
+    DASHBOARD("Dashboard", 1),
+    DATASETS("My Datasets", 2),
+    WORKFLOWS("My Workflows", 3),
+    COMPONENTS("My Components", 4),
+    ADMINISTRATION("Admin area", 5);
 
 
     private final String title;

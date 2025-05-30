@@ -45,8 +45,8 @@ public class RepositoryServicesLauncher extends ServiceLauncher {
     @Override
     protected List<ServiceEntry> exportedEntries() {
         final List<ServiceEntry> entries = new ArrayList<>();
-        entries.add(new ServiceEntry("Repositories", Visibility.USER, Section.DATASETS, 3));
-        entries.add(new ServiceEntry("Remote Web Services", Visibility.ADMIN, Section.ADMINISTRATION, 5));
+        entries.add(new ServiceEntry("Repositories", "my/repositories", "./fragments/repositories.fragment.html", Visibility.USER, Section.DATASETS, 3));
+        entries.add(new ServiceEntry("Public Repositories", "admin/repositoriesTemplate", "./fragments/repositoriesTemplate-admin2.fragment.html", Visibility.ADMIN, Section.ADMINISTRATION, 5));
         return entries;
     }
 }

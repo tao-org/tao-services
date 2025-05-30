@@ -64,8 +64,8 @@ public class AdministrationServiceLauncher extends ServiceLauncher {
     @Override
     protected List<ServiceEntry> exportedEntries() {
         final List<ServiceEntry> entries = new ArrayList<>();
-        entries.add(new ServiceEntry("System Dashboard", Visibility.ADMIN, Section.ADMINISTRATION, 1));
-        entries.add(new ServiceEntry("Users", Visibility.ADMIN, Section.ADMINISTRATION, 9));
+        entries.add(new ServiceEntry("System Dashboard", "admin/systemDashboard", "./fragments/systemDashboard-admin2.fragment.html", Visibility.ADMIN, Section.ADMINISTRATION, 1));
+        entries.add(new ServiceEntry("Users", "admin/users", "./fragments/users-admin2.fragment.html", Visibility.ADMIN, Section.ADMINISTRATION, 9));
         return entries;
     }
 }

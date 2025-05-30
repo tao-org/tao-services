@@ -48,8 +48,8 @@ public class WPSLauncher extends ServiceLauncher {
     @Override
     protected List<ServiceEntry> exportedEntries() {
         final List<ServiceEntry> entries = new ArrayList<>();
-        entries.add(new ServiceEntry("Remote Services", Visibility.USER, Section.WORKFLOWS, 2));
-        entries.add(new ServiceEntry("Remote Web Services", Visibility.ADMIN, Section.ADMINISTRATION, 5));
+        entries.add(new ServiceEntry("Remote Services", "my/remoteServices", "./fragments/remoteServices-components.fragment.html", Visibility.USER, Section.WORKFLOWS, 2));
+        entries.add(new ServiceEntry("Remote Web Services", "admin/remoteServices", "./fragments/remoteServices-admin2.fragment.html", Visibility.ADMIN, Section.ADMINISTRATION, 5));
         return entries;
     }
 }
