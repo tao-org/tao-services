@@ -50,22 +50,27 @@ public interface FileProcessor {
             files = new ArrayList<>();
             for (Map.Entry<String, String> entry : map.entrySet()) {
                 final Path configFile = configDirectory.resolve(entry.getKey());
-                Files.deleteIfExists(configFile);
-                Files.createDirectories(configFile.getParent());
-                byte[] buffer = new byte[(int) MemoryUnit.KB.value()];
-                try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream(entry.getValue()));
-                     OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile,
-                                                                                      StandardOpenOption.CREATE,
-                                                                                      StandardOpenOption.WRITE))) {
-                    int read;
-                    while ((read = is.read(buffer)) != -1) {
-                        os.write(buffer, 0, read);
+                try {
+                    if (!Files.exists(configFile) || !configFile.toString().endsWith(".properties")) {
+                        Files.createDirectories(configFile.getParent());
+                        byte[] buffer = new byte[(int) MemoryUnit.KB.value()];
+                        try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream(entry.getValue()));
+                             OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile,
+                                                                                              StandardOpenOption.CREATE,
+                                                                                              StandardOpenOption.WRITE))) {
+                            int read;
+                            while ((read = is.read(buffer)) != -1) {
+                                os.write(buffer, 0, read);
+                            }
+                            os.flush();
+                        } catch (Exception ex) {
+                            Logger.getLogger(getClass().getName()).severe("Cannot read or find resource " + entry.getValue());
+                        }
                     }
-                    os.flush();
+                    files.add(configFile);
                 } catch (Exception ex) {
-                    Logger.getLogger(getClass().getName()).severe("Cannot read or find resource " + entry.getValue());
+                    Logger.getLogger(getClass().getName()).severe(ex.getMessage());
                 }
-                files.add(configFile);
             }
         }
         return files;
