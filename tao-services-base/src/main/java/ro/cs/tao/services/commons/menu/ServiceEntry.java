@@ -4,14 +4,14 @@ public class ServiceEntry {
     private String name;
     private String route;
     private String location;
-    private Visibility visibility;
+    private Visibility[] visibility;
     private Section section;
     private int position;
 
     public ServiceEntry() {
     }
 
-    public ServiceEntry(String name, String route, String location, Visibility visibility, Section section, int position) {
+    public ServiceEntry(String name, String route, String location, Visibility[] visibility, Section section, int position) {
         this.visibility = visibility;
         this.name = name;
         this.route = route;
@@ -52,11 +52,11 @@ public class ServiceEntry {
         this.section = section;
     }
 
-    public Visibility getVisibility() {
+    public Visibility[] getVisibility() {
         return visibility;
     }
 
-    public void setVisibility(Visibility visibility) {
+    public void setVisibility(Visibility[] visibility) {
         this.visibility = visibility;
     }
 

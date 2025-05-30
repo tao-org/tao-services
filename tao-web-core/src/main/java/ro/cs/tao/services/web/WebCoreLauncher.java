@@ -25,7 +25,7 @@ public class WebCoreLauncher extends ServiceLauncher {
     @Override
     protected List<ServiceEntry> exportedEntries() {
         final List<ServiceEntry> entries = new ArrayList<>();
-        entries.add(new ServiceEntry("Dashboard", "admin/dashboard", "./fragments/dashboard-admin.fragment.html", Visibility.USER, Section.DASHBOARD, 1));
+        entries.add(new ServiceEntry("Dashboard", "admin/dashboard", "./fragments/dashboard-admin.fragment.html", new Visibility[] { Visibility.USER, Visibility.ADMIN }, Section.DASHBOARD, 1));
         return entries;
     }
 }
