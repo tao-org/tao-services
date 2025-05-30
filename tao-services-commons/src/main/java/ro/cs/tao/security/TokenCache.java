@@ -2,6 +2,8 @@ package ro.cs.tao.security;
 
 import org.springframework.security.core.Authentication;
 
+import java.util.function.BiFunction;
+
 /**
  * The TokenCache interface provides methods to manage the caching of
  * tokens and their associated authentication details. It extends the
@@ -17,4 +19,9 @@ public interface TokenCache extends TokenKeeper {
     default String getUser(String token) { return null; }
 
     default Authentication getPreviousAuthentication(String token) { return null; }
+
+    default void setTokenProvider(TokenProvider tokenProvider) { }
+
+    default void setAuthenticationFactory(BiFunction<String, String, Authentication> function) { }
+
 }
