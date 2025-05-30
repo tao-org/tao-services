@@ -25,13 +25,11 @@ import ro.cs.tao.user.User;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class LdapLoginModule extends TaoLoginModule {
-
-    private final TaoLdapClient ldapClient;
+public class LdapLoginModule extends TaoLoginModule<TaoLdapClient> {
 
     public LdapLoginModule() {
         super();
-        ldapClient = new TaoLdapClient();
+        this.tokenProvider = new TaoLdapClient();
     }
 
     @Override
@@ -47,7 +45,7 @@ public class LdapLoginModule extends TaoLoginModule {
         if (userProvider == null) {
             throw new RuntimeException("[userProvider] not set");
         }
-        User userEntity = ldapClient.checkLoginCredentials(username, password);
+        User userEntity = this.tokenProvider.checkLoginCredentials(username, password);
         if (userEntity != null) {
             final User existing = userProvider.getByName(user);
             if (existing == null) {
