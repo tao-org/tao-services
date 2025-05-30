@@ -30,7 +30,7 @@ public class SchedulingServiceLauncher extends ServiceLauncher {
     @Override
     protected List<ServiceEntry> exportedEntries() {
         final List<ServiceEntry> entries = new ArrayList<>();
-        entries.add(new ServiceEntry("Scheduled Jobs", Visibility.USER, Section.WORKFLOWS, 3));
+        entries.add(new ServiceEntry("Scheduled Jobs", "my/scheduling", "./fragments/scheduling-admin2.fragment.html", Visibility.USER, Section.WORKFLOWS, 3));
         return entries;
     }
 }
