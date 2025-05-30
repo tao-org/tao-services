@@ -9,6 +9,13 @@
             <directory>src/assembly/bin</directory>
             <outputDirectory>bin</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>../tao-web-core/src/main/resources/web</directory>
+            <includes>
+                <include>**</include>
+            </includes>
+            <outputDirectory>static</outputDirectory>
+        </fileSet>
     </fileSets>
     <files>
         <file>

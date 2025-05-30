@@ -1,0 +1,173 @@
+<app-modal-overlay>
+<app-modal role="dialog" tabindex="-1" style="background-color:#f3f6f8">
+	<div class="app-title-line">
+		<button class="app-dismiss">
+			<svg viewBox="0 0 24 24" width="24px" height="24px" x="0" y="0" preserveAspectRatio="xMinYMin meet" class="" focusable="false"><path d="M20,5.32L13.32,12,20,18.68,18.66,20,12,13.33,5.34,20,4,18.68,10.68,12,4,5.32,5.32,4,12,10.69,18.68,4Z" class="" style="fill: currentColor"></path></svg>
+		</button>
+		<span class="app-propbar-details">Node editor</span>
+		<div class="app-user-avatar">
+			<a class="" href="#" role="button" tabindex="0" title="Component logo" aria-expanded="false">
+				<img class="app-user-avatar-img" src="./media/module01.png" alt="component logo">
+			</a>
+		</div>
+	</div>
+	<app-modal-header>
+        <h1 class="pni-editable">
+            <span class="val-propbar-name">Unknown</span>
+            <i class="fa fa-pencil fa-fw pni-editable-btn" aria-hidden="true"></i>
+            <input class="pni-editable-input" type="text" value="Unknown"/>
+        </h1>
+		<h2 class="val-propbar-componentid">Unknown</h2>
+        <p class="val-propbar-details"></p>
+	</app-modal-header>
+	<app-modal-content>
+		<div>
+			<div id="qbody" class="app-card app-card-clean">
+				<div class="app-card-header">
+					Customize value as needed
+				</div>
+				<div class="app-card-divider"></div>
+				<form class = "l-form">
+					Username:<br>
+					<input class="l-form__input" type="text" name="qusername" autocomplete="qusername" placeholder="" value="">
+					<br>
+					Password:<br>
+					<input class="l-form__input" type="password" name="qpassword" autocomplete="qpassword" placeholder="" value="">
+					<br>
+                    Page number:<br>
+                    <input class="l-form__input" type="number" name="qpagenumber" placeholder="" value="">
+                    <br>
+                    Page size:<br>
+                    <input class="l-form__input" type="number" name="qpagesize" placeholder="" value="">
+                    <br>
+                    Limit:<br>
+                    <input class="l-form__input" type="number" name="qlimit" placeholder="" value="">
+                    <br>
+				</form>
+			</div>
+            <div class="app-card app-card-clean">
+                <div class="app-card-header">
+                    Custom values
+                </div>
+                <div style="padding:0 15px;color:#555">
+					<table class="table tbl-edt" id="tbl-edt-sysvar">
+                        <tbody>
+							<tr class="tpl-sample-row">
+								<td style="border:0">
+									<span class="var-id hidden"></span><span class="var-name hidden"></span>
+									<span class="var-parent-id hidden"></span><span class="var-parent-name hidden"></span>
+									<span class="var-label" style="font-weight:700;"></span>&nbsp;(<span class="var-dataType" style="font-size:0.9em"></span>)<br/>
+									<span class="var-type hidden" ></span>
+									<div class="div-params" style="border-left:10px solid #f1f1f1;padding-left:15px;font-size:0.9em">
+										<span class="var-description" style="color:#aaa;font-size:0.9em;font-style:italic"></span>
+										<br>
+										
+										<!-- <input type="text" class="var-value-string form-control collapse" value="" placeholder="input variable's value"> -->
+										<div style="display: flex; flex-direction: row;">
+											<input type="hidden" class="var-value" value="" placeholder="input variable's value">
+											<input type="text" class="var-value-string collapse" value="" placeholder="input variable's value" style="width: 100%;">
+											<i class="glyphicon glyphicon-eye-open" title="show password" style="display: none; position: absolute; top: auto; line-height: 2; right: 35px;"></i>
+										</div>
+										<select class="var-value-list form-control collapse"></select>
+										<span id="show-var-def" style="font-size:0.9em;font-weight:700">Default value:</span>&nbsp;<span class="var-default" style="font-size:0.9em;color:#286080;cursor:pointer"></span>
+									</div>
+								</td>
+							</tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="app-card-head-lines" class="app-card">
+                <input id="update-custum-values" class="l-form__submit" type="submit" value="Apply">
+            </div>
+			<!--<div class="app-card">
+				<div class="app-card-header">
+					Help
+				</div>
+				<div class="app-card-note-item">
+					<p class="">Please edit values as necessary. After reviewing you changes please click APPLY to save your work. Closing this panel without explicitly saving your work will result in all changes made to this panel to be discarded.</p>
+				</div>
+			</div>-->
+
+            <div class="app-debug"></div>
+		</div>
+	</app-modal-content>
+	<app-modal-footer>
+	</app-modal-footer>
+</app-modal>
+<div id="propbarMap" style="position:absolute"></div>
+</app-modal-overlay>
+<style>
+	table#tbl-edt-sysvar>tbody>tr>td{padding:0;}
+	table#tbl-edt-sysvar input{height:25px;font-size:12px;}
+	.tbl-extra-param{margin-left: 50px;}
+
+.select2-container--default .select2-selection--multiple{border-color:#d2d6de;line-height:2rem;overflow:auto !important;height:auto !important;max-height:9rem}
+.select2-container::after{content:"\25be";font-size:32px;color:#79bde4;position:absolute;display:block;right:0;top:0;line-height:3.2rem;pointer-events:none}
+.select2-container--default.select2-container--open::after{content:"\25b4"}
+.select2-container.overflow::after{right:1.5rem}
+.select2-container--default.select2-container--open .select2-selection--multiple{border-color:#79bde4}
+.select2-selection__choice{background-color:#79bde4;border-color:#79bde4;color:black;line-height:2rem}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove{color:white !important;border-right:1px solid rgba(255,255,255,0.3) !important}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover{background-color:#41a0d8}
+.select2-container--default .select2-search--inline .select2-search__field::placeholder{font-family:"Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;color:#bbb}
+.select2-selection__clear{display:none !important;}
+.select2-container--open{top:unset !important; left: unset !important;}
+.select2-dropdown {z-index:99999;}
+.shifted .select2{display:none}
+ li.select2-search.select2-search--inline {display:none}
+
+</style>
+
+<link rel="stylesheet" href="../assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" type="text/css" />
+<script src="../assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.js" type="text/javascript"></script>
+<link rel="stylesheet" type="text/css" href="../assets/libs/select2/4.1.0/select2.min.css" />
+<script type="text/javascript" src="../assets/libs/select2/4.1.0/select2.min.js"></script>
+
+<script>
+    $( document ).ready(function() {
+        //prevent keyup to bubble outside the propbar and trigger events
+        $("app-modal")
+            .on("keyup",function(e){
+                event.stopPropagation();
+            })
+            .on("click", ".pni-editable-btn", function(){
+                var $parent = $(this).parent();
+                var $input = $('input',$parent);
+                var $span = $('span',$parent);
+                $parent.addClass("edit");
+                $input.focus();
+                $input.val($span.text());
+            })
+            .on("keyup", ".pni-editable-input",function(e){
+                if(e.keyCode && (e.keyCode === 13)){
+                    $(this).trigger("blur");
+                }
+            });
+        $(".pni-editable-input")
+            .on("blur",function(e){
+                var $parent = $(this).parent();
+                var $input = $('input',$parent);
+                var $span = $('span',$parent);
+                $span.text($input.val());
+                $parent.removeClass("edit");
+            });
+
+		// Hide/Show password by clicking on the eye glyphicon
+        $('.glyphicon-eye-open').css({ 'cursor': 'pointer', 'pointer-events': 'all' });
+        $("#tbl-edt-sysvar").on('click', ".glyphicon", function () {
+            if ($(this).hasClass('glyphicon-eye-open')) {
+                $($(this).siblings("input.var-value-string")[0]).attr("type", "text");
+                $(this).removeClass('glyphicon-eye-open');
+                $(this).addClass('glyphicon-eye-close');
+                $(this).attr('title', 'hide password');
+                $(this).css({ 'cursor': 'pointer', 'pointer-events': 'all' });
+            } else if ($(this).hasClass('glyphicon-eye-close')) {
+				$($(this).siblings("input.var-value-string")[0]).attr('type', 'password');
+                $(this).removeClass('glyphicon-eye-close');
+                $(this).addClass('glyphicon-eye-open');
+                $(this).attr('title', 'show password');
+            }
+        });
+    });
+</script>

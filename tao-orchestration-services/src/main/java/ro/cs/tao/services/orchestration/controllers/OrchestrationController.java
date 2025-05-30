@@ -97,6 +97,13 @@ public class OrchestrationController extends BaseController {
                                                    ConfigurationManager.getInstance()
                                                                        .getValue("execution.environment",
                                                                                  Environment.DEFAULT.friendlyName()));
+            if (defaultEnv == null) {
+                EnumUtils
+                        .getEnumConstantByName(Environment.class,
+                                               ConfigurationManager.getInstance()
+                                                                   .getValue("execution.environment",
+                                                                             Environment.DEFAULT.name()).toUpperCase());
+            }
             final List<Environment> results = environments.stream()
                                                           .filter(e -> e != defaultEnv)
                                                           .sorted()

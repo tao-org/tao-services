@@ -19,6 +19,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import ro.cs.tao.services.commons.ServiceLauncher;
+import ro.cs.tao.services.commons.menu.Section;
+import ro.cs.tao.services.commons.menu.ServiceEntry;
+import ro.cs.tao.services.commons.menu.Visibility;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Configuration class responsible for initializing and launching the
@@ -42,12 +48,24 @@ import ro.cs.tao.services.commons.ServiceLauncher;
  */
 @Configuration
 @ImportResource("classpath:admin-service-context.xml")
-public class AdministrationServiceLauncher implements ServiceLauncher {
+public class AdministrationServiceLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(AdministrationServiceLauncher.class, args);
     }
 
+    public AdministrationServiceLauncher() {
+        super();
+    }
+
     @Override
     public String serviceName() { return "User Administration Service"; }
+
+    @Override
+    protected List<ServiceEntry> exportedEntries() {
+        final List<ServiceEntry> entries = new ArrayList<>();
+        entries.add(new ServiceEntry("System Dashboard", Visibility.ADMIN, Section.ADMINISTRATION, 1));
+        entries.add(new ServiceEntry("Users", Visibility.ADMIN, Section.ADMINISTRATION, 9));
+        return entries;
+    }
 }

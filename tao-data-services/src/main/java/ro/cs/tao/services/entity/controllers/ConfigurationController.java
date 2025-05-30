@@ -39,10 +39,13 @@ import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.PersistenceManager;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.RoleRequired;
+import ro.cs.tao.services.commons.ServiceLauncher;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.commons.menu.ServiceEntry;
 import ro.cs.tao.services.entity.beans.ExtendedKeyValuePair;
 import ro.cs.tao.services.interfaces.ConfigurationService;
 import ro.cs.tao.services.model.KeyValuePair;
+import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.RepositoryType;
 
@@ -276,6 +279,28 @@ public class ConfigurationController
             // The request will be forwaded to the actuator's /loggers endpoint
             template.postForEntity("/actuator/loggers", new HttpEntity<>(map, headers), String.class);
             return prepareResult("Log level changed to " + level);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/menu", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getMenuEntries() {
+        try {
+            final List<ServiceEntry> entries = new ArrayList<>();
+            final Set<ServiceLauncher> services = ServiceRegistryManager.getInstance()
+                                                                        .getServiceRegistry(ServiceLauncher.class)
+                                                                        .getServices();
+            for (ServiceLauncher service : services) {
+                entries.addAll(service.getEntries());
+            }
+            entries.sort(new Comparator<ServiceEntry>() {
+                @Override
+                public int compare(ServiceEntry o1, ServiceEntry o2) {
+                    return Integer.compare(o1.getPosition(), o2.getPosition());
+                }
+            });
+            return prepareResult(entries);
         } catch (Exception e) {
             return handleException(e);
         }

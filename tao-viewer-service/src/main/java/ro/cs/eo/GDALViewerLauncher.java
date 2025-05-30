@@ -8,10 +8,14 @@ import ro.cs.tao.services.commons.ServiceLauncher;
 @Configuration
 @ImportResource("classpath:viewer-service-context.xml")
 
-public class GDALViewerLauncher implements ServiceLauncher {
+public class GDALViewerLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(GDALViewerLauncher.class, args);
+    }
+
+    public GDALViewerLauncher() {
+        super();
     }
 
     @Override

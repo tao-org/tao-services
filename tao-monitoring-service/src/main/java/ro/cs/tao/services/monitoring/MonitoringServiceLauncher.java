@@ -26,12 +26,17 @@ import ro.cs.tao.services.commons.ServiceLauncher;
 @Configuration
 @ImportResource("classpath:monitoring-service-context.xml")
 
-public class MonitoringServiceLauncher implements ServiceLauncher {
+public class MonitoringServiceLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(MonitoringServiceLauncher.class, args);
     }
 
+    public MonitoringServiceLauncher() {
+        super();
+    }
+
     @Override
     public String serviceName() { return "Notification Service"; }
+
 }
