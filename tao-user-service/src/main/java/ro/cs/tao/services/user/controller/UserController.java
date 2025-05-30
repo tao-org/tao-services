@@ -178,6 +178,7 @@ public class UserController extends BaseController {
      */
     @RequestMapping(value = "/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId,
+                                                          @RequestParam(name = "extended", required = false) boolean extended,
                                                           HttpServletRequest request) {
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
@@ -185,15 +186,19 @@ public class UserController extends BaseController {
         try {
             final User user = userService.getUserInfo(userId);
             if (user != null) {
-                final int processingTime = auditProvider.getAggregatedUserProcessingTime(userId);
-                final List<SessionDuration> sessions = auditProvider.getUserSessions(userId);
-                int sessionTime = sessions != null ? (int) sessions.stream().mapToDouble(SessionDuration::getDuration).sum() : 0;
-                final UserInfo userInfo = new UserInfo(user, sessionTime, processingTime);
-                if (userInfo.getActualInputQuota() == -1) {
-                    Repository repository = getLocalRepository(currentUser());
-                    userInfo.setActualInputQuota((int) (FileUtilities.folderSize(Paths.get(repository.root())) >> 20));
+                if (extended) {
+                    final int processingTime = auditProvider.getAggregatedUserProcessingTime(userId);
+                    final List<SessionDuration> sessions = auditProvider.getUserSessions(userId);
+                    int sessionTime = sessions != null ? (int) sessions.stream().mapToDouble(SessionDuration::getDuration).sum() : 0;
+                    final UserInfo userInfo = new UserInfo(user, sessionTime, processingTime);
+                    if (userInfo.getActualInputQuota() == -1) {
+                        Repository repository = getLocalRepository(currentUser());
+                        userInfo.setActualInputQuota((int) (FileUtilities.folderSize(Paths.get(repository.root())) >> 20));
+                    }
+                    return prepareResult(userInfo);
+                } else {
+                    return prepareResult(user);
                 }
-                return prepareResult(userInfo);
             } else {
                 if (currentPrincipal() == null) {
                     request.getSession().invalidate();

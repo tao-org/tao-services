@@ -396,7 +396,7 @@
 	function getUserQuotaInfo(userId) {
 		return $.ajax({
 			cache: false,
-			url: baseRestApiURL + "user/"+userId,
+			url: baseRestApiURL + "user/"+userId+"?extended=true",
 			dataType : 'json',
 			type: 'GET',
 			async: false,
