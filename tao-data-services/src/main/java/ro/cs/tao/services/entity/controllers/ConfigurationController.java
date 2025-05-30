@@ -41,6 +41,7 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceLauncher;
 import ro.cs.tao.services.commons.ServiceResponse;
+import ro.cs.tao.services.commons.menu.Section;
 import ro.cs.tao.services.commons.menu.ServiceEntry;
 import ro.cs.tao.services.entity.beans.ExtendedKeyValuePair;
 import ro.cs.tao.services.interfaces.ConfigurationService;
@@ -287,20 +288,35 @@ public class ConfigurationController
     @RequestMapping(value = "/menu", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getMenuEntries() {
         try {
-            final List<ServiceEntry> entries = new ArrayList<>();
+            final Map<String, List<ServiceEntry>> map = new LinkedHashMap<>();
+            final List<Section> sections = Arrays.stream(Section.values()).sorted(new Comparator<Section>() {
+                @Override
+                public int compare(Section o1, Section o2) {
+                    return Integer.compare(o1.value(), o2.value());
+                }
+            }).collect(Collectors.toList());
+            for (Section section : sections) {
+                map.put(section.friendlyName(), new ArrayList<>());
+            }
             final Set<ServiceLauncher> services = ServiceRegistryManager.getInstance()
                                                                         .getServiceRegistry(ServiceLauncher.class)
                                                                         .getServices();
             for (ServiceLauncher service : services) {
-                entries.addAll(service.getEntries());
-            }
-            entries.sort(new Comparator<ServiceEntry>() {
-                @Override
-                public int compare(ServiceEntry o1, ServiceEntry o2) {
-                    return Integer.compare(o1.getPosition(), o2.getPosition());
+                final List<ServiceEntry> entries = service.getEntries();
+                for (ServiceEntry entry : entries) {
+                    final Section section = entry.getSection();
+                    map.get(section.friendlyName()).add(entry);
                 }
+            }
+            map.entrySet().forEach( e -> {
+                e.getValue().sort(new Comparator<ServiceEntry>() {
+                    @Override
+                    public int compare(ServiceEntry o1, ServiceEntry o2) {
+                        return Integer.compare(o1.getPosition(), o2.getPosition());
+                    }
+                });
             });
-            return prepareResult(entries);
+            return prepareResult(map);
         } catch (Exception e) {
             return handleException(e);
         }

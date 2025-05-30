@@ -63,7 +63,9 @@ public abstract class ServiceLauncher implements FileProcessor, ApplicationListe
      */
     public List<ServiceEntry> getEntries() {
         final List<ServiceEntry> entries = exportedEntries();
-        entries.sort(Comparator.comparing(ServiceEntry::getPosition));
+        if (!entries.isEmpty()) {
+            entries.sort(Comparator.comparing(ServiceEntry::getPosition));
+        }
         return entries;
     }
 
