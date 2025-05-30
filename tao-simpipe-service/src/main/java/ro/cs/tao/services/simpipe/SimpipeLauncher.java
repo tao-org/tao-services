@@ -10,7 +10,7 @@ import ro.cs.tao.services.commons.ServiceLauncher;
  */
 @SpringBootApplication()
 @ImportResource({"classpath:tao-simpipe-service-context.xml"})
-public class SimpipeLauncher implements ServiceLauncher {
+public class SimpipeLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(SimpipeLauncher.class, args);

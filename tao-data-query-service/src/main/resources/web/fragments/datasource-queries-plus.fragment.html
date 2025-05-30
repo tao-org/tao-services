@@ -1,0 +1,3945 @@
+<style>
+body{padding-right:0 !important}
+::placeholder{font-style:italic}
+.main-header .navbar{opacity:0.8}
+.btn.disabled, .btn[disabled], fieldset[disabled] .btn{opacity:0.4 !important}
+.filter-hidden{display: none!important;}
+.info-message{text-align:left;margin:0;}
+/* ======== CUSTOM SPIN BUTTON FOR INPUT TYPE NUMBER ======== */
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:inner-spin-button !important;width:25px;position:absolute;top:0;right:0;height:100%;}
+
+/* ======== #myModalNodes ======== */
+#myModalNodes{position:absolute;width:100%;height:auto;z-index:800;padding:0 !important}
+#myModalNodes #myFlatMap .ol-zoom{top:100px}
+#myModalNodes #myFlatMap .poly-map-title{padding-left:30%;top:55px}
+#myModalNodes #myFlatMap .poly-shape-type{top:60px}
+#myModalNodes #myFlatMap .poly-actions-panel{position:absolute;width:45rem;right:0;max-width:100%;}
+#myModalNodes #topInfo{position:fixed;background-color:#fff4d6;border:1px solid #ffd154;top:60px;padding:0 4px;font-weight:700;color:#a71f16;border-radius:5px;pointer-events:none;min-height:1.6em;z-index:800}
+/* ======== MODAL CONTROLS AND PANELS ======== */
+#myModalNodes .modal-body .form-control:not(select){height:2em;line-height:2em;padding:0 5px}
+#myModalNodes .modal-body .form-control:not(select):focus{border-color:#79bde4!important}
+#myModalNodes .modal-body .form-control-feedback{height:2em;line-height:2em;}
+#myModalNodes #tbDatasourceParams .form-control-feedback{height:2em;line-height:3em;right:0.3em;}
+#myModalNodes .box-shadow--6dp{box-shadow:0 6px 10px 0 rgba(0, 0, 0, .14), 0 1px 18px 0 rgba(0, 0, 0, .12), 0 3px 5px -1px rgba(0, 0, 0, .2) !important;border-radius:5px}
+#myModalNodes .modal-header{background-color:#79bde4;color:white;padding:10px 15px;border-radius:5px 5px 0 0}
+#myModalNodes .modal-header.ui-draggable-handle{position:relative;cursor:ew-resize}
+#myModalNodes .modal-header.ui-draggable-handle::before{font:normal normal normal 20px/1 FontAwesome;content:"\f07e";background-color:#79bde4;position:absolute;left:15px;top:-10px;padding:0 10px;border-radius:10px;border:1px solid #56b0e4}
+#myModalNodes .modal-title{white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+#myModalNodes .modal-content .close{margin-left:10px;font-size:25px;outline:none;opacity:1;color:white}
+#myModalNodes .modal-content .close.custom{position:absolute;color:#286080;top:0px;right:14px;font-size:30px}
+#myModalNodes .modal-content .close.custom:hover{color:#e92f2f}
+#myModalNodes .modal-content .back .fa.fa-reply{font-size:1.5rem;top:-0.2rem;position:relative;}
+#myModalNodes .modal-body{overflow-x:hidden;overflow-y:auto}
+#myModalNodes .modal-body .row .last{width:100%;float:left;padding-top:15px}
+#myModalNodes .modal-note{background-color:#ffffd2;border-top:1px solid #eac9a5}
+#myModalNodes .modal-note strong{display:inline-block;width:40px;color:#a71f16}
+#myModalNodes .modal-note p{margin:0}
+#myModalNodes .modal-note p+p{margin:5px 0 0 42px}
+#myModalNodes .modal-note p i{font-weight:700;color:#3d6f8a}
+/* ======== MODAL EXTENTS ======== */
+/*#myModalNodes .modal-content,*/
+#myModalNodes .extent{-webkit-transition:all 0.5s ease;-moz-transition:all 0.5s ease;-o-transition:all 0.5s ease;-ms-transition:all 0.5s ease;transition:all 0.5s ease}
+#myModalNodes .extent.no-transitions,
+#myModalNodes .extent.ui-draggable-dragging{-webkit-transition:none;-moz-transition:none;-o-transition:none;-ms-transition:none;transition:none}
+#myModalNodes .extent{position:absolute !important;top:0;left:0;margin:0;padding:10px;width:50rem;max-width:100%;z-index:800}
+/*#myModalNodes #queryExtent.extent{width:40rem}*/
+#myModalNodes #processingParameters.extent{width:47rem}
+#myModalNodes .extent.shifted{left:-100rem !important}
+#myModalNodes.full-map-view .main-panel{display:inline-block;width:40px;height:40px;cursor:pointer;border-radius:5px;padding:5px;text-align:center;border:0}
+#myModalNodes.full-map-view .main-panel>*{display:none}
+#myModalNodes.full-map-view .main-panel::after{content:"\f2d2";font-family:"FontAwesome";font-size:22px;color:#286080}
+#myModalNodes .extent.locked div.locked{pointer-events:none}
+#myModalNodes .extent.locked div.locked::before{content:"";position:absolute;top:0;left:0;width:100%;height:100%;background-color:rgba(255, 255, 255, 0.6);z-index:810;border-radius:5px}
+#myModalNodes .extent.locked div.locked button{opacity:0.4}
+#myModalNodes .extent.locked .ui-resizable-handle{pointer-events:none;background-color:lightgray !important}
+#myModalNodes #collectionExtent.no-map{opacity:1}
+#myModalNodes #collectionExtent.no-map .minimize{display:none}
+#myModalNodes #queryExtent.no-map, #myModalNodes #queryExtentParameters.no-map, #myModalNodes #processingParameters.no-map{left:18%}
+#myModalNodes #mapExtent{display:block;width:100%;height:100%;position:fixed;top:0;right:0;background-color:white;overflow:auto}
+#myModalNodes #collectionExtent{opacity:0.9}
+#myModalNodes #detailsExtent{width:30%}
+#myModalNodes.full-map-view #detailsExtent{left:3%;width:37%}
+/* ======== TABLE CONTENTS ======== */
+#myModalNodes .vertical-container{position:relative;clear:both;border-top:1px solid #79bde4;overflow-x:hidden;overflow-y:auto;scroll-behavior:smooth;border-bottom:1px solid #79bde4;height:100%;background-color:white}
+#myModalNodes .sticky{position:relative;position:sticky;top:0;background-color:#cee9f9;padding:7px 50px 7px 15px;z-index:801;border-bottom:1px solid #93c2da;line-height:2em}
+#myModalNodes table{position:relative;table-layout:fixed;margin:0}
+#myModalNodes table tr>*{vertical-align:middle;position:relative}
+#myModalNodes table td{word-break:break-all}
+#myModalNodes table>tbody+tbody{border-top:1px solid #93c2da}
+#myModalNodes table.ds-params{table-layout:auto}
+#myModalNodes table.ds-params::before{content:" ";position:absolute;width:15px;height:100%;top:0;left:0;}
+#myModalNodes table.ds-params td{padding:2px 10px}
+#myModalNodes table.ds-params tbody tr:first-child td{padding-top:10px}
+#myModalNodes table.ds-params tbody tr:last-child td{padding-bottom:10px}
+#myModalNodes table.ds-params tbody td:first-child{font-weight:700;text-align:right;line-height:1.2em}
+#myModalNodes table.ds-params tbody td span:not([class^="select2"], .selection){font-style:normal;font-size:0.8em;color:#c0c0c0;font-weight:400}
+#myModalNodes table.ds-params tbody td:last-child{width:66.666667%}
+#myModalNodes table.ds-params td{border:0}
+#myModalNodes table.ds-params input,
+#myModalNodes table.ds-params select:not([class^="select2"]),
+#myModalNodes table.ds-params textarea:not([class^="select2"]){width:100%;border:1px solid #d2d6de;height:2em;padding:0 4px;outline:0;border-radius:2px}
+#myModalNodes table.ds-params input.datepicker{max-width:48%}
+#myModalNodes #processingParameters table.ds-params input.datepicker{max-width:100%}
+#myModalNodes table.ds-params input.datepicker:last-child{float:right}
+#myModalNodes table.ds-products tr{background-color:white;-webkit-transition:all 0.2s ease;-moz-transition:all 0.2s ease;-o-transition:all 0.2s ease;-ms-transition:all 0.2s ease;transition:all 0.2s ease}
+#myModalNodes table.ds-products td{padding:6px;color:#737373;border-top-color:#ccc}
+#myModalNodes table.ds-products tbody tr:first-child td{border-top:0}
+#myModalNodes table.ds-products tr.selected{background-color:#ffedbd}
+#myModalNodes table.ds-products tr:hover{background-color:#fff4d6}
+#myModalNodes table.ds-products img{position:relative;margin:5px 0;float:left;cursor:pointer}
+#myModalNodes table.ds-products img:hover{border:3px solid red}
+#myModalNodes table.ds-products span.highlight{background-color:#ffc188;color:#a71f16}
+#myModalNodes table.ds-products span.name{color:#a71f16;font-weight:700}
+#myModalNodes table.ds-products span.info{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-size:0.9em;font-weight:700;display:inline-block;width:90%;width:calc(100% - 48px);margin:0;padding:0 8px 0 25px}
+#myModalNodes table.ds-products span.info.top{width:100%;padding:0;font-size:1em}
+#myModalNodes table.ds-products span.info span{padding:2px 5px;margin-right:5px}
+#myModalNodes table.ds-products span.info i{color:#0068c1;font-weight:400;margin-right:10px;line-height:1.3em;max-height:2.6em;display:inline-block;vertical-align:bottom;overflow-y:hidden;border-bottom:1px dashed #a6cddc}
+#myModalNodes table.ds-products span p{white-space:normal;word-break:break-word;padding:2px 5px;margin:0}
+#myModalNodes table.ds-products tr.datasource{font-weight:700;background-color:#cee9f9}
+#myModalNodes table.ds-products tr.datasource td{border:0;padding:8px 5px 8px 15px;color:#286080}
+#myModalNodes table.ds-products tr.datasource:hover{background-color:#cee9f9}
+#myModalNodes table.ds-products tr.datasource span.title{width:90%;display:inline-block}
+#myModalNodes table.ds-products tr.datasource input.title{width:90%;display:inline-block}
+#myModalNodes table.ds-products tr.datasource span.info{width:96%;width:calc(100% - 32px)}
+#myModalNodes table.ds-products tr.datasource.disabled{opacity:0.3}
+#myModalNodes table.ds-products tr.datasource.deprecated{background-color:#ffd1d1}
+#myModalNodes table.ds-products tr.flash{background-color:#ffccbd}
+#myModalNodes table.ds-products label.deprecated{font-style:italic;color:red;font-size:1.1em;white-space:normal;word-break:break-word;text-align:justify;padding:2px 5px}
+#myModalNodes table.ds-products label.deprecated ul{position:relative;margin:0;font-weight:400}
+#myModalNodes table.ds-products label.deprecated ul li button{padding:0;text-decoration:underline;font-weight:700}
+#myModalNodes table.ds-products label.deprecated ul li button:hover{color:#286080}
+#myModalNodes table.pd-details{table-layout:auto}
+#myModalNodes table.pd-details td{vertical-align:top;border:0;padding:10px}
+#myModalNodes table.pd-details label{color:#286080;line-height:1.2em;display:block;text-align:justify;max-height:4.8em;overflow-x:hidden;overflow-y:auto;padding-bottom:2px;margin-bottom:5px;font-size:13px}
+#myModalNodes table.pd-details span{padding:0 5px;font-weight:400;color:#555}
+#myModalNodes table.pd-details .summary{margin-bottom:10px}
+#myModalNodes table.pd-details .summary-header{border-bottom:1px solid #cfe6f6}
+#myModalNodes table.pd-details .summary-header label{font-size:16px;margin:0;padding:2px 0 2px 5px;line-height:1.9em;cursor:pointer;background-color:#f0f8fc}
+#myModalNodes table.pd-details .summary-header button{font-size:20px;padding-right:15px}
+#myModalNodes table.pd-details .summary-content{padding:5px 10px;user-select:text}
+/* ======== TABLE ACTION CONTROLS ======== */
+#myModalNodes table.ds-products .qry-ac-group{position:absolute;right:0;/*width:100%*/;padding:2px 10px;color:#286080}
+#myModalNodes table.ds-products .top-group{top:0;font-size:16px}
+#myModalNodes table.ds-products .bottom-group{bottom:0;font-size:16px;opacity:0.1;-webkit-transition:all 0.5s ease;-moz-transition:all 0.5s ease;-o-transition:all 0.5s ease;-ms-transition:all 0.5s ease;transition:all 0.5s ease}
+#myModalNodes table.ds-products tr.datasource .qry-ac-group .pull-right{background-color:rgba(206,233,249,0.6)}
+#myModalNodes table.ds-products tr.datasource.deprecated .qry-ac-group .pull-right{background-color:rgba(255, 209, 209, 0.6)}
+#myModalNodes table.ds-products tr.datasource .top-group{font-size:20px}
+#myModalNodes table.ds-products tr.datasource .bottom-group{opacity:0.5;font-size:20px}
+#myModalNodes table.ds-products tr:hover .bottom-group{opacity:1}
+#myModalNodes table.ds-products tr.selected .bottom-group{opacity:1;padding-right:35px}
+#myModalNodes .btn-action{float:left;background-color:transparent;border:0;outline:none}
+#myModalNodes .btn-action:hover{color:#e92f2f}
+#myModalNodes .btn-action[disabled]{color:#286080;opacity:0.3}
+#myModalNodes .btn-ul-action{float:none;font-size:1em}
+#myModalNodes .modal-content .btn-movable{float:right;font-size:14px;text-shadow:none;line-height:1.9em}
+/* ======== OTHER CONTROLS ======== */
+#myModalNodes .dataset-label{padding:0 15px;display:table;width:100%;margin-bottom:10px;background:white}
+#myModalNodes .dataset-label>*{display:table-cell;width:1px;vertical-align:middle}
+#myModalNodes .dataset-label input{width:100%;border:0;background-color:transparent;color:#3d6f8a}
+#myModalNodes .checkbox{margin:0;padding:0;position:absolute;right:7px;bottom:0}
+#myModalNodes .checkbox label{margin:0;padding:4px 10px}
+#myModalNodes .checkbox input{margin:0;padding:0;position:relative;cursor:pointer}
+#myModalNodes .checkbox input{margin:0;padding:0;position:relative}
+#myModalNodes .checkbox input[name='allproducts']{margin-top:7px}
+#myModalNodes .pagination{margin:10px 15px 0 15px}
+#myModalNodes .pagination>li>a,.pagination>li>span{padding:4px 10px}
+#myModalNodes .btn-primary+.btn-primary{margin-left:10px}
+#myModalNodes .btn-primary.btn-red{background-color:red;border-color:#c50000}
+#myModalNodes .btn-primary.btn-red:hover{background-color:#e20000;border-color:#a90000}
+#myModalNodes .btn-primary label{font-size:0.7em;font-weight:400;margin:0;line-height:1em;vertical-align:top}
+#myModalNodes .btn-primary label:hover{text-shadow:0px 0px 4px white}
+#myModalNodes .btn-primary input{margin-right:5px;float:left}
+/* ======== THUMBNAILS ======== */
+#myModalNodes #thumbsExtent{bottom:0;padding:10px;height:auto !important;opacity:0.9}
+#myModalNodes.full-map-view #thumbsExtent .ui-resizable-handle{border-radius:5px 5px 0 0}
+#myModalNodes #thumbsExtent .ui-resizable-handle{background-color:#79bde4;cursor:ns-resize;text-align:center;width:97%;width:calc(100% - 20px);margin:0 10px;top:0;height:10px}
+#myModalNodes #thumbsExtent .ui-resizable-handle::after{content:"\f0c9";color:white;font:normal normal normal 11px/1 FontAwesome}
+#myModalNodes #thumbsExtent .vertical-container{padding:5px;border-radius:0 0 5px 5px;overflow-y:scroll;border:0}
+#myModalNodes #thumbsExtent.locked .vertical-container{overflow-y:auto}
+#myModalNodes #thumbsExtent .thumbnails{width:100%;display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:flex-end;overflow-x:hidden;overflow-y:auto;clear:both;scroll-behavior:smooth}
+#myModalNodes #thumbsExtent .thumbnails>div{display:inline-block;width:15.5%;min-width:80px;margin:2px 1% 2px 0;position:relative;text-align:right;border-radius:5px}
+#myModalNodes #thumbsExtent .thumbnails>div::after{content:"";display:block;padding-bottom:100%}
+#myModalNodes #thumbsExtent .thumbnails>div img{position:absolute;top:0;bottom:0;left:0;right:0;width:100%;max-height:100%;object-fit:fill;object-position:center;cursor:pointer;border:4px solid transparent;border-radius:5px;box-shadow:0px 0px 4px 0 rgba(0, 0, 0, .14), 0px 0px 4px 0 rgba(0, 0, 0, .14)}
+#myModalNodes #thumbsExtent .thumbnails>div:hover::before{content:"\f00e";color:white;font:normal normal normal 16px/1 FontAwesome;position:absolute;right:5px;top:5px;background-color:rgba(13, 134, 204, 0.5);padding:5px;border-radius:12px;pointer-events:none;z-index:1}
+#myModalNodes #thumbsExtent .thumbnails>div.selected img,
+#myModalNodes #thumbsExtent .thumbnails>div img:hover{border-color:#f23b3b}
+#myModalNodes #thumbsExtent .thumbnails>div .op-exclude .fa::before{content:"\f096"}
+#myModalNodes #thumbsExtent .thumbnails>div.selected .op-exclude .fa::before{content:"\f046"}
+#myModalNodes #thumbsExtent .thumbnails>div img{-webkit-transition:all 0.3s ease;-moz-transition:all 0.3s ease;-o-transition:all 0.3s ease;-ms-transition:all 0.3s ease;transition:all 0.3s ease}
+#myModalNodes #thumbsExtent .thumbnails>div.flash{background-color:red}
+#myModalNodes #thumbsExtent .thumbnails>div.flash img{border-color:#f23b3b;opacity:0.75}
+#myModalNodes #thumbsExtent .thumbnails>div ul.controls{display:none;position:absolute;bottom:7px;right:7px;margin:0;padding:0}
+#myModalNodes #thumbsExtent .thumbnails>div:hover ul.controls{display:block}
+#myModalNodes #thumbsExtent .thumbnails>div ul.controls>li{display:block;width:20px;padding:2px 5px;margin:2px 0 0 0;background-color:red;color:white;text-shadow:2px 2px 5px black;border-radius:3px;line-height:1.3em;cursor:pointer;text-align:center;float:none;font-size:0.9em;font-weight:700}
+#myModalNodes #thumbsExtent .thumbnails>div ul.controls>li:hover{color:red;text-shadow:1px 1px 3px #ffabab;background-color:white}
+#myModalNodes #floatingExtent{position:absolute;width:98%;height:98%;top:1%;left:1%;pointer-events:none;z-index:800}
+#myModalNodes #floatingExtent .floating{width:75%;height:75%;position:absolute;bottom:0;right:0;width:auto;min-width:150px}
+#myModalNodes #floatingExtent .floating>div{width:100%;height:100%;pointer-events:all}
+#myModalNodes #floatingExtent .floating>div:hover::after{content:"\f010";color:white;font:normal normal normal 16px/1 FontAwesome;position:absolute;right:5px;top:5px;background-color:rgba(13, 134, 204, 0.5);padding:5px;border-radius:12px;pointer-events:none}
+#myModalNodes #floatingExtent .floating>div img{width:100%;height:100%;cursor:pointer;box-shadow:0 6px 10px 0 rgba(0, 0, 0, .14), 0 1px 18px 0 rgba(0, 0, 0, .12), 0 3px 5px -1px rgba(0, 0, 0, .2);border-radius:10px;border:3px solid rgba(255, 255, 255, 0.4)}
+
+#myModalNodes #choosedDatasource{margin-bottom:10px;}
+#myModalNodes .info-message>span:first-child{padding-right:5px;font-style:italic}
+
+@media (max-width: 767px) {
+.sidebar-open #myModalNodes{width:70%;width: calc(100% - 230px)}
+#queryExtent .modal-body {min-height:45vh;max-height:calc(100vh - 22em)!important;}
+}
+
+@media (max-width: 1320px) {
+  #myModalNodes #filtersDialog:not(.shifted){max-width:100%;left:0 !important;}
+}
+
+#listDatasources{width:100%;max-height:72rem;}
+#listDatasources input[type='checkbox']{display:none;}
+#listDatasources .fa-folder{color:#ffb85d;}
+#listDatasources .fa{float:none;width:30px;}
+#listDatasources a span{padding:0 7px;text-align:right}
+#listDatasources a{color:#333;display:block;cursor:pointer;padding:0 7px 0 0;line-height:1.8em;max-height:1.8em;white-space:nowrap;width:auto;width:max-content;font-weight:700;}
+#listDatasources a:hover{color:#3c8dbc}
+#listDatasources a.selected{color:#3c8dbc;background-color:#3c8dbc1f}
+
+#listDatasources .treeview label{position:relative;display:block}
+#listDatasources .treeview label::before{content:'\f105';margin-left:0;display:block;position:absolute;top:-0.2em;left:-17px;font-family:'FontAwesome';font-size:1.7rem;padding:0 7px;color:#5c5d5e;opacity:0.3;}
+#listDatasources .treeview input:checked+label::before{content:'\f107';margin-left:-3px;}
+#listDatasources .treeview label:hover:before{opacity:1}
+#listDatasources .treeview:hover input:checked+label::before{opacity:1}
+
+#listDatasources .datasource{padding-left:1rem;}
+#listDatasources .datasource_list::-webkit-scrollbar, #listDatasources .datasource::-webkit-scrollbar{display:none;}
+#listDatasources .dataset{padding-left:3px;}
+
+#listDatasources .dataset>a{display:inline-flex;}
+#listDatasources .dataset>span.info{font-size:1rem;color:#555;position:absolute}
+#listDatasources .dataset>span.info:hover{color:#3c8dbc;}
+
+#queryExtent .modal-body{min-height:40vh;max-height:calc(100vh - 8em)!important;}
+#queryExtent .panel-title{font-weight:700;color:#286080;font-size:20px}
+#queryExtent .modal-header .panel-control{flex:0 0 auto;color:#000;text-shadow:0 1px 0 #fff;opacity:0.2;cursor:pointer;}
+#queryExtent .modal-header .panel-control:hover{text-decoration:none;opacity:1;}
+#queryExtent .rspace,.filter-reset{margin-left:10px;float:right;top:3px;}
+#queryExtent .treeview .sub.mCustomScrollbar .mCSB_scrollTools.mCSB_scrollTools_vertical{right:auto;margin-left:-4px;}
+#queryExtent .treeview .sub.mCustomScrollbar .mCSB_scrollTools_horizontal{bottom:-5px;}
+#queryExtent .treeview .sub.mCustomScrollbar .mCSB_container_wrapper{position:relative;}
+#queryExtent .treeview .sub.mCustomScrollbar {max-height:20rem;overflow-y:auto;overflow-x:hidden;margin-left:0;}
+#queryExtent .info-text{padding:5px 15px;font-style:italic;font-size:1.3rem;}
+
+#queryExtentParameters .sensor-name{text-align:center;padding:4px}
+#queryExtentParameters .sensor-name>h3{font-weight:700;}
+#queryExtentParameters #parameterList .form-group{margin-bottom:5px;margin-right:0}
+#queryExtentParameters #parameterList .control-label{padding-right:0;}
+#queryExtentParameters #parameterList .last .form-group{display:inline-flex}
+#queryExtentParameters #parameterList .btnStartInterrogation{padding-left:0;}
+
+#filtersDialog #filters{padding-top:10px;}
+
+.select2-container--default .select2-selection--multiple{border-color:#d2d6de;line-height:2rem;overflow:auto !important;height:auto !important;max-height:9rem}
+.select2-container::after{content:"\25be";font-size:32px;color:#79bde4;position:absolute;display:block;right:0;top:0;line-height:3.2rem;pointer-events:none}
+.select2-container--default.select2-container--open::after{content:"\25b4"}
+.select2-container.overflow::after{right:1.5rem}
+.select2-container--default.select2-container--open .select2-selection--multiple{border-color:#79bde4}
+.select2-selection__choice{background-color:#79bde4;border-color:#79bde4;color:white;line-height:2rem}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove{color:white !important;border-right:1px solid rgba(255,255,255,0.3) !important}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover{background-color:#41a0d8}
+.select2-container--default .select2-search--inline .select2-search__field::placeholder{font-family:"Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;color:#bbb}
+.select2-selection__clear{display:none !important;}
+#filtersDialog.shifted .select2{display:none}
+#filtersDialog li.select2-search.select2-search--inline {display:none}
+#filtersDialog #search_button button{width:100%;}
+#filtersDialog #search_button button:focus{outline:0 !important;}
+
+#coverage{border:0;font-weight:bold;}
+.return-button{
+	position: absolute !important;
+    padding: 10px;
+    z-index: 800;
+	right: 125px;
+	top: 8px;
+    text-align: center;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+</style>
+
+<div id="mapExtent" class="hidden"></div>
+<div>
+	<button id="returnButton" class="return-button btn-primary fa fa-reply-all" ></button>
+</div>
+<div id="collectionExtent" class="extent no-map no-transitions can-be-locked shifted">
+	<div class="modal-content main-panel box-shadow--6dp can-be-locked" style="border-radius:5px 5px 0 0">
+		<div class="modal-header" style="border:0">
+			<button class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			<button class="close minimize"><span aria-hidden="true">&minus;</span><span class="sr-only">Minimize</span></button>
+			<button class="close back"><span aria-hidden="true" class="fa fa-reply"></span><span class="sr-only">Back</span></button>
+			<h4 class="modal-title" id="myModalLabel">Edit query</h4>
+		</div>
+		<div class="modal-body" style="padding-top:0">
+			<div class="row">
+				<div class="vertical-container">
+					<table id="tbAddNewCriteria" class="sticky table ds-products">
+						<tr class="datasource" data-index="-1">
+							<td>Add new search criteria...<span class="qry-ac-group top-group"><span class="pull-right"><button class="btn-action op-addnew" data-action="op-addnew"><i class="fa fa-plus"></i></button></span></span></td>
+						</tr>
+					</table>
+					<table id="tbSelectedProducts" class="table ds-products">
+						<tbody><tr style='background-color:#fff4d6'><td>No queries added</td></tr></tbody>
+					</table>
+				</div>
+				<div class="last">
+					<div class="col-sm-12 col-md-12">
+						<button id="saveQuery" name="btnSaveQuery" class="btn btn-primary">Save collection</button>
+						<button id="saveComponent" name="saveComponent" class="btn btn-primary hidden">Download Product List</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="executionExtent" class="extent no-map movable shifted">
+	<div class="modal-content box-shadow--6dp execution-results" style="border-radius:5px 5px 0 0">
+		<div class="modal-header" style="border:0">
+			<button class="btn cancel close"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			<button class="close btn btn-movable op-reset-position" data-action="op-reset-position" title="Restore initial position" disabled><i class="fa fa-outdent"></i></button>
+			<h4 class="modal-title">Query product results</h4>
+		</div>
+		<div class="modal-body" style="padding-top:0">
+			<div id="datasourceProducts" class="row">
+				<div class="vertical-container">
+					<div class="sticky">
+						<span id="countVisible" style="font-weight:700">Display 1 to n of n products.</span>
+						<span id="countSelected" style="float:right;font-weight:700">0 products selected</span>
+						<div class="checkbox"><label><input type="checkbox" name="allproducts" value="all" /></label></div>
+					</div>
+					<table id="tbDatasourceProducts" class="table paginated ds-products"></table>
+				</div>
+				<div class="last">
+					<div class="col-sm-12 col-md-12">
+						<button id="collectProducts" name="btnCollectProducts" class="btn btn-primary">Collect selected products</button>
+						<button id="discardProducts" name="btnDiscardProducts" class="btn btn-primary btn-red" title="Remove selected products from list">Remove products from list</button>
+						<button id="cancelExecution" name="btnCancelExecution" class="btn btn-primary cancel" style="float:right">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="topInfo"></div>
+
+<div id="thumbsExtent" class="extent no-map no-transitions can-be-locked">
+	<div class="can-be-locked" style="position:relative;height:100%">
+		<div class="vertical-container box-shadow--6dp">
+			<div class="thumbnails"></div>
+		</div>
+	</div>
+</div>
+
+<div id="queryExtent" class="extent no-map movable shifted">
+	<div class="modal-content main-panel box-shadow--6dp query-parameters">
+		<div class="modal-header">
+			<button class="close query hidden" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			<button class="close minimize"><span aria-hidden="true">−</span><span class="sr-only">Minimize</span></button>
+			<span class="glyphicon glyphicon-filter panel-control filter rspace" title="Filters"></span>
+			<span class="glyphicon glyphicon-refresh panel-control filter-reset" title="Reset filters"></span>
+			<button class="close btn btn-movable op-reset-position" data-action="op-reset-position" title="Restore initial position" disabled><i class="fa fa-outdent"></i></button>
+			<h4 class="modal-title">Dataset Explorer</h4>
+		</div>
+		
+		<div class="modal-body">
+			<div>
+				<div class="col-sm-12 col-md-12">
+					<div class="ui-widget col-sm-8 col-md-8" id="listDatasources">
+					</div>
+					<h3 id="noDatasource" class="panel-title hidden">No datasource found</h3>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="queryExtentParameters" class="extent no-map movable shifted">
+	<div class="modal-content box-shadow--6dp query-parameters">
+		<div class="modal-header">
+			<button class="btn cancel close"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			<button class="close btn btn-movable op-reset-position" data-action="op-reset-position" title="Restore initial position" disabled><i class="fa fa-outdent"></i></button>
+			<h4 class="modal-title">Datasource Parameters</h4>
+		</div>
+		<div class="sensor-name">
+			<h3 id="choosedDatasource" class="panel-title">ADEOS-1 (NASA_CMR)</h3>
+			<p class="info-message"><span>Data temporal coverage:</span><span class="info-temporal-message"></span></p>
+			<p class="info-message"><span>Data spatial coverage:</span><span class="info-spatial-message"></span></p>
+			<p class="info-message noinfo"><span>Temporal and spatial coverage information are not available.</span></p>
+
+		</div>
+		<div class="modal-body">
+			<!-- Parameters list -->
+			<form id="parameterList" class="row hidden">
+				<div class="col-sm-12 col-md-12 form-horizontal">
+					<div class="form-group">
+						<label for="queryLabel" class="col-sm-4 col-md-4 control-label">Label</label>
+						<div class="col-sm-8 col-md-8">
+							<input type="hidden" id="queryLabelDefault" name="queryLabelDefault" value="">
+							<input type="text" id="queryLabel" name="queryLabel" class="form-control" value="" placeholder="Name of your query" autocomplete="off" value="" data-errorspan="label">
+						</div>
+					</div>
+					<div class="form-group has-feedback">
+						<label for="user_name" class="col-sm-4 col-md-4 control-label">User </label>
+						<div class="col-sm-5 col-md-5">
+							<input type="text" id="user_name" value="" class="form-control">
+						</div>
+					</div>
+					<div class="form-group has-feedback">
+						<label for="user_pass" class="col-sm-4 col-md-4 control-label">Password </label>
+						<div class="col-sm-5 col-md5">
+							<input type="password" id="user_pass" name="user_pass" value="" class="form-control" autocomplete="new-password">
+							<i class="glyphicon glyphicon-eye-open form-control-feedback" title="show password"></i>
+						</div>
+					</div>
+					<div class="form-group has-feedback">
+						<label for="user_secret" class="col-sm-4 col-md-4 control-label">Secret </label>
+						<div class="col-sm-5 col-md5">
+							<input type="text" id="user_secret" name="user_secret" value="" class="form-control" >
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="use_site" class="col-sm-4 col-md-4 control-label">Choose AOI from </label>
+						<div class="col-sm-5 col-md5">
+							<select id="use_site" class="form-control" disabled>
+								<option value=""></option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<div tabindex="0" class="vertical-container">
+					<table id="tbDatasourceParams" class="table ds-params" style="table-layout:auto"></table>
+				</div>
+				<div class="last">	
+					<div class="form-group" style="display: block;padding: 0 15px;padding-bottom: 5px;">
+						<div class="" style="">	<label>Coverage: </label>
+							<span id="coverage"></span>
+						</div>		
+						<div id="coverageSlider" class="ui-slider ui-corner-all ui-slider-horizontal ui-widget ui-widget-content" style="">
+							<span tabindex="0" class="ui-slider-handle ui-corner-all ui-state-default" style="left: 46%;"></span>
+						</div>
+					</div>
+					
+					<div class="form-group" style="float:left">
+						<label for="limit" class="col-sm-2 col-md-2 control-label">Limit</label>
+						<div class="col-sm-2 col-md-2">
+							<input type="number" id="limit" value="500" class="form-control" min="1" />
+						</div>
+						<label for="pageSize" class="col-sm-2 col-md-2 control-label">Page size</label>
+						<div class="col-sm-2 col-md-2">
+							<input type="number" id="pageSize" value="100" class="form-control" min="1" />
+						</div>
+						<div class="col-sm-2 col-md-2 btnStartInterrogation">
+							<button type="submit" id="startInterrogation" name="btnStartInterrogation" class="btn btn-primary">Start Interrogation</button>
+						</div>
+					</div>
+					
+				</div>
+			</form>
+		</div>
+		<div class="modal-note hidden">
+			<p class="note"><strong>Note:</strong> Some query parameters were not found in the list of corresponding datasource parameteres:</p>
+		</div>
+	</div>
+</div>
+
+<div id="floatingExtent"><div class="floating"></div></div>
+
+<div id="detailsExtent" class="extent no-map movable shifted">
+	<div class="modal-content box-shadow--6dp">
+		<div class="modal-header" style="border:0">
+			<button class="btn cancel close"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			<button class="close btn btn-movable op-reset-position" data-action="op-reset-position" title="Restore initial position" disabled><i class="fa fa-outdent"></i></button>
+			<h4 class="modal-title">Product Details</h4>
+		</div>
+		<div class="modal-body" style="padding-top:0">
+			<div id="productDetails" class="row">
+				<div class="vertical-container">
+					<table id="tbProductDetails" class="table pd-details">
+						<tbody>
+							<tr>
+								<td class="details">
+									<div class="summary dt-summary">
+										<div class="summary-header"><label><button class="btn-action op-toggle" data-action="op-toggle"><i class="fa fa-angle-double-left"></i></button>Product Summary</label></div>
+										<div class='summary-content'></div>
+									</div>
+									<div class="summary dt-attributes">
+										<div class="summary-header"><label><button class="btn-action op-toggle" data-action="op-toggle"><i class="fa fa-angle-double-left"></i></button>Product Attributes</label></div>
+										<div class='summary-content'></div>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="last">
+					<div class="col-sm-12 col-md-12">
+						<button id="closeDetails" class="btn btn-primary cancel" style="float:right">Close</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="filtersDialog" class="extent no-map movable shifted">
+	<div class="modal-content box-shadow--6dp execution-results" style="border-radius:5px 5px 0 0">
+		<div class="modal-header" style="border:0">
+			<button class="btn cancel close"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			<button class="close btn btn-movable op-reset-position" data-action="op-reset-position" title="Restore initial position" disabled><i class="fa fa-outdent"></i></button>
+			<h4 class="modal-title">Filters</h4>
+		</div>
+		<div class="modal-body" style="padding-top:0">
+			<div id="filters">
+				<div class="col-sm-12 col-md-12 form-horizontal">
+					<div class="form-group">
+						<label for="categoryNames" class="col-sm-3 col-md-3 control-label">Category</label>
+						<div class="col-sm-9 col-md-9">
+							<select id="categoryNames" name="categoryNames[]" multiple="multiple"></select>
+						</div>
+					</div>
+				</div>
+				<div class="col-sm-12 col-md-12 form-horizontal">
+					<div class="form-group">
+						<label for="colectionName" class="col-sm-3 col-md-3 control-label">Collection</label>
+						<div class="col-sm-9 col-md-9">
+							<input type="text" id="colectionName" name="colectionName" class="form-control" value="" placeholder="Name of the sensor or collection..." autocomplete="off" data-errorspan="label">
+						</div>
+					</div>
+				</div>
+				<div class="col-sm-12 col-md-12 form-horizontal">
+					<div class="form-group">
+						<label for="providers" class="col-sm-3 col-md-3 control-label">Provider</label>
+						<div class="col-sm-9 col-md-9">
+							<select id="providers" name="providers[]" multiple="multiple"></select>
+						</div>
+					</div>
+				</div>
+				<div id="search_button" class="col-sm-12 col-md-12 form-horizontal" style="margin-bottom: 0px;">
+					<button name="search" class="btn search-btn">Apply</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Template -->
+<div id="template_datasourceList" style="display:none">
+	<div class="treeview sub">
+		
+	</div>
+	<!-- template for category level-->
+	<div class="category">
+		<input type="checkbox">
+		<label>
+			<a href="#" title=""><span class="fa fa-folder"></span></a>
+		</label>
+	</div>
+	<!-- template for datasource level, including datasource_list-->
+	<div class="datasource hidden">
+		<input type="checkbox">
+		<label>
+			<a href="#" title=""><span class="fa fa-cubes"></span></a>
+		</label>
+		<div class="sub datasource_list hidden">
+		</div>
+	</div>
+</div>
+
+<!-- include select2 -->
+<!-- already included in datasources-queries.fragment.html
+<link rel="stylesheet" type="text/css" href="assets/libs/select2/4.1.0/select2.min.css" />
+<script type="text/javascript" src="assets/libs/select2/4.1.0/select2.min.js"></script>
+-->
+
+<!-- include custom scrollbar -->
+<link rel="stylesheet" type="text/css" href="assets/libs/customScrollbar/jquery.mCustomScrollbar.min.css" />
+<script type="text/javascript" src="assets/libs/customScrollbar/jquery.mCustomScrollbar.concat.min.js"></script>
+
+<script type="text/javascript">
+    var $myModalNodes    = $("#myModalNodes");
+	var isCollection     = false;
+    var modeEdit         = false;
+	var objDna           = {};
+	var datasourcesList  = [];
+    var queryCollection  = [];
+	var selectedProducts = [];
+    var listOfProducts   = [];
+	var defaultFootprint = "";
+	var defaultInterval  = "";
+	var localEditMode    = false;
+	var myPolygonMap     = { mapActive: false };
+	var inputType        = { "Integer": { type: "number", min: "0" }, "Float": { type: "number" }, "Double": { type: "number" }, "String": { type: "text" } };
+	var filtersDialogInitialzIndex = $("#filtersDialog").css("z-index");
+	var queryExtentInitialzIndex = $("#queryExtent").css("z-index");
+	var filterDialogPositionLeft;
+	var dateFormat = "yy-mm-dd";
+	
+	var getParameters = function (sensor, datasource) {
+		return $.ajax({
+			cache: false,
+			url: baseRestApiURL + "query/sensor/" + sensor + "/" + datasource,
+			dataType : 'json',
+			type: 'GET',
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			}
+		});
+	}
+
+	var getDefaultFilters = function(){
+		return $.ajax({
+			cache: false,
+			url: baseRestApiURL + "query/filter/",
+			dataType : 'json',
+			type: 'GET',
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			}
+		 });
+	}
+
+	function setDefaultFilers(){
+		$.when(getDefaultFilters()).done(function(response){
+			var defaultFilters = chkTSRF(response);
+
+			if( typeof defaultFilters.provider !== "undefined"){
+				if( typeof $("#providers").find("[value='"+defaultFilters.provider+"']") !== "undefined"){
+					$("#providers").find("[value='"+defaultFilters.provider+"']").prop("selected", true);
+					$("#providers").trigger("change");
+				}
+			}
+			if( typeof defaultFilters.category !== "undefined"){
+				if( typeof $("#categoryNames").find("[value='"+defaultFilters.category+"']") !== "undefined"){
+					$("#categoryNames").find("[value='"+defaultFilters.category+"']").prop("selected", true);
+					$("#categoryNames").trigger("change");
+				}
+			}
+			if( typeof defaultFilters.collection !== "undefined"){
+				$("#colectionName").val(defaultFilters.collection);				
+			}
+
+			setPreferedFilters();
+			searchDataSource();
+			
+		});
+	}
+
+	function setPreferedFilters(){
+		
+		$.when(_userPref.getUserPreferences(taoUserProfile.id))
+		.done(function(responseProfile){
+			var r = responseProfile.data;
+			var allPreferences = r.preferences;
+
+			$.each(allPreferences, function(index, pref){
+				
+				if (pref.key === "search_category"){
+					$("#categoryNames").val(null).trigger('change');
+					if(pref.value.indexOf(",") !== -1){
+						prefArray = pref.value.split(',');
+						$.each(prefArray, function(index, value){
+							$("#categoryNames").find("[value='"+value+"']").prop("selected", true);
+							$("#categoryNames").trigger("change");
+						});
+
+					} else {
+						$("#categoryNames").find("[value='"+pref.value+"']").prop("selected", true);
+						$("#categoryNames").trigger("change");
+					}
+					
+				} else if (pref.key === "search_collection" && pref.value !== ""){
+					$("#colectionName").val("");
+					$("#colectionName").val(pref.value);
+				} else if (pref.key === "search_provider"){
+					$("#providers").val(null).trigger('change');
+					if(pref.value.indexOf(",") !== -1){
+						prefArray = pref.value.split(',');
+						$.each(prefArray, function(index, value){
+							$("#providers").find("[value='"+value+"']").prop("selected", true);
+							$("#providers").trigger("change");
+						});
+
+					} else {
+						$("#providers").find("[value='"+pref.value+"']").prop("selected", true);
+						$("#providers").trigger("change");
+					}
+				}
+			
+				
+			});
+
+		});
+	}
+
+	function populateFilters(datasourceSelectList, categorySelectList) {
+		$("#categoryNames option", "#filtersDialog").remove();
+		$("#providers option", "#filtersDialog").remove();
+		$.each(datasourceSelectList, function (index, value) {
+			$("#providers").append("<option value='" + value + "'>" + value + "</option>");
+		});
+		$.each(categorySelectList, function (index, value) {
+			$("#categoryNames").append("<option value='" + value.replaceAll(" ", "_") + "'>" + value + "</option>");
+		});
+		var maxHeight = $("#filters").closest(".modal-body").height ();
+		$("#categoryNames" ).select2({ placeholder: "Select category..."  , width: "100%", allowClear: true});
+		$("#providers"     ).select2({ placeholder: "Select provider..."  , width: "100%", allowClear: true});
+		// Capture "keydown" event on select2 control before its own routine does (which prevents this type of event from being propagated), then forward it to the parent dialog
+		$("#filtersDialog .select2-search--inline").on("keydown", function (e) {
+			$("#filtersDialog").trigger("keypress", [ e ]);
+		});
+		
+		$("#providers,#categoryNames").on("change.select2", function (e) {
+			var $container = $(e.target).data("select2").$container;
+			var $selection = $(e.target).data("select2").$selection;
+			if ($selection.get(0).clientHeight < $selection.get(0).scrollHeight) {
+				$container.addClass("overflow");
+			} else {
+				$container.removeClass("overflow");
+			}
+		});
+	}
+	
+	function niceFileSize(size) {
+		if (size < 1024) {
+			return size + " B";
+		} else if (size < 1024*1024) {
+			return Math.round(size*100/1024)/100 + " KB";
+		} else if (size < 1024*1024*1024) {
+			return Math.round(size*100/1024/1024)/100 + " MB";
+		} else if (size < 1024*1024*1024*1024) {
+			return Math.round(size*100/1024/1024/1024)/100 + " GB";
+		} else {
+			return Math.round(size*100/1024/1024/1024/1024)/100 + " TB";
+		}
+	}
+	
+	function waitForExecution(action) {
+		setTimeout(function () { taoLoadingDiv.modal(action); }, action === "show" ? 10 : 200);
+	}
+	
+	function ajaxCallFnc(url, data, type, async) {
+		var showWaitMsg = (typeof async === "boolean") ? async : true;
+		if (showWaitMsg) waitForExecution('show');
+		var deferred = $.Deferred();
+		$.ajax({
+			cache  : false,
+			url    : baseRestApiURL + url,
+			type   : type,
+			data   : data,
+			async  : (typeof async === "undefined" ? true : async),
+			headers: {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				if (showWaitMsg) waitForExecution('hide');
+				if (jqXHR.status === 400) {
+					showMsg(typeof jqXHR.responseJSON === "undefined" ? textStatus : jqXHR.responseJSON.error, "FAILED");
+				} else if (jqXHR.status === 500) {
+					showMsg("Please check your data and try again.", "ERROR");
+				} else if (jqXHR.status === 406) {
+					showMsg("Please check your data for inconsisntent attributes values.", "ERROR");
+				} else {
+					showMsg("Unknown error. Please try again.", "ERROR");
+				}
+				deferred.reject(jqXHR, textStatus, errorThrown);
+			},
+			success: function(response, textStatus, jqXHR) {
+				if (showWaitMsg) waitForExecution('hide');
+				deferred.resolve(response, textStatus, jqXHR);
+			}
+		});
+		return deferred.promise();
+    }
+	
+	function handlePolygonMapEvents(olPoly) {
+		olPoly.el.on("newfootprint", function (evt, footprint) {
+			if (typeof event !== "undefined" && event.type !== "load" && $(event.target.closest("*[id]")).attr("id").toLowerCase().indexOf("map") > -1 && defaultFootprint !== footprint) {
+				if (!$("option[value='']","#use_site").prop("selected")) {
+					$("option[value='']","#use_site").prop("selected", true).trigger("change");
+				}
+			}
+			$("#tbDatasourceParams input[name='footprint']").val(footprint);
+			defaultFootprint = footprint;
+		});
+		olPoly.el.on("clickextrafeature dblclickextrafeature", function (evt, feature, modifier) {
+			evt.stopPropagation();
+			var tableName = $("#executionExtent").hasClass("shifted") ? "tbSelectedProducts" : "tbDatasourceProducts";
+			if (feature) {
+				$.each($("#" + tableName + " tbody tr:not(.datasource)"), function () {
+					var $tr = $(this);
+					if ($tr.data("id") == feature.getId()) {
+						var $chk = $(".checkbox input[name='product']", $tr);
+						if ($chk.length > 0) {
+							if (evt.type == "dblclickextrafeature") {
+								$chk.prop({ "checked": false });
+							}
+							
+							$chk.trigger("click");
+							showTopInfo();
+							if ($chk.is(":checked")) {
+								highlightProduct($tr, true, true);
+								highlightThumbnail($tr, true);
+								setTimeout(function () { 
+									if (evt.type == "dblclickextrafeature") {
+										showDetailsPanel($tr);
+									} else {
+										updateDetailsPanel($tr);
+										updateFloatingThumbnail($tr);
+									}
+								}, 100);
+								setTimeout(function () { showTopInfo($tr); }, 500);
+								
+								return false;
+							}
+						} else {
+							return false;
+						}
+					}
+				});
+			}
+		});
+	}
+	
+	function autoPanMap(dialogId) {
+		if (typeof dialogId === "undefined") {
+			dialogId = "collectionExtent";
+		}
+		if (myPolygonMap.mapActive) {
+			var mapW = $("#mapExtent").outerWidth();
+			if (mapW > 0) {
+				var panelW = $(".main-sidebar").outerWidth() + ($myModalNodes.hasClass("full-map-view") ? 0 : $("#" + dialogId).outerWidth() - 10);
+				var prc = parseInt(100*panelW/mapW);
+				if (prc != myPolygonMap.options.panPrc) {
+					setTimeout(function () { myPolygonMap.setPanPercentage(prc); }, 100);
+				}
+			}
+		}
+	}
+
+	function createShapeFromTrGeometry($tr){
+		
+		if ($tr.data("geometry")) {
+			var geometry = $tr.data("geometry")
+				.replace('MULTIPOLYGON (((', 'POLYGON((')
+				.replace(')))', '))')
+				.replace(' ((', '((');
+			geometry = geometry.replace('POLYGON ((', 'POLYGON((');
+			var highlighted = $tr.find("input[name='product']").is(":checked");
+			var properties = {
+				"description": "preview",
+				"id"         : $tr.data("id"),
+				"name"       : $tr.data("name"),
+				"highlighted": (highlighted ? "true" : "false")
+			}
+			myPolygonMap.createShapeFromGeometry(geometry, properties);
+		}
+	}
+
+	function polygonArrayFromText (geometry) {
+			var polysArray = [];
+			
+			var polys = geometry;
+			polys = polys.replace(/  +/g   , " "   );
+			polys = polys.replace(/, /g    , ","   );
+			polys = polys.replace(/ ,/g    , ","   );
+			polys = polys.replace(/\),\(/g , ")("  );
+			polys = polys.replace(/\(/g    , "["   );
+			polys = polys.replace(/\)/g    , "]"   );
+			polys = polys.replace(/\[\[/g  , "[[[" );
+			polys = polys.replace(/\]\]/g  , "]]]" );
+			polys = polys.replace(/\]\[/g  , "]][[");
+			polys = polys.replace(/,/g     , "]["  );
+			polys = polys.replace(/ /g     , ","   );
+			polys = polys.replace(/\]\[/g  , "],[" );
+			polys = polys.replace("POLYGON", ""    );
+			
+			try {
+				polysArray = $.parseJSON(polys);
+			} catch (err) {
+				polysArray = false;
+			}
+			
+			return polysArray;
+		}
+	
+	function previewProducts($table) {
+		if (myPolygonMap.mapActive) {
+			// remove all previous preview features on map
+			myPolygonMap.removeFeaturesByProperty({ "description": "preview" });
+			// add new preview fetures on map
+			$.each($("tbody tr", $table), function () {
+				
+				var $tr = $(this);
+				if ($tr.data("geometry")) {
+					var geometry = $tr.data("geometry")
+						.replace('MULTIPOLYGON (((', 'POLYGON((')
+						.replace(')))', '))')
+						.replace(' ((', '((');
+					geometry = geometry.replace('POLYGON ((', 'POLYGON((');
+					var geom = polygonArrayFromText(geometry);
+					var poly = new ol.geom.Polygon([geom[0]]);
+					poly.transform('EPSG:4326', 'EPSG:3857');
+					var area = ol.sphere.getArea(poly);
+					$tr.data("area", area);
+					if(area < 100000000000){
+						createShapeFromTrGeometry($tr);
+					}
+				}
+				
+			});
+			// set style for all new preview features on map
+			resetPreviewProductsStyle();
+		}
+	}
+	
+	function resetPreviewProductsStyle() {
+		if (myPolygonMap.mapActive) {
+			// set style for all new preview features on map
+			var pStroke = new ol.style.Stroke({ color: [255, 119, 0, 0.3], width: 2 });
+			var pFill   = new ol.style.Fill  ({ color: [255, 153, 0, 0.1] });
+			var pStyle  = new ol.style.Style ({ stroke: pStroke, fill: pFill });
+			myPolygonMap.setFeaturesStyleByProperty({ "description": "preview" }, pStyle);
+			
+			var hStroke = new ol.style.Stroke({ color: [255, 0, 0, 1], width: 4 });
+			var hFill   = new ol.style.Fill  ({ color: [255, 153, 0, 0.1] });
+			var hStyle  = new ol.style.Style ({ stroke: hStroke, fill: hFill });
+			myPolygonMap.setFeaturesStyleByProperty({ "highlighted": "true" }, hStyle);
+		}
+	}
+	
+	function highlightProduct($tr, scrollIntoView, flashOnOff) {
+		if (scrollIntoView) {
+			// Change table page if product not on current page
+			if (!$tr.is(":visible")) {
+				var $pag = $('+.pagination-container', $tr.closest(".vertical-container")).data("paginaThing");
+				if ($pag) {
+					$pag.show(parseInt($tr.index()/$pag.options.perPage) + 1);
+				}
+			}
+			if (!$tr.is(":visible") && $tr.hasClass("hidden")) {
+				$tr.closest("tbody").find(".datasource .op-toggle").trigger("click");
+			}
+			// Scroll product into view
+			var $table     = $tr.closest("table");
+			var $container = $tr.closest(".vertical-container");
+			var $sticky    = $(".sticky", $container);
+			var scroll     = $tr.offset().top - $table.offset().top;
+			var maxScroll  = $table.outerHeight() + ($sticky.length > 0 ? $sticky.outerHeight() : 0) + 2;
+			if (scroll < maxScroll) {
+				$container.scrollTop(scroll);
+			} else {
+				$tr.get(0).scrollIntoView();
+			}
+		}
+		// highlight product in table
+		$("tr", $tr.closest("table")).removeClass("flash");
+		$tr.addClass("flash");
+		// delay showing the top info until scrollTop/scrollIntoView is finished
+		setTimeout(function () {
+			if (flashOnOff) $tr.removeClass("flash");
+			showTopInfo($tr);
+		}, 500);
+	}
+	
+	function highlightFeature($tr) {
+		if (myPolygonMap.mapActive) {
+			// partially hide all preview features on map
+			var pStroke = new ol.style.Stroke({ color: [255, 255, 255, 1], width: 2 });
+			var pFill   = new ol.style.Fill  ({ color: [255, 255, 255, 0.1] });
+			var pStyle  = new ol.style.Style ({ stroke: pStroke, fill: pFill });
+			myPolygonMap.setFeaturesStyleByProperty({ "description": "preview" }, pStyle);
+
+			var hStroke = new ol.style.Stroke({ color: [255, 0, 0, 1], width: 4 });
+			var hFill   = new ol.style.Fill  ({ color: [255, 153, 0, 0.1] });
+			var hStyle  = new ol.style.Style ({ stroke: hStroke, fill: hFill });
+			myPolygonMap.setFeaturesStyleByProperty({ "highlighted": "true" }, hStyle);
+			
+			// locate selected features on map
+			var pStroke = new ol.style.Stroke({ color: [255, 0, 0, 1], width: 4 });
+			var pFill   = new ol.style.Fill  ({ color: [255, 0, 0, 0.3] });
+			var pStyle  = new ol.style.Style ({ stroke: pStroke, fill: pFill });
+			myPolygonMap.setFeaturesStyleById($tr.data("id"), pStyle);
+		}
+	}
+	
+	function initControls() {
+		// Set page element attributes according to current action type
+		if (isCollection) {
+			$("#myModalLabel").html(modeEdit ? "Edit collection" : "Create collection");
+			
+			$("#saveQuery").html(modeEdit ? "Update collection" : "Create collection");
+			$("#saveQuery").prop("disabled", selectedProducts.length == 0 || ($.unique($.map(selectedProducts, function (item) { return (item._dsLabelDefault); })).length != queryCollection.length));
+			
+			$("#saveComponent").addClass("hidden");
+			$("#saveComponent").prop("disabled", true);
+		} else {
+			$("#myModalLabel").html(modeEdit ? "Edit query" : "Create query");
+			
+			$("#saveQuery").html(modeEdit ? "Update query" : "Create query");
+			$("#saveQuery").prop("disabled", queryCollection.length == 0);
+			
+			$("#saveComponent").removeClass("hidden");
+			$("#saveComponent").prop("disabled", selectedProducts.length == 0);
+			if (queryCollection.length == 0) {
+				// Enable Addnew button
+				$("#tbAddNewCriteria .datasource").removeClass("disabled");
+				$("#tbAddNewCriteria button.op-addnew").prop("disabled", false);
+			} else if (queryCollection.length == 1)	{
+			 	// Disable Addnew button
+				$("#tbAddNewCriteria .datasource").addClass("disabled");
+				$("#tbAddNewCriteria button.op-addnew").prop("disabled", true);
+				// Set query label on top
+				$("#datasetLabel").val(queryCollection[0].label);
+				$("#datasetLabel").attr("placeholder", queryCollection[0]._dsLabelDefault);			 
+			} else {
+				// Shold not have more than 1 query
+				alert("Error. You have more than one query active.");
+			}
+		}
+	}
+	
+	function initDatasources() {
+		$("#listDatasources").html("");
+		$.when(ajaxCallFnc("query/summary", {}, "GET", false))
+		.done(function (response, textStatus, jqXHR) {
+			datasourcesList = chkTSRF(response);
+			if (jqXHR.status === 204) {
+				showMsg("No datasource found.", "SUCCESS");
+				datasourcesList = [];
+			}
+			var $dataSourceTree = $("div.treeview","#template_datasourceList").clone();
+			//variable used for filters
+			var categorySelectList = [];
+			var datasourceSelectList = [];
+			// sort datasource by category, by sensor and by datasource
+			datasourcesList.sort((a, b) => (
+				(a.category.toLowerCase() !== b.category.toLowerCase()) ? 
+					(a.category.toLowerCase() < b.category.toLowerCase()) ? -1 : 1
+					: (a.sensor.toLowerCase() !== b.sensor.toLowerCase()) ? 
+						(a.sensor.toLowerCase() < b.sensor.toLowerCase()) ? -1 : 1
+						:(a.dataSourceName.toLowerCase() < b.dataSourceName.toLowerCase()) ? -1 : 1
+			));
+			$.each(datasourcesList, function (k, v) {
+				var categoryId = v.category.replaceAll(" ", "_");
+				var category = v.category;
+
+				if (categoryId === "Unknown") {
+					categoryId = "Unclassified";
+					category = "Unclassified";
+				}
+				//datasource id is based ok category id, in order to be unique
+				var datasourceId = categoryId + "_" + v.dataSourceName.replaceAll(" ", "_");
+				if ($.inArray(categoryId, categorySelectList) < 0) {
+					categorySelectList.push(categoryId);
+				}
+				if ($.inArray(v.dataSourceName, datasourceSelectList) < 0) {
+					datasourceSelectList.push(v.dataSourceName);
+				}
+				var $category;
+				if ($("input#" + categoryId, $dataSourceTree).length > 0) {
+					$category = $("input#" + categoryId, $dataSourceTree).closest(".category");
+				} else {
+					$category = $(".category","#template_datasourceList").clone();
+					$category.children("input").attr("id", categoryId);
+					$category.children("label").attr("for", categoryId);
+					$category.children("label").children("a").attr("title", category).append(category);
+					$dataSourceTree.append($category);
+				}
+				var sensorId = categoryId + "_" + v.sensor.replace(/[\/ \\]/g, "_").replace(/[()]/g, "");
+				if (typeof v.mission !== "undefined" && v.mission !== null) {
+					sensorId = categoryId + "_" + v.mission.replace(/[\/ \\]/g, "_");
+				}
+				// var $dataSource = '<div class="dataset"><a href="#" title="' +  v.dataSourceLabel + '"id="' + k + '"><span class="fa fa-cube"></span>' +  v.dataSourceLabel + '</a></div>';
+				// if (typeof v.description !== "undefined" && v.description !== null && v.description.trim() !== "") {
+				// 	$dataSource = '<div class="dataset"><a href="#" title="' +  v.dataSourceLabel + '"id="' + k + '"><span class="fa fa-cube"></span>' +  v.dataSourceLabel + '</a><span class="info">&#x1F6C8;</span><div class="info-text" style="display:none">' + v.description + '</div></div>';
+				// }
+				var $dataSource = '<div class="dataset"><a href="#" title="' +  v.dataSourceName + '"id="' + k + '"><span class="fa fa-cube"></span>' +  v.dataSourceName + '</a></div>';
+				if (typeof v.description !== "undefined" && v.description !== null && v.description.trim() !== "") {
+					$dataSource = '<div class="dataset"><a href="#" title="' +  v.dataSourceName + '"id="' + k + '"><span class="fa fa-cube"></span>' +  v.dataSourceName + '</a><span class="info">&#x1F6C8;</span><div class="info-text" style="display:none">' + v.description + '</div></div>';
+				}
+				if ($("input#" + sensorId, $category).length > 0) {
+					$("input#" + sensorId, $category).parent().find("div.datasource_list").append($dataSource);
+				} else {
+					var $dataSourceTemplate = $(".datasource","#template_datasourceList").clone();
+					$("input",$dataSourceTemplate).attr("id", sensorId);
+					$("label",$dataSourceTemplate).attr("for", sensorId);
+					$("label>a",$dataSourceTemplate).attr("title", v.mission).append(v.mission);
+					$("div.datasource_list",$dataSourceTemplate).append($dataSource);
+					$category.append($dataSourceTemplate);
+				}
+			});
+			populateFilters(datasourceSelectList, categorySelectList);
+			$("#listDatasources").append($dataSourceTree);
+			$(".ui-autocomplete-input").addClass("form-control");
+			
+		});
+	}
+	
+	function initQuery() {
+		queryCollection  = [];
+		selectedProducts = [];
+		listOfProducts   = [];
+		
+		resizePanels();		
+		// Populate page forms depending on action type
+		if (modeEdit) {
+			var dsQueries = [objDna];
+			if (!isCollection && objDna.componentId) {
+				var collection = getCollectionByComponentId(objDna.componentId);
+				if (collection) {
+					isCollection = true;
+					dsQueries = [collection];
+					localEditMode = true;
+				}
+			}
+			
+			var dsComponents = [];
+			if (isCollection) {
+				// Get query collection
+				$.when(ajaxCallFnc("datasource/user/group", { id: dsQueries[0].id }, "GET", false))
+				.done(function (response) {
+					dsQueries = [];
+					if (response.status === "SUCCEEDED") {
+						dsQueries    = response.data.dataSourceQueries;
+						dsComponents = response.data.dataSourceComponents;
+					} else {
+						showMsg(response.message, "FAIL");
+					}
+				});
+			} else if (objDna.componentId) {
+				// Get datasource component
+				$.when(ajaxCallFnc("datasource/user", { id: objDna.componentId }, "GET", false))
+				.done(function (response) {
+					if (response.status === "SUCCEEDED") {
+						dsComponents.push(response.data);
+					} else {
+						showMsg(response.message, "FAIL");
+					}
+				});
+			}
+			
+			var addQueriesInCollection = function (qryList) {
+				if (qryList && qryList.length > 0) {
+					var deferred = $.Deferred();
+					$.each(qryList, function (index, query) {
+						// Make sure that queries within collection are given unique local id by delaying progressively each iteration
+						setTimeout(function () {
+							var dsId = _.findIndex(datasourcesList, {sensor: query.sensor, dataSourceName: query.dataSource});
+							if (dsId >= 0) {
+								var qry = $.extend(true, {}, query);
+								qry._dsId           = dsId;
+								qry._dsName         = qry.sensor + " " + qry.dataSource;
+								qry._dsLabelDefault = qry._dsName + " (" + moment().format("YYYY-MM-DD HH:mm:ss.SSS").toString() + ")";
+								qry.label = (qry.label === "") ? qry._dsLabelDefault : qry.label;
+								// Set geometry lat/lon precision to 6 decimals
+								if (myPolygonMap.mapActive && typeof qry.values !== "undefined" && typeof qry.values.footprint !== "undefined") {
+									var polyArray = myPolygonMap.polygonArrayFromText(qry.values.footprint);
+									if (polyArray) {
+										qry.values.footprint = myPolygonMap.polygonTextFromArray(polyArray);
+									} else {
+										if (qry.values.footprint.length > 0) {
+											myPolygonMap.userText.val(qry.values.footprint);
+											myPolygonMap.userText.addClass("error");
+										}
+										qry.values.footprint = "";
+									}
+								}
+								registerQueryInCollection(qry);
+								if (index == qryList.length - 1) {
+									return deferred.resolve();
+								}
+							}
+						}, index*50);
+					});
+					return deferred.promise();
+				}
+			}
+			$(".extent", "#myModalNodes").addClass("hidden");
+			$.when(addQueriesInCollection(dsQueries)).done(function () {
+				$(".extent", "#myModalNodes").removeClass("hidden");
+				$.each(dsComponents, function (index, component) {
+					$.each(component.sources, function (idx, source) {
+						var parentQuery = _.findWhere(queryCollection, { componentId: source.parentId });
+						if (parentQuery) {
+							var productNames = "";
+							if (isOldVersion) {
+								productNames = typeof source.dataDescriptor.location === "undefined" ? "" : source.dataDescriptor.location;
+							} else {
+								productNames = typeof source.location === "undefined" ? "" : source.location;
+							}
+							if (productNames != "") {
+								var productsRead = false;
+								$.when(ajaxCallFnc("product", { name: productNames }, "GET", false))
+								.done(function (response) {
+									if (response.status === "SUCCEEDED") {
+										$.each(response.data, function (index, product) {
+											product._dsThumb        = "media/images/preview-not-available.png"
+											product._dsName         = parentQuery._dsName,
+											product._dsLabelDefault = parentQuery._dsLabelDefault,
+											selectedProducts.push(product);
+											productsRead = true;
+										});
+									}
+								});
+								// Create dummy products when unable to read from DB
+								if (!productsRead) {
+									var products = productNames.split(",");
+									$.each(products, function (index, name) {
+										var product = {
+											id             : name,
+											name           : name,
+											geometry       : "",
+											location       : "-",
+											approximateSize: 0,
+											productType    : parentQuery.sensor,
+											acquisitionDate: parentQuery.created,
+											_dsThumb       : "media/images/preview-not-available.png",
+											_dsName        : parentQuery._dsName,
+											_dsLabelDefault: parentQuery._dsLabelDefault
+										};
+										selectedProducts.push(product);
+									});
+								}
+							}
+						}
+					});
+				});
+				
+				// Set default footprint
+				if (myPolygonMap.mapActive && defaultFootprint != "") {
+					myPolygonMap.createShapeFromGeometry(defaultFootprint, null, true);
+				}
+				updateSelectedProductsTable("query edit");
+				if (myPolygonMap.mapActive && defaultFootprint != "") {
+					myPolygonMap.fitAllFeatures();
+				}
+				
+				if (isCollection && localEditMode) {
+					// Open query from collection for editing
+					qryIndex = _.findIndex(queryCollection, { "componentId": objDna.componentId });
+					$($("#tbSelectedProducts tr.datasource[data-index='" + qryIndex + "'] button.op-edit").get(0)).trigger("click");
+				} else if (!isCollection && localEditMode) {
+					// Open standalone query for editing
+					$($("#tbSelectedProducts tr.datasource button.op-edit").get(0)).trigger("click");
+				}
+				
+			});
+		} else if (!isCollection) {
+			// Add new: auto open the query parameters section
+			$($("#tbAddNewCriteria tr.datasource button.op-addnew").get(0)).trigger("click");
+		} else {
+			showPanel("selected products");
+		}
+	}
+	
+	function getCollectionByComponentId(componentId) {
+		var collection = false;
+		$.when(ajaxCallFnc("datasource/user/group/", {}, "GET", false))
+		.done(function (response) {
+			if (response.status === "SUCCEEDED") {
+				var dsGroups = response.data;
+				var dsComponents = [];
+				$.each(dsGroups, function (index, group) {
+					var exit = false;
+					$.each(group.dataSourceComponents, function (index, component) {
+						if (component.id == componentId) {
+							collection = group;
+							exit = true;
+							return false;
+						}
+					});
+					if (exit) return false;
+				});
+			}
+		});
+		return collection;
+	}
+	
+	function unlockPanels(panelId) {
+		if (typeof panelId === "undefined") {
+			$(".can-be-locked", "#myModalNodes").removeClass("locked");
+		} else {
+			$(panelId).removeClass("locked");
+			$(".can-be-locked", panelId).removeClass("locked");
+		}
+		// Thumbnails panel should always be locked when empty
+		if ($(".thumbnails>div", "#thumbsExtent").length == 0) {
+			lockPanels("#thumbsExtent");
+		}
+	}
+	
+	function lockPanels(panelId) {
+		if (typeof panelId === "undefined") {
+			$(".can-be-locked", "#myModalNodes").addClass("locked");
+		} else {
+			$(panelId).addClass("locked");
+			$(".can-be-locked", panelId).addClass("locked");
+		}
+	}
+	
+	function resizePanels() {
+		if ($("#tbDatasourceParams, #tbDatasourceProducts, #tbSelectedProducts, #tbProductDetails").length < 4) return false;
+		
+		var prevH = $("#myModalNodes").outerHeight();
+		
+		var h = $(window).height();
+		var hH = h - $(".main-header").outerHeight();
+		$("#myModalNodes").css({ height: hH + "px" });
+		
+		var thumbsPanelEmpty = false;
+		// resize thumbnails section
+		var h0 = prevH - $("#thumbsExtent").get(0).offsetTop;
+		var pd = 	$(".vertical-container", "#thumbsExtent").outerHeight() - $(".vertical-container", "#thumbsExtent").height() +
+					$("#thumbsExtent").outerHeight() - $("#thumbsExtent").height();
+		if ($(".thumbnails>div", "#thumbsExtent").length == 0) {
+			h0 = pd;
+			thumbsPanelEmpty = true;
+		} else {
+			var th = $(".thumbnails>div:first-child", "#thumbsExtent").outerHeight(true) + pd;
+			if (h0 < th) h0 = th;
+			if (h0 > $(".thumbnails", "#thumbsExtent").outerHeight() + pd) h0 = $(".thumbnails", "#thumbsExtent").outerHeight() + pd;
+		}
+		var t0 = hH - h0;
+		t0 *= t0 < 0 ? 0 : 1;
+		h0 = hH - t0;
+		$("#thumbsExtent").css({ top: t0 + "px" });
+		
+		h -= 15; // set panel bottom gap
+		
+		// resize query parameters section
+		if (!$("#queryExtent").hasClass("shifted") || localEditMode) {
+			var h1 = h - $("#tbDatasourceParams").parent().offset().top - 115;
+			h1 -= $("#queryExtent .last").outerHeight();
+			h1 -= $("#queryExtent .modal-note").outerHeight();
+			h1 = h1 < 60 ? 60 : h1;
+			$("#tbDatasourceParams").parent().css({ "max-height": h1 + "px" });
+		}
+		
+		// resize query results section
+		var tp = $("#tbSelectedProducts").closest(".modal-content").offset().top - 60;
+		$("#executionExtent").css({ top: tp + "px" });
+		if (!$("#executionExtent").hasClass("shifted")) {
+			var h2 = h - $("#tbDatasourceProducts").parent().offset().top;
+			h2 -= $("#executionExtent .pagination-container").outerHeight();
+			h2 -= $("#executionExtent .last").outerHeight();
+			h2 -= thumbsPanelEmpty ? 10 : h0;
+			h2 = h2 < 60 ? 60 : h2;
+			$("#tbDatasourceProducts").parent().css({ "max-height": h2 + "px", "height": h2 + "px" });
+		}
+		
+		// resize collection section
+		if (!$myModalNodes.hasClass("full-map-view")) {
+			var h3 = h - $("#tbSelectedProducts").parent().offset().top;
+			h3 -= $("#collectionExtent .last").outerHeight();
+			h3 -= thumbsPanelEmpty ? 10 : h0;
+			h3 = h3 < 60 ? 60 : h3;
+			$("#tbSelectedProducts").parent().css({ "max-height": h3 + "px", "height": h3 + "px" });
+		}
+		
+		// resize product details section
+		var tp = $("#tbSelectedProducts").closest(".modal-content").offset().top - 60;
+		$("#detailsExtent").css({ top: tp + "px" });
+		if (!$("#detailsExtent").hasClass("shifted")) {
+			var h4 = h - $("#tbProductDetails").parent().offset().top - 10;
+			h4 -= $("#productDetails .last").outerHeight();
+			h4 = h4 < 60 ? 60 : h4;
+			$("#tbProductDetails").parent().css({ "max-height": h4 + "px" });
+		}
+		
+		// Adjust panels height when thumbnails panel is empty
+		if (thumbsPanelEmpty) {
+			$("#tbDatasourceProducts, #tbSelectedProducts").parent().css({ "height": "" });
+			$("#tbDatasourceProducts, #tbSelectedProducts").closest(".modal-content").css({ "border-radius": "" });
+			$("#thumbsExtent").css({ "opacity": 0 });
+		} else {
+			$("#tbDatasourceProducts, #tbSelectedProducts").closest(".modal-content").css({ "border-radius": "5px 5px 0 0" });
+			$("#thumbsExtent").css({ "opacity": 0.9 });
+		}
+		
+		if (!$("#filtersDialog").hasClass("shifted")) {
+			computeFiterDialogPosition();
+			$("#filtersDialog").css({left: filterDialogPositionLeft, "z-index": queryExtentInitialzIndex + 100});
+		}
+	}
+	
+	function showPanel(panel) {
+		showTopInfo();
+		
+		unlockPanels();
+		if (panel == "query explorer") {			
+			lockPanels("#thumbsExtent");
+			
+			// hide other panels
+			$("#queryExtentParameters").addClass("shifted");
+			$("#executionExtent").addClass("shifted");
+			// show required panels
+			if ($("#collectionExtent").hasClass("shifted")) {
+				$("#queryExtent").removeClass("shifted");
+				lockPanels("#collectionExtent");
+			} else {
+				$("#collectionExtent").addClass("shifted");
+				$("#queryExtent").removeClass("shifted");
+			}
+		} else if (panel == "query parameters") {
+			lockPanels("#collectionExtent");
+			lockPanels("#thumbsExtent");
+			
+			if (myPolygonMap.mapActive) {
+				myPolygonMap.setReadOnly(false);
+			}
+			
+			// hide other panels
+			$("#executionExtent").addClass("shifted");
+			// show required panels
+			$("#queryExtentParameters").removeClass("shifted");
+		} else if (panel == "query edit") {
+			$("#collectionExtent").removeClass("shifted");
+			unlockPanels("#collectionExtent");
+			lockPanels("#thumbsExtent");
+			
+			if (myPolygonMap.mapActive) {
+				myPolygonMap.setReadOnly(true);
+			}
+			
+			// hide other panels
+			$("#executionExtent").addClass("shifted");
+		} else if (panel == "query edit parameters") {
+			$("#collectionExtent").removeClass("shifted");
+			lockPanels("#collectionExtent");
+			lockPanels("#thumbsExtent");
+			
+			if (myPolygonMap.mapActive) {
+				myPolygonMap.setReadOnly(false);
+			}
+			
+			// hide other panels
+			$("#executionExtent").addClass("shifted");
+			
+			$("#queryExtentParameters").removeClass("shifted");
+		} else if (panel == "query execution results") {
+			lockPanels("#collectionExtent");
+			if (myPolygonMap.mapActive) {
+				myPolygonMap.setReadOnly(true);
+			}
+			// hide other panels
+			$("#queryExtent").addClass("shifted");
+			$("#queryExtentParameters").addClass("shifted");
+			$("#collectionExtent").addClass("shifted");
+			// reset checkboxes
+			$('input[name=allproducts]').prop('checked', false);
+			// show required panels
+			$("#executionExtent").removeClass("shifted");
+		} else {
+			if (myPolygonMap.mapActive && panel !== "query datasource") {
+				myPolygonMap.setReadOnly(true);
+			}
+			
+			if (!$("#queryExtentParameters").hasClass("shifted")) {
+				$("#queryExtentParameters").addClass("shifted");
+			} else {
+				// hide other panels
+				$("#queryExtent").addClass("shifted");
+				$("#queryExtentParameters").addClass("shifted");
+				$("#executionExtent").addClass("shifted");
+			}
+		}
+		// Only hide details panel when main panel is not minimized
+		if (!$myModalNodes.hasClass("full-map-view")) {
+			hideDetailsPanel();
+		}
+		
+		// Always hide floating picture preview when switching panels
+		hideFloatingThumbnail();
+		//clear thumbnails
+		$(".thumbnails", "#thumbsExtent").html("");
+	}
+	
+	function resetDatasourcesList() {
+		// Reset query labels
+		$("#queryLabelDefault").val("");
+		$("#queryLabel").val("");
+		$("#queryLabel").prop("placeholder", "Name of your query");
+		$("#listDatasources .treeview a.selected").removeClass("selected");
+		$('input:checkbox').removeAttr('checked');
+		$("#listDatasources .datasource").addClass("hidden");
+		$("#listDatasources .datasource_list").addClass("hidden");
+		$("#noDatasource").addClass("hidden");
+	}
+	
+	function evaluateCondition(condition, value, expectedValue) {
+		switch (condition.toUpperCase()) {
+			case "EQ":
+				return value === expectedValue;
+				break;
+			case "NEQ":
+				return value !== expectedValue;
+				break;
+			case "LT":
+				return value < expectedValue;
+				break;
+			case "LTE":
+				return value <= expectedValue;
+				break;
+			case "GT":
+				return value > expectedValue;
+				break;
+			case "GTE":
+				return value >= expectedValue;
+				break;
+			case "IN":
+				if($.isArray(expectedValue)) {
+					return $.inArray(value,expectedValue);
+				} else {
+					console.error("Expected value is not array for condition " + condition);
+				}
+				break;
+			case "NOTIN":
+				if($.isArray(expectedValue)) {
+					return !$.inArray(value,expectedValue);
+				} else {
+					console.error("Expected value is not array for condition " + condition);
+				}
+				break;
+			default:
+				console.error("Missing case for condition " + condition);
+				break;
+		}
+		return;
+	}
+
+	function evaluateDependencyType(dependencyType, condition, value, expectedValue) {
+		switch (dependencyType.toLowerCase()) {
+			case "filter":
+				return evaluateCondition(condition, value, expectedValue);
+				break;
+			case "exclusive":
+				//TODO implement function for this type
+				break;
+			default:
+				console.error("Missing case for dependency type " + dependencyType);
+				break;
+		}
+		return;
+	}
+
+	function showAllowedValues($element, allowedValues) {
+		$.each($("[value]", $element), function (i, elem) {
+			if ($.inArray(elem.value,allowedValues) < 0) {
+				$(elem).addClass("hidden");
+			} else {
+				$(elem).removeClass("hidden");
+			}
+		});
+		if ($element.is("select") && $("option:selected",$element).hasClass("hidden")) {
+			$("option:not(.hidden):first",$element).prop("selected",true);
+		}
+	}
+	
+    function showDatasourceParams(data, paramInfo, defaultLabel) {
+
+		if($("#parameterList").find(".has-error").length > 0){
+			$.each($("#parameterList").find(".has-error"), function(){
+				$(this).removeClass("has-error");
+			});
+		}
+		if($("#parameterList").find(".error").length > 0){
+			$.each($("#parameterList").find(".error"), function(){
+				$(this).remove();
+			});
+		}
+
+		if(data.requiresAuthentication){
+			$("#user_pass").show();
+			$("#user_pass").siblings().show();
+			$("#user_pass").parent().siblings("label").show();
+			$("#user_pass").prop("required", true);
+
+			$("#user_name").show();
+			$("#user_name").parent().siblings("label").show();
+			$("#user_name").prop("required", true);
+		}else{
+			$("#user_pass").hide();
+			$("#user_pass").siblings().hide();
+			$("#user_pass").parent().siblings("label").hide();
+			$("#user_pass").prop("required", false);
+
+			$("#user_name").parent().siblings("label").hide();
+			$("#user_name").hide();
+			$("#user_name").prop("required", false);
+		}
+
+		if(data.requires2FA || data.requiresBearerToken){
+			$("#user_secret").show();
+			$("#user_secret").parent().siblings("label").show();
+			$("#user_secret").prop("required", true);
+
+		}else{
+			$("#user_secret").hide();
+			$("#user_secret").parent().siblings("label").hide();
+			$("#user_secret").prop("required", false);
+
+		}
+		
+		$("#parameterList").removeClass("hidden");
+		$("#choosedDatasource").html(data.sensor);
+		var param = paramInfo.parameter;
+		var auth = typeof paramInfo.auth !== "undefined" ? paramInfo.auth : {};
+		if ($("#queryLabelDefault").val() === "") {
+			$("#queryLabelDefault").val(defaultLabel + " (" + moment().format("YYYY-MM-DD HH:mm:ss.SSS").toString() + ")");
+		}
+		if (typeof data.temporalCoverage !== "undefined" && data.temporalCoverage !== null && data.temporalCoverage.trim() !== "" ||
+				typeof data.spatialCoverage !== "undefined" && data.spatialCoverage !== null && data.spatialCoverage.trim() !== "") {
+			if (typeof data.temporalCoverage !== "undefined" && data.temporalCoverage !== null && data.temporalCoverage.trim() !== "") {
+				$(".info-temporal-message","#queryExtentParameters").html(data.temporalCoverage);
+			} else {
+				$(".info-temporal-message","#queryExtentParameters").html("");
+				$(".info-temporal-message","#queryExtentParameters").closest(".info-message").addClass("hidden");
+			}
+			if (typeof data.spatialCoverage !== "undefined" && data.spatialCoverage !== null && data.spatialCoverage.trim() !== "") {
+				$(".info-spatial-message","#queryExtentParameters").html(data.spatialCoverage);
+			} else {
+				$(".info-spatial-message","#queryExtentParameters").html("");
+				$(".info-spatial-message","#queryExtentParameters").closest(".info-message").addClass("hidden");
+			}
+			$(".info-message.noinfo","#queryExtentParameters").addClass("hidden");
+		} else {
+			$(".info-temporal-message","#queryExtentParameters").closest(".info-message").addClass("hidden");
+			$(".info-spatial-message","#queryExtentParameters").closest(".info-message").addClass("hidden");
+			$(".info-message.noinfo","#queryExtentParameters").removeClass("hidden");
+		}
+		
+		$("#user_name","#queryExtentParameters").val("");
+		$("#user_pass","#queryExtentParameters").val("");
+		$("#user_name").prop("disabled", false);
+		$("#user_pass").prop("disabled", false);
+			
+		if ($.isEmptyObject(auth) && typeof data.requiresAuthentication !== "undefined" && !data.requiresAuthentication) {
+				$("#user_name").prop("disabled", true);
+				$("#user_pass").prop("disabled", true);
+		} else {
+			if (typeof auth.userName !== "undefined" && auth.userName !== null && auth.userName.trim() !== "") {
+				$("#user_name","#queryExtentParameters").val(auth.userName);
+			}
+			if (typeof auth.password !== "undefined" && auth.password !== null && auth.password.trim() !== "") {
+				$("#user_pass","#queryExtentParameters").val(auth.password);
+			}
+		}
+		if ($("#queryLabel").val() == "") {
+			$("#queryLabel").attr({ "placeholder": $("#queryLabelDefault").val() });
+		}
+		//var html = "";
+		var sortedParams = _.sortBy( param, 'order' );
+		
+		var $html = $("<tbody></tbody>");
+		$.each(sortedParams, function (index, property) {
+			var paramType = property.type;
+			var paramName = property.name;
+			
+			var lDefault = "";
+			if(typeof property.defaultValue !== "undefined" && property.defaultValue !== null) {
+				lDefault = property.defaultValue;
+			}
+			var label = property.label ? property.label : property.name;
+			if(label === "Start Date" || label === "End Date"){
+				var $tr = ($( "<tr" + (property.required ? " class='required'" : "") + ">" +
+					"<td>" + label + "<br/><span>[" + paramType + "]</span></td>" +
+					"<td>"));
+			}else{
+				var $tr = ($( "<tr" + (property.required ? " class='required'" : "") + ">" +
+					"<td>" + label + "<br/><span>[" + paramType + "]</span></td>" +
+					"<td>"));
+			}
+			
+			if (paramName.toLowerCase().endsWith("password")) {
+				paramType = "Password";
+			} else {
+				paramType = $.trim(paramType.replace(/;/g,''));
+			}
+			
+			switch (paramType) {
+				case "DataFormat":
+					$("td",$tr).last().append($('<input type="text" name="' + paramName + '" value=""  class="var_' + paramName + '">'));
+				break;
+				case "polygon":
+					// Check current footprint
+					lDefault = myPolygonMap.mapActive ? myPolygonMap.getFootprint() : defaultFootprint;
+					$("td",$tr).last().append($('<input type="text" name="' + paramName + '" value="' + lDefault + '"  class="var_' + paramName + '" placeholder="Please select your area of interest on the map..."' + (myPolygonMap.mapActive ? ' disabled' : '') + ' />'));
+				break;
+				case "SensorType":
+					var enums = taoEnums.getEntity(property.type);
+					var $select = $("<select name='" + paramName + "' class='var_" + paramName + "'></select>");
+					if (property.defaultValue == null) {
+						$select.append($("<option value='default'>Select</option>").prop("selected",true));
+					}
+					$.each(enums, function (index, values) {
+						$select.append($("<option value='" + values.key + "'>" + values.value + "</option>").prop("selected",lDefault === values.key ? true : false));
+					});
+					$("td",$tr).last().append($select);
+				break;
+				case "date":case "date[]":
+					// Set the startDate default value to the last one set by the user
+					if (paramName == "startDate") {
+						if (localEditMode) {
+							lDefault = (lDefault == "") ? defaultInterval : lDefault;
+						} else {
+							lDefault = (defaultInterval == "") ? lDefault : defaultInterval;
+						}
+					}
+					lDefault = lDefault.replace(']', '');
+					lDefault = lDefault.replace('[', '');
+					lDefault = lDefault.split(',');
+					var lDefault1=''; lDefault2 ='';
+					if (lDefault.length > 1) {
+						lDefault1 = lDefault[0];
+						lDefault2 = lDefault[1];
+					} else {
+						lDefault1 = lDefault[0];
+					}
+					
+					if (paramType === "date[]") {
+						$("td",$tr).last().append($("<input type='text' autocomplete='off' name='" + paramName + "_d1' class='datepicker var_" + paramName + "' data-name='" + paramName + "' value='" + lDefault1 + "'>"));
+						$("td",$tr).last().append($("<input type='text' autocomplete='off' name='" + paramName + "_d2' class='datepicker var_" + paramName + "' data-name='" + paramName + "' value='" + lDefault2 + "'>"));
+					} else {
+						$("td",$tr).last().append($("<input type='text' autocomplete='off' name='" + paramName + "_d1' class='datepicker var_" + paramName + "' data-name='" + paramName + "' value='" + lDefault1 + "' style='max-width:100%'>"));
+						$("td",$tr).last().append($("<input type='text' autocomplete='off' name='" + paramName + "_d2' class='datepicker hidden var_" + paramName + "' data-name='" + paramName + "' value=''>"));
+					}
+				break;
+				case "Password":
+					var value = typeof property.defaultValue !== "undefined" && property.defaultValue !== null && property.defaultValue.trim() !== "" ? property.defaultValue : "";
+					$("td",$tr).last().append($("<input type='password' id='" + paramName + "' name='" + paramName + "' value='" + value + "' class='var_" + paramName + "'> <i  class='glyphicon glyphicon-eye-open form-control-feedback' title='show password'></i>"));
+					break;
+				default:
+					if (typeof property.valueSet !== "undefined" && property.valueSet !== null) {
+						var $select = $("<select name='" + paramName + "' class='var_" + paramName + "'></select>");
+						if (property.defaultValue == null) {
+							$select.append($("<option value='default'>Select </option>").prop("selected",true));
+						}
+						$.each(property.valueSet, function (index, value) {
+							$select.append($("<option value='" + value + "'>" + value + "</option>").prop("selected", lDefault === value ? true : false));
+						});
+						$("td",$tr).last().append($select);
+					} else {
+						var type = (inputType.hasOwnProperty(paramType)) ? ((inputType[paramType].hasOwnProperty("type"))? inputType[paramType]['type'] : "text") : "text";
+						var min  = (inputType.hasOwnProperty(paramType)) ? ((inputType[paramType].hasOwnProperty("min")) ? "min='" + inputType[paramType]['min'] + "'" : "") : "";
+						
+						$("td",$tr).last().append($("<input type='" + type + "' name='" + paramName + "' value='" + lDefault + "' " + min + " class='var_" + paramName + "'>"));
+					}
+				break;
+			}
+			// works only for select elements
+			if (typeof property.dependencies !== "undefined" && property.dependencies !== null) {
+				// add allowed values on referenced paramater, in order to used it on change
+				var allowedValues = [];
+				$.each(property.dependencies, function (idx, dependency) {
+					var referencedParameter = $("[name='"+dependency.referencedParameterId+"']", $html);
+					//verify if other dependencies
+					switch (dependency.dependencyType){
+						case "REQUIRED_IF":
+							if($("[name^='"+ paramName +"']", $tr).length > 1){
+								$($("[name^='"+ paramName +"']", $tr)[0]).data("dependencies", property.dependencies);
+								$($("[name^='"+ paramName +"']", $tr)[0]).addClass("requiredIf");
+							}else{
+								$("[name^='"+ paramName +"']", $tr).data("dependencies", property.dependencies);
+								$("[name^='"+ paramName +"']", $tr).addClass("requiredIf");
+							}
+							break;
+						default: 
+							break;
+						// case "EXCLUSIVE":
+						// 	if($("[name^='"+ paramName +"']", $tr).length > 1){
+						// 		$($("[name^='"+ paramName +"']", $tr)[0]).data("dependencies", property.dependencies);
+						// 		$($("[name^='"+ paramName +"']", $tr)[0]).addClass("exclusive");
+						// 	}else{
+						// 		$("[name^='"+ paramName +"']", $tr).data("dependencies", property.dependencies);
+						// 		$("[name^='"+ paramName +"']", $tr).addClass("exclusive");
+						// 	}
+					}
+
+					// add allowed values on referenced paramater, in order to used it on change
+					if (referencedParameter.is("select")) {
+						var foundAllowedValues = false;
+						$.each($("option",$(referencedParameter)), function (i, elem) {
+							foundAllowedValues = evaluateDependencyType(dependency.dependencyType, dependency.condition, elem.value, dependency.expectedValue);
+							if (foundAllowedValues) {
+								$(elem).data("dna",{"parameterName":paramName,"allowedValues":dependency.allowedValues});
+								//apply dependency for current selection
+								if ($(elem).is(":selected")) {
+									allowedValues = dependency.allowedValues.replace(/\s*,\s*/g, ",").split(",");
+								}
+								return true;
+							}
+						});
+					}
+				});
+				showAllowedValues($("[name='"+paramName+"']",$tr),allowedValues);
+			}
+			$html.append($tr);
+		});
+		$('table#tbDatasourceParams tbody').remove();
+		$('table#tbDatasourceParams').append($html);
+
+		// $("input.exclusive", "#tbDatasourceParams"). on("click", function(){
+		// 	$elem = $(this);
+		// 	$.each($(element).data("dependencies"), function(idx, dependency){
+		// 		if(dependency.dependencyType === "EXCLUSIVE"){
+		// 			$elem.valid();
+		// 		}
+		// 	});
+		// });
+		
+		var passwordInputs = $("input[type=password]", "table#tbDatasourceParams");
+		if (passwordInputs.length > 0) {
+			$.each(passwordInputs, function (l) {
+				// Hide/Show password by clicking on the eye glyphicon
+				$("input[name='" + this.name + "'] + .glyphicon ").css({ 'cursor': 'pointer', 'pointer-events': 'all' });
+				$('input[name="' + this.name + '"] + .glyphicon ').on('click', function () {
+					if ($(this).hasClass('glyphicon-eye-open')) {
+						$("#" + this.previousElementSibling.id ).attr('type','text');
+						$(this).removeClass('glyphicon-eye-open');
+						$(this).addClass('glyphicon-eye-close');
+						$(this).attr('title', 'hide password');
+					} else {
+						$("#" + this.previousElementSibling.id).attr('type', 'password');
+						$(this).removeClass('glyphicon-eye-close');
+						$(this).addClass('glyphicon-eye-open');
+						$(this).attr('title', 'show password');
+					}
+				});
+			});
+		}
+		
+		//remove old datepickers
+		$("#" + $.datepicker.dpDiv.attr("id")).remove();
+		
+		//initialize the new datepickers
+		$.each($("input[name*='_d1']"), function () {
+			var name = $(this).attr('data-name');
+			$(this).datepicker({
+				changeYear	: true,
+				changeMonth : true,
+				dateFormat  : dateFormat,
+				yearRange   : "1990:c+10",
+				onSelect    : function (selected,evnt) {
+					var newDate = new Date(selected);
+					if (newDate) { // Not null
+						newDate.setDate(newDate.getDate() + 1);
+					}
+					$("input[name='" + name + "_d2']").datepicker("option", "minDate", newDate);
+				}
+			});
+			var minDate = $(this).datepicker( "option", "minDate" );
+		});
+		
+		$.each($("input[name*='_d2']"), function () {
+			var name = $(this).attr('data-name');
+			$(this).datepicker({
+				changeYear : true,
+				changeMonth: true,
+				dateFormat : 'yy-mm-dd',
+				onSelect   : function (selected,evnt) {
+					var newDate = new Date(selected);
+					if (newDate) { // Not null
+						newDate.setDate(newDate.getDate() - 1);
+					}
+					$("input[name='" + name + "_d1']").datepicker("option", "maxDate", newDate);
+				}
+			});
+		});
+		
+		$("input[name='tileId']", "#tbDatasourceParams").on("change", function (e) {
+			if (this.value != "") {
+				$.when(getTileFootprint(this.value))
+				.done(function (response) {
+					defaultFootprint = response;
+					$("input[name='footprint']", "#tbDatasourceParams").val(response);
+					if (myPolygonMap.mapActive) {
+						var features = null;
+						defaultFootprint = response;
+						if (features = myPolygonMap.createShapeFromGeometry(defaultFootprint, null, true)) {
+							// Prevent footprint match errors due to precision
+							defaultFootprint = myPolygonMap.getFootprint();
+							features[0].setId("tile_footprint");
+							myPolygonMap.fitFeatureById("tile_footprint");
+							showMsg("New default footprint set", "INFO");
+						} else {
+							showMsg("Inconsistent footprint information for the selected tile", "WARNING");
+						}
+					}								
+				})
+				.fail(function (jqXHR, status, error) {
+					showMsg(error, "WARNING");
+				});
+			}
+		});
+		
+		if ($("option:selected", "#use_site").val() !== "") {
+			 var optionData = $("option:selected", "#use_site").data("dna");
+			 populateStartEndDate (optionData.startDate, optionData.endDate);
+		}
+		resizePanels();
+    }
+	
+	function getTileFootprint(tileId) {
+		var deferred = $.Deferred();
+		
+		var dsId = parseInt($("a.selected","#listDatasources").attr("id"));
+		if (!datasourcesList[dsId]) {
+			deferred.reject(null, "FAILED", "The selected datasource is invalid");
+		} else {
+			var sensor = datasourcesList[dsId]['sensor'];
+			$.ajax({
+				url: baseRestApiURL + "query/footprint",
+				type: "GET",
+				data: { satellite: sensor.toLowerCase(),
+						tile: tileId	
+					},
+				beforeSend: function(xhr) { xhr.setRequestHeader("X-Auth-Token", tokenKey); },
+				success: function(response) {
+					if (response.status === "SUCCEEDED") {
+						deferred.resolve(response.data);
+					} else {
+						deferred.reject(response.data, response.status, response.message);
+					}
+				},
+				error: function (jqXHR, textStatus, errorThrown) {
+					deferred.reject(jqXHR, textStatus, errorThrown);
+				}
+			});
+		}
+		return deferred.promise();
+	}
+	
+	function rebuildPagination($table, pageSize) {
+		// Define pagination
+		var $insertAfter = $table.closest(".vertical-container");
+		$('+.pagination-container', $insertAfter).remove();
+		$('tbody', $table).paginathing({
+    		firstLast: false,
+    	    perPage: pageSize || 10,
+    	    pageNumbers: true,
+    	    insertAfter: $insertAfter,
+		});
+		// Get thumbnails after pagination
+ 		$('+.pagination-container', $insertAfter).on("pagechange", function (e, data) {
+			getVisibleProductsThumbnails($table);
+			countSelectedProducts($table.attr("id"));
+		});
+	}
+	
+    function showProductsTable() {
+    	showPanel("query execution results");
+		
+		$('table#tbDatasourceProducts tbody').remove();
+		$('table#tbDatasourceProducts').append('<tbody></tbody>');
+		$.each(listOfProducts, function (index, product) {
+			var str = product.name;
+			var platform = str.substring(0, str.indexOf("_"));
+			str = str.substring(str.indexOf("_") + 1);
+			var instrument = "-";
+			var attributes = {};
+			$.each(product.attributes, function (index, attribute) { attributes[attribute.name] = attribute.value; });
+			if (attributes.instrumentshortname) {
+				instrument = attributes.instrumentshortname.indexOf(" ") >= 0 ? attributes.instrumentshortname.substring(0, attributes.instrumentshortname.indexOf(" ")) : attributes.instrumentshortname;
+			}
+			
+			var existing = _.findWhere(selectedProducts, { id: product.id });
+			var $tr = $("<tr" + (existing ? " class='selected'" : "") + "></tr>");
+			$tr.data("name", product.name);
+			$tr.data("selIndex", index);
+			$tr.data("id", product.name).attr("id", product.name);
+			if (product.geometry) { $tr.data("geometry", product.geometry); }
+			if (product.quicklookLocation) { $tr.data("preview", encodeURIComponent(product.quicklookLocation).replace(/'/g, "%27").replace(/"/g, "%22")); }
+			$tr.html(
+					"	<td>" +
+					"	<span class='qry-ac-group bottom-group' style='padding-right:35px'>" +
+					"		<span class='pull-right'>" +
+					(!myPolygonMap.mapActive ? "" :
+					"			<button class='btn-action op-locate' data-action='op-locate' title='Locate product on map'><i class='glyphicon glyphicon-screenshot'></i></button>") +
+					"			<button class='btn-action op-details' data-action='op-details' title='View product details'><i class='glyphicon glyphicon-eye-open'></i></button>" +
+					"		</span>" +
+					"	</span>" +
+					"		<span class='info top'>" +
+					"			<span class='highlight'>" + platform + "</span><span class='highlight'>" + instrument + "</span><span class='name'>" + product.name + "</span>" +
+					"		</span>" +
+					"		<img width='48px' height='48px' src='./media/images/preview-not-available.png' />" +
+					"		<span class='info'>" +
+					"			<span>Download URL: <i>" + product.location + "</i></span>" +
+					"			<p>Mission: <i>" + product.productType + "</i> Instrument: <i>" + instrument + "</i> Sensing Date: <i>" + niceIsoTime(product.acquisitionDate) + "</i> Size: <i>" + niceFileSize(product.approximateSize) + "</i></p>" +
+					"		</span>" +
+					"		<div class='checkbox'><label><input type='checkbox' name='product' value='" + product.id + "'" + (existing ? " checked='checked'" : "") + " /></label></div>" +
+					"	</td>"
+			);
+			$('table#tbDatasourceProducts tbody').append($tr);
+		});
+		
+    	rebuildPagination($("table#tbDatasourceProducts"), parseInt($("#pageSize", "#queryExtentParameters").val()));
+		getVisibleProductsThumbnails($("table#tbDatasourceProducts"));
+		countSelectedProducts("tbDatasourceProducts");
+		
+		// Show products on map
+		previewProducts($("table#tbDatasourceProducts"));
+		showThumbnails($("#tbDatasourceProducts"));
+		unlockPanels("#thumbsExtent");
+    }
+	
+	function registerQueryInCollection(query) {
+		// Update default values for footprint and time interval
+		defaultFootprint = (typeof query.values !== "undefined" && typeof query.values.footprint !== "undefined") ? query.values.footprint : defaultFootprint;
+		defaultInterval  = (typeof query.values !== "undefined" && typeof query.values.startDate !== "undefined") ? query.values.startDate : "";
+		// Update or save query in collection
+		if (query._dsId >= 0) {
+			qryIndex = _.findIndex(queryCollection, { "_dsId": query._dsId, "_dsLabelDefault": query._dsLabelDefault });
+			if (qryIndex >= 0) {
+				// Complete query with original data before updating it (id, componentId, ...)
+				$.each(Object.keys(queryCollection[qryIndex]), function (index, key) {
+					if (!query.hasOwnProperty(key)) {
+						query[key] = queryCollection[qryIndex][key];
+					}
+				});
+				queryCollection[qryIndex] = query;
+			} else {
+				queryCollection.push(query);
+			}
+		}
+	}
+	
+	function resetSelectedProductsTable() {
+		$("input[name='product']:checked", "table#tbSelectedProducts").trigger("click");
+	}
+	
+	function updateSelectedProductsTable(panelName) {
+		
+		if (typeof panelName === "undefined") {
+			panelName = "selected products";
+		}		
+		showPanel(panelName);
+			
+		$('table#tbSelectedProducts tbody').remove();
+		
+		// Parse and render table headers for each datasource
+		$.each(queryCollection, function(index, query) {
+			var $crtDatasetHeader =	$(	"<tbody><tr class='datasource' data-index='" + index + "'><td>" +
+										"	<span class='qry-ac-group top-group'>" +
+										"		<span class='pull-right'>" +
+										(modeEdit && !isCollection ? "" :
+										"			<button class='btn-action op-discard' data-action='op-discard' title='Remove query from collection'><i class='fa fa-trash'></i></button>") +
+										"			<button class='btn-action op-edit' data-action='op-edit' title='"+(modeEdit?'Edit query':'Edit label')+"'><i class='fa fa-pencil'></i></button>" +
+										"			<button class='btn-action op-checked' data-action='op-checked' title='Done' style='display:none'><i class='fa fa-check'></i></button>" +
+										"		</span>" +
+										"	</span>" +
+										"	<span class='qry-ac-group bottom-group'>" +
+										"		<span class='pull-right'>" +
+										"			<button class='btn-action op-toggle' data-action='op-toggle'><i class='fa fa-angle-double-left'></i></button>" +
+										"		</span>" +
+										"	</span>" +
+										"	<span class='title'>" + query._dsName + " / " + (query.label == "" ? query._dsLabelDefault : query.label) + "</span>" +
+										"   <input class='title form-control' value='"+query._dsName+" / "+(query.label==""?query._dsLabelDefault:query.label)+"' style='display: none'></input>" +
+										"	<span class='info'><p></p></span>" +
+										"</td></tr></tbody>");
+			$crtDatasetHeader.find("tr.datasource").data("dsName", query._dsName);
+			$crtDatasetHeader.find("tr.datasource").data("dsLabelDefault", query._dsLabelDefault);
+			var $pf = $crtDatasetHeader.find("tr.datasource p");
+			$.each(query.values, function (key, value) {
+				if (key == "footprint") {
+					if (value != defaultFootprint) {
+						$crtDatasetHeader.find(".datasource").addClass("deprecated");
+						$pf.before("<label class='deprecated' for=''>The footprint on the map has changed:" +
+									"	<ul class='qry-ac-group'>" +
+									"		<li><button class='btn-action btn-ul-action op-edit deprecated' data-action='op-edit'>Re-interrogate the datasource</button>, then refresh your product selection</li>" +
+									"		<li><button class='btn-action btn-ul-action op-footprint deprecated' data-action='op-footprint'>Restore the footprint</button> from the previous interrogation.</li>" +
+									"	</ul>" +
+									"</label>");
+						$pf.append(key + ": <i style='color:red;overflow-y:auto'>" + value + "</i>");
+					} else {
+						$pf.append(key + ": <i style='overflow-y:auto'>" + value + "</i>");
+					}
+				} else {
+					$pf.append(key + ": <i>" + value + "</i>");
+				}
+			});
+			$('table#tbSelectedProducts').append($crtDatasetHeader);
+		});
+		
+		// Parse products
+		$.each(selectedProducts, function(index, product) {
+			// Find the datasource section where the product should be added
+			var $crtDatasetHeader = false;
+			$.each($('table#tbSelectedProducts tbody tr.datasource'), function () {
+				if ($(this).data("dsName") === product._dsName && $(this).data("dsLabelDefault") === product._dsLabelDefault) {
+					$crtDatasetHeader = $(this);
+					return false;
+				}
+			});
+			if ($crtDatasetHeader) {
+				var str = product.name;
+				var platform = str.substring(0, str.indexOf("_"));
+				str = str.substring(str.indexOf("_") + 1);
+				
+				var instrument = "-";
+				var attributes = {};
+				$.each(product.attributes, function (index, attribute) { attributes[attribute.name] = attribute.value; });
+				if (attributes.instrumentshortname) {
+					instrument = attributes.instrumentshortname.indexOf(" ") >= 0 ? attributes.instrumentshortname.substring(0, attributes.instrumentshortname.indexOf(" ")) : attributes.instrumentshortname;
+				}
+				
+				var $tr = $("<tr></tr>");
+				$tr.data("dsIndex", $crtDatasetHeader.data("index"));
+				$tr.data("selIndex", index);
+				$tr.data("id", $crtDatasetHeader.data("index") + "_" + product.name).attr("id", $crtDatasetHeader.data("index") + "_" + product.name);
+				$tr.data("name", product.name);
+				if (product.geometry) { $tr.data("geometry", product.geometry); }
+				if (!product.quicklookLocation && product.location.indexOf("/$value") >= 0) {
+					product.quicklookLocation = product.location.replace("/$value", "/Products('Quicklook')/$value");
+				}
+				if (product.quicklookLocation) { $tr.data("preview", encodeURIComponent(product.quicklookLocation).replace(/'/g, "%27").replace(/"/g, "%22")); }
+				$tr.html(	"<td>" +
+							"	<span class='qry-ac-group bottom-group'>" +
+							"		<span class='pull-right'>" +
+							(!myPolygonMap.mapActive ? "" :
+							"			<button class='btn-action op-locate' data-action='op-locate' title='Locate product on map'><i class='glyphicon glyphicon-screenshot'></i></button>") +
+							"			<button class='btn-action op-details' data-action='op-details' title='View product details'><i class='glyphicon glyphicon-eye-open'></i></button>" +
+							"			<button class='btn-action op-remove' data-action='op-remove' title='Remove product from collection'><i class='glyphicon glyphicon-remove'></i></button>" +
+							"		</span>" +
+							"	</span>" +
+							"	<span class='info top'>" +
+							"		<span class='highlight'>" + platform + "</span><span class='highlight'>" + instrument + "</span><span class='name'>" + product.name + "</span><br/>" +
+							"	</span>" +
+							"	<img width='48px' height='48px' src='" + product._dsThumb + "' />" +
+							"	<span class='info'>" +
+							"		<span>Download URL: <i>" + product.location + "</i></span>" +
+							"		<p>Mission: <i>" + product.productType + "</i> Instrument: <i>" + instrument + "</i> Sensing Date: <i>" + niceIsoTime(product.acquisitionDate) + "</i> Size: <i>" + niceFileSize(product.approximateSize) + "</i></p>" +
+							"	</span>" +
+							"	<div class='checkbox hidden'><label><input type='checkbox' name='product' value='" + product.id + "' /></label></div>" +
+							"</td>"
+				);
+				$crtDatasetHeader.after($tr);
+			}
+    	});
+		if ($("#tbSelectedProducts tbody").length == 0) {
+			$("#tbSelectedProducts").append("<tbody><tr style='background-color:#fff4d6'><td>No queries added</td></tr></tbody>")
+		}
+		$.each($("#tbSelectedProducts tr.datasource"), function () {
+			if ($(this).find("+tr td>img").length == 0) {
+				$(this).after("<tr style='background-color:#fff4d6'><td>No selected products for this datasource component</td></tr>")
+			}
+		});
+		getVisibleProductsThumbnails($("table#tbSelectedProducts"));
+		
+		initControls();
+		
+		// Show products on map
+		previewProducts($("table#tbSelectedProducts"));
+		showThumbnails($("table#tbSelectedProducts"));
+		unlockPanels("#thumbsExtent");
+		//clear thumbnails
+		$(".thumbnails", "#thumbsExtent").html("");
+		$("#thumbsExtent").css({ "opacity": 0 });
+	}
+	
+	function countSelectedProducts(tableName) {
+		var count = $("#"+ tableName + " input[name='product']:checked").length;
+		if (tableName == "tbDatasourceProducts") {
+			$("#countSelected").html(count + " product" + (count == 1 ? "" : "s") + " selected");
+			
+			var visibleFirst = $("#"+ tableName + " tbody tr:visible").first().index() + 1;
+			var visibleLast  = $("#"+ tableName + " tbody tr:visible").last().index() + 1;
+			$("#countVisible").html("Display " + visibleFirst + " to " + visibleLast + " from " + $("#"+ tableName + " tbody tr").length);
+		} else if (tableName == "tbSelectedProducts") {
+			
+		}
+	}
+	
+	function clearHighlightedProducts() {
+		var highlighted = false;
+		$("table.ds-products tbody tr input[name=product]").prop("checked", false);
+		$("table.ds-products tbody tr").removeClass("selected");
+		setFeaturesDataByProperty({ "description": "preview" }, { "highlighted": false })
+		resetPreviewProductsStyle();
+	}
+	
+	function removeExtraDsInfo(object) {
+		$.each(Object.keys(object), function (index, key) {
+			if (key.indexOf("_ds") == 0) {
+				delete object[key];
+			}
+		});
+	}
+	
+	function getCurrentUserQuery() {
+		var dsId;
+		if (typeof $("#queryExtent").data("query") !== "undefined") {
+			dsId = $("#queryExtent").data("query")._dsId;
+		} else {
+			dsId = parseInt($("#listDatasources .treeview a.selected").attr("id"));
+		}
+		if (!datasourcesList[dsId]) {
+			return false;
+		}
+		
+		// Get all updated values for query parameters
+		var values = {};
+		$("[class^='var_'],[class*=' var_']", "#queryExtentParameters").each(function () {
+			if ($(this).val() !== 'default' && $.trim($(this).val()) !== "") {
+				if ($(this).hasClass("datepicker") ) {
+					var paramName = $(this).attr("data-name");
+					if ($.inArray(paramName, values) < 0) {
+						var name = $(this).attr("name");
+						if (name === paramName + "_d1") {
+							date1 = $(this).val();
+							date2 = $("input[name='" + paramName + "_d2']").val();
+						} else if (name === paramName + "_d2") {
+							date2 = $(this).val();
+							date1 = $("input[name='" + paramName + "_d1']").val();
+						}
+						if (date1 !== "" && date2 !== "") {
+							values[paramName] = "[" + date1 + "," + date2 + "]";
+						} else if (date1 !== "") {
+							values[paramName] = date1;
+						} else if (date2 !== "") {
+							values[paramName] = date2;
+						}
+					}
+				} else {
+					values[$(this).attr('name')] = $(this).val();
+				}
+			}
+		});
+		if(datasourcesList[dsId].requiresAuthentication === true || datasourcesList[dsId].requiresBearerToken === true){
+			var secret = $('#user_secret').val();
+		}else {
+			secret = null;
+		}
+
+		var query = {
+			userId    : taoUserProfile.id,
+			siteId	  : $("option:selected", "#use_site").val() || null,
+			label     : $("#queryLabel").val(),
+			sensor    : datasourcesList[dsId]['sensor'],
+			dataSource: datasourcesList[dsId]['dataSourceName'],
+			user      : $('#user_name').val(),
+			password  : $('#user_pass').val(),
+			secret	  : secret,
+			coverage  : ($("#coverageSlider").slider("option", "value") || 50) / 100, // coverage is double between 0.0 and 1.0
+			limit     : parseInt($("#limit"     , "#queryExtentParameters").val()) || 10,
+			pageNumber: parseInt($("#pageNumber", "#queryExtentParameters").val()) || 1,
+			pageSize  : parseInt($("#pageSize"  , "#queryExtentParameters").val()) || 10,
+			values    : values
+		}
+		return query;
+	}
+	
+	function showTopInfo($tr) {
+		if (typeof $tr !== "undefined" &&  $(".top.info .name", $tr).length > 0 && $tr.closest(".ui-draggable-dragging").length == 0) {
+			// get tooltip text
+			var topInfo = $(".top.info .name", $tr).html();
+			
+			// calculate tooltip position
+			var tp = $(".top.info .name", $tr).offset().top;
+			var lf = $(".top.info .name", $tr).offset().left;
+			
+			// prevent showing tooltip over the sticky section
+			var $sticky = $tr.closest("table").siblings(".sticky");
+			var minTop = $sticky.offset().top + $sticky.outerHeight();
+			
+			var $container = $tr.closest(".vertical-container");
+			var maxTop = $container.offset().top + $container.outerHeight() - $("#topInfo").outerHeight();
+			if (tp >= minTop && tp <= maxTop) {
+				$("#topInfo").css({ left: lf+"px", top: tp+"px" })
+				$("#topInfo").html(topInfo);
+			} else {
+				$("#topInfo").html("");
+				$("#topInfo").css({ left: "0px", top: "0px" });
+			}
+		} else {
+			$("#topInfo").html("");
+			$("#topInfo").css({ left: "0px", top: "0px" });
+		}
+	}
+	
+	function setProductImageSource(previewUrl, qryUser, qryPass, prodName) {
+		var notAvailable = "media/images/preview-not-available.png";
+		var deferred = $.Deferred();
+		$.ajax({
+			url: baseRestApiURL + "utilities/tunnel/get",
+			type: "GET",
+			data: { url: decodeURIComponent(previewUrl), user: qryUser, password: qryPass, name: prodName },
+			beforeSend: function(xhr) { xhr.setRequestHeader("X-Auth-Token", tokenKey); },
+			success: function(response) {
+				deferred.resolve(response === "" ? notAvailable : response);
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				deferred.resolve(notAvailable);
+			}
+		});
+		return deferred.promise();
+	}
+	
+	function getVisibleProductsThumbnails($table) {
+		var isSelectedProductsTable = $table.get(0).id === "tbSelectedProducts";
+		
+		$.each($('tbody', $table), function (index, tbody) {
+			var $tbody = $(tbody);
+			
+			var qryUser = isSelectedProductsTable ? "" : $("#user_name").val();
+			var qryPass = isSelectedProductsTable ? "" : $("#user_pass").val();
+			if (isSelectedProductsTable) {
+				var qry = queryCollection[$("tr.datasource", $tbody).data("index")];
+				qryUser = qry ? qry.user : "";
+				qryPass = qry ? qry.password : "";
+			}
+			$.each($('tr:not(.datasource)', $tbody), function (index, tr) {
+				var $tr = $(tr);
+				var previewUrl = $tr.data("preview");
+				var prodName = $tr.data("name");
+				var $img = $("td img", tr);
+				if ($tr.is(":visible") && $img.length > 0 && $img.attr("src").indexOf("preview-not-available.png") >= 0) {
+					$.when(setProductImageSource(previewUrl, qryUser, qryPass, prodName)).done(function (response) { $img.attr("src", response); });
+				}
+			});
+		});
+	}
+	
+	function resizeFloatingThumbnail(ratio) {
+		var $img = $(".floating>div img", "#floatingExtent");
+		if ($img.length > 0) {
+			if ($img.attr("src").indexOf("preview-not-available") == -1) {
+				var $floating = $img.closest(".floating");
+				$img.load(function () {
+					if (typeof ratio === "undefined") {
+						ratio = $img.data("ratio");
+					}
+					var w = Math.max(this.naturalWidth, this.naturalHeight);
+					var h = w*ratio;
+					
+					var maxW = 3/4*$("#floatingExtent").outerWidth();
+					var maxH = 3/4*$("#floatingExtent").outerHeight();
+					if (w > maxW) {
+						w = maxW;
+						h = w*ratio;
+					}
+					if (h > maxH) {
+						h = maxH;
+						w = h/ratio;
+					}
+					var rg = $floating.get(0).offsetLeft + w;
+					if (rg > $("#floatingExtent").outerWidth()) {
+						var lf = $("#floatingExtent").outerWidth() - w;
+						$floating.css({ right: "unset", left: lf + "px" });
+					}
+					var bt = $floating.get(0).offsetTop + h;
+					if (bt > $("#floatingExtent").outerHeight()) {
+						var tp = $("#floatingExtent").outerHeight() - h;
+						$floating.css({ bottom: "unset", top: tp + "px" });
+					}
+					$floating.css({ width: w + "px", height: h + "px" });
+					$img.data("ratio", ratio);
+				});
+			} else {
+				hideFloatingThumbnail();
+			}
+		}
+	}
+	
+	function showFloatingThumbnail($tr) {
+		var trId = $tr.get(0).id;
+		var $thumbnail = $(".thumbnails>div[id='" + trId + "']", "#thumbsExtent");
+		if ($thumbnail.length == 0) return;
+		
+		var $floating = $(".floating>div", "#floatingExtent");
+		if ($floating.length == 0 || ($floating.length > 0 && trId != $floating.get(0).id)) {
+			// Show product large preview image
+			var ratio = 1;
+			if (myPolygonMap.mapActive) {
+				var feature = myPolygonMap.getFeatureById(trId);
+				if (feature) {
+					var extent = feature.getGeometry().getExtent();
+					var angleR_ = 0;
+					if (feature.getGeometry().flatCoordinates.length == 10) {
+						var center = [feature.getGeometry().getInteriorPoint().flatCoordinates[0], feature.getGeometry().getInteriorPoint().flatCoordinates[1]];
+						var lon1 = feature.getGeometry().flatCoordinates[0];
+						var lat1 = feature.getGeometry().flatCoordinates[1];
+						var lon2 = feature.getGeometry().flatCoordinates[2];
+						var lat2 = feature.getGeometry().flatCoordinates[3];
+						
+						angle_ = Math.atan2(lat2-lat1, lon2-lon1);
+						var angle_ = angle_*180/Math.PI;
+						if (angle_ >  135) angle_ -= 180;
+						if (angle_ < -135) angle_ += 180;
+						if (angle_ >   45) angle_ -=  90;
+						if (angle_ <  -45) angle_ +=  90;
+						angleR_ = (-1)*angle_*Math.PI/180;
+						
+						var tmp = feature.clone();
+						tmp.getGeometry().rotate(angleR_, center);
+						extent = tmp.getGeometry().getExtent();
+						var fW = ol.extent.getWidth(extent);
+						var fH = ol.extent.getHeight(extent);
+						ratio = fH/fW;
+					}
+				}
+				//var url = $("img", $thumbnail).attr("src");
+				//displayProductImage(url, extent, (-1)*angle_);
+			}
+			
+			$(".floating", "#floatingExtent").html("").append($thumbnail.clone());
+			$(".controls", "#floatingExtent").remove();
+			resizeFloatingThumbnail(ratio);
+		}
+	}
+	
+	function hideFloatingThumbnail() {
+		$(".floating>div", "#floatingExtent").remove();
+	}
+	
+	function toggleFloatingThumbnail($tr) {
+		if ($(".floating>div", "#floatingExtent").length == 0 || $(".floating>div", "#floatingExtent").attr("id") !== $tr.attr("id")) {
+			showFloatingThumbnail($tr);
+		} else{
+			hideFloatingThumbnail();
+		}
+	}
+	
+	function updateFloatingThumbnail($tr) {
+		if ($tr && $tr.length > 0 && $tr.data("id") && $(".floating>div", "#floatingExtent").length > 0) {
+			showFloatingThumbnail($tr);
+		}
+	}
+	
+	function showThumbnails($table) {
+		$(".thumbnails", "#thumbsExtent").html("");
+		$.each($("tr:not(.datasource)", $table), function (index, tr) {
+			showThumbnail($(tr));
+		});
+		resizePanels();
+	}
+	
+	function showThumbnail($tr) {
+		if ($tr && $tr.length > 0 && $tr.data("id")) {
+			var trId = $tr.data("id");
+			var isSelectedProductsTable = $tr.closest("table").get(0).id === "tbSelectedProducts";
+			
+			var $chk = $(".checkbox input[name='product']", $tr);
+			if ($chk.length == 0) return;
+			
+			var $thumbnail = $(".thumbnails>div[id='" + trId + "']", "#thumbsExtent");
+			if ($thumbnail.length == 0) {
+				var $img = $("td img", $tr);
+				var $div = $(
+					"<div id='" + trId + "'" + ($chk.is(":checked") ? " class='selected'" : "") + ">" +
+					"	<img src='" + ($img.length > 0 ? $img.attr("src") : "media/images/preview-not-available.png") + "' />" +
+					"	<ul class='controls'>" +
+					"		<li class='btn-action op-exclude' data-action='op-exclude'><i class='fa'></i></li>" +
+					"		<li class='btn-action op-remove' data-action='op-remove'><i class='fa fa-trash'></i></li>" +
+					"	</ul>" +
+					"</div>"
+				);
+				$(".thumbnails", "#thumbsExtent").prepend($div);
+				$img = $(".thumbnails>div#"+ trId + " img", "#thumbsExtent");
+				if ($img.length > 0 && $img.attr("src").indexOf("preview-not-available.png") >= 0) {
+					var qryUser = isSelectedProductsTable ? "" : $("#user_name").val();
+					var qryPass = isSelectedProductsTable ? "" : $("#user_pass").val();
+					if (isSelectedProductsTable) {
+						var $tbody = $tr.closest("tbody");
+						if ($tbody.length > 0) {
+							var qry = queryCollection[$("tr.datasource", $tbody).data("index")];
+							qryUser = qry ? qry.user : "";
+							qryPass = qry ? qry.password : "";
+						}
+					}
+					var previewUrl = $tr.data("preview");
+					var prodName = $tr.data("name");
+					$.when(setProductImageSource(previewUrl, qryUser, qryPass, prodName)).done(function (response) {
+						$img.attr("src", response);
+					});
+				}
+			} else {
+				if ($chk.is(":checked")) {
+					$thumbnail.addClass("selected");
+				} else {
+					$thumbnail.removeClass("selected");	
+				}
+			}
+		}
+	}
+	
+	function highlightThumbnail($tr, scrollIntoView) {
+		var $thumbnail = $(".thumbnails>div[id='" + $tr.data("id") + "']", "#thumbsExtent");
+		if ($thumbnail.length > 0) {
+			var $thumbnails = $thumbnail.closest(".thumbnails");
+			var $container  = $thumbnail.closest(".vertical-container");
+			if (scrollIntoView) {
+				var scroll    = $thumbnail.offset().top - $thumbnails.offset().top;
+				var maxScroll = $thumbnails.outerHeight();
+				if (scroll < maxScroll) {
+					$container.scrollTop(scroll);
+				} else {
+					$thumbnail.get(0).scrollIntoView();
+				}
+			}
+			$thumbnail.addClass("flash");
+			setTimeout(function () {
+				$thumbnail.removeClass("flash");
+			}, 500);
+		}
+	}
+	
+	function updateThumbnailControls($thumbnail) {
+		var selected = $thumbnail.hasClass("selected");
+		var ul = 	"<ul class='controls'>" +
+					"	<li class='btn-action' data-action='op-exclude' title='Unselect product'><i class='fa " + (selected ? "fa-square-o" : "fa-check-square-o") + "'></i></li>" +
+					"	<li class='btn-action' data-action='op-remove' title='Remove product from results'><i class='fa fa-trash'></i></li>" +
+					"</ul>"
+		$thumbnail.append(ul);
+	}
+	
+	function showDetailsPanel($tr) {
+		if ($tr && $tr.length > 0 && $tr.closest("tbody").length > 0) {
+			var $tbody  = $tr.closest("tbody");
+			$(".summary-content", "#tbProductDetails").html("");
+			
+			// Get product attributes
+			var isSelectedProductsTable = $tr.closest("table").attr("id") === "tbSelectedProducts";
+			var product = isSelectedProductsTable ? selectedProducts[$tr.data("selIndex")] : listOfProducts[$tr.data("selIndex")];
+			$(".modal-title", "#detailsExtent").html("Product Details");
+			
+			var attributes = {
+				date      : niceIsoTime(product.acquisitionDate),
+				id        : "-"
+			};
+			
+			var detailsProd = "";
+			var detailsLast = "";
+			$.each(Object.keys(product), function (index, key) {
+					   if (key == "acquisitionDate") { attributes.date   = niceIsoTime(product[key]);
+				} else if (key == "name"           ) { attributes.id     = product[key];
+				} else if (key == "productType"    ) { attributes.sensor = product[key];
+				} else if (key == "approximateSize") { if (product[key] > 0) {attributes.size   = niceFileSize(product[key]); detailsProd += "<label>" + key + ":<span>" + product[key] + "</span></label>";}
+				} else if (key.indexOf("_ds") == -1 && typeof product[key] !== "object") {
+					if ((product[key] + "").indexOf("http:") == 0 ||
+						(product[key] + "").indexOf("https:") == 0 ||
+						(product[key] + "").indexOf("file:") == 0 ||
+						(product[key] + "").indexOf("POLYGON") == 0 ||
+						(product[key] + "").indexOf("MULTIPOLYGON") == 0
+						) {
+						detailsLast += "<label>" + key + ":<span>" + product[key] + "</span></label>";
+					} else if ((key != "width" && key != "height") || (product[key] != -1)) {
+						detailsProd += "<label>" + key + ":<span>" + product[key] + "</span></label>";
+					}
+				}
+			});
+			
+			detailsAttr = "";
+			if (typeof product.attributes !== "undefined") {
+				$.each(product.attributes, function (index, attribute) {
+					switch (attribute.name) {
+						case "instrumentshortname":
+							attributes.instrument = attribute.value.indexOf(" ") >= 0 ? attribute.value.substring(0, attribute.value.indexOf(" ")) : attribute.value;
+							if (attributes.instrument != attribute.value) detailsAttr += "<label>" + attribute.name + ":<span>" + attribute.value + "</span></label>";
+							break;
+						case "filename":
+							attributes.filename = attribute.value;
+							break;
+						default:
+							detailsAttr += "<label>" + attribute.name + ":<span>" + attribute.value + "</span></label>";
+							break;
+					}
+				});
+			}
+			
+			detailsFirst = "";
+			$.each(Object.keys(attributes), function (index, key) {
+				detailsFirst += "<label style='text-transform:capitalize'>" + key + ":<span>" + attributes[key] + "</span></label>";
+			});
+			
+			$(".dt-summary .summary-content"   , "#tbProductDetails").html(detailsFirst + "<br/>" + detailsProd);
+			$(".dt-attributes .summary-content", "#tbProductDetails").html(detailsAttr  + detailsLast);
+			
+			if (attributes.id != "-") { $(".modal-title", "#detailsExtent").html(attributes.id); }
+		}
+		
+		$("#detailsExtent").removeClass("shifted");
+		var leftValue = $("#executionExtent").outerWidth() - 2 * parseInt($("#executionExtent").css("padding"));
+		$("#detailsExtent").css("left",leftValue + "px");
+		$("#detailsExtent").data("id", $tr.data("id"));
+		
+		resizePanels();
+		showTopInfo();
+	}
+	
+	function hideDetailsPanel() {
+		$("#detailsExtent").addClass("shifted").removeData("id");
+	}
+	
+	function toggleDetailsPanel($tr) {
+		if ($("#detailsExtent").hasClass("shifted") || $("#detailsExtent").data("id") !== $tr.data("id")) {
+			showDetailsPanel($tr);
+		} else{
+			hideDetailsPanel();
+		}
+	}
+	
+	function updateDetailsPanel($tr) {
+		if ($tr && $tr.length > 0 && !$("#detailsExtent").hasClass("shifted")) {
+			showDetailsPanel($tr);
+		}
+	}
+
+	function rotateImage(url, bearing) {
+		var canvas = document.createElement("canvas");
+		var ctx = canvas.getContext('2d');
+		var img = new Image();
+		var deferred = $.Deferred();
+		img.onload = function () { //on image load do the following stuff
+			canvas.width = this.width*2; //Any width
+			canvas.height = this.height*2; //Any height
+			var cache = this; //cache the local copy of image element for future reference
+			var iw = cache.width;
+			var ih = cache.height;
+			
+			ctx.save(); //saves the state of canvas
+			ctx.clearRect(0, 0, canvas.width, canvas.height); //clear the canvas
+			ctx.translate(canvas.width/2, canvas.height/2); //let's translate
+			ctx.rotate(bearing/2 * Math.PI / 180); //increment the angle and rotate the image 
+			ctx.translate(-(canvas.width/2), -(canvas.height/2)); //let's translate
+			ctx.drawImage(img, canvas.width/2 - iw/2, canvas.height/2 - ih/2, iw, ih); //draw the image ;)
+			ctx.restore(); //restore the state of canvas
+			
+			deferred.resolve($("<img/>").attr("src", canvas.toDataURL()));
+			
+		};
+		img.src = url;
+		return deferred.promise();
+	}
+	
+	function displayProductImage(imageUrl, extent, bearing) {
+		if (myPolygonMap.mapActive) {
+			$.each(myPolygonMap.map.getLayers().getArray(), function (index, layer) {
+				if (layer instanceof ol.layer.Image) {
+					myPolygonMap.map.removeLayer(layer);
+				}
+			});
+			if (imageUrl) {
+				rotateImage(imageUrl, bearing).then(function (newImg) {
+					var imageLayer = new ol.layer.Image({
+						opacity: 0.75,
+						source: new ol.source.ImageStatic({
+							url: $(newImg).attr("src"),
+							projection: myPolygonMap.map.getView().getProjection(),
+							imageExtent: extent
+						})
+					});
+					myPolygonMap.map.addLayer(imageLayer);
+				});
+			}
+		}
+	};
+
+	function expandFolder(selectionId) {
+		var $checkbox = $("input#"+selectionId);
+		if ($checkbox.is(":checked")) {
+			$checkbox.siblings("div").removeClass("hidden");
+			if ($checkbox.siblings("div").hasClass("datasource_list")) {
+				$checkbox.siblings("div").mCustomScrollbar({
+				axis: "y",
+				scrollbarPosition: "outside",
+				theme: "rounded-dots-dark"
+			});
+				$checkbox.siblings("div").find(".mCSB_container").css("left",0);
+				$checkbox.siblings("div.mCustomScrollbar").css("max-height","20rem");
+			}
+		} else {
+			$checkbox.siblings("div").addClass("hidden");
+		}
+	}
+	
+	function resetFilters() {
+		//clear existing filters
+		$("#categoryNames").val("").trigger("change");
+		$("#providers").val("").trigger("change");
+		$("#colectionName").val("");
+		resetDatasourceFilters();
+	}
+	
+	function resetDatasourceFilters() {
+		$("#queryExtent").find(".filter-hidden").removeClass("filter-hidden");
+		$("#noDatasource").addClass("hidden");
+	}
+	
+	function searchDataSource() {
+		var categoryFilters = $("#categoryNames").select2("val");
+		var databaseFilters = $("#providers").select2("val");
+		var sensor = $("#colectionName").val().trim().toLowerCase();
+		
+		resetDatasourceFilters();
+	
+		if (typeof categoryFilters !== "undefined" && categoryFilters !== null) {
+			$.each($(".category", "#queryExtent").children("input[type='checkbox']"),function(index, elem) {
+				if ($.inArray(elem.id,categoryFilters) < 0) {
+					$(elem).closest(".category").addClass("filter-hidden");
+				}
+			});
+		}
+		
+		if (sensor.trim() !== "") {
+			$.each($(".datasource",$(".category:not(.filter-hidden)","#queryExtent")).children("input[type='checkbox']"),function(index,elem){
+				if (!elem.id.toLowerCase().includes(sensor.trim())) {
+					$(elem).closest(".datasource").addClass("filter-hidden");
+				}
+			});			
+		}
+		
+		if (typeof databaseFilters !== "undefined" && databaseFilters !== null) {
+			$.each($(".datasource_list a", $(".datasource:not(.filter-hidden)","#queryExtent")),function(index, elem) {
+				if (!databaseFilters.some(filter => elem.title.replaceAll(" ","_").toLowerCase().includes(filter.replaceAll(" ","_").toLowerCase()))) {
+					$(elem).closest(".dataset").addClass("filter-hidden");
+				}
+			});
+		}
+		
+		$.each($(".datasource_list",$(".category:not(.filter-hidden)","#queryExtent")),function(index,elem){
+			if ($(elem).find("div.dataset:not(.filter-hidden)").length === 0) {
+				$(elem).closest(".datasource").addClass("filter-hidden");
+			}
+		});
+		$.each($(".category:not(.filter-hidden)","#queryExtent"),function(index,elem){
+			if ($(elem).find(".datasource:not(.filter-hidden)").length === 0) {
+				$(elem).addClass("filter-hidden");
+			}
+		});
+		$.each($(".category","#queryExtent"),function(index,elem){
+			if ($(elem).find(".datasource:not(.filter-hidden)").length === 0) {
+				$(elem).closest(".datasource").addClass("filter-hidden");
+			}
+		});
+		if ($(".category:not(.filter-hidden)", "#queryExtent").length === 0) {
+			$("#noDatasource").removeClass("hidden");
+		}
+	}
+	
+	function computeFiterDialogPosition (leftValue) {
+		if (typeof leftValue === "undefined") {
+			leftValue = parseInt($("#queryExtent").css("left"));
+		}
+		var queryExtentCover = leftValue + $("#queryExtent").width();
+		filterDialogPositionLeft = queryExtentCover;
+		if (queryExtentCover + filterDialogPositionLeft > window.innerWidth) {
+			filterDialogPositionLeft = parseInt($("#queryExtent").css("left")) - $("#filtersDialog").width() + 30;
+		}
+	}
+	
+	function populateRegionOfInterest(polygon) {
+		var geometry = polygon
+						.replace('MULTIPOLYGON (((', 'POLYGON((')
+						.replace(')))', '))')
+						.replace(' ((', '((');
+		myPolygonMap.createShapeFromGeometry(geometry, null, true);
+		myPolygonMap.fitAllFeatures();
+		myPolygonMap.restartActiveInteraction();
+	};
+	
+	function populateStartEndDate (d1, d2) {
+		//disable date fields
+		$("#tbDatasourceParams").find(".datepicker").prop("disabled",true);
+		// if two start date fileds are found in the paramaters section
+		if ($("#tbDatasourceParams").find(".datepicker[name*='_d2']:not(.hidden)").length > 0) {
+			$(".datepicker[name*='_d1']", "#tbDatasourceParams").val($.datepicker.formatDate(dateFormat, new Date(d1)));
+			$(".datepicker[name*='_d2']", "#tbDatasourceParams").val($.datepicker.formatDate(dateFormat, new Date(d2)));
+		} else {
+			$($(".datepicker[name*='_d1']", "#tbDatasourceParams")[0]).val($.datepicker.formatDate(dateFormat, new Date(d1)));
+			$($(".datepicker[name*='_d1']", "#tbDatasourceParams")[1]).val($.datepicker.formatDate(dateFormat, new Date(d2)));
+		}
+	}
+	
+	function populateAvailableSites (siteId) {
+		$.when(getAvailableSites()).done(function (getAvailableSitesResponse) {
+			$("option[value!='']", "#use_site").remove();
+			var availableSitesData = chkTSRF(getAvailableSitesResponse);
+			if (availableSitesData !== null && availableSitesData.length > 0) {
+				$.each(availableSitesData, function(idx, obj) {
+					var $option = $("<option value='"+obj.id+"'>"+obj.name+"</option>");
+					$option.data("dna",obj);
+					$("#use_site").append($option);
+				});
+				$("#use_site").prop("disabled", false);
+			} else {
+				$("#use_site").prop("disabled", true);
+			}
+			if (localEditMode && typeof siteId !== "undefined" && siteId !== null) {
+				$("option[value='" + siteId + "']","#use_site").prop("selected", true).trigger("change");
+			}
+		});
+	}
+	
+	$("#tbSelectedProducts").on("keypress", "input.title", function (e) {
+		if(e.which === $.ui.keyCode.ENTER) {
+			var $tr = $(this).closest("tr.datasource");
+			var crtQuery = $tr.hasClass("datasource") ? queryCollection[$tr.data("index")] : null;
+			crtQuery.label = this.value;
+			$("span.title",$tr).html(this.value);
+			$("span.title",$tr).show();
+			$("input.title",$tr).hide();
+			$(".btn-action:not(.op-checked)",$tr).show();
+			$(".btn-action.op-checked",$tr).hide();
+			console.log("enter pressed");
+		}
+	});
+	
+	$("#tbSelectedProducts, #tbDatasourceProducts").on("click dblclick", "tr img", function (e) {
+		e.stopPropagation();
+		var $tr = $(this).closest("tr");
+		toggleFloatingThumbnail($tr);
+		$tr.trigger("click");
+	});
+	
+	$("#thumbsExtent").on("click", ".thumbnails>div", function (e) {
+		// Update details panel if visible
+		var tableName = $("#executionExtent").hasClass("shifted") ? "tbSelectedProducts" : "tbDatasourceProducts";
+		var $tr = $("tr[id='" + this.id + "']", "table#" + tableName);
+		if ($tr.length > 0) {
+			highlightProduct($tr, true);
+			toggleFloatingThumbnail($tr);
+			$tr.trigger("click");
+		}
+	});
+	
+	$("#floatingExtent").on("click", ".floating>div", function (e) {
+		hideFloatingThumbnail();
+	});
+	
+	$(".btn-movable").on("click", function (e) {
+		e.stopPropagation();
+		if ($(this).closest(".extent").attr("id") === "filtersDialog") {
+			$(this).closest(".extent").css({ left: filterDialogPositionLeft});
+		} else if ($(this).closest(".extent").attr("id") === "queryExtent") {			
+			$(this).closest(".extent").css({left: "", "z-index": queryExtentInitialzIndex});
+			if (!$("#filtersDialog").hasClass("shifted")) {
+				computeFiterDialogPosition(0);
+				$("#filtersDialog").css({left: filterDialogPositionLeft, "z-index": queryExtentInitialzIndex + 100});
+				$(".btn-movable","#filtersDialog").prop("disabled", true);
+			}
+		} else {
+			$(this).closest(".extent").css({ left: ""});
+		}
+		$(this).prop("disabled", true);
+	});
+	
+	$("#tbSelectedProducts, #tbDatasourceProducts, #tbAddNewCriteria, #tbProductDetails, #thumbsExtent").on("click dblclick", ".btn-action", function (e) {
+		e.stopPropagation();
+		
+		if (e.type == "dblclick") return;
+		
+		var $tr = (e.delegateTarget.id == "thumbsExtent") ? $("tr[id='" + $(this).closest("div").attr("id") + "']", $("#executionExtent").hasClass("shifted") ? "#tbSelectedProducts" : "#tbDatasourceProducts") : $(this).closest("tr");
+		if ($tr.length == 0) return;
+		if ($tr.hasClass("datasource")) {
+			// per collection stuff
+			localEditMode = false;
+			if (typeof $tr.data("index") !== "undefined") {
+				var crtQuery = $tr.hasClass("datasource") ? queryCollection[$tr.data("index")] : null;
+				switch ($(this).data("action")) {
+					case "op-toggle":
+						if ($(this).find("i").hasClass("fa-angle-double-left")) {
+							$(this).find("i").removeClass("fa-angle-double-left").addClass("fa-angle-double-down");
+							$(this).closest("tr").siblings().addClass("hidden");
+						} else {
+							$(this).find("i").addClass("fa-angle-double-left").removeClass("fa-angle-double-down");
+							$(this).closest("tr").siblings().removeClass("hidden");
+						}
+					break;
+					case "op-addnew":
+						$("#collectionExtent").addClass("shifted");
+						resetSelectedProductsTable();
+						resetDatasourcesList();
+						resetFilters();
+						myPolygonMap.setReadOnly(false);
+						showPanel("query explorer");
+					break;
+					case "op-edit":
+						if (crtQuery && modeEdit) {
+							localEditMode = true;
+							
+							// Open the parameters section and populate the form with query data for editing
+							resetSelectedProductsTable();
+							
+							// restore query label
+							$("#queryLabelDefault").val(crtQuery._dsLabelDefault);
+							$("#queryLabel").val(crtQuery.label);
+							$("#queryLabel").attr({ "placeholder": (crtQuery._dsLabelDefault == "" ? "name of your query" : crtQuery._dsLabelDefault) });
+							
+							// restore datasource default values for all parameters before restoring the query datasource
+							var defaults   = crtQuery.values;
+							$.when(getParameters(objDna.sensor, objDna.dataSource)).done(function (getParametersResponse) {
+								var infoParameters = chkTSRF(getParametersResponse);
+								$.each(infoParameters.parameter, function (index, param) {
+									param['defaultValue'] = (defaults.hasOwnProperty(param.name) ? defaults[param.name] : null);
+								});
+								// Search for unknown parameters
+								var queryParamsNotFound = $.map(defaults, function (val, key) { return (infoParameters.parameter.find((obj => obj.name === key)) ? null : key); });
+								if (queryParamsNotFound.length > 0) {
+									$("#queryExtent .modal-note p.note+p").remove();
+									$("#queryExtent .modal-note p.note").after('<p>Parameters not found: <i>' + queryParamsNotFound.join().replace(",", ", ") + '</i></p>' );
+									$("#queryExtent .modal-note").removeClass("hidden");
+								} else {
+									$("#queryExtent .modal-note").addClass("hidden");
+								}
+								
+								showPanel("query edit parameters");
+								$("#listDatasources .treeview a.selected", "#queryExtent").removeClass("selected");
+								$("#listDatasources .treeview", "#queryExtent").find("a[title='" + objDna.dataSource + " " + objDna.sensor + "'][id='" + crtQuery._dsId + "']").addClass("selected");		
+								
+								showDatasourceParams(objDna, infoParameters, crtQuery._dsLabelDefault);
+								// restore query general info
+								$("#user_name").val(crtQuery.user);
+								$("#user_pass").val(crtQuery.password);
+								$("#limit").val(crtQuery.limit);
+								$("#pageNumber").val(crtQuery.pageNumber);
+								$("#pageSize").val(crtQuery.pageSize);
+								
+								populateAvailableSites(crtQuery.siteId);
+								
+								$("#queryExtent").data("query", crtQuery);
+							});
+						} else {
+							$("span.title",$tr).hide();
+							$("input.title",$tr).show();
+							$(".btn-action:not(.op-checked)",$tr).hide();
+							$(".btn-action.op-checked",$tr).show();
+						}
+					break;
+					case "op-footprint":
+						if (crtQuery && crtQuery.values.footprint) {
+							$('#confirm-dialog').modal('confirm', {
+								msg: "Are you sure you want to restore the previous footprint?",
+								callbackConfirm: function () {
+									if (myPolygonMap.mapActive) {
+										if (myPolygonMap.createShapeFromGeometry(crtQuery.values.footprint, null, true)) {
+											// Prevent footprint match errors due to precision
+											crtQuery.values.footprint = myPolygonMap.getFootprint();
+										}
+									} else {
+										defaultFootprint = crtQuery.values.footprint;
+									}								
+									updateSelectedProductsTable();
+								},
+								callbackCancel: function () { }
+							});
+						} else {
+							showPanel("selected products");
+						}
+					break;
+					case "op-discard":
+						$('#confirm-dialog').modal('confirm', {
+							msg: "Are you sure you want to remove the selected query with all its associated products?",
+							callbackConfirm: function () {
+								// Remove products for selected query
+								var trimSelectedProducts = $.map(selectedProducts, function (product, index) {
+									return (product._dsName == crtQuery._dsName && product._dsLabelDefault == crtQuery._dsLabelDefault ? null : product);
+								});
+								selectedProducts = trimSelectedProducts;
+								// Remove selected query from collection
+								queryCollection.splice($.inArray(crtQuery, queryCollection), 1);
+								updateSelectedProductsTable();
+								if (queryCollection.length === 0) {
+									//reset map, date and AOI
+									myPolygonMap.removeFeaturesByProperty({ "description": "preview" });
+									$("option[value='']","#use_site").prop("selected", true).trigger("change");
+									defaultInterval = "";
+								}
+							},
+							callbackCancel: function () { }
+						});
+					break;
+					case "op-checked":
+						var evnt = evnt = jQuery.Event('keypress', { which: $.ui.keyCode.ENTER})
+						$(this.closest("tr")).find("input.title").trigger(evnt);
+						console.log("done");
+					break;
+				}
+			}
+		} else {
+			// per product stuff
+			switch ($(this).data("action")) {
+				case "op-toggle":
+					if ($(this).find("i").hasClass("fa-angle-double-left")) {
+						$(this).find("i").removeClass("fa-angle-double-left").addClass("fa-angle-double-down");
+						$(this).closest(".summary-header").siblings().addClass("hidden");
+					} else {
+						$(this).find("i").addClass("fa-angle-double-left").removeClass("fa-angle-double-down");
+						$(this).closest(".summary-header").siblings().removeClass("hidden");
+					}
+				break;
+				case "op-locate":
+					var $chk = $(".checkbox input[name='product']", $tr);
+					if (e.delegateTarget.id == "tbSelectedProducts" && $chk.length > 0 && !$chk.is(":checked")) {
+						$chk.trigger("click");
+					}
+					updateDetailsPanel($tr);
+					updateFloatingThumbnail($tr);
+					//$chk.trigger("click");
+					// $chk.prop("checked", false);
+					// $chk.trigger("click");
+					if($tr.data("area") > 100000000000){
+						createShapeFromTrGeometry($tr);
+					}
+					
+					if (myPolygonMap.mapActive && $tr.data("id")) {
+						myPolygonMap.fitFeatureById($tr.data("id"));
+						highlightFeature($tr);
+					}
+				break;
+				case "op-details":
+					var $chk = $(".checkbox input[name='product']", $tr);
+					if (e.delegateTarget.id == "tbSelectedProducts" && $chk.length > 0 && !$chk.is(":checked")) {
+						$chk.trigger("click");
+					}
+					toggleDetailsPanel($tr);
+					updateFloatingThumbnail($tr);
+					// $chk.trigger("click");
+					// $chk.prop("checked", true);
+					if($tr.data("area") > 100000000000){
+						createShapeFromTrGeometry($tr);
+					}
+				break;
+				case "op-remove":
+					$('#confirm-dialog').modal('confirm', {
+						msg: "Are you sure you want to remove this product from the list?",
+						callbackConfirm: function () {
+							// Remove selected products
+							var prodName = $tr.data("name");
+							var $table = $tr.closest("table");
+							if ($table.get(0).id == "tbDatasourceProducts") {
+								// remove product thumbnail and floating image
+								var $thumbnail = $(".thumbnails>div[id='"+ $tr.data("id") + "']", "#thumbsExtent");
+								$thumbnail.remove();
+								hideDetailsPanel();
+								hideFloatingThumbnail();
+								
+								// remove product from products list and recalculate indexes
+								listOfProducts.splice(_.findIndex(listOfProducts, { "name": prodName }), 1);
+								$tr.remove();
+								$.each($("tbody tr", $table), function (index, tr) {
+									$(tr).data("selIndex", _.findIndex(listOfProducts, { "name": tr.id }));
+								});
+								
+								countSelectedProducts($table.get(0).id);
+								// rebuild table pagination
+								var $pag = $('+.pagination-container', $table.closest(".vertical-container")).data("paginaThing");
+								var pageSize = (typeof $pag === "undefined") ? 10 : $pag.options.perPage;
+								rebuildPagination($table, pageSize);
+								
+								previewProducts($table);
+								
+								unlockPanels("#thumbsExtent");
+								resizePanels();
+							} else {
+								var dsLabelDefault = queryCollection[$tr.data("dsIndex")]._dsLabelDefault;
+								selectedProducts.splice(_.findIndex(selectedProducts, { "name": prodName, "_dsLabelDefault": dsLabelDefault }), 1);
+								updateSelectedProductsTable();
+							}
+						},
+						callbackCancel: function () { }
+					});
+				break;
+				case "op-exclude":
+					var $chk = $(".checkbox input[name='product']", $tr);
+					$chk.trigger("click");
+				break;
+			}
+		}
+	});
+	
+	$("#datasourceProducts").on("click", "input[name='allproducts']", function (e) {
+		e.stopPropagation();
+		
+		var highlighted = false;
+		if ($(this).is(':checked')) {
+			$('#datasourceProducts input[name=product]').prop('checked', false);
+			$('#datasourceProducts input[name=product]').trigger('click');		
+			highlighted = true;
+		} else {
+			$('#datasourceProducts input[name=product]').prop('checked', true);
+			$('#datasourceProducts input[name=product]').trigger('click');
+		}
+		$.each($("table#tbDatasourceProducts tbody tr"), function () {
+			var $tr = $(this);
+			var $thumbnail = $(".thumbnails>div[id='" + $tr.attr("id") + "']", "#thumbsExtent");
+			if (highlighted) {
+				$tr.addClass("selected");
+				$thumbnail.addClass("selected");
+			} else {
+				$tr.removeClass("selected");
+				$thumbnail.removeClass("selected");
+			}
+			if ($tr.data("id")) {
+				if (myPolygonMap.mapActive) {
+					var feature = myPolygonMap.getFeatureById($tr.data("id"));
+					if (feature) {
+						feature.setProperties({ "highlighted": (highlighted ? "true" : "false") });
+					}
+				}
+			}
+		});
+		resetPreviewProductsStyle();
+		countSelectedProducts("tbDatasourceProducts");
+	});
+
+	$("#tbSelectedProducts, #tbDatasourceProducts").on("mouseenter", "tr", function(){
+		var $tr = $(this);
+		if($tr.data("area") > 100000000000){
+			createShapeFromTrGeometry($tr);
+		}
+	});
+
+	$("#tbSelectedProducts, #tbDatasourceProducts").on("mouseleave","tr", function(){
+		var $tr = $(this);
+		if(!$(this).find("input[name='product']").is(':checked') && $tr.data("area") > 100000000000){
+			myPolygonMap.removeFeaturesByTrId($tr.attr("id"));
+		}
+	});
+	
+	$("#tbSelectedProducts, #tbDatasourceProducts").on("click dblclick", "input[name='product']", function (e) {
+		e.stopPropagation();
+		
+		if (e.type == "dblclick") return;
+		
+		var $tr = $(this).closest("tr");
+		var $thumbnail = $(".thumbnails>div[id='" + $tr.attr("id") + "']", "#thumbsExtent");
+		if($(this).is(':checked')){
+			createShapeFromTrGeometry($tr);
+		}else{
+			//remove shape
+			if($tr.data("area") > 100000000000){
+				myPolygonMap.removeFeaturesByTrId($tr.attr("id"));
+			}
+		}
+		// Reset highlight for all other products when in "Selected Products" table
+		if (typeof $tr.data("dsIndex") !== "undefined") {
+			$("tr", $tr.closest("table")).removeClass("selected");
+			$(">div", $thumbnail.closest(".thumbnails")).removeClass("selected");
+			$tr.closest("table").find("tr .checkbox").addClass("hidden");
+			$tr.closest("tbody").siblings().find("input[name='product']").prop("checked", false);
+			$tr.siblings().find("input[name='product']").prop("checked", false);
+			if (myPolygonMap.mapActive) {
+				myPolygonMap.setFeaturesDataByProperty({ "description": "preview" }, { "highlighted": "false" });
+			}
+			if ($(this).is(':checked')) {
+				$(this).closest(".checkbox").removeClass("hidden");
+			}
+		} else {
+			showThumbnail($tr);
+		}
+		
+		var highlighted = false;
+		if ($(this).is(':checked')) {
+			$tr.addClass("selected");
+			$thumbnail.addClass("selected");
+			highlighted = true;
+		} else {
+			$tr.removeClass("selected");
+			$thumbnail.removeClass("selected");
+		}
+		if (myPolygonMap.mapActive) {
+			var feature = myPolygonMap.getFeatureById($tr.data("id"));
+			if (feature) {
+				feature.setProperties({ "highlighted": (highlighted ? "true" : "false") });
+			}
+		}
+		if (true) {
+			resetPreviewProductsStyle();
+		}
+		countSelectedProducts(e.delegateTarget.id);
+	});
+	
+	$("#tbSelectedProducts, #tbDatasourceProducts").on("click dblclick", "tbody tr:not(.datasource)", function (e) {
+		e.stopPropagation();
+		var $tr = $(this);
+
+		var $chk = $(".checkbox input[name='product']", $tr);
+		var $loc = $("button.op-locate", $tr);
+		if (e.type == "click") {
+			if (e.delegateTarget.id == "tbSelectedProducts") {
+				if ($chk.length > 0 && !$chk.is(":checked")) { $chk.trigger("click"); }
+			}
+			updateDetailsPanel($tr);
+			updateFloatingThumbnail($tr);
+		} else {
+			$loc.trigger("click");
+		}
+	});
+	
+	$("#tbSelectedProducts, #tbDatasourceProducts").on("mouseenter", "tbody tr", function (e) {
+		// restore style for all preview features
+		resetPreviewProductsStyle();
+		var $tr = $(this);
+		if ($tr.data("id")) {
+			highlightFeature($tr);
+			highlightThumbnail($tr, true);
+		}
+		showTopInfo($tr);
+	});
+	
+	$("#tbSelectedProducts, #tbDatasourceProducts").on("mouseleave", "tbody", function (e) {
+		resetPreviewProductsStyle();
+		showTopInfo();
+	});
+	
+	$("#tbDatasourceParams").on("change", "select", function (e) {
+		var selectedOptionData = $("option[value='"+this.value+"']",this).data("dna");
+		if (typeof selectedOptionData !== "undefined") {
+			allowedValues = selectedOptionData.allowedValues.replace(/\s*,\s*/g, ",").split(",");
+			showAllowedValues($("[name='"+selectedOptionData.parameterName+"']"), allowedValues);
+		}
+	});
+	
+	$("#thumbsExtent").on("mouseenter", ".thumbnails>div", function (e) {
+		var $tr = $("tr[id='" + this.id + "']", $("#executionExtent").hasClass("shifted") ? "#tbSelectedProducts" : "#tbDatasourceProducts");
+		if ($tr.length > 0) {
+			highlightProduct($tr);
+			resetPreviewProductsStyle();
+			highlightFeature($tr);
+		}		
+	});
+	
+	$("#thumbsExtent").on("mouseleave", ".thumbnails", function (e) {
+		$(".ds-products tr", "#myModalNodes").removeClass("flash");
+		resetPreviewProductsStyle();
+		showTopInfo();
+	});
+	
+	$("#collectionExtent, #queryExtent").on("click", ".minimize, .main-panel", function (e, t) {
+		if ($(e.currentTarget).hasClass("minimize")) {
+			e.stopPropagation();
+			$myModalNodes.addClass("full-map-view");
+			
+			setTimeout(function () {
+				var maxW = $("#myModalNodes").outerWidth();
+				var rg = $("#detailsExtent").position().left + $("#detailsExtent").outerWidth();
+				var lf = 0;
+				if (rg > maxW) {
+					lf = parseFloat(100 - 100*$("#detailsExtent").outerWidth()/maxW).toFixed(1);
+					lf *= lf < 0 ? 0 : 1;
+					$("#detailsExtent").css({ left: lf + "%" });
+				}
+			}, 500);
+			showTopInfo();
+			
+			if ($("#detailsExtent").hasClass("shifted")) { autoPanMap($(e.currentTarget).closest("div[id]").attr("id")); }
+			
+		} else if ($(e.currentTarget).hasClass("main-panel") && $myModalNodes.hasClass("full-map-view")) {
+			$myModalNodes.removeClass("full-map-view");
+			resizePanels();
+			
+			if ($("#detailsExtent").hasClass("shifted")) { autoPanMap($(e.currentTarget).closest("div[id]").attr("id")); }
+		}
+	});
+	
+	$("#collectionExtent").on("click", "button.close:not(.minimize, .back)", function (e) {
+		e.stopPropagation();
+		if (window.location.hash.endsWith("/explorer")) {
+			modeEdit = false;
+			initQuery();
+					
+			updateSelectedProductsTable("query explorer");
+			//reset map, date and AOI
+			myPolygonMap.setReadOnly(false);
+			myPolygonMap.removeFeaturesByProperty({ "description": "preview" });
+			$("option[value='']","#use_site").prop("selected", true).trigger("change");
+			defaultInterval = "";
+		} else {
+			$("#myModalNodes").modal("hide");
+		}
+	});
+
+	$("#returnButton").on("click", function (e) {
+		e.stopPropagation();
+		if (window.location.hash.endsWith("/explorer")) {
+			modeEdit = false;
+			initQuery();
+					
+			updateSelectedProductsTable("query explorer");
+			//reset map, date and AOI
+			myPolygonMap.setReadOnly(false);
+			myPolygonMap.removeFeaturesByProperty({ "description": "preview" });
+			$("option[value='']","#use_site").prop("selected", true).trigger("change");
+			defaultInterval = "";
+		} else {
+			$("#myModalNodes").modal("hide");
+		}
+	});
+	
+	$("#queryExtent").on("click", function(e) {
+		if (!$("#filtersDialog").hasClass("shifted")) {
+			$("#filtersDialog").css("z-index", filtersDialogInitialzIndex);
+			$("#queryExtent").css("z-index", parseInt(filtersDialogInitialzIndex) + 100);
+		}
+	});
+	
+	$("#executionExtent, #collectionExtent").on("click", ".cancel, .back", function (e) {
+		updateSelectedProductsTable("query parameters");
+		//resetFilters();
+		e.stopPropagation();
+	});
+	
+	$("#queryExtent").on("click",".filter", function (e){
+		$("button.cancel.close","#queryExtent").prop("disabled", true);
+		
+		//show filters dialog and place it in front of the parent dialogs
+		$("#filtersDialog").removeClass("shifted").css("z-index", parseInt(filtersDialogInitialzIndex) + 100);
+		computeFiterDialogPosition();
+		$("#filtersDialog").css("left",filterDialogPositionLeft);
+		
+		e.stopPropagation();
+	});
+	
+	$("#queryExtent").on("click",".filter-reset", function (e){
+		resetFilters();
+		e.stopPropagation();
+		var delData = ["search_category","search_collection","search_provider"];
+		var url = baseRestApiURL + "user/prefs";
+		$.when(ajaxGeneralCallFnc(url, JSON.stringify(delData), "DELETE", "json" )).done(function(response){
+            
+        }).fail(function (jqXHR, textStatus) {
+			chkXHR(jqXHR.status);
+		});
+	});
+	
+	$("#filtersDialog").on("click", function(e) {
+		$("#queryExtent").css("z-index", queryExtentInitialzIndex);
+		$("#filtersDialog").css("z-index", parseInt(queryExtentInitialzIndex) + 100);
+	});
+	
+	$("#filtersDialog").on("click", ".cancel", function (e) {
+		$("#queryExtent").css("z-index",queryExtentInitialzIndex);
+		$("#filtersDialog").css("z-index",filtersDialogInitialzIndex);
+		$("#filtersDialog").addClass("shifted");
+		$("button.cancel.close","#queryExtent").prop("disabled", false);
+		e.stopPropagation();
+	});
+	
+	$("#filtersDialog").on("click", ".search-btn", function(e){
+		searchDataSource();
+		e.stopPropagation();
+		var categoryFilters = ($("#categoryNames").select2("val") ?? '').toString();
+		var providerFilters = ($("#providers").select2("val") ?? '').toString();
+		var collectionFilters = ($("#colectionName").val() ?? '').trim().toLowerCase();
+		
+		$.when(_userPref.getUserPreferences(taoUserProfile.id))
+		.done(function(responseProfile){
+			var r = responseProfile.data;
+			currentPref = r.preferences;
+		});
+		currentPref.push({'key':'search_category', 'value': categoryFilters });
+		currentPref.push({'key':'search_collection', 'value': collectionFilters});
+		currentPref.push({'key':'search_provider', 'value': providerFilters});
+		_userPref.updateUserPreferences(JSON.stringify(currentPref));
+	});
+	
+	function closeFiltersDialogOnEscape(e) {
+		if (e?.which === 27) {
+			// When filters dialog has the focus
+			var $fitersDialog = $('#filtersDialog');
+			if (!$fitersDialog.hasClass("shifted") && parseInt($fitersDialog.css("z-index")) == parseInt(queryExtentInitialzIndex) + 100) {
+				// Close it except when its select2 children controls are inactive
+				if ($(e.target).closest(".select2-container--open").length == 0) {
+					e.stopPropagation();
+					// Trigger dialog close
+					$(".cancel", $fitersDialog).get(0).click();
+				}				
+			}
+		}
+	}
+	
+	$(window).on("keydown", function(e) {
+		closeFiltersDialogOnEscape(e);
+	});
+	
+	$("#filtersDialog").on("keypress", function(e, originalEvent) {
+		closeFiltersDialogOnEscape(originalEvent || e);
+	});
+	
+	$("#filtersDialog").keypress(function(e) {
+		if(e.which == 13) {
+			e.preventDefault();
+			searchDataSource();
+		}
+	});
+	
+	$("#queryExtentParameters").on("click", ".cancel", function (e) {
+		if (!$("#collectionExtent").hasClass("shifted") && $("#collectionExtent").hasClass("locked")) {
+			unlockPanels("#collectionExtent");
+			unlockPanels("#thumbsExtent");
+			
+			$("#queryExtentParameters").addClass("shifted");
+		} else {
+			// send attribute in order to keep the expantion of data set list
+			if (localEditMode && !window.location.hash.endsWith("/explorer")) {
+				$("#myModalNodes").modal("hide");
+			} else {
+				updateSelectedProductsTable("query explorer");
+			}
+		}
+	});
+	
+	$("#queryExtentParameters").on("change keyup", "input[type='number']", function (e) {
+		if (parseInt(this.value) < parseInt(this.min)) {
+			$(this).val(parseInt(this.min));
+		}
+	});
+	
+	$("#detailsExtent").on("click", ".cancel", function (e) {
+		hideDetailsPanel();
+	});
+	
+    //$("#startInterrogation").on("click", function (e) {
+	$("#parameterList").on("submit", function (e) {
+		e.preventDefault();
+
+		if($(this).valid()){
+			if (myPolygonMap.mapActive && myPolygonMap.getFootprint().length == 0) {
+				showMsg("Please select your area of interest on the map before continuing with your interrogation.", "WARNING");
+				return false;
+			}
+			var qry = getCurrentUserQuery();
+			if (!qry) {
+				showMsg("Please select a valid datasource.", "WARNING");
+				return;
+			}
+			var _self = $(this);
+			_self.prop("enabled", false);
+			$.when(ajaxCallFnc("query/exec", JSON.stringify(qry), "POST"))
+			.done(function (response) {
+				_self.prop("enabled", true);
+				if ($.type(response) === 'object' && response.status === "SUCCEEDED" && Object.keys(response.data).length > 0) {
+					listOfProducts = response.data;
+					showProductsTable();
+				} else if ($.type(response) === 'object' && response.status === "FAILED") {
+					showMsg(response.message, "WARNING");
+				} else {
+					showMsg("No products were found for selected datasource.", "INFO");
+				}
+			})
+			.fail(function (jqXHR, status, error) {
+				_self.prop("enabled", true);
+			});
+		}
+	});
+	
+	$("#collectProducts").on("click", function (e) {
+		var qry = getCurrentUserQuery();
+		if (!qry) {
+			showMsg("Please select a valid datasource.", "WARNING");
+			return;
+		}
+		// Append some extra info to current query for later use
+		qry._dsId           = parseInt($("a.selected","#listDatasources").attr("id"));
+		qry._dsName         = qry.sensor + " " + qry.dataSource;
+		qry._dsLabelDefault = $("#queryLabelDefault").val();
+		
+		// Clear from the final collection, all the products associated with the current datasource
+		var trimSelectedProducts = $.map(selectedProducts, function (item, index) {
+			return (item._dsName == qry._dsName && item._dsLabelDefault == qry._dsLabelDefault ? null : item);
+		});
+		selectedProducts = trimSelectedProducts;
+		$.each($('table#tbDatasourceProducts input[name=product]:checked'), function (index) {
+			// Add all selected products to the final collection results
+			var prodFound = _.findWhere(listOfProducts, { id: $(this).attr('value') });
+			if (prodFound){
+				prodFound._dsName         = qry._dsName;
+				prodFound._dsLabelDefault = qry._dsLabelDefault;
+				prodFound._dsThumb        = $(this).closest("tr").find("img").attr("src");
+				selectedProducts.push(prodFound);
+			}
+		});
+		
+		registerQueryInCollection(qry);
+		updateSelectedProductsTable();
+		$("#collectionExtent").removeClass("shifted");
+	});
+	
+	$("#discardProducts").on("click", function (e) {
+		$('#confirm-dialog').modal('confirm', {
+			msg: "Are you sure you want to remove all selected product from the list?",
+			callbackConfirm: function () {
+				// Remove thumbnails and hide floating image preview
+				$(".thumbnails>div.selected", "#thumbsExtent").remove();
+				hideDetailsPanel();
+				hideFloatingThumbnail();
+				
+				$("input[name='allproducts']", "#datasourceProducts").prop("checked", false);
+				var $table = $("table#tbDatasourceProducts");
+				$.each($("tr.selected", $table), function (index, tr) {
+					// Remove product from products list
+					listOfProducts.splice(_.findIndex(listOfProducts, { "name": $(tr).data("name") }), 1);
+					$(tr).remove();
+				});
+				// Recalculate indexes
+				$.each($("tr", $table), function (index, tr) {
+					$(tr).data("selIndex", _.findIndex(listOfProducts, { "name": tr.id }));
+				});
+				
+				// Rebuild table pagination
+				var $pag = $('+.pagination-container', $table.closest(".vertical-container")).data("paginaThing");
+				var pageSize = (typeof $pag === "undefined") ? 10 : $pag.options.perPage;
+				rebuildPagination($table, pageSize);
+				
+				// Redraw product map features
+				previewProducts($table);
+				countSelectedProducts($table.attr("id"));
+
+
+				unlockPanels("#thumbsExtent");
+				resizePanels();
+			},
+			callbackCancel: function () { }
+		});
+	});
+	
+	$("#saveComponent").on("click", "input[type='checkbox'], label", function (e) {
+		e.stopPropagation();
+	});
+	
+	$("#saveComponent").on("click", function (e) {
+		modeEdit = false;
+		$btn = $(this);
+		$btn.prop("disabled", true);
+		if (!isCollection && queryCollection.length == 1) {
+			// Save user datasource component
+			var query = queryCollection[0];
+			var label = query.label == "" ? query._dsLabelDefault : query.label;
+			if (label == "") {
+				showMsg("You must specify a label for your query in order to proceed.", "WARNING");
+				return false;
+			}
+			
+			var formData = {
+				label      : label,
+				dataSource : query.dataSource,
+				productType: query.sensor,
+				products   : [],
+				queryId    : typeof query.id === "undefined" ? null : query.id
+			};
+			
+			$.each(selectedProducts, function (index, product) {
+				if (product._dsLabelDefault == query._dsLabelDefault) {
+					var prod = $.extend(true, {}, product);
+					// remove extra info
+					removeExtraDsInfo(prod);
+					formData.products.push(prod);
+				}
+			});
+			
+			if (formData.products.length > 0) {
+				showMsg("Download queued. Progress can be seen in Dashboard section", "SUCCESS");
+				
+				// Start downloading selected products
+				var queryData = {
+					"query"   : $.extend(true, {}, query),
+					"products": formData.products,
+					"mode"    : "1"//RESUME
+				};
+				removeExtraDsInfo(queryData.query);
+							$.when(ajaxCallFnc("query/fetch", JSON.stringify(queryData), "POST", false))
+				.done(function (data) {
+					if ($.type(data) === 'object' && data.status === "SUCCEEDED") {
+						showMsg("Started downloading selected products. Please wait!", "INFO");
+					} else if ($.type(data) === 'object' && data.status === "FAILED") {
+						showMsg(data.message, "FAILED");
+					} else {
+						showMsg("The selected products were not downloaded.", "INFO");
+					}
+				});
+				$("#queryExtent").removeData("query");
+				initControls();
+				initDatasources();
+				setDefaultFilers();
+				initQuery();
+				
+				if (window.location.hash.endsWith("/explorer")) {
+					$("#collectionExtent").addClass("shifted");
+					$("#queryExtent").removeClass("shifted");
+					//reset map, date and AOI
+					myPolygonMap.setReadOnly(false);
+					myPolygonMap.removeFeaturesByProperty({ "description": "preview" });
+					$("option[value='']","#use_site").prop("selected", true).trigger("change");
+					defaultInterval = "";
+				} else {
+					$("#myModalNodes").modal("hide");
+				}
+			} else {
+				showMsg("No products selected for download", "WARNING");
+			}
+		}
+	});
+	
+	$("#saveQuery").on("click", function (e) {
+		// remove delete button
+		$(".btn-action.op-discard", "#collectionExtent").remove();
+		if (isCollection) {
+			// Create/Save existing query collection
+			if (queryCollection.length == 0) {
+				showMsg("You must define at least one query in order to proceed.", "FAILED");
+				return false;
+			}
+			var myGroup = {
+				//groupId   : $("#datasetLabel").data("groupId"),
+				groupLabel: label,
+				queries   : []
+			};
+			
+			$.each(queryCollection, function (index, query) {
+				var queryData = {
+					query: $.extend(true, {}, query),
+					products: []
+				}
+				
+				// trim query from unnecessary data and make sure the label is not empty
+				queryData.query.label = (queryData.query.label === "") ? queryData.query['_dsLabelDefault'] : queryData.query.label;
+				removeExtraDsInfo(queryData.query);
+				// get query selected products
+				$.each(selectedProducts, function (idx, product) {
+					if (product._dsLabelDefault == query._dsLabelDefault) {
+						// Remove temporary information from product and save it in colection
+						var productData = $.extend(true, {}, product);
+						removeExtraDsInfo(productData);
+						queryData.products.push(productData);
+					}
+				});
+				myGroup.queries.push(queryData);
+			});
+			$.when(ajaxCallFnc("datasource/user/group/save", JSON.stringify(myGroup), "POST"))
+			.done(function (response) {
+				if ($.type(response) === 'object' && response.status === "SUCCEEDED" && Object.keys(response.data).length > 0) {
+					showMsg("Query collection has been successfully " + (modeEdit ? "updated." : "saved."), "SUCCESS");
+					
+					modeEdit = true;
+					objDna = response.data;
+					
+					// Initialize query functionality after map is loaded
+					initControls();
+					initDatasources();
+					setDefaultFilers();
+					initQuery();
+					
+				} else if ($.type(response) === 'object' && response.status === "FAILED") {
+					showMsg(response.message, "FAILED");
+				} else {
+					showMsg("Failed to save query collection.", "FAILED");
+				}
+			});
+		} else {
+			// Create/Save existing query
+			if (queryCollection.length != 1) { return false; }
+			
+			var qry = $.extend(true, {}, queryCollection[0]);
+			qry.label = (qry.label == "") ? qry._dsLabelDefault : qry.label;
+			removeExtraDsInfo(qry);
+			var method = modeEdit ? "PUT" : "POST";
+			$.when(ajaxCallFnc("datasource/query/", JSON.stringify(qry), method))
+			.done(function (response) {
+				if ($.type(response) === 'object' && response.status === "SUCCEEDED" && Object.keys(response.data).length > 0) {
+					showMsg("Query has been successfully " + (modeEdit ? "updated." : "saved and can be found in Workspace/Queries section"), "SUCCESS");
+					
+					objDna = response.data;
+					$.each(Object.keys(objDna), function (index, key) {
+						queryCollection[0][key] = objDna[key];
+					});
+					if (modeEdit) {
+						$("#myModalNodes").modal("hide");
+					} else {
+						window.location.hash="#my/queries";
+						$(window).trigger('hashchange');
+					}
+				} else if ($.type(response) === 'object' && response.status === "FAILED") {
+					showMsg(response.message, "FAIL");
+				} else {
+					showMsg("Failed to save query.", "FAILED");
+				}
+			});
+		}
+	});
+	
+	$(".modal-body .vertical-container").scroll(function (e) {
+		showTopInfo();
+	});
+	
+	$("#listDatasources").on("click", "a", function (e) {
+		e.preventDefault();
+		$("#listDatasources .treeview a.selected").removeClass("selected");
+		$(this).addClass("selected");		
+		if ($(this).closest(".sub").hasClass("datasource_list")) {
+			var data = datasourcesList[$(this).attr("id")];
+			var sensor = data.sensor;
+			var datasource = data.dataSourceName;
+			var defaultLabel = sensor + " " + datasource;
+			$.when(getParameters(sensor, datasource)).done(function (getParametersResponse) {
+				var parameters = chkTSRF(getParametersResponse);
+				showDatasourceParams(data, parameters, defaultLabel);
+				populateAvailableSites();
+				if ($("#queryExtentParameters").hasClass("shifted")) {
+					$("#queryExtentParameters").removeClass("shifted");
+					$("#queryExtent").addClass("shifted");
+					$("#filtersDialog").addClass("shifted");
+				}
+			});
+			
+		}
+	});
+	
+	$("#listDatasources").on("dblclick", "label", function (e) {
+		e.preventDefault();
+		var $chk = $(this).siblings("input[type='checkbox']");
+		if ($chk.length > 0) {
+			// Expand/collapse folder
+			$chk.prop("checked", !$chk.prop("checked"));
+			// Show folder contents
+			expandFolder($chk.attr("id"));
+		}
+	});
+	
+	$("#listDatasources").on("change", "input[type='checkbox']", function () {
+		expandFolder($(this).attr("id"));
+	});
+	
+	$("#listDatasources").on("click","span.info",function (){
+		if(typeof $(this).parent().find(".info-text").attr("style") === "undefined") {
+			$(this).parent().find(".info-text").css({display:"none"});
+		} else {
+			$("div.info-text","#listDatasources").css({display:"none"});
+			$(this).parent().find(".info-text").removeAttr("style");
+		}
+	});
+	
+	$("#use_site").on("change", function () {
+		var siteId = $(this).val();
+		if (siteId === "") {
+			/* when action is on map the polygon remains the same */
+			if (event.type === "load" || $(event.target.closest("*[id]")).attr("id").toLowerCase().indexOf("map") < 0) {
+				myPolygonMap.removeAllFeatures();
+				myPolygonMap.startDrawing();
+			}
+			$("#tbDatasourceParams").find(".datepicker").prop("disabled",false);
+		} else {
+			var data = $("option[value='"+siteId+"']", "#use_site").data("dna");
+			populateStartEndDate(data.startDate, data.endDate);
+			populateRegionOfInterest(data.footprint);
+		}
+	});
+	
+	$(window).off("resize");
+	
+    $(window).on("resize", function(e) {
+		setTimeout(function () {
+			resizePanels();
+			resizeFloatingThumbnail();
+		}, 100);
+	});
+
+    $(document).ready(function() {
+		// when loading the page scroll to top because window is not scrollable
+		window.scrollTo(0, 0);
+		if($("li.routed-my-queries").hasClass("opened")){
+			$("#returnButton").removeClass("hidden");
+		} else{
+			$("#returnButton").addClass("hidden");
+		}
+
+		if($("#parameterList").find(".has-error").length > 0){
+			$.each($("#parameterList").find(".has-error"), function(){
+				$(this).removeClass("has-error");
+			});
+		}
+
+		$.validator.addMethod("verifyDependency", function(value, element){
+			var req = false;
+			$.each($(element).data("dependencies"), function(idx, dependency){
+				if(dependency.dependencyType === "REQUIRED_IF"){
+					if(dependency.condition === "NOTSET"){
+						if($("[name^='"+dependency.referencedParameterId+"']").val() === "" && $(element).val() === ""){
+							req = false;
+						}else{
+							req = true;
+						}
+					}else if (dependency.condition === "SET"){
+						if($("[name^='"+dependency.referencedParameterId+"']").val() !== "" || $("[name^='"+dependency.referencedParameterId+"']").val() === null ){
+							req = true;
+						}else{
+							req =  false;
+						}
+					}
+				}else{
+					req =  true;
+				}
+			});
+			return req;
+		},"This field is required.");
+
+		$.validator.addClassRules(
+				"requiredIf", {
+					verifyDependency: true
+				}
+            );
+		
+
+		$("#parameterList").validate({
+			rules : {
+				"user-pass" : { required: true },
+				"user-name" : { required: true },
+				"user-secret" : { required: true }
+			},
+			highlight: function(element, errorClass) {
+				$(element).parent().addClass("has-error");
+			},
+			unhighlight: function(element, errorClass) {
+				$(element).parent().removeClass("has-error");
+			},
+			messages: {
+			},
+			errorPlacement: function(error, element) {
+				error.appendTo(element.parent());
+			},
+			success: function(label) {
+				label.remove();
+			}
+		});
+
+		$("#coverageSlider").slider({
+			range: "min",
+			min: 1,
+			max: 100,
+			animate:"slow",  
+			orientation: "horizontal",
+			step: 1,
+			slide: function(event, ui) {
+				$("#coverage").html(ui.value + "%");
+		   },
+		   change: function (event, ui) {
+				$("#coverage").html(ui.value + "%");
+		   }
+		});
+		$("#coverageSlider").slider("option", "value" , 50);
+		if (window.location.hash.endsWith("/queries")) {
+			$("button.close.query", "#queryExtent").removeClass("hidden");
+		}
+		// fix bug in Firefox when selecting the month in datepicker inside a bootstrap-modal won't work (when modal tabindex is set)
+		if (navigator.userAgent.toLowerCase().indexOf('firefox') !== -1) {
+			$.fn.modal.Constructor.prototype.enforceFocus = function (){};
+		}
+		
+		// Get modal data
+		isCollection = $("#myModalNodes").data("isCollection");
+		modeEdit     = $("#myModalNodes").data("action") == "edit";
+		objDna       = $("#myModalNodes").data("dna");
+		$("#myModalNodes").removeData(["isCollection", "action", "dna"]);
+		
+		// Hide/Show password by clicking on the eye glyphicon
+    	$('input[name="user_pass"] + .glyphicon ').css({ 'cursor': 'pointer', 'pointer-events': 'all' });
+    	$('input[name="user_pass"] + .glyphicon ').on('click', function () {
+			if ($(this).hasClass('glyphicon-eye-open')) {
+				$("#" + this.previousElementSibling.id ).attr('type','text');
+				$(this).removeClass('glyphicon-eye-open');
+				$(this).addClass('glyphicon-eye-close');
+				$(this).attr('title', 'hide password');
+			} else {
+				$("#" + this.previousElementSibling.id).attr('type', 'password');
+				$(this).removeClass('glyphicon-eye-close');
+				$(this).addClass('glyphicon-eye-open');
+				$(this).attr('title', 'show password');
+			}
+    	});
+		
+		// Initialize map and query
+		var olPoly = $("#mapExtent").poly2D({ startLat: 4, startLon: -15, zoom: 3, maxFeaturesNo: 1, extraFeatureDescription: "preview" });
+		$.when(olPoly)
+		.done(function (result) {
+			if (typeof result.readOnly === "boolean") {
+				$(".extent", "#myModalNodes").removeClass("no-map");
+				$("#mapExtent").removeClass("hidden");
+				myPolygonMap = result;
+				handlePolygonMapEvents(myPolygonMap);
+				$(".sliderscontainer.drawer-panel", "#mapExtent").remove();
+				autoPanMap();
+			}
+			
+			// Initialize query functionality after map is loaded
+			initControls();
+			initDatasources();
+			setDefaultFilers();
+			initQuery();
+		})
+		// Initialize query functionality without map
+		.fail(function () {
+			initControls();
+			initDatasources();
+			setDefaultFilers();
+			
+		});
+			
+		$myModalNodes.removeClass("full-map-view");
+		$(".movable").draggable({
+			containment: "#myModalNodes",
+			axis       : "x",
+			handle     : ".modal-header",
+			opacity    : 0.8,
+			stop: function(event, ui) {
+				var maxW = $("#myModalNodes").outerWidth();
+				var rg = ui.position.left + ui.helper.outerWidth();
+				var lf = 0;
+				if (rg > maxW) {
+					lf = parseFloat(100 - 100*ui.helper.outerWidth()/maxW).toFixed(1);
+				} else {
+					lf = parseFloat(100*ui.position.left/maxW).toFixed(1);
+				}
+				var filtersZIndex = $("#filtersDialog").css("z-index");
+				var queryExtentZIndex = $("#queryExtent").css("z-index");
+				var zIndex = filtersZIndex == queryExtentZIndex ? filtersZIndex : parseInt(filtersZIndex > queryExtentZIndex ? filtersZIndex : queryExtentZIndex) + 100;
+				ui.helper.css({ left: lf + "%", "z-index": zIndex });
+				
+				if (ui.helper[0].id !== "filtersDialog" && parseInt(lf) === 0 || ui.helper[0].id === "filtersDialog" && parseFloat(lf).toFixed(1) === parseFloat(filterDialogPositionLeft / maxW * 100).toFixed(1)) {
+					$(".btn-movable", ui.helper).prop("disabled", true);
+				} else {
+					$(".btn-movable", ui.helper).prop("disabled", false);
+				}
+			}
+		});
+		$(".floating", "#floatingExtent").draggable({
+			containment: "#floatingExtent",
+			handle     : "img",
+			opacity    : 0.8,
+			start: function(event, ui) { $(this).css({ bottom: "unset", right: "unset" }); },
+			stop: function(event, ui) {
+				var maxW = $("#myModalNodes").offset().left + $("#myModalNodes").outerWidth();
+				var rg = ui.helper.offset().left + ui.helper.outerWidth();
+				if (rg > maxW) {
+					var lf = maxW - ui.helper.outerWidth() - ui.helper.parent().offset().left;
+					ui.helper.css({ left: lf + "px" });
+				}
+				
+				var maxH = $("#myModalNodes").offset().top + $("#myModalNodes").outerHeight();
+				var bt = ui.helper.offset().top + ui.helper.outerHeight();
+				if (bt > maxH) {
+					var tp = maxH - ui.helper.outerHeight() - ui.helper.parent().offset().top;
+					ui.helper.css({ top: tp + "px" });
+				}
+			}
+		});
+		$("#thumbsExtent").resizable({
+			handles: "n",
+			containment: "parent",
+			stop: function (event, ui) { resizePanels(); }
+		});
+		
+		window.addEventListener('resize', resizePanels());
+    });
+
+//# sourceURL=datasource-queries-plus.js
+</script>

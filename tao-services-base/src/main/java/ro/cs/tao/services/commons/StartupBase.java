@@ -109,9 +109,9 @@ public abstract class StartupBase implements ApplicationListener {
     public static void run(Class startupClass, String[] args) throws IOException {
         SpringApplication app = new SpringApplicationBuilder()
                                         .profiles("server")
+                                        .properties(initialize())
                                         .sources(detectLaunchers(startupClass))
                                         .build();
-        app.setDefaultProperties(initialize());
         if (Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.dev.mode", "false"))) {
             System.out.println("Development mode is ON");
         }

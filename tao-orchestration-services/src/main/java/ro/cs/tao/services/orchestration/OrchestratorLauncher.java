@@ -26,10 +26,14 @@ import ro.cs.tao.services.commons.ServiceLauncher;
  */
 @SpringBootApplication()
 @ImportResource({"classpath:tao-orchestration-services-context.xml"})
-public class OrchestratorLauncher implements ServiceLauncher {
+public class OrchestratorLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(OrchestratorLauncher.class, args);
+    }
+
+    public OrchestratorLauncher() {
+        super();
     }
 
     @Override
