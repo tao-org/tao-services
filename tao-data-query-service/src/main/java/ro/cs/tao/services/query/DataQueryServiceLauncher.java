@@ -48,7 +48,7 @@ public class DataQueryServiceLauncher extends ServiceLauncher {
     @Override
     protected List<ServiceEntry> exportedEntries() {
         final List<ServiceEntry> entries = new ArrayList<>();
-        entries.add(new ServiceEntry("Search", "my/explorer", "./fragments/datasource-queries.fragment.html" , new Visibility[] { Visibility.USER, Visibility.ADMIN }, Section.DATASETS, 1));
+        entries.add(new ServiceEntry("Search", "my/explorer", "./fragments/datasources-queries.fragment.html" , new Visibility[] { Visibility.USER, Visibility.ADMIN }, Section.DATASETS, 1));
         entries.add(new ServiceEntry("Product Sets", "my/queries", "./fragments/datasources-queries.fragment.html", new Visibility[] { Visibility.USER, Visibility.ADMIN }, Section.DATASETS, 4));
         entries.add(new ServiceEntry("Data Sources", "admin/datasources", "./fragments/datasource-admin.fragment.html", new Visibility[] { Visibility.ADMIN }, Section.ADMINISTRATION, 6));
         return entries;
