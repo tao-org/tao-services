@@ -1,16 +1,7 @@
 (function () {
-	// Localhost API
-//	window.baseRestApiURL = 'http://pcd3368.c-s.ro/';
-//	window.baseWssUrl     = 'ws://pcd3368.c-s.ro/';
-	
-	// Live API
-	window.baseRestApiURL = 'http://pcd3368.c-s.ro/';
-	window.baseWssUrl     = 'ws://pcd3368.c-s.ro/';
-	
-	// Custom API
-//	window.baseRestApiURL = 'http://pcd3368.c-s.ro/';
-//	window.baseWssUrl     = 'ws://pcd3368.c-s.ro/';
-	
+	window.baseRestApiURL = 'http://localhost/';
+	window.baseWssUrl     = 'ws://localhost/';
+
 	// User preferences
 	window.preferences                = { "viewMode": "grid", "autorefresh": "on" };
 	window.notificationsMaxNumber     = 50;

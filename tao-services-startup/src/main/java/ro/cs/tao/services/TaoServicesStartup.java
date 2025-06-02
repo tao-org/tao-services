@@ -237,6 +237,10 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
         final long limit = Long.parseLong(stringSize.replace(unit, "").trim()) * unitSize(unit);
         final Path cachePath = Paths.get(sitePath).resolve("previews");
         try {
+            if (!Files.exists(cachePath)) {
+                Files.createDirectories(cachePath);
+                return;
+            }
             long size = FileUtilities.folderSize(cachePath);
             try (Stream<Path> stream = Files.list(cachePath)) {
                 List<Path> files = stream.sorted((o1, o2) -> {

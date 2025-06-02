@@ -1,6 +1,7 @@
 package ro.cs.tao.services.commons.config;
 
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.utils.Tuple;
 import ro.cs.tao.utils.executors.MemoryUnit;
 
 import java.io.BufferedInputStream;
@@ -10,6 +11,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,29 +44,34 @@ import java.util.logging.Logger;
  *   method will continue processing other files.
  */
 public interface FileProcessor {
-    Map<String, String> getFileMap();
+    Map<String, Tuple<String, FileTime>> getFileMap();
     default List<Path> processFiles(Path configDirectory) throws IOException {
-        final Map<String, String> map = getFileMap();
+        final Map<String, Tuple<String, FileTime>> map = getFileMap();
         List<Path> files = null;
         if (map != null) {
             files = new ArrayList<>();
-            for (Map.Entry<String, String> entry : map.entrySet()) {
+            for (Map.Entry<String, Tuple<String, FileTime>> entry : map.entrySet()) {
                 final Path configFile = configDirectory.resolve(entry.getKey());
                 try {
                     if (!Files.exists(configFile) || !configFile.toString().endsWith(".properties")) {
                         Files.createDirectories(configFile.getParent());
-                        byte[] buffer = new byte[(int) MemoryUnit.KB.value()];
-                        try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream(entry.getValue()));
-                             OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile,
-                                                                                              StandardOpenOption.CREATE,
-                                                                                              StandardOpenOption.WRITE))) {
-                            int read;
-                            while ((read = is.read(buffer)) != -1) {
-                                os.write(buffer, 0, read);
+                        final Tuple<String, FileTime> value = entry.getValue();
+                        // Only overwrite if newer
+                        if (!Files.exists(configFile) || value.getKeyTwo().compareTo(Files.getLastModifiedTime(configFile)) > 0) {
+                            final byte[] buffer = new byte[(int) MemoryUnit.KB.value()];
+                            try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream(value.getKeyOne()));
+                                 OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile,
+                                                                                                  StandardOpenOption.CREATE,
+                                                                                                  StandardOpenOption.WRITE))) {
+                                int read;
+                                while ((read = is.read(buffer)) != -1) {
+                                    os.write(buffer, 0, read);
+                                }
+                                os.flush();
+                                Logger.getLogger(getClass().getName()).fine(configFile.getFileName() + " updated");
+                            } catch (Exception ex) {
+                                Logger.getLogger(getClass().getName()).severe("Cannot read or find resource " + value.getKeyOne());
                             }
-                            os.flush();
-                        } catch (Exception ex) {
-                            Logger.getLogger(getClass().getName()).severe("Cannot read or find resource " + entry.getValue());
                         }
                     }
                     files.add(configFile);
