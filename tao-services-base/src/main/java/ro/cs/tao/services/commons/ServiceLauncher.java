@@ -22,9 +22,11 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.commons.config.FileProcessor;
 import ro.cs.tao.services.commons.menu.ServiceEntry;
+import ro.cs.tao.utils.Tuple;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -82,17 +84,18 @@ public abstract class ServiceLauncher implements FileProcessor, ApplicationListe
     }
 
     @Override
-    public Map<String, String> getFileMap() {
+    public Map<String, Tuple<String, FileTime>> getFileMap() {
         final String jarFilePath = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
         final String folderPath = "web/";
-        final Map<String, String> files = new LinkedHashMap<>();
+        final Map<String, Tuple<String, FileTime>> files = new LinkedHashMap<>();
         try (JarFile jarFile = new JarFile(jarFilePath)) {
             final Enumeration<JarEntry> entries = jarFile.entries();
             JarEntry entry;
             while (entries.hasMoreElements()) {
                 entry = entries.nextElement();
                 if (entry.getName().startsWith(folderPath) && !entry.isDirectory()) {
-                    files.put(entry.getName().replace(folderPath,""), "/" + entry.getName());
+                    files.put(entry.getName().replace(folderPath,""),
+                              new Tuple<>("/" + entry.getName(), entry.getLastModifiedTime()));
                 }
             }
         } catch (IOException e) {

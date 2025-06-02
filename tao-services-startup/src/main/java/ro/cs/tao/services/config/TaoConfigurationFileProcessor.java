@@ -17,17 +17,23 @@
 package ro.cs.tao.services.config;
 
 import ro.cs.tao.services.commons.config.ConfigurationFileProcessor;
+import ro.cs.tao.utils.Tuple;
 
+import java.nio.file.attribute.FileTime;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
 
 public class TaoConfigurationFileProcessor implements ConfigurationFileProcessor {
 
     @Override
-    public Map<String, String> getFileMap() {
-        return new HashMap<String, String>() {{
-            put("application.properties", "/config/spring.properties");
-            put("tao.properties", "/ro/cs/tao/configuration/tao.properties");
+    public Map<String, Tuple<String, FileTime>> getFileMap() {
+        return new HashMap<String, Tuple<String, FileTime>>() {{
+            put("application.properties", new Tuple<>("/config/spring.properties",
+                                                      FileTime.from(LocalDateTime.now().toInstant(ZoneOffset.UTC))));
+            put("tao.properties", new Tuple<>("/ro/cs/tao/configuration/tao.properties",
+                                              FileTime.from(LocalDateTime.now().toInstant(ZoneOffset.UTC))));
         }};
     }
 
