@@ -65,12 +65,6 @@
             <artifactId>tao-data-services</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>ro.c-s.tao</groupId>
-            <artifactId>tao-executor-simpipe</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <build>
