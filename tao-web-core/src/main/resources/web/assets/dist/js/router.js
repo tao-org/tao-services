@@ -17,15 +17,14 @@
  *
  **/
 
-//default page
 var taoLoadingDiv = $("#myModalLoading");
-var routeTags = [];
-var routeFilters = {};
-var userOpStack = [];  //holder for aditional user action parameters
+var routeTags     = [];
+var routeFilters  = {};
+var userOpStack   = [];  //holder for aditional user action parameters
 
-//UI loading indicator management
+// UI loading indicator management
 function routeLoading(action){
-    if(action === "show"){
+	if(action === "show"){
 		if (taoLoadingDiv.data("bs.modal") && taoLoadingDiv.data("bs.modal").$backdrop == null) {
 			taoLoadingDiv.modal('show');
 		}
@@ -62,8 +61,7 @@ function refreshToken() {
 					window.tokenKey = apiData.token;
 					refreshed = true;
 				} else {
-					// console.log("Failed to retrieve new token. User should try and log back in.");
-                    // showMsg("Failed to retrieve new token. User should try and log back in.", "ERROR");
+					// Failed to retrieve new token.
                     _settings.createCookie("tokenKey",'');
                     _settings.createCookie("userMatrix",'{}');
                     _settings.createCookie("refreshToken","");
@@ -75,8 +73,7 @@ function refreshToken() {
 				}
 			},
 			"error": function (jqXHR, status, textStatus) {
-				// console.log("Could not refresh the token. User should try and log back in.");
-                // showMsg("Could not refresh the token. User should try and log back in.", "ERROR");
+				// Could not refresh the token
                 _settings.createCookie("tokenKey",'');
                 _settings.createCookie("userMatrix",'{}');
                 _settings.createCookie("refreshToken","");
@@ -116,53 +113,102 @@ function refreshToken() {
 	 };
 })();
 
-//ROUTER
+// ROUTER
 $(function () {
     var taoDynPageDiv = $(".tao-async-cw");
     var DEFAULT_PAGE_URL = "#admin/dashboard";
     var UNDEFINED_PAGE_URL = "#undefined/page";
     var hashRoutesMap = [];
-    hashRoutesMap["admin/dashboard"] = "./fragments/dashboard-admin.fragment.html";
-    hashRoutesMap["projects"] = '';
-	
-    // User section
-    hashRoutesMap["my/queries"] = "./fragments/datasources-queries.fragment.html";
-    hashRoutesMap["my/sharedDatasets"] = "./fragments/shared-datasets.fragment.html";
-	hashRoutesMap["my/explorer"] = "./fragments/datasources-queries.fragment.html";
-	hashRoutesMap["my/workflows"] = "./fragments/workflows-admin2.fragment.html";
-//	hashRoutesMap["my/auxfiles"] = "./fragments/my-auxfiles.fragment.html";
-    hashRoutesMap["my/repositories"] = "./fragments/repositories.fragment.html";
-    hashRoutesMap["my/scheduling"] = "./fragments/scheduling-admin2.fragment.html";
-    hashRoutesMap["my/sites"] = "./fragments/sites.fragment.html";
     
-	// Remote Services components section
-	hashRoutesMap["my/remoteServices"] ="./fragments/remoteServices-components.fragment.html";
-	hashRoutesMap["my/components"] ="./fragments/components-user.fragment.html";
-    hashRoutesMap["my/containers"] ="./fragments/containers-user.fragment.html";
-    // Shared section
-//	hashRoutesMap["shared/components"] = "./fragments/component-admin2.fragment.html";
-//	hashRoutesMap["shared/workflows"] = "./fragments/workflows-admin2.fragment.html";
-//	hashRoutesMap["shared/auxfiles"] = "./fragments/my-auxfiles.fragment.html";
+	function getSidebarMenu() {
+		var deferred = $.Deferred();
+			$.ajax({
+				url    : baseRestApiURL + "config/menu",
+				type   : 'GET',
+				cache  : false,
+				headers: { "X-Auth-Token": window.tokenKey },
+				success: function (response) {
+					if (typeof response.status === "string" && response.status === responseStatus.success && typeof response.data !== "undefined") {
+						deferred.resolve(response.data);
+					} else {
+						var jqXHR = {
+							"data"   : typeof response.data    === "undefined"                            ? null                : response.data,
+							"status" : typeof response.status  === "undefined"                            ? responseStatus.fail : response.status,
+							"message": typeof response.message === "undefined" || response.message === "" ? "Error"             : response.message
+						}
+						deferred.reject(jqXHR.data, jqXHR.status, jqXHR.message);
+					}
+				},
+				error: function (jqXHR, textStatus, errorThrown) {
+					deferred.reject(jqXHR, textStatus, "Untracked error");
+				}
+			});
+		return deferred.promise();
+	}
 	
-	// Resources
-	hashRoutesMap["admin/components"] = "./fragments/component-admin2.fragment.html";
-	hashRoutesMap["admin/datasources"] = "./fragments/datasource-admin2.fragment.html";
-    hashRoutesMap["admin/topology"] = "./fragments/topology-admin2.fragment.html";
-    hashRoutesMap["admin/containers"] = "./fragments/containers-admin2.fragment.html";
-    hashRoutesMap["admin/repositoriesTemplate"] = "./fragments/repositoriesTemplate-admin2.fragment.html";
-    hashRoutesMap["admin/remoteServices"] = "./fragments/remoteServices-admin2.fragment.html";
-    hashRoutesMap["admin/users"] = "./fragments/users-admin2.fragment.html";
-    hashRoutesMap["admin/systemDashboard"] = "./fragments/systemDashboard-admin2.fragment.html";
-    hashRoutesMap["admin/config"] = "./fragments/configuration.fragment.html";
+	// Get dynamic menu data
+	$.when(getSidebarMenu()).done(function (menu) {
+		var sidebarMenu = [];
+		$.each(menu, function (index, entry) {
+			switch (entry.title) {
+				case "Dashboard"    : entry.icon = "fa fa-dashboard" ; break;
+				case "My Datasets"  : entry.icon = "fa fa-wpexplorer"; break;
+				case "My Workflows" : entry.icon = "fa fa-briefcase" ; break;
+				case "My Components": entry.icon = "fa fa-briefcase" ; break;
+				case "Admin area"   : entry.icon = "fa fa-link"      ; break;
+				default             : entry.icon = "fa fa-bars"      ; break;
+			}
+			entry.items = $.map(entry.items, function (item) { if ($.inArray(taoUserProfile.userRole, item.visibility) > -1) { return item; } });
+			if (entry.items.length > 0) {
+				entry.items.sort(function (a, b) { return (a.position < b.position ? -1 : (a.position > b.position ? 1 : 0)); });
+				sidebarMenu.push(entry);
+			}
+		});
+		sidebarMenu.sort(function (a, b) { return (a.position < b.position ? -1 : (a.position > b.position ? 1 : 0)); });
+		
+		// Documentation (added manually)
+		sidebarMenu.push({"items":[],"position":1001,"title":"DOCUMENTATION","icon":""});
+		sidebarMenu.push({"items":[{"name":"How To","route":"howto/intro","location":"./fragments/tao-howto.fragment.html","visibility":["USER","ADMIN"],"section":"DOCUMENTATION","position":1}],"position":1002,"title":"How To","icon":"fa fa-info-circle"});
+		
+		var $hul = $(".sidebar-menu").html('');
+		$.each(sidebarMenu, function (index, entry) {
+			var $hli = $('<li class="routed"><a href="#default"><i class="' + entry.icon + '"></i><span>' + entry.title + '</span></a></li>');
+			if (entry.items.length == 0) {
+				$hli = $('<li class="header">' + entry.title + '</li>');
+			} else if (entry.items.length == 1) {
+				hashRoutesMap[entry.items[0].route] = entry.items[0].location;
+				$("a", $hli).attr("href", "#" + entry.items[0].route);
+				var cls = "routed-" + entry.items[0].route.replaceAll("/", "-");
+				$hli.addClass(cls).addClass("active");
+			} else {
+				$hli.addClass("treeview");
+				$("a", $hli).append('<i class="fa fa-angle-left pull-right"></i>');
+				var $ul = $('<ul class="treeview-menu">');
+				$.each(entry.items, function (idx, item) {
+					hashRoutesMap[item.route] = item.location;
+					var cls = "routed-" + item.route.replaceAll("/", "-");
+					$hli.addClass(cls);
+					var $li = $('<li class="routed ' + cls + '"><a href="#' + item.route + '"><span>' + item.name + '</span></a></li>');
+					if (idx = 0) {
+						$li.addClass("active");
+					}
+					$ul.append($li);
+				});
+				$hli.append($ul);
+			}
+			$hul.append($hli);
+		});
+		hashRoutesMap["undefined/page"] = "./fragments/tao-howto.fragment.html";
+		
+		//trigger a hashchange to start app
+		$(window).trigger('hashchange');
+	}).fail(function (jqXHR, textStatus, errorThrown) {
+		alert("Could not load dynamic menu!");
+	});
 	
-	// Documentation
-    hashRoutesMap["howto/intro"] = "./fragments/tao-howto.fragment.html";
-    hashRoutesMap["documentation/intro"] = "./fragments/tao-documentation.fragment.html";
-    hashRoutesMap["undefined/page"] = "./fragments/tao-howto.fragment.html";
-
     // Event handlers for frontend navigation
     $(window).on('hashchange', function(){
-        //check authtoken
+        // check authtoken
         clearTimeout(tokenTimer);
 		var tokenKey = _settings.readCookie("tokenKey");
 		if (tokenKey === "" || tokenKey == null) {
@@ -206,7 +252,6 @@ $(function () {
                 hExtra = hExtra.split("|");
                 _.map(hExtra, function(s){ var a=s.split("="); routeFilters[a[0]] = a[1];});
             }
-            //console.log(routeFilters);
         }
         if(hashRoutesMap[hash] === undefined){
             hash = UNDEFINED_PAGE_URL;
@@ -275,7 +320,4 @@ $(function () {
     function renderErrorPage(){
         window.location.hash = DEFAULT_PAGE_URL;
     }
-
-    //trigger a hashchange to start app
-    $(window).trigger('hashchange');
 });
