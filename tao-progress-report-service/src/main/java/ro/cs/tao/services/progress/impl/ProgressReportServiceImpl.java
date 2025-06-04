@@ -21,6 +21,7 @@ import ro.cs.tao.messaging.progress.*;
 import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.services.interfaces.ProgressReportService;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -30,12 +31,15 @@ import java.util.stream.Stream;
 public class ProgressReportServiceImpl extends Notifiable implements ProgressReportService {
     private static final Pattern DOWNLOAD_PATTERN = Topic.getCategoryPattern(Topic.PROGRESS);
     private static final Pattern TRANSFER_PATTERN = Topic.getCategoryPattern(Topic.TRANSFER_PROGRESS);
+    private static final long MAX_IDLE_TIME_MINUTES = 3;
     private static final Map<String, TaskProgress> tasksInProgress = Collections.synchronizedMap(new LinkedHashMap<>());
+    private static final Map<String, LocalDateTime> taskUpdateTime = Collections.synchronizedMap(new LinkedHashMap<>());
     private String previousMessage;
 
     public ProgressReportServiceImpl() {
         Messaging.subscribe(this, DOWNLOAD_PATTERN);
         Messaging.subscribe(this, TRANSFER_PATTERN);
+        new Timer().schedule(new EvictionTask(), MAX_IDLE_TIME_MINUTES, MAX_IDLE_TIME_MINUTES);
     }
 
     @Override
@@ -52,9 +56,9 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
             taskName = ((ActivityStart) message).getTaskName();
             taskProgress = new TaskProgress(taskName, category, 0);
             taskProgress.setInfo(message.getItems());
-            tasksInProgress.put(taskName, taskProgress);
+            updateTask(taskProgress);
         } else if (message instanceof ActivityEnd) {
-            tasksInProgress.remove(((ActivityEnd) message).getTaskName());
+            removeTask(((ActivityEnd) message).getTaskName());
         } else if (message instanceof SubActivityStart) {
             SubActivityStart casted = (SubActivityStart) message;
             taskName = casted.getTaskName();
@@ -62,7 +66,7 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
                 double mainProgress = tasksInProgress.get(taskName).getProgress();
                 taskProgress = new TaskProgress(taskName, category, mainProgress, casted.getSubTaskName(), 0.0);
                 taskProgress.setInfo(message.getItems());
-                tasksInProgress.put(taskName, taskProgress);
+                updateTask(taskProgress);
             }
         } else if (message instanceof SubActivityEnd) {
             SubActivityEnd casted = (SubActivityEnd) message;
@@ -71,11 +75,11 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
             if (existingProgress != null) {
                 double mainProgress = existingProgress.getProgress();
                 if (1.0 - mainProgress < 0.001) {
-                    tasksInProgress.remove(taskName);
+                    removeTask(taskName);
                 } else {
                     taskProgress = new TaskProgress(taskName, category, mainProgress, casted.getSubTaskName(), 1.0);
                     taskProgress.setInfo(message.getItems());
-                    tasksInProgress.put(taskName, taskProgress);
+                    updateTask(taskProgress);
                 }
             }
         } else if (message instanceof SubActivityProgress) {
@@ -85,11 +89,11 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
             if (existingProgress != null) {
                 double mainProgress = existingProgress.getProgress();
                 if (casted.getSubTaskProgress() == 1.0 && (1.0 - mainProgress < 0.001)) {
-                    tasksInProgress.remove(taskName);
+                    removeTask(taskName);
                 } else {
                     taskProgress = new TaskProgress(taskName, category, casted.getTaskProgress(), casted.getSubTaskName(), casted.getSubTaskProgress());
                     taskProgress.setInfo(message.getItems());
-                    tasksInProgress.put(taskName, taskProgress);
+                    updateTask(taskProgress);
                 }
             }
         } else if (message instanceof ActivityProgress) {
@@ -101,7 +105,7 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
                 taskProgress.addInfo("speed", ((DownloadProgress) message).getTransferSpeedMB());
                 taskProgress.addInfo("remaining", String.valueOf(((DownloadProgress) message).getRemaining()));
             }
-            tasksInProgress.put(taskName, taskProgress);
+            updateTask(taskProgress);
         }
     }
 
@@ -129,5 +133,31 @@ public class ProgressReportServiceImpl extends Notifiable implements ProgressRep
             });
         }
         return results.collect(Collectors.toList());
+    }
+
+    private synchronized void updateTask(TaskProgress taskProgress) {
+        tasksInProgress.put(taskProgress.getName(), taskProgress);
+        taskUpdateTime.put(taskProgress.getName(), LocalDateTime.now());
+    }
+
+    private synchronized void removeTask(String taskName) {
+        tasksInProgress.remove(taskName);
+        taskUpdateTime.remove(taskName);
+    }
+
+    private class EvictionTask extends TimerTask {
+        @Override
+        public void run() {
+            synchronized (taskUpdateTime) {
+                final Iterator<Map.Entry<String, LocalDateTime>> iterator = taskUpdateTime.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Map.Entry<String, LocalDateTime> next = iterator.next();
+                    if (next.getValue().plusMinutes(MAX_IDLE_TIME_MINUTES).isBefore(LocalDateTime.now())) {
+                        logger.finest("Evicted idle progress for " + next.getKey());
+                        iterator.remove();
+                    }
+                }
+            }
+        }
     }
 }
