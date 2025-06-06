@@ -150,6 +150,7 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
                 }
                 evt.setUserId(userId);
                 evt.setTimestamp(LocalDateTime.now());
+                evt.setSessionId(session.getId());
                 evt.setEvent("Logout");
                 try {
                     auditProvider.save(evt);
