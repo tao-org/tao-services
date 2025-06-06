@@ -30,6 +30,8 @@ import ro.cs.tao.configuration.ConfigurationCategory;
 import ro.cs.tao.configuration.ConfigurationItem;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.Projection;
+import ro.cs.tao.eodata.naming.ResolverFunction;
+import ro.cs.tao.eodata.naming.TokenResolver;
 import ro.cs.tao.eodata.sorting.Association;
 import ro.cs.tao.eodata.sorting.DataFilter;
 import ro.cs.tao.eodata.sorting.DataSorter;
@@ -70,6 +72,7 @@ public class ConfigurationController
     private WeakReference<List<String[]>> groupers;
     private WeakReference<List<String[]>> filters;
     private WeakReference<Map<String, List<ExtendedKeyValuePair>>> enums;
+    private WeakReference<Map<String, List<ResolverFunction>>> functions;
 
     @Autowired
     private PersistenceManager persistenceManager;
@@ -196,6 +199,31 @@ public class ConfigurationController
     @RequestMapping(value = "/projection/codes/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAvailableProjectionCodes() {
         return prepareResult(Projection.getSupported().keySet());
+    }
+
+    /**
+     * Returns a list of functions that can be used in component templates and/or parameter values
+     */
+    @RequestMapping(value = "/functions", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getAvailableFunctions() {
+        if (this.functions == null || this.functions.get() == null) {
+            final Map<String, List<ResolverFunction>> descriptions = new TreeMap<>();
+            final Set<TokenResolver> resolvers = ServiceRegistryManager.getInstance().getServiceRegistry(TokenResolver.class).getServices();
+            for (TokenResolver resolver : resolvers) {
+                final List<ResolverFunction> list = resolver.definedFunctions();
+                if (!list.isEmpty()) {
+                    for (ResolverFunction function : list) {
+                        final String category = function.getCategory();
+                        if (!descriptions.containsKey(category)) {
+                            descriptions.put(category, new ArrayList<>());
+                        }
+                        descriptions.get(category).add(function);
+                    }
+                }
+            }
+            this.functions = new WeakReference<>(descriptions);
+        }
+        return prepareResult(this.functions.get());
     }
 
     /**
