@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ro.cs.tao.messaging.Messaging;
@@ -176,7 +177,7 @@ public abstract class BaseController extends ControllerBase {
      */
     protected void record(String event) {
         try {
-            auditProvider.save(new LogEvent(LocalDateTime.now(), currentUser(), event));
+            auditProvider.save(new LogEvent(LocalDateTime.now(), currentUser(), RequestContextHolder.currentRequestAttributes().getSessionId(), event));
         } catch (PersistenceException e) {
             Logger.getLogger(getClass().getName()).warning(e.getMessage());
         }
