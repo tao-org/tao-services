@@ -1,563 +1,455 @@
 <style>
-.modal-error{background-color:red}
-.modal-error span{background:#a63f3f}
-.floating-img{width:16.666667%;float:right}
-.floating-img>img{width:100%;height:auto;max-height:120px;margin:0;/*cursor:pointer*/}
-.tbl-edt{border-top:0;margin:0}
-.tbl-edt thead tr:nth-child(1) th{position:sticky;background:#556270;color:white;top:0px;z-index:10;white-space:normal;word-break:break-all;vertical-align:middle;padding:3px 8px}
-.tbl-edt tbody tr:nth-child(even){background-color:#f4f4f4}
-.tbl-edt tbody tr td{padding:3px 8px}
-.icon{text-align: center;}
-.new-icon{color: rgb(255 98 5 / 87%);
-    font-family: 'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
-    font-size: 14px;
-    font-weight: bold;}
-#frmEditContainer img.base64image.empty::before{position:relative}
-#frmEditContainer img.base64image.empty::after{position:relative}
-form .tagsinput .tag{background-color:#f4f4f4;border:1px solid #dedede;color:#556270}
-@media (max-width: 991px) {
-	.floating-img{width:100%;margin-bottom:10px}
-	.floating-img>img{width:100px;float:right}
-}
-@media (min-width: 992px) {
-	 .col-name .col-md-2{width:20%}
-	 .col-name .col-md-10{width:80%}
-}
-
-
-/*------MAP------*/
-/*#myModalNodes #myFlatMap .ol-zoom{top:100px}*/
-#myModalNodes #myFlatMap .poly-map-title{padding-left:30%;/*top:55px*/}
-/*#myModalNodes #myFlatMap .poly-shape-type{top:60px}*/
-#myModalNodes #myFlatMap .poly-actions-panel{width:45rem;height:13rem;right:0;max-width:100%}
-
-#myModalNodes.full-map-view .main-panel{display:inline-block;width:40px;height:40px;cursor:pointer;border-radius:5px;padding:5px;text-align:center;border:0}
-#myModalNodes.full-map-view .main-panel>*{display:none}
-#myModalNodes.full-map-view .main-panel::after{content:"\f2d2";font-family:"FontAwesome";font-size:22px;color:#286080}
-
-#myModalNodes #collectionExtent.no-map{opacity:1}
-#myModalNodes #collectionExtent.no-map .minimize{display:none}
-#myModalNodes #queryExtent.no-map, #myModalNodes #queryExtentParameters.no-map, #myModalNodes #processingParameters.no-map{left:18%}
-
-
-/*#myModalNodes #mapExtent{display:block;width:100%;height:100%;position:fixed;top:0;right:0;background-color:white;overflow:auto}*/
-
-#myModalNodes #mapExtent{display:block;height:600px;width: 830px ;top:0;right:0;background-color:white;overflow:auto}
-
-
-#myModalNodes.full-map-view #detailsExtent{left:3%;width:37%}
-
-#myModalNodes.full-map-view #thumbsExtent .ui-resizable-handle{border-radius:5px 5px 0 0}
-#myFlatMap .sliderscontainer{display:none}
-
-</style>
-<div class="modal-content" style="padding-bottom: 15px;">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-        <h4 class="modal-title" id="myModalLabel">Edit site</h4>
-    </div>
+	.modal-error      {background-color:red;}
+	.modal-error span {background:#a63f3f;}
 	
-    <form id="frmEditContainer" class="form-horizontal" action="" role="form">
-		<input type="hidden" name="system" value="true" />
-        <div class="modal-error collapse">
-            <h4 class="modal-title">Error updating site!</h4>
-            <p id="modal-error-msg">Please check your data.</p>
-            <p>
-                <span class="error-container collapse"><i class="fa fa-exclamation-triangle fa-fw"></i>Error.</span>
-            </p>
-        </div>
-
-        <div class="modal-body">
-            <div class="row">
-				<div class="col-md-12 col-sm-12" >
-					<!-- FORM -->
-
-					<div class="col-md-4 col-sm-4">
-
+	/*------FORM------*/
+	#frmEditSiteContainer {
+		.tagsinput:has(.tag) {
+			width:fit-content!important;
+			.tag-input {display:none;}
+		}
+		.tag                      {margin-right:0;border:2px solid transparent;border-radius:3px;cursor:pointer;}
+		.tag.match                {background:#0099ff;}
+		.tag.error                {background:#a63f3f;cursor:default;border-color:transparent!important;}
+		.tag:has(.tag-text:hover) {border-color:rgb(255 255 255/0.5);}
+		.tag .tag-remove:hover    {transform:scale(1.3);}
+		[name=footprint][readonly]{color:#ccc;padding-top:0;padding-bottom:0;word-break:break-all;}
+	}
+	/*------MAP------*/
+	#myModalNodes {
+		#mapExtent {position:relative;display:block;margin:-15px;width:calc(100% + 30px);height:550px;min-height:550px;background-color:white;overflow:hidden;}
+		#myFlatMap {
+			.map {border:1px solid #96c1ce;}
+			.poly-actions-panel {
+				width:50rem;max-width:100%;right:0;bottom:0;
+				textarea {font-size:0.8em;line-height:1;}
+				.btn-poly:disabled {pointer-events:none;}
+			}
+			.sliderscontainer {display:none;}
+		}
+	}
+</style>
+<div class="modal-content">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+		<h4 class="modal-title" id="myModalLabel">Edit site</h4>
+	</div>
+	<div class="modal-error collapse">
+		<h4 class="modal-title">Error updating site!</h4>
+		<p id="modal-error-msg">Please check your data.</p>
+		<p><span class="error-container collapse"><i class="fa fa-exclamation-triangle fa-fw"></i>Error.</span></p>
+	</div>
+	<div class="modal-body">
+		<div class="row">
+			<!-- FORM -->
+			<div class="col-sm-4 col-md-4">
+				<form id="frmEditSiteContainer" class="form-horizontal clearfix" action="" role="form">
+					<input type="hidden" name="system" value="true" />
+					<div class="form-group">
 						<label for="name" class="col-sm-12 col-md-12" style="font-size: large;">Define your area of interest</label>
-
-						<div class="col-md-12">
+						<div class="col-sm-12 col-md-12">
 							<div class="form-group has-feedback">
-								<label for="name" class="col-sm-2 col-md-2">Name</label>
+								<label for="name" class="col-sm-12 col-md-12">Name</label>
 								<div class="col-sm-12 col-md-12">
 									<input type="text" class="form-control" id="name" name="name" placeholder="name" autocomplete="off" value="" />
 								</div>
 							</div>
 						</div>
-								
-						<div class="col-md-12">
+						<div class="col-sm-12 col-md-12">
 							<div class="form-group">
-								<label for="description" class="col-sm-2 col-md-2 ">Description</label>
+								<label for="description" class="col-sm-12 col-md-12 ">Description</label>
 								<div class="col-sm-12 col-md-12">
 									<textarea class="form-control" rows="3" id="description" name="description" placeholder="description" autocomplete="off"></textarea>
 								</div>
 							</div>
 						</div>
-
-						<div class="col-md-12">
+					</div>
+					<div class="form-group">
+						<div class="col-sm-8 col-md-8">
 							<div class="form-group">
-								<label for="polygon" class="col-sm-4 col-md-4 ">Polygon title</label>
+								<label for="polygon" class="col-sm-12 col-md-12">Polygon<sup>*</sup></label>
+								<div class="col-sm-12 col-md-12">
+									<textarea class="form-control" rows="2" name="footprint" placeholder="footprint" autocomplete="off" readonly="true"></textarea>
+								</div>
+								<label class="col-sm-12 col-md-12"><i style="font-weight:400">(*) draw on the <a class="scroll-into-view" href="#mapExtent">map</a> or select a <a class="focus-on" href="#polygon_tag">tile</a></i></label>
+							</div>
+						</div>
+						<div class="col-sm-4 col-md-4">
+							<div class="form-group">
+								<label for="polygon" class="col-sm-12 col-md-12">Tile</i></label>
 								<div class="col-sm-12 col-md-12">
 									<input class="form-control tag-format" type="text" id="polygon" name="polygon" placeholder="polygon" autocomplete="off" />
 								</div>
 							</div>
 						</div>
-
-						<!--<div class="col-md-12">
-							<div class="form-group">
-								<label for="tag" class="col-sm-2 col-md-2 ">Tags</label>
-								<div class="col-sm-12 col-md-12">
-									<textarea class="form-control" rows="1" id="tag" name="tag" placeholder="tag" autocomplete="off"></textarea>
-								</div>
-							</div>
-						</div>-->
-
+					</div>
+					<div class="form-group">
 						<label for="name" class="col-sm-12 col-md-12" style="font-size: large;">Choose your time period</label>
-
-						<div class="col-md-12">
+						<div class="col-sm-6 col-md-6">
 							<div class="form-group">
-								<label class="col-sm-4 col-md-4 ">Start date</label>
+								<label class="col-sm-12 col-md-12">Start date</label>
 								<div class="col-sm-12 col-md-12">
 									<input type="text" autocomplete="off" id="startDate" name="startDate" class="datepicker form-control" >
 								</div>
 							</div>
 						</div>
-
-						<div class="col-md-12">
+						<div class="col-sm-6 col-md-6">
 							<div class="form-group">
-								<label class="col-sm-4 col-md-4">End date</label>
+								<label class="col-sm-12 col-md-12">End date</label>
 								<div class="col-sm-12 col-md-12">
 									<input type="text" autocomplete="off" id="endDate" name="endDate" class="datepicker form-control" >
 								</div>
 							</div>
 						</div>
-
-						<div class="col-md-12">
+					</div>
+					<div class="form-group">
+						<div class="col-sm-12 col-md-12">
 							<div class="form-group">
-								<div class="col-md-10 col-sm-10">
+								<div class="col-md-12 col-sm-12" style="text-align:center;">
 									<button id="saveContainer" type="submit" class="btn btn-primary btn-submit" name="btnSave">Save changes</button>
 								</div>
 							</div>
 						</div>
 					</div>
-
-					<!-- MAP -->
-					<div>
-						<div class="col-md-8 col-sm-8" style="height: 600px;">
-							<div id="mapExtent" class="hidden"></div>
-							
-						</div>
-					</div>
-
-				</div>
+				</form>
 			</div>
-	
-		</div><!-- /.modal-body -->
-    </form>
-
-	<!--
-    <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-    </div>-->
+			
+			<!-- MAP -->
+			<div class="col-sm-8 col-md-8">
+				<div id="mapExtent" class="hidden"></div>
+			</div>
+		</div>
+	</div><!-- /.modal-body -->
 
 </div><!-- /.modal-content -->
 <link rel="stylesheet" href="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" type="text/css" />
 <script src="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.js" type="text/javascript"></script>
 
-<script>	
+<script type="text/javascript">
 	var $myModalNodes = $("#myModalNodes");
-	var myPolygonMap = { mapActive: false };
-
-	function handlePolygonMapEvents(olPoly) {
-		olPoly.el.on("newfootprint", function (evt, footprint) {
-			$("#tbDatasourceParams input[name='footprint']").val(footprint);
-			defaultFootprint = footprint;
+	var myPolygonMap  = { mapActive: false };
+	
+	// Initialize FORM
+	function initializeForm($form, initData) {
+		$('[name="name"       ]', $form).val(initData?.name        || "");
+		$('[name="description"]', $form).val(initData?.description || "");
+		initData?.startDate && $('[name="startDate"  ]', $form).val(moment(initData.startDate).format("YYYY-MM-DD"));
+		initData?.endDate   && $('[name="endDate"    ]', $form).val(moment(initData.endDate  ).format("YYYY-MM-DD"));
+	}
+	
+	// Initialize datepicker controls for start and end dates
+	function initializeDatepickerControls ($startDate, $endDate) {
+		// Remove old datepickers
+		$("#" + $.datepicker.dpDiv.attr("id")).remove();
+		
+		// Set the mininum end date when start date changes
+		var setMinEndDate = function () {
+			var minEndDate = $startDate.datepicker('getDate');
+			(minEndDate != null) && minEndDate.setDate(minEndDate.getDate() + 1);
+			$endDate.datepicker('option', 'minDate', minEndDate);
+		};
+		
+		// Initialize startDate datepicker
+		$startDate.datepicker({
+			dateFormat: "yy-mm-dd",
+			onSelect: function (date, picker) {
+				setMinEndDate();
+				picker.settings["dateAlreadySet"] = true;
+			},
+			onClose: function (date, picker) {
+				if (!picker.settings["dateAlreadySet"]) {
+					var date = moment(date);
+					picker.input.val(date.isValid() ? moment(date).format('YYYY-MM-DD') : "");
+					setMinEndDate();
+				}
+				picker.settings["dateAlreadySet"] = false;
+			}
 		});
-		olPoly.el.on("clickextrafeature dblclickextrafeature", function (evt, feature, modifier) {
-			evt.stopPropagation();
-			var tableName = $("#executionExtent").hasClass("shifted") ? "tbSelectedProducts" : "tbDatasourceProducts";
-			if (feature) {
-				$.each($("#" + tableName + " tbody tr:not(.datasource)"), function () {
-					var $tr = $(this);
-					if ($tr.data("id") == feature.getId()) {
-						var $chk = $(".checkbox input[name='product']", $tr);
-						if ($chk.length > 0) {
-							if (evt.type == "dblclickextrafeature") {
-								$chk.prop({ "checked": false });
-							}
-							
-							$chk.trigger("click");
-							showTopInfo();
-							if ($chk.is(":checked")) {
-								highlightProduct($tr, true, true);
-								highlightThumbnail($tr, true);
-								setTimeout(function () { 
-									if (evt.type == "dblclickextrafeature") {
-										showDetailsPanel($tr);
-									} else {
-										updateDetailsPanel($tr);
-										updateFloatingThumbnail($tr);
-									}
-								}, 100);
-								setTimeout(function () { showTopInfo($tr); }, 500);
-								
-								return false;
-							}
-						} else {
-							return false;
-						}
+		
+		// Initialize endDate datepicker
+		$endDate.datepicker({
+			dateFormat: "yy-mm-dd",
+			onSelect: function (date, picker) {
+				picker.settings["dateAlreadySet"] = true;
+			},
+			onClose: function (date, picker) {
+				if (!picker.settings["dateAlreadySet"]) {
+					var date = moment(date);
+					picker.input.val(date.isValid() ? moment(date).format('YYYY-MM-DD') : "");
+					if (date.toDate() <= $('#startDate').datepicker('getDate')) {
+						picker.input.val("");
 					}
+				}
+				picker.settings["dateAlreadySet"] = false;
+			}
+		});
+		
+		// Initialize endDate min value
+		if ($startDate.val() != "") { setMinEndDate(); }
+	}
+	
+	// Initialize the tags control to accept Sentinel-2 tiles and use their geometry as site's footprint
+	function initializeTagsControl($tileTags) {
+		// Extract the footprint of a given Sentinel-2 tile
+		var getTileFootprint = function (tileId) {
+			var deferred = $.Deferred();
+				$.ajax({
+					url: baseRestApiURL + "query/footprint",
+					type: "GET",
+					data: { satellite: "sentinel2", tile: tileId },
+					beforeSend: function(xhr) { xhr.setRequestHeader("X-Auth-Token", tokenKey); },
+					success: function(response) {
+						if (response.status === "SUCCEEDED") {
+							deferred.resolve(response.data);
+						} else {
+							deferred.reject(null, response.status, response.message);
+						}
+					},
+					error: function (jqXHR, status, error) {
+						deferred.reject(jqXHR, status, error);
+					}
+				});
+			return deferred.promise();
+		};
+		
+		// Initialize the tags control
+		$tileTags.tagsInput({
+			placeholder	: 'Add a Sentinel-2 tile',
+			limit		: 1,
+			minChars	: 0,
+			maxChars	: null,
+			interactive	: true,
+			autocomplete: null,
+			unique		: true,
+			confirmKeys	: [188, 32],
+			onAddTag    : function (elm, tag) {
+				$.when(getTileFootprint(tag)).done(function (response) {
+					$tileTags.trigger("newtilefootprint", [ response ]);
+					$("+.tagsinput .tag", elm).on("click", function () {
+						$tileTags.trigger("newtilefootprint", [ response ]);
+					});
+				}).fail(function (jqXHR, status, error) {
+					$("+.tagsinput .tag", elm).addClass("error");
+					showMsg("Inconsistent footprint information for the selected tile.<br/>Please enter a correct Setinel-2 tile.", "ERROR");
 				});
 			}
 		});
 	}
-
-	function autoPanMap(dialogId) {
-		if (typeof dialogId === "undefined") {
-			dialogId = "collectionExtent";
-		}
-		if (myPolygonMap.mapActive) {
-			var mapW = $("#mapExtent").outerWidth();
-			if (mapW > 0) {
-				var panelW = $(".main-sidebar").outerWidth() + ($myModalNodes.hasClass("full-map-view") ? 0 : $("#" + dialogId).outerWidth() - 10);
-				var prc = parseInt(100*panelW/mapW);
-				if (prc != myPolygonMap.options.panPrc) {
-					setTimeout(function () { myPolygonMap.setPanPercentage(prc); }, 100);
+	
+	// Adjust the map size to match its container's boundaries
+	function adjustMapSize(_map, $container) {
+		var cTop = $container.offset().top;
+		var cBtm = $container.outerHeight(true) - $container.height() - cTop;
+		var marg = _map.el.offset().top + cBtm;
+		
+		var $form = $("form", $container);
+		var minH = $form.length > 0 ? $form.height() - (_map.container.parent().outerHeight(true) - _map.container.parent().outerHeight()) : 550;
+		
+		_map.el.css({ "height": "calc(100vh - " + parseInt(marg + 0.5) + "px", "min-height": parseInt(minH + 0.5) + "px" });
+		_map.updateMapSize(10);
+	}
+	
+	function updateMapSize(_map) {
+		var $mCont = $mapExtent.closest(".modal-content");
+		var $mBody = $(".modal-body"  , $mCont);
+		var $mHead = $(".modal-header", $mCont);
+		var marg = 3*$mCont.offset().top + $mHead.outerHeight(true);
+		var minH = parseInt($("form", $mBody).outerHeight(true) + 0.5) + ($mBody.outerHeight() - $mBody.height());
+		_map.el.css({ "height": "calc(100vh - " + parseInt(marg) + "px", "min-height": minH + "px" });
+		_map.updateMapSize(10);
+	}
+	
+	// Initialize map
+	function initializeMap(_map, $mapExtent, $tileTags, initFootprint) {
+		// Actions to take when the Edit modal page is opened or closed
+		var toggleModalVisibility = function (e) {
+			if (e.type == "shown") {
+				if (_map.mapActive) {
+					adjustMapSize(_map, _map.el.closest(".modal-dialog"));
+					setTimeout(function () { _map.fitAllFeatures(); }, 50);
 				}
+			} else if (e.type == "hidden") {
+				$myModalNodes.unbind("shown.bs.modal hidden.bs.modal", toggleModalVisibility);
 			}
 		}
-	}
-	function fieldFormat(){
-
-		$("#polygon").tagsInput({
-			minChars	: 0,
-			maxChars	: null,
-			limit		: null,
-			interactive	: true,
-			autocomplete: null,
-			unique		: true,
-			placeholder	: 'Add an element',
-			delimiter	: ',',
-			confirmKeys	: [188, 32]
-		});
-
-	}
-
-	function getTileFootprint(tileId) {
-		var deferred = $.Deferred();
-
-		$.ajax({
-			url: baseRestApiURL + "query/footprint",
-			type: "GET",
-			data: { satellite: "sentinel2",
-					tile: tileId	
-				},
-			beforeSend: function(xhr) { xhr.setRequestHeader("X-Auth-Token", tokenKey); },
-			success: function(response) {
-				if (response.status === "SUCCEEDED") {
-					deferred.resolve(response.data);
+		$myModalNodes.on("shown.bs.modal hidden.bs.modal", toggleModalVisibility);
+		
+		// Draw a polygon on the map and use it as the site footprint
+		var createPolygonOnMap = function (footprint, isTile) {
+			if (_map.mapActive) {
+				var features = null;
+				if (features = _map.createShapeFromGeometry(footprint, null, true)) {
+					_map.fitAllFeatures();
+					_map.restartActiveInteraction();
+					if (isTile) {
+						$("+.tagsinput .tag", $tileTags).addClass("match").data({ "footprint": features[0].getProperties()["textGeometry"] });
+						showMsg("New footprint set", "INFO");
+					}
 				} else {
-					deferred.reject(response.data, response.status, response.message);
+					showMsg("Inconsistent footprint information for the selected tile", "WARNING");
 				}
-			},
-			error: function (jqXHR, textStatus, errorThrown) {
-				deferred.reject(jqXHR, textStatus, errorThrown);
 			}
-		});
-		return deferred.promise();
-	}
-
-	$("#polygon").on("change", function (e) {
-		if (this.value != "") {
-			$.when(getTileFootprint(this.value))
-			.done(function (response) {
-				defaultFootprint = response;
-				if (myPolygonMap.mapActive) {
-					var features = null;
-					defaultFootprint = response;
-					if (features = myPolygonMap.createShapeFromGeometry(defaultFootprint, null, true)) {
-						// Prevent footprint match errors due to precision
-						defaultFootprint = myPolygonMap.getFootprint();
-						features[0].setId("tile_footprint");
-						myPolygonMap.fitFeatureById("tile_footprint");
-						showMsg("New default footprint set", "INFO");
-					} else {
-						showMsg("Inconsistent footprint information for the selected tile", "WARNING");
-					}
-				}								
-			})
-			.fail(function (jqXHR, status, error) {
-				showMsg(error, "WARNING");
-			});
-		}
-	});
-
-	//////////////////////////////////////////////////////////////////////////////////////
-    $(document).ready( function() {
-		//Remove old datepickers
-		$("#" + $.datepicker.dpDiv.attr("id")).remove();
-		fieldFormat();
-
-		var $form = $("form#frmEditContainer");
-		var obj = window.userOpStack.dna;
-
-		$("#startDate").datepicker({
-			dateFormat: "yy-mm-dd",
-            onSelect: function (date) {
-                var date2 = $('#startDate').datepicker('getDate');
-				if( $('#endDate').datepicker('getDate') <= $('#startDate').datepicker('getDate') ){
-                	date2.setDate(date2.getDate() + 1);
-                	$('#endDate').datepicker('setDate', date2);
-                	//sets minDate to dt1 date + 1
-                	$('#endDate').datepicker('option', 'minDate', date2);
-				}
-            }
-		});
-
-		$('#endDate').datepicker({
-            dateFormat: "yy-mm-dd",
-            onClose: function () {
-                var dt1 = $('#startDate').datepicker('getDate');
-                var dt2 = $('#endDate').datepicker('getDate');
-                if (dt2 <= dt1) {
-                    var minDate = $('#endDate').datepicker('option', 'minDate');
-                    $('#endDate').datepicker('setDate', minDate);
-                }
-            }
-        });
-
-		$('#polygon_tag').on('keypress', function(e){
-			if (e.keyCode == 32){
-				e.keyCode = 188;
-				e.preventDefault();
-			};
-			$("#polygon").trigger("change");
-  		});
-
-		/*$.each($("input.datepicker"), function(){
-			var name = $(this).attr("name");
-			$(this).datepicker({
-				onselect : function(selected, event){
-					var newDate = new Date(selected);
-					if(newDate){
-						if(name === "startDate"){
-							newDate.setDate(newDate.getDate() + 1);
-							$("input.datepicker[name=endDate]").datepicker("option", "minDate",newDate);
-
-						}else{
-							newDate.setDate(newDate.getDate() - 1);
-							$("input.datepicker[name=startDate]").datepicker("option", "minDate",newDate);
-						}
-					}
-				} 
-			});
-
-		} ); */
+		};
 		
-		
-
-		// Initialize map and query
-		var olPoly = $("#mapExtent").poly2D({ startLat: 4, startLon: 15, zoom: 5, maxFeaturesNo: 1, extraFeatureDescription: "preview" });
-		$.when(olPoly).done(function (result) {
-				//*
-			if (typeof result.readOnly === "boolean") {
-				$(".extent", "#myModalNodes").removeClass("no-map");
-				$("#mapExtent").removeClass("hidden");
-				myPolygonMap = result;
-				handlePolygonMapEvents(myPolygonMap);
+		// Initialize map
+		$mapExtent.poly2D({
+			startLat     : 4,
+			startLon     : 15,
+			zoom         : 5,
+			maxFeaturesNo: 1,
+			loaded       : function (olPoly) {
+				if (typeof olPoly.readOnly === "boolean") {
+					$.extend(_map, olPoly);
+					_map.el.removeClass("hidden");
 					
-				autoPanMap();
-
-				if (typeof obj !== "undefined") {
-					$("input[name=name]", $form).val(obj.name);
-					$("textarea[name=description]", $form).val(obj.description);
-					$("input[name=startDate]", $form).val(moment(obj.startDate).format('YYYY-MM-DD'));
-					$("input[name=endDate]", $form).val(moment(obj.endDate).format('YYYY-MM-DD'));
-					//$("input[name=tag]", $form).val(obj.tag);
-					var geometry = obj.footprint.replace("MULTIPOLYGON (((", "POLYGON((").replace(")))", "))").replace(" ((", "((");
-					myPolygonMap.createShapeFromGeometry(geometry, {extraFeatureDescription : "preview"}, true);
-					myPolygonMap.fitAllFeatures();
-					myPolygonMap.restartActiveInteraction();
-
+					// Initialize the tags control
+					initializeTagsControl($tileTags);
+					
+					// Create new tile polygon on map after a valid one is being set
+					$tileTags.on("newtilefootprint", function (e, tilefootprint) {
+						createPolygonOnMap(tilefootprint, true);
+					});
+					
+					// Check whether the new footprint matches the tile footprint and mark the tile control accordingly
+					_map.el.on("newfootprint", function (e, footprint) {
+						var tagFootprint = $("+.tagsinput .tag", $tileTags).data("footprint");
+						$('#frmEditSiteContainer [name="footprint"]').val(footprint);
+						if (tagFootprint == footprint) {
+							$("+.tagsinput .tag", $tileTags).addClass("match");
+						} else {
+							$("+.tagsinput .tag", $tileTags).removeClass("match");
+						}
+					});
+					
+					// Set initial footprint from input data
+					if (initFootprint) {
+						var geometry = initFootprint.replace("MULTIPOLYGON (((", "POLYGON((").replace(")))", "))").replace(" ((", "((");
+						createPolygonOnMap(geometry);
+					}
 				}
-
 			}
-
 		});
-
-
-		/*$(".tbl-edt")
-            .on("click", ".tbl-app-delete-action", function(e){
-                e.preventDefault();
-                $(this).closest(".val-row").remove();
-			});*/
+	}
+	
+	//////////////////////////////////////////////////////////////////////////////////////
+	$(document).ready( function() {
+		var $form    = $("#frmEditSiteContainer");
+		var initData = window?.userOpStack?.dna || {};
 		
+		// Read input form data
+		initializeForm($form, initData);
 		
-		// Custom validation for container name
-		$.validator.addMethod('containerName', function (value, element, params) {
-			var pattern = new RegExp(params.regEx, "g");
-			var match = value.match(pattern);
-			return value.length == 0 || match;
-		}, "Remove invalid characters ( site's name must be unique, only allowed small caps letters (a-z), numbers (0-9) and dashes (-)).");
-		$.validator.addMethod( "isUnique", function(value,element,params){
-			var isUni = true;
-			if($.inArray(value, nameList) >= 0 && value !== obj.name ){
-				isUni = false;
+		// Initialize date picker controls for startDate and endDate
+		initializeDatepickerControls($("#startDate"), $("#endDate"));
+		
+		// Initialize map
+		initializeMap(myPolygonMap, $("#mapExtent"), $("#polygon"), initData?.footprint);
+		
+		// Custom validations for container name (accepted characters & unique name)
+		$.validator.addMethod("containerName", function (value, element, params) { return value.length == 0 || value.match(new RegExp(params.regEx, "g")); }, "Remove invalid characters ( site's name must be unique, only allowed small caps letters (a-z), numbers (0-9) and dashes (-)).")
+		$.validator.addMethod("isUnique"     , function (value, element, params) { return $.inArray(value, nameList) == -1 || value == initData.name; }, "Site's name must be unique.");
+		
+		// Scroll element into view
+		$("a.scroll-into-view, a.focus-on").on("click", function (e) {
+			e.preventDefault();
+			if ($(e.target).hasClass("scroll-into-view")) {
+				$($(e.target).attr("href"))[0].scrollIntoView({ behavior: "smooth" });
 			}
-			return isUni;
-		}, "Site's name must be unique.");
-
+			if ($(e.target).hasClass("focus-on")) {
+				$($(e.target).attr("href"))[0].focus();
+			}
+		});
+		
 		// Validate form before submit
-		$("form#frmEditContainer").validate({
+		$form.validate({
 			rules: {
-				name: {
-					required: true,
-					containerName: { regEx: "^[a-z0-9-]+$" },
-					isUnique: true
-				},
-				description: {
-					required: true
-				},
-				startDate: {
-					required: true
-				},
-				endDate:{
-					required: true
-				}
+				name       : { required: true, isUnique: true, containerName: { regEx: "^[a-zA-Z0-9- ]+$" } },
+				description: { required: true },
+				startDate  : { required: true },
+				endDate    : { required: true },
+				footprint  : { required: true }
 			},
-			highlight: function(element, errorClass) {
-				$(element).parent().addClass("has-error");
-			},
-			unhighlight: function(element, errorClass) {
-				$(element).parent().removeClass("has-error");
-			},
-			messages: {
-			},
+			highlight     : function(element, errorClass) { $(element).parent().addClass("has-error"); },
+			unhighlight   : function(element, errorClass) { $(element).parent().removeClass("has-error"); },
+			messages      : { },
 			errorPlacement: function(error, element) {
 				error.appendTo(element.parent());
+				setTimeout(function () { adjustMapSize(myPolygonMap, myPolygonMap.el.closest(".modal-dialog")); }, 500);
 			},
-			success: function(label) {
-				label.remove();
-			}
+			success       : function(label) { label.remove(); }
+		});
+		
+		// Disable form submit on keypress (Enter)
+		$form.on("keyup keypress", ".form-control", function (e) {
+			if ((e.keyCode || e.which) === 13) { e.preventDefault(); return false; }
 		});
 		
         // Submit form
-		$("form#frmEditContainer").submit(function (event) {
-
+		$form.submit(function (event) {
 			event.preventDefault();
-
 			var formData = {
-				id		        	: userOpStack.dna.id,
-				userId				: taoUserProfile.id,
-				name				: $("input[name=name]", this).val(),
-				description			: $("textarea[name=description]", this).val(),
-				/*tag					: [],*/
-				startDate 			: moment($("input[name=startDate]", this).val()).format("YYYY-MM-DDTHH:mm:ss"),
-				endDate 			: moment($("input[name=endDate]", this).val()).format("YYYY-MM-DDTHH:mm:ss"),
-				footprint			: $("[name='userText']").val()
+				id         : initData.id,
+				userId     : taoUserProfile.id,
+				name       :        $('[name="name"       ]', this).val(),
+				description:        $('[name="description"]', this).val(),
+				startDate  : moment($('[name="startDate"  ]', this).val()).format("YYYY-MM-DDTHH:mm:ss"),
+				endDate    : moment($('[name="endDate"    ]', this).val()).format("YYYY-MM-DDTHH:mm:ss"),
+				footprint  :        $('[name="footprint"  ]', this).val()
 			};
-
-			var haserror=0;
-			//var applNamesArr=[]; 
-
-            //var $tblContApp = $("#tbl-applications");
-            //$(".val-row", $tblContApp).each(function() {
-			/*$(".val-row:not(:has(th>span.glyphicon-remove))", $tblContApp).each(function() {
-				
-				var name = $(this).find("input.app-name").val();
-				var path = $(this).find("input.app-path").val();
-				var memoryRequirements = $(this).find("input.app-memoryRequirements").val();
-				var parallelFlagTemplate = $(this).find("input.app-parallelFlagTemplate").val();
-
-				var newApp = {};
 			
-               if( (typeof name !== "undefined") && (typeof name.valueOf() === "string") && (name.length > 0) && (typeof path !== "undefined") && (typeof path.valueOf() === "string") && (path.length > 0) ) {
-                    newApp.name = name;
-					newApp.path = path;
-					newApp.memoryRequirements = memoryRequirements;
-					newApp.parallelFlagTemplate = parallelFlagTemplate;
-
-					formData.applications.push(newApp);
-					
-					applNamesArr.push(name);
-                }else{
-					haserror = 1;
-                }
-			});*/
-
-			/*
-			var applDuplicates=0;
-			if(applNamesArr.length !== new Set(applNamesArr).size) {
-					applDuplicates = 1;
-					}
-
-			if (haserror==1)
-					{
-					showMsg("Invalid application. Please choose valid names and paths to continue.", "ERROR");
-					}
-			else if (applDuplicates==1)
-					{
-					showMsg("Invalid application. Please choose unique names to continue.", "ERROR");
-					}
-			else{ */
-
-				if ($(this).valid()) {
-					$(".modal-error ").fadeOut();
-					
-					$.ajax({
-						cache: false,
-						url: baseRestApiURL + "site/" + formData.id,
-						dataType: 'json',
-						type: "PUT",
-						data: JSON.stringify(formData),
-						headers: {
-							"Accept": "application/json",
-							"Content-Type": "application/json",
-							"X-Auth-Token": window.tokenKey
-						},
-						error : function (jqXHR, textStatus, errorThrown) {
-							if (jqXHR.status === 500) {
-								showMsg("Error updating site. Please check your data and try again.", "ERROR");
+			if ($(this).valid()) {
+				$(".modal-error").fadeOut();
+				$.ajax({
+					cache   : false,
+					url     : baseRestApiURL + "site/" + formData.id,
+					dataType: 'json',
+					type    : "PUT",
+					data    : JSON.stringify(formData),
+					headers : {
+						"Accept"      : "application/json",
+						"Content-Type": "application/json",
+						"X-Auth-Token": window.tokenKey
+					},
+					error: function (jqXHR, textStatus, errorThrown) {
+						if (jqXHR.status === 500) {
+							showMsg("Error updating site. Please check your data and try again.", "ERROR");
+						} else {
+							showMsg("Unknown error. Unable to update site. Please try again.", "ERROR");
+						}
+					},
+					success: function(response,textStatus, jqXHR) {
+						var r = chkTSRF(response);
+						if (response.status === "FAILED") {
+							if (response.message) {
+								showMsg("Error updating site service. Please check your data, one or more values for the attributes were not correct.", "ERROR");
+								//handle error messages
+								
+								var objResponse = JSON.parse(jqXHR.responseText);
+								objResponse = objResponse.message.split(';');
+								if (objResponse[0] !== "Entity has validation errors") {
+									return;
+								} 
+								for (i = 0; i < objResponse.length; i ++) {
+									var matches = objResponse[i].match(/\[(.*?)\]/);
+									if (matches) {
+										$(".error-"+matches[1],".modal-error").css('display', 'inline-block');
+									}
+								}
+								$(".modal-error ").fadeIn("slow");
+								$myModalNodes.animate({ scrollTop: 0 }, 250);
 								return;
 							}
-							showMsg("Unknown error. Unable to update site. Please try again.", "ERROR");
-						},
-						success: function(response,textStatus, jqXHR) {
-							var r = chkTSRF(response);
-							if (response.status === "FAILED") {
-								if (response.message) {
-									showMsg("Error updating site service. Please check your data, one or more values for the attributes were not correct.", "ERROR");
-									//handle error messages
-									
-									var objResponse = JSON.parse(jqXHR.responseText);
-									objResponse = objResponse.message.split(';');
-									if (objResponse[0] !== "Entity has validation errors") {
-										return;
-									}
-									for (i = 0; i < objResponse.length; i ++) {
-										var matches = objResponse[i].match(/\[(.*?)\]/);
-										if (matches) {
-											$(".error-"+matches[1],".modal-error").css('display', 'inline-block');
-										}
-									}
-									$(".modal-error ").fadeIn("slow");
-									$('#myModalNodes').animate({scrollTop: 0}, 250);
-									return;
-								}
-								showMsg("Error updating site. Please check your data and try again.", "ERROR");
-							}
-							showMsg("Site successfully saved.", "SUCCESS");
-							$("#myModalNodes").modal('hide');
-							panelComp.refreshData();
+							showMsg("Error updating site. Please check your data and try again.", "ERROR");
 						}
-					});
-				}
-			//}
-            return false; // To avoid actual submission of the form
-        });
+						showMsg("Site successfully saved.", "SUCCESS");
+						$myModalNodes.modal('hide');
+						panelComp.refreshData();
+					}
+				});
+			}
+			return false; // To avoid actual submission of the form
+		});
+	});
 
-    });
-
-	//# sourceURL=sites-edit.js
-
+//# sourceURL=sites-edit.js
 </script>

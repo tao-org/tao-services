@@ -76,6 +76,7 @@
 		// Status variables
 		_self.readOnly = false;
 		_self.mapActive = false;
+		_self.blockTriggers = false;
 		
 		// Map interactions
 		_self.draw = null;
@@ -124,6 +125,9 @@
 			
 			_self.mapActive = true;
 			
+			// Callback loaded event
+			if (typeof _self.options.loaded === "function") { _self.options.loaded(_self); }
+			
 			// Return the complete object only when map has finished rendering all elements
 			deferred.resolve(_self);
 		});
@@ -135,12 +139,12 @@
 	};
 	
 	Polygon2D.prototype = {
-		updateMapSize: function () {
+		updateMapSize: function (timeout) {
 			var _self = this;
 			setTimeout(function() {
 				$(_self.map.getTargetElement()).css({ "height": _self.el.height() + "px" });
 				_self.map.updateSize();
-			}, 300);
+			}, timeout || 300);
 		},
 		toggleReadOnly: function () {
 			var _self = this;
@@ -233,10 +237,12 @@
 				// Set feature style
 				feature.setStyle(style);
 				// Bring feature on top
+				_self.blockTriggers = true; // Block triggers to prevent raising event on clone elements
 				var tmp = feature.clone();
 				_self.source.removeFeature(feature);
 				tmp.setId(id);
 				_self.source.addFeature(tmp);
+				_self.blockTriggers = false;
 			}
 		},
 		setFeaturesStyleByProperty: function (property, style) {
@@ -422,6 +428,7 @@
 					poly.push([lonlat[0].toFixed(6), lonlat[1].toFixed(6)]);
 				});
 				polys.push(poly);
+				item.set("textGeometry", _self.polygonTextFromArray([poly]));
 			});
 			var geometry = _self.polygonTextFromArray(polys);
 			
@@ -429,7 +436,9 @@
 			//_self.btnParseUserText.attr("disabled", true);
 			_self.userText.val(geometry);
 			
-			_self.el.trigger("newfootprint", [_self.userText.val()]);
+			if (!_self.blockTriggers) {
+				_self.el.trigger("newfootprint", [_self.userText.val()]);
+			}
 			return geometry;
 		},
 		clearSelection: function () {
@@ -588,22 +597,24 @@
 			var feature = _self.source.getFeatureById(id);
 			if (feature) {
 				_self.map.getView().fit(feature.getGeometry(), _self.map.getSize());
-				var crtZoom = myPolygonMap.map.getView().getZoom();
-				if (crtZoom - 1 >= _self.options.minZoom) myPolygonMap.map.getView().setZoom(crtZoom - 1);
+				var crtZoom = _self.map.getView().getZoom();
+				if (crtZoom - 1 >= _self.options.minZoom) _self.map.getView().setZoom(crtZoom - 1);
 				_self.panToFit();
 				
 				// Bring feature on top
+				_self.blockTriggers = true; // Block triggers to prevent raising event on clone elements
 				var tmp = feature.clone();
 				_self.source.removeFeature(feature);
 				tmp.setId(id);
 				_self.source.addFeature(tmp);
+				_self.blockTriggers = false;
 			}
 		},
 		setPanPercentage: function (newPanPrc) {
 			var _self = this;
 			var shift = newPanPrc - _self.options.panPrc;
-			myPolygonMap.panToFit(shift);
-			myPolygonMap.options.panPrc = newPanPrc;
+			_self.panToFit(shift);
+			_self.options.panPrc = newPanPrc;
 		},
 		panToFit: function (delta) {
 			var _self = this;
@@ -617,7 +628,7 @@
 			var yc = (y1+y2)/2;
 			var cnt = [xc, yc];
 			
-			myPolygonMap.map.getView().animate({
+			_self.map.getView().animate({
 			  center: cnt,
 			  duration: 0
 			});
@@ -672,8 +683,8 @@
 					var feature = new ol.Feature(polygon);
 					var sz = _self.map.getSize();
 					_self.map.getView().fit(feature.getGeometry(), { size: sz });
-					var crtZoom = myPolygonMap.map.getView().getZoom();
-					if (crtZoom - 1 >= _self.options.minZoom) myPolygonMap.map.getView().setZoom(crtZoom - 1);
+					var crtZoom = _self.map.getView().getZoom();
+					if (crtZoom - 1 >= _self.options.minZoom) _self.map.getView().setZoom(crtZoom - 1);
 					_self.panToFit();
 				}
 			}
@@ -979,7 +990,9 @@
 		strokeTransform: { color: [  0, 153, 255, 1.0], width: 3.0 },	fillTransform  : { color: [255, 255, 255, 0.3] },
 		strokeModify   : { color: [111, 216,  97, 1.0], width: 1.0 },	fillModify     : { color: [119, 232, 103, 0.3] },
 		// Footprint
-		defaultFootprint: ""
+		defaultFootprint: "",
+		// Callbacks
+		loaded: false
 	};
 
 })(jQuery, window, document);
