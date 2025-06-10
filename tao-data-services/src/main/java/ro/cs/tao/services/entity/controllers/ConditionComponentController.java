@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/conditioncomponent")
-@Tag(name = "Condition Components", description = "Operations related to WMS components managements")
+@Tag(name = "Condition Components", description = "Operations related to condition components managements")
 public class ConditionComponentController extends BaseController {
 
     @Autowired

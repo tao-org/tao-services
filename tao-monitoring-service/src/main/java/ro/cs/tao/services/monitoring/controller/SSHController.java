@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.RemovalListener;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.json.JSONObject;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +32,7 @@ import java.util.logging.Logger;
  * cleaned up when the bean is destroyed.
  */
 @RestController
+@Tag(name ="SSH", description = "Endpoint for SSH terminal")
 public class SSHController implements DisposableBean {
 
     private static final String SESSION_KEY_TERM_UUID = "TERM-UUID";

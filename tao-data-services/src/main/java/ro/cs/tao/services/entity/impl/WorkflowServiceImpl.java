@@ -152,6 +152,9 @@ public class WorkflowServiceImpl
     @Override
     public List<WorkflowInfo> getUserWorkflowsByStatus(String user, Status status) {
         final List<WorkflowDescriptor> list = workflowProvider.listUserWorkflowsByStatus(user, status.value());
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
         final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
                                                                                 .map(WorkflowDescriptor::getId)
                                                                                 .collect(Collectors.toSet()));
@@ -161,6 +164,9 @@ public class WorkflowServiceImpl
     @Override
     public List<WorkflowInfo> getUserPublishedWorkflowsByVisibility(String user, Visibility visibility) {
         final List<WorkflowDescriptor> list = workflowProvider.listUserPublishedWorkflowsByVisibility(user, visibility.value());
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
         final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
                                                                                 .map(WorkflowDescriptor::getId)
                                                                                 .collect(Collectors.toSet()));
@@ -170,6 +176,9 @@ public class WorkflowServiceImpl
     @Override
     public List<WorkflowInfo> getOtherPublicWorkflows(String user) {
         final List<WorkflowDescriptor> list = workflowProvider.listOtherPublicWorkflows(user);
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
         final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
                                                                                 .map(WorkflowDescriptor::getId)
                                                                                 .collect(Collectors.toSet()));
@@ -184,6 +193,9 @@ public class WorkflowServiceImpl
         } else {
             list = MockData.getMockWorkflows();
         }
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
         final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
                                                                                 .map(WorkflowDescriptor::getId)
                                                                                 .collect(Collectors.toSet()));
@@ -193,6 +205,9 @@ public class WorkflowServiceImpl
     @Override
     public List<WorkflowInfo> getUserVisibleWorkflows(String userId) {
         final List<WorkflowDescriptor> list = workflowProvider.listUserVisible(userId);
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
         final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
                                                                                 .map(WorkflowDescriptor::getId)
                                                                                 .collect(Collectors.toSet()));

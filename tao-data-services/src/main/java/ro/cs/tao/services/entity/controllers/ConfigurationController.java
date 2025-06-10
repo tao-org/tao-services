@@ -235,6 +235,19 @@ public class ConfigurationController
         return prepareResult("Development mode is " + (mode ? "on" : "off"));
     }
 
+    /**
+     * Retrieves the configuration items based on provided filters, category, and grouping options.
+     *
+     * @param filter     An optional filter string used to match against item IDs. If provided,
+     *                   only items whose IDs contain the filter string will be returned.
+     * @param categoryId An optional category ID. If specified, only configuration items belonging
+     *                   to the specified category will be retrieved.
+     * @param grouped    An optional flag indicating whether the items should be grouped by category.
+     *                   Defaults to false, meaning items will not be grouped.
+     * @return A {@link ResponseEntity} containing a {@link ServiceResponse} with
+     *         the retrieved configuration items. If a category ID is invalid or an error occurs,
+     *         an appropriate error response will be returned.
+     */
     @RequestMapping(value = "/detail/items", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getConfigurationItems(@RequestParam(name = "filter", required = false) String filter,
                                                                     @RequestParam(name = "category", required = false) Integer categoryId,
@@ -271,11 +284,29 @@ public class ConfigurationController
         }
     }
 
+    /**
+     * Retrieves the list of configuration categories available in the system.
+     *
+     * @return a {@link ResponseEntity} containing a {@link ServiceResponse} with
+     *         the retrieved list of configuration categories. The HTTP status is
+     *         {@code OK} if the operation is successful.
+     */
     @RequestMapping(value = "/detail/categories", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getCategories() {
         return prepareResult(persistenceManager.configuration().getCategories());
     }
 
+    /**
+     * Saves a list of configuration items.
+     * This method updates the `lastUpdated` timestamp for each item and persists them into the configuration storage.
+     * If the list is not empty, a notification message regarding the configuration change is sent to the appropriate topic.
+     *
+     * @param items the list of configuration items to be saved. Each item should contain the necessary details to be updated
+     *              or inserted into the configuration storage.
+     * @return a {@link ResponseEntity} containing a {@link ServiceResponse} object that represents the outcome of the
+     *         operation. If the operation succeeds, a success response is returned with the count of saved items. If an
+     *         error occurs, an appropriate error response is returned.
+     */
     @RequestMapping(value = "/detail/items", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> saveConfigurationItems(@RequestBody List<ConfigurationItem> items) {
         try {
@@ -296,6 +327,18 @@ public class ConfigurationController
         }
     }
 
+    /**
+     * Changes the log level of the application by forwarding the request to the
+     * actuator's /loggers endpoint. The desired log level is specified as a parameter.
+     * This method requires admin privileges to execute.
+     *
+     * @param level the desired log level to set. This should be a valid log level
+     *              (e.g., DEBUG, INFO, WARN, ERROR) and is case-insensitive.
+     * @return a {@link ResponseEntity} containing a {@link ServiceResponse} object
+     *         indicating the result of the operation. If successful, a message confirming
+     *         the updated log level is returned. In case of an error, an appropriate error
+     *         response is returned.
+     */
     @RequestMapping(value = "/log", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> changeLogLevel(@RequestParam("level") String level) {
@@ -314,6 +357,16 @@ public class ConfigurationController
         }
     }
 
+    /**
+     * Retrieves the menu entries available in the system.
+     * The method organizes service entries into sections based on their defined categories
+     * and sorts them according to their positions within each section.
+     *
+     * @return a {@link ResponseEntity} containing a {@link ServiceResponse} object with
+     *         the organized menu entries. If the operation succeeds, the response will
+     *         contain the menu entries structured by sections. In case of an error, an
+     *         appropriate error response is returned.
+     */
     @RequestMapping(value = "/menu", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getMenuEntries() {
         try {
