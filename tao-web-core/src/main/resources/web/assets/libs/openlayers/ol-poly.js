@@ -172,13 +172,11 @@
 		},
 		togglePinDrawer: function ($drawer) {
 			$drawer.toggleClass("pinned");
-			//if (!$drawer.hasClass("hovering")) {
-				if ($drawer.hasClass("pinned")) {
-					$drawer.removeClass("closed");
-				} else {
-					$drawer.addClass("closed");
-				}
-			//}
+			if ($drawer.hasClass("pinned")) {
+				$drawer.removeClass("closed");
+			} else {
+				$drawer.addClass("closed");
+			}
 		},
 		focusOnMap: function () {
 			var _self = this;
@@ -197,8 +195,8 @@
 				var $fit = {};
 				if (name == 'Map') {
 					// Set read-only button
-					//$fit = $('<button class="btn-poly" title="Toggle read only"><i class="fa fa-eye-slash fa-fw"></i></button>').on("click", function () { _self.toggleReadOnly(); });
-					//$slider.append($fit);
+					$fit = $('<button class="btn-poly" title="Toggle read only"><i class="fa fa-eye-slash fa-fw"></i></button>').on("click", function () { _self.toggleReadOnly(); });
+					$slider.append($fit);
 				} else {
 					// Set fit button
 					$fit = $('<button class="btn-poly" title="Fit"><i class="fa fa-expand fa-fw"></i></button>').on("click", function () { _self.fitAll(name); });
@@ -366,7 +364,6 @@
 			
 			var polysArray = _self.polygonArrayFromText(geometry);
 			if (polysArray) {
-				//if (clean) { _self.removeAllFeatures(); }
 				$.each(polysArray, function (index, item) {
 					// Check if polygon has at least 3 enges
 					if (item.length > 3) {
@@ -433,7 +430,6 @@
 			var geometry = _self.polygonTextFromArray(polys);
 			
 			_self.userText.removeClass("error");
-			//_self.btnParseUserText.attr("disabled", true);
 			_self.userText.val(geometry);
 			
 			if (!_self.blockTriggers) {
@@ -796,7 +792,7 @@
 						}
 						_self.startModifying();
 					}
-				}  
+				}
 			});
 			
 			_self.source.on(["addfeature", "removefeature", "clear"], function (e) {
@@ -925,20 +921,7 @@
 					_self.fitAllFeatures();
 				}
 			});
-			/* * 
-			_self.userText
-			.on("focusin", function (e) {
-				e.preventDefault();
-				e.stopPropagation();
-				$(this).data("defaultValue", $(this).val());
-			})
-			.on("change paste keyup", function (e) {
-				var defaultValue = $(this).data("defaultValue");
-				if (defaultValue && $(this).val() != defaultValue) {
-					_self.btnParseUserText.attr("disabled", false);
-				}
-			});
-			/**/
+			
 			/* Map tools section */
 			_self.refreshLayerOpacity();
 			_self.container.on("click", ".drawer-pin", function () {
