@@ -137,40 +137,49 @@ public class ExpressionEvaluator<T, R> {
             throws CannotCompileException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         try {
             final String className = classPrefix + compiledExpressions.size();
-            final CtClass clazz = classPool.makeClass(className);
-            clazz.setModifiers(Modifier.PUBLIC);
-            String exp = code;
-            final Class<?> paramType = primitiveTypeMap.getOrDefault(pixelType, pixelType);
             final Class<?> retType = primitiveTypeMap.getOrDefault(returnType, returnType);
-            final String retTypeName = retType.getSimpleName();
-            final boolean includeCast = !retType.equals(paramType);
-            // Replace parameters placeholders with (optionally casted) arguments
-            for (int i = 1; i <= nbArgs; i++) {
-                exp = exp.replace("$" + i,
-                                  (includeCast ? "(" + retTypeName + ")" : "") + "value" + (nbArgs == 1 ? "" : i));
-            }
-            // For functions from java.lang.Math, cast the arguments to double)
-            final Matcher matcher = functionPattern.matcher(exp);
-            if (matcher.find()) {
-                String group;
-                for (int i = 0; i < matcher.groupCount(); i++) {
-                    if (!(group = matcher.group(i + 1)).isEmpty()) {
-                        exp = exp.replace(group, group + "(double)");
+            CtClass clazz = null;
+            try {
+                clazz = classPool.makeClass(className);
+                clazz.setModifiers(Modifier.PUBLIC);
+                String exp = code;
+                final Class<?> paramType = primitiveTypeMap.getOrDefault(pixelType, pixelType);
+                final String retTypeName = retType.getSimpleName();
+                final boolean includeCast = !retType.equals(paramType);
+                // Replace parameters placeholders with (optionally casted) arguments
+                for (int i = 1; i <= nbArgs; i++) {
+                    exp = exp.replace("$" + i,
+                                      (includeCast ? "(" + retTypeName + ")" : "") + "value" + (nbArgs == 1 ? "" : i));
+                }
+                // For functions from java.lang.Math, cast the arguments to double)
+                final Matcher matcher = functionPattern.matcher(exp);
+                if (matcher.find()) {
+                    String group;
+                    for (int i = 0; i < matcher.groupCount(); i++) {
+                        if (!(group = matcher.group(i + 1)).isEmpty()) {
+                            exp = exp.replace(group, group + "(double)");
+                        }
                     }
                 }
+                // Qualify the function names with Math.
+                final String[] strings = replacementsWithCast.get(retType);
+                exp = StringUtils.replaceEach(exp, mathMethods, strings);
+                final String decl = nbArgs == 1
+                                    ? String.format(singleDeclaration, retTypeName, paramType.getSimpleName(), exp)
+                                    : String.format(doubleDeclaration, retTypeName, paramType.getSimpleName(), paramType.getSimpleName(), exp);
+                clazz.addMethod(CtNewMethod.make(decl, clazz));
+            } catch (Throwable t) {
+                clazz = classPool.get(className);
             }
-            // Qualify the function names with Math.
-            final String[] strings = replacementsWithCast.get(retType);
-            exp = StringUtils.replaceEach(exp, mathMethods, strings);
-            final String decl = nbArgs == 1
-                                ? String.format(singleDeclaration, retTypeName, paramType.getSimpleName(), exp)
-                                : String.format(doubleDeclaration, retTypeName, paramType.getSimpleName(), paramType.getSimpleName(), exp);
-            clazz.addMethod(CtNewMethod.make(decl, clazz));
-            final Class<?> loadedClass = clazz.toClass();
-            final MethodType methodType = nbArgs == 1
-                                          ? MethodType.methodType(retType, pixelType)
-                                          : MethodType.methodType(retType, pixelType, pixelType);
-            return MethodHandles.lookup().findStatic(loadedClass, "execute", methodType);
+            if (clazz != null) {
+                final Class<?> loadedClass = clazz.toClass();
+                final MethodType methodType = nbArgs == 1
+                                              ? MethodType.methodType(retType, pixelType)
+                                              : MethodType.methodType(retType, pixelType, pixelType);
+                return MethodHandles.lookup().findStatic(loadedClass, "execute", methodType);
+            } else {
+                throw new RuntimeException("Failed to compile expression: " + code);
+            }
         } catch (Throwable t) {
             Logger.getLogger(ExpressionEvaluator.class.getName()).severe(t.getMessage());
             throw new RuntimeException(t);
