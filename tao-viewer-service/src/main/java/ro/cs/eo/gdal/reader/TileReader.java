@@ -499,7 +499,17 @@ public class TileReader {
                 }
             }
         }
-        final Dataset translateDataset = GDAL.translate(tileFilePath, warpDataset, new TranslateOptions(translateOptions));
+        Dataset translateDataset = null;
+        try {
+            translateDataset = GDAL.translate(tileFilePath, warpDataset, new TranslateOptions(translateOptions));
+        } catch (Throwable e) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+            translateDataset = GDAL.translate(tileFilePath, warpDataset, new TranslateOptions(translateOptions));
+        }
         if (translateDataset == null) {
             throw new IllegalStateException("Fail to translate dataset. " + GDAL.getLastErrorMsg());
         }
