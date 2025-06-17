@@ -39,6 +39,7 @@
         <module>tao-ogc-service</module>
         <module>tao-simpipe-service</module>
         <module>tao-web-core</module>
+        <module>tao-zeppelin-service</module>
         <!--<module>tao-openeo-service</module>-->
     </modules>
 
