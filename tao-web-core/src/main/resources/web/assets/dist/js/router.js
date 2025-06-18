@@ -203,7 +203,7 @@ $(function () {
 		//trigger a hashchange to start app
 		$(window).trigger('hashchange');
 	}).fail(function (jqXHR, textStatus, errorThrown) {
-		alert("Could not load dynamic menu!");
+		console.log("Could not load dynamic menu!");
 	});
 	
     // Event handlers for frontend navigation

@@ -92,20 +92,17 @@ public class OrchestrationController extends BaseController {
             if (environments == null) {
                 environments = new HashSet<>();
             }
-            Environment defaultEnv = EnumUtils
-                    .getEnumConstantByFriendlyName(Environment.class,
-                                                   ConfigurationManager.getInstance()
-                                                                       .getValue("execution.environment",
-                                                                                 Environment.DEFAULT.friendlyName()));
+            Environment defaultEnv = EnumUtils.getEnumConstantByString(Environment.class,
+                                                                       ConfigurationManager.getInstance()
+                                                                                           .getValue("execution.environment",
+                                                                                                     Environment.DEFAULT.friendlyName()));
             if (defaultEnv == null) {
-                EnumUtils
-                        .getEnumConstantByName(Environment.class,
-                                               ConfigurationManager.getInstance()
-                                                                   .getValue("execution.environment",
-                                                                             Environment.DEFAULT.name()).toUpperCase());
+                warn("Default execution environment not found. Using default value: '" + Environment.DEFAULT.friendlyName() + "'");
+                defaultEnv = Environment.DEFAULT;
             }
+            final Environment de = defaultEnv;
             final List<Environment> results = environments.stream()
-                                                          .filter(e -> e != defaultEnv)
+                                                          .filter(e -> e != de)
                                                           .sorted()
                                                           .collect(Collectors.toList());
             results.add(0, defaultEnv);

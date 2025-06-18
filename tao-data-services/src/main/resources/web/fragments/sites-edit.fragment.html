@@ -8,22 +8,34 @@
 			width:fit-content!important;
 			.tag-input {display:none;}
 		}
-		.tag                      {margin-right:0;border:2px solid transparent;border-radius:3px;cursor:pointer;}
+		.tag                      {margin-right:0;border:2px solid transparent;border-radius:3px;cursor:pointer;padding-right:35px;}
 		.tag.match                {background:#0099ff;}
 		.tag.error                {background:#a63f3f;cursor:default;border-color:transparent!important;}
 		.tag:has(.tag-text:hover) {border-color:rgb(255 255 255/0.5);}
 		.tag .tag-remove:hover    {transform:scale(1.3);}
+		.tag .tag-text            {max-width:70px;display:inline-block;}
 		[name=footprint][readonly]{color:#ccc;padding-top:0;padding-bottom:0;word-break:break-all;}
+		#restore       {opacity:0.6;color:dodgerblue;float:right;}
+		#restore:hover {opacity:0.8;}
 	}
 	/*------MAP------*/
 	#myModalNodes {
-		#mapExtent {position:relative;display:block;margin:-15px;width:calc(100% + 30px);height:550px;min-height:550px;background-color:white;overflow:hidden;}
+		#mapExtent {
+			position:relative;display:block;margin:-15px;width:calc(100% + 30px);height:550px;min-height:550px;background-color:white;overflow:hidden;
+			@media (max-width:767px) {
+				& {max-height:unset!important;}
+			}
+		}
 		#myFlatMap {
-			.map {border:1px solid #96c1ce;}
+			.map {border-left:1px solid #96c1ce;}
 			.poly-actions-panel {
-				width:50rem;max-width:100%;right:0;bottom:0;
+				width:50rem;max-width:100%;right:0;bottom:0;border:0;
 				textarea {font-size:0.8em;line-height:1;}
-				.btn-poly:disabled {pointer-events:none;}
+				.btn-poly {
+					color:rgb(255 255 255/0.8);
+					&:hover {color:rgb(255 255 255/1);}
+					&:disabled {color:rgb(255 255 255/0.4);pointer-events:none;}
+				}
 			}
 			.sliderscontainer {display:none;}
 		}
@@ -67,18 +79,18 @@
 					<div class="form-group">
 						<div class="col-sm-8 col-md-8">
 							<div class="form-group">
-								<label for="polygon" class="col-sm-12 col-md-12">Polygon<sup>*</sup></label>
+								<label for="footprint" class="col-sm-12 col-md-12">Polygon<sup>*</sup></label>
 								<div class="col-sm-12 col-md-12">
-									<textarea class="form-control" rows="2" name="footprint" placeholder="footprint" autocomplete="off" readonly="true"></textarea>
+									<textarea class="form-control" rows="2" id="footprint" name="footprint" placeholder="polygon" autocomplete="off" readonly="true"></textarea>
 								</div>
-								<label class="col-sm-12 col-md-12"><i style="font-weight:400">(*) draw on the <a class="scroll-into-view" href="#mapExtent">map</a> or select a <a class="focus-on" href="#polygon_tag">tile</a></i></label>
+								<label class="col-sm-12 col-md-12"><i style="font-weight:400">(*) draw on the <a class="scroll-into-view" href="#mapExtent">map</a> or select a <a class="focus-on" href="#tileTags_tag">tile</a></i></label>
 							</div>
 						</div>
 						<div class="col-sm-4 col-md-4">
 							<div class="form-group">
-								<label for="polygon" class="col-sm-12 col-md-12">Tile</i></label>
+								<label for="tileTags" class="col-sm-12 col-md-12">Tile</i></label>
 								<div class="col-sm-12 col-md-12">
-									<input class="form-control tag-format" type="text" id="polygon" name="polygon" placeholder="polygon" autocomplete="off" />
+									<input class="form-control tag-format" type="text" id="tileTags" name="tile" placeholder="tile" autocomplete="off" />
 								</div>
 							</div>
 						</div>
@@ -105,12 +117,22 @@
 					<div class="form-group">
 						<div class="col-sm-12 col-md-12">
 							<div class="form-group">
-								<div class="col-md-12 col-sm-12" style="text-align:center;">
-									<button id="saveContainer" type="submit" class="btn btn-primary btn-submit" name="btnSave">Save changes</button>
+								<div class="col-sm-12 col-md-12">
+									<a id="restore" href="" style="font-size:larger">Restore site &nbsp;<i class="fa fa-refresh"></i></a>
 								</div>
 							</div>
 						</div>
 					</div>
+					<div class="form-group">
+						<div class="col-sm-12 col-md-12">
+							<div class="form-group">
+								<div class="col-md-12 col-sm-12" style="text-align:center;">
+									<button type="submit" class="btn btn-primary" name="btnSave">Save changes</button>
+								</div>
+							</div>
+						</div>
+					</div>
+					
 				</form>
 			</div>
 			
@@ -127,17 +149,8 @@
 
 <script type="text/javascript">
 	var $myModalNodes = $("#myModalNodes");
-	var myPolygonMap  = { mapActive: false };
 	
-	// Initialize FORM
-	function initializeForm($form, initData) {
-		$('[name="name"       ]', $form).val(initData?.name        || "");
-		$('[name="description"]', $form).val(initData?.description || "");
-		initData?.startDate && $('[name="startDate"  ]', $form).val(moment(initData.startDate).format("YYYY-MM-DD"));
-		initData?.endDate   && $('[name="endDate"    ]', $form).val(moment(initData.endDate  ).format("YYYY-MM-DD"));
-	}
-	
-	// Initialize datepicker controls for start and end dates
+	// Initialize datepicker controls for start/end dates
 	function initializeDatepickerControls ($startDate, $endDate) {
 		// Remove old datepickers
 		$("#" + $.datepicker.dpDiv.attr("id")).remove();
@@ -150,6 +163,7 @@
 		};
 		
 		// Initialize startDate datepicker
+		$startDate.data("datepicker") && $startDate.datepicker("destroy");
 		$startDate.datepicker({
 			dateFormat: "yy-mm-dd",
 			onSelect: function (date, picker) {
@@ -167,6 +181,7 @@
 		});
 		
 		// Initialize endDate datepicker
+		$endDate.data("datepicker") && $endDate.datepicker("destroy");
 		$endDate.datepicker({
 			dateFormat: "yy-mm-dd",
 			onSelect: function (date, picker) {
@@ -188,28 +203,56 @@
 		if ($startDate.val() != "") { setMinEndDate(); }
 	}
 	
-	// Initialize the tags control to accept Sentinel-2 tiles and use their geometry as site's footprint
-	function initializeTagsControl($tileTags) {
+	// Adjust the map size to match its container's boundaries
+	function adjustMapSize(_map, $container) {
+		var cTop = $container.offset().top;
+		var cBtm = $container.outerHeight(true) - $container.height() - cTop;
+		var marg = _map.el.offset().top + cBtm;
+		
+		var $form = $("form", $container);
+		var minH = $form.length > 0 ? $form.height() - (_map.container.parent().outerHeight(true) - _map.container.parent().outerHeight()) : 550;
+		
+		_map.el.css({ "height": "calc(100vh - " + parseInt(marg + 0.5) + "px", "min-height": parseInt(minH + 0.5) + "px", "max-height": parseInt(minH + 0.5) + "px" });
+		_map.updateMapSize(10);
+	}
+	
+	// Draw a polygon on the map and use it as the site's footprint
+	function createPolygonOnMap(_map, footprint) {
+		if (_map.mapActive) {
+			_map.userText.val(footprint);
+			_map.btnParseUserText.get(0).click();
+			if (!_map.userText.hasClass("error")) {
+				return _map.userText.val();
+			} else {
+				_map.userText.focus();
+				showMsg("Inconsistent footprint information for the selected tile", "WARNING");
+			}
+		}
+		return false;
+	};
+	
+	// Initialize tags control to accept Sentinel-2 tiles and use their geometry as site's footprint
+	function initializeTileTags($tileTags, _map) {
 		// Extract the footprint of a given Sentinel-2 tile
 		var getTileFootprint = function (tileId) {
-			var deferred = $.Deferred();
-				$.ajax({
-					url: baseRestApiURL + "query/footprint",
-					type: "GET",
-					data: { satellite: "sentinel2", tile: tileId },
-					beforeSend: function(xhr) { xhr.setRequestHeader("X-Auth-Token", tokenKey); },
-					success: function(response) {
-						if (response.status === "SUCCEEDED") {
-							deferred.resolve(response.data);
-						} else {
-							deferred.reject(null, response.status, response.message);
-						}
-					},
-					error: function (jqXHR, status, error) {
-						deferred.reject(jqXHR, status, error);
+			var tileFootprint = $.Deferred();
+			$.ajax({
+				url: baseRestApiURL + "query/footprint",
+				type: "GET",
+				data: { satellite: "sentinel2", tile: tileId },
+				beforeSend: function(xhr) { xhr.setRequestHeader("X-Auth-Token", tokenKey); },
+				success: function(response) {
+					if (response.status === "SUCCEEDED") {
+						tileFootprint.resolve(response.data);
+					} else {
+						tileFootprint.reject(null, response.status, response.message);
 					}
-				});
-			return deferred.promise();
+				},
+				error: function (jqXHR, status, error) {
+					tileFootprint.reject(jqXHR, status, error);
+				}
+			});
+			return tileFootprint.promise();
 		};
 		
 		// Initialize the tags control
@@ -223,10 +266,15 @@
 			unique		: true,
 			confirmKeys	: [188, 32],
 			onAddTag    : function (elm, tag) {
+				var footprint = false;
 				$.when(getTileFootprint(tag)).done(function (response) {
-					$tileTags.trigger("newtilefootprint", [ response ]);
-					$("+.tagsinput .tag", elm).on("click", function () {
-						$tileTags.trigger("newtilefootprint", [ response ]);
+					if (footprint = createPolygonOnMap(_map, response)) {
+						$("+.tagsinput .tag", elm).addClass("match").data({ "footprint": footprint });
+						showMsg("New footprint set", "INFO");
+					}
+					// Restore tile's footprint on map when a the tag is clicked
+					$("+.tagsinput", elm).on("click", ".tag:not(.match,.error)", function (e) {
+						createPolygonOnMap(_map, response);
 					});
 				}).fail(function (jqXHR, status, error) {
 					$("+.tagsinput .tag", elm).addClass("error");
@@ -236,31 +284,8 @@
 		});
 	}
 	
-	// Adjust the map size to match its container's boundaries
-	function adjustMapSize(_map, $container) {
-		var cTop = $container.offset().top;
-		var cBtm = $container.outerHeight(true) - $container.height() - cTop;
-		var marg = _map.el.offset().top + cBtm;
-		
-		var $form = $("form", $container);
-		var minH = $form.length > 0 ? $form.height() - (_map.container.parent().outerHeight(true) - _map.container.parent().outerHeight()) : 550;
-		
-		_map.el.css({ "height": "calc(100vh - " + parseInt(marg + 0.5) + "px", "min-height": parseInt(minH + 0.5) + "px" });
-		_map.updateMapSize(10);
-	}
-	
-	function updateMapSize(_map) {
-		var $mCont = $mapExtent.closest(".modal-content");
-		var $mBody = $(".modal-body"  , $mCont);
-		var $mHead = $(".modal-header", $mCont);
-		var marg = 3*$mCont.offset().top + $mHead.outerHeight(true);
-		var minH = parseInt($("form", $mBody).outerHeight(true) + 0.5) + ($mBody.outerHeight() - $mBody.height());
-		_map.el.css({ "height": "calc(100vh - " + parseInt(marg) + "px", "min-height": minH + "px" });
-		_map.updateMapSize(10);
-	}
-	
 	// Initialize map
-	function initializeMap(_map, $mapExtent, $tileTags, initFootprint) {
+	function initializeMap(_map, $mapExtent, $tileTags) {
 		// Actions to take when the Edit modal page is opened or closed
 		var toggleModalVisibility = function (e) {
 			if (e.type == "shown") {
@@ -274,76 +299,66 @@
 		}
 		$myModalNodes.on("shown.bs.modal hidden.bs.modal", toggleModalVisibility);
 		
-		// Draw a polygon on the map and use it as the site footprint
-		var createPolygonOnMap = function (footprint, isTile) {
-			if (_map.mapActive) {
-				var features = null;
-				if (features = _map.createShapeFromGeometry(footprint, null, true)) {
-					_map.fitAllFeatures();
-					_map.restartActiveInteraction();
-					if (isTile) {
-						$("+.tagsinput .tag", $tileTags).addClass("match").data({ "footprint": features[0].getProperties()["textGeometry"] });
-						showMsg("New footprint set", "INFO");
-					}
-				} else {
-					showMsg("Inconsistent footprint information for the selected tile", "WARNING");
-				}
-			}
-		};
-		
 		// Initialize map
 		$mapExtent.poly2D({
-			startLat     : 4,
-			startLon     : 15,
-			zoom         : 5,
+			startLat: 4,
+			startLon: 15,
 			maxFeaturesNo: 1,
-			loaded       : function (olPoly) {
-				if (typeof olPoly.readOnly === "boolean") {
-					$.extend(_map, olPoly);
-					_map.el.removeClass("hidden");
-					
-					// Initialize the tags control
-					initializeTagsControl($tileTags);
-					
-					// Create new tile polygon on map after a valid one is being set
-					$tileTags.on("newtilefootprint", function (e, tilefootprint) {
-						createPolygonOnMap(tilefootprint, true);
-					});
-					
-					// Check whether the new footprint matches the tile footprint and mark the tile control accordingly
-					_map.el.on("newfootprint", function (e, footprint) {
-						var tagFootprint = $("+.tagsinput .tag", $tileTags).data("footprint");
-						$('#frmEditSiteContainer [name="footprint"]').val(footprint);
-						if (tagFootprint == footprint) {
-							$("+.tagsinput .tag", $tileTags).addClass("match");
-						} else {
-							$("+.tagsinput .tag", $tileTags).removeClass("match");
-						}
-					});
-					
-					// Set initial footprint from input data
-					if (initFootprint) {
-						var geometry = initFootprint.replace("MULTIPOLYGON (((", "POLYGON((").replace(")))", "))").replace(" ((", "((");
-						createPolygonOnMap(geometry);
-					}
-				}
+			defaultFootprint: _map.siteFootprint,
+			loaded: function (olPoly) {
+				$.extend(_map, olPoly);
+				_map.el.removeClass("hidden");
+				
+				// Initialize the tags control for tiles
+				initializeTileTags($tileTags, _map);
 			}
 		});
+		
+		// Check whether the new footprint matches the tile footprint and mark the tile control accordingly
+		$mapExtent.on("newfootprint", function (e, footprint) {
+			var tagFootprint = $("+.tagsinput .tag", $tileTags).data("footprint");
+			$('#frmEditSiteContainer [name="footprint"]').val(footprint);
+			if (tagFootprint == footprint) {
+				$("+.tagsinput .tag", $tileTags).addClass("match");
+			} else {
+				$("+.tagsinput .tag", $tileTags).removeClass("match");
+			}
+		});
+	};
+	
+	// Initialize form
+	function initializeForm($form, initData) {
+		// Name
+		$('[name="name"]', $form).val(initData?.name || "");
+		
+		// Description
+		$('[name="description"]', $form).val(initData?.description || "");
+		
+		// Date picker controls for startDate and endDate
+		initData?.startDate && $('[name="startDate"]', $form).val(moment(initData.startDate).format("YYYY-MM-DD"));
+		initData?.endDate   && $('[name="endDate"  ]', $form).val(moment(initData.endDate  ).format("YYYY-MM-DD"));
+		initializeDatepickerControls($('[name="startDate"]', $form), $('[name="endDate"]', $form));
+		
+		// Footprint
+		if (initData?.footprint) {
+			if (initData?.map?.mapActive) {
+				var geometry = initData.footprint.replace("MULTIPOLYGON (((", "POLYGON((").replace(")))", "))").replace(" ((", "((");
+				createPolygonOnMap(initData.map, geometry);
+			} else {
+				// Initialize map
+				initData.map = { mapActive: false, siteFootprint: initData.footprint };
+				initializeMap(initData.map, $("#mapExtent"), $("#tileTags"));
+			}
+		}
 	}
 	
-	//////////////////////////////////////////////////////////////////////////////////////
+	// Document ready
 	$(document).ready( function() {
-		var $form    = $("#frmEditSiteContainer");
-		var initData = window?.userOpStack?.dna || {};
+		var $form = $("#frmEditSiteContainer");
+		var initData = $.extend({}, window?.userOpStack?.dna || {});
 		
-		// Read input form data
+		// Initialize form
 		initializeForm($form, initData);
-		
-		// Initialize date picker controls for startDate and endDate
-		initializeDatepickerControls($("#startDate"), $("#endDate"));
-		
-		// Initialize map
-		initializeMap(myPolygonMap, $("#mapExtent"), $("#polygon"), initData?.footprint);
 		
 		// Custom validations for container name (accepted characters & unique name)
 		$.validator.addMethod("containerName", function (value, element, params) { return value.length == 0 || value.match(new RegExp(params.regEx, "g")); }, "Remove invalid characters ( site's name must be unique, only allowed small caps letters (a-z), numbers (0-9) and dashes (-)).")
@@ -360,6 +375,13 @@
 			}
 		});
 		
+		// Restore form data
+		$("#restore").on("click", function (e) {
+			e.preventDefault();
+			initializeForm($form, initData);
+			$form.valid();
+		});
+		
 		// Validate form before submit
 		$form.validate({
 			rules: {
@@ -372,11 +394,11 @@
 			highlight     : function(element, errorClass) { $(element).parent().addClass("has-error"); },
 			unhighlight   : function(element, errorClass) { $(element).parent().removeClass("has-error"); },
 			messages      : { },
+			success       : function(label) { label.remove(); },
 			errorPlacement: function(error, element) {
 				error.appendTo(element.parent());
-				setTimeout(function () { adjustMapSize(myPolygonMap, myPolygonMap.el.closest(".modal-dialog")); }, 500);
-			},
-			success       : function(label) { label.remove(); }
+				setTimeout(function () { initData?.map?.mapActive && adjustMapSize(initData.map, initData.map.el.closest(".modal-dialog")); }, 500);
+			}
 		});
 		
 		// Disable form submit on keypress (Enter)
