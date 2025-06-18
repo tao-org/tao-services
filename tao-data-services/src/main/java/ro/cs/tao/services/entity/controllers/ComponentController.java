@@ -246,7 +246,11 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      */
     @RequestMapping(value = "/naming", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateRule(@RequestBody NamingRule rule) {
-        return saveRule(rule);
+        try {
+            return prepareResult(nameTokenService.update(rule));
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
     /**
      * Removes a naming rule
