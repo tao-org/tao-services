@@ -28,6 +28,7 @@ import ro.cs.tao.services.interfaces.TopologyService;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.ServiceDescription;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.utils.executors.MemoryUnit;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -140,6 +141,9 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody NodeDescription entity) {
         entity.setAppId(Orchestrator.getInstance().getId());
+        if (entity.getFlavor().getMemoryUnit() == null) {
+            entity.getFlavor().setMemoryUnit(MemoryUnit.GB); // by default, consider GB as memory unit in cases when it's not specified
+        }
         return super.save(entity);
     }
 
