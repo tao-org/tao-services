@@ -178,7 +178,11 @@ body.size-large .btn-list-view, body.size-large .btn-submit.btn-list-view{font-s
 body.size-larger  .btn-list-view, body.size-larger .btn-submit.btn-list-view{font-size:16px}
 
 /*Form fields*/
-.form-control{font-size:14px}
+.form-control{
+	font-size:14px;
+	height: 2.43em;
+    padding: 0.43em 0.86em;
+}
 body.size-small .form-control{font-size:12px}
 body.size-normal .form-control{font-size:14px}
 body.size-large .form-control{font-size:16px}

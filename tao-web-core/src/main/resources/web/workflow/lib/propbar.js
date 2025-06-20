@@ -60,11 +60,31 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
         }
         window.$propbar.menu("close");
     })
+	.on("click", ".toggle-password", function (e) {
+		// Toggle password visibility by clicking the eye icon
+		if ($(this).hasClass('fa-eye')) {
+			$(this).removeClass("fa-eye").addClass("fa-eye-slash").attr("title", "hide password").prev().attr("type", "text");
+		} else if ($(this).hasClass('fa-eye-slash')) {
+			$(this).removeClass("fa-eye-slash").addClass("fa-eye").attr("title", "hide password").prev().attr("type", "password");
+		}
+	})
 	.on("click", ".ol", function (e) {
 		// Load map poly
 		var $mapContainer   = $("#propbarMap");
 		var $footprintField = $(this).parent().find("input.var-value-string");
 		openPolygonMap($mapContainer, $footprintField);
+	})
+	.on("click", ".insert-function", function (e) {
+		// Show insert function dialog
+		var p1Sel = "";
+		var p2Sel = "";
+		
+		var $sinput = $(e.currentTarget).siblings(".var-value-string");
+		if ($sinput.length > 0) {
+			$sinput.is("div") && ($sinput = $(">.input", $sinput));
+			p1Sel = ($sinput.is("div") ? $sinput.text() : $sinput.val()).substring(0, $sinput.get(0).selectionStart);
+			p2Sel = ($sinput.is("div") ? $sinput.text() : $sinput.val()).substring($sinput.get(0).selectionEnd);
+		}
 	})
     .on("click", ".var-default",function(e){
 		if ($(".var-value-string:visible", $(this).parent()).length > 0) {
@@ -220,10 +240,25 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
                 alert("Could not update custom values", "ERROR");
             });
     };
+	
+	var isEmpty = function (value) {
+		var empty = (value === null) || (typeof value === "undefined");
+		if (!empty) {
+			if (typeof value === "string") {
+				empty = (value === "") || (value === "null") || (value === "_null");
+			} else if ($.isArray(value)) {
+				empty = (value.length === 0) || (value.length === 1 && isEmpty(value[0]));
+			} else if (typeof value === "object") {
+				empty = $.isEmptyObject(value);
+			} else if (typeof value === "boolean") {
+				empty = value;
+			}
+		}
+		return empty;
+	};
 
-    function fieldFormat(){
-
-		$(".tag-format").tagsInput({
+    var fieldFormat = function ($tag) {
+		$tag.tagsInput({
 			minChars	: 0,
 			maxChars	: null,
 			limit		: null,
@@ -233,26 +268,24 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
             allowDuplicates: true,
 			placeholder	: 'Add an element',
 			delimiter	: ','
-
 		});
-
 	}
-
+	
 	window.$propbar.menu = function(action, params){
 						if ( action === "open") {
 							$('html, body').addClass("app-noscroll");
-							propbar_remderNodeForm(params.nodeid);
+							propbar_renderNodeForm(params.nodeid);
 							$('app-modal-overlay').addClass("on-screen");
 						}
 						if ( action === "close") {
 							closePolygonMap();
 							$('app-modal-overlay').removeClass("on-screen");
 							$('html, body').removeClass("app-noscroll");
-                            widgetRootEl.find(".app-card-clean").hide();
+							widgetRootEl.find(".app-card-clean").hide();
 						}
 	};
     var topologyList;
-	var propbar_remderNodeForm = function(nid){
+	var propbar_renderNodeForm = function(nid){
         widgetRootEl.find(".tbl-edt").closest(".app-card").hide();
 	    widgetRootEl.find(".val-row").remove();
         $propbar.nid = nid;
@@ -458,49 +491,53 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
         $tblEdt = $("#tbl-edt-sysvar");
         $tblEdt.find(".val-row").remove();
 
-        var helper_putValue = function($el, name, type, value, valueset){
-
-            var currentCustomValueSet = (_.find($propbar.nodeData.customValues, function(item) {
-                return (item.parameterName === name);
-            }));
-            //console.log("value:"+value+"current"+currentCustomValueSet.parameterValue);
-            if(currentCustomValueSet && currentCustomValueSet.hasOwnProperty('parameterValue')){
-                if((currentCustomValueSet.parameterValue ==="[]" || currentCustomValueSet.parameterValue ==="" ) && valueset!== null){
-                    value = null;
-                }else{
-                    value = currentCustomValueSet.parameterValue;
-                }
-            }
-
-            if ((valueset === null) || (valueset.length === 0) || ((valueset.length === 1) && ((valueset[0] === "") || (valueset[0] === "null")))) {
-                $('input.var-value', $el).val(value);
-                if( name === "password" && type.indexOf("[]") == -1 ){
-                    $('input.var-value-string', $el).attr("type", "password");
-                    $('input.var-value-string', $el).css("width","100%");
-                    $('i.glyphicon-eye-open', $el).css("display", "inline");
-                }
-                if( type.indexOf("[]") > -1){ 
-                    $('input.var-value-string', $el).addClass("tag-format");
-                    if(value !== null && value!== "") {
-                        $('input.var-value', $el).val(value.substring(1, value.length-1));
-                        $('input.var-value-string', $el).val(value.substring(1, value.length-1)).show();
-                    }    
-                }else if (type === "date") {
-                    $('input.var-value-string', $el).attr("type", "date");
-                    if(value != null){
-                        $('input.var-value-string', $el).val(value.split("T")[0]).show();
-                    }else{
-                        $('input.var-value-string', $el).show();
-                    }
-                } else {
-                    if ((type === "int") || (type === "long") || (type === "double") || (type === "short") || (type === "float") || (type === "number")) {
-                        $('input.var-value-string', $el).attr("type", "number");
-                    }
-                    $('input.var-value-string', $el).val(value).show();
-                }
-                fieldFormat();
-            } else {
-                $('input.var-value', $el).val(value);
+		var helper_putValue = function ($el, name, type, value, valueset) {
+			var currentCustomValueSet = _.find($propbar.nodeData.customValues, function (item) { return (item.parameterName === name); });
+			if (typeof currentCustomValueSet === "object" && currentCustomValueSet.hasOwnProperty('parameterValue')) {
+				if ((currentCustomValueSet.parameterValue === "[]" || currentCustomValueSet.parameterValue === "") && valueset !== null) {
+					value = null;
+				} else {
+					value = currentCustomValueSet.parameterValue;
+				}
+			}
+			if (isEmpty(valueset)) {
+				$('input.var-value', $el).val(value);
+				if (type.indexOf("[]") > -1) {
+					// Multivalue: convert input field to tags control
+					$('input.var-value-string', $el).addClass("tag-format");
+					if(value !== null && value!== "") {
+						$('input.var-value', $el).val(value.substring(1, value.length-1));
+						$('input.var-value-string', $el).val(value.substring(1, value.length-1)).show();
+					}
+				} else if (type === "date") {
+					// Date: convert input field to date
+					$('input.var-value-string', $el).attr("type", "date");
+					if (value != null) {
+						$('input.var-value-string', $el).val(value.split("T")[0]).show();
+					} else {
+						$('input.var-value-string', $el).show();
+					}
+				} else if ((type === "int") || (type === "long") || (type === "double") || (type === "short") || (type === "float") || (type === "number")) {
+					// Number: convert input field to number
+					$('input.var-value-string', $el).attr("type", "number");
+					$('input.var-value-string', $el).val(value).show();
+                } else if (type === "polygon" || type === "wkt") {
+					// Footprint: add button to open map
+					$('input.var-value-string', $el).after('<i class="side-control fa fa-globe ol"></i>').parent().addClass("has-side-control");
+					$('input.var-value-string', $el).val(value).show();
+				} else {
+					// Other types: string, bool, TEMPLATE
+					if (name === "password") {
+						// Password: convert input field to password
+						$('input.var-value-string', $el).attr("type", "password");
+						$('input.var-value-string', $el).after('<i class="side-control toggle-password fa fa-eye" title="show password"></i>').parent().addClass("has-side-control");
+					} else {
+						$('input.var-value-string', $el).after('<i class="side-control insert-function" title="insert function">f<sub>x</sub></i>').parent().addClass("has-side-control");
+					}
+					$('input.var-value-string', $el).val(value).show();
+				}
+			} else {
+				$('input.var-value', $el).val(value);
                 var html = "";
                 html += "<option class='empty-option' value='"+(type.indexOf("[]") > -1 ? null : "")+"'>Empty value</option>";
                 $.each(valueset, function(i, v) {
@@ -580,8 +617,8 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
             }
 
             if(obj.type === "TEMPLATE"){
-                $el.find(".textviewWrapper ").removeClass(".textviewWrapper ");
-                $(".div-params", $el).css("display","none");
+                $(".textviewWrapper", $el).removeClass("textviewWrapper");
+				$(".div-params", $el).css("display","none");
             }
 
             if(typeof objParent === "undefined"){
@@ -600,7 +637,7 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
                 });
             }
 
-            fieldFormat();
+            ($('.tag-format', $el).length > 0) && fieldFormat($('.tag-format', $el));
             return $el;
         };
         if (typeof lcl_n.additionalInfo != 'undefined') {
@@ -643,14 +680,12 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
                 var elValueVal = $('.var-value', elValue)[0];
                 console.log(nodeTokens);
                 //call filename plugin on element
-                $(elFilename).npFileName({
+				$(elFilename).npFileName({
                     tags: nodeTokens,
                     output: elValueVal,
                     submitOnEnter: false,
-                    debug: true,
 					sourcesIndex: sourcesIndex
                 });
-                
             } else {
                 helper_addSTblEdtRow($("#tbl-edt-sysvar"),parameter);
             }
@@ -677,13 +712,18 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
                         tags: nodeTokens,
                         output: elValue,
                         submitOnEnter: false,
-                        debug: true,
                         sourcesIndex: sourcesIndex
                     });
                 }
             });
         }   
-        if(componentTemplate.parameterDescriptors.length > 0 || lcl_n.additionalInfo.length > 0) $tblEdt.closest(".app-card").show();
+        if(componentTemplate.parameterDescriptors.length > 0 || lcl_n.additionalInfo.length > 0) {
+			// Add the default control class name "var-value-string" to all npFileName controls
+			$(".has-side-control .textviewWrapper", $tblEdt).addClass("var-value-string");
+			
+			// Show parameters
+			$tblEdt.closest(".app-card").show();	
+		}
 	    return 1;
 	};
 
@@ -744,7 +784,7 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
 					}
 				} else if ((type === "int") || (type === "long") || (type === "double") || (type === "short") || (type === "float") || (type === "number")) {
 					$('input.var-value-string', $el).attr("type", "number");
-                } else if (type === "polygon") {
+                } else if (type === "polygon" || type === "wkt") {
 					// Add button to open polygon map
 					$("<i class='fa fa-fw fa-globe ol' style='position:absolute;font-size:1.5em;vertical-align:bottom;color:#2677a7;cursor:pointer;margin-left:-25px;margin-top:2px;background-color:white;'></i>").insertAfter($('input.var-value-string', $el));
 				}

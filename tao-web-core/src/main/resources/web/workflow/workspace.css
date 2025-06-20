@@ -270,6 +270,10 @@
     text-shadow: 1px 1px 1px #666;
 }
 
+#infoband:has(>span:empty){
+	padding: 0px 20px;
+}
+
 #tools-toolbox {
 	position: absolute;
 	padding: 2px;
