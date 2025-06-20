@@ -671,6 +671,7 @@
 	var devalidateLogoFile = function(event) {
 		if (event.type == "error") {
 			var $previewLogo = $("#previewLogo");
+			$previewLogo.removeAttr("onerror");
 			$previewLogo.attr("src", "");
 			$previewLogo.addClass("empty");
 		}
