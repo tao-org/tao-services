@@ -1,0 +1,16 @@
+.has-side-control {
+	background:white;display:inline-block;padding-right:2em;
+	/* sub-elements */.foo{}
+	+i.side-control {
+		display:inline-block;color:#2677a7;text-align:center;width:2em;padding:0.33em;line-height:1;cursor:pointer;vertical-align:top;margin:0.1em 0 0 -2em;font-size:1em;
+		/* sub-elements */.foo{}
+		&.autohide {
+			opacity:0;pointer-events:none;
+			/* sub-elements */.foo{}
+			.has-side-control:hover+&,
+			&:hover  {opacity:1;pointer-events:all;}
+			&:hover  {transform:scale(1.2);}
+			&:active {transform:scale(1.0);}
+		}
+	}
+}
