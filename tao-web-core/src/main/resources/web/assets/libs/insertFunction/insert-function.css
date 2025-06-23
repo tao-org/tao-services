@@ -1,0 +1,38 @@
+.insert-function {
+	font-size:12px;
+	ul,li                    {list-style:none;padding:0;margin:0;}
+	label                    {width:100%;font-weight:400;color:inherit;}
+	select[name],input[name] {width:100%;font-size:inherit;height:2em;padding:0.2em 0.5em;margin-bottom:0.36em;border:1px solid #ccc;}
+	select[name][size]       {height:unset;padding:0;}
+	select[name] option      {padding:0.3em 0.7em;}
+	.fn-search {
+		position:relative;padding-left:2em;margin-bottom:1em;.foo{}
+		label               {margin:0;}
+		.clear-search       {position:absolute;right:0;top:0;margin:0.5em 0.5em 0 0;cursor:pointer;}
+		.clear-search:hover {color:crimson;transform:scale(1.2);}
+	}
+	.fn-selection {
+		padding-left:2em;
+		.fn-definition {font-weight:700;word-wrap:break-word;}
+		.fn-description {
+			font-weight:400;word-wrap:break-word;
+			span     {display:inline-block;vertical-align:top;}
+			.fn-def  {margin:0.7em 0;}
+			.fn-args {margin:0;font-size:0.9em;}
+			.indent1 {width:30%;padding-left:5%;}
+			.indent2 {width:70%;}
+		}
+	}
+	.ui-widget:has(&) {
+		opacity:0.98;color:#555;background-color:whitesmoke;margin:0;padding:0;border:0;border-radius:4px;box-shadow:0 1px 4px 0 rgba(0,0,0,0.37);overflow:hidden;z-index:10001;
+		.ui-widget-header {
+			font:400 18px/20px math,Arial,Helvetica,sans-serif;background:none;border:0;
+			.ui-button {margin-right:10px;}
+		}
+		.ui-widget-content   {padding:15px;margin:0;border:0;background:none;color:inherit;}
+		.ui-dialog-buttonset {
+			float:right;.foo{}
+			button{margin:.0 0 0 .4em;}
+		}
+	}
+}

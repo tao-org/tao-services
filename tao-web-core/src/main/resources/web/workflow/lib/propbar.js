@@ -60,32 +60,6 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
         }
         window.$propbar.menu("close");
     })
-	.on("click", ".toggle-password", function (e) {
-		// Toggle password visibility by clicking the eye icon
-		if ($(this).hasClass('fa-eye')) {
-			$(this).removeClass("fa-eye").addClass("fa-eye-slash").attr("title", "hide password").prev().attr("type", "text");
-		} else if ($(this).hasClass('fa-eye-slash')) {
-			$(this).removeClass("fa-eye-slash").addClass("fa-eye").attr("title", "hide password").prev().attr("type", "password");
-		}
-	})
-	.on("click", ".ol", function (e) {
-		// Load map poly
-		var $mapContainer   = $("#propbarMap");
-		var $footprintField = $(this).parent().find("input.var-value-string");
-		openPolygonMap($mapContainer, $footprintField);
-	})
-	.on("click", ".insert-function", function (e) {
-		// Show insert function dialog
-		var p1Sel = "";
-		var p2Sel = "";
-		
-		var $sinput = $(e.currentTarget).siblings(".var-value-string");
-		if ($sinput.length > 0) {
-			$sinput.is("div") && ($sinput = $(">.input", $sinput));
-			p1Sel = ($sinput.is("div") ? $sinput.text() : $sinput.val()).substring(0, $sinput.get(0).selectionStart);
-			p2Sel = ($sinput.is("div") ? $sinput.text() : $sinput.val()).substring($sinput.get(0).selectionEnd);
-		}
-	})
     .on("click", ".var-default",function(e){
 		if ($(".var-value-string:visible", $(this).parent()).length > 0) {
             if(/\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/.test($(this).html())){
@@ -100,7 +74,62 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
 			$(this).siblings(".var-value-list").trigger("change");
 		}
 	});
-
+	
+	function sideControlAction(action, $control) {
+		// Get the list of functions
+		var getConfigFunctions = function () {
+			var deferred = $.Deferred();
+				if (typeof window.configFunctions !== "undefined") {
+					deferred.resolve(window.configFunctions);
+				} else {
+					$.ajax({
+						url    : baseRestApiURL + "config/functions",
+						type   : 'GET',
+						cache  : false,
+						headers: { "X-Auth-Token": window.tokenKey },
+						error  : function (jqXHR, textStatus, errorThrown) { deferred.resolve({}); },
+						success: function (response) {
+							if (response?.status === responseStatus.success && typeof response.data !== "undefined") {
+								window.configFunctions = response.data;
+								deferred.resolve(window.configFunctions);
+							} else {
+								deferred.resolve({});
+							}
+						}
+					});
+				}
+			return deferred.promise();
+		};
+		var $input = $control.prev(".has-side-control");
+		if ($input.length > 0) {
+			switch (action) {
+				case "togglePassword":
+					// Toggle password visibility
+					if ($control.hasClass('fa-eye')) {
+						$input.attr("type", "text");
+						$control.removeClass("fa-eye").addClass("fa-eye-slash").attr("title", "hide password");
+					} else if ($control.hasClass('fa-eye-slash')) {
+						$input.attr("type", "password");
+						$control.removeClass("fa-eye-slash").addClass("fa-eye").attr("title", "show password");
+					}
+					break;
+				case "showMap":
+					// Load poly map
+					openPolygonMap($("#propbarMap"), $input);
+					break;
+				case "insertFunction":
+					$input.insertFunction({
+						container: $("body"),
+						source   : function () { return getConfigFunctions(); },
+						selection: function (response) {
+							$input.trigger("change");
+						}
+					});
+					break;
+			}
+		}
+	}
+	
     var saveQuery = function(){
         var cV = {};
         $tblEdt = $("#tbl-edt-sysvar");
@@ -522,17 +551,33 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
 					$('input.var-value-string', $el).attr("type", "number");
 					$('input.var-value-string', $el).val(value).show();
                 } else if (type === "polygon" || type === "wkt") {
-					// Footprint: add button to open map
-					$('input.var-value-string', $el).after('<i class="side-control fa fa-globe ol"></i>').parent().addClass("has-side-control");
+					// Add side button that opens up the map, when clicked
+					$('input.var-value-string', $el).sideControl({
+						iconclass: 'fa fa-globe ol',
+						tooltip  : "show map",
+						onclick  : function (e) { sideControlAction("showMap", $(e.currentTarget)); }
+					});
 					$('input.var-value-string', $el).val(value).show();
 				} else {
 					// Other types: string, bool, TEMPLATE
 					if (name === "password") {
 						// Password: convert input field to password
 						$('input.var-value-string', $el).attr("type", "password");
-						$('input.var-value-string', $el).after('<i class="side-control toggle-password fa fa-eye" title="show password"></i>').parent().addClass("has-side-control");
+						// Add side button that toggles the password visibility, when clicked
+						$('input.var-value-string', $el).sideControl({
+							iconclass: 'toggle-password fa fa-eye',
+							tooltip  : "show password",
+							onclick  : function (e) { sideControlAction("togglePassword", $(e.currentTarget)); }
+						});
 					} else {
-						$('input.var-value-string', $el).after('<i class="side-control insert-function" title="insert function">f<sub>x</sub></i>').parent().addClass("has-side-control");
+						// Add side button that shows a dialog with all functions list, when clicked
+						$('input.var-value-string', $el).sideControl({
+							iconclass: "insert-function",
+							icontext : 'f<sub>x</sub>',
+							autohide : true,
+							tooltip  : "insert function",
+							onclick  : function (e) { sideControlAction("insertFunction", $(e.currentTarget)); }
+						});
 					}
 					$('input.var-value-string', $el).val(value).show();
 				}
@@ -716,13 +761,14 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
                     });
                 }
             });
-        }   
+        }
         if(componentTemplate.parameterDescriptors.length > 0 || lcl_n.additionalInfo.length > 0) {
-			// Add the default control class name "var-value-string" to all npFileName controls
-			$(".has-side-control .textviewWrapper", $tblEdt).addClass("var-value-string");
+			$.each($(".textviewWrapper:has(+.side-control)", $tblEdt), function () {
+				$(".input", this).addClass("has-side-control").after($(this).next());
+			});
 			
 			// Show parameters
-			$tblEdt.closest(".app-card").show();	
+			$tblEdt.closest(".app-card").show();
 		}
 	    return 1;
 	};
@@ -830,8 +876,8 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
         $.each(queryTemplate.parameters, function(i, value) {
             helper_addSTblEdtRow($("#tbl-edt-sysvar"),value);
         });
+		
         if(_.size(queryTemplate.parameters) > 0) $tblEdt.closest(".app-card").show();
-
     };
 
 
@@ -860,3 +906,4 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
 	};
     wf_loadPropbarWidget();
 }());
+//# sourceURL=propbar.js

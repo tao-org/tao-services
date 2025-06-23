@@ -92,7 +92,8 @@ pre {
 	-moz-box-shadow: 0 0 20px 0 rgba(0,0,0,0.5);
 	box-shadow: 0 0 20px 0 rgba(0,0,0,0.5);
 	border: 2px solid #2e6f9a;
-
+	margin-left: -1px;
+    margin-top: -1px;
 }
 
 .w.unknown-w{
