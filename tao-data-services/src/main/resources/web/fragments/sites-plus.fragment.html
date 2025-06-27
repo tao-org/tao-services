@@ -5,29 +5,39 @@
 			width:fit-content!important;
 			.tag-input {display:none;}
 		}
-		.tag                      {margin-right:0;border:2px solid transparent;border-radius:3px;cursor:pointer;padding-right:35px;}
-		.tag.match                {background:#0099ff;}
-		.tag.error                {background:#a63f3f;cursor:default;border-color:transparent!important;}
-		.tag:has(.tag-text:hover) {border-color:rgb(255 255 255/0.5);}
-		.tag .tag-remove:hover    {transform:scale(1.3);}
-		.tag .tag-text            {max-width:70px;display:inline-block;}
-		[name=footprint][readonly]{color:#ccc;padding-top:0;padding-bottom:0;word-break:break-all;}
-		#reset       {opacity:0.6;color:dodgerblue;float:right;}
-		#reset:hover {opacity:0.8;}
+		.tag                        {margin-right:0;border:2px solid transparent;border-radius:3px;cursor:pointer;padding-right:35px;}
+		.tag.match                  {background:#0099ff;}
+		.tag.error                  {background:#a63f3f;cursor:default;border-color:transparent!important;}
+		.tag:has(.tag-text:hover)   {border-color:rgb(255 255 255/0.5);}
+		.tag .tag-remove:hover      {transform:scale(1.3);}
+		.tag .tag-text              {max-width:70px;display:inline-block;}
+		[name=footprint][readonly]  {color:#ccc;padding-top:0;padding-bottom:0;word-break:break-all;resize:none;}
+		[name=description]          {resize:none;}
+		[name=btnSave]              {width:70%;float:left;min-width:fit-content;
+			                         &:focus {outline:5px auto #00587a;outline-offset:-2px;}
+		}
+		[name=btnCancel]            {float:right;width:28%;min-width:fit-content;
+			                         &:focus {outline:5px auto #ddd;outline-offset:-2px;}
+		}
+		#reset                      {opacity:0.8;color:dodgerblue;float:right;}
+		#reset i                    {vertical-align:middle;}
+		.scroll-into-view,.focus-on {opacity:0.6;font-weight:700;}
+		#reset:hover,.scroll-into-view:hover,.focus-on:hover,
+		#reset:focus,.scroll-into-view:focus,.focus-on:focus {opacity:1;}
 	}
 	/*------MAP------*/
 	#myModalNodes {
 		#mapExtent {
 			position:relative;display:block;margin:-15px;width:calc(100% + 30px);height:550px;min-height:550px;background-color:white;overflow:hidden;
 			@media (max-width:767px) {
-				& {max-height:unset!important;}
+				& {min-height:90vh!important;max-height:90vh!important;}
 			}
 		}
 		#myFlatMap {
 			.map {border-left:1px solid #96c1ce;}
 			.poly-actions-panel {
 				width:50rem;max-width:100%;right:0;bottom:0;border:0;
-				textarea {font-size:0.8em;line-height:1;}
+				textarea {font-size:0.8em;line-height:1;resize:none;}
 				.btn-poly {
 					color:rgb(255 255 255/0.8);
 					&:hover {color:rgb(255 255 255/1);}
@@ -37,103 +47,108 @@
 			.sliderscontainer {display:none;}
 		}
 	}
+	/*------Modal------*/
+	@media (min-width:  768px) {.modal-width{width: 766px;}}
+	@media (min-width:  992px) {.modal-width{width: 990px;}}
+	@media (min-width: 1400px) {.modal-width{width:1398px;}}
 </style>
-<div class="modal-content">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-		<h4 class="modal-title" id="myModalLabel">Manage site</h4>
-	</div>
-	<div class="modal-body">
-		<div class="row">
-			<!-- FORM -->
-			<div class="col-sm-4 col-md-4">
-				<form id="frmContainer" class="form-horizontal clearfix" action="" role="form">
-					<div class="form-group">
-						<label for="name" class="col-sm-12 col-md-12" style="font-size: large;">Define your area of interest</label>
-						<div class="col-sm-12 col-md-12">
-							<div class="form-group has-feedback">
-								<label for="name" class="col-sm-12 col-md-12">Name</label>
-								<div class="col-sm-12 col-md-12">
-									<input type="text" class="form-control" id="name" name="name" placeholder="name" autocomplete="off" value="" />
-								</div>
-							</div>
-						</div>
-						<div class="col-sm-12 col-md-12">
-							<div class="form-group">
-								<label for="description" class="col-sm-12 col-md-12 ">Description</label>
-								<div class="col-sm-12 col-md-12">
-									<textarea class="form-control" rows="3" id="description" name="description" placeholder="description" autocomplete="off"></textarea>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="form-group">
-						<div class="col-sm-8 col-md-8">
-							<div class="form-group">
-								<label for="footprint" class="col-sm-12 col-md-12">Polygon<sup>*</sup></label>
-								<div class="col-sm-12 col-md-12">
-									<textarea class="form-control" rows="2" id="footprint" name="footprint" placeholder="polygon" autocomplete="off" readonly="true"></textarea>
-								</div>
-								<label class="col-sm-12 col-md-12"><i style="font-weight:400">(*) draw on the <a class="scroll-into-view" href="#mapExtent">map</a> or select a <a class="focus-on" href="#tileTags_tag">tile</a></i></label>
-							</div>
-						</div>
-						<div class="col-sm-4 col-md-4">
-							<div class="form-group">
-								<label for="tileTags" class="col-sm-12 col-md-12">Tile</label>
-								<div class="col-sm-12 col-md-12">
-									<input class="form-control" type="text" id="tileTags" name="tileTags" />
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="form-group">
-						<label for="name" class="col-sm-12 col-md-12" style="font-size: large;">Choose your time period</label>
-						<div class="col-sm-6 col-md-6">
-							<div class="form-group">
-								<label class="col-sm-12 col-md-12">Start date</label>
-								<div class="col-sm-12 col-md-12">
-									<input type="text" autocomplete="off" id="startDate" name="startDate" class="datepicker form-control" >
-								</div>
-							</div>
-						</div>
-						<div class="col-sm-6 col-md-6">
-							<div class="form-group">
-								<label class="col-sm-12 col-md-12">End date</label>
-								<div class="col-sm-12 col-md-12">
-									<input type="text" autocomplete="off" id="endDate" name="endDate" class="datepicker form-control" >
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="form-group">
-						<div class="col-sm-12 col-md-12">
-							<div class="form-group">
-								<div class="col-sm-12 col-md-12">
-									<a id="reset" href="" style="font-size:larger">Reset</a>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="form-group">
-						<div class="col-sm-12 col-md-12">
-							<div class="form-group">
-								<div class="col-sm-12 col-md-12" style="text-align:center;">
-									<button id="btnSave" type="submit" class="btn btn-primary" name="btnSave">Save</button>
-								</div>
-							</div>
-						</div>
-					</div>
-				</form>
-			</div>
-			<!-- MAP -->
-			<div class="col-sm-8 col-md-8">
-				<div id="mapExtent" class="hidden"></div>
-			</div>
+<div class="modal-dialog modal-width">
+	<div class="modal-content">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
+			<h4 class="modal-title" id="myModalLabel">Manage site</h4>
 		</div>
-	</div><!-- /.modal-body -->
-</div><!-- /.modal-content -->
-<link   type="text/css"       href="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" rel="stylesheet" />
-<script type="text/javascript" src="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.js"></script>
+		<div class="modal-body">
+			<div class="row">
+				<!-- FORM -->
+				<div class="col-sm-4 col-md-4">
+					<form id="frmContainer" class="form-horizontal clearfix" action="" role="form">
+						<div class="form-group">
+							<label for="name" class="col-sm-12 col-md-12" style="font-size: large;">Define your area of interest</label>
+							<div class="col-sm-12 col-md-12">
+								<div class="form-group has-feedback">
+									<label for="name" class="col-sm-12 col-md-12">Name</label>
+									<div class="col-sm-12 col-md-12">
+										<input type="text" class="form-control" id="name" name="name" placeholder="name" autocomplete="off" value="" />
+									</div>
+								</div>
+							</div>
+							<div class="col-sm-12 col-md-12">
+								<div class="form-group">
+									<label for="description" class="col-sm-12 col-md-12 ">Description</label>
+									<div class="col-sm-12 col-md-12">
+										<textarea class="form-control" rows="3" id="description" name="description" placeholder="description" autocomplete="off"></textarea>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="col-sm-8 col-md-8">
+								<div class="form-group">
+									<label for="footprint" class="col-sm-12 col-md-12">Polygon<sup>*</sup></label>
+									<div class="col-sm-12 col-md-12">
+										<textarea class="form-control" rows="2" id="footprint" name="footprint" placeholder="polygon" tabindex="-1" autocomplete="off" readonly="true"></textarea>
+									</div>
+									<label class="col-sm-12 col-md-12"><i style="font-weight:400">(*) draw on the <a class="scroll-into-view" href="#mapExtent">map</a> or select a <a class="focus-on" href="#tileTags_tag">tile</a></i></label>
+								</div>
+							</div>
+							<div class="col-sm-4 col-md-4">
+								<div class="form-group">
+									<label for="tileTags" class="col-sm-12 col-md-12">Tile</label>
+									<div class="col-sm-12 col-md-12">
+										<input id="tileTags" class="form-control" type="text" name="tileTags" />
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="name" class="col-sm-12 col-md-12" style="font-size: large;">Choose your time period</label>
+							<div class="col-sm-6 col-md-6">
+								<div class="form-group">
+									<label class="col-sm-12 col-md-12">Start date</label>
+									<div class="col-sm-12 col-md-12">
+										<input type="text" autocomplete="off" id="startDate" name="startDate" class="datepicker form-control" >
+									</div>
+								</div>
+							</div>
+							<div class="col-sm-6 col-md-6">
+								<div class="form-group">
+									<label class="col-sm-12 col-md-12">End date</label>
+									<div class="col-sm-12 col-md-12">
+										<input type="text" autocomplete="off" id="endDate" name="endDate" class="datepicker form-control" >
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="col-sm-12 col-md-12">
+								<div class="form-group">
+									<div class="col-sm-12 col-md-12">
+										<a id="reset" href="" style="font-size:larger">Reset</a>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="col-sm-12 col-md-12">
+								<div class="form-group">
+									<div class="col-sm-12 col-md-12" style="text-align:center;">
+										<button id="btnSave"   type="submit" class="btn btn-flat btn-primary" name="btnSave">Save</button>
+										<button id="btnCancel" type="button" class="btn btn-flat btn-default" name="btnCancel">Cancel</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
+				</div>
+				<!-- MAP -->
+				<div class="col-sm-8 col-md-8">
+					<div id="mapExtent" class="hidden"></div>
+				</div>
+			</div>
+		</div><!-- /.modal-body -->
+	</div><!-- /.modal-content -->
+</div><!-- /.modal -->
 
 <script type="text/javascript">
 	var $myModalNodes = $("#myModalNodes");
@@ -285,6 +300,7 @@
 				});
 			}
 		});
+		$('[href="#tileTags_tag"].focus-on').attr("href", "#" + $tileTags.attr("id") + "_tag");
 	}
 	
 	// Initialize map
@@ -292,6 +308,7 @@
 		// Actions to take when the Edit modal page is opened or closed
 		var toggleModalVisibility = function (e) {
 			if (e.type == "shown") {
+				$('[name="name"]', $form).focus();
 				if (_map.mapActive) {
 					adjustMapSize(_map);
 					setTimeout(function () { _map.fitAllFeatures(); }, 50);
@@ -335,7 +352,7 @@
 		// Form labels
 		$("#myModalLabel").html('Add new site');
 		$("#btnSave"     ).html('Add site');
-		$("#reset"       ).html('Reset&nbsp;<i class="fa fa-times-circle-o"></i>');
+		$("#reset"       ).html('<span style="color:crimson;">Reset&nbsp;&nbsp;<i class="fa fa-recycle"></i></span>');
 		
 		// Name
 		$('[name="name"]', $form).val(initData?.name || "");
@@ -389,11 +406,16 @@
 		$("a.scroll-into-view, a.focus-on").on("click", function (e) {
 			e.preventDefault();
 			if ($(e.target).hasClass("scroll-into-view")) {
-				$($(e.target).attr("href"))[0].scrollIntoView({ behavior: "smooth" });
+				$($(e.target).attr("href")).eq(0).scrollIntoView({ behavior: "smooth" });
 			}
 			if ($(e.target).hasClass("focus-on")) {
-				$($(e.target).attr("href"))[0].focus();
+				$($(e.target).attr("href")).eq(0).focus();
 			}
+		});
+		
+		// Cancel action
+		$("#btnCancel").on("click", function (e) {
+			$myModalNodes.modal('hide');
 		});
 		
 		// Validate form before submit
