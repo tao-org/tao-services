@@ -1,74 +1,43 @@
 <style>
-	textarea{resize: none;}
-	.nodes-item-core-box .box-top .box-text{line-height:1.3em;white-space:nowrap;overflow:hidden}
-	.nodes-item-core-box .box-description{background:#e3f3fc;padding:5px 15px;margin:10px -15px 10px -15px;line-height:1.2em;color:#555}
-	.nodes-item-core-box .box-bottom{padding:0}
-	@media (min-width: 768px){.modal-width{width: 766px;}}
-	@media (min-width: 992px){.modal-width{width: 990px;}}
-	@media (min-width: 1400px){.modal-width{width: 1398px;}}
-	img.base64image{position:relative;display:block;width:100px;height:100px;margin:5px 0 0 0;border-radius:15px;background-color:white;padding:5px;box-shadow:3px 3px 5px 0 rgba(51, 51, 51, 0.12);border-bottom:2px solid #3c8dbc}
-	img.base64image.empty{box-shadow:none;border:0}
-	img.base64image.empty::before{content:" ";position:absolute;display:block;width:100%;height:100%;background-color:white}
-	img.base64image.empty::after{content:" ";position:absolute;display:block;width:94px;height:94px;border-radius:15px;background-repeat:no-repeat;background-color:white;background-image:url(../media/images/preview-not-available.png);background-position:center;box-shadow:3px 3px 5px 0 rgba(51, 51, 51, 0.12);border-bottom:2px solid #3c8dbc}
+	#panel-nodes {
+		core-cell-list .nodes-item-core-box {
+			div.box-description {min-height:unset!important;}
+		}
+		core-cell-grid .nodes-item-core-box {
+			padding:5px 0;
+			>div {
+				padding:0 15px;margin:10px 0;
+				&.box-top {
+					>*        {padding:0;margin:5px 0;}
+					.box-text {margin-top:15px;}
+				}
+				&.box-description {padding:4px 15px;}
+				.box-label {display:inline-block;min-width:4.5em;margin-right:0.5em;vertical-align:middle;color:#00587a;}
+			}
+		}
+	}
 </style>
 
-<!-- modal nodes op -->
-<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-	</div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-<!-- modal nodes op -->
-
-
-<!-- modal nodes container descriptor -->
-<div id="myModalNodesContDesc" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-	</div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-<!-- modal nodes op -->
-
-
-<!-- modal nodes component descriptor -->
-<div id="myModalNodesCompDesc" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-	</div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-<!-- modal nodes op -->
-
-
-
-<!-- Content Header (Page header) -->
-<section class="content-header tao-async-ph">
+<!-- Content Header -->
+<section class="content-header">
 	<h1>Sites <small>Eases the search for EO datasets on specific <strong>area of interest</strong> and <strong> temporal interval</strong>.</small></h1>
-	<ol class="breadcrumb">
-		<li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
-		<li class="active">Sites</li>
-	</ol>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li><li class="active"><i class="fa fa-th-large"></i> Sites</li></ol>
 </section>
-<!-- /Content Header (Page header) -->
-<!-- Main content -->
-<section class="content tao-async-mc">
-	<div id="panel-topo-wrapper" class="row collapseX">
-		<div class="col-md-12">
+
+<!-- Content Body -->
+<section class="content">
+	<div class="row collapseX">
+		<div class="col-sm-12 col-md-12">
 			<!-- Custom Tabs -->
 			<div class="nav-tabs-custom">
-				<ul class="nav nav-tabs visible-xs-block"> <!-- visible-xs-block -->
-					<!--li class="role-dropdown active">
-						<select id="selectNodePanel" name="selectNodePanel" class="form-control form-changepane" title="Select desired node view.">
-							<option class="role role-admin" value="active_nodes">Online nodes</option>
-						</select>
-					</li-->
-				</ul>
-				<ul class="nav nav-tabs hidden-xs">
-					<!--li class="role role-admin active"><a href="#panel-nodes" data-toggle="tab" data-action="active_nodes" aria-expanded="true">Toolbox container</a></li-->
-				</ul>
-				
+				<ul class="nav nav-tabs visible-xs-block"></ul>
+				<ul class="nav nav-tabs hidden-xs"></ul>
 				<div class="tab-content">
-					<div class="tab-pane active" id="panel-nodes">
+					<div id="panel-nodes" class="tab-pane active">
 						<div class="row">
-							<div class="col-md-12" id="list-master-controls">
+							<div id="list-master-controls" class="col-sm-12 col-md-12">
 								<div class="box-tools pull-left">
-									<button class="btn btn-master-tool text-black" data-action="op-plus" data-toggle="tooltip" data-original-title="Add new site"><i class="fa fa-plus"></i></button>
+									<button class="btn btn-master-tool text-black" data-action="plus" data-toggle="tooltip" data-original-title="Add new site"><i class="fa fa-plus"></i></button>
 								</div>
 								<div class="box-tools pull-left">
 									<button class="btn btn-master-tool text-black" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
@@ -77,26 +46,26 @@
 									<form class="search-container collapse" action="">
 										<input id="search-box" type="text" class="search-box" name="q" placeholder="Search by label" />
 										<label for="search-box"><i class="fa fa-search search-icon" aria-hidden="true"></i></label>
-										<input type="submit" id="search-submit" />
+										<input id="search-submit" type="submit" />
 									</form>
 								</div>
 								<div class="box-tools pull-right">
-									<button class="btn btn-master-tool text-black" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"><i class="fa fa-refresh fa-spin-hover"></i></button>
-									<button class="btn btn-master-tool text-black" data-action="view-list" data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
-									<button class="btn btn-master-tool text-black" data-action="view-table" data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+									<button class="btn btn-master-tool text-black" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+									<button class="btn btn-master-tool text-black" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+									<button class="btn btn-master-tool text-black" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
 								</div>
 							</div>
 						</div>
 						<div class="row">
-							<div class="col-md-12 like collapse">
+							<div class="col-sm-12 col-md-12 like collapse">
 								<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search" aria-hidden="true"></i></span>
 							</div>
-							<div class="col-md-12 tags collapse">
+							<div class="col-sm-12 col-md-12 tags collapse">
 								<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw" aria-hidden="true"></i></span>
 							</div>
 						</div>
-						<div class="row" id="list-work-users">
-							<div class="col-sm-12">
+						<div class="row">
+							<div class="col-sm-12 col-md-12">
 								<div class="box box-success">
 									<div class="box-header">
 										<i class="fa fa-th-large" aria-hidden="true"></i>
@@ -106,56 +75,46 @@
 									<div class="nppaginatedcells-empty callout callout-empty">
 										<p>List is empty. <span class="results-empty">You do not have any saved sites.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
 									</div>
-									<div class="box-body chat users-box">
+									<div class="box-body">
 										<div class="nppaginatedcells-panel-body"></div>
 										<div class="cell-templates collapse">
 											<core-cell-list>
-												<div class="col-md-12 col-sm-12">
+												<div class="col-sm-12 col-md-12">
 													<div class="nodes-item-core-box">
-														<div class="box-top-tags">
-															<span>Tag1</span><span>Tag2</span><span>Tag3</span>
-														</div>
+														<div class="box-top-tags"><span>Tag1</span></div>
 														<div class="box-top">
-															<div class="box-title"><span class="val-name"> Lynx Node </span></div>
-															<!--<div class="box-subtitle"><i><span class="val-tag"> Tag </span></i></div>-->
-															<div class="box-text">
-																Start date: <strong><span class="val-sDate"> - </span></strong> | 
-																End date: <strong><span class="val-eDate"> - </span></strong>
-															</div>
+															<div class="box-title"><span class="val-name">Node Title</span></div>
+															<div class="box-text">Start date: <strong><span class="val-sDate"> - </span></strong> | End date: <strong><span class="val-eDate"> - </span></strong></div>
 														</div>
-														<div class="box-description row"><span class="val-description"> Description </span></div>
+														<div class="box-description row"><span class="val-description">Description</span></div>
 														<div class="row">
-															<div class="col-md-6 col-sm-12 col-xs-12">
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="edit"><i class="fa fa-pencil fa-fw" aria-hidden="true"></i><span class="span-muted">&nbsp;Edit</span></button>
+															<div class="col-sm-12 col-md-12">
+																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="edit"  ><i class="fa fa-pencil fa-fw"  aria-hidden="true"></i><span class="span-muted">&nbsp;Edit</span></button>
 																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="delete"><i class="fa fa-trash-o fa-fw" aria-hidden="true"></i><span class="span-muted">&nbsp;Delete</span></button>
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="clone"><i class="fa fa-random fa-fw" aria-hidden="true"></i><span class="span-muted">&nbsp;Clone</span></button>
-
+																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="clone" ><i class="fa fa-random fa-fw"  aria-hidden="true"></i><span class="span-muted">&nbsp;Clone</span></button>
 															</div>
 														</div>
 													</div>
 												</div>
 											</core-cell-list>
 											<core-cell-grid>
-												<div class="col-lg-3 col-md-4 col-sm-6">
+												<div class="col-sm-6 col-md-4 col-lg-3">
 													<div class="nodes-item-core-box">
-														<div class="box-top-tags">
-															<span>Tag1</span><span>Tag2</span><span>Tag3</span>
-														</div>
+														<div class="box-top-tags"><span>Tag1</span></div>
 														<div class="box-top">
-															<div class="box-title"><span class="val-name"> Lynx Node </span></div>
-															<!--<div class="box-subtitle"><i><span class="val-tag"> Tag </span></i></div>-->
+															<div class="box-title"><span class="val-name">Node Title</span></div>
+															<!--<div class="box-subtitle"><i><span class="val-tag">Subtitle</span></i></div>-->
 															<div class="box-text">
-																Start date: <strong><span class="val-sDate"> - </span></strong><br/>
-																End date: <strong><span class="val-eDate"> - </span></strong>
+																<span class="box-label">Start date: </span><strong><span class="val-sDate"> - </span></strong><br/>
+																<span class="box-label">End date: </span><strong><span class="val-eDate"> - </span></strong>
 															</div>
 														</div>
-														<div class="box-description"><span class="val-description"> Description </span></div>
+														<div class="box-description"><span class="val-description">Description</span></div>
 														<div class="box-bottom">
 															<div class="text-left">
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="edit" data-toggle="tooltip" data-original-title="Edit site"><i class="fa fa-pencil fa-fw" aria-hidden="true"></i><span class="span-muted collapse">&nbsp;Edit</span></button>
+																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="edit"   data-toggle="tooltip" data-original-title="Edit site"  ><i class="fa fa-pencil fa-fw"  aria-hidden="true"></i><span class="span-muted collapse">&nbsp;Edit</span></button>
 																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="delete" data-toggle="tooltip" data-original-title="Delete site"><i class="fa fa-trash-o fa-fw" aria-hidden="true"></i><span class="span-muted collapse">&nbsp;Delete</span></button>
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="clone" data-toggle="tooltip" data-original-title="Clone site"><i class="fa fa-random fa-fw" aria-hidden="true"></i><span class="span-muted collapse">&nbsp;Clone</span></button>
-
+																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="clone"  data-toggle="tooltip" data-original-title="Clone site" ><i class="fa fa-random fa-fw"  aria-hidden="true"></i><span class="span-muted collapse">&nbsp;Clone</span></button>
 															</div>
 														</div>
 													</div>
@@ -179,155 +138,133 @@
 							</div>
 						</div>
 					</div><!-- /.tab-pane -->
-					
-					<div class="tab-pane" id="panel-nodesX">
-					</div><!-- /.tab-pane -->
-					
 				</div><!-- /.tab-content -->
 			</div><!-- nav-tabs-custom -->
 		</div>
 	</div>
 </section><!-- /.content -->
 
+<!-- Modal for user actions -->
+<div id="myModalNodes" class="modal modal-form-focus fade" tabindex="-1" data-backdrop="static" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true"></div>
 
-<link rel="stylesheet" href="./assets/libs/jQuery-datepicker/jquery-ui.theme.css" type="text/css" />
-<link rel="stylesheet" href="./assets/libs/jQuery-datepicker/jquery-ui.structure.css" type="text/css" />
-<link rel="stylesheet" href="./assets/libs/jQuery-datepicker/jquery-ui.css" type="text/css" />
-
-<script src="./assets/libs/jQuery-datepicker/jquery-ui.js" type="text/javascript"></script>
+<!-- Datepicker -->
+<link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.theme.css" rel="stylesheet" />
+<link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.structure.css" rel="stylesheet" />
+<link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.css" rel="stylesheet" />
+<script type="text/javascript" src="./assets/libs/jQuery-datepicker/jquery-ui.js"></script>
+<!-- Tags -->
+<link   type="text/css"       href="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" rel="stylesheet" />
+<script type="text/javascript" src="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.js"></script>
+<!-- Polygon Map -->
 <script type="text/javascript" src="./assets/libs/openlayers/ol-poly.js"></script>
 
-<script>
+<script type="text/javascript">
 	var nameList = [];
-
+	
 	myModalNodesOpShow = function (operationid, args) {
-		var $modal = $("#myModalNodes");
-		$(".modal-dialog", $modal).removeClass("modal-width");
-		var rm_contentUrl = '';
-		var rmContent = '';
-		window.userOpStack = [];
-		
-		if (operationid === "op-plus") {
-			$(".modal-dialog", $modal).addClass("modal-width");
-			rm_contentUrl="./fragments/sites-plus.fragment.html?" + Math.random();
-		}
-		if(operationid === "edit"){
-			$(".modal-dialog", $modal).addClass("modal-width");
-			window.userOpStack = { "dna": args.dna };
-			rm_contentUrl="./fragments/sites-edit.fragment.html?" + Math.random();
-		}
-		if (rm_contentUrl === '') {
-			alert("TAO - Operation mismatch");
-			return;
-		}
-		$.ajax({
-			url: rm_contentUrl,
-			success: function(result) {
-				rmContent = result;
-				if (rmContent !== '') {
-					$modal.find('.modal-dialog').html(rmContent);
-				} else {
-					alert("Could not retrive needed data from server.");
-					return e.preventDefault();
+		if ($.inArray(operationid, [ "plus", "edit" ]) != -1) {
+			window.userOpStack = (operationid === "edit") ? { "dna": args.dna } : [];
+			$.ajax({
+				url: "./fragments/sites-" + operationid + ".fragment.html?" + Math.random(),
+				error: function (jqXHR, textStatus, errorThrown) {
+					alert("Could not retrive needed data from server.\n" + errorThrown);
+				},
+				success: function (result) {
+					if (result !== "") {
+						$("#myModalNodes").html(result).modal('show');
+					} else {
+						alert("Could not retrive needed data from server.");
+					}
 				}
-				$modal.modal('show');
-			}
-		});
-
+			});
+		} else {
+			alert("TAO - Operation mismatch");
+		}
 	};
-
-	deleteSiteById = function(id){
+	
+	deleteSiteById = function (id) {
 		$.ajax({
-			cache: false,
-			url: baseRestApiURL + "site/"+id,
-			dataType : 'json',
-			type: 'DELETE',
-			headers: {
-				"Accept": "application/json",
+			cache   : false,
+			url     : baseRestApiURL + "site/" + id,
+			dataType: 'json',
+			type    : 'DELETE',
+			headers : {
+				"Accept"      : "application/json",
 				"Content-Type": "application/json",
 				"X-Auth-Token": window.tokenKey
 			},
-			error : function (jqXHR, textStatus, errorThrown) {
-				console.log("error");
-				if(jqXHR.status === 500 ){
-					showMsg("Unable to delete site. Please try again.", "ERROR");
+			error: function (jqXHR, textStatus, errorThrown) {
+				if (jqXHR.status === 500) {
+					showMsg("Unable to delete the site. Please try again.", "ERROR");
 				} else {
-					alert('An error has occurred, please try again or contact app admin.');
+					alert("An error has occurred, please try again or contact app admin.");
 				}
 			},
-			success: function(data) {
+			success: function (data) {
 				showMsg("Site successfully deleted.", "SUCCESS");
 				panelComp.refreshData();
 			}
 		});
 	};
-
 	
-
-	cloneSiteByIdGET = function(id){
-        var cloneS = $.ajax({
-            cache: false,
-            url: baseRestApiURL + "site/"+id,
-            type: 'GET',
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "X-Auth-Token": window.tokenKey
-            }
-        });
-        $.when(cloneS)
-            .done(function (cloneSResponse) {
-                var r = chkTSRF(cloneSResponse);
-                if(r.id){
-					delete r["id"];
-					var randNr = 1;
-					var tempName = r.name;
-					while($.inArray(tempName, nameList) !== -1){
-						tempName = r.name +"-"+ randNr;
-						randNr++;
-					}
-					r.name = tempName;
-					cloneSiteByIdPOST(r);
-                    //showMsg("Site successfully cloned. Site <i>"+r.name+"</i> created in your workspace.", "SUCCESS");
-                    panelComp.refreshData();
-                }else{
-                    //showMsg("Site's clone failed.", "ERROR");
-                }
-            })
-            .fail(function () {
-                showMsg("Site's clone failed.", "ERROR");
-            });
-    };
-
-	cloneSiteByIdPOST = function(site){
-        var cloneS = $.ajax({
-            cache: false,
-            url: baseRestApiURL + "site/",
-            dataType : 'json',
-			data : JSON.stringify(site),
-            type: 'POST',
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "X-Auth-Token": window.tokenKey
-            }
-        });
-        $.when(cloneS)
-            .done(function (cloneSResponse) {
-                var r = chkTSRF(cloneSResponse);
-                if(r.id){
-                    showMsg("Site successfully cloned. Site <i>"+r.name+"</i> created in your workspace.", "SUCCESS");
-                    panelComp.refreshData();
-                }else{
-                    showMsg("Site's clone failed.", "ERROR");
-                }
-            })
-            .fail(function () {
-                showMsg("Site's clone failed.", "ERROR");
-            });
-    };
+	cloneSiteByIdPOST = function (site) {
+		var cloneSite = $.ajax({
+			cache   : false,
+			url     : baseRestApiURL + "site/",
+			dataType: 'json',
+			data    : JSON.stringify(site),
+			type    : 'POST',
+			headers : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			}
+		});
+		$.when(cloneSite).done(function (response) {
+			var cSite = chkTSRF(response);
+			if (cSite.id) {
+				showMsg("Site successfully cloned. Site <i>" + cSite.name + "</i> created in your workspace.", "SUCCESS");
+				panelComp.refreshData();
+			} else {
+				showMsg("Cloning the site failed.", "ERROR");
+			}
+		}).fail(function (jqXHR, textStatus, errorThrown) {
+			showMsg("Cloning the site failed.<br/>" + errorThrown, "ERROR");
+		});
+	};
 	
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	cloneSiteByIdGET = function(id) {
+		var cloneSite = $.ajax({
+			cache  : false,
+			url    : baseRestApiURL + "site/" + id,
+			type   : 'GET',
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			}
+		});
+		$.when(cloneSite).done(function (response) {
+			var site = chkTSRF(response);
+			if (site.id) {
+				delete site["id"];
+				var randNr = 1;
+				var tempName = site.name;
+				while ($.inArray(tempName, nameList) !== -1) {
+					tempName = site.name + "-" + randNr;
+					randNr ++;
+				}
+				site.name = tempName;
+				cloneSiteByIdPOST(site);
+				panelComp.refreshData();
+			} else {
+				showMsg("Cloning the site failed.", "ERROR");
+			}
+		}).fail(function (jqXHR, textStatus, errorThrown) {
+			showMsg("Cloning the site failed.<br/>" + errorThrown, "ERROR");
+		});
+	};
+	
 	$(document).ready(function () {
 		var urls = [ baseRestApiURL + "site/" ];
 		window.panelComp = $('#panel-nodes').npPaginatedCells({
@@ -335,70 +272,46 @@
 			url: urls,
 			viewMode: preferences.viewMode,
 			filterAttribute: "name",
-			order:[
-				{
-					"label":"Name ascending",
-					"objAttributeName":"name",
-					"direction":"ASC"
-				},
-				{
-					"label":"Name descending",
-					"objAttributeName":"name",
-					"direction":"DSC"
-				}
+			order: [
+				{ "label":"Name ascending" , "objAttributeName":"name", "direction":"ASC" },
+				{ "label":"Name descending", "objAttributeName":"name", "direction":"DSC" }
 			],
 			doDataPreprocessing: function (data) {
-				for (var i = 0; i < data.length; i ++) {
-					data[i].sDate = moment(data[i].startDate).format('YYYY-MM-DD');
-					data[i].eDate = moment(data[i].endDate).format('YYYY-MM-DD');
-					nameList.push(data[i].name);
-					//data[i].fprint = data.footprint;
-					/*data[i].tags = [data[i].tag];*/
-				}
+				// Get a list with site names
+				nameList = $.map(data, function (site, idx) {
+					// Save dates also in YYYY-MM-DD format
+					site.sDate = moment(site.startDate).format('YYYY-MM-DD');
+					site.eDate = moment(site.endDate  ).format('YYYY-MM-DD');
+					return site.name;
+				});
 				return data;
 			},
 			doAction: function (action, args) {
-				if (action === "op-plus") {
-					/*if (taoUserProfile.userRole !== "ADMIN") {
-						showMsg("Only admin roles can add remote services.", "ERROR");
-						return;
-					}*/
-					myModalNodesOpShow(action, args);
+				switch (action) {
+					// Add new site	------------------------------------------
+					case "plus":	myModalNodesOpShow(action, args);
+									break;
+					// Edit site	------------------------------------------
+					case "edit":	myModalNodesOpShow(action, args);
+									break;
+					// Clone site	------------------------------------------
+					case "clone":	cloneSiteByIdGET(args.dna.id);
+									break;
+					// Delete site	------------------------------------------
+					case "delete":	if (taoUserProfile.userRole !== "ADMIN") {
+										alert("not allowed");
+									} else {
+										$('#confirm-dialog').modal('confirm', {
+											msg            : "Are you sure you want to delete the site: <strong>" + args.dna.name + "</strong>?",
+											callbackConfirm: function () { deleteSiteById(args.dna.id); },
+											callbackCancel : function () {}
+										});
+									}
+									break;
 				}
-				if (action === "edit") {
-					myModalNodesOpShow(action, args);
-				}
-
-				if (action === "clone") {
-					 cloneSiteByIdGET(args.dna.id);
-
-					 //loneSiteByIdPOST(args.dna);
-				}
-
-				if(action === "delete"){
-					if( taoUserProfile.userRole !== "ADMIN"){
-						alert("not allowed");
-						return;
-					}
-					$('#confirm-dialog').modal('confirm',{
-						msg:"Are you sure you want to delete the site: <strong>"+args.dna.name+"</strong>?",
-						callbackConfirm: function() {
-							deleteSiteById(args.dna.id);
-						},
-						callbackCancel:function(){}
-					});
-				}
-			},
-			/*doCustomRender: function($elClone, elX) {
-				// set container logo
-				if (elX.logo) {
-					$(".base64image", $elClone).attr("src", "data:image/jpeg;base64, " + elX.logo).removeClass("empty");
-				} else {
-					$(".base64image", $elClone).attr("src", "").attr("alt", " ").addClass("empty");
-				}
-			}*/
+			}
 		});
 	});
-
-	//# sourceURL=sites.js
+	
+//# sourceURL=sites.js
 </script>
