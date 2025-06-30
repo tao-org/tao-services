@@ -15,7 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Evaluator for mathematical expressions written with functions from java.lang.Math.
+ * Evaluator for mathematical expressions written with functions from java.lang.Math (also available in JavaScript)
  * @param <T>   The type of the input values
  * @param <R>   The type of the return value
  */

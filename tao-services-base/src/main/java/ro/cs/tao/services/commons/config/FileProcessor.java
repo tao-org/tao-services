@@ -62,6 +62,7 @@ public interface FileProcessor {
                             try (BufferedInputStream is = new BufferedInputStream(ConfigurationManager.class.getResourceAsStream(value.getKeyOne()));
                                  OutputStream os = new BufferedOutputStream(Files.newOutputStream(configFile,
                                                                                                   StandardOpenOption.CREATE,
+                                                                                                  StandardOpenOption.TRUNCATE_EXISTING,
                                                                                                   StandardOpenOption.WRITE))) {
                                 int read;
                                 while ((read = is.read(buffer)) != -1) {
