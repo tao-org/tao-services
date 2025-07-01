@@ -130,6 +130,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return response;
     }
 
+    /**
+     * Retrieves the image associated with the specified workflow ID.
+     *
+     * @param workflowId the identifier of the workflow for which the image is to be retrieved
+     * @return a ResponseEntity containing the service response with the workflow image or an error response in case of exceptions
+     */
     @RequestMapping(value = "/{id:.+}/image", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getImage(@PathVariable("id") long workflowId) {
         try {
@@ -139,6 +145,13 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
     }
 
+    /**
+     * Adds an image to a specified workflow.
+     *
+     * @param workflowId the unique identifier of the workflow to which the image should be added
+     * @param image the image file to be added, provided as a {@link MultipartFile}
+     * @return a {@link ResponseEntity} containing a {@link ServiceResponse} object with the workflow details or error information
+     */
     @RequestMapping(value = "/{id:.+}/image", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> addImage(@PathVariable("id") long workflowId,
                                                        @RequestParam("image") MultipartFile image) {
@@ -152,6 +165,13 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
     }
 
+    /**
+     * Updates the image associated with the specified workflow.
+     *
+     * @param workflowId the unique identifier of the workflow whose image is to be updated
+     * @param image the new image file to associate with the workflow
+     * @return a ResponseEntity containing the updated workflow information
+     */
     @RequestMapping(value = "/{id:.+}/image", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateImage(@PathVariable("id") long workflowId,
                                                           @RequestParam("image") MultipartFile image) {
@@ -165,6 +185,13 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
     }
 
+    /**
+     * Deletes the image associated with the given workflow ID.
+     *
+     * @param workflowId the unique identifier of the workflow whose image is to be deleted
+     * @return a ResponseEntity containing a ServiceResponse with the updated workflow information,
+     *         or an appropriate error response in case of failure
+     */
     @RequestMapping(value = "/{id:.+}/image", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> deleteImage(@PathVariable("id") long workflowId) {
         try {
@@ -173,6 +200,18 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         } catch (Exception e) {
             return handleException(e);
         }
+    }
+
+    @RequestMapping(value = "/{id:.+}/remove", method = RequestMethod.DELETE)
+    public ResponseEntity<ServiceResponse<?>> remove(@PathVariable("id") long id) {
+        ResponseEntity<ServiceResponse<?>> response;
+        try {
+            service.removeWorkflow(id);
+            response = prepareResult("", ResponseStatus.SUCCEEDED);
+        } catch (PersistenceException e) {
+            response = handleException(e);
+        }
+        return response;
     }
 
     /**
@@ -197,9 +236,6 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> getUserWorkflowsByVisibility(@PathVariable("visibility") Visibility visibility,
                                                                            @RequestParam(name = "userId", required = false) String userId) {
-        /*if (!StringUtilities.isNullOrEmpty(userId) && !isCurrentUserAdmin()) {
-            return unauthorizedResponse();
-        }*/
         return prepareResult(service.getUserPublishedWorkflowsByVisibility(currentUser(), visibility));
     }
 

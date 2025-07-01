@@ -1282,6 +1282,26 @@ public class WorkflowServiceImpl
         return serializer.serialize(descriptor);
     }
 
+    @Override
+    public void removeWorkflow(long workflowId) throws PersistenceException {
+        WorkflowDescriptor workflow = findById(workflowId);
+        if (workflow != null) {
+            final List<ExecutionJob> jobs = jobProvider.listByWorkflow(workflowId);
+            if (jobs != null) {
+                for (ExecutionJob job : jobs) {
+                    final List<ExecutionTask> tasks = job.getTasks();
+                    for (ExecutionTask task : tasks) {
+                        task.setWorkflowNodeId(null);
+                        taskProvider.update(task);
+                    }
+                    job.setWorkflowId(null);
+                    jobProvider.update(job);
+                }
+            }
+            workflowProvider.delete(workflow);
+        }
+    }
+
     /**
      * Processes the creation of a link between a node outside a group and a node inside a group.
      * The actual link is made between the source node and the group node.
