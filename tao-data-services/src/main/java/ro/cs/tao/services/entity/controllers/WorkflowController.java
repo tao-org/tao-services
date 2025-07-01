@@ -560,7 +560,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     public ResponseEntity<ServiceResponse<?>> getWorkflowExecutions(@PathVariable("workflowId") long workflowId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(service.getWorkflowExecutions(workflowId));
+            responseEntity = prepareResult(service.getWorkflowExecutions(workflowId, currentUser()));
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }

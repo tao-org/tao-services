@@ -1010,12 +1010,12 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public List<ExecutionJobInfo> getWorkflowExecutions(long workflowId) throws PersistenceException {
+    public List<ExecutionJobInfo> getWorkflowExecutions(long workflowId, String userId) throws PersistenceException {
         final WorkflowDescriptor workflow = workflowProvider.get(workflowId);
         if (workflow == null) {
             throw new PersistenceException("There is no workflow having the given identifier " + String.valueOf(workflowId));
         }
-        return ServiceTransformUtils.toJobInfos(jobProvider.listByWorkflow(workflowId));
+        return ServiceTransformUtils.toJobInfos(jobProvider.listByWorkflow(workflowId, userId));
     }
 
     @Override
