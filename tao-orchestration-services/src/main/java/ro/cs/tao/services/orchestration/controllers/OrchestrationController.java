@@ -153,7 +153,7 @@ public class OrchestrationController extends BaseController {
     @RequestMapping(value = "/outputs/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getWorkflowOutputs(@PathVariable("id") long workflowId) {
         try {
-            return prepareResult(orchestrationService.getWorkflowOutputs(workflowId));
+            return prepareResult(orchestrationService.getWorkflowOutputs(workflowId, currentUser()));
         } catch (Exception ex) {
             return handleException(ex);
         }

@@ -112,8 +112,8 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<ExecutionTaskOutput> getWorkflowOutputs(long workflowId) throws PersistenceException {
-        return jobProvider.getWorkflowOutputs(workflowId);
+    public List<ExecutionTaskOutput> getWorkflowOutputs(long workflowId, String userId) throws PersistenceException {
+        return jobProvider.getWorkflowOutputs(workflowId, userId);
     }
 
     @Override
