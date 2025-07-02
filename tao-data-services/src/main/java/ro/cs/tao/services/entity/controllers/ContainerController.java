@@ -452,7 +452,9 @@ public class ContainerController extends DataEntityController<Container, String,
                     final Token token = tokenManagementService.getUserToken(user);
                     return prepareResult(((SingletonContainer) installer).start(user, user));//token.getToken()));
                 } catch (Exception e) {
-                    return prepareResult(((SingletonContainer) installer).start());
+                    //handle exception instead of starting container?
+                    //return prepareResult(((SingletonContainer) installer).start());
+                    return handleException(e);
                 }
             } else {
                 final String name = SystemPrincipal.instance().getName();
