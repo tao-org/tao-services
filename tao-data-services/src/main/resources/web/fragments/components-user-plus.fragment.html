@@ -233,7 +233,7 @@
 											</div>
 											<div class="form-group">
 												<div class="col-md-offset-2 col-md-10 col-sm-offset-2 col-sm-10">
-													<button id="openJupyterLab" type="button" class="btn btn-primary btn-submit" name="btnOpenJupyterLab" style="display: none;">Open JupyterLab</button>
+													<button id="openApacheZeppelin" type="button" class="btn btn-primary btn-submit" name="btnopenApacheZeppelin" style="display: none;">Open Apache Zeppelin</button>
 												</div>
 											</div>
 										</div>
@@ -783,7 +783,7 @@ li.select2-search.select2-search--inline {display:none}
 	}
 
     var action = 'op-plus';
-	var jupyterContainerId = null;
+	var apacheZeppelinContainerId = null;
 
 	function fieldFormat(){
 
@@ -903,7 +903,7 @@ li.select2-search.select2-search--inline {display:none}
 				$('input[name=managedOutput]', $el).prop({ "checked": response.managedOutput });
 
 				if( response.componentType === "SCRIPT" && ($("#inputContainerId").find("option:selected").text()).startsWith("python")){
-					$("#openJupyterLab").removeClass("hidden");
+					$("#openApacheZeppelin").removeClass("hidden");
 					editor.getSession().setMode("ace/mode/python");
 					editor.setTheme("ace/theme/crimson_editor");
 				}else{
@@ -1472,17 +1472,17 @@ li.select2-search.select2-search--inline {display:none}
 
 			if( $("#inputComponentType").find("option:selected").val() === "SCRIPT" && ($("#inputContainerId").find("option:selected").text()).startsWith("python") ){
 				// if container is python add syntax highlight
-				$("#openJupyterLab").removeClass("hidden");
+				$("#openApacheZeppelin").removeClass("hidden");
 			}else{
-				$("#openJupyterLab").addClass("hidden");
+				$("#openApacheZeppelin").addClass("hidden");
 			}
 		});
 
 		$("#inputComponentType").on("change", function(){
 			if( $("#inputComponentType").find("option:selected").val() === "EXECUTABLE" ){
-				$("#openJupyterLab").css("display", "none");
+				$("#openApacheZeppelin").css("display", "none");
 			}else{
-				$("#openJupyterLab").css("display", "");
+				$("#openApacheZeppelin").css("display", "");
 			}
 		});
 
@@ -1699,30 +1699,30 @@ li.select2-search.select2-search--inline {display:none}
             }
         });
 		
-		$("#openJupyterLab").on("click", function (e) {
-            var $jupyter = $("#jupyterLab");
-            if ($jupyter.length == 0) {
-                $jupyter = $('<div id="jupyterLab" class="modal fade in" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="false"><div class="modal-dialog modal-lg"></div></div>');
+		$("#openApacheZeppelin").on("click", function (e) {
+            var $apacheZeppelin = $("#apacheZeppelin");
+            if ($apacheZeppelin.length == 0) {
+                $apacheZeppelin = $('<div id="apacheZeppelin" class="modal fade in" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="false"><div class="modal-dialog modal-lg"></div></div>');
             }
-            $jupyter.off('hidden.bs.modal');
-            $jupyter.on('hidden.bs.modal', function (e) {
-                $jupyter.remove();
+            $apacheZeppelin.off('hidden.bs.modal');
+            $apacheZeppelin.on('hidden.bs.modal', function (e) {
+                $apacheZeppelin.remove();
             });            
 
-            $("#myModalNodes").after($jupyter);
-            $(".modal-dialog",$jupyter).addClass("modal-lg");
-            rm_contentUrl="./fragments/component-jupyterlab.fragment.html?" + Math.random();
+            $("#myModalNodes").after($apacheZeppelin);
+            $(".modal-dialog",$apacheZeppelin).addClass("modal-lg");
+            rm_contentUrl="./fragments/component-apachezeppelin.fragment.html?" + Math.random();
             $.ajax({
                 url: rm_contentUrl,
                 success: function(result) {
                     rmContent = result;
                     if(rmContent !== ''){
-                        $jupyter.find('.modal-dialog').html(rmContent);
-						// start jupyter docker
+                        $apacheZeppelin.find('.modal-dialog').html(rmContent);
+						// start apacheZeppelin docker
 						$.ajax({
 							"async": false,
 							"crossDomain": true,
-							"url": baseRestApiURL + "docker/start?id=jupyterlite",
+							"url": baseRestApiURL + "docker/start?id=apachezeppelin",
 							"method": "POST",
 							headers: {
 								"X-Auth-Token": window.tokenKey
@@ -1731,7 +1731,7 @@ li.select2-search.select2-search--inline {display:none}
 								// update iframe and recover ui parameters
 								var idx = result.data.indexOf(":");
 								var port = idx > 0 ? result.data.substring(idx) : "";
-								jupyterContainerId = result.data.substring(0, idx);
+								apacheZeppelinContainerId = result.data.substring(0, idx);
 								var paramData = {
 									"parameterDescriptors": [
 											{
@@ -1752,20 +1752,20 @@ li.select2-search.select2-search--inline {display:none}
 									};
 									paramData.parameterDescriptors.push(newParameterDescriptor);
 								});
-								$("#jupyterFrame").prop('src', window.baseRestApiURL + 'lab?token=' + taoUserProfile.id);
+								$("#apacheZeppelinFrame").prop('src', window.baseRestApiURL + 'lab?token=' + taoUserProfile.id);
 								// <!-- Generate template / notebook -->
 								$.ajax({
 									"async": true,
 									"crossDomain": true,
 									"contentType": "application/json",
-									"url": baseRestApiURL + "jupyter",
+									"url": baseRestApiURL + "apacheZeppelin",
 									"method": "POST",
 									"data" : JSON.stringify(paramData.parameterDescriptors)
 								});
 							}
 						});
                     }
-                    $jupyter.modal('show');
+                    $apacheZeppelin.modal('show');
                 }
             });
         });
