@@ -233,7 +233,7 @@
 											</div>
 											<div class="form-group">
 												<div class="col-md-offset-2 col-md-10 col-sm-offset-2 col-sm-10">
-													<button id="openJupyterLab" type="button" class="btn btn-primary btn-submit hidden" name="btnOpenJupyterLab">Open JupyterLab</button>
+													<button id="openApacheZeppelin" type="button" class="btn btn-primary btn-submit hidden" name="btnopenApacheZeppelin">Open Apache Zeppelin</button>
 												</div>
 											</div>
 										</div>
@@ -788,7 +788,7 @@ li.select2-search.select2-search--inline {display:none}
 	}
 
     var action = 'op-plus';
-	var jupyterContainerId = null;
+	var apachezeppelinContainerId = null;
 	var paramType_ui = "REGULAR";
 	
 	function fieldFormat(){
@@ -921,7 +921,7 @@ li.select2-search.select2-search--inline {display:none}
 				$('input[name=inputWorkingDirectory]', $el).val(response.workingDirectory);
 
 				if( response.componentType === "SCRIPT" && ($("#inputContainerId").find("option:selected").text()).startsWith("python")){
-					$("#openJupyterLab").removeClass("hidden");
+					$("#openApacheZeppelin").removeClass("hidden");
 					editor.getSession().setMode("ace/mode/python");
 					editor.setTheme("ace/theme/crimson_editor");
 				}else{
@@ -1539,17 +1539,17 @@ li.select2-search.select2-search--inline {display:none}
 			if( $("#inputComponentType").find("option:selected").val() === "SCRIPT" && ($("#inputContainerId").find("option:selected").text()).startsWith("python") ){
 				// if container is python add syntax highlight
 				editor.getSession().setMode("ace/mode/python");
-				$("#openJupyterLab").removeClass("hidden");
+				$("#openApacheZeppelin").removeClass("hidden");
 			}else{
-				$("#openJupyterLab").addClass("hidden");
+				$("#openApacheZeppelin").addClass("hidden");
 			}
 		});
 
 		$("#inputComponentType").on("change", function(){
 			if( $("#inputComponentType").find("option:selected").val() === "SCRIPT" && ($("#inputContainerId").find("option:selected").text()).startsWith("python") ){
-				$("#openJupyterLab").removeClass("hidden");
+				$("#openApacheZeppelin").removeClass("hidden");
 			}else{
-				$("#openJupyterLab").addClass("hidden");
+				$("#openApacheZeppelin").addClass("hidden");
 			}
 		});
 
@@ -1763,39 +1763,42 @@ li.select2-search.select2-search--inline {display:none}
 			}
 		});
 		
-		$("#openJupyterLab").on("click", function (e) {
-            var $jupyter = $("#jupyterLab");
-            if ($jupyter.length == 0) {
-                $jupyter = $('<div id="jupyterLab" class="modal fade in" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="false"><div class="modal-dialog modal-lg"></div></div>');
+		$("#openApacheZeppelin").on("click", function (e) {
+            var $apachezeppelin = $("#zeppelin");
+            if ($apachezeppelin.length == 0) {
+                $apachezeppelin = $('<div id="zeppelin" class="modal fade in" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="false"><div class="modal-dialog modal-lg"></div></div>');
             }
-            $jupyter.off('hidden.bs.modal');
-            $jupyter.on('hidden.bs.modal', function (e) {
-                $jupyter.remove();
+            $apachezeppelin.off('hidden.bs.modal');
+            $apachezeppelin.on('hidden.bs.modal', function (e) {
+                $apachezeppelin.remove();
             });            
 
-            $("#myModalNodes").after($jupyter);
-            $(".modal-dialog",$jupyter).addClass("modal-lg");
-            rm_contentUrl="./fragments/component-jupyterlab.fragment.html?" + Math.random();
+            $("#myModalNodes").after($apachezeppelin);
+            $(".modal-dialog",$apachezeppelin).addClass("modal-lg");
+            rm_contentUrl="./fragments/component-apachezeppelin.fragment.html?" + Math.random();
             $.ajax({
                 url: rm_contentUrl,
                 success: function(result) {
                     rmContent = result;
                     if(rmContent !== ''){
-                        $jupyter.find('.modal-dialog').html(rmContent);
-						// start jupyter docker
+                        $apachezeppelin.find('.modal-dialog').html(rmContent);
+						// start apache zeppelin docker
 						$.ajax({
 							"async": false,
 							"crossDomain": true,
-							"url": baseRestApiURL + "docker/start?id=jupyterlite",
+							"url": baseRestApiURL + "docker/start?id=apachezeppelin",
 							"method": "POST",
 							headers: {
 								"X-Auth-Token": window.tokenKey
 							},
 							"success": function(result) {
+								if(result.status === "failed"){
+
+								}
 								// update iframe and recover ui parameters
 								var idx = result.data.indexOf(":");
 								var port = idx > 0 ? result.data.substring(idx + 1) : "";
-								jupyterContainerId = result.data.substring(0, idx);
+								apachezeppelinContainerId = result.data.substring(0, idx);
 								var paramData = {
 									"parameterDescriptors": [
 											{
@@ -1816,20 +1819,33 @@ li.select2-search.select2-search--inline {display:none}
 									};
 									paramData.parameterDescriptors.push(newParameterDescriptor);
 								});
-								$("#jupyterFrame").prop('src', window.baseRestApiURL.substring(0, window.baseRestApiURL.length - 1) + ':' + port + '/lab?token=' + taoUserProfile.id);
+								const srcZeppelin = window.baseRestApiURL.substring(0, window.baseRestApiURL.length - 5) + ':' + port;
+								$("#zeppelinFrame").prop('src', srcZeppelin);
 								// <!-- Generate template / notebook -->
 								$.ajax({
 									"async": true,
 									"crossDomain": true,
 									"contentType": "application/json",
-									"url": baseRestApiURL + "jupyter",
+									"url": baseRestApiURL + "zeppelin/start",
 									"method": "POST",
-									"data" : JSON.stringify(paramData.parameterDescriptors)
+									headers: {
+										"X-Auth-Token": window.tokenKey
+									},
+									"data" : JSON.stringify(paramData.parameterDescriptors),
+									"success": function(result) {
+										console.log(result.data);
+									},
+									"error": function (jqXHR, textStatus, errorThrown) {
+                        				showMsg("Error opening Apache Zeppelin: " + errorThrown, "ERROR");
+                    				}
 								});
-							}
+							},
+							"error": function (jqXHR, textStatus, errorThrown) {
+                        		showMsg("Error opening Apache Zeppelin: " + errorThrown, "ERROR");
+                    		}
 						});
                     }
-                    $jupyter.modal('show');
+                    $apachezeppelin.modal('show');
                 }
             });
         });
