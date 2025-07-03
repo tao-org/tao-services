@@ -30,6 +30,7 @@ import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
+import ro.cs.tao.execution.monitor.RuntimeInfoCluster;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
@@ -126,6 +127,21 @@ public class MonitoringController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> getNodeSnapshot(@PathVariable("host") String host) {
         if (isCurrentUserAdmin()) {
             final RuntimeInfo snapshot = monitoringService.getNodeSnapshot(host);
+            if (snapshot == null) {
+                return prepareResult("No information available for node ['" + host + "']", ResponseStatus.FAILED);
+            }
+            return prepareResult(snapshot);
+        } else {
+            return prepareResult("Not authorized", ResponseStatus.FAILED, HttpStatus.FORBIDDEN);
+        }
+    }
+    /**
+     * Returns a snapshot of the resources for a cluster node
+     */
+    @RequestMapping(value = "/monitor/cluster/{host:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getClusterSnapshot(@PathVariable("host") String host) {
+        if (isCurrentUserAdmin()) {
+            final RuntimeInfoCluster snapshot = monitoringService.getClusterSnapshot(host);
             if (snapshot == null) {
                 return prepareResult("No information available for node ['" + host + "']", ResponseStatus.FAILED);
             }
