@@ -4,10 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -43,10 +40,10 @@ public class ZeppelinController extends BaseController {
     }
 
     @RequestMapping(value = "/readNotebook", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> ReadNotebook() {
+    public ResponseEntity<ServiceResponse<?>> ReadNotebook(@RequestParam String notebookName) {
         try {
             final Repository repository = getLocalRepository(currentUser());
-            return prepareResult(zeppelinService.readNotebook(Path.of(repository.root())));
+            return prepareResult(zeppelinService.readNotebook(Path.of(repository.root(), notebookName)));
         } catch (Exception e) {
             return handleException(e);
         }
