@@ -16,8 +16,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="./assets/libs/gritter/css/avl.jquery.gritter.css" />
     <!-- Theme style -->
-    <link href="./assets/dist/css/AdminLTE.min.css" rel="stylesheet" type="text/css" />
-    <link href="./assets/dist/css/AdminLTEplus.css" rel="stylesheet" type="text/css" />
+    <link href="./assets/dist/css/AdminLTE.min.css?v=250708" rel="stylesheet" type="text/css" />
+    <link href="./assets/dist/css/AdminLTEplus.css?v=250708" rel="stylesheet" type="text/css" />
     <link href="./assets/dist/css/size-customization.css" rel="stylesheet" type="text/css" />
     <link href="./assets/dist/css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" id="style_css_file"/>
 
@@ -734,6 +734,7 @@ Nothing to see!
             return (className.match (/\bsize-\S+/g) || []).join(' ');
             });
             $("body").addClass(value);
+			document.documentElement.style.setProperty('--body-font-size', $("body").css("font-size"));
 
 			if ($("input[type='checkbox'].switch_elem", "#list-config-accordion").length > 0) {
 				$("input[type='checkbox'].switch_elem", "#list-config-accordion").bootstrapSwitch("size", bootstrapSwitchSize(value));

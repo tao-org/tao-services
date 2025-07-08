@@ -1,27 +1,21 @@
 <style>
 	#panel-nodes {
-		core-cell-list .nodes-item-core-box {
-			div.box-description {min-height:unset!important;}
+		@media (min-width: 768px) {
+			core-cell-list .box-description {min-height:2.8em;padding-right:19em;}
+			core-cell-list .flat-buttons    {position:absolute;bottom:30px;right:15px;}
 		}
-		core-cell-grid .nodes-item-core-box {
-			padding:5px 0;
-			>div {
-				padding:0 15px;margin:10px 0;
-				&.box-top {
-					>*        {padding:0;margin:5px 0;}
-					.box-text {margin-top:15px;}
-				}
-				&.box-description {padding:4px 15px;}
-				.box-label {display:inline-block;min-width:4.5em;margin-right:0.5em;vertical-align:middle;color:#00587a;}
-			}
-		}
+	}
+	.modal-cw {
+		@media (min-width:  768px) {& {width: 766px;}}
+		@media (min-width:  992px) {& {width: 990px;}}
+		@media (min-width: 1400px) {& {width:1398px;}}
 	}
 </style>
 
 <!-- Content Header -->
 <section class="content-header">
 	<h1>Sites <small>Eases the search for EO datasets on specific <strong>area of interest</strong> and <strong> temporal interval</strong>.</small></h1>
-	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li><li class="active"><i class="fa fa-th-large"></i> Sites</li></ol>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li><li class="active">Sites</li></ol>
 </section>
 
 <!-- Content Body -->
@@ -30,8 +24,16 @@
 		<div class="col-sm-12 col-md-12">
 			<!-- Custom Tabs -->
 			<div class="nav-tabs-custom">
-				<ul class="nav nav-tabs visible-xs-block"></ul>
-				<ul class="nav nav-tabs hidden-xs"></ul>
+				<ul class="nav nav-tabs visible-xs-block">
+					<li class="role-dropdown active">
+						<select id="selectUserPanel" name="selectUserPanel" class="form-control form-changepane" title="Select desired workflows view.">
+							<option class="role" value="manage_sites" data-target="#panel-nodes">Manage Sites</option>
+						</select>
+					</li>
+				</ul>
+				<ul class="nav nav-tabs hidden-xs">
+					<li class="role active"><a href="#panel-nodes" data-toggle="tab" data-action="manage_sites" aria-expanded="true">Manage Sites</a></li>
+				</ul>
 				<div class="tab-content">
 					<div id="panel-nodes" class="tab-pane active">
 						<div class="row">
@@ -45,7 +47,7 @@
 								<div class="box-tools pull-left">
 									<form class="search-container collapse" action="">
 										<input id="search-box" type="text" class="search-box" name="q" placeholder="Search by label" />
-										<label for="search-box"><i class="fa fa-search search-icon" aria-hidden="true"></i></label>
+										<label for="search-box"><i class="fa fa-search search-icon"></i></label>
 										<input id="search-submit" type="submit" />
 									</form>
 								</div>
@@ -58,17 +60,17 @@
 						</div>
 						<div class="row">
 							<div class="col-sm-12 col-md-12 like collapse">
-								<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search" aria-hidden="true"></i></span>
+								<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
 							</div>
 							<div class="col-sm-12 col-md-12 tags collapse">
-								<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw" aria-hidden="true"></i></span>
+								<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
 							</div>
 						</div>
 						<div class="row">
 							<div class="col-sm-12 col-md-12">
 								<div class="box box-success">
 									<div class="box-header">
-										<i class="fa fa-th-large" aria-hidden="true"></i>
+										<i class="fa fa-map"></i>
 										<h3 class="box-title">Sites -  <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span></h3>
 										<div class="box-tools pull-right nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
 									</div>
@@ -81,17 +83,22 @@
 											<core-cell-list>
 												<div class="col-sm-12 col-md-12">
 													<div class="nodes-item-core-box">
-														<div class="box-top-tags"><span>Tag1</span></div>
+														<div class="box-top-tags"></div>
 														<div class="box-top">
-															<div class="box-title"><span class="val-name">Node Title</span></div>
-															<div class="box-text">Start date: <strong><span class="val-sDate"> - </span></strong> | End date: <strong><span class="val-eDate"> - </span></strong></div>
+															<div class="box-title icon-shift"><span class="val-name"></span></div>
+															<br />
+															<div class="box-text">
+																Start date: <strong><span class="val-sDate"> - </span></strong> |
+																End date: <strong><span class="val-eDate"> - </span></strong>
+															</div>
+															<div class="box-icon"><i class="fa fa-map"></i></div>
 														</div>
-														<div class="box-description row"><span class="val-description">Description</span></div>
+														<div class="box-description"><span class="val-description">Description</span></div>
 														<div class="row">
-															<div class="col-sm-12 col-md-12">
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="edit"  ><i class="fa fa-pencil fa-fw"  aria-hidden="true"></i><span class="span-muted">&nbsp;Edit</span></button>
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="delete"><i class="fa fa-trash-o fa-fw" aria-hidden="true"></i><span class="span-muted">&nbsp;Delete</span></button>
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="clone" ><i class="fa fa-random fa-fw"  aria-hidden="true"></i><span class="span-muted">&nbsp;Clone</span></button>
+															<div class="text-right flat-buttons">
+																<button class="btn btn-primary btn-nodeop" data-action="edit"  ><i class="fa fa-pencil fa-fw" ></i> Edit</button>
+																<button class="btn btn-primary btn-nodeop" data-action="clone" ><i class="fa fa-clone fa-fw"  ></i> Clone</button>
+																<button class="btn btn-primary btn-nodeop" data-action="delete"><i class="fa fa-trash-o fa-fw"></i> Delete</button>
 															</div>
 														</div>
 													</div>
@@ -102,19 +109,18 @@
 													<div class="nodes-item-core-box">
 														<div class="box-top-tags"><span>Tag1</span></div>
 														<div class="box-top">
-															<div class="box-title"><span class="val-name">Node Title</span></div>
-															<!--<div class="box-subtitle"><i><span class="val-tag">Subtitle</span></i></div>-->
-															<div class="box-text">
-																<span class="box-label">Start date: </span><strong><span class="val-sDate"> - </span></strong><br/>
-																<span class="box-label">End date: </span><strong><span class="val-eDate"> - </span></strong>
-															</div>
+															<div class="box-title icon-shift"><span class="val-name"></span></div>
+															<br />
+															<div class="box-text with-label"><label>Start date: </label><strong><span class="val-sDate"> - </span></strong></div>
+															<div class="box-text with-label"><label>End date: </label><strong><span class="val-eDate"> - </span></strong></div>
+															<div class="box-icon icon"><i class="fa fa-map"></i></div>
 														</div>
 														<div class="box-description"><span class="val-description">Description</span></div>
 														<div class="box-bottom">
 															<div class="text-left">
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="edit"   data-toggle="tooltip" data-original-title="Edit site"  ><i class="fa fa-pencil fa-fw"  aria-hidden="true"></i><span class="span-muted collapse">&nbsp;Edit</span></button>
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="delete" data-toggle="tooltip" data-original-title="Delete site"><i class="fa fa-trash-o fa-fw" aria-hidden="true"></i><span class="span-muted collapse">&nbsp;Delete</span></button>
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="clone"  data-toggle="tooltip" data-original-title="Clone site" ><i class="fa fa-random fa-fw"  aria-hidden="true"></i><span class="span-muted collapse">&nbsp;Clone</span></button>
+																<button class="btn btn-primary btn-nodeop" data-action="edit"   data-toggle="tooltip" data-original-title="Edit site"  ><i class="fa fa-pencil fa-fw" ></i></button>
+																<button class="btn btn-primary btn-nodeop" data-action="clone"  data-toggle="tooltip" data-original-title="Clone site" ><i class="fa fa-clone fa-fw"  ></i></button>
+																<button class="btn btn-primary btn-nodeop" data-action="delete" data-toggle="tooltip" data-original-title="Delete site"><i class="fa fa-trash-o fa-fw"></i></button>
 															</div>
 														</div>
 													</div>
@@ -142,10 +148,12 @@
 			</div><!-- nav-tabs-custom -->
 		</div>
 	</div>
-</section><!-- /.content -->
+</section>
 
 <!-- Modal for user actions -->
-<div id="myModalNodes" class="modal modal-form-focus fade" tabindex="-1" data-backdrop="static" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true"></div>
+<div id="myModalNodes" class="modal fade" tabindex="-1" data-backdrop="static" role="dialog">
+	<div class="modal-dialog"></div>
+</div>
 
 <!-- Datepicker -->
 <link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.theme.css" rel="stylesheet" />
@@ -163,7 +171,7 @@
 	
 	myModalNodesOpShow = function (operationid, args) {
 		if ($.inArray(operationid, [ "plus", "edit" ]) != -1) {
-			window.userOpStack = (operationid === "edit") ? { "dna": args.dna } : [];
+			window.userOpStack = (operationid === "edit") ? { "dna": args.dna } : {};
 			$.ajax({
 				url: "./fragments/sites-" + operationid + ".fragment.html?" + Math.random(),
 				error: function (jqXHR, textStatus, errorThrown) {
@@ -171,7 +179,9 @@
 				},
 				success: function (result) {
 					if (result !== "") {
-						$("#myModalNodes").html(result).modal('show');
+						$(".modal-dialog", "#myModalNodes").addClass("modal-cw");
+						$(".modal-dialog", "#myModalNodes").html(result)
+						$("#myModalNodes").modal("show");
 					} else {
 						alert("Could not retrive needed data from server.");
 					}
@@ -186,8 +196,8 @@
 		$.ajax({
 			cache   : false,
 			url     : baseRestApiURL + "site/" + id,
-			dataType: 'json',
-			type    : 'DELETE',
+			dataType: "json",
+			type    : "DELETE",
 			headers : {
 				"Accept"      : "application/json",
 				"Content-Type": "application/json",
@@ -211,9 +221,9 @@
 		var cloneSite = $.ajax({
 			cache   : false,
 			url     : baseRestApiURL + "site/",
-			dataType: 'json',
+			dataType: "json",
 			data    : JSON.stringify(site),
-			type    : 'POST',
+			type    : "POST",
 			headers : {
 				"Accept"      : "application/json",
 				"Content-Type": "application/json",
@@ -237,7 +247,7 @@
 		var cloneSite = $.ajax({
 			cache  : false,
 			url    : baseRestApiURL + "site/" + id,
-			type   : 'GET',
+			type   : "GET",
 			headers: {
 				"Accept": "application/json",
 				"Content-Type": "application/json",
@@ -267,7 +277,7 @@
 	
 	$(document).ready(function () {
 		var urls = [ baseRestApiURL + "site/" ];
-		window.panelComp = $('#panel-nodes').npPaginatedCells({
+		window.panelComp = $("#panel-nodes").npPaginatedCells({
 			headerUser: taoUserProfile.username,
 			url: urls,
 			viewMode: preferences.viewMode,
@@ -280,8 +290,8 @@
 				// Get a list with site names
 				nameList = $.map(data, function (site, idx) {
 					// Save dates also in YYYY-MM-DD format
-					site.sDate = moment(site.startDate).format('YYYY-MM-DD');
-					site.eDate = moment(site.endDate  ).format('YYYY-MM-DD');
+					site.sDate = moment(site.startDate).format("YYYY-MM-DD");
+					site.eDate = moment(site.endDate  ).format("YYYY-MM-DD");
 					return site.name;
 				});
 				return data;
@@ -301,7 +311,7 @@
 					case "delete":	if (taoUserProfile.userRole !== "ADMIN") {
 										alert("not allowed");
 									} else {
-										$('#confirm-dialog').modal('confirm', {
+										$("#confirm-dialog").modal("confirm", {
 											msg            : "Are you sure you want to delete the site: <strong>" + args.dna.name + "</strong>?",
 											callbackConfirm: function () { deleteSiteById(args.dna.id); },
 											callbackCancel : function () {}
