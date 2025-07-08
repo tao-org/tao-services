@@ -2,153 +2,130 @@
 	/*------FORM------*/
 	#frmContainer {
 		.tagsinput:has(.tag) {
-			width:fit-content!important;
-			.tag-input {display:none;}
+			.tag                      {margin-right:0;border:2px solid transparent;border-radius:3px;cursor:pointer;padding-right:35px;width:100%;}
+			.tag.match                {background:#0099ff;}
+			.tag.error                {background:#a63f3f;cursor:default;border-color:transparent!important;}
+			.tag:has(.tag-text:hover) {border-color:rgb(255 255 255/0.5);}
+			.tag .tag-remove:hover    {transform:scale(1.3);}
+			.tag .tag-text            {max-width:70px;display:inline-block;}
+			.tag-input                {display:none;}
 		}
-		.tag                        {margin-right:0;border:2px solid transparent;border-radius:3px;cursor:pointer;padding-right:35px;}
-		.tag.match                  {background:#0099ff;}
-		.tag.error                  {background:#a63f3f;cursor:default;border-color:transparent!important;}
-		.tag:has(.tag-text:hover)   {border-color:rgb(255 255 255/0.5);}
-		.tag .tag-remove:hover      {transform:scale(1.3);}
-		.tag .tag-text              {max-width:70px;display:inline-block;}
+		.control-label              {text-align:inherit;margin-bottom:5px;}
+		.info-label                 {font-weight:400;font-style:italic;margin:-2px 0;}
 		[name=footprint][readonly]  {color:#ccc;padding-top:0;padding-bottom:0;word-break:break-all;resize:none;}
 		[name=description]          {resize:none;}
-		[name=btnSave]              {width:70%;float:left;min-width:fit-content;
-			                         &:focus {outline:5px auto #00587a;outline-offset:-2px;}
-		}
-		[name=btnCancel]            {float:right;width:28%;min-width:fit-content;
-			                         &:focus {outline:5px auto #ddd;outline-offset:-2px;}
-		}
-		#reset                      {opacity:0.8;color:dodgerblue;float:right;}
+		[name=btnSave]              {float:left ;width:70%;min-width:fit-content;&:focus {outline:5px auto #00587a;outline-offset:-2px;}}
+		[name=btnCancel]            {float:right;width:28%;min-width:fit-content;&:focus {outline:5px auto #dddddd;outline-offset:-2px;}}
+		#reset                      {background:none;border:0;opacity:0.8;font-size:1.2em;color:dodgerblue;float:right;}
 		#reset i                    {vertical-align:middle;}
 		.scroll-into-view,.focus-on {opacity:0.6;font-weight:700;}
 		#reset:hover,.scroll-into-view:hover,.focus-on:hover,
 		#reset:focus,.scroll-into-view:focus,.focus-on:focus {opacity:1;}
 	}
 	/*------MAP------*/
-	#myModalNodes {
-		#mapExtent {
-			position:relative;display:block;margin:-15px;width:calc(100% + 30px);height:550px;min-height:550px;background-color:white;overflow:hidden;
-			@media (max-width:767px) {
-				& {min-height:90vh!important;max-height:90vh!important;}
-			}
+	#mapExtent {
+		position:relative;display:block;margin:-15px;width:calc(100% + 30px);height:550px;min-height:550px;background-color:white;overflow:hidden;
+		.map {border-left:1px solid #96c1ce;}
+		.poly-actions-panel {
+			width:50rem;max-width:100%;right:0;bottom:0;border:0;
+			textarea {font-size:0.8em;line-height:1;resize:none;}
+			.btn-poly {color:rgb(255 255 255/0.8);&:hover {color:rgb(255 255 255/1);}&:disabled {color:rgb(255 255 255/0.4);pointer-events:none;}}
 		}
-		#myFlatMap {
-			.map {border-left:1px solid #96c1ce;}
-			.poly-actions-panel {
-				width:50rem;max-width:100%;right:0;bottom:0;border:0;
-				textarea {font-size:0.8em;line-height:1;resize:none;}
-				.btn-poly {
-					color:rgb(255 255 255/0.8);
-					&:hover {color:rgb(255 255 255/1);}
-					&:disabled {color:rgb(255 255 255/0.4);pointer-events:none;}
-				}
-			}
-			.sliderscontainer {display:none;}
-		}
+		.sliderscontainer {display:none;}
+		@media (max-width:767px) {& {min-height:90vh!important;max-height:90vh!important;}}
 	}
-	/*------Modal------*/
-	@media (min-width:  768px) {.modal-width{width: 766px;}}
-	@media (min-width:  992px) {.modal-width{width: 990px;}}
-	@media (min-width: 1400px) {.modal-width{width:1398px;}}
 </style>
-<div class="modal-dialog modal-width">
-	<div class="modal-content">
-		<div class="modal-header">
-			<button type="button" class="close" data-dismiss="modal"><span>&times;</span><span class="sr-only">Close</span></button>
-			<h4 class="modal-title" id="myModalLabel">Manage site</h4>
-		</div>
-		<div class="modal-body">
-			<div class="row">
+<div class="modal-content">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+		<h4 id="myModalLabel" class="modal-title">Manage site</h4>
+	</div>
+	<div class="modal-body">
+		<div class="row">
+			<div class="col-sm-4 col-md-4">
 				<!-- FORM -->
-				<div class="col-sm-4 col-md-4">
-					<form id="frmContainer" class="form-horizontal clearfix" action="" role="form">
-						<div class="form-group">
-							<label for="name" class="col-sm-12 col-md-12" style="font-size: large;">Define your area of interest</label>
-							<div class="col-sm-12 col-md-12">
-								<div class="form-group has-feedback">
-									<label for="name" class="col-sm-12 col-md-12">Name</label>
-									<div class="col-sm-12 col-md-12">
-										<input type="text" class="form-control" id="name" name="name" placeholder="name" autocomplete="off" value="" />
-									</div>
-								</div>
-							</div>
-							<div class="col-sm-12 col-md-12">
-								<div class="form-group">
-									<label for="description" class="col-sm-12 col-md-12 ">Description</label>
-									<div class="col-sm-12 col-md-12">
-										<textarea class="form-control" rows="3" id="description" name="description" placeholder="description" autocomplete="off"></textarea>
-									</div>
+				<form id="frmContainer" class="form-horizontal clearfix" action="" role="form">
+					<div class="row">
+						<div class="col-sm-12 col-md-12">
+							<div class="form-group">
+								<label for="name" class="col-sm-12 col-md-12 control-label">Name</label>
+								<div class="col-sm-12 col-md-12">
+									<input id="name" type="text" class="form-control" name="name" placeholder="name" autocomplete="off" value="" />
 								</div>
 							</div>
 						</div>
-						<div class="form-group">
-							<div class="col-sm-8 col-md-8">
-								<div class="form-group">
-									<label for="footprint" class="col-sm-12 col-md-12">Polygon<sup>*</sup></label>
-									<div class="col-sm-12 col-md-12">
-										<textarea class="form-control" rows="2" id="footprint" name="footprint" placeholder="polygon" tabindex="-1" autocomplete="off" readonly="true"></textarea>
-									</div>
-									<label class="col-sm-12 col-md-12"><i style="font-weight:400">(*) draw on the <a class="scroll-into-view" href="#mapExtent">map</a> or select a <a class="focus-on" href="#tileTags_tag">tile</a></i></label>
-								</div>
-							</div>
-							<div class="col-sm-4 col-md-4">
-								<div class="form-group">
-									<label for="tileTags" class="col-sm-12 col-md-12">Tile</label>
-									<div class="col-sm-12 col-md-12">
-										<input id="tileTags" class="form-control" type="text" name="tileTags" />
-									</div>
+						<div class="col-sm-12 col-md-12">
+							<div class="form-group">
+								<label for="description" class="col-sm-12 col-md-12 control-label">Description</label>
+								<div class="col-sm-12 col-md-12">
+									<textarea id="description" class="form-control" rows="3" name="description" placeholder="description" autocomplete="off"></textarea>
 								</div>
 							</div>
 						</div>
-						<div class="form-group">
-							<label for="name" class="col-sm-12 col-md-12" style="font-size: large;">Choose your time period</label>
-							<div class="col-sm-6 col-md-6">
-								<div class="form-group">
-									<label class="col-sm-12 col-md-12">Start date</label>
-									<div class="col-sm-12 col-md-12">
-										<input type="text" autocomplete="off" id="startDate" name="startDate" class="datepicker form-control" >
-									</div>
+					</div>
+					<div class="row">
+						<label class="col-sm-12 col-md-12 group-label">Define your area of interest</label>
+						<div class="col-sm-12 col-md-8">
+							<div class="form-group">
+								<label for="footprint" class="col-sm-12 col-md-12 control-label">Polygon<sup>*</sup></label>
+								<div class="col-sm-12 col-md-12">
+									<textarea id="footprint" class="form-control" rows="2" name="footprint" placeholder="polygon" tabindex="-1" autocomplete="off" readonly="true"></textarea>
 								</div>
+								<label class="col-sm-12 col-md-12 info-label">(*) draw on the <a class="scroll-into-view" href="#mapExtent">map</a> or select a <a class="focus-on" href="#tileTags_tag">tile</a></label>
 							</div>
-							<div class="col-sm-6 col-md-6">
-								<div class="form-group">
-									<label class="col-sm-12 col-md-12">End date</label>
-									<div class="col-sm-12 col-md-12">
-										<input type="text" autocomplete="off" id="endDate" name="endDate" class="datepicker form-control" >
-									</div>
+						</div>
+						<div class="col-sm-12 col-md-4">
+							<div class="form-group">
+								<label for="tileTags" class="col-sm-12 col-md-12 control-label">Tile</label>
+								<div class="col-sm-12 col-md-12">
+									<input id="tileTags" class="form-control" type="text" name="tileTags" />
 								</div>
 							</div>
 						</div>
-						<div class="form-group">
-							<div class="col-sm-12 col-md-12">
-								<div class="form-group">
-									<div class="col-sm-12 col-md-12">
-										<a id="reset" href="" style="font-size:larger">Reset</a>
-									</div>
+					</div>
+					<div class="row">
+						<label class="col-sm-12 col-md-12 group-label">Choose your time period</label>
+						<div class="col-sm-6 col-md-6">
+							<div class="form-group">
+								<label class="col-sm-12 col-md-12 control-label">Start date</label>
+								<div class="col-sm-12 col-md-12">
+									<input id="startDate" type="text" autocomplete="off" name="startDate" class="datepicker form-control" >
 								</div>
 							</div>
 						</div>
-						<div class="form-group">
-							<div class="col-sm-12 col-md-12">
-								<div class="form-group">
-									<div class="col-sm-12 col-md-12" style="text-align:center;">
-										<button id="btnSave"   type="submit" class="btn btn-flat btn-primary" name="btnSave">Save</button>
-										<button id="btnCancel" type="button" class="btn btn-flat btn-default" name="btnCancel">Cancel</button>
-									</div>
+						<div class="col-sm-6 col-md-6">
+							<div class="form-group">
+								<label class="col-sm-12 col-md-12 control-label">End date</label>
+								<div class="col-sm-12 col-md-12">
+									<input id="endDate" type="text" autocomplete="off" name="endDate" class="datepicker form-control" >
 								</div>
 							</div>
 						</div>
-					</form>
-				</div>
-				<!-- MAP -->
-				<div class="col-sm-8 col-md-8">
-					<div id="mapExtent" class="hidden"></div>
-				</div>
+					</div>
+					<div class="row">
+						<div class="col-sm-12 col-md-12">
+							<div class="form-group">
+								<div class="col-sm-12 col-md-12">
+									<button id="reset" type="reset">Reset</button>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-sm-12 col-md-12 modal-footer">
+							<button id="btnSave"   type="submit" class="btn btn-flat btn-primary" name="btnSave">Save</button>
+							<button id="btnCancel" type="button" class="btn btn-flat btn-default" name="btnCancel" data-dismiss="modal">Cancel</button>
+						</div>
+					</div>
+				</form>
 			</div>
-		</div><!-- /.modal-body -->
-	</div><!-- /.modal-content -->
-</div><!-- /.modal -->
+			<!-- MAP -->
+			<div class="col-sm-8 col-md-8">
+				<div id="mapExtent" class="hidden"></div>
+			</div>
+		</div>
+	</div>
+</div>
 
 <script type="text/javascript">
 	var $myModalNodes = $("#myModalNodes");
@@ -160,9 +137,9 @@
 		
 		// Set the mininum end date when start date changes
 		var setMinEndDate = function () {
-			var minEndDate = $startDate.datepicker('getDate');
+			var minEndDate = $startDate.datepicker("getDate");
 			(minEndDate != null) && minEndDate.setDate(minEndDate.getDate() + 1);
-			$endDate.datepicker('option', 'minDate', minEndDate);
+			$endDate.datepicker("option", "minDate", minEndDate);
 		};
 		
 		// Initialize startDate datepicker
@@ -177,7 +154,7 @@
 			onClose: function (date, picker) {
 				if (!picker.settings["dateAlreadySet"]) {
 					var date = moment(date);
-					picker.input.val(date.isValid() ? moment(date).format('YYYY-MM-DD') : "");
+					picker.input.val(date.isValid() ? moment(date).format("YYYY-MM-DD") : "");
 					setMinEndDate();
 				}
 				picker.settings["dateAlreadySet"] = false;
@@ -195,8 +172,8 @@
 			onClose: function (date, picker) {
 				if (!picker.settings["dateAlreadySet"]) {
 					var date = moment(date);
-					picker.input.val(date.isValid() ? moment(date).format('YYYY-MM-DD') : "");
-					if (date.toDate() <= $('#startDate').datepicker('getDate')) {
+					picker.input.val(date.isValid() ? moment(date).format("YYYY-MM-DD") : "");
+					if (date.toDate() <= $("#startDate").datepicker("getDate")) {
 						picker.input.val("");
 					}
 				}
@@ -275,7 +252,7 @@
 		
 		// Initialize the tags control
 		$tileTags.tagsInput({
-			placeholder	: 'Add a Sentinel-2 tile',
+			placeholder	: "Add a Sentinel-2 tile",
 			limit		: 1,
 			minChars	: 0,
 			maxChars	: null,
@@ -389,19 +366,6 @@
 		// Initialize form
 		initializeForm($form, initData);
 		
-		// Custom validations for site name (accepted characters & unique and trimmed name)
-		$.validator.addMethod("siteName", function (value, element, params) {
-			$.validator.messages.siteName = params?.message || "Remove invalid characters.";
-			return value.length == 0 || value.match(new RegExp(params.regEx, "g"));
-		}, $.validator.messages.siteName);
-		$.validator.addMethod("isUnique", function (value, element, params) {
-			return $.inArray(value, nameList) == -1 || (initData?.name && (value === initData.name));
-		}, "Site's name must be unique.");
-		$.validator.addMethod("isTrimmed", function (value, element, params) {
-			$.validator.messages.isTrimmed = params?.message || "Remove trailing and leading invalid characters [" + params.chars + "].";
-			return !value.match(new RegExp("^(^[" + params.chars + "]+)|([" + params.chars + "]+$)$", "g"));
-		}, $.validator.messages.isTrimmed);
-		
 		// Scroll element into view
 		$("a.scroll-into-view, a.focus-on").on("click", function (e) {
 			e.preventDefault();
@@ -415,8 +379,21 @@
 		
 		// Cancel action
 		$("#btnCancel").on("click", function (e) {
-			$myModalNodes.modal('hide');
+			$myModalNodes.modal("hide");
 		});
+		
+		// Custom validations for site name (accepted characters & unique and trimmed name)
+		$.validator.addMethod("siteName", function (value, element, params) {
+			$.validator.messages.siteName = params?.message || "Remove invalid characters.";
+			return value.length == 0 || value.match(new RegExp(params.regEx, "g"));
+		}, $.validator.messages.siteName);
+		$.validator.addMethod("isUnique", function (value, element, params) {
+			return $.inArray(value, nameList) == -1 || (initData?.name && (value === initData.name));
+		}, "Site's name must be unique.");
+		$.validator.addMethod("isTrimmed", function (value, element, params) {
+			$.validator.messages.isTrimmed = params?.message || "Remove trailing and leading invalid characters [" + params.chars + "].";
+			return !value.match(new RegExp("^(^[" + params.chars + "]+)|([" + params.chars + "]+$)$", "g"));
+		}, $.validator.messages.isTrimmed);
 		
 		// Validate form before submit
 		var fValidator = $form.validate({
@@ -425,7 +402,7 @@
 					required : true,
 					minlength: 2,
 					isUnique : true,
-					isTrimmed: { chars: '- ', message: "Remove trailing and leading spaces or dashes." },
+					isTrimmed: { chars: "- ", message: "Remove trailing and leading spaces or dashes." },
 					siteName : { regEx: "^[A-Za-z0-9][A-Za-z0-9- ]*[A-Za-z0-9]$", message: "Remove invalid characters (allowed: letters, numbers, spaces and dashed)." }
 				},
 				description: { required: true },
@@ -447,9 +424,9 @@
 		});
 		
 		// Reset form data
-		$("#reset").on("click", function (e) {
-			e.preventDefault();
-			initializeForm($form, initData);
+		$form.on("reset", function (event) {
+			event.preventDefault();
+			initializeForm($(this), initData);
 			fValidator.resetForm();
 		});
 		
@@ -461,20 +438,19 @@
         // Submit form
 		$form.submit(function (event) {
 			event.preventDefault();
-			var formData = {
-				name       :        $('[name="name"       ]', this).val(),
-				description:        $('[name="description"]', this).val(),
-				startDate  : moment($('[name="startDate"  ]', this).val()).format("YYYY-MM-DDTHH:mm:ss"),
-				endDate    : moment($('[name="endDate"    ]', this).val()).format("YYYY-MM-DDTHH:mm:ss"),
-				footprint  :        $('[name="footprint"  ]', this).val()
-			};
-			
 			if ($(this).valid()) {
+				var formData = {
+					name       :        $('[name="name"       ]', this).val(),
+					description:        $('[name="description"]', this).val(),
+					startDate  : moment($('[name="startDate"  ]', this).val()).format("YYYY-MM-DDTHH:mm:ss"),
+					endDate    : moment($('[name="endDate"    ]', this).val()).format("YYYY-MM-DDTHH:mm:ss"),
+					footprint  :        $('[name="footprint"  ]', this).val()
+				};
 				$.ajax({
 					cache   : false,
 					url     : baseRestApiURL + "site/",
-					dataType: 'json',
 					type    : "POST",
+					dataType: "json",
 					data    : JSON.stringify(formData),
 					headers : {
 						"Accept"      : "application/json",
@@ -491,7 +467,7 @@
 					success: function (response) {
 						if (response.status === window.responseStatus.success) {
 							showMsg("Site successfully saved.", "SUCCESS");
-							$myModalNodes.modal('hide');
+							$myModalNodes.modal("hide");
 							panelComp.refreshData();
 						} else {
 							showMsg("Error adding site. Please check your data and try again.", "ERROR");
