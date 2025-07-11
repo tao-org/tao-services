@@ -1792,8 +1792,8 @@ li.select2-search.select2-search--inline {display:none}
 								"X-Auth-Token": window.tokenKey
 							},
 							"success": function(result) {
-								if(result.status === "failed"){
-
+								if(result.status === "FAILED"){
+									 showMsg("Connection to Apache Zeppelin failed. Please try again. " + result.message , "FAILED");
 								}
 								// update iframe and recover ui parameters
 								var idx = result.data.indexOf(":");
@@ -1819,7 +1819,7 @@ li.select2-search.select2-search--inline {display:none}
 									};
 									paramData.parameterDescriptors.push(newParameterDescriptor);
 								});
-								const srcZeppelin = window.baseRestApiURL.substring(0, window.baseRestApiURL.length - 5) + ':' + port;
+								const srcZeppelin = window.baseRestApiURL.substring(0, window.baseRestApiURL.length - 5) + port;
 								$("#zeppelinFrame").prop('src', srcZeppelin);
 								// <!-- Generate template / notebook -->
 								$.ajax({
