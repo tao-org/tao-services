@@ -447,16 +447,18 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                         if (isFile) {
                             Resource file = loadAsResource(user, fileName);
                             response.setContentType(contentType);
-                            response.setContentLengthLong(file.contentLength());
                             response.setStatus(HttpStatus.OK.value());
                             if (!base64) {
+                                response.setContentLengthLong(file.contentLength());
                                 response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename());
                                 try (InputStream in = file.getInputStream()) {
                                     writeAsBytes(in, response.getOutputStream());
                                 }
                             } else {
-                                try (InputStream in = file.getInputStream()) {
-                                    response.getWriter().write(readAsBase64String(in));
+                                try (InputStream in = file.getInputStream();
+                                     OutputStream out = Base64.getEncoder().wrap(response.getOutputStream())) {
+                                    //response.getWriter().write(readAsBase64String(in));
+                                    writeAsBytes(in, out);
                                 }
                             }
 
