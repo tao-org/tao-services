@@ -48,7 +48,6 @@ import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -457,7 +456,6 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                             } else {
                                 try (InputStream in = file.getInputStream();
                                      OutputStream out = Base64.getEncoder().wrap(response.getOutputStream())) {
-                                    //response.getWriter().write(readAsBase64String(in));
                                     writeAsBytes(in, out);
                                 }
                             }
@@ -514,7 +512,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                                 IOUtils.copy(stream, response.getOutputStream());
                                 response.flushBuffer();
                             } else {
-                                response.getWriter().write(readAsBase64String(stream));
+                                try (OutputStream out = Base64.getEncoder().wrap(response.getOutputStream())) {
+                                    writeAsBytes(stream, out);
+                                }
                             }
                         }
                     } else {
@@ -1086,18 +1086,6 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
             Messaging.send(userId, topic, message);
         };
-    }
-
-    private String readAsBase64String(InputStream in) throws IOException {
-        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
-            final byte[] smallBuffer = new byte[(int) MemoryUnit.MB.value()];
-            int read;
-            while ((read = in.read(smallBuffer)) > 0) {
-                buffer.write(smallBuffer, 0, read);
-            }
-            buffer.flush();
-            return Base64.getEncoder().encodeToString(buffer.toByteArray());
-        }
     }
 
     private void writeAsBytes(InputStream in, OutputStream os) throws IOException {
