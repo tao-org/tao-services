@@ -1700,25 +1700,25 @@ li.select2-search.select2-search--inline {display:none}
         });
 		
 		$("#openApacheZeppelin").on("click", function (e) {
-            var $apacheZeppelin = $("#apacheZeppelin");
-            if ($apacheZeppelin.length == 0) {
-                $apacheZeppelin = $('<div id="apacheZeppelin" class="modal fade in" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="false"><div class="modal-dialog modal-lg"></div></div>');
+            var $apachezeppelin = $("#zeppelin");
+            if ($apachezeppelin.length == 0) {
+                $apachezeppelin = $('<div id="zeppelin" class="modal fade in" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="false"><div class="modal-dialog modal-lg"></div></div>');
             }
-            $apacheZeppelin.off('hidden.bs.modal');
-            $apacheZeppelin.on('hidden.bs.modal', function (e) {
-                $apacheZeppelin.remove();
-            });            
+            $apachezeppelin.off('hidden.bs.modal');
+            $apachezeppelin.on('hidden.bs.modal', function (e) {
+                $apachezeppelin.remove();
+            });
 
-            $("#myModalNodes").after($apacheZeppelin);
-            $(".modal-dialog",$apacheZeppelin).addClass("modal-lg");
+            $("#myModalNodes").after($apachezeppelin);
+            $(".modal-dialog",$apachezeppelin).addClass("modal-lg");
             rm_contentUrl="./fragments/component-apachezeppelin.fragment.html?" + Math.random();
             $.ajax({
                 url: rm_contentUrl,
                 success: function(result) {
                     rmContent = result;
                     if(rmContent !== ''){
-                        $apacheZeppelin.find('.modal-dialog').html(rmContent);
-						// start apacheZeppelin docker
+                        $apachezeppelin.find('.modal-dialog').html(rmContent);
+						// start apache zeppelin docker
 						$.ajax({
 							"async": false,
 							"crossDomain": true,
@@ -1728,10 +1728,13 @@ li.select2-search.select2-search--inline {display:none}
 								"X-Auth-Token": window.tokenKey
 							},
 							"success": function(result) {
+								if(result.status === "FAILED"){
+									 showMsg("Connection to Apache Zeppelin failed. Please try again. " + result.message , "FAILED");
+								}
 								// update iframe and recover ui parameters
 								var idx = result.data.indexOf(":");
-								var port = idx > 0 ? result.data.substring(idx) : "";
-								apacheZeppelinContainerId = result.data.substring(0, idx);
+								var port = idx > 0 ? result.data.substring(idx + 1) : "";
+								apachezeppelinContainerId = result.data.substring(0, idx);
 								var paramData = {
 									"parameterDescriptors": [
 											{
@@ -1752,20 +1755,33 @@ li.select2-search.select2-search--inline {display:none}
 									};
 									paramData.parameterDescriptors.push(newParameterDescriptor);
 								});
-								$("#apacheZeppelinFrame").prop('src', window.baseRestApiURL + 'lab?token=' + taoUserProfile.id);
+								const srcZeppelin = window.baseRestApiURL.substring(0, window.baseRestApiURL.length - 5) + port;
+								$("#zeppelinFrame").prop('src', srcZeppelin);
 								// <!-- Generate template / notebook -->
 								$.ajax({
 									"async": true,
 									"crossDomain": true,
 									"contentType": "application/json",
-									"url": baseRestApiURL + "apacheZeppelin",
+									"url": baseRestApiURL + "zeppelin/start",
 									"method": "POST",
-									"data" : JSON.stringify(paramData.parameterDescriptors)
+									headers: {
+										"X-Auth-Token": window.tokenKey
+									},
+									"data" : JSON.stringify(paramData.parameterDescriptors),
+									"success": function(result) {
+										console.log(result.data);
+									},
+									"error": function (jqXHR, textStatus, errorThrown) {
+                        				showMsg("Error opening Apache Zeppelin: " + errorThrown, "ERROR");
+                    				}
 								});
-							}
+							},
+							"error": function (jqXHR, textStatus, errorThrown) {
+                        		showMsg("Error opening Apache Zeppelin: " + errorThrown, "ERROR");
+                    		}
 						});
                     }
-                    $apacheZeppelin.modal('show');
+                    $apachezeppelin.modal('show');
                 }
             });
         });
