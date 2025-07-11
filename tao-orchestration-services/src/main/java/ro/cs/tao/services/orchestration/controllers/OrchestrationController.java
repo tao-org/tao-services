@@ -149,11 +149,18 @@ public class OrchestrationController extends BaseController {
     /**
      * Returns the outputs of a workflow execution (a workflow can have more than one execution)
      * @param workflowId    The workflow identifier
+     * @param userId        The user that executed the workflow. Only an administrator can pass this value.
      */
     @RequestMapping(value = "/outputs/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> getWorkflowOutputs(@PathVariable("id") long workflowId) {
+    public ResponseEntity<ServiceResponse<?>> getWorkflowOutputs(@PathVariable("id") long workflowId,
+                                                                 @RequestParam(name = "userId", required = false) String userId) {
         try {
-            return prepareResult(orchestrationService.getWorkflowOutputs(workflowId, currentUser()));
+            boolean isUserIdSet = !StringUtilities.isNullOrEmpty(userId);
+            if (isUserIdSet && !currentUser().equals(userId) && !isCurrentUserAdmin()) {
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
+            }
+            final String user = isUserIdSet ? userId : currentUser();
+            return prepareResult(orchestrationService.getWorkflowOutputs(workflowId, user));
         } catch (Exception ex) {
             return handleException(ex);
         }
