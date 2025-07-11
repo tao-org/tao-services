@@ -48,10 +48,10 @@ import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1087,13 +1087,15 @@ public class StorageController extends DataEntityController<EOProduct, String, P
     }
 
     private String readAsBase64String(InputStream in) throws IOException {
-        final ByteBuffer buffer = ByteBuffer.allocate((int) MemoryUnit.MB.value());
-        final byte[] smallBuffer = new byte[(int) MemoryUnit.KB.value() * 64];
-        int read;
-        while ((read = in.read(smallBuffer)) > 0) {
-            buffer.put(smallBuffer, 0, read);
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            final byte[] smallBuffer = new byte[(int) MemoryUnit.MB.value()];
+            int read;
+            while ((read = in.read(smallBuffer)) > 0) {
+                buffer.write(smallBuffer, 0, read);
+            }
+            buffer.flush();
+            return Base64.getEncoder().encodeToString(buffer.toByteArray());
         }
-        return Base64.getEncoder().encodeToString(buffer.array());
     }
 
     private void writeAsBytes(InputStream in, OutputStream os) throws IOException {
