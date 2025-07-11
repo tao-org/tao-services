@@ -26,6 +26,7 @@ import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.ExecutionConfiguration;
+import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
 import ro.cs.tao.execution.model.*;
@@ -41,6 +42,7 @@ import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.interfaces.OrchestratorService;
+import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.user.User;
@@ -48,6 +50,8 @@ import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.Tuple;
 import ro.cs.tao.workflow.ExternalGraphConverter;
 import ro.cs.tao.workflow.WorkflowDescriptor;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
@@ -79,6 +83,9 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Autowired
     private ProcessingComponentProvider componentProvider;
+
+    @Autowired
+    private RepositoryService repositoryService;
 
     @Override
     public long startWorkflow(ExecutionRequest request) throws ExecutionException {
@@ -113,7 +120,11 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public List<ExecutionTaskOutput> getWorkflowOutputs(long workflowId, String userId) throws PersistenceException {
-        return jobProvider.getWorkflowOutputs(workflowId, userId);
+        final List<ExecutionTaskOutput> outputs = jobProvider.getWorkflowOutputs(workflowId, userId);
+        for (ExecutionTaskOutput output : outputs) {
+            replaceWithURL(userId, output);
+        }
+        return outputs;
     }
 
     @Override
@@ -487,5 +498,23 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             jobs.add(summary);
         }
         return jobs;
+    }
+
+    private void replaceWithURL(String ownerId, ExecutionTaskOutput output) {
+        String path = output.getUrl();
+        boolean isFile = output.getFormat() != DataFormat.FOLDER && output.getFormat() != DataFormat.DB_CONNECTION;
+        List<Repository> repositories = repositoryService.getByUser(ownerId);
+        Repository repository = repositories.stream().filter(r -> {
+            RepositoryType type = r.getType();
+            return path.startsWith(type.prefix()) || (type == RepositoryType.LOCAL && path.startsWith("/"));
+        }).findFirst().orElse(null);
+        if (repository != null) {
+            output.setUrl(repositoryService.createDownloadURL(ownerId, repository.getId(), path, isFile, false));
+            String previewUrl = output.getPreviewUrl();
+            if (previewUrl != null) {
+                output.setPreviewUrl(repositoryService.createDownloadURL(ownerId, repository.getId(), previewUrl, isFile, true));
+            }
+            output.setRelativePath(repository.relativize(repository.root(), path));
+        }
     }
 }

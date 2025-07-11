@@ -4,12 +4,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.interfaces.StorageService;
+import ro.cs.tao.utils.Crypto;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,6 +29,9 @@ import java.util.UUID;
 @Service("repositoryService")
 public class RepositoryServiceImpl
         extends EntityService<Repository> implements RepositoryService {
+
+    private static final String tokenJSON = "{ \"repository\":\"%s\", \"fileName\":%s, \"folder\":%s, \"user\":\"%s\", \"base64\":\"%s\" }";
+
     @Autowired
     private RepositoryProvider workspaceProvider;
 
@@ -103,6 +111,26 @@ public class RepositoryServiceImpl
         if (id != null) {
             workspaceProvider.delete(id);
         }
+    }
+
+    @Override
+    public String createDownloadURL(String userId, String repositoryId, String item, boolean isFile, boolean base64Encoded) {
+        if (StringUtilities.isNullOrEmpty(item)) {
+            throw new IllegalArgumentException("Empty item");
+        }
+        final Repository repository = workspaceProvider.get(repositoryId);
+        if (repository == null) {
+            throw new IllegalArgumentException("[repository] Invalid value");
+        }
+        List<Repository> userRepositories = workspaceProvider.getByUser(userId);
+        if (userRepositories.stream().noneMatch(r -> repositoryId.equals(r.getId()))) {
+            throw new IllegalArgumentException("Operation not allowed");
+        }
+        final String fileName = isFile ? "\"" + item + "\"" : null;
+        final String folder = isFile ? null : "\"" + item + "\"";
+        final String json = String.format(tokenJSON, repositoryId, fileName, folder, userId, base64Encoded);
+        return "/files/get?token=" + URLEncoder.encode(Crypto.encrypt(json, SystemPrincipal.instance().getName()),
+                StandardCharsets.UTF_8);
     }
 
     @Override

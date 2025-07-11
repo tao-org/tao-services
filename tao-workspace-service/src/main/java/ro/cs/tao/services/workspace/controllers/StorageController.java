@@ -31,6 +31,7 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.controllers.DataEntityController;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.ProductService;
+import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.model.ItemAction;
@@ -49,8 +50,8 @@ import ro.cs.tao.workspaces.RepositoryType;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,7 +71,6 @@ import java.util.zip.ZipOutputStream;
 @Tag(name = "Workspaces", description = "Operations related to file operations on user workspaces")
 public class StorageController extends DataEntityController<EOProduct, String, ProductService> {
 
-    private static final String tokenJSON = "{ \"repository\":\"%s\", \"fileName\":%s, \"folder\":%s, \"user\":\"%s\" }";
     private static final Pattern maliciousPathRegEx = Pattern.compile("\\.\\.\\/|\\.\\.|\\/\\/|\\\\\\\\|\\/\\.\\/|\\\\\\.\\\\|%|;");
 
     private static final Map<String, Integer> maliciousAttempts = new HashMap<>();
@@ -89,6 +89,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
     @Autowired
     private UserProvider userProvider;
+
+    @Autowired
+    private RepositoryService repositoryService;
 
     private static final BlockingQueue<Tuple<Repository, String>> deletionQueue;
 
@@ -405,20 +408,11 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             } else {
                 checkPath(folder);
             }
-            final Repository repository = repositoryProvider.get(repositoryId);
-            if (repository == null) {
-                throw new IllegalArgumentException("[repository] Invalid value");
-            }
-            final String user = currentUser();
-            List<Repository> userRepositories = repositoryProvider.getByUser(user);
-            if (userRepositories.stream().noneMatch(r -> repositoryId.equals(r.getId()))) {
-                throw new IllegalArgumentException("Operation not allowed");
-            }
-            fileName = StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + fileName + "\"";
-            folder = StringUtilities.isNullOrEmpty(folder) ? null : "\"" + folder + "\"";
-            final String json = String.format(tokenJSON, repositoryId, fileName, folder, user);
-            return prepareResult("/files/get?token=" + URLEncoder.encode(Crypto.encrypt(json, SystemPrincipal.instance().getName()),
-                                                                         StandardCharsets.UTF_8));
+            return prepareResult(repositoryService.createDownloadURL(currentUser(),
+                                                                     repositoryId,
+                                                                     isFile ? fileName : folder,
+                                                                     isFile,
+                                                                     false));
         } catch (Exception e) {
             return handleException(e);
         }
@@ -438,6 +432,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             final String fileName = values.get("fileName");
             final String folder = values.get("folder");
             final String user = values.get("user");
+            final boolean base64 = Boolean.parseBoolean(values.get("base64"));
             final Repository repository = repositoryProvider.get(repositoryId);
             final boolean isFile = StringUtilities.isNullOrEmpty(folder);
             if (isFile) {
@@ -445,61 +440,63 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             } else {
                 checkPath(folder);
             }
+            final String contentType = base64 ? MediaType.TEXT_PLAIN_VALUE : MediaType.APPLICATION_OCTET_STREAM_VALUE;
             switch (repository.getType()) {
                 case LOCAL:
-                    //asyncExecute(() -> {
-                        try {
-                            if (isFile) {
-                                Resource file = loadAsResource(user, fileName);
-                                response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                                response.setContentLengthLong(file.contentLength());
+                    try {
+                        if (isFile) {
+                            Resource file = loadAsResource(user, fileName);
+                            response.setContentType(contentType);
+                            response.setContentLengthLong(file.contentLength());
+                            response.setStatus(HttpStatus.OK.value());
+                            if (!base64) {
                                 response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename());
-                                response.setStatus(HttpStatus.OK.value());
-                                byte[] buffer = new byte[(int) MemoryUnit.MB.value()];
                                 try (InputStream in = file.getInputStream()) {
-                                    int read;
-                                    while ((read = in.read(buffer)) > 0) {
-                                        response.getOutputStream().write(buffer, 0, read);
-                                    }
+                                    writeAsBytes(in, response.getOutputStream());
                                 }
                             } else {
-                                final Path path = Paths.get(repository.resolve(folder));
-                                if (Files.exists(path) && Files.isDirectory(path)) {
-                                    try {
-                                        response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                                        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
-                                        response.setStatus(HttpServletResponse.SC_OK);
-                                        try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
-                                            getLocalRepositoryService(user).streamToZip(path.toString(), zipOutputStream);
-                                            zipOutputStream.finish();
-                                        }
-                                    } catch (IOException ex) {
-                                        try {
-                                            warn(ex.getMessage());
-                                            response.sendError(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
-                                        } catch (IOException e) {
-                                            error(e.getMessage());
-                                        }
+                                try (InputStream in = file.getInputStream()) {
+                                    response.getWriter().write(readAsBase64String(in));
+                                }
+                            }
+
+                        } else {
+                            final Path path = Paths.get(repository.resolve(folder));
+                            if (Files.exists(path) && Files.isDirectory(path)) {
+                                try {
+                                    response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                                    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
+                                    response.setStatus(HttpServletResponse.SC_OK);
+                                    try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
+                                        getLocalRepositoryService(user).streamToZip(path.toString(), zipOutputStream);
+                                        zipOutputStream.finish();
                                     }
-                                } else {
+                                } catch (IOException ex) {
                                     try {
-                                        response.sendError(HttpStatus.BAD_REQUEST.value(), String.format("%s does not exist or it is not a folder", folder));
+                                        warn(ex.getMessage());
+                                        response.sendError(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
                                     } catch (IOException e) {
                                         error(e.getMessage());
                                     }
                                 }
+                            } else {
+                                try {
+                                    response.sendError(HttpStatus.BAD_REQUEST.value(), String.format("%s does not exist or it is not a folder", folder));
+                                } catch (IOException e) {
+                                    error(e.getMessage());
+                                }
                             }
-                        } catch (IOException e) {
-                            error(e.getMessage());
                         }
-                    //});
+                    } catch (IOException e) {
+                        error(e.getMessage());
+                        response.sendError(HttpStatus.NOT_FOUND.value(), e.getMessage());
+                    }
                     break;
                 default:
                     StorageService client = StorageServiceFactory.getInstance(repository.getUrlPrefix());
                     client.associate(repository);
                     final Path path;
                     if (isFile) {
-                        //path = Paths.get(fileName.replace(repository.getUrlPrefix() + "://", ""));
                         String strPath = repository.resolve(fileName);
                         if (repository.getType() == RepositoryType.FTP || repository.getType() == RepositoryType.FTPS) {
                             strPath = strPath.replace(repository.root(), "");
@@ -508,14 +505,17 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                         }
                         path = Paths.get(strPath);
                         try (InputStream stream = (InputStream) client.download(path.toString())) {
-                            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                            response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
+                            response.setContentType(contentType);
                             response.setStatus(HttpServletResponse.SC_OK);
-                            IOUtils.copy(stream, response.getOutputStream());
-                            response.flushBuffer();
+                            if (!base64) {
+                                response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
+                                IOUtils.copy(stream, response.getOutputStream());
+                                response.flushBuffer();
+                            } else {
+                                response.getWriter().write(readAsBase64String(stream));
+                            }
                         }
                     } else {
-                        //path = Paths.get(folder.replace(repository.getUrlPrefix() + "://", ""));
                         path = Paths.get(repository.resolve(folder).replace(repository.getUrlPrefix() + "://", ""));
                         response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
                         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
@@ -1084,6 +1084,24 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
             Messaging.send(userId, topic, message);
         };
+    }
+
+    private String readAsBase64String(InputStream in) throws IOException {
+        final ByteBuffer buffer = ByteBuffer.allocate((int) MemoryUnit.MB.value());
+        final byte[] smallBuffer = new byte[(int) MemoryUnit.KB.value() * 64];
+        int read;
+        while ((read = in.read(smallBuffer)) > 0) {
+            buffer.put(smallBuffer, 0, read);
+        }
+        return Base64.getEncoder().encodeToString(buffer.array());
+    }
+
+    private void writeAsBytes(InputStream in, OutputStream os) throws IOException {
+        final byte[] buffer = new byte[(int) MemoryUnit.MB.value()];
+        int read;
+        while ((read = in.read(buffer)) > 0) {
+            os.write(buffer, 0, read);
+        }
     }
 
     private static class DeleteOperation implements Function<Tuple<Repository, String>, Void> {
