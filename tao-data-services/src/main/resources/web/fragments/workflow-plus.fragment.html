@@ -121,10 +121,10 @@
 	</div><!-- /.modal-body -->
 </div><!-- /.modal-content -->
 
-<link    rel="stylesheet"     href="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" type="text/css" />
-<script type="text/javascript" src="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.js"></script>
 <link    rel="stylesheet"     href="./assets/libs/jQuery-datepicker/jquery-ui.css" type="text/css" />
 <script type="text/javascript" src="./assets/libs/jQuery-datepicker/jquery-ui.js"></script>
+<link    rel="stylesheet"     href="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" type="text/css" />
+<script type="text/javascript" src="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.js"></script>
 
 <script>
     var wfHasImage   = false;
@@ -298,7 +298,7 @@
 		if (element.files.length == 0) {
 			validateLogoFile(element, "");
 		} else if (element.files.length > 0 && $.inArray(element.files[0]["type"], imageTypes) == -1) {
-			invalidateLogoFile(element, "The selected file is not of the required type " + JSON.stringify(imageTypes).replace(/(image\/)|(")/g, "").replaceAll(",", ", ") + ".")
+			invalidateLogoFile(element, "The selected file is not of the required type " + JSON.stringify(imageTypes).replace(/(image\/)|(")/g, "").replaceAll(",", ", ") + ".");
 		} else {
 			// The selected file is of the required image type: Check the image integrity
 			var file = element.files[0];
@@ -309,7 +309,7 @@
 					// The selected image file is OK: Set the new logo preview and set the file control as being VALID
 					validateLogoFile(element, response);
 				}).fail(function (jqXHR, textStatus, errorThrown) {
-					invalidateLogoFile(element, "Invalid image source.")
+					invalidateLogoFile(element, "Invalid image source.");
 				});
 			}
 			reader.readAsDataURL(file);

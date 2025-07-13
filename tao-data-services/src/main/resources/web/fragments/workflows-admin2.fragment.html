@@ -14,8 +14,8 @@
 		}
 	}
 	.spacer             {display:inline-block;width:2em;text-align:center;&::before{content:"|";opacity:0.65;}&:has(+.hidden,+.invisible){display:none;}}
-	.fa-simpipe::before {content:"";display:block;width:1.285em;height:1.285em;margin-bottom:-0.3em;background-repeat:no-repeat;background-size:contain;background-position:50% 50%;
-						 background-image:url(data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22-65%20-15%20650%20650%22%3E%3Cpath%20id%3D%22svg_58%22%20d%3D%22M510%20460%20L260%20610%20L10%20460%20L510%20160%20L260%2010%20L10%20160%20L510%20460%20L510%20310%20L260%20460%20L10%20310%20L260%20160%20L510%20310%20M260%20460%20L260%20610%20M10%20160%20L10%20310%20M260%2010%20L260%20160%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%2235%22%20stroke%3D%22%23fff%22%20fill%3D%22none%22%2F%3E%3C%2Fsvg%3E);}
+	.fa-simpipe::before {display:block;width:100%;height:1em;float:left;margin-top:-0.10em;
+						 content:url(data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22-20%20-20%20540%20520%22%3E%3Cpath%20id%3D%22svg_simpipe%22%20d%3D%22M500%20360%20L250%20480%20L0%20360%20L500%20120%20L250%200%20L0%20120%20L500%20360%20L500%20240%20L250%20360%20L0%20240%20L250%20120%20L500%20240%20M250%20360%20L250%20480%20M0%20120%20L0%20240%20M250%200%20L250%20120%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%2240%22%20stroke%3D%22%23fff%22%20fill%3D%22none%22%2F%3E%3C%2Fsvg%3E);}
 	.fa-trash-ban       {position:relative;background:inherit;&::before{content:"\f014"}&::after {content:"\f1b8";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.1em;background:inherit;border-radius:50%;}}
 	.fa-dry-run         {position:relative;background:inherit;&::before{content:"\f080"}&::after {content:"\f046";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.1em;background:inherit;border-radius:50%;}}
 	
@@ -258,7 +258,7 @@
 			case "wf-script"          : window.userOpStack = [{ "action": "wf_script"         , "dna": dna }]; rm_contentUrl = "./fragments/workflow-start.fragment.html"           ; break;
 			case "wf-start"           : window.userOpStack = [{ "action": "wf_edit"           , "dna": dna }]; rm_contentUrl = "./fragments/workflow-start.fragment.html"           ; break;
 			case "wf-execute-simpipe" : window.userOpStack = [{ "action": "wf_simpipe"        , "dna": dna }]; rm_contentUrl = "./fragments/workflow-start.fragment.html"           ; break;
-			case "wf-view-results"    : window.userOpStack = [{ "action": "wf_edit"           , "dna": dna }]; rm_contentUrl = "./fragments/workflow-show-results.fragment.html"    ; break;
+			case "wf-view-results"    : window.userOpStack =  { "action": "wf_edit"           , "dna": dna } ; rm_contentUrl = "./fragments/workflow-show-results.fragment.html"    ; break;
 			case "wf-trace-execution" : window.userOpStack = [{ "action": "wf_edit"           , "dna": dna }]; rm_contentUrl = "./fragments/workflow-trace-executions.fragment.html"; break;
 			case "wf-dry-run-results" : window.userOpStack = [{ "action": "wf_dry_run_results", "dna": dna }]; rm_contentUrl = "./fragments/workflow-dry-run-results.fragment.html" ; break;
 		}
@@ -387,8 +387,7 @@
 			} else {
 				showMsg("Workflow unsubscribe failed. " + (unsubscribeWorkflow?.message || ""), "ERROR");
 			}
-		})
-		.fail(function (jqXHR, textStatus, errorThrown) {
+		}).fail(function (jqXHR, textStatus, errorThrown) {
 			showMsg("Workflow unsubscribe failed. " + errorThrown, "ERROR");
 		});
 	};
@@ -411,8 +410,7 @@
 			} else {
 				showMsg("Workflow subscribe failed. " + (subscribeWorkflow?.message || ""), "ERROR");
 			}
-		})
-		.fail(function (jqXHR, textStatus, errorThrown) {
+		}).fail(function (jqXHR, textStatus, errorThrown) {
 			showMsg("Workflow subscribe failed. " + errorThrown, "ERROR");
 		});
 	};
@@ -470,7 +468,7 @@
 				var isReadOnly     = isPublished && (isPublic || isSubscription);
 				
 				// Format values
-				$(".val-created", $elClone).html(moment(elX.created).format("YY-MM-DD") + ' <small>' + moment(elX.created).format("HH:mm:ss") + '</small>')
+				$(".val-created", $elClone).html(moment(elX.created).format("YY-MM-DD") + ' <small>' + moment(elX.created).format("HH:mm:ss") + '</small>');
 				
 				// Set action buttons availabilities
 				$('[data-action="wf-edit-description"]', $elClone).prop("disabled", !((isUserOwner || (isAdmin && !isActive)) && !isSubscription));
@@ -537,7 +535,7 @@
 					case "wf-edit-workflow":	tao_showWorkflow(dna.id);
 												break;
 					// Clone workflow			------------------------------------------
-					case "wf-clone":			cloneWorkflowById(dna.id)
+					case "wf-clone":			cloneWorkflowById(dna.id);
 												break;
 					// Generate script			------------------------------------------
 					case "wf-script":			myModalNodesOpShow(action, dna);
