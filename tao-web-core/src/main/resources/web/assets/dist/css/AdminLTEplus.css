@@ -577,6 +577,7 @@ ul.timeline.current_route:before{
     border-radius: 3px;
     margin: 0 0 10px 0;
     padding: 10px;
+	border: 0;
     border-left: 5px solid #eee;
     background-color: #ffffff;
     color: black;
@@ -813,8 +814,7 @@ ul.timeline.current_route:before{
 	border-top: 1px solid #D4DCE5;
 	margin-top: 10px;
 }
-
-.nodes-item-core-box .box-bottom .btn-nodeop {
+.btn.btn-nodeop {
 	padding: 0.28em 0.28em;
     margin-bottom: 0.14em;
 	border-radius:0.35em;
@@ -1387,7 +1387,7 @@ span.markallasread:hover{color:green}
 p.message {white-space:nowrap;}
 p.message span{overflow:hidden;text-overflow:ellipsis;}
 
-/* Additions to the nodes-item-core-box */
+/* ==== Additions to the nodes-item-core-box ==== */
 :root {
 	--body-font-size    : 10px;
 	
