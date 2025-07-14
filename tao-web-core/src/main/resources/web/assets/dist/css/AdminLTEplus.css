@@ -573,48 +573,28 @@ ul.timeline.current_route:before{
     border-radius: 50px;
 }
 
-.job-history-one {
-    border-radius: 3px;
-    margin: 0 0 10px 0;
-    padding: 10px;
-	border: 0;
-    border-left: 5px solid #eee;
-    background-color: #ffffff;
-    color: black;
-    box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.2), 0 0 10px 0 rgba(0, 0, 0, 0.2);
-}
-.job-history-one.success {
-    border-left: 5px solid #00733e;
-}
-.job-history-one.fail {
-    border-left: 5px solid #c23321;
-}
-.job-history-one.suspended {
-    border-left: 5px solid #f39c12;
-}
-.job-history-one.cancelled {
-    border-left: 5px solid #dd4b39;
-}
-.job-history-one.queued-active {
-    border-left: 5px solid #001f3f;
-}
-.job-history-one.running {
-    border-left: 5px solid #00733e;
+.job-history-one    {border-radius:3px;margin:0;padding:10px;border:0;border-left:5px solid #eee;box-shadow:0 0 3px 0 rgba(0, 0, 0, 0.2), 0 0 5px 0 rgba(0, 0, 0, 0.1);
+	&.success       {border-left:5px solid #00733e;}
+	&.fail          {border-left:5px solid #c23321;}
+	&.suspended     {border-left:5px solid #f39c12;}
+	&.cancelled     {border-left:5px solid #dd4b39;}
+	&.queued-active {border-left:5px solid #001f3f;}
+	&.running       {border-left:5px solid #00733e;}
+	+&              {margin-top:10px;}
+	&:hover         {box-shadow:0 0 3px 0 rgba(0, 0, 0, 0.2), 0 0 10px 0 rgba(0, 0, 0, 0.2);}
+	.panel-header   {
+		.helper     {display:block;padding:10px;margin:-10px;
+			.title  {font-size:1.2em;}
+			>*      {margin:0;}
+		}
+	}
+	.panel-attr     {
+		&::before   {content:"";display:block;margin:10px 0;border: 0;border-top: 1px solid #eee;}
+		.tasks      {margin-left:20px;}
+		.one-task   {+& {margin-top: 4px;}}
+	}
 }
 
-
-.job-history-one h4 {
-    margin-top:0;
-}
-.job-history-one .tasks{
-    margin-left: 20px;
-}
-.job-history-one .tasks .one-task {
-    border-bottom: 1px solid #CCC;
-    border-bottom: 1px solid #ffffff52;
-    padding: 0;
-    margin: 2px;
-}
 /* users */
 .users-box .item{
 	/*border: 1px solid #3c8dbc;

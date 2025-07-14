@@ -280,81 +280,77 @@ jQuery.fn.npExecPanels = function(options){
 	var drawJobCell = function (index, job, accordionID) {
 		// replace special characters with _ or remove them 
 		var pID = job.id + "_" + job.jobName.replace(/[#_: /,]/g,'').replace(/[(]/g,'_').replace(/[)]/g,'').replace(/[&]/g,'And').replace(/[^a-zA-Z0-9]/g,'_');
-		var htmlContent = '<div>'+
-		'		<h4>'+
-		'          <a data-toggle="collapse"  href="#'+pID+'" class="collapsed" aria-expanded="false">'+
-		'             <h4>Job name: <strong>'+job.jobName+'</strong></h4>'+ 
-		'		   </a>'+
-		'		</h4>'+                               
-		'	</div>'+
-	
-		'	<div id="'+pID+'" class="panel-collapse collapse" style="height: 0px; background-color: rgb(247, 250, 255);" aria-expanded="false" data-parent="#'+accordionID+'">';
-				if (typeof job.workflowName !== "undefined") {
-					htmlContent += '<p>Workflow: <b>'+job.workflowName+'</b></p>';
-				}
-				htmlContent += 'Status: '+ '<span id="jobStatus' + job.id +'">'+job.jobStatus+'</span> <small class="label label-info"><i class="fa fa-clock-o fa-fw"></i>'+niceIsoTime(job.jobStart)+'</small> - <small class="label label-info"><i class="fa fa-clock-o fa-fw"></i>'+niceIsoTime(job.jobEnd)+'</small>';
-				//htmlContent += '<div class="tasks">Tasks:';
-				if(job.taskSummaries !== undefined){
-					htmlContent += '<div class="tasks">Tasks: ';
-					for(ii = 0; ii<job.taskSummaries.length; ii++) {
-						var task = job.taskSummaries[ii];
-						var statusIcon = ui_getTaskStatusIcon(task.taskStatus);
-						htmlContent += '<div class="one-task" id='+ task.taskId + '>';
-						
-						var time;
-						if (task.taskStatus === "RUNNING") {
-							var percent = Number.isInteger(task.percentComplete) ? (task.percentComplete < 0 ? 0 : task.percentComplete) : Math.round(task.percentComplete*100)/100;
-							htmlContent += "<div class='progress history'>" + "<div class='progress-bar progress-bar-info' role='progressbar' data-toggle='tooltip' data-placement='bottom' onmouseover='$(this).tooltip();' style='width:" + percent +"%'>" + percent + " %</div></div>";    
-							htmlContent += statusIcon + '<strong data-toggle="collapse" data-target=.'+ task.taskId + ' style="cursor:pointer">' +task.componentName + '</strong>';
-							time = ('Started: [' + niceIsoTime(task.taskStart)+ ']' + ((typeof task.taskEnd === "undefined") ? (', updated [' + niceIsoTime(task.lastUpdated) + ']') : ' ,ended ['+ niceIsoTime(task.taskEnd) + ']')) ;
-						} else if (task.taskStatus === "UNDETERMINED") {
-							htmlContent += statusIcon + '<strong data-toggle="collapse" data-target=.'+ task.taskId + ' style="cursor:pointer">' +task.componentName + '</strong>';
-						} else {
-							htmlContent += statusIcon + '<strong data-toggle="collapse" data-target=.'+ task.taskId + ' style="cursor:pointer">' +task.componentName + '</strong>';
-							time = 'Started: [' + niceIsoTime(task.taskStart) + ']' + (typeof task.taskEnd === "undefined" ? ', updated [' + niceIsoTime(task.lastUpdated) : ', ended ['+ niceIsoTime(task.taskEnd)) + ']';
+		var htmlContent =
+		'<div class="panel-header">' +
+		'	<a data-toggle="collapse" href="#' + pID + '" class="helper collapsed">' +
+		'		<span class="title">Job name: <strong>' + job.jobName + '</strong></span>' + 
+		'	</a>' +
+		'</div>' +
+		'<div id="' + pID + '" class="panel-attr panel-collapse collapse" data-parent="#' + accordionID + '">';
+			if (typeof job.workflowName !== "undefined") {
+				htmlContent += '<p>Workflow: <b>' + job.workflowName + '</b></p>';
+			}
+			htmlContent += 'Status: '+ '<span id="jobStatus' + job.id +'">'+job.jobStatus+'</span> <small class="label label-info"><i class="fa fa-clock-o fa-fw"></i>'+niceIsoTime(job.jobStart)+'</small> - <small class="label label-info"><i class="fa fa-clock-o fa-fw"></i>'+niceIsoTime(job.jobEnd)+'</small>';
+			if(job.taskSummaries !== undefined){
+				htmlContent += '<div class="tasks">Tasks: ';
+				for(ii = 0; ii<job.taskSummaries.length; ii++) {
+					var task = job.taskSummaries[ii];
+					var statusIcon = ui_getTaskStatusIcon(task.taskStatus);
+					htmlContent += '<div class="one-task" id='+ task.taskId + '>';
+					
+					var time;
+					if (task.taskStatus === "RUNNING") {
+						var percent = Number.isInteger(task.percentComplete) ? (task.percentComplete < 0 ? 0 : task.percentComplete) : Math.round(task.percentComplete*100)/100;
+						htmlContent += "<div class='progress history'>" + "<div class='progress-bar progress-bar-info' role='progressbar' data-toggle='tooltip' data-placement='bottom' onmouseover='$(this).tooltip();' style='width:" + percent +"%'>" + percent + " %</div></div>";    
+						htmlContent += statusIcon + '<strong data-toggle="collapse" data-target=.'+ task.taskId + ' style="cursor:pointer">' +task.componentName + '</strong>';
+						time = ('Started: [' + niceIsoTime(task.taskStart)+ ']' + ((typeof task.taskEnd === "undefined") ? (', updated [' + niceIsoTime(task.lastUpdated) + ']') : ' ,ended ['+ niceIsoTime(task.taskEnd) + ']')) ;
+					} else if (task.taskStatus === "UNDETERMINED") {
+						htmlContent += statusIcon + '<strong data-toggle="collapse" data-target=.'+ task.taskId + ' style="cursor:pointer">' +task.componentName + '</strong>';
+					} else {
+						htmlContent += statusIcon + '<strong data-toggle="collapse" data-target=.'+ task.taskId + ' style="cursor:pointer">' +task.componentName + '</strong>';
+						time = 'Started: [' + niceIsoTime(task.taskStart) + ']' + (typeof task.taskEnd === "undefined" ? ', updated [' + niceIsoTime(task.lastUpdated) : ', ended ['+ niceIsoTime(task.taskEnd)) + ']';
+					}
+
+					if(task.taskStatus === "DONE" || task.taskStatus === "FAILED"){
+						htmlContent += '<button id="task_log_info_'+task.taskId+'" class="icon fa fa-info-circle log-info" value="'+task.taskId+'"></button>';
+						htmlContent +='<div id="task_log_modal'+task.taskId+'" class="log-modal"><div class="log-modal-content"><div class="log-title-button"><div class="log-title"><h4 class="title">Task Log</h4></div><button type="button" class="log-close">&times;</button></div><p class="log_text">'+'</p></div></div>';
+
+						if (typeof task.command !== "undefined" && task.command !== "") {
+							htmlContent += '<button id="task_command_info_'+task.taskId+'" class="icon fa fa-terminal log-info" value="'+task.taskId+'"></button>';
+							htmlContent += '<div id="command_info_modal'+task.taskId+'" class="command-modal"><div class="command-modal-content"><div class="command-title-button"><div class="command-title"><h4 class="title">Command Line</h4></div><button type="button" class="command-close">&times;</button></div><p class="command_text">'+'</p></div></div>';
 						}
-
-						if(task.taskStatus === "DONE" || task.taskStatus === "FAILED"){
-							htmlContent += '<button id="task_log_info_'+task.taskId+'" class="icon fa fa-info-circle log-info" value="'+task.taskId+'"></button>';
-							htmlContent +='<div id="task_log_modal'+task.taskId+'" class="log-modal"><div class="log-modal-content"><div class="log-title-button"><div class="log-title"><h4 class="title">Task Log</h4></div><button type="button" class="log-close">&times;</button></div><p class="log_text">'+'</p></div></div>';
-
-							if (typeof task.command !== "undefined" && task.command !== "") {
-								htmlContent += '<button id="task_command_info_'+task.taskId+'" class="icon fa fa-terminal log-info" value="'+task.taskId+'"></button>';
-								htmlContent += '<div id="command_info_modal'+task.taskId+'" class="command-modal"><div class="command-modal-content"><div class="command-title-button"><div class="command-title"><h4 class="title">Command Line</h4></div><button type="button" class="command-close">&times;</button></div><p class="command_text">'+'</p></div></div>';
-							}
-						}
-
-						var htmlCollapse = 
-						'<div style="margin-left: 20px;">' +
-								'<span>' + time + '</span><br>' +
-								'<span>' + ui_getTaskHost(task.host) + '</span>' +
-						'</div>';
-
-						htmlContent += '<div class="collapse collapsible ' + task.taskId + '">'+ htmlCollapse +' </div> ';
-						htmlContent += "</div>";
 					}
-					htmlContent += '</div>';
+
+					var htmlCollapse = 
+					'<div style="margin-left: 20px;">' +
+							'<span>' + time + '</span><br>' +
+							'<span>' + ui_getTaskHost(task.host) + '</span>' +
+					'</div>';
+
+					htmlContent += '<div class="collapse collapsible ' + task.taskId + '">'+ htmlCollapse +' </div> ';
+					htmlContent += "</div>";
 				}
-				//htmlContent += '</div>';
-				// check if buttons mus be displayed, in order to create element for them
-				if ((typeof settings.cancelURL !== "undefined" && settings.cancelURL !== '') || 
-					(typeof settings.pauseURL !== "undefined" && settings.pauseURL !== '' && job.jobStatus === "RUNNING") || 
-					(typeof settings.resumeURL !== "undefined" && settings.resumeURL !== '' && job.jobStatus === "SUSPENDED")) {
-					htmlContent += "<div style='text-align:right'>";
-					// pause or resume job button
-					if (typeof settings.pauseURL !== "undefined" && settings.pauseURL !== '' && job.jobStatus === "RUNNING") {
-						htmlContent += "<button class='btn btn-default pause-job'><i class='fa fa-pause-circle' style='color:#3c8dbc'></i> Pause</button>";
-					} else if (typeof settings.resumeURL !== "undefined" && settings.resumeURL !== '' && job.jobStatus === "SUSPENDED") {
-						htmlContent += "<button class='btn btn-default resume-job'><i class='fa fa-play-circle' style='color:#3c8dbc'></i> Resume</button>";
-					}
-					// cancel job button
-					if (typeof settings.cancelURL !== "undefined" && settings.cancelURL !== '') {
-						htmlContent += "<button class='btn btn-default cancel-job' style='margin-left:1em'><i class='fa fa-stop-circle' style='color:#3c8dbc'></i> Cancel</button>";
-					}
-					htmlContent += '</div>';
+				htmlContent += '</div>';
+			}
+			// check if buttons mus be displayed, in order to create element for them
+			if ((typeof settings.cancelURL !== "undefined" && settings.cancelURL !== '') || 
+				(typeof settings.pauseURL !== "undefined" && settings.pauseURL !== '' && job.jobStatus === "RUNNING") || 
+				(typeof settings.resumeURL !== "undefined" && settings.resumeURL !== '' && job.jobStatus === "SUSPENDED")) {
+				htmlContent += "<div style='text-align:right'>";
+				// pause or resume job button
+				if (typeof settings.pauseURL !== "undefined" && settings.pauseURL !== '' && job.jobStatus === "RUNNING") {
+					htmlContent += "<button class='btn btn-default pause-job'><i class='fa fa-pause-circle' style='color:#3c8dbc'></i> Pause</button>";
+				} else if (typeof settings.resumeURL !== "undefined" && settings.resumeURL !== '' && job.jobStatus === "SUSPENDED") {
+					htmlContent += "<button class='btn btn-default resume-job'><i class='fa fa-play-circle' style='color:#3c8dbc'></i> Resume</button>";
 				}
+				// cancel job button
+				if (typeof settings.cancelURL !== "undefined" && settings.cancelURL !== '') {
+					htmlContent += "<button class='btn btn-default cancel-job' style='margin-left:1em'><i class='fa fa-stop-circle' style='color:#3c8dbc'></i> Cancel</button>";
+				}
+				htmlContent += '</div>';
+			}
 				
-			htmlContent = htmlContent +	'</div>';
+		htmlContent = htmlContent +	'</div>';
 
 		var css = 'job-history-one'+ui_getJobStatusClass(job.jobStatus)+' collapse panel';
 		var $newEl = $('<div>',{
