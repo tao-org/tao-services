@@ -739,8 +739,11 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
             List<String> errors = null;
             final ProcessingComponent component = componentService.findById(node.getComponentId());
             ConditionComponent conditionComponent = component == null ? conditionComponentService.findById(node.getComponentId()) : null;
-            Set<ParameterDescriptor> parameters = component != null ? component.getParameterDescriptors()
-                    : conditionComponent.getParameterDescriptors();
+            Set<ParameterDescriptor> parameters = component != null
+                    ? component.getParameterDescriptors()
+                    : conditionComponent != null
+                        ? conditionComponent.getParameterDescriptors()
+                        : new HashSet<>();
             for (Iterator<ParameterValue> it = customValues.iterator(); it.hasNext(); ) {
                 ParameterValue customValue = it.next();
                 ParameterDescriptor descriptor = null;
