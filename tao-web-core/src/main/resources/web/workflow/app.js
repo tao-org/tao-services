@@ -874,7 +874,8 @@ jsPlumb.ready(function () {
             $elSelectSortType.val("none").change();
             $elSelectGroupType.val("none").change();
 			$elSelectFilterType.val("").change();
-    
+			$elInputSequencingArg.val(1);
+			
             if(connData.linkData.aggregator && connData.linkData.aggregator.sorter && connData.linkData.aggregator.sorter[0]){
                 $elSelectSortType.val(connData.linkData.aggregator.sorter[0]).trigger("change");
             }
