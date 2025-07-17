@@ -121,8 +121,14 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Override
     public List<ExecutionTaskOutput> getWorkflowOutputs(long workflowId, String userId) throws PersistenceException {
         final List<ExecutionTaskOutput> outputs = jobProvider.getWorkflowOutputs(workflowId, userId);
-        for (ExecutionTaskOutput output : outputs) {
-            replaceWithURL(userId, output);
+        Iterator<ExecutionTaskOutput> iterator = outputs.iterator();
+        while (iterator.hasNext()) {
+            ExecutionTaskOutput output = iterator.next();
+            if (output.getUrl() != null) {
+                replaceWithURL(userId, output);
+            } else {
+                iterator.remove();
+            }
         }
         return outputs;
     }
@@ -502,19 +508,21 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     private void replaceWithURL(String ownerId, ExecutionTaskOutput output) {
         String path = output.getUrl();
-        boolean isFile = output.getFormat() != DataFormat.FOLDER && output.getFormat() != DataFormat.DB_CONNECTION;
-        List<Repository> repositories = repositoryService.getByUser(ownerId);
-        Repository repository = repositories.stream().filter(r -> {
-            RepositoryType type = r.getType();
-            return path.startsWith(type.prefix()) || (type == RepositoryType.LOCAL && path.startsWith("/"));
-        }).findFirst().orElse(null);
-        if (repository != null) {
-            output.setUrl(repositoryService.createDownloadURL(ownerId, repository.getId(), path, isFile, false));
-            String previewUrl = output.getPreviewUrl();
-            if (previewUrl != null) {
-                output.setPreviewUrl(repositoryService.createDownloadURL(ownerId, repository.getId(), previewUrl, isFile, true));
+        if (path != null) {
+            boolean isFile = output.getFormat() != DataFormat.FOLDER && output.getFormat() != DataFormat.DB_CONNECTION;
+            List<Repository> repositories = repositoryService.getByUser(ownerId);
+            Repository repository = repositories.stream().filter(r -> {
+                RepositoryType type = r.getType();
+                return path.startsWith(type.prefix()) || (type == RepositoryType.LOCAL && path.startsWith("/"));
+            }).findFirst().orElse(null);
+            if (repository != null) {
+                output.setUrl(repositoryService.createDownloadURL(ownerId, repository.getId(), path, isFile, false));
+                String previewUrl = output.getPreviewUrl();
+                if (previewUrl != null) {
+                    output.setPreviewUrl(repositoryService.createDownloadURL(ownerId, repository.getId(), previewUrl, isFile, true));
+                }
+                output.setRelativePath(repository.relativize(repository.root(), path));
             }
-            output.setRelativePath(repository.relativize(repository.root(), path));
         }
     }
 }

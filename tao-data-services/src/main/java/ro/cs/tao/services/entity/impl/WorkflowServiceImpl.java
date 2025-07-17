@@ -816,8 +816,8 @@ public class WorkflowServiceImpl
                                                         .forEach(n -> clonedNode.addNode(cloneMap.get(n.getId())));
                     workflowNodeProvider.update(clonedNode);
                 }
-            }
-            for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
+            /*}
+            for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {*/
                 final Set<ComponentLink> links = node.getIncomingLinks();
                 if (links != null) {
                     WorkflowNodeDescriptor clonedNode = cloneMap.get(node.getId());
@@ -826,6 +826,7 @@ public class WorkflowServiceImpl
                         TargetDescriptor input = targetDescriptorRepository.findById(link.getInput().getId()).get(); //WorkflowUtilities.findTarget(link.getInput().getId(), clonedSource);
                         SourceDescriptor output = sourceDescriptorRepository.findById(link.getOutput().getId()).get(); //WorkflowUtilities.findSource(link.getOutput().getId(), clonedNode);
                         ComponentLink clonedLink = new ComponentLink(clonedSource.getId(), input, output);
+                        clonedLink.setAggregator(link.getAggregator());
                         Set<ComponentLink> clonedLinks = clonedNode.getIncomingLinks();
                         if (clonedLinks == null) {
                             clonedLinks = new HashSet<>();
