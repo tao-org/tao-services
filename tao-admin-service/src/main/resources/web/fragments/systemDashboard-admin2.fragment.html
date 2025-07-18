@@ -26,7 +26,60 @@
 				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
 				<h4 class="modal-title" id="myModalLabel"> ### </h4>
 			</div>
+		
 			<div class="modal-body" id="user_info_accordion">
+				<div id="user-extra-info" class="panel panel-info box">
+					<div class="panel-heading box-header">
+						<h3 class="panel-title"><a data-toggle="collapse" data-parent="#user_info_accordion"
+								class="collapsed" href="#user_extra_info">User Informmation</a></h3>
+					</div>
+					<div class="panel-body panel-collapse collapse" id="user_extra_info">
+						<div class="panel-filter">
+						</div>
+						<div class="col-md-12 like collapse">
+						</div>
+						<div class="box-body">
+							
+							<div class="form-group form-group-sm " id="resource-usage">
+								<div><label>Resource usage:</label></div>
+								<div class="col col-md-6 col-sm-6">
+									<div class="col-md-6 col-sm-6 inline_view">
+										<label>Storage usage: </label>
+										<span id="storage-usage"></span>
+									</div>
+									<div class="col-md-6 col-sm-6 inline_view">
+										<div class="progress progress-xxs">
+											<div class="progress-bar progress-bar-danger progress-bar-graph" style="width: 0%;"></div>
+										</div>
+									</div>
+								</div>
+								<div class="col col-md-6 col-sm-6 processing-usage">
+									<div class="col-md-6 col-sm-6 inline_view">
+										<label>Processing usage: </label>
+										<span id="processing-usage"></span>
+									</div>
+								</div>
+							</div>
+							<div class="form-group form-group-sm " id="time-usage">
+								<div><label>Time usage:</label></div>
+								<div class="col col-md-6 col-sm-6">
+									<div class="col-md-6 col-sm-6 inline_view">
+										<label>Time spent: </label>
+										<span id="time-spent"></span>
+									</div>
+								</div>
+								<div class="col col-md-6 col-sm-6 ">
+									<div class="col-md-6 col-sm-6 inline_view">
+										<label>Processing time: </label>
+										<span id="processing-time"></span>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<div class="box-notification"><p><span>Updated</span></p></div>
+					</div>
+				</div>
 				<div id="user-download-statistics-panel" class="panel panel-info box">
 					<div class="panel-heading box-header">
 						<h3 class="panel-title"><a data-toggle="collapse" data-parent="#user_info_accordion"
@@ -651,7 +704,7 @@
         </div>
     </section><!-- /.content -->
 	<style>
-		#exec-user-history-panel .box-body,#exec-user-list-panel .box-body,#user_download_list .box-body,#exec-user-queued-panel .box-body{height:calc(100vh - 37em)!important;overflow:auto;}
+		#exec-user-history-panel .box-body,#exec-user-list-panel .box-body,#user_download_list .box-body,#exec-user-queued-panel .box-body, #user-extra-info .box-body{height:calc(100vh - 45em)!important;overflow:auto;}
 		#exec-user-history-panel .box-footer .pagination,#exec-user-list-panel .box-footer .pagination,#exec-user-queued-panel .box-footer .pagination{margin:0}
 		#exec-history-panel .box-body,#exec-list-panel .box-body{height:240px;overflow:auto}
 		#exec-user-list-panel .tasks .one-task{/*display:inline-flex;flex-wrap:wrap;*/width:100%;}
@@ -851,7 +904,48 @@
 	function viewUserInfo(usrData) {
 		var $userInfo = $("#info-content").clone().removeAttr("style id");
 		$(".modal-title", $userInfo).html(usrData.fullName);
-		$("input[name='username']", $userInfo).val(usrData.username);				
+		$("input[name='username']", $userInfo).val(usrData.username);
+		var userQuotaInfo = {
+			"inputQuota":-1,
+			"actualInputQuota":-1,
+			"processingQuota":-1,
+			"actualProcessingQuota":-1,
+			"cpuQuota": -1,
+			"applicationTime": -1,
+			"processingTime": -1
+		}
+		$.when(getUserQuotaInfo(usrData.id))
+		.done(function (getUserQuotaInfoResponse) {
+
+			userQuotaInfo.inputQuota = parseFloat(getUserQuotaInfoResponse.data.inputQuota);
+			userQuotaInfo.actualInputQuota = parseFloat(getUserQuotaInfoResponse.data.actualInputQuota);
+			userQuotaInfo.processingQuota = parseFloat(getUserQuotaInfoResponse.data.processingQuota);
+			userQuotaInfo.actualProcessingQuota = parseFloat(getUserQuotaInfoResponse.data.actualProcessingQuota);
+			userQuotaInfo.cpuQuota = parseInt(getUserQuotaInfoResponse.data.cpuQuota);
+			userQuotaInfo.applicationTime = parseInt(getUserQuotaInfoResponse.data.applicationTime);
+			userQuotaInfo.processingTime = parseInt(getUserQuotaInfoResponse.data.processingTime);
+		
+		})
+		.fail(function (jqXHR, textStatus) {
+			console.log("Error. Could not determine user storage usage... Try later.");
+		});
+
+		var resourceStorge = humanFileSizeFromMB(userQuotaInfo.actualInputQuota);
+		if(userQuotaInfo.inputQuota !== -1){
+			var resourceStragePercent = Math.ceil(userQuotaInfo.actualInputQuota/ userQuotaInfo.inputQuota*100);
+		} else {
+			var resourceStragePercent = 0;
+		}
+		$("#storage-usage").text(resourceStorge);
+
+		var resourceProcessing = userQuotaInfo.processingActual + "CPUs";
+		if(userQuotaInfo.inputQuota !== -1){
+			var resourceStragePercent = Math.ceil(userQuotaInfo.actualInputQuota/ userQuotaInfo.inputQuota*100);
+		} else {
+			var resourceStragePercent = 0;
+		}
+
+
 																							  
 		$("#exec-user-list-panel", $userInfo).npExecPanels({
             msgEnd: "No more job to show.",
