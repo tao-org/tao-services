@@ -96,7 +96,7 @@ const voiceSettings = new VoiceSettings(false, 'en-us');
 $(function () {
     var username = _settings.readCookie("TaoUserName");
     var userId = _settings.readCookie("TaoUserId");
-	
+
     function getUserProfile(userId){
         return $.ajax({
             cache: false,
@@ -145,7 +145,7 @@ $(function () {
 			return [{"data":{},"message":null,"status":"SUCCEEDED"}];
 		}
     }
-	
+
 	function getTaoVersion() {
 		$.each(taoEnums.data.TAO, function (idx, obj) {
 			if (obj.key === "version") {
@@ -268,14 +268,14 @@ $(function () {
               var gravatarUrl = "https://www.gravatar.com/avatar/"+taoUserProfile.userEmailMD5+"?d=mp&s=160";
               $(".val-user-avatar").attr("src", gravatarUrl);
               $(document).trigger( "quota:update" );
-              $(".wrapper").fadeTo( "slow", 1, function() {}); 
+              $(".wrapper").fadeTo( "slow", 1, function() {});
               showMsg("Your profile was successufuly updated.", "SUCCESS");
               $elModalProfile.modal("hide");
     	}
     	});
-    	
+
     }
-    
+
     function f(){
         $.ajax({ cache: false,
             url: "./fragments/profile.fragment.html"
@@ -296,7 +296,7 @@ $(function () {
                 $(".val-user-name",$elModalProfile).html(taoUserProfile.username);
                 $(".val-user-phone",$elModalProfile).html(taoUserProfile.phone);
                 $("[contenteditable]").css({"word-wrap":"break-word", "white-space": "pre-wrap"});
-                
+
                 $(".btn-edit-profile").on("click", function(){
                 	if($(this).attr("data-action") === "edit"){//make divs available to edit
                 		$(this).text('Save').attr("data-action","save");
@@ -304,7 +304,7 @@ $(function () {
                     		$(this).attr("contenteditable","true").css({"background":"#fff"});
                     	});
                 	}else{
-                		//save 
+                		//save
                 	    var formData = {
                                 "id" : taoUserProfile.id,
                                 "username" : taoUserProfile.username,
@@ -400,7 +400,7 @@ $(function () {
 
         // on receiving a message
         $("#wrapper-quota").on("wsmessage", function (e, wsdna){
-            
+
             var pctinputQ = pctI, pctprocessQ = pctP;
 
             switch(wsdna.topic){
@@ -422,17 +422,17 @@ $(function () {
                     break;
             }
 
-            var inputQ = 
+            var inputQ =
             '        <h4 class="control-sidebar-subheading"><i class="fa fa-arrow-right fa-fw" aria-hidden="true"></i>storage:&nbsp;<span>'+lblInputQ+'</span><span class="label label-danger pull-right">'+lblInputPercent+'</span></h4>' +
             '        <div class="progress progress-xxs"><div class="progress-bar progress-bar-danger progress-bar-graph" style="width: '+pctinputQ+'%;"></div></div>';
 
-            var processQ = 
+            var processQ =
             '        <h4 class="control-sidebar-subheading"><i class="fa fa-bolt fa-fw" aria-hidden="true"></i>processing:&nbsp;<span>'+lblProcessingQ+'</span><span class="label label-danger pull-right">'+lblProcessingPercent+'</span></h4>' +
             '        <div class="progress progress-xxs"><div class="progress-bar progress-bar-danger progress-bar-graph" style="width: '+pctprocessQ+'%;"></div></div>';
-            
+
             var usageHTML =
             '        <h4 class="control-sidebar-subheading">Resource usage:</h4>' + inputQ + processQ;
-           
+
             $elQuota.find("a.holder").empty().html(usageHTML);
             $elQuotaSmall.find(".arc1").attr("d",describeArc(20, 20, 16, 0, (pctinputQ>=100?99.99:pctinputQ)/100*360));
             $elQuotaSmall.find(".arc2").attr("d",describeArc(20, 20, 9, 0, (pctprocessQ>=100?99.99:pctprocessQ)/100*360));
@@ -464,7 +464,7 @@ $(function () {
             '        <div class="progress progress-xxs"><div class="progress-bar progress-bar-info progress-bar-graph" style="width: 0%;"></div></div>' +
             '        <h4 class="control-sidebar-subheading"><i class="fa fa-bolt fa-fw" aria-hidden="true"></i>processing:&nbsp;<span>'+processed+'</h4>' +
             '        <div class="progress progress-xxs"><div class="progress-bar progress-bar-info progress-bar-graph" style="width: 0%;"></div></div>';
-            
+
         $elQuotaTime.find("a.holder").empty().html(usageHTML);
         return true;
     }
@@ -486,7 +486,7 @@ $(function () {
         function getProfileSettings(){
             return $.ajax({
                 cache: false,
-                url: baseRestApiURL + "user/"+taoUserProfile.id,
+                url: baseRestApiURL + "user/"+taoUserProfile.id +"?extended=true",
                 dataType : 'json',
                 type: 'GET',
                 async: false,
@@ -542,7 +542,7 @@ $(function () {
 	//		lifetime: 4000,
 	//		closable: true
 	//	};
-		
+
 	//	// Set message color
 	//	var collor_class = "";
 	//	switch (o.status.toUpperCase()) {
@@ -554,19 +554,19 @@ $(function () {
 	//		case 'FAILED' : collor_class = " msg-red locked"; o.closable = false; break;
 	//		case 'ERROR'  : collor_class = " msg-red locked"; o.closable = false; break;
 	//	}
-		
+
 	//	// Set message ID
 	//	my_messages_index++;
-		
+
 	//	// Add message to stack
 	//	$elMsgBox.append('<div id="messagesBoxItem'+my_messages_index+'" class="messagesBoxItem'+collor_class+'"><span class="glyphicon glyphicon-remove"></span>'+o.msg+'</div>');
-		
+
 	//	// Manual close
 	//	$elMsgBox.on("click", "#messagesBoxItem"+my_messages_index+" span.glyphicon-remove", function () {
 	//		$(this).closest(".messagesBoxItem").remove();
 	//		checkLocked();
 	//	});
-		
+
 	//	// Automatic close
 	//	if (o.closable) { $('#messagesBoxItem'+my_messages_index).delay(o.lifetime).fadeOut(function () { $(this).remove(); checkLocked(); }); }
 	//	checkLocked();
@@ -607,7 +607,7 @@ $(function () {
             sticky: true,
             class_name: 'gritter-danger'
         });
-    }  
+    }
     function showGritter(message, status) {
         if (typeof status !== 'undefined' && typeof message !== 'undefined') {
             switch (status.toUpperCase()) {
@@ -717,18 +717,18 @@ $(function () {
            //if(flagExecRefresh){
                $("#exec-list-panel, #exec-history-panel, #notification-history-panel, #download-statistics-panel, #exec-user-list-panel, #exec-user-history-panel").trigger("panel:refresh");
            //}
-           
+
            $("#bot-notice-chat").on("wsmessage", function (e, wsdna) {
-                
-                // make the pop up appear if it is not visible 
+
+                // make the pop up appear if it is not visible
                 if(!$elChatBox.is(':visible')){
                     $elChatBox.slideDown();
-                }  
+                }
 
                 // format date
                 formatDate = moment(wsdna.timestamp).format("YYYY-MM-DD HH:mm:ss");
 
-                // create html box for each notification 
+                // create html box for each notification
                 var $el = $elClonable.clone();
                 $el.removeClass("master").removeClass("hidden");
                 $el.find(".val-msg-ts").html(formatDate);
