@@ -32,6 +32,7 @@ import ro.cs.tao.execution.callback.EndpointDescriptor;
 import ro.cs.tao.execution.model.*;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
+import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
@@ -39,10 +40,15 @@ import ro.cs.tao.persistence.DryRunMetricsProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
 import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.quota.QuotaException;
+import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.commons.dev.MockData;
+import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.OrchestratorService;
 import ro.cs.tao.services.interfaces.RepositoryService;
+import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.user.User;
@@ -54,6 +60,7 @@ import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -410,6 +417,21 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             }
             job.setTasks(null);
             jobProvider.delete(job);
+            if (job.getExecutionStatus() != ExecutionStatus.CANCELLED && job.getJobOutputPath() != null) {
+                // try to also remove any files and folders for failed jobs
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    Repository repository = TaskUtilities.getUserLocalRepository(job);
+                    final StorageService<?, ?> localStorage = StorageServiceFactory.getInstance(repository);
+                    try {
+                        localStorage.remove(job.getJobOutputPath());
+                        UserQuotaManager.getInstance().updateUserProcessingQuota(new UserPrincipal(userId));
+                    } catch (IOException e) {
+                        logger.warning("Failed to remove job output folder for job " + job.getId() + ": " + e.getMessage());
+                    } catch (QuotaException e) {
+                        logger.warning("Failed to update user quota for job " + job.getId() + ": " + e.getMessage());
+                    }
+                });
+            }
         }
     }
 
