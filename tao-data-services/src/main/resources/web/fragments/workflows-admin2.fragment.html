@@ -13,12 +13,13 @@
 			.box-description          {color:#555;font-size:0.9em;background:#efefef;@media (min-width: 768px) {&,&:hover {min-height:1.8em;max-height:4.2em;}}}
 		}
 	}
-	.spacer             {display:inline-block;width:2em;text-align:center;&::before{content:"|";opacity:0.65;}&:has(+.hidden,+.invisible){display:none;}}
-	.fa-simpipe::before {display:block;width:100%;height:1em;float:left;margin-top:-0.10em;
-						 content:url(data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22-20%20-20%20540%20520%22%3E%3Cpath%20id%3D%22svg_simpipe%22%20d%3D%22M500%20360%20L250%20480%20L0%20360%20L500%20120%20L250%200%20L0%20120%20L500%20360%20L500%20240%20L250%20360%20L0%20240%20L250%20120%20L500%20240%20M250%20360%20L250%20480%20M0%20120%20L0%20240%20M250%200%20L250%20120%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%2240%22%20stroke%3D%22%23fff%22%20fill%3D%22none%22%2F%3E%3C%2Fsvg%3E);}
-	.fa-trash-ban       {position:relative;background:inherit;&::before{content:"\f014"}&::after {content:"\f1b8";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.1em;background:inherit;border-radius:50%;}}
-	.fa-dry-run         {position:relative;background:inherit;&::before{content:"\f080"}&::after {content:"\f046";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.1em;background:inherit;border-radius:50%;}}
-	
+	.spacer               {display:inline-block;width:2em;text-align:center;&::before{content:"|";opacity:0.65;}&:has(+.hidden,+.invisible){display:none;}}
+	.fa-trash-ban         {position:relative;background:inherit;&::before{content:"\f014"}&::after {content:"\f1b8";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.1em;background:inherit;border-radius:50%;}}
+	.fa-dry-run           {position:relative;background:inherit;&::before{content:"\f0ae"}&::after {content:"\f046";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.3em;background:inherit;border-radius:50%;}}
+	.fa-code-fork::before {display:block;transform:scaleX(-1.3) scaleY(1.3) rotate(180deg)}
+	.fa-tasks::before     {display:block;transform:scaleX(1.3);}
+	.fa-dry-run::before   {display:block;transform:scaleX(1.3);}
+	.fa-gg::before        {display:block;transform:scaleX(1.5) rotate(90deg);}
 	
 	.col-custom {
 		@media (min-width: 768px) {& {width:100%;float:left;}
@@ -132,9 +133,9 @@
 																<button class="btn btn-primary btn-nodeop"        data-action="wf-delete"           data-toggle="tooltip" data-original-title="Delete workflow"          ><i class="fa fa-trash-o fa-fw"     ></i></button>
 																<div class="spacer"></div>
 																<button class="btn btn-primary btn-nodeop"        data-action="wf-start"            data-toggle="tooltip" data-original-title="Start execution"          ><i class="fa fa-paper-plane fa-fw" ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-view-results"     data-toggle="tooltip" data-original-title="Show execution results"   ><i class="fa fa-bar-chart fa-fw"   ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-trace-execution"  data-toggle="tooltip" data-original-title="Trace execution"          ><i class="fa fa-road fa-fw"        ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-execute-simpipe"  data-toggle="tooltip" data-original-title="Execute SIMPIPE"          ><i class="fa fa-simpipe fa-fw"     ></i></button>
+																<button class="btn btn-primary btn-nodeop"        data-action="wf-view-results"     data-toggle="tooltip" data-original-title="Execution results"        ><i class="fa fa-tasks fa-fw"       ></i></button>
+																<button class="btn btn-primary btn-nodeop"        data-action="wf-history"          data-toggle="tooltip" data-original-title="Executions history"       ><i class="fa fa-code-fork fa-fw"   ></i></button>
+																<button class="btn btn-primary btn-nodeop"        data-action="wf-execute-simpipe"  data-toggle="tooltip" data-original-title="Execute SIMPIPE"          ><i class="fa fa-gg fa-fw"          ></i></button>
 																<button class="btn btn-primary btn-nodeop"        data-action="wf-dry-run-results"  data-toggle="tooltip" data-original-title="Dry Run results"          ><i class="fa fa-dry-run fa-fw"     ></i></button>
 																<div class="spacer"></div>
 																<button class="btn btn-primary btn-nodeop"        data-action="wf-subscribe"        data-toggle="tooltip" data-original-title="Subscribe to workflow"    ><i class="fa fa-plus-circle fa-fw" ></i></button>
@@ -175,9 +176,9 @@
 																<label>Execute:</label>
 																<div>
 																	<button class="btn btn-primary btn-nodeop"        data-action="wf-start"            data-toggle="tooltip" data-original-title="Start execution"          ><i class="fa fa-paper-plane fa-fw" ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-view-results"     data-toggle="tooltip" data-original-title="Show execution results"   ><i class="fa fa-bar-chart fa-fw"   ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-trace-execution"  data-toggle="tooltip" data-original-title="Trace execution"          ><i class="fa fa-road fa-fw"        ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-execute-simpipe"  data-toggle="tooltip" data-original-title="Execute SIMPIPE"          ><i class="fa fa-simpipe fa-fw"     ></i></button>
+																	<button class="btn btn-primary btn-nodeop"        data-action="wf-view-results"     data-toggle="tooltip" data-original-title="Execution results"        ><i class="fa fa-tasks fa-fw"       ></i></button>
+																	<button class="btn btn-primary btn-nodeop"        data-action="wf-history"          data-toggle="tooltip" data-original-title="Execution  history"       ><i class="fa fa-code-fork fa-fw"   ></i></button>
+																	<button class="btn btn-primary btn-nodeop"        data-action="wf-execute-simpipe"  data-toggle="tooltip" data-original-title="Execute SIMPIPE"          ><i class="fa fa-gg fa-fw"          ></i></button>
 																	<button class="btn btn-primary btn-nodeop"        data-action="wf-dry-run-results"  data-toggle="tooltip" data-original-title="Dry Run results"          ><i class="fa fa-dry-run fa-fw"     ></i></button>
 																</div>
 															</div>
@@ -259,7 +260,7 @@
 			case "wf-start"           : window.userOpStack = [{ "action": "wf_edit"           , "dna": dna }]; rm_contentUrl = "./fragments/workflow-start.fragment.html"           ; break;
 			case "wf-execute-simpipe" : window.userOpStack = [{ "action": "wf_simpipe"        , "dna": dna }]; rm_contentUrl = "./fragments/workflow-start.fragment.html"           ; break;
 			case "wf-view-results"    : window.userOpStack =  { "action": "wf_edit"           , "dna": dna } ; rm_contentUrl = "./fragments/workflow-show-results.fragment.html"    ; break;
-			case "wf-trace-execution" : window.userOpStack = [{ "action": "wf_edit"           , "dna": dna }]; rm_contentUrl = "./fragments/workflow-trace-executions.fragment.html"; break;
+			case "wf-history"         : window.userOpStack =  { "action": "wf_edit"           , "dna": dna } ; rm_contentUrl = "./fragments/workflow-trace-executions.fragment.html"; break;
 			case "wf-dry-run-results" : window.userOpStack = [{ "action": "wf_dry_run_results", "dna": dna }]; rm_contentUrl = "./fragments/workflow-dry-run-results.fragment.html" ; break;
 		}
 		if (rm_contentUrl !== "") {
@@ -274,8 +275,7 @@
 						switch (operationid) {
 							case "wf-plus"            :
 							case "wf-plus-import"     :
-							case "wf-edit-description":
-							case "wf-trace-execution" : $(".modal-dialog", "#myModalNodes").removeClass("modal-lg"); break;
+							case "wf-edit-description": $(".modal-dialog", "#myModalNodes").removeClass("modal-lg"); break;
 						}
 						$(".modal-dialog", "#myModalNodes").html(result);
 						$("#myModalNodes").modal("show");
@@ -479,7 +479,7 @@
 				$('[data-action="wf-delete"          ]', $elClone).prop("disabled", !(isUserOwner && !isReadOnly));
 				$('[data-action="wf-start"           ]', $elClone).prop("disabled", !(isActive));
 				$('[data-action="wf-view-results"    ]', $elClone).prop("disabled", !(isActive));
-				$('[data-action="wf-trace-execution" ]', $elClone).prop("disabled", !(isActive));
+				$('[data-action="wf-history"         ]', $elClone).prop("disabled", !(isActive));
 				$('[data-action="wf-execute-simpipe" ]', $elClone).prop("disabled", !(isActive));
 				$('[data-action="wf-dry-run-results" ]', $elClone).prop("disabled", !(isActive));
 				$('[data-action="wf-subscribe"       ]', $elClone).prop("disabled", !(isActive && !isSubscription && isPublished)).addClass(!isActive || isSubscription || !isPublished ? "hidden1" : "");
@@ -555,11 +555,11 @@
 					// Start execution			------------------------------------------
 					case "wf-start":			myModalNodesOpShow(action, dna);
 												break;
-					// Show execution results	------------------------------------------
+					// Execution results		------------------------------------------
 					case "wf-view-results":		myModalNodesOpShow(action, dna);
 												break;
-					// Trace execution 			------------------------------------------
-					case "wf-trace-execution":	myModalNodesOpShow(action, dna);
+					// Executions history		------------------------------------------
+					case "wf-history":			myModalNodesOpShow(action, dna);
 												break;
 					// Execute Simpipe			------------------------------------------
 					case "wf-execute-simpipe":	myModalNodesOpShow(action, dna);

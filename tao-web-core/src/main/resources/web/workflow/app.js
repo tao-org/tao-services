@@ -79,7 +79,7 @@ var toolboxModules = {
             })
             .fail(function (jqXHR) {
                 chkXHR(jqXHR.status);
-                alert("Could not update position", "ERROR");
+                alert("Could not update position");
             });   
     },
     rightAlignSelected: function () {
@@ -126,7 +126,7 @@ var toolboxModules = {
             })
             .fail(function (jqXHR) {
                 chkXHR(jqXHR.status);
-                alert("Could not update position", "ERROR");
+                alert("Could not update position");
             });
     },
     topAlignSelected: function () {
@@ -171,7 +171,7 @@ var toolboxModules = {
             })
             .fail(function (jqXHR) {
                 chkXHR(jqXHR.status);
-                alert("Could not update position", "ERROR");
+                alert("Could not update position");
             });
     },
     bottomAlignSelected: function () {
@@ -218,7 +218,7 @@ var toolboxModules = {
             })
             .fail(function (jqXHR) {
                 chkXHR(jqXHR.status);
-                alert("Could not update position", "ERROR");
+                alert("Could not update position");
             });
     },
 	rmSelected: function(){
@@ -350,7 +350,7 @@ jsPlumb.bind("tao_updateNodePosition", function(params) {
         })
         .fail(function(jqXHR){
 			chkXHR(jqXHR.status);
-            alert("Could not update position", "ERROR");
+            alert("Could not update position");
         });
 });
 
@@ -390,12 +390,12 @@ jsPlumb.bind("tao_dropNewNode", function(params) {
 
                 $(".v-lastaction","#infoband").html("node "+r.name+" added");
             }else{
-                alert("Could not add node", "ERROR");
+                alert("Could not add node");
             }
         })
         .fail(function(jqXHR){
 			chkXHR(jqXHR.status);
-            alert("Could not add node", "ERROR");
+            alert("Could not add node");
         });
 });
 
@@ -820,14 +820,14 @@ jsPlumb.ready(function () {
             $elSelectSortType.val("none").change();
             $elSelectGroupType.val("none").change();
 			$elSelectFilterType.val("").change();
-			$elInputSequencingArg.val(1);
+			$elInputSequencingArg.val("").change();
 			
             if(connData.linkData.aggregator && connData.linkData.aggregator.sorter && connData.linkData.aggregator.sorter[0]){
                 $elSelectSortType.val(connData.linkData.aggregator.sorter[0]).trigger("change");
             }
 			
 			if (connData.linkData.aggregator && connData.linkData.aggregator.order) {
-				$elInputSequencingArg.val(connData.linkData.aggregator.order);
+				$elInputSequencingArg.val(connData.linkData.aggregator.order).change();
 			}
 
             var sourceNodeId = connData.from.split("_")[1];
@@ -874,14 +874,14 @@ jsPlumb.ready(function () {
             $elSelectSortType.val("none").change();
             $elSelectGroupType.val("none").change();
 			$elSelectFilterType.val("").change();
-			$elInputSequencingArg.val(1);
+			$elInputSequencingArg.val("").change();
 			
             if(connData.linkData.aggregator && connData.linkData.aggregator.sorter && connData.linkData.aggregator.sorter[0]){
                 $elSelectSortType.val(connData.linkData.aggregator.sorter[0]).trigger("change");
             }
 			
 			if (connData.linkData.aggregator && connData.linkData.aggregator.order) {
-				$elInputSequencingArg.val(connData.linkData.aggregator.order);
+				$elInputSequencingArg.val(connData.linkData.aggregator.order).change();
 			}
 
             var sourceNodeId = connData.from.split("_")[1];
@@ -999,7 +999,7 @@ jsPlumb.ready(function () {
                 })
                 .fail(function(jqXHR){
 					chkXHR(jqXHR.status);
-                    alert("Could not save connection", "ERROR");
+                    alert("Could not save connection");
                 });
         }
         return true;
@@ -1033,12 +1033,12 @@ jsPlumb.ready(function () {
                     $(".v-lastaction","#infoband").html("node removed");
                     removeOneNodeFromCanvas();
                 } else {
-                    alert("Could not delete node", "ERROR");
+                    alert("Could not delete node");
                     return 0;
                 }
             })
             .fail(function(jqXHR, status, textStatus){
-                alert("Could not delete node", "ERROR");
+                alert("Could not delete node");
                 return 0;
             });
 
@@ -1346,14 +1346,14 @@ var tao_adGroupNodesToSelection = function(groupCanvasID){
 		$elSelectSortType.val("none").change();
 		$elSelectGroupType.val("none").change();
 		$elSelectFilterType.val("").change();
-		$elInputSequencingArg.val(1);
+		$elInputSequencingArg.val("").change();
 		
 		if (connData.linkData.aggregator && connData.linkData.aggregator.sorter && connData.linkData.aggregator.sorter[0]) {
 			$elSelectSortType.val(connData.linkData.aggregator.sorter[0]).trigger("change");
 		}
 		
 		if (connData.linkData.aggregator && connData.linkData.aggregator.order) {
-			$elInputSequencingArg.val(connData.linkData.aggregator.order);
+			$elInputSequencingArg.val(connData.linkData.aggregator.order).change();
 		}
 		
 		if (sourceNodeData.componentType == "DATASOURCE" && (targetNodeData.componentType == "DATASOURCE" || targetNodeData.componentType == "PROCESSING")) {
@@ -1417,99 +1417,89 @@ var tao_adGroupNodesToSelection = function(groupCanvasID){
 	});
 	$elFrmConnectorEdit.on("submit", function(e) {
 		e.preventDefault();
-		var clickedButtonId = $(document.activeElement).attr('id');
 		var connid = $elModalSG.data("connid");
 		
-		if ( clickedButtonId === "btnSave") {
-			
-			var sorter = [$elSelectSortType.val(), $elSelectSortDirection.val()];
-			var associator = [$elSelectGroupType.val()];
-			if(!$elInputGroupingArg.closest(".grouping-params").hasClass( "collapse" )){
+		var btnClicked = $(document.activeElement).attr("id");
+		if (btnClicked === "btnSave") {
+			var sorter     = [ $elSelectSortType.val(), $elSelectSortDirection.val() ];
+			var associator = [ $elSelectGroupType.val() ];
+			if (!$elInputGroupingArg.closest(".grouping-params").hasClass( "collapse" )) {
 				associator[1] = $elInputGroupingArg.val();
 			}
-			var filter = [$elSelectFilterType.val()];
-			if(!$elInputFilteringArg.closest(".filtering-params").hasClass( "collapse" )){
+			var filter = [ $elSelectFilterType.val() ];
+			if (!$elInputFilteringArg.closest(".filtering-params").hasClass( "collapse" )) {
 				filter[1] = $elInputFilteringArg.val();
 			}
-			if(sorter[0] === 'none') sorter = null;
-			if(associator[0] === 'none') associator = null;
-			if(filter[0] === '') filter = null;
+			var order = $elInputSequencingArg.val();
+			if (order != "") {
+				order = parseInt(order);
+			}
 			
-			var order = parseInt($elInputSequencingArg.val());
+			if (sorter[0]     === "none") sorter     = null;
+			if (associator[0] === "none") associator = null;
+			if (filter[0]     === ""    ) filter     = null;
+			if (order         === ""    ) order      = null;
 			
 			var aggregator = {
-				"sorter": sorter,
+				"sorter"    : sorter,
 				"associator": associator,
-				"filter": filter,
-				"order": order
+				"filter"    : filter,
+				"order"     : order
 			};
-			if (sorter === null && associator === null && filter === null && order <= 1) { aggregator = null };
+			if (sorter === null && associator === null && filter === null && order === null) { aggregator = null };
 			
-			var connData = wfPlumbCanvasData.getConnectorById(connid);
+			var connData     = wfPlumbCanvasData.getConnectorById(connid);
 			var targetNodeId = connData.to.split("_")[1];
-			var linkToUpdate;
-			var linkFound = 0;
-			
-			var nodeData = wfPlumbCanvasData.getNodeById(targetNodeId);
+			var linkToUpdate = {};
+			var linkFound    = 0;
+			var nodeData     = wfPlumbCanvasData.getNodeById(targetNodeId);
 			if (nodeData.incomingLinks) {
 				nodeData.incomingLinks.forEach(function(link) {
 					if (link === connData.linkData) {
 						linkToUpdate = link;
-						linkFound++;
+						linkFound ++;
 					}
 				});
 			}
-			if (linkFound !== 1) {
-				alert("Unbable to identify link in node definition. Please reload workflow and try again.");
-				return;
-			} else {
+			if (linkFound == 1) {
 				linkToUpdate.aggregator = aggregator;
-			}
-			
-			$.when(putOneNode(currentWfID, nodeData)).done(function (putOneNodeResponse) {
-				if(putOneNodeResponse.status === "SUCCEEDED"){
-					$(".v-lastaction", "#infoband").html("link updated");
-					// If agregator added, append icon to div with id=$('#' + connid)
-					if (aggregator) {
-						$('#' + connid).empty();
-						$('#' + connid).append(
-							"<svg width=\"48\" height=\"50\">\n" +
-							"  <g transform=\"scale(4)\"><path fill=\"#fff\" stroke=\"#3c8dbc\" stroke-width=\".3\" d=\"M5.9,1.2L0.7,6.5l5.2,5.4l5.2-5.4L5.9,1.2z\" /></g>\n" +
-							"  <g transform=\"scale(0.03) translate(420 600)\"><path fill=\"#3c8dbc\" d=\"M512.1 191l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7 9.5-7.9 20.4-14.2 32.1-18.6 5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0L552 6.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c6.9 8 12.3 17.3 15.9 27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zm-10.5-58.8c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.7-82.4 14.3-52.8 52.8zM386.3 286.1l33.7 16.8c10.1 5.8 14.5 18.1 10.5 29.1-8.9 24.2-26.4 46.4-42.6 65.8-7.4 8.9-20.2 11.1-30.3 5.3l-29.1-16.8c-16 13.7-34.6 24.6-54.9 31.7v33.6c0 11.6-8.3 21.6-19.7 23.6-24.6 4.2-50.4 4.4-75.9 0-11.5-2-20-11.9-20-23.6V418c-20.3-7.2-38.9-18-54.9-31.7L74 403c-10 5.8-22.9 3.6-30.3-5.3-16.2-19.4-33.3-41.6-42.2-65.7-4-10.9.4-23.2 10.5-29.1l33.3-16.8c-3.9-20.9-3.9-42.4 0-63.4L12 205.8c-10.1-5.8-14.6-18.1-10.5-29 8.9-24.2 26-46.4 42.2-65.8 7.4-8.9 20.2-11.1 30.3-5.3l29.1 16.8c16-13.7 34.6-24.6 54.9-31.7V57.1c0-11.5 8.2-21.5 19.6-23.5 24.6-4.2 50.5-4.4 76-.1 11.5 2 20 11.9 20 23.6v33.6c20.3 7.2 38.9 18 54.9 31.7l29.1-16.8c10-5.8 22.9-3.6 30.3 5.3 16.2 19.4 33.2 41.6 42.1 65.8 4 10.9.1 23.2-10 29.1l-33.7 16.8c3.9 21 3.9 42.5 0 63.5zm-117.6 21.1c59.2-77-28.7-164.9-105.7-105.7-59.2 77 28.7 164.9 105.7 105.7zm243.4 182.7l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7 9.5-7.9 20.4-14.2 32.1-18.6 5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0l8.2-14.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c6.9 8 12.3 17.3 15.9 27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zM501.6 431c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.6-82.4 14.3-52.8 52.8z\"/></g>\n" +
-							"</svg>\n" 
+				$.when(putOneNode(currentWfID, nodeData)).done(function (putOneNodeResponse) {
+					if (putOneNodeResponse.status === responseStatus.success) {
+						$(".v-lastaction", "#infoband").html("link updated");
+						// When agregator is added, append icon to the connection link
+						$("#" + connid).html(aggregator ?
+							'<svg width="48" height="50">' +
+							'  <g transform="scale(4)"><path fill="#fff" stroke="#3c8dbc" stroke-width=".3" d="M5.9,1.2L0.7,6.5l5.2,5.4l5.2-5.4L5.9,1.2z" /></g>' +
+							'  <g transform="scale(0.03) translate(420 600)"><path fill="#3c8dbc" d="M512.1 191l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7 9.5-7.9 20.4-14.2 32.1-18.6 5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0L552 6.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c6.9 8 12.3 17.3 15.9 27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zm-10.5-58.8c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.7-82.4 14.3-52.8 52.8zM386.3 286.1l33.7 16.8c10.1 5.8 14.5 18.1 10.5 29.1-8.9 24.2-26.4 46.4-42.6 65.8-7.4 8.9-20.2 11.1-30.3 5.3l-29.1-16.8c-16 13.7-34.6 24.6-54.9 31.7v33.6c0 11.6-8.3 21.6-19.7 23.6-24.6 4.2-50.4 4.4-75.9 0-11.5-2-20-11.9-20-23.6V418c-20.3-7.2-38.9-18-54.9-31.7L74 403c-10 5.8-22.9 3.6-30.3-5.3-16.2-19.4-33.3-41.6-42.2-65.7-4-10.9.4-23.2 10.5-29.1l33.3-16.8c-3.9-20.9-3.9-42.4 0-63.4L12 205.8c-10.1-5.8-14.6-18.1-10.5-29 8.9-24.2 26-46.4 42.2-65.8 7.4-8.9 20.2-11.1 30.3-5.3l29.1 16.8c16-13.7 34.6-24.6 54.9-31.7V57.1c0-11.5 8.2-21.5 19.6-23.5 24.6-4.2 50.5-4.4 76-.1 11.5 2 20 11.9 20 23.6v33.6c20.3 7.2 38.9 18 54.9 31.7l29.1-16.8c10-5.8 22.9-3.6 30.3 5.3 16.2 19.4 33.2 41.6 42.1 65.8 4 10.9.1 23.2-10 29.1l-33.7 16.8c3.9 21 3.9 42.5 0 63.5zm-117.6 21.1c59.2-77-28.7-164.9-105.7-105.7-59.2 77 28.7 164.9 105.7 105.7zm243.4 182.7l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7 9.5-7.9 20.4-14.2 32.1-18.6 5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0l8.2-14.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c6.9 8 12.3 17.3 15.9 27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zM501.6 431c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.6-82.4 14.3-52.8 52.8z"/></g>' +
+							'</svg>' : ''
 						);            
-					
-					// If agregator deleted (select <none> on sorting and grouping options), delete the icon
+						$elModalSG.modal("hide");
 					} else {
-						$('#' + connid).empty();
+						alert("Could not update link." + putOneNodeResponse.message);
 					}
-					$elModalSG.modal("hide");
-				} else {
-					alert("Could not update link." + putOneNodeResponse.message);
-				}
-			}).fail(function (jqXHR) {
-				chkXHR(jqXHR.status);
-				alert("Could udate link", "ERROR");
-			});
-		}
-		
-		if (clickedButtonId === "btnDelete") {
-			$('#confirm-dialog').modal('confirm',{
-				msg:"Are you sure you want to delete selected connector?",
-				callbackConfirm: function() {
-					var connection = window.jsp.getConnections().filter(function(item){if(item.id === connid) {return item;}});
-					window.jsp.deleteConnection(connection[0]); //this itself will trigger connectionDetached event
-					console.log("delete connection id:" +connection.id);
+				}).fail(function (jqXHR) {
+					chkXHR(jqXHR.status);
+					alert("Could not update the link.");
+				});
+			} else {
+				alert("Unbable to identify link in node definition. Please reload workflow and try again.");
+			}
+		} else if (btnClicked === "btnDelete") {
+			$("#confirm-dialog").modal("confirm", {
+				msg: "Are you sure you want to delete selected connector?",
+				callbackConfirm: function () {
+					var connection = window.jsp.getConnections().filter(function (item) { if (item.id === connid) { return item; } });
+					window.jsp.deleteConnection(connection[0]); // this will trigger connectionDetached event
 					$elModalSG.modal("hide");
 				},
-				callbackCancel:function(){
-					var connection = window.jsp.getConnections().filter(function(item){if(item.id === connid) {return item;}});
+				callbackCancel: function () {
+					var connection = window.jsp.getConnections().filter(function (item) { if (item.id === connid) { return item; } });
 					connection[0].removeClass("conn-to-be-deleted");
 				}
 			});
 		}
 	});
-
+	
 	$elModalSG.on("hide.bs.modal", function () {
 		var connid = $(this).data("connid");
 		var connection = window.jsp.getConnections().filter(function(item){if(item.id === connid) {return item;}});

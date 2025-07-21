@@ -1,34 +1,46 @@
 <style>
-	#rm_result_attr   {min-height:15em;max-height:calc(100vh - 15em);overflow-y:auto;padding:10px 10px 10px 0;margin-right:-10px;margin-bottom:-10px;
-		.panel.empty  {background-color:rgb(221 75 57/0.1);}
-		.panel-header {display:flex;align-items:center;word-break:break-word;gap:1em;}
-		.helper       {flex-grow:1;display:flex;align-items:center;gap:0.5em;
-			>*        {flex-grow:0;flex-shrink:0;width:5em;color:#777777;text-align:center;}
-			.name     {flex-grow:1;flex-shrink:1;width:auto;color:inherit;text-align:left;display:flex;align-items:center;}
-			.name .fa {font-size:1.6em;margin-right:0.2em;line-height:1.4em;flex-shrink:0;}
-			.time     {line-height:1;margin-top:0.4em;margin-bottom:-0.4em;small {display:block;}}
+	#showResults {
+		.modal-title  {
+			@media (min-width: 768px) {& {white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}}
 		}
-		.btns         {display:flex;align-items:center;justify-content:center;gap:0.7em;flex-grow:0;flex-shrink:0;}
-		.btns a       {cursor:default;}
-		.panel-attr   {word-break:break-all;
-			p         {display:flex;line-height:1.2em;text-align:right;}
-			p>label   {margin:0 1em 0 0;min-width:6em;flex-shrink:0;color:#333;}
-			p>span    {text-align:left;flex-grow:1;max-height:3.6em;overflow-y:auto;color:#333;}
+		.details {
+			.row {font-style:italic;color:white;line-height:1.2em;font-weight:300;margin-top:10px;>* {margin:0;}}
+			@media (min-width: 768px) {.row {padding-left:45px;margin-top:5px;}}
 		}
-		/* Responsive */
-		.panel-header {@media (max-width: 450px) {& {flex-direction:column;}}}
-		.helper       {@media (max-width: 767px) {& {flex-wrap:wrap;justify-content:flex-end;}}
-			           @media (max-width: 450px) {& {max-width:100%;}}}
-		.panel-attr p {@media (max-width: 450px) {& {flex-direction:column;text-align:left;}}}
-	}
-	#rm_preview_img   {position:fixed;cursor:pointer;top:1em;bottom:1em;left:1%;right:1%;border-radius:5px;width:98%;height:calc(100% - 2em);object-fit:contain;background-color:rgba(0,0,0,0.5);
-		.modal-dialog:has(&.full-screen) {-webkit-transform:none;transform:none;transition:none;}
+		#rm_result_attr   {min-height:15em;max-height:calc(100vh - 23em);overflow-y:auto;padding:10px 10px 10px 0;margin-right:-10px;margin-bottom:-10px;
+			.panel.empty  {background-color:rgb(221 75 57/0.1);}
+			.panel-header {display:flex;align-items:center;word-break:break-word;gap:1em;}
+			.helper       {flex-grow:1;display:flex;align-items:center;gap:0.5em;
+				>*        {flex-grow:0;flex-shrink:0;width:5em;color:#777777;text-align:center;}
+				.name     {flex-grow:1;flex-shrink:1;width:auto;color:inherit;text-align:left;display:flex;align-items:center;}
+				.name .fa {font-size:1.6em;margin-right:0.2em;line-height:1.4em;flex-shrink:0;}
+				.time     {line-height:1;margin-top:0.4em;margin-bottom:-0.4em;small {display:block;}}
+			}
+			.btns         {display:flex;align-items:center;justify-content:center;gap:0.7em;flex-grow:0;flex-shrink:0;}
+			.btns a       {cursor:default;}
+			.panel-attr   {word-break:break-all;
+				p         {display:flex;line-height:1.2em;text-align:right;}
+				p>label   {margin:0 1em 0 0;min-width:6em;flex-shrink:0;color:#333;}
+				p>span    {text-align:left;flex-grow:1;max-height:3.6em;overflow-y:auto;color:#333;}
+			}
+			/* Responsive */
+						   @media (max-width: 767px) {& {max-height:unset;}}
+			.panel-header {@media (max-width: 450px) {& {flex-direction:column;}}}
+			.helper       {@media (max-width: 767px) {& {flex-wrap:wrap;justify-content:flex-end;}}
+						   @media (max-width: 450px) {& {max-width:100%;}}}
+			.panel-attr p {@media (max-width: 450px) {& {flex-direction:column;text-align:left;}}}
+		}
+		#rm_preview_img   {position:fixed;cursor:pointer;top:1em;bottom:1em;left:1%;right:1%;border-radius:5px;width:98%;height:calc(100% - 2em);object-fit:contain;background-color:rgba(0,0,0,0.5);
+			.modal-dialog:has(&.full-screen) {-webkit-transform:none;transform:none;transition:none;}
+		}
 	}
 </style>
+
 <div id="showResults" class="modal-content">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-		<h4 class="modal-title">Execution Results &nbsp;<small style="font-sise:14px;font-weight:300;color:white;">The outputs of the <strong>selected</strong> workflow.</small></h4>
+		<h4 class="modal-title">Execution Results &nbsp;<small style="font-weight:300;color:white;">The outputs of the <strong>selected</strong> workflow.</small></h4>
+		<div class="details"></div>
 	</div>
 	<div class="modal-body">
 		<div id="rm_result_attr" class="panel-list"></div>
@@ -38,9 +50,21 @@
 		<button type="button" class="btn btn-flat btn-default" data-dismiss="modal">Close</button>
 	</div>
 </div>
+
 <script type="text/javascript">
-	var $resultAttr = $("#rm_result_attr");
-	var $previewImg = $("#rm_preview_img");
+	var $showResults = $("#showResults");
+	var $resultAttr  = $("#rm_result_attr");
+	var $previewImg  = $("#rm_preview_img");
+	
+	// Show workflow details
+	function showWorkflowDetails(wf) {
+		var wfDetails = '<div class="row"><label class="col-sm-3 col-md-2">Workflow name:</label><div class="col-sm-9 col-md-10">' + wf.name       + '</div></div>' +
+						'<div class="row"><label class="col-sm-3 col-md-2">Initiator:</label>    <div class="col-sm-9 col-md-10">' + wf.userId     + '</div></div>' +
+						'<div class="row"><label class="col-sm-3 col-md-2">Status:</label>       <div class="col-sm-9 col-md-10">' + wf.status     + '</div></div>' +
+						'<div class="row"><label class="col-sm-3 col-md-2">Visibility:</label>   <div class="col-sm-9 col-md-10">' + wf.visibility + '</div></div>' +
+						'<div class="row"><label class="col-sm-3 col-md-2">Active:</label>       <div class="col-sm-9 col-md-10">' +  (wf.active ? "yes" : "no")  + '</div></div>';
+		$(".details", $showResults).html(wfDetails);
+	}
 	
 	// Prettify file size
 	function formatSizeUnits(bytes) {
@@ -63,6 +87,16 @@
 				url    : a.href || "#",
 				type   : "GET",
 				headers: { "X-Auth-Token": window.tokenKey },
+				error  : function (jqXHR, textStatus, error) {
+					// Flash element with error
+					var $el = $(a).closest(".panel-header");
+					$el.addClass("flash-error"); setTimeout(function () { $el.removeClass("flash-error"); }, 500);
+					// Show error message
+					var msg = error?.message || error;
+					(msg === "") && (msg = jqXHR?.responseText || "");
+					(msg === "") && (msg = "Error while extracting the preview.");
+					showMsg(msg, "WARNING");
+				},
 				success: function(response) {
 					$previewImg.attr("src", "data:image/jpeg;base64, " + response);
 					$previewImg.addClass("full-screen").removeClass("hidden");
@@ -75,10 +109,10 @@
 	}
 	
 	// Populate the execution results list
-	function renderResults(response, error) {
-		if (response) {
+	function renderResults(results, error) {
+		if (results) {
 			// Render files
-			$.each(response, function (idx, file) {
+			$.each(results, function (idx, file) {
 				var ftype  = file.relativePath.substring(file.relativePath.lastIndexOf("."));
 				var fafile = "fa-file-o";
 				switch (file.format) {
@@ -129,10 +163,10 @@
 		}
 	}
 	
-	// Get all execution results for the selected workflow
-	function getWorkflowResults(initData) {
+	// Get workflow execution results
+	function getWorkflowResults(workflowId) {
 		$.ajax({
-			url     : baseRestApiURL + "orchestrator/outputs/" + initData.id,
+			url     : baseRestApiURL + "orchestrator/outputs/" + workflowId,
 			type    : "GET",
 			dataType: "json",
 			headers : {
@@ -150,7 +184,7 @@
 				if (response.status == responseStatus.success) {
 					renderResults(response.data);
 				} else {
-					showMsg(response.message, "ERROR");
+					renderResults(null, response.message);
 				}
 			}
 		});
@@ -159,8 +193,11 @@
 	$(document).ready(function () {
 		var initData = $.extend({}, window.userOpStack?.dna || {});
 		
+		// Show workflow details
+		showWorkflowDetails(initData);
+		
 		// Get execution results for the selected workflow
-		getWorkflowResults(initData);
+		getWorkflowResults(initData.id);
 		
 		// Quickview execution result
 		$resultAttr.on("click", ".quickview", function (e) {
