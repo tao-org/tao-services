@@ -414,33 +414,6 @@ body.sidebar-collapse #wrapper-quota-small{
 .messagesBoxItem span:hover{background-color:red;cursor:pointer}
 /* /message box style*/
 
-ul.timeline.current_route, ul.timeline.next_route{
-	margin: 0;
-}
-ul.timeline.current_route li, ul.timeline.next_route li{
-	margin-bottom: 0;
-	padding-bottom: 15px;
-}
-.timeline-body.next{
-	background: bisque;
-}
-
-ul.timeline.current_route:before{
-	background:#dd4b39;
-}
-ul.timeline.next_route:before{
-	background:#00a65a;
-}
-ul.timeline.current_route:before{
-	background:#dd4b39;
-}
-.timeline>li>.fa, .timeline>li>.glyphicon, .timeline>li>.ion {
-    width: 20px;
-    height: 20px;
-    left: 23px;
-    border: 5px solid #FFF;
-}
-
 /*fix padding for .input-group*/
 .fix-input-group-padding{
     padding-right: 15px;
@@ -1379,6 +1352,10 @@ p.message span{overflow:hidden;text-overflow:ellipsis;}
 	--box-list-logo-size: 4.5em;
 	--box-list-icon-size: 1.6em;
 }
+
+@-webkit-keyframes flasherror { 50% {background-color:rgb(255 0 0/0.3);}}
+@keyframes         flasherror { 50% {background-color:rgb(255 0 0/0.3);}}
+.flash-error                  {-webkit-animation:flasherror linear 0.25s 2 forwards;animation:flasherror linear 0.25s 2 forwards;}
 
 .group-label {font-size:large;margin-top:15px;margin-bottom:5px;padding-top:5px;padding-bottom:5px;background:linear-gradient(90deg,rgb(0 0 0/0.08),transparent);}
 

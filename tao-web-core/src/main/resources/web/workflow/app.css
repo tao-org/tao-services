@@ -196,6 +196,8 @@ pre {
     border-radius: 50%;
     border: solid 2px #5c96bc;
     margin: 0;
+	object-fit: contain;
+    background: white;
 }
 
 

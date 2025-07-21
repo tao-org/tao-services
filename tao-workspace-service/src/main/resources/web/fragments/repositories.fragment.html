@@ -945,7 +945,7 @@
             }else{
                 if (root) $(".loading", $tree).addClass("hidden");
                 if (root) $compsTree.closest(".box").addClass("box-warning");
-                deferred.reject(jqXHR, textStatus, "Error while loading files.");
+                deferred.reject(null, response.status, "Error while loading files.");
                 showMsg(response.message, "FAIL");
             }
         });
@@ -1252,7 +1252,7 @@
             if(response.status === "SUCCEEDED"){
                 deferred.resolve(response);
             }else{
-                deferred.reject(jqXHR, textStatus, error);
+                deferred.reject(null, response.status, response.message);
                 showMsg(response.message, "FAIL");
             }
         });
