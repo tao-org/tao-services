@@ -8,6 +8,33 @@ import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.topology.provider.DefaultNodeProvider;
 import ro.cs.tao.utils.StringUtilities;
 
+/**
+ * Initializes and configures the system's topology monitoring and management infrastructure.
+ *
+ * This class sets up the necessary providers, configurations, and default node information
+ * required for managing and monitoring the topology. It uses the {@link DefaultNodeProvider}
+ * to handle topology nodes and the {@link NodeManager} to control node operations such as
+ * creating, updating, and limiting nodes.
+ *
+ * Key tasks performed by this class include:
+ * - Loading configuration properties for topology management (e.g., user credentials, node descriptions, limits).
+ * - Setting up providers for node, task, and resource subscription management.
+ * - Initializing and starting the {@link NodeManager} for managing nodes.
+ * - Enabling node creation based on configurable limits.
+ * - Logging the state of topology monitoring and node creation support.
+ *
+ * This class extends {@link BaseLifeCycle}, thus implementing the lifecycle methods
+ * such as initialization (onStartUp) and optional resource cleanup (onShutdown).
+ *
+ * Note:
+ * - The {@link ConfigurationProvider} is used to load configuration values.
+ * - If mandatory configuration values are missing, default node information is not set, affecting node creation.
+ *
+ * Overrides:
+ * - {@link BaseLifeCycle#priority()} defines the initialization priority for this component.
+ * - {@link BaseLifeCycle#onStartUp()} implements the initialization logic.
+ * - {@link BaseLifeCycle#onShutdown()} is a no-op in this implementation.
+ */
 public class TopologyInitializer extends BaseLifeCycle {
     private static final String MASTER_USER = "topology.master.user";
     private static final String MASTER_PASSWORD = "topology.master.password";

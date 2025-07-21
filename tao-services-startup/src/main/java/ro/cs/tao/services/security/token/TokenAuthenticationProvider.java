@@ -37,6 +37,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * The TokenAuthenticationProvider class is an implementation of the AuthenticationProvider interface
+ * responsible for handling token-based authentication in the application. It interacts with the
+ * TokenManagementService to validate tokens and manage user authentication.
+ *
+ * This provider ensures that tokens are verified and authenticated users are returned with their corresponding roles.
+ * It supports tokens issued for API access and user-specific tokens, differentiating access based on token validity and user roles.
+ *
+ * The class uses a factory pattern to create authentication objects when needed, caching the results
+ * for performance optimization. It also integrates with the UserProvider to fetch user details.
+ *
+ * Features:
+ * - Validates tokens to ensure they are valid and not expired.
+ * - Supports pre-authenticated authentication tokens.
+ * - Creates specific authentication tokens based on the user and their roles.
+ *
+ * Dependencies:
+ * This class utilizes the following services:
+ * - TokenManagementService: Manages token validation, creation, and retrieval operations.
+ * - UserProvider: Retrieves user-specific information needed for authentication.
+ *
+ * Thread-safety:
+ * This class is marked as a Spring component with singleton scope and is thread-safe when used within the managed Spring container.
  *
  * @author Oana H.
  */

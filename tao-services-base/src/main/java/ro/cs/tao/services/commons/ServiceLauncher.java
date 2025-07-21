@@ -34,10 +34,10 @@ import java.util.logging.Logger;
 
 /**
  * Defines a contract for launching a service within the application.
- * Implementations of this interface are responsible for providing
+ * Specialisation of this class are responsible for providing
  * a unique name that represents the service being launched.
  *
- * This interface is typically implemented by classes that serve
+ * This class is typically extended by classes that serve
  * as entry points for different modular services in the application.
  */
 public abstract class ServiceLauncher implements FileProcessor, ApplicationListener {
