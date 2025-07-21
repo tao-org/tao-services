@@ -36,6 +36,25 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
+/**
+ * The {@code PersistenceInjecter} class is responsible for managing the initialization
+ * and configuration of persistence-related components and services within the application lifecycle.
+ * It extends {@code BaseLifeCycle} to utilize lifecycle hooks for startup and shutdown processes.
+ *
+ * This class performs the following key tasks during the startup process:
+ * 1. Refreshes the system principal using user data from the persistence manager.
+ * 2. Registers a {@link TaskStatusListener} to handle task status changes and update
+ *    the corresponding persistence states.
+ * 3. Configures various executors and services with the appropriate persistence data providers.
+ * 4. Initializes and saves predefined condition components if they do not already exist.
+ * 5. Sets up session providers and authentication-related providers for the security framework.
+ *
+ * The shutdown process is defined but does not currently implement any specific functionality.
+ *
+ * This class interacts heavily with multiple subsystems such as task handling,
+ * job management, resource usage tracking, and data storage to ensure proper initialization
+ * and persistence integration across the application.
+ */
 public class PersistenceInjecter extends BaseLifeCycle {
 
     @Override

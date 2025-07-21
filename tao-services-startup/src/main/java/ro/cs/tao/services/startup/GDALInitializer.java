@@ -2,6 +2,13 @@ package ro.cs.tao.services.startup;
 
 import ro.cs.eo.gdal.dataio.GDALLoader;
 
+/**
+ * The GDALInitializer class is responsible for initializing the GDAL (Geospatial Data Abstraction Library)
+ * binaries during the application startup lifecycle.
+ *
+ * This class extends the BaseLifeCycle and overrides its lifecycle methods to ensure that the
+ * GDAL binaries are properly initialized and ready for use.
+ */
 public class GDALInitializer extends BaseLifeCycle {
     @Override
     public int priority() {

@@ -9,6 +9,35 @@ import ro.cs.tao.workspaces.Repository;
 
 import java.util.List;
 
+/**
+ * The SharedDatasetChecksumResolver class extends the BaseLifeCycle and provides mechanisms
+ * to calculate and update the checksum value for unchecked dataset subscriptions at the
+ * application's startup.
+ *
+ * This class is designed to work in conjunction with the PersistenceManager and its
+ * related components, such as the DataSubscriptionManager and RepositoryManager, to
+ * perform operations on data subscriptions and repositories.
+ *
+ * Responsibilities:
+ * - Resolves and updates checksum values for unchecked data subscriptions.
+ * - Associates repositories with their respective storage services for checksum computation.
+ *
+ * Features:
+ * - Executes checksum updates during the startup of the application lifecycle.
+ * - Safely handles errors during checksum computation without interrupting the execution flow.
+ *
+ * Priority:
+ * - The execution order of this resolver is defined by the {@code priority()} method,
+ *   indicating a higher priority with the numeric value of 99.
+ *
+ * Life Cycle:
+ * - During startup (via {@code onStartUp()}):
+ *   - Fetches unchecked subscriptions using the DataSubscriptionManager.
+ *   - Retrieves their associated repositories and binds them to storage services for
+ *     checksum computation.
+ *   - Updates each subscription with the computed checksum value.
+ * - During shutdown (via {@code onShutdown()}), no operations are performed.
+ */
 public class SharedDatasetChecksumResolver extends BaseLifeCycle{
     @Override
     public int priority() {

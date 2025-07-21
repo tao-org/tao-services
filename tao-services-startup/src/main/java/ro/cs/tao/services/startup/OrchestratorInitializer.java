@@ -1,6 +1,5 @@
 package ro.cs.tao.services.startup;
 
-import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.eodata.naming.NameExpressionParser;
 import ro.cs.tao.eodata.naming.TokenResolver;
 import ro.cs.tao.execution.drmaa.DRMAAExecutor;
@@ -10,6 +9,20 @@ import ro.cs.tao.services.workspace.impl.JobFilesUpload;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
 
+/**
+ * The OrchestratorInitializer class is responsible for setting up and initializing the orchestrator
+ * during the application startup process. It extends the BaseLifeCycle class and provides specific
+ * implementations for managing the orchestrator's lifecycle events.
+ *
+ * During startup, the orchestrator is initialized with application identifiers and relevant configurations.
+ * Necessary listeners and resolvers are also registered to facilitate orchestrator operations. Once all
+ * initializations are complete, the orchestrator is started.
+ *
+ * This class ensures that the orchestrator is properly integrated with the system components, such as
+ * the node manager and job execution environment, to provide a seamless workflow execution process.
+ *
+ * Priority for this lifecycle component is set to 9, indicating its relative startup order in the system.
+ */
 public class OrchestratorInitializer extends BaseLifeCycle {
 	
     @Override
