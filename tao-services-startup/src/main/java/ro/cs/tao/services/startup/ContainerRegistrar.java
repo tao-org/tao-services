@@ -42,20 +42,22 @@ public class ContainerRegistrar extends BaseLifeCycle {
                 logger.finest(() -> String.format("Found %d new docker image plugins: %s", installers.size(),
                                                   installers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.joining(","))));
                 for (DockerImageInstaller imageInstaller : installers) {
-                    try {
-                        Container container = imageInstaller.installImage();
-                        if (container != null && container.getLogo() != null) {
-                            Path imgPath = Paths.get(ConfigurationManager.getInstance().getValue("site.path"))
-                                                .resolve("workflow").resolve("media")
-                                                .resolve(container.getId() + ".png");
-                            if (!Files.exists(imgPath)) {
-                                FileUtilities.createDirectories(imgPath.getParent());
-                                Files.write(imgPath, Base64.getDecoder().decode(container.getLogo().trim()));
+                    asyncExecute(() -> {
+                        try {
+                            Container container = imageInstaller.installImage();
+                            if (container != null && container.getLogo() != null) {
+                                Path imgPath = Paths.get(ConfigurationManager.getInstance().getValue("site.path"))
+                                                    .resolve("workflow").resolve("media")
+                                                    .resolve(container.getId() + ".png");
+                                if (!Files.exists(imgPath)) {
+                                    FileUtilities.createDirectories(imgPath.getParent());
+                                    Files.write(imgPath, Base64.getDecoder().decode(container.getLogo().trim()));
+                                }
                             }
+                        } catch (Throwable e) {
+                            logger.severe(e.getMessage());
                         }
-                    } catch (Throwable e) {
-                        logger.severe(e.getMessage());
-                    }
+                    });
                 }
             }
         } else {
@@ -66,16 +68,18 @@ public class ContainerRegistrar extends BaseLifeCycle {
             logger.finest(() -> String.format("Found %d docker standalone containers: %s", containers.size(),
                                               containers.stream().map(i -> i.getClass().getSimpleName()).collect(Collectors.joining(","))));
             for (SingletonContainer container : containers) {
-                try {
-                    container.install();
-                    logger.fine(() -> String.format("Installed docker image %s", container.getContainerName()));
-                    if (!container.isPerUser()) {
-                        container.start();
-                        logger.fine(() -> String.format("Started docker container %s", container.getContainerName()));
+                asyncExecute(() -> {
+                    try {
+                        container.install();
+                        logger.fine(() -> String.format("Installed docker image %s", container.getContainerName()));
+                        if (!container.isPerUser()) {
+                            container.start();
+                            logger.fine(() -> String.format("Started docker container %s", container.getContainerName()));
+                        }
+                    } catch (Throwable e) {
+                        logger.severe(e.getMessage());
                     }
-                } catch (Throwable e) {
-                    logger.severe(e.getMessage());
-                }
+                });
             }
         } else {
             logger.fine("No docker standalone container found");
