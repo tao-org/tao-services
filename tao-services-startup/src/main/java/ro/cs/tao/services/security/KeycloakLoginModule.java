@@ -64,8 +64,14 @@ public class KeycloakLoginModule extends TaoLoginModule<KeycloakClient> {
                     userEntity.setPassword(password);
                     if (!isAdmin) {
                         userEntity.setCpuQuota(userProvider.defaultCPUQuota());
+                        userEntity.setInputQuota(userProvider.defaultInputQuota());
                         userEntity.setProcessingQuota(userProvider.defaultProcessingQuota());
                         userEntity.setMemoryQuota(userProvider.defaultMemoryQuota());
+                    } else {
+                        userEntity.setCpuQuota(-1);
+                        userEntity.setInputQuota(-1);
+                        userEntity.setProcessingQuota(-1);
+                        userEntity.setMemoryQuota(-1);
                     }
                     existing = userEntity;
                     userProvider.save(existing);
