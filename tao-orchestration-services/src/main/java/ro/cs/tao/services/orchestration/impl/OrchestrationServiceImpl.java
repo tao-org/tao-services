@@ -36,6 +36,7 @@ import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
+import ro.cs.tao.orchestration.ScriptJobFactory;
 import ro.cs.tao.persistence.DryRunMetricsProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
@@ -96,6 +97,10 @@ public class OrchestrationServiceImpl implements OrchestratorService {
 
     @Override
     public long startWorkflow(ExecutionRequest request) throws ExecutionException {
+        final Orchestrator instance = Orchestrator.getInstance();
+        if (instance.getJobFactory(request.getEnvironment()) instanceof ScriptJobFactory) {
+            return scriptJob(request).getId();
+        }
         ExecutionRequest modified = request;
         long id;
         if ((id = tryCreateTemporaryWorkflow(request)) > 0) {
@@ -103,7 +108,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             modified = new ExecutionRequest(request);
             modified.setWorkflowId(id);
         }
-        final ExecutionJob job = Orchestrator.getInstance().startWorkflow(SessionStore.currentContext(), modified);
+        final ExecutionJob job = instance.startWorkflow(SessionStore.currentContext(), modified);
         return job != null ? job.getId() : -1;
     }
 
