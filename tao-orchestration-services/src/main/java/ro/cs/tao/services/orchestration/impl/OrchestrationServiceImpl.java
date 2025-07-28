@@ -26,6 +26,7 @@ import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.ExecutionConfiguration;
+import ro.cs.tao.drmaa.Environment;
 import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.execution.ExecutionException;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
@@ -155,9 +156,10 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             modified.setWorkflowId(id);
         }
         JobType type = EnumUtils.getEnumConstantByName(JobType.class, request.getJobType());
+        Environment env = request.getEnvironment() != null ? EnumUtils.getEnumConstantByString(Environment.class, request.getEnvironment()) : Environment.DEFAULT;
         return Orchestrator.getInstance().createJob(SessionStore.currentContext(),
                                                     modified.getWorkflowId(), modified.getName(),
-                                                    modified.getParameters(), type);
+                                                    modified.getParameters(), type, env);
     }
 
 
