@@ -41,6 +41,7 @@ import ro.cs.tao.EnumUtils;
 import ro.cs.tao.SortDirection;
 import ro.cs.tao.TaoEnum;
 import ro.cs.tao.component.*;
+import ro.cs.tao.component.enums.ComponentCategory;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.configuration.ConfigurationManager;
@@ -53,6 +54,9 @@ import ro.cs.tao.persistence.AuxiliaryDataProvider;
 import ro.cs.tao.persistence.ContainerInstanceProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
+import ro.cs.tao.persistence.repository.ParameterDescriptorRepository;
+import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
+import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.Token;
@@ -103,6 +107,12 @@ public class ContainerController extends DataEntityController<Container, String,
     private ContainerInstanceProvider containerInstanceProvider;
     @Autowired
     private ProcessingComponentProvider processingComponentProvider;
+    @Autowired
+    private ParameterDescriptorRepository parameterDescriptorRepository;
+    @Autowired
+    private SourceDescriptorRepository sourceDescriptorRepository;
+    @Autowired
+    private TargetDescriptorRepository targetDescriptorRepository;
     @Autowired
     private TokenManagementService tokenManagementService;
 
@@ -541,13 +551,40 @@ public class ContainerController extends DataEntityController<Container, String,
             }
             final String contents = new String(file.getBytes());
             int added = 0, updated = 0;
-            for (ProcessingComponent component : deserialize(contents)) {
+            List<ProcessingComponent> components = deserialize(contents);
+            for (ProcessingComponent component : components) {
                 component.setContainerId(containerId);
                 component.addTags(container.getName());
-                if (this.processingComponentProvider.get(component.getId(), containerId) == null) {
+                if (component.getCategory() == null) {
+                    component.setCategory(ComponentCategory.MISC);
+                }
+                for (SourceDescriptor descriptor : component.getSources()) {
+                    descriptor.setParentId(component.getId());
+                }
+                for (TargetDescriptor descriptor : component.getTargets()) {
+                    descriptor.setParentId(component.getId());
+                }
+                ProcessingComponent existing = null;
+                if ((existing = this.processingComponentProvider.get(component.getId(), containerId)) == null) {
                     this.processingComponentProvider.save(component);
                     added++;
                 } else {
+                    List<SourceDescriptor> existingSources = existing.getSources();
+                    List<TargetDescriptor> existingTargets = existing.getTargets();
+                    List<SourceDescriptor> sources = component.getSources();
+                    List<TargetDescriptor> targets = component.getTargets();
+                    for (SourceDescriptor source : sources) {
+                        SourceDescriptor descriptor = existingSources.stream().filter(s -> s.getId().equals(source.getId()) || s.getName().equals(source.getName())).findFirst().orElse(null);
+                        if (descriptor != null) {
+                            source.setId(descriptor.getId());
+                        }
+                    }
+                    for (TargetDescriptor target : targets) {
+                        TargetDescriptor descriptor = existingTargets.stream().filter(t -> t.getId().equals(target.getId()) || t.getName().equals(target.getName())).findFirst().orElse(null);
+                        if (descriptor != null) {
+                            target.setId(descriptor.getId());
+                        }
+                    }
                     this.processingComponentProvider.update(component);
                     updated++;
                 }
