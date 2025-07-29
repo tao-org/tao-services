@@ -573,16 +573,20 @@ public class ContainerController extends DataEntityController<Container, String,
                     List<TargetDescriptor> existingTargets = existing.getTargets();
                     List<SourceDescriptor> sources = component.getSources();
                     List<TargetDescriptor> targets = component.getTargets();
-                    for (SourceDescriptor source : sources) {
-                        SourceDescriptor descriptor = existingSources.stream().filter(s -> s.getId().equals(source.getId()) || s.getName().equals(source.getName())).findFirst().orElse(null);
-                        if (descriptor != null) {
-                            source.setId(descriptor.getId());
+                    if (existingSources != null) {
+                        for (SourceDescriptor source : sources) {
+                            SourceDescriptor descriptor = existingSources.stream().filter(s -> s.getId().equals(source.getId()) || s.getName().equals(source.getName())).findFirst().orElse(null);
+                            if (descriptor != null) {
+                                source.setId(descriptor.getId());
+                            }
                         }
                     }
-                    for (TargetDescriptor target : targets) {
-                        TargetDescriptor descriptor = existingTargets.stream().filter(t -> t.getId().equals(target.getId()) || t.getName().equals(target.getName())).findFirst().orElse(null);
-                        if (descriptor != null) {
-                            target.setId(descriptor.getId());
+                    if (existingTargets != null) {
+                        for (TargetDescriptor target : targets) {
+                            TargetDescriptor descriptor = existingTargets.stream().filter(t -> t.getId().equals(target.getId()) || t.getName().equals(target.getName())).findFirst().orElse(null);
+                            if (descriptor != null) {
+                                target.setId(descriptor.getId());
+                            }
                         }
                     }
                     this.processingComponentProvider.update(component);
