@@ -15,7 +15,11 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -24,6 +28,7 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.h2.util.IOUtils;
+import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -34,10 +39,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.SortDirection;
+import ro.cs.tao.TaoEnum;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.param.JavaType;
 import ro.cs.tao.docker.*;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Messaging;
@@ -49,7 +56,10 @@ import ro.cs.tao.persistence.ProcessingComponentProvider;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.Token;
+import ro.cs.tao.serialization.BaseSerializer;
 import ro.cs.tao.serialization.JsonMapper;
+import ro.cs.tao.serialization.SerializationException;
+import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.RoleRequired;
@@ -520,6 +530,35 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
+    @RequestMapping(value = "/update/{id:.+}", method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
+    public ResponseEntity<ServiceResponse<?>> updateComponents(@PathVariable("id") String containerId,
+                                                               @RequestParam("file") MultipartFile file) {
+        try {
+            final Container container = service.findById(containerId);
+            if (container == null) {
+                throw new IllegalArgumentException(String.format("[%s] not found", containerId));
+            }
+            final String contents = new String(file.getBytes());
+            int added = 0, updated = 0;
+            for (ProcessingComponent component : deserialize(contents)) {
+                component.setContainerId(containerId);
+                component.addTags(container.getName());
+                if (this.processingComponentProvider.get(component.getId(), containerId) == null) {
+                    this.processingComponentProvider.save(component);
+                    added++;
+                } else {
+                    this.processingComponentProvider.update(component);
+                    updated++;
+                }
+            }
+            return prepareResult(String.format("Components: %d added, %d updated", added, updated),
+                                 ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
     private HttpUriRequest createHttpUriRequest(HttpServletRequest request, String host, int port, String query) throws Exception {
         final URI uri = new URI("http://" + host + ":" + port + (query != null ? "/" + query : ""));
         final RequestBuilder rb = RequestBuilder.create(request.getMethod());
@@ -621,5 +660,31 @@ public class ContainerController extends DataEntityController<Container, String,
         FileUtilities.createDirectories(destination.getParent());
         file.transferTo(destination.toAbsolutePath().toFile());
         return destination;
+    }
+
+    private List<ProcessingComponent> deserialize(String contents) throws SerializationException {
+        final BaseSerializer<ProcessingComponent> componentSerializer = SerializerFactory.create(ProcessingComponent.class, ro.cs.tao.serialization.MediaType.JSON);
+        componentSerializer.setIgnoreNullFields();
+        componentSerializer.setFormatOutput(true);
+        Reflections reflections = new Reflections("ro.cs.tao");
+        Set<Class<? extends TaoEnum>> enums = reflections.getSubTypesOf(TaoEnum.class);
+        for (Class anEnum : enums) {
+            componentSerializer.addDeserializer(anEnum, new StdDeserializer(anEnum) {
+
+                @Override
+                public Object deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
+                    if (anEnum.equals(JavaType.class)) {
+                        return JavaType.fromFriendlyName(jsonParser.getText());
+                    } else {
+                        try {
+                            return EnumUtils.getEnumConstantByName(anEnum, jsonParser.getText());
+                        } catch (IllegalArgumentException e) {
+                            return EnumUtils.getEnumConstantByValue(anEnum, jsonParser.getText());
+                        }
+                    }
+                }
+            });
+        }
+        return componentSerializer.deserialize(ProcessingComponent.class, contents);
     }
 }
