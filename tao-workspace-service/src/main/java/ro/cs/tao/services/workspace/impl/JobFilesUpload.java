@@ -8,6 +8,7 @@ import ro.cs.tao.execution.JobCompletedListener;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
+import ro.cs.tao.execution.model.JobType;
 import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.messaging.Message;
@@ -96,7 +97,7 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
 	@Override
 	public void onCompleted(ExecutionJob job) {
 		// only process jobs which finished successfully
-		if (job.getExecutionStatus() != ExecutionStatus.DONE) {
+		if (job.getExecutionStatus() != ExecutionStatus.DONE || job.getJobType() != JobType.EXECUTION) {
 			return;
 		}
     	final Repository remoteRepository = getRemoteRepository(job.getUserId());
