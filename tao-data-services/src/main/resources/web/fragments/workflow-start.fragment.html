@@ -360,12 +360,6 @@
             wfSubmitUrl = baseRestApiURL + "orchestrator/script";
             pupulateJobTypes();
         }
-         if (window.userOpStack[0].action && window.userOpStack[0].action === "wf_simpipe") {
-             $("#myModalLabel").html("Execute Simpipe");
-             $(".info-box-content .info-box-text", "#wf-header").html("Selected workflow for simpipe execution");
-             wfSubmitUrl = baseRestApiURL + "simpipe/execute";
-         }
-
         if (window.userOpStack[0].dna && window.userOpStack[0].dna.id) {
             getWFDataById(window.userOpStack[0].dna.id);
         } else {
@@ -649,7 +643,7 @@
                     formData['jobType'] = "EXECUTION";
                     if (!$("select", "#chooseScriptType").hasClass("hidden")) {
                         formData['jobType'] = $("select", "#chooseScriptType").val();
-                    } else if(window.userOpStack[0].action === "wf_simpipe"){
+                    } else if(formData['environment'] === "SIMPIPE"){
                          formData['jobType'] = "ARGO_EXPORT";
                      }
                     /*var isValid =  true;*/

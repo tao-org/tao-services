@@ -16,6 +16,10 @@ public class SimpipeLauncher extends ServiceLauncher {
         SpringApplication.run(SimpipeLauncher.class, args);
     }
 
+    public SimpipeLauncher() {
+        super();
+    }
+
     @Override
     public String serviceName() { return "Simpipe Service"; }
 }

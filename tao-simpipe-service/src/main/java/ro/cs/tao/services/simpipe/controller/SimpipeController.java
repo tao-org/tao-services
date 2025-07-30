@@ -2,14 +2,13 @@ package ro.cs.tao.services.simpipe.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import ro.cs.tao.component.DryRunMetricsBean;
-import ro.cs.tao.execution.ExecutionException;
-import ro.cs.tao.execution.model.ExecutionJob;
-import ro.cs.tao.execution.model.ExecutionRequest;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
@@ -38,29 +37,6 @@ public class SimpipeController extends BaseController {
 
     @Autowired
     private SimpipeService simpipeService;
-
-    /**
-     * Exports a workflow execution in ARGO format and then executes a dry run on the SIM-PIPE app.
-     * The workflow is not actually executed, but its execution is simulated in a dry run in order to calculate the metrics
-     * required for choosing an appropriate node flavor for future executions of the components
-     * @param request   The execution request
-     */
-    @RequestMapping(value = "/execute", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> executeSimPipe(@RequestBody ExecutionRequest request) {
-        ResponseEntity<ServiceResponse<?>> response;
-        try {
-            final ExecutionJob job = simpipeService.executeSimpipe(request);
-            if (job == null) {
-                throw new ExecutionException("Failed to create ARGO Workflow and Dry run on SIMPIPE");
-            }
-            response = prepareResult(job.getJobOutputPath(),
-                    "The script model for the job should be available in the path and the metrics of execution created!",
-                    ResponseStatus.SUCCEEDED, HttpStatus.OK);
-        } catch (Exception ex) {
-            response = handleException(ex);
-        }
-        return response;
-    }
 
     /**
      * Returns the dry run metrics of one or more components, given their ids.
