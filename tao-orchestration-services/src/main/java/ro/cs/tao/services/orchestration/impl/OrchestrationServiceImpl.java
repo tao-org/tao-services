@@ -29,6 +29,7 @@ import ro.cs.tao.docker.ExecutionConfiguration;
 import ro.cs.tao.drmaa.Environment;
 import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.execution.ExecutionException;
+import ro.cs.tao.execution.JobCompletedListener;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
 import ro.cs.tao.execution.model.*;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
@@ -486,6 +487,16 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         } catch (Exception e) {
             throw new ExecutionException(e);
         }
+    }
+
+    @Override
+    public void registerListener(JobCompletedListener listener) {
+        Orchestrator.getInstance().addJobListener(listener);
+    }
+
+    @Override
+    public void unregisterListener(JobCompletedListener listener) {
+        Orchestrator.getInstance().removeJobListener(listener);
     }
 
     @Bean
