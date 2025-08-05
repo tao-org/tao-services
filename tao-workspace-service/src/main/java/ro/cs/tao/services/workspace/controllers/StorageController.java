@@ -180,6 +180,36 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
         return responseEntity;
     }
+
+    /**
+     * Handles retrieval of selection data for a given item. The method processes
+     * the input parameter and retrieves the appropriate data from the storage service.
+     * The returned sub-tree would contain the first level nodes and child nodes only for the elements of the path.
+     *
+     * @param item the path or identifier specifying the item to retrieve data for.
+     *             If the input is null, empty, or ".", the method retrieves data
+     *             for the root path ("/").
+     * @return a {@code ResponseEntity} containing the service response. In the case
+     *         of successful retrieval, it contains the requested data. If an
+     *         exception occurs, it returns an appropriate error response.
+     */
+    @GetMapping(value = "selection", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getForSelection(@RequestParam("item") String item) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            checkPath(item);
+            final StorageService repositoryService = getLocalRepositoryService(currentUser());
+            if (StringUtilities.isNullOrEmpty(item) || item.equals(".")) {
+                responseEntity = prepareResult(repositoryService.getForSelection("/"));
+            } else {
+                responseEntity = prepareResult(repositoryService.getForSelection(item));
+            }
+        } catch (IOException ex) {
+            responseEntity = handleException(ex);
+        }
+
+        return responseEntity;
+    }
     /**
      * Uploads a file into the given folder of the user workspace
      * @param files         The file/files to be uploaded
