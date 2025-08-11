@@ -19,6 +19,7 @@ import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.component.enums.AuthenticationType;
+import ro.cs.tao.component.ogc.OGCProcessComponent;
 import ro.cs.tao.component.ogc.WMSComponent;
 import ro.cs.tao.component.ogc.WPSComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
@@ -131,6 +132,21 @@ public final class ServiceTransformUtils {
         final List<WMSComponentInfo> results = new ArrayList<>();
         for (WMSComponent component : components) {
             results.add(new WMSComponentInfo(component));
+        }
+        return results;
+    }
+
+    /**
+     * Converts a list of {@code OGCProcessComponent} objects into a list of {@code OGCProcessComponentInfo} objects.
+     * Each {@code OGCProcessComponentInfo} is created by mapping data from a corresponding {@code OGCProcessComponent}.
+     *
+     * @param components the list of {@code OGCProcessComponent} objects to be converted
+     * @return a list of {@code OGCProcessComponentInfo} objects created from the provided {@code OGCProcessComponent} objects
+     */
+    public static List<OGCProcessComponentInfo> toOGCProcessComponentInfos(final List<OGCProcessComponent> components) {
+        final List<OGCProcessComponentInfo> results = new ArrayList<>();
+        for (OGCProcessComponent component : components) {
+            results.add(new OGCProcessComponentInfo(component));
         }
         return results;
     }

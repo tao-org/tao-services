@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/wmscomponent")
-@Tag(name = "WMS Components", description = "Operations related to WMS components managements")
+@Tag(name = "WMS Components", description = "Operations related to the management of WMS components")
 public class WMSComponentController extends BaseController {
 
     @Autowired
