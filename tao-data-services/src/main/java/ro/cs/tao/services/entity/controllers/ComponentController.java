@@ -155,6 +155,25 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     }
 
     /**
+     * Finds components or only the labels of components that match or are similar to the specified input text.
+     * Provides suggestions or results based on label similarity.
+     *
+     * @param text The input text used as the search criteria for finding similar labels.
+     * @return A ResponseEntity containing a ServiceResponse. If the text is valid, it contains the matching labels;
+     *         otherwise, it will include an error message indicating invalid input.
+     */
+    @RequestMapping(value = "/find", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> findLabels(@RequestParam(name = "text") String text,
+                                                         @RequestParam(name = "labels", required = false, defaultValue = "true") boolean labelsOnly) {
+        if (StringUtilities.isNullOrEmpty(text)) {
+            return prepareResult("Invalid search text", ResponseStatus.FAILED);
+        }
+        return prepareResult(labelsOnly
+                                     ? service.findLabelsBySimilarity(text, currentUser())
+                                     : service.findBySimilarity(text, currentUser()));
+    }
+
+    /**
      * Returns the descriptors of one or more group components given their ids.
      * A group component relates to a node group.
      * @param groupIdList   The list of identifiers
