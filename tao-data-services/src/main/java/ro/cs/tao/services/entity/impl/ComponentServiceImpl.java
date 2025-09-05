@@ -122,6 +122,16 @@ public class ComponentServiceImpl
     }
 
     @Override
+    public List<ProcessingComponentInfo> findBySimilarity(String text, String userId) {
+        return ServiceTransformUtils.toProcessingComponentInfos(processingComponentProvider.findBySimilarity(text, userId));
+    }
+
+    @Override
+    public List<String> findLabelsBySimilarity(String text, String userId) {
+        return processingComponentProvider.findLabelsBySimilarity(text, userId);
+    }
+
+    @Override
     public ProcessingComponent save(ProcessingComponent component) {
         if (component != null) {
             if (processingComponentProvider.get(component.getId(), component.getContainerId()) != null) {
