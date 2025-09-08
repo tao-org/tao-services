@@ -56,7 +56,10 @@ public class SimpipeServiceImpl implements SimpipeService, JobCompletedListener 
             throw new IllegalArgumentException("List of component IDs is null or empty");
         List<DryRunMetrics> metrics = new ArrayList<>();
         for (String componentId : componentIds) {
-            metrics.add(dryRunMetricsProvider.getByComponentId(componentId));
+            DryRunMetrics componentMetrics = dryRunMetricsProvider.getByComponentId(componentId);
+            if(componentMetrics != null) {
+                metrics.add(componentMetrics);
+            }
         }
         return metrics;
     }
