@@ -120,7 +120,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                     if(component == null)
                         component = conditionComponentService.findById(n.getComponentId());
                     if (component != null
-                            && (n.getAdditionalInfo() == null || n.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))) {
+                            && (n.getAdditionalInfo() == null || n.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))
+                            && component.getNodeAffinity() != null) {
                         n.addInfo("nodeAffinity", component.getNodeAffinity().getValue());
                     }
                 }
