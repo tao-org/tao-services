@@ -379,7 +379,7 @@ $(function () {
         $.extend(q, v);
         // storage
         var lblInputQ = humanFileSizeFromMB(q.inputActual);
-        var pctI = Math.ceil(q.inputActual/q.input*100);
+        var pctI = (q.inputActual/(q.input*1000))*100;
         if(pctI>100){pctI = 100;}
         var lblInputPercent = pctI+"%";
         if(q.input === -1){
@@ -389,7 +389,7 @@ $(function () {
         }
         // cpu
         var lblProcessingQ = q.processingActual+" CPUs"; //humanFileSizeFromMB(q.processing);
-        var pctP = Math.ceil(q.processingActual/q.cpuQuota*100);
+        var pctP = (q.processingActual/q.cpuQuota)*100;
         if(pctP>100){pctP = 100;}
         var lblProcessingPercent = pctP+"%";
         if(q.cpuQuota === -1 || isNaN(pctP)){
@@ -407,12 +407,12 @@ $(function () {
                 case "user.storage.resources":
                     var payload = wsdna.data.Payload;
                     lblInputQ = humanFileSizeFromMB(payload);
-                    pctinputQ = Math.ceil(payload/q.input*100);
+                    pctinputQ = (payload/(q.input*1000))*100;
                     lblInputPercent = (q.input === -1)? "n/a" : pctinputQ +"%";
                     break;
                 case "user.cpu.resources":
                     lblProcessingQ = wsdna.data.Payload + " CPUs";
-                    pctprocessQ = Math.ceil(lblProcessingQ/q.cpuQuota*100);
+                    pctprocessQ = (lblProcessingQ/q.cpuQuota)*100;
                     if (isNaN(pctprocessQ)){
                         lblProcessingPercent = "n/a";
                         pctprocessQ = 0;

@@ -31,7 +31,7 @@
 				<div id="user-extra-info" class="panel panel-info box">
 					<div class="panel-heading box-header">
 						<h3 class="panel-title"><a data-toggle="collapse" data-parent="#user_info_accordion"
-								class="collapsed" href="#user_extra_info">User Informmation</a></h3>
+								class="collapsed" href="#user_extra_info">User Information</a></h3>
 					</div>
 					<div class="panel-body panel-collapse collapse" id="user_extra_info">
 						<div class="panel-filter">
@@ -48,8 +48,8 @@
 										<span id="storage-usage"></span>
 									</div>
 									<div class="col-md-6 col-sm-6 inline_view">
-										<div class="progress progress-xxs">
-											<div class="progress-bar progress-bar-danger progress-bar-graph" style="width: 0%;"></div>
+										<div class="bar-css progress progress-xxs " style="height: 1.4rem;">
+											<div class="storage-bar progress-bar progress-bar-danger progress-bar-graph" style="width: 0%; "></div>
 										</div>
 									</div>
 								</div>
@@ -57,6 +57,11 @@
 									<div class="col-md-6 col-sm-6 inline_view">
 										<label>Processing usage: </label>
 										<span id="processing-usage"></span>
+									</div>
+									<div class="col-md-6 col-sm-6 inline_view">
+										<div class="bar-css progress progress-xxs " style="height: 1.4rem;">
+											<div class="processing-bar progress-bar progress-bar-danger progress-bar-graph" style="width: 0%;"></div>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -476,7 +481,7 @@
 				.user-info-content .u-i-span{display:block;}
 				#myModalNodes .modal-dialog{width:80vw;}
 				#myModalNodes .modal-content{height:93vh;}
-				#user_info_accordion{font-size:1.3rem}
+				#user_info_accordion{font-size:1.4rem}
 				#user_info_accordion h4{font-size:14px;}
 				#resource_usage .box-body>div{margin-left:10px;}
 				#resource_usage .message strong{padding-left:10px;}
@@ -704,13 +709,13 @@
         </div>
     </section><!-- /.content -->
 	<style>
-		#exec-user-history-panel .box-body,#exec-user-list-panel .box-body,#user_download_list .box-body,#exec-user-queued-panel .box-body, #user-extra-info .box-body{height:calc(100vh - 45em)!important;overflow:auto;}
+		#exec-user-history-panel .box-body,#exec-user-list-panel .box-body,#user_download_list .box-body,#exec-user-queued-panel .box-body{height:calc(100vh - 45em)!important;overflow:auto;}
 		#exec-user-history-panel .box-footer .pagination,#exec-user-list-panel .box-footer .pagination,#exec-user-queued-panel .box-footer .pagination{margin:0}
 		#exec-history-panel .box-body,#exec-list-panel .box-body{height:240px;overflow:auto}
 		#exec-user-list-panel .tasks .one-task{/*display:inline-flex;flex-wrap:wrap;*/width:100%;}
 		#exec-user-list-panel .progress.history{max-width:none;width:20%;margin:0 15px;min-width:fit-content;}
 		#notification-history-panel .box-body{min-height:450px;}
-
+		#user_extra_info .box-body{min-height: 150px; overflow: auto;}
 		.progress{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 		.progress,.progress>.progress-bar{clear:both;height:auto;margin-bottom:5px;text-align:left;text-shadow:1px 1px 1px black;text-indent:5px;line-height:2em;white-space:nowrap}
 		.progress-bar{max-width:100%;}
@@ -720,7 +725,10 @@
 		.memory-progress-bar,.cpu-progress-bar,.disk-progress-bar,.used-ram-progress-bar, .percent-complete-progress-bar,.used-cpu-progress-bar{background-color:#cadce7;height:20px;padding:0;}
 
 		.vm-info-row .row, #vm_running_tasks .row{margin:5px 0; margin-left: -15px !important;}
-		
+
+		.bar-css { background-color: #e7e7e7;line-height: 1em !important;}
+		.storage-bar, .processing-bar {margin: 0 !important;height: inherit !important; line-height: 1em !important;;margin-bottom: 5px; text-shadow: 1px 1px 1px black;
+
 		#panel-admin-wrapper .box-bottom{padding-top:0;}
 		#panel-admin-wrapper .box-header{padding:5px}
 		#panel-admin-wrapper .nodes-item-core-box{padding:5px;margin-bottom:5px;}
@@ -929,23 +937,35 @@
 		.fail(function (jqXHR, textStatus) {
 			console.log("Error. Could not determine user storage usage... Try later.");
 		});
+		$("#myModalNodes").on('shown.bs.modal', function () {
 
-		var resourceStorge = humanFileSizeFromMB(userQuotaInfo.actualInputQuota);
-		if(userQuotaInfo.inputQuota !== -1){
-			var resourceStragePercent = Math.ceil(userQuotaInfo.actualInputQuota/ userQuotaInfo.inputQuota*100);
-		} else {
-			var resourceStragePercent = 0;
-		}
-		$("#storage-usage").text(resourceStorge);
+			var resourceStorge = humanFileSizeFromMB(userQuotaInfo.actualInputQuota);
+			if(userQuotaInfo.inputQuota !== -1){
+				var resourceStoragePercent = (userQuotaInfo.actualInputQuota/ (userQuotaInfo.inputQuota*1000))*100;
+				$(".storage-bar").css("width", resourceStoragePercent + "%").text(resourceStoragePercent+"%");
+			} else {
+				var resourceStoragePercent = 0;
+				$(".storage-bar").prop("hidden", true);
 
-		var resourceProcessing = userQuotaInfo.processingActual + "CPUs";
-		if(userQuotaInfo.inputQuota !== -1){
-			var resourceStragePercent = Math.ceil(userQuotaInfo.actualInputQuota/ userQuotaInfo.inputQuota*100);
-		} else {
-			var resourceStragePercent = 0;
-		}
+			}
+			$("#storage-usage").text(resourceStorge);
 
+			var resourceProcessing = userQuotaInfo.actualProcessingQuota + " CPUs";
+			if(userQuotaInfo.processingQuota !== -1){
+				var resourceProcessingPercent = (userQuotaInfo.actualProcessingQuota/(userQuotaInfo.processingQuota*1000))*100;
+				$(".processing-bar").css("width", resourceProcessingPercent + "%").text(resourceProcessingPercent+"%");
+			} else {
+				var resourceProcessingPercent = 0;
+				$(".processing-bar").prop("hidden", true);
+				
+			}
+			$("#processing-usage").text(resourceProcessing);
 
+			var timeSpent = (userQuotaInfo.applicationTime <= 0 || isNaN(userQuotaInfo.applicationTime))? '0d 0h 0m': getTime(userQuotaInfo.applicationTime);
+			var timeProcessing = (userQuotaInfo.processingTime <= 0 || isNaN(userQuotaInfo.processingTime))? '0d 0h 0m': getTime(userQuotaInfo.processingTime);
+			$("#time-spent").text(timeSpent);
+			$("#processing-time").text(timeProcessing);
+		});
 																							  
 		$("#exec-user-list-panel", $userInfo).npExecPanels({
             msgEnd: "No more job to show.",
@@ -1672,7 +1692,7 @@
 			},
 			doCustomRender: function($el, data) {
 				if (tabAction === "all_users") {
-					$(".actualInputQuota", $el).html(humanFileSizeFromMB(data.actualInputQuota));
+					$(".actualInputQuota", $el).html(humanFileSizeFromMB(data.actualProcessingQuota));
 					$("input[name='username']", $el).val(data.username);
 
 					var processingTime = (data.processingTime <= 60 || isNaN(data.processingTime))? '0d 0h 0m': getTime(data.processingTime);
