@@ -17,24 +17,9 @@
  *
  **/
 
-var taoLoadingDiv = $("#myModalLoading");
 var routeTags     = [];
 var routeFilters  = {};
 var userOpStack   = [];  //holder for aditional user action parameters
-
-// UI loading indicator management
-function routeLoading(action){
-	if(action === "show"){
-		if (taoLoadingDiv.data("bs.modal") && taoLoadingDiv.data("bs.modal").$backdrop == null) {
-			taoLoadingDiv.modal('show');
-		}
-    }
-    if(action === "hide"){
-        setTimeout(function(){
-            taoLoadingDiv.modal('hide');
-        }, 100);
-    }
-}
 
 function refreshToken() {
 	var refreshed = false;
@@ -149,14 +134,27 @@ $(function () {
 	// Get dynamic menu data
 	$.when(getSidebarMenu()).done(function (menu) {
 		var sidebarMenu = [];
+		
+		// Clone top header user menu entries
+		sidebarMenu.push({
+			"position": -1001,
+			"title"   : $(".user-menu .user-header>div").html(),
+			"items"   : $.map($(".user-menu .menu>li>a"), function (el, idx) { return el.attributes["data-action"] ? { "name": el.innerHTML, "action": el.attributes["data-action"].value } : null; })
+		});
+		
+		// Navigation
+		sidebarMenu.push({"position":-1000,"title":"NAVIGATION"});
+
+		
+		// Actual menu entries from server
 		$.each(menu, function (index, entry) {
 			switch (entry.title) {
-				case "Dashboard"    : entry.icon = "fa fa-dashboard" ; break;
-				case "My Datasets"  : entry.icon = "fa fa-wpexplorer"; break;
-				case "My Workflows" : entry.icon = "fa fa-briefcase" ; break;
-				case "My Components": entry.icon = "fa fa-briefcase" ; break;
-				case "Admin area"   : entry.icon = "fa fa-link"      ; break;
-				default             : entry.icon = "fa fa-bars"      ; break;
+				case "Dashboard"    : entry.icon = "fa fa-columns"  ; break;
+				case "My Datasets"  : entry.icon = "fa fa-database" ; break;
+				case "My Workflows" : entry.icon = "fa fa-sitemap"  ; break;
+				case "My Components": entry.icon = "fa fa-briefcase"; break;
+				case "Admin area"   : entry.icon = "fa fa-sliders"  ; break;
+				default             : entry.icon = "fa fa-bars"     ; break;
 			}
 			entry.items = $.map(entry.items, function (item) { if ($.inArray(taoUserProfile.userRole, item.visibility) > -1) { return item; } });
 			if (entry.items.length > 0) {
@@ -166,35 +164,45 @@ $(function () {
 		});
 		sidebarMenu.sort(function (a, b) { return (a.position < b.position ? -1 : (a.position > b.position ? 1 : 0)); });
 		
-		// Documentation (added manually)
-		sidebarMenu.push({"items":[],"position":1001,"title":"DOCUMENTATION","icon":""});
-		sidebarMenu.push({"items":[{"name":"How To","route":"howto/intro","location":"./fragments/tao-howto.fragment.html","visibility":["USER","ADMIN"],"section":"DOCUMENTATION","position":1}],"position":1002,"title":"How To","icon":"fa fa-info-circle"});
+		// Documentation
+		sidebarMenu.push({"position":1001,"title":"DOCUMENTATION"});
+		sidebarMenu.push({"items":[{"name":"How To","route":"howto/intro","location":"./fragments/tao-howto.fragment.html","visibility":["USER","ADMIN"],"section":"DOCUMENTATION","position":1}],"position":1002,"title":"How To","icon":"fa fa-book"});
+		// Quota resource & time
+		sidebarMenu.push({"position":1003,"title":"RESOURCE USAGE","wrapper_id":"#wrapper-quota"     });
+		sidebarMenu.push({"position":1004,"title":"TIME USAGE"    ,"wrapper_id":"#wrapper-quota-time"});
 		
 		var $hul = $(".sidebar-menu").html('');
 		$.each(sidebarMenu, function (index, entry) {
-			var $hli = $('<li class="routed"><a href="#default"><i class="' + entry.icon + '"></i><span>' + entry.title + '</span></a></li>');
-			if (entry.items.length == 0) {
-				$hli = $('<li class="header">' + entry.title + '</li>');
-			} else if (entry.items.length == 1) {
-				hashRoutesMap[entry.items[0].route] = entry.items[0].location;
-				$("a", $hli).attr("href", "#" + entry.items[0].route);
-				var cls = "routed-" + entry.items[0].route.replaceAll("/", "-");
-				$hli.addClass(cls).addClass("active");
-			} else {
-				$hli.addClass("treeview");
-				$("a", $hli).append('<i class="fa fa-angle-left pull-right"></i>');
-				var $ul = $('<ul class="treeview-menu">');
-				$.each(entry.items, function (idx, item) {
-					hashRoutesMap[item.route] = item.location;
-					var cls = "routed-" + item.route.replaceAll("/", "-");
+			var $hli = $('<li class="routed"><a href="#default">' + (entry.icon ? '<i class="' + entry.icon + '"></i>' : '') + '<span class="title">' + entry.title + '</span></a></li>');
+			if ($.isArray(entry.items)) {
+				if (entry.items.length == 1) {
+					// Single menu entry
+					hashRoutesMap[entry.items[0].route] = entry.items[0].location;
+					$("a", $hli).attr("href", "#" + entry.items[0].route);
+					var cls = "routed-" + entry.items[0].route.replaceAll("/", "-");
 					$hli.addClass(cls);
-					var $li = $('<li class="routed ' + cls + '"><a href="#' + item.route + '"><span>' + item.name + '</span></a></li>');
-					if (idx = 0) {
-						$li.addClass("active");
-					}
-					$ul.append($li);
-				});
-				$hli.append($ul);
+				} else {
+					// Submenu
+					$hli.addClass("treeview");
+					$("a", $hli).append('<i class="fa fa-angle-left"></i>');
+					var $ul = $('<ul class="treeview-menu">');
+					$.each(entry.items, function (idx, item) {
+						var $li = '';
+						if (item.location) {
+							hashRoutesMap[item.route] = item.location;
+							var cls = "routed-" + item.route.replaceAll("/", "-");
+							$hli.addClass(cls);
+							$li = $('<li class="routed ' + cls + '"><a href="#' + item.route + '"><i class="fa fa-empty"></i><span class="title">' + item.name + '</span></a></li>');
+						} else if (item.action) {
+							$li = $('<li class="routed"><a href="#default" data-action="' + item.action + '">' + item.name + '</a></li>');
+						}
+						$ul.append($li);
+					});
+					$hli.append($ul);
+				}
+			} else {
+				$hli = $('<li class="header">' + (entry.title ? '<span class="title">' + entry.title + '</span>' : '') + '</li>');
+				$(entry.wrapper_id).length &&  $hli.append($(entry.wrapper_id));
 			}
 			$hul.append($hli);
 		});
@@ -207,7 +215,7 @@ $(function () {
 	});
 	
     // Event handlers for frontend navigation
-    $(window).on('hashchange', function(){
+    $(window).on('hashchange', function(e) {
         // check authtoken
         clearTimeout(tokenTimer);
 		var tokenKey = _settings.readCookie("tokenKey");
@@ -234,7 +242,18 @@ $(function () {
         }, 1800*1000);
         navRouter(decodeURI(window.location.hash));
     });
-
+	
+	// Remove any remaining elements from previous navigations
+	function hashNavCleanup() {
+		$('.modal-backdrop').remove();
+		$('body').removeClass("modal-open");
+		
+		if (typeof window.navCleanup === "function") {
+			window.navCleanup();
+			window.navCleanup = void 0;
+		}
+	}
+	
     // Navigation/router function will call appropriate functions.
     function navRouter(hash) {
         var fragmentUrl = "";
@@ -258,12 +277,10 @@ $(function () {
             hash = hash.substring(1);
         }
         routeTags = hash.split('/');
-
-        //map resolver, fragment loader & renderer
-        routeLoading('show');
+		
         fragmentUrl = hashRoutesMap[hash];
         unsolvedRoute = false;
-
+		
         //set viewMode before loading fragment
         var preferences_viewMode = "grid";
         var username = _settings.readCookie("TaoUserName");
@@ -287,23 +304,22 @@ $(function () {
         });
         preferences.viewMode = preferences_viewMode;
         
-        $.ajax({
+		hashNavCleanup();
+		$.ajax({
             cache: false,
             url: fragmentUrl
         })
         .done(function (data) {
-                taoDynPageDiv.html(data);
-                routeLoading('hide');
+			taoDynPageDiv.html(data);
         })
         .fail(function (jqXHR, textStatus) {
-                taoDynPageDiv.html('');
-                routeLoading('hide');
-                alert("Could not load page content... Try later.")
+			taoDynPageDiv.html('');
+			alert("Could not load page content... Try later.")
         });
         // Sync active menu. Remove active from navigation, and generically mark branch as active.
-        $('.sidebar-menu .routed').removeClass('active opened');
-        $('.sidebar-menu .routed-'+routeTags[0]+'-'+routeTags[1]).addClass("active opened");
-
+		$(".routed"                                     , ".sidebar-menu").removeClass("active opened").closest("ul:not(.sidebar-menu)").removeClass("menu-open").css("display", "none" );
+		$(".routed-" + routeTags[0] + "-" + routeTags[1], ".sidebar-menu").addClass   ("active opened").closest("ul:not(.sidebar-menu)").addClass   ("menu-open").css("display", "block");
+		
         if(routeTags[0] === "account"){
             if(routeTags[1] === "profile"){
                 //to do something custom
@@ -315,7 +331,7 @@ $(function () {
         }
         taoDynPageDiv.addClass('visible');
     }
-
+	
     // Shows the home in case of error.
     function renderErrorPage(){
         window.location.hash = DEFAULT_PAGE_URL;

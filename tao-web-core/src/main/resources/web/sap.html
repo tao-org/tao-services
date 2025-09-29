@@ -1,1013 +1,924 @@
 <!DOCTYPE html>
-<html>
-    <style>
-        .error{color: red; font-weight: normal;}
-        .fonts{font-size: unset;}
-    </style>
-	<style data="test" type="text/css"></style>
+<html class="thin-scrollbar">
 <head>
-    <meta charset="UTF-8">
-    <title>Dashboard</title>
-    <!-- Tell the browser to be responsive to screen width -->
-    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
-    <!-- Bootstrap 3.3.4 -->
-    <link href="./assets/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <!-- Font Awesome Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="./assets/libs/gritter/css/avl.jquery.gritter.css" />
-    <!-- Theme style -->
-    <link href="./assets/dist/css/AdminLTE.min.css" rel="stylesheet" type="text/css" />
-    <link href="./assets/dist/css/AdminLTEplus.css" rel="stylesheet" type="text/css" />
-    <link href="./assets/dist/css/size-customization.css" rel="stylesheet" type="text/css" />
-    <link href="./assets/dist/css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" id="style_css_file"/>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/switchery/0.8.2/switchery.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/switchery/0.8.2/switchery.min.js" type="text/javascript"></script>
+	<meta charset="UTF-8" />
+	<meta name="application-name" content="TAO" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
-    <link rel="shortcut icon" type="image/x-icon" href="/media/icons/dunia-favicon.ico" />
-    
-    <meta name="application-name" content="&nbsp;"/>
-    <meta name="msapplication-TileColor" content="#FFFFFF" />
-    <meta name="msapplication-TileImage" content="./mstile-144x144.png" />
-    <meta name="msapplication-square70x70logo" content="./mstile-70x70.png" />
-    <meta name="msapplication-square150x150logo" content="./mstile-150x150.png" />
-    <meta name="msapplication-wide310x150logo" content="./mstile-310x150.png" />
-    <meta name="msapplication-square310x310logo" content="./mstile-310x310.png" />
-
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
-    <script src="./assets/dist/js/general-functions.js" type="text/javascript"></script>
-    <script src="./assets/dist/js/common-dashboard-functions.js" type="text/javascript"></script>
-    <script src="./assets/dist/js/config.js" type="text/javascript"></script>
-    <script>
-        var root_path = '/_tao/';
-    </script>
+	<title>Dashboard</title>
+	<link type="image/x-icon" rel="shortcut icon" href="/media/icons/dunia-favicon.ico" />
+	
+	<!-- External -->
+	<link type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" />
+	<link type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/switchery/0.8.2/switchery.min.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/bootstrap/css/bootstrap.min.css" />
+	<link type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/libs/select2/4.1.0/select2.min.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/libs/gritter/css/avl.jquery.gritter.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/xterm.css" />
+	<!-- TAO -->
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTE.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEplus.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEextra.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEskin.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/root/full/light-hsl.css" id="root_css_file" />
+	
+	<!-- External -->
+	<script type="text/javascript" src="./assets/libs/jQuery/jQuery-2.2.4.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/jquery-validate/jquery.validate.min.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/switchery/0.8.2/switchery.min.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/md5.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/aes.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+	<script type="text/javascript" src="./assets/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+	<script type="text/javascript" src="./assets/bootstrap/js/bootstrap-tour.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/underscore-min.js"></script>
+	<script type="text/javascript" src="./assets/libs/base64/base64.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/momentjs/moment.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/chartjs/chartjs.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/splitjs/split.js"></script>
+	<script type="text/javascript" src="./assets/libs/select2/4.1.0/select2.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/gritter/js/jquery.gritter.js"></script>
+	<script type="text/javascript" src="./assets/dist/js/xterm.js"></script>
+	<script type="text/javascript" src="./assets/dist/js/xterm-addon-fit.js"></script>
+	<script type="text/javascript" src="./assets/libs/jquery.idle/jquery.idle.js"></script>
+	<script type="text/javascript" src="./assets/libs/modernizr/modernizr.custom.input.js"></script>
+	<!-- TAO -->
+	<script type="text/javascript" src="./assets/dist/js/general-functions.js"></script>
+	<script type="text/javascript" src="./assets/dist/js/config.js"></script>
+	<script type="text/javascript" src="./assets/dist/js/common-dashboard-functions.js"></script>
+	<script type="text/javascript" src="./assets/dist/js/notification.js"></script>
+	<script type="text/javascript" src="./assets/dist/js/websockets.js"></script>
+	<!-- NPs -->
+	<script type="text/javascript" src="./assets/libs/np/jquery.npmodalconfirm.js"></script>
+	<script type="text/javascript" src="./assets/libs/np/jquery.npexecpanel.js"></script>
+	<script type="text/javascript" src="./assets/libs/np/jquery.npnotificationpanel.js"></script>
+	<script type="text/javascript" src="./assets/libs/np/jquery.nppaginatedcells.js"></script>
+	
+	<style>
+		.error {color:red;font-weight:normal;}
+		.fonts {font-size:unset;}
+		#selectThemeColor                         {display:flex;flex-direction:column;}
+		#selectThemeColor .theme                  {display:inline-flex;}
+		#selectThemeColor .theme .title           {display:block;width:100%;}
+		#selectThemeColor .theme .selected-accent {width:2.5em;}
+		#selectThemeColor .theme small            {display:block;width:100%;font-weight:400;opacity:0.7;}
+		#selectThemeColor .theme a                {display:inline-block;font-size:1.78em;text-shadow:1px 1px 0.22em rgb(0 0 0/0.2);}
+		#selectThemeColor .theme a.disabled       {cursor:default;}
+		#selectThemeColor .theme a i              {padding: 0 0.7em 0 0;}
+		
+		#selectSettingsBodySize                   {display:flex;align-items:flex-end;justify-content:space-between;padding:0.7em;margin:0 -10%;
+			.btn.btn-icon                         {padding:0;margin:0;border:0;display:flex;justify-content:center;opacity:0.6;color:var(--sidebar-color);background:none;
+				.fa-aa                            {font-size:1em;line-height:normal;padding-bottom:2px;border-bottom:2px solid transparent;}
+				.fa-aa::before                    {content:"\f031";font-size:0.7em;margin-right:-0.3em;}
+				.fa-aa::after                     {content:"\f031";}
+				&:hover,&:active                  {opacity:1;box-shadow:none;transform:scale(1.3);}
+				&.selected                        {opacity:1;box-shadow:none;.fa-aa {border-color:var(--sidebar-color);}}
+				&:hover .fa-aa                    {transform:none;}
+				&[data-action="size-small" ]      {font-size:10px;}
+				&[data-action="size-normal"]      {font-size:16px;}
+				&[data-action="size-large" ]      {font-size:22px;}
+				&[data-action="size-larger"]      {font-size:28px;}
+			}
+		}
+		
+		#confirm-dialog .body-message {word-break:break-word;}
+		
+		#myModalNotifications {
+			.form-changepane,.nav-tabs>li>a {height:2.8em;}
+			.notif-list {height:0;}
+		}
+		
+		.user-panel                        {margin:1em 0;padding:0 0.35em;text-align:center;
+			.image                         {width:5em;max-width:5em;display:inline-block;transition:width .3s ease-in-out;
+				body.sidebar-collapse &    {width:100%;margin-bottom:2em;}
+			}
+			.image>img                     {width:100%;max-width:100%;height:auto;}
+		}
+		
+		.main-sidebar .sidebar-menu>li:first-of-type {
+			&+.header                                {padding-top:0;border:0;}
+			>a                                       {min-width:15em;}
+			.title>*                                 {display:block;line-height:1.4;text-align:center;font-size:1em;color:var(--sidebar-color);}
+			.title>br,.val-user-role                 {display:none};
+			.treeview-menu                           {padding:0 0.85em;}
+			.treeview-menu p                         {margin-bottom:0.23em;}
+			body.sidebar-collapse &                  {display:none};
+		}
+		.fa.fa-empty::before{content:"";}
+		
+	</style>
 </head>
 
 <body class="sidebar-mini size-normal noselect">
-
-<!-- messages -->
-<div id="messagesBox">
-    <div id="messagesBoxItemX" class="messagesBoxItem hidden" style=""></div>
-</div>
-
-<!-- modal -->
-<div id="myModalWorkFlow" class="modal modal-fullscreen fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-    </div><!-- /.modal-dialog -->
-</div>
-<!-- /.modal -->
-<!-- modal -->
-<div id="myModalAuth" class="modal modal-fullscreen fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-    </div><!-- /.modal-dialog -->
-</div>
-<!-- /.modal -->
-<!-- modal route -->
-<div id="myModalRoute" class="modal modal-keep-empty fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-    </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-<!-- modal route -->
-<!-- modal preview -->
-<div id="myModalPreview" class="modal modal-keep-empty fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-xlg">
-    </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-<!-- modal preview -->
-<!-- modal operation -->
-<div id="myModalOperation" class="modal modal-keep-empty fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-    </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-<!-- modal operation -->
-
-<div class="wrapper" style="opacity: 0;">
-    <!-- Main Header -->
-    <header class="main-header">
-        <!-- Logo -->
-        <a href="./sap.html" class="logo">
-            <!-- mini logo for sidebar mini 50x50 pixels -->
-            <span class="logo-mini"><img id="logoSmall" src="./media/images/avl_logo_small_transparent.png" alt="logo_small" style="height:5rem"/></span>
-            <!-- logo for regular state and mobile devices -->
-            <span id = "logoText" class="logo-lg"></span>
-        </a>
-        <!-- Header Navbar -->
-        <nav class="navbar navbar-static-top" role="navigation">
-            <!-- Sidebar toggle button-->
-            <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
-                <span class="sr-only">Toggle navigation</span>
-            </a>
-            <!-- Navbar Right Menu -->
-            <div class="navbar-custom-menu">
-                <ul class="nav navbar-nav">
-                    <!-- Messages: style can be found in dropdown.less-->
-                    <li class="dropdown messages-menu info-notif-menu">
-                        <!-- Menu toggle button -->
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            <i class="fa fa-flag-o"></i>
-                            <span id="val-newdocs02" class="label label-success">0</span>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li class="header">No new events to show</li>
-                                              <li>
-                           		<ul class="menu"><!-- notifications --></ul>	                    
-                                              </li>
-                            <li class="footer"><a href="#"></a></li>
-                        </ul>
-                    </li><!-- /.messages-menu -->
-
-                    <!-- Notifications Menu -->
-                    <li class="dropdown messages-menu execution-notif-menu">
-                        <!-- Menu toggle button -->
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            <i class="fa fa-envelope-o"></i>
-                            <span id="val-countdocs02" class="label label-warning">0</span>
-                        </a>
-                    </li>
-                    <!-- Tasks Menu -->
-                    <li class="dropdown messages-menu error-notif-menu">
-                        <!-- Menu Toggle Button -->
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            <i class="fa fa-exclamation-triangle"></i>
-                            <span id="val-latedocs02" class="label label-danger">0</span>
-                        </a>
-
-                    </li>
-                    <!-- User Account Menu -->
-                    <li class="dropdown user user-menu">
-                        <!-- Menu Toggle Button -->
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            <!-- The user image in the navbar-->
-                            <img src="https://www.gravatar.com/avatar/0000000000?d=mp&s=160" class="user-image val-user-avatar"/>
-                            <!-- hidden-xs hides the username on small devices so only the image appears. -->
-                            <span class="hidden-xs val-user-fullname"></span>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <!-- The user image in the menu -->
-                            <li class="user-header">
-                                <img src="https://www.gravatar.com/avatar/0000000000?d=mp&s=160" class="img-circle val-user-avatar"/>
-                                <p><span class="val-user-fullname"></span><br><span class="user-role"></span><span class="val-user-role user-role"></span><small class="val-user-email"></small></p>
-                            </li>
-                            <li class="user-footer">
-                                <div class="pull-left">
-                                    <a href="#" class="btn btn-default btn-flat do-editprofile">Profile</a>
-                                </div>
-                                <div class="pull-right">
-                                    <a href="#" class="btn btn-default btn-flat do-logout">Sign out</a>
-                                </div>
-                            </li>
-                        </ul>
-                    </li>
-                    <!-- Control Sidebar Toggle Button -->
-                    <li>
-                        <a href="#" data-toggle="control-sidebar"><i class="fa fa-gears"></i></a>
-                    </li>
-                </ul>          </div>
-        </nav>
-    </header>
-    <!-- Left side column. contains the logo and sidebar -->
-    <aside class="main-sidebar">
-        <!-- sidebar: style can be found in sidebar.less -->
-        <section class="sidebar">
-            <!-- Sidebar user panel (optional) -->
-            <div class="user-panel">
-                <div class="pull-left image">
-                    <img src="https://www.gravatar.com/avatar/0000000000?d=mp&s=160" class="img-circle val-user-avatar" alt="User Image" />
-                </div>
-                <div class="pull-left info">
-                    <p class="val-user-fullname"></p>
-                    <!-- Status -->
-                    <a href="#"><i class="fa fa-circle text-success"></i><span class="val-user-role"></span></a>
-                </div>
-            </div>
+<div class="wrapper" style="opacity:0;">
+	<!-- Main Header -->
+	<header class="main-header">
+		<!-- Logo -->
+		<a href="./sap.html" class="logo">
+			<span class="logo-mini"><img id="logoSmall" src="./media/images/avl_logo_small_transparent.png" alt="logo_small" /></span>
+			<span id="logoText" class="logo-lg"></span>
+		</a>
+		<!-- Header Navbar -->
+		<nav class="navbar navbar-static-top" role="navigation">
+			<a class="sidebar-toggle" data-toggle="offcanvas" role="button" href="#"><i class="fa fa-bars"></i></a>
+			<ul class="nav navbar-nav">
+				<!-- Messages -->
+				<li class="dropdown notif-menu">
+					<a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="fa fa-bell-o"><span class="badge notif label-danger val-messages-count"></span></i></a>
+					<ul class="dropdown-menu">
+						<li class="header"><span class="thin">No new events to show</span></li>
+						<li><ul class="menu"></ul></li>
+						<li class="footer"><a data-action="show-all-messages" href="#"><i class="fa fa-chevron-right pull-right"></i>Show All Notifications</a></li>
+					</ul>
+				</li>
+				<!-- User Account -->
+				<li class="dropdown user user-menu">
+					<a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="fa fa-user-o"></i></a>
+					<ul class="dropdown-menu">
+						<li class="header user-header">
+							<img src="https://www.gravatar.com/avatar/0000000000?d=mp&s=160" class="img-circle val-user-avatar"/>
+							<div><span class="val-user val-user-fullname bold"></span><br /><span class="val-user val-user-role user-role"></span><br /><small class="val-user val-user-email thin"></small></div>
+						</li>
+						<li><ul class="menu">
+							<li><a data-action="editprofile"       class="media" href="#"><div class="media-left"><i class="fa fa-user-o"></i></div><div class="media-body"><p class="text">Profile</p></div></a></li>
+							<li><a data-action="show-all-messages" class="media" href="#"><div class="media-left"><i class="fa fa-envelope-o"></i></div><div class="media-body"><p class="text">Messages<span class="pull-right badge label-danger val-messages-count">0</span></p></div></a></li>
+							<li><a data-toggle="control-sidebar"   class="media" href="#"><div class="media-left"><i class="fa fa-paint-brush"></i></div><div class="media-body"><p class="text">Themes<span class="pull-right badge label-success">New</span></p></div></a></li>
+							<li><a data-action="logout"            class="media" href="#"><div class="media-left"><i class="fa fa-sign-out"></i></div><div class="media-body"><p class="text">Logout</p></div></a></li>
+						</ul></li>
+					</ul>
+				</li>
+			</ul>
+			<!-- Control Sidebar Toggle Button -->
+			<a data-toggle="control-sidebar" href="#"><i class="fa fa-gears"></i></a>
+		</nav>
+	</header>
+	
+	<!-- Page content -->
+	<div class="content-wrapper tao-async-cw">
+		<!-- Content Header (Page header) -->
+		<section class="content-header tao-async-ph clearfix">
+			<h1>Dashboard <small>Overview of your activity.</small></h1>
+			<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li><li class="active">Dashboard</li></ol>
+		</section>
+		
+		<!-- Main content -->
+		<section class="content tao-async-mc">
+			<div class="row">Nothing to see!</div>
+		</section>
+	</div>
+	
+	<!-- Main menu -->
+	<aside class="main-sidebar">
+		<section class="sidebar thin-scrollbar onhover custom">
+			<!-- User panel -->
+			<div class="user-panel">
+				<div class="image">
+					<img src="https://www.gravatar.com/avatar/0000000000?d=mp&s=160" class="img-circle val-user-avatar" alt="User Image" />
+				</div>
+			</div>
+			<!-- Sidebar Menu -->
+			<ul class="sidebar-menu"></ul>
 			
-            <!-- search form (Optional)
-            <form action="#" method="get" class="sidebar-form">
-                <div class="input-group">
-                    <input type="text" name="q" class="form-control" placeholder="Search..." />
-                    <span class="input-group-btn">
-                <button type="submit" name="search" id="search-btn" class="btn btn-flat"><i class="fa fa-search"></i></button>
-              </span>
-                </div>
-            </form>
-            /.search form -->
-
-            <!-- Sidebar Menu -->
-            <ul class="sidebar-menu"></ul><!-- /.sidebar-menu -->
-			
-            <div id="wrapper-quota" style="padding: 10px 15px;">
-                <ul class="control-sidebar-menu">
-                    <li>
-                        <a class="holder"></a>
-                    </li>
-                </ul><!-- /.control-sidebar-menu -->
-            </div>
-            <div id="wrapper-quota-small">
-                <div class="quota-icon" data-toggle="tooltip" data-original-title="Quota&nbsp;usage" data-html="true">
-                    <svg width="40" height="40">
-                        <path class="arc1" fill="none" stroke="#dd4b39" stroke-width="6" d="M 20 8 A 12 12 0 0 0 20 8"></path>
-                        <path class="arc2" fill="none" stroke="#f39c12" stroke-width="6" d="M 20 8 A 12 12 0 0 0 20 8"></path>
-                    </svg>
-                </div>
-            </div>
-
-            <div id="wrapper-quota-time" style="padding: 10px 15px;">
-                <ul class="control-sidebar-menu">
-                    <li>
-                        <a class="holder"></a>
-                    </li>
-                </ul><!-- /.control-sidebar-menu -->
-            </div>
-        </section>
-        <!-- /.sidebar -->
-    </aside>
-
-    <!-- Content Wrapper. Contains page content -->
-    <div class="content-wrapper tao-async-cw">
-
-        <!-- Content Header (Page header) -->
-        <section class="content-header tao-async-ph">
-            <h1>Dashboard <small>Overview of your activity.</small></h1>
-            <ol class="breadcrumb">
-                <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
-                <li class="active">Dashboard</li>
-            </ol>
-        </section>
-        <!-- /Content Header (Page header) -->
-
-        <!-- Main content -->
-        <section class="content tao-async-mc">
-            <div class="row">
-Nothing to see!
-            </div>
-        </section><!-- /.content -->
-
-    </div>
-    <!-- /.content-wrapper -->
-
-    <!-- Main Footer -->
-    <footer class="main-footer">
-        <!-- Default to the left -->
-        Copyright &copy; 2024 <b><a href="./" class="text-black"> - CS GROUP Romania</a></b>
-    </footer>
-
-    <!-- Control Sidebar -->
-    <aside class="control-sidebar control-sidebar-dark">
-        <!-- Create the tabs -->
-        <ul class="nav nav-tabs nav-justified control-sidebar-tabs">
-            <li class="active"><a href="#control-sidebar-settings-tab" data-toggle="tab"></a></li>
-        </ul>
-        <!-- Tab panes -->
-        <div class="tab-content">
-            <!-- Home tab content -->
-            <div class="tab-pane" id="control-sidebar-home-tab">
-                <h3 class="control-sidebar-heading">Progress</h3>
-                <ul class="control-sidebar-menu">
-                    <li>
-                        <a href="#">
-                            <h4 class="control-sidebar-subheading">
-                                Overall progress
-                                <span class="label label-danger pull-right">70%</span>
-                            </h4>
-                            <div class="progress progress-xxs">
-                                <div class="progress-bar progress-bar-danger" style="width: 70%"></div>
-                            </div>
-                        </a>
-                    </li>
-                </ul><!-- /.control-sidebar-menu -->
-                <h3 class="control-sidebar-heading">Activity History</h3>
-                <ul class="control-sidebar-menu">
-                    <li>
-                        <a href="#">
-                            <i class="menu-icon fa fa-tag bg-red"></i>
-                            <div class="menu-info">
-                                <h4 class="control-sidebar-subheading">Started Task "xxxx"</h4>
-                                <p>23.10.2017</p>
-                            </div>
-                        </a>
-                    </li>
-                </ul><!-- /.control-sidebar-menu -->
-            </div><!-- /.tab-pane -->
-            <!-- Settings tab content -->
-            <div class="tab-pane active" id="control-sidebar-settings-tab">
-                <form id="frmSettings" name="frmSettings">
-                    <h3 class="control-sidebar-heading">Display settings</h3>
-                    <p>These settings will only affect your account.</p>
-                    <div class="form-group">
-                        <label for="selectSettingsBodySize" class="control-label">Font size</label>
-                        <select id="selectSettingsBodySize" name="selectSettingsBodySize" class="form-control form-changesettings"><option value="size-small" >Small</option><option value="size-normal"  selected>Normal</option><option value="size-large" >Large</option><option value="size-larger" >Extra Large</option></select>
-                    </div>
+			<!-- Quota (resources) tiny -->
+			<div id="wrapper-quota-small" class="sidebar-quota-tiny">
+				<div class="quota-icon" data-toggle="tooltip" data-original-title="Quota&nbsp;usage" data-html="true">
+					<i class="fa fa-tasks"></i>
+				</div>
+			</div>
+			<!-- Quota (resources & time) -->
+			<div id="wrapper-quota"      class="sidebar-quota"><div class="holder"></div></div>
+			<div id="wrapper-quota-time" class="sidebar-quota"><div class="holder"></div></div>
+		</section>
+	</aside>
+	
+	<!-- Display settings -->
+	<aside class="control-sidebar">
+		<ul class="nav navbar-nav">
+			<li class="control-sidebar-heading"><span>Display settings</span></li>
+			<li><a data-toggle="control-sidebar" href="#"><i class="fa fa-times"></i><i class="fa fa-caret-down"></i></a></li>
+		</ul>
+		<section class="sidebar thin-scrollbar onhover">
+			<div class="display-settings">
+				<form id="frmSettings" name="frmSettings" class="clearfix">
+					<p>These settings will only affect your account.</p>
 					<div class="form-group">
-                        <label for="selectSettingsTheme" class="control-label">Theme</label>
-                        <select id="selectSettingsTheme" name="selectSettingsTheme" class="form-control form-changesettings">
-							<option value="dark" selected >Dark</option>
-							<option value="light">Light</option>
-						</select>
-						<div id="selectThemeColor">
-							
+						<label class="control-sidebar-heading">Font size</label>
+						<div id="selectSettingsBodySize" class="form-changesettings">
+							<a class="btn btn-icon" data-action="size-small"  data-toggle="tooltip" data-original-title="Small"       href="#"><i class="fa fa-aa"></i></a>
+							<a class="btn btn-icon" data-action="size-normal" data-toggle="tooltip" data-original-title="Normal"      href="#"><i class="fa fa-aa"></i></a>
+							<a class="btn btn-icon" data-action="size-large"  data-toggle="tooltip" data-original-title="Large"       href="#"><i class="fa fa-aa"></i></a>
+							<a class="btn btn-icon" data-action="size-larger" data-toggle="tooltip" data-original-title="Extra Large" href="#"><i class="fa fa-aa"></i></a>
 						</div>
 					</div>
-                    <!-- /.form-group -->
-                    <div class="form-group">
-                        <label for="selectSettingsRefreshRate" class="control-label">Autorefresh rate</label>
-                        <select id="selectSettingsRefreshRate" name="selectSettingsRefreshRate" class="form-control form-changesettings">
-                            <option value="10000" selected>10 seconds</option>
-                            <option value="30000" >30 seconds</option>
-                            <option value="60000" >1 minute</option>
-                        </select>
-                    </div>
-                    <!-- /.form-group -->
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary" data-action="save-settings">Save</button>
-                    </div><!-- /.form-group -->
-                    <div class="form-group">
-                        <p>Reset to default will restore your display settings to the initial values.</p>
-                        <button id="btnRestore" type="submit" class="btn btn-primary" data-action="restore-settings" disabled="true">Reset to default</button>
-                    </div><!-- /.form-group -->
-                  <!--  <div id= "notificationonsave" class="box-notification"><p><span>User preferences saved!</span></p></div>
-                    <div id= "notificationondelete" class="box-notification"><p><span>User preferences deleted!</span></p></div> -->
-                </form>
-              
-            </div><!-- /.tab-pane -->
-        </div>
-    </aside><!-- /.control-sidebar -->
-    <!-- Add the sidebar's background. This div must be placed immediately after the control sidebar -->
-    <div class="control-sidebar-bg"></div>
+					<div class="form-group">
+						<label class="control-sidebar-heading">Color schemes</label>
+						<div id="selectThemeColor">
+							<section class="theme" data-scheme="full"   data-title="LIGHT"      data-desc="Completely Light theme" data-accents="light"      ></section>
+							<section class="theme" data-scheme="full"   data-title="DARK"       data-desc="Completely Dark theme"  data-accents="dark"       ></section>
+							<section class="theme" data-scheme="modern" data-title="MODERN"     data-desc="Accent Color theme"     data-accents="navy,purple,green,red,teal,indigo"></section>
+							<section class="theme" data-scheme="nav"    data-title="NAVIGATION" data-desc="Navigation theme"       data-accents="navy,purple,green,red,teal,indigo"></section>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-sidebar-heading">Autorefresh rate</label>
+						<select id="selectSettingsRefreshRate" name="selectSettingsRefreshRate" class="form-control form-changesettings">
+							<option value="10000" selected>10 seconds</option>
+							<option value="30000" >30 seconds</option>
+							<option value="60000" >1 minute</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<button type="submit" class="btn btn-primary" data-action="save-settings">Save</button>
+					</div>
+					<div class="form-group clearfix">
+						<p>Reset to default will restore your display settings to the initial values.</p>
+						<button id="btnRestore" type="submit" class="btn btn-primary" data-action="restore-settings" disabled="true">Reset to default</button>
+					</div>
+				</form>
+			</div>
+		</section>
+	</aside>
+	
+	<!-- Main Footer -->
+	<footer class="main-footer">
+		<span>&copy; 2024 <a href="//www.c-s.ro/">CS GROUP Romania</a></span>
+	</footer>
+	
+	<!-- bot-notifications -->
+	<div id="bot-notice-chat">
+		<div class="box box-primary box-solid direct-chat collapse">
+			<div class="box-header with-border">
+				<h3 class="box-title">Notifications</h3>
+				<div class="box-tools pull-right">
+					<span data-toggle="tooltip" title="" class="badge bg-yellow val-msgcount" data-original-title="No of messages">0</span>
+					<button type="button" class="btn btn-box-tool do-clear-all-notice"><i class="fa fa-trash-o"></i></button>
+					<button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+					<button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
+				</div>
+			</div>
+			<div class="box-body">
+				<!-- Conversations are loaded here -->
+				<div class="direct-chat-messages thin-scrollbar">
+					<div class="max-msg-note hidden">
+						<p> Showing a maximum of <span class="val-notificationsmaxnumber"></span> most recent messages. Same messages have been automatically removed. <br> Please check all your messages <a href="#admin/dashboard">here</a></p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Master message to the right -->
+		<div class="direct-chat-msg master hidden">
+			<div class="direct-chat-info clearfix">
+				<!--<span class="direct-chat-name pull-left">Msg Bot</span>-->
+				<span class="direct-chat-timestamp pull-right val-msg-ts">23 Jan 2:00 pm</span>
+			</div>
+			<!-- /.direct-chat-info -->
+			<img class="direct-chat-img" src="favicon-128.png" alt="Message User Image"/>
+			<div class="direct-chat-text">
+				<span class="val-msg-txt"></span>
+				<div class="tools">
+					<i class="fa fa-trash-o"></i>
+				</div>
+			</div>
+		</div>
+	</div>
+</div><!-- /.wrapper -->
 
-
-<!-- bot-notifications -->
-    <div id="bot-notice-chat">
-        <div class="box box-success box-solid direct-chat direct-chat-success collapse">
-            <div class="box-header with-border">
-                <h3 class="box-title">Notifications</h3>
-                <div class="box-tools pull-right">
-                    <span data-toggle="tooltip" title="" class="badge bg-yellow val-msgcount" data-original-title="No of messages">0</span>
-                    <button type="button" class="btn btn-box-tool do-clear-all-notice"><i class="fa fa-trash-o"></i></button>
-                    <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
-                    <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
-                </div>
-            </div>
-            <!-- /.box-header -->
-            <div class="box-body">
-                <!-- Conversations are loaded here -->
-                <div class="direct-chat-messages">
-                    <div class="max-msg-note hidden">
-                        <p> Showing a maximum of <span class="val-notificationsmaxnumber"></span> most recent messages. Same messages have been automatically removed. <br> Please check all your messages <a href="#admin/dashboard">here</a></p>
-                    </div>
-                </div>
-                <!--/.direct-chat-messages-->
-                <!-- /.direct-chat-pane -->
-            </div>
-            <!-- /.box-body -->
-        </div>
-        <!-- Master message to the right -->
-        <div class="direct-chat-msg master hidden">
-            <div class="direct-chat-info clearfix">
-                <!--<span class="direct-chat-name pull-left">Msg Bot</span>-->
-                <span class="direct-chat-timestamp pull-right val-msg-ts">23 Jan 2:00 pm</span>
-            </div>
-            <!-- /.direct-chat-info -->
-            <img class="direct-chat-img" src="favicon-128.png" alt="Message User Image"/>
-            <div class="direct-chat-text">
-                <span class="val-msg-txt"></span>
-                <div class="tools">
-                    <i class="fa fa-trash-o"></i>
-                </div>
-            </div>
-            <!-- /.direct-chat-text -->
-        </div>
-        <!-- /master .direct-chat-msg -->
-    </div>
-<!-- bot n -->
-
-
-</div><!-- ./wrapper -->
-<!-- messages -->
-<!-- modal loading -->
-<div id="myModalLoading" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalReload" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <svg class="cog-svg" width="67" height="67" xmlns="http://www.w3.org/2000/svg">
-                <g class="cog-group">
-                    <circle fill="#65B2C2" cx="33.521" cy="33.574" r="33.26"/>
-                    <path fill="#FFFFFF" class="large-cog" d="m26.154,25.215c-1.152,0.296 -2.248,0.712 -3.285,1.126c0.865,4.027 -2.535,5.329 -4.955,3.612c-0.922,0.652 -1.614,1.541 -1.902,2.785c2.535,1.716 1.268,6.275 -2.189,5.861c0,1.303 0,2.604 0,3.91c3.688,-0.357 4.494,4.204 2.189,6.157c0.635,0.947 0.922,2.252 2.189,2.547c2.189,-1.835 5.531,-0.178 4.667,3.613c1.038,0.414 2.132,0.83 3.284,1.124c0.463,-3.198 5.244,-3.198 5.763,0c1.153,-0.294 2.247,-0.71 3.286,-1.124c-0.864,-4.027 2.533,-5.332 4.955,-3.613c0.922,-0.65 1.61,-1.541 1.9,-2.784c-2.535,-1.716 -1.267,-6.275 2.19,-5.862c0,-1.302 0,-2.605 0,-3.908c-3.687,0.298 -4.495,-4.203 -2.19,-6.159c-0.635,-0.948 -0.865,-2.251 -2.189,-2.487c-2.191,1.836 -5.53,0.178 -4.666,-3.614c-1.039,-0.413 -2.133,-0.829 -3.286,-1.124c-0.806,3.256 -4.954,3.256 -5.761,-0.06zm8.586,15.398c0,3.196 -2.536,5.804 -5.705,5.804c-3.17,0 -5.705,-2.607 -5.705,-5.804c0,-3.197 2.535,-5.805 5.705,-5.805c3.17,-0.057 5.705,2.548 5.705,5.805z"/>
-                    <path fill="#FFFFFF" class="small-cog" d="m40.646,11.596c-0.627,0.114 -1.199,0.23 -1.769,0.404c0.227,2.135 -1.655,2.596 -2.795,1.559c-0.514,0.288 -0.914,0.692 -1.199,1.327c1.199,1.038 0.285,3.29 -1.484,2.886c-0.057,0.691 -0.17,1.326 -0.229,2.019c1.94,0.058 2.111,2.481 0.801,3.29c0.284,0.52 0.342,1.213 0.969,1.442c1.256,-0.806 2.91,0.232 2.225,2.136c0.514,0.287 1.083,0.577 1.654,0.75c0.457,-1.615 2.969,-1.327 3.025,0.346c0.629,-0.115 1.199,-0.23 1.77,-0.403c-0.228,-2.135 1.654,-2.598 2.795,-1.558c0.514,-0.29 0.914,-0.693 1.199,-1.328c-1.199,-1.038 -0.285,-3.29 1.484,-2.886c0.057,-0.692 0.173,-1.327 0.228,-2.02c-1.939,-0.057 -2.111,-2.48 -0.799,-3.29c-0.284,-0.519 -0.343,-1.212 -0.97,-1.442c-1.254,0.807 -2.91,-0.231 -2.225,-2.135c-0.514,-0.289 -1.084,-0.52 -1.655,-0.75c-0.628,1.673 -2.795,1.442 -3.025,-0.347zm3.596,8.482c-0.172,1.674 -1.713,2.827 -3.366,2.655c-1.655,-0.173 -2.853,-1.674 -2.626,-3.348c0.171,-1.673 1.712,-2.827 3.367,-2.654c1.597,0.174 2.796,1.674 2.625,3.347z"/>
-                </g>
-            </svg>
-            <p>LOADING</p>
-        </div>
-    </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-<!-- modal loading -->
-<!-- holder for hidden elements -->
-<div class="row hidden">
+<!-- Notifications -->
+<div id="myModalNotifications" class="modal modal-stretched fade" data-scrollelement=".thin-scrollbar" data-margin="30" tabindex="-1" role="dialog" aria-labelledby="Notifications Panel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 id="myModalLabel" class="modal-title">Notifications</h4>
+			</div>
+			<div class="modal-body">
+				<div id="selectActiveNotifPanel">
+					<ul class="nav nav-tabs visible-xs-block"><li class="role-dropdown active"><select name="selectNotifPanel" class="form-control form-changepane" title="Select desired node view."></select></li></ul>
+					<ul class="nav nav-tabs hidden-xs"></ul>
+					<div class="tab-content"></div>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
-<!-- /.holder for hidden elements -->
-<!-- REQUIRED JS SCRIPTS -->
-<!-- jQuery 2.1.4
-<script src="./assets/libs/jQuery/jQuery-2.1.4.min.js" type="text/javascript"></script>
- -->
-<script src="./assets/libs/jQuery/jQuery-2.2.4.min.js" type="text/javascript"></script>
 
-<!-- jQuery 3.2.1
-<script
-        src="https://code.jquery.com/jquery-3.2.1.min.js"
-        integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-        crossorigin="anonymous"></script>
--->
+<!-- Loading -->
+<div id="myModalLoading" class="modal no-trigger" tabindex="-1" role="dialog" aria-labelledby="Loading Content" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<svg class="cog-svg" width="67" height="67" xmlns="http://www.w3.org/2000/svg">
+				<g class="cog-group">
+					<circle fill="#65B2C2" cx="33.521" cy="33.574" r="33.26"/>
+					<path fill="#FFFFFF" class="large-cog" d="m26.154,25.215c-1.152,0.296 -2.248,0.712 -3.285,1.126c0.865,4.027 -2.535,5.329 -4.955,3.612c-0.922,0.652 -1.614,1.541 -1.902,2.785c2.535,1.716 1.268,6.275 -2.189,5.861c0,1.303 0,2.604 0,3.91c3.688,-0.357 4.494,4.204 2.189,6.157c0.635,0.947 0.922,2.252 2.189,2.547c2.189,-1.835 5.531,-0.178 4.667,3.613c1.038,0.414 2.132,0.83 3.284,1.124c0.463,-3.198 5.244,-3.198 5.763,0c1.153,-0.294 2.247,-0.71 3.286,-1.124c-0.864,-4.027 2.533,-5.332 4.955,-3.613c0.922,-0.65 1.61,-1.541 1.9,-2.784c-2.535,-1.716 -1.267,-6.275 2.19,-5.862c0,-1.302 0,-2.605 0,-3.908c-3.687,0.298 -4.495,-4.203 -2.19,-6.159c-0.635,-0.948 -0.865,-2.251 -2.189,-2.487c-2.191,1.836 -5.53,0.178 -4.666,-3.614c-1.039,-0.413 -2.133,-0.829 -3.286,-1.124c-0.806,3.256 -4.954,3.256 -5.761,-0.06zm8.586,15.398c0,3.196 -2.536,5.804 -5.705,5.804c-3.17,0 -5.705,-2.607 -5.705,-5.804c0,-3.197 2.535,-5.805 5.705,-5.805c3.17,-0.057 5.705,2.548 5.705,5.805z"/>
+					<path fill="#FFFFFF" class="small-cog" d="m40.646,11.596c-0.627,0.114 -1.199,0.23 -1.769,0.404c0.227,2.135 -1.655,2.596 -2.795,1.559c-0.514,0.288 -0.914,0.692 -1.199,1.327c1.199,1.038 0.285,3.29 -1.484,2.886c-0.057,0.691 -0.17,1.326 -0.229,2.019c1.94,0.058 2.111,2.481 0.801,3.29c0.284,0.52 0.342,1.213 0.969,1.442c1.256,-0.806 2.91,0.232 2.225,2.136c0.514,0.287 1.083,0.577 1.654,0.75c0.457,-1.615 2.969,-1.327 3.025,0.346c0.629,-0.115 1.199,-0.23 1.77,-0.403c-0.228,-2.135 1.654,-2.598 2.795,-1.558c0.514,-0.29 0.914,-0.693 1.199,-1.328c-1.199,-1.038 -0.285,-3.29 1.484,-2.886c0.057,-0.692 0.173,-1.327 0.228,-2.02c-1.939,-0.057 -2.111,-2.48 -0.799,-3.29c-0.284,-0.519 -0.343,-1.212 -0.97,-1.442c-1.254,0.807 -2.91,-0.231 -2.225,-2.135c-0.514,-0.289 -1.084,-0.52 -1.655,-0.75c-0.628,1.673 -2.795,1.442 -3.025,-0.347zm3.596,8.482c-0.172,1.674 -1.713,2.827 -3.366,2.655c-1.655,-0.173 -2.853,-1.674 -2.626,-3.348c0.171,-1.673 1.712,-2.827 3.367,-2.654c1.597,0.174 2.796,1.674 2.625,3.347z"/>
+				</g>
+			</svg>
+			<p>LOADING</p>
+		</div>
+	</div>
+</div>
 
-
-<!-- Bootstrap 3.3.2 JS -->
-<script src="./assets/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
-<script src="./assets/bootstrap/js/bootstrap-tour.min.js" type="text/javascript"></script>
-<!-- AdminLTE App -->
-<script src="./assets/dist/js/app.js" type="text/javascript"></script>
-<script src="./assets/dist/js/notification.js" type="text/javascript"></script>
-<!-- TAO App -->
-<script src="./assets/libs/underscore-min.js" type="text/javascript"></script>
-<script src="./assets/dist/js/router.js" type="text/javascript"></script>
-<!-- NPs -->
-<script src="./assets/libs/np/jquery.npmodalconfirm.js" type="text/javascript"></script>
-<script src="./assets/libs/np/jquery.npexecpanel.js" type="text/javascript"></script>
-<script src="./assets/libs/np/jquery.npnotificationpanel.js" type="text/javascript"></script>
-<script src="./assets/libs/np/jquery.nppaginatedcells.js" type="text/javascript"></script>
-<!-- Base64  -->
-<script src="./assets/libs/base64/base64.min.js" type="text/javascript"></script>
-<!-- CryptoJS  -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/md5.js" type="text/javascript"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/aes.js" type="text/javascript"></script>
-<!-- xTerm js-->
-<link rel="stylesheet" href="./assets/dist/css/xterm.css" />
-<script src="./assets/dist/js/xterm.js"></script>
-<script src="./assets/dist/js/xterm-addon-fit.js"></script>
-<!-- jQuery Validate -->
-<script type="text/javascript" src="./assets/libs/jquery-validate/jquery.validate.min.js"></script>
-
-<!-- moment.js -->
-<script type="text/javascript" src="./assets/libs/momentjs/moment.min.js"></script>
-<!-- chart.js -->
-<script type="text/javascript" src="./assets/libs/chartjs/chartjs.min.js"></script>
-<!-- split.js -->
-<script type="text/javascript" src="./assets/libs/splitjs/split.js"></script>
-<!-- gritter -->
-<script type="text/javascript" src="./assets/libs/gritter/js/jquery.gritter.js"></script>
-<!-- TAO UI functions  -->
-<script src="./assets/dist/js/ui.js" type="text/javascript"></script>
-<!-- Websockets -->
-<script src="./assets/dist/js/websockets.js" type="text/javascript"></script>
-<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js" type="text/javascript"></script>
-
- <!-- includes for bootstrap-toggle -->
- <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
- <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
-
-
-<style>
-.content-header>h1>small{color:#ccc;}
-.content-header>.breadcrumb>li>a{color:#aba9a9;}
-.breadcrumb>.active{color:#d2d6de}
-.main-footer>b>a.text-black{color:#ccc !important;}
-.box.box-success{border-top-color:#3c8dbc;}
-#selectThemeColor{display:inline-flex;flex-wrap: wrap;}
-#selectThemeColor a{display:block;font-size:2.5rem;}
-</style>
-
-</body>
-</html>
-
-<script type="text/javascript" src="./assets/libs/jquery.idle/jquery.idle.js"></script>
-<script type="text/javascript" src="./assets/libs/modernizr/modernizr.custom.input.js"></script>
+<script type="text/javascript" src="./assets/dist/js/app.js"></script>
+<script type="text/javascript" src="./assets/dist/js/router.js"></script>
+<script type="text/javascript" src="./assets/dist/js/ui.js"></script>
 
 <script type="text/javascript">
-    //Modernizr.load({
-    //    test: Modernizr.inputtypes.date,
-    //    nope: ['/_tao/lib/bootstrap-datepicker/js/bootstrap-datepicker.js', '/_tao/lib/bootstrap-datepicker/js/locales/bootstrap-datepicker.ro.js'],
-    //    complete: function () {
-    //			console.log('loaded datepicker');
-    //    }
-    //});
-    //check preferences
-    // (function(){
-    //     var preferences_viewMode = _settings.readCookie("preferences_viewMode");
-    //     if ((preferences_viewMode !== "") && (preferences_viewMode !== null)) {
-    //         preferences.viewMode = preferences_viewMode;
-    //     }else{
-    //     	preferences.viewMode = "grid";
-    //     }
-    // })();
-	var selectedColor = defaultStyle.substr(defaultStyle.indexOf("-") + 1);
+	var $myModalNotif = $("#myModalNotifications");
+	
+	var selectedSize  = window.defaultSize;
+	var selectedStyle = {
+		scheme: window.defaultScheme,
+		color : window.defaultStyle,
+		css   : $.AdminLTE.options.styles[window.defaultStyle]
+	};
 	var notificationsList = [];
-	var topics = {'info':{'header':'You have new events'},'execution':{'header':'You have new events'},'error':{'header':'You have new events'}};
-	var menu = $(".messages-menu .dropdown-menu");
-    
-	function getNotificationBody(data, topic){
-        var list ='';
-
-        // save the objects in a list
-        var notifications = $.map(data, function (elem, idx) { return elem });
-
-        // sort the list
-        notifications.sort((a,b) => (Date.parse(b.timestamp) - Date.parse(a.timestamp)) );
-
-        // create the list
-		$.each(notifications, function(index,value){
-            var payload = "";
-            
-            switch(value.topic){
-                case "transfer":
-                case "product.progress":
-                    payload = JSON.parse(value.data).Payload;
-                    break;
-                case "info":
-                case "warn":
-                case "execution.status.changed":
-                case "authentication":
-                    payload = JSON.parse(value.data).Message;
-                    break;
-                default:
-                    payload = value.data.substring(12, 200);
-            }
-            
-            list = list+  '		<li class="notif-info">'+
-                        '				<div class="expand">  '+
-                        '					<div class="pull-left">'+
-                '						<span class="glyphicon glyphicon-ok markasread"  title="mark as read" id="'+value.timestamp+'_'+value.user+'" data-topic="'+topic+'"></span>'+		                             			
-                        '					</div>'+
-                        '					<span class="text">'+
-                                            payload +'</span>'+
-                        '				  <small style="float:right" class="label label-info"><i class="fa fa-clock-o "></i>'+value.timestamp+'</small>'+
-                        '				 </div>'+
-                        '		</li>';
-            });
-		
-        
-        return list;
-	}
-        					
-	function markAsRead(data){
-        					$.ajax({
-        						cache: false,
-        			            url: baseRestApiURL + "monitor/notification/ack/",
-            data:JSON.stringify(data),
-        			            type: 'POST',
-        			            headers: {
-        			                "Accept": "application/json",
-        			                "Content-Type": "application/json",
-        			                "X-Auth-Token": window.tokenKey
-        			            }
-        					}).done(function (response) {
-        						//console.log(response);
-        					}).fail(function (jqXHR, textStatus) {
-        						//console.log(textStatus);
-        						//console.log(jqXHR);
-        			        }).complete(function(){
-        		                	getUnreadNotifications();
-    	});
-	}
-
-	function displayNotifications(data, topic, id){
-		if(data.length > 0){
-			$("."+id+"-notif-menu .dropdown-menu .header").html("<span class='notification-menu-header'>"+topics[id].header+"</span><span class='glyphicon glyphicon-check markallasread' id='"+topic+"_markall'></span>Mark all as read  ");
+	var topics = {
+		info     : { topic: "info"                    , title: "Info messages"   , badge: "badge label-success", icon: "fa fa-flag-o"              , color: "var(--status-success)", showFirst: true  },
+		execution: { topic: "execution.status.changed", title: "Execution events", badge: "badge label-warning", icon: "fa fa-envelope-o"          , color: "var(--status-warning)", showFirst: false },
+		error    : { topic: "error"                   , title: "Error messages"  , badge: "badge label-danger" , icon: "fa fa-exclamation-triangle", color: "var(--status-danger)" , showFirst: false }
+	};
+	
+	// Define actions for all "a[data-action]" links in "sidebar main menu" or "top header droppdown menu"
+	function menuActions(e) {
+		var $a = $(e.target).closest("a[data-action]");
+		switch ($a.data("action")) {
+			case "show-all-messages": $myModalNotif.modal("show"); break;
+			case "editprofile"      : $("#myModalUserProfile").trigger("editprofile", [e]); break;
+			case "logout"           : $("#myModalUserProfile").trigger("logout"     , [e]); break;
+			default: break;
 		}
-		$("."+id+"-notif-menu a span").text(data.length);
-		
-		var list ='';
-		list = getNotificationBody(data, topic);
-		$("."+id+"-notif-menu .dropdown-menu .menu").append(list);
-        canDeleteNotification(id);
-        return data.length;
 	}
 	
-    function getUnreadNotifications(){
-        $.ajax({
-            cache: false,
-            url: baseRestApiURL + "monitor/notification/unread/",
-            dataType : 'json',
-            type: 'GET',
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "user": taoUserProfile.username,
-                "X-Auth-Token": window.tokenKey
-            }
-        }).done(function (notificationsResponse) {
-            var r = chkTSRF(notificationsResponse);
-            notificationsList = [];
-            if(r instanceof Object ){
-            	notificationsList = r;
-            	//console.log($("li[class$='-notif-menu'] ul.dropdown-menu"));
-            	$(".messages-menu ul.dropdown-menu").remove();
-            	//console.log($("li[class$='-notif-menu'] ul.dropdown-menu"));
-            	menu.clone().insertAfter(".info-notif-menu a");
-            	menu.clone().insertAfter(".error-notif-menu a");
-            	menu.clone().insertAfter(".execution-notif-menu a");
-            	
-            	$("li[class$='-notif-menu'] .dropdown-menu .header").text(0);
-            	
-        		$(".info-notif-menu .dropdown-menu .header").text("No new events to show");
-        		$(".execution-notif-menu .dropdown-menu .header").text("No new execution infos to show");
-        		$(".error-notif-menu .dropdown-menu .header").text("No new errors to show");
-         
-            	if(r.hasOwnProperty('info')){
-            		//console.log(r.info);
-            		var n = displayNotifications(r.info,'info','info');
-            		speak('You have ' + n + ' information messages');
-            	}
-            	
-            	//display execution notifications in toolbar
-				if(r.hasOwnProperty('execution.status.changed') ){
-					//console.log(r["execution.status.changed"]);
-					displayNotifications(r["execution.status.changed"],'execution.status.changed','execution');
-            	}
-            	
-				//display error notifications in toolbar
-				if(r.hasOwnProperty('error') ){
-					displayNotifications(r["error"],'error','error');
-            	}
-				// PREVENT INSIDE CLICK DROPDOWN
-				$('.dropdown-menu').on("click.bs.dropdown", function (e) { e.stopPropagation(); e.preventDefault(); });
-            }
-        }).fail(function (jqXHR, textStatus) {
-			chkXHR(jqXHR.status);
-        });
- 	}
-
-    function canDeleteNotification(id){
-        
-        $("."+id+"-notif-menu .dropdown-menu .menu span.markasread").each(function(){
-			$(this).click(function(event){
-				var el = event.target.id;
-				el = el.split('_');
-				var topic = event.target.getAttribute('data-topic');
-				el =_.findWhere(notificationsList[topic], {timestamp:el[0], user:el[1]});
-				if(el != undefined){
-					markAsRead([el.id]);
-        		}
-        	});
-        });
-		
-		$("span.markallasread").each(function(){
-			$(this).off("click");
-            $(this).on("click", function(event){
-				var el = event.target.id;
-				el = el.split('_');
-				if(notificationsList.hasOwnProperty(el[0])){
-					var payload = $.map(notificationsList[el[0]], function (elem, idx) { return elem.id; });
-					markAsRead(payload);
+	// Mark one or all notifications as read
+	function markAsRead(key, id) {
+		var payload = (typeof id !== "undefined") ? [id] : $.map(notificationsList[topics[key].topic], function (elem, idx) { return elem.id; });
+		if (payload.length > 0) {
+			// Call endpoint
+			$.ajax({
+				cache  : false,
+				url    : baseRestApiURL + "monitor/notification/ack/",
+				data   : JSON.stringify(payload),
+				type   : "POST",
+				headers: {
+					"Accept"      : "application/json",
+					"Content-Type": "application/json",
+					"X-Auth-Token": window.tokenKey
 				}
-				
+			}).done(function (response) {
+			}).fail(function (jqXHR, textStatus) {
+			}).complete(function (ww,ww) {
+				getUnreadNotifications();
 			});
-		});
-    }
-
-    function getNotification(wsdna, topic){
-
-        formatDate = moment(wsdna.timestamp).format();
-        message = (wsdna.data.hasOwnProperty("Message"))? wsdna.data.Message: (wsdna.data.hasOwnProperty("Payload"))? wsdna.data.Payload: "N/A";
-
-        var li = $('		<li class="notif-info">'+
-                        '				<div class="expand">  '+
-                        '					<div class="pull-left">'+
-                        '				        <span class="glyphicon glyphicon-ok markasread"  title="mark as read" id="'+formatDate+'_'+wsdna.user+'" data-topic="'+topic+'"></span>'+		                             			
-                        '					</div>'+
-                        '					<span class="text">'+
-                                            message +'</span>'+
-                        '				  <small style="float:right" class="label label-info"><i class="fa fa-clock-o "></i>'+ formatDate +'</small>'+
-                        '				 </div>'+
-                        '		</li>');
-        return li;
-    }
+		}
+	}
 	
-    function updateNotificationNr(id, topic){
-
-        $oldNr = $("."+id+"-notif-menu a span").text();
-        if($oldNr == 0){
-            $("."+id+"-notif-menu .dropdown-menu .header").html("<span class='notification-menu-header'>"+topics.info.header+"</span><span class='glyphicon glyphicon-check markallasread' id='"+topic+"_markall'></span>Mark all as read  ");
-        }
-        $("."+id+"-notif-menu a span").text(parseInt($oldNr) + 1)
-    }
-
-	//add available styles
-	function populateAvailableStyles(theme) {
-		if (typeof theme === "undefined") {
-			theme = $("#selectSettingsTheme").val();
-		}
-		var found_class_styles = Object.keys($.AdminLTE.options.styles).filter((key) => key.startsWith(theme+"-")).reduce((obj, key) => {
-			return Object.assign(obj,{[key]:$.AdminLTE.options.styles[key]});
-		}, {});
-		$("a", "#selectThemeColor").remove();
-		$.each(found_class_styles, function(key,value) {
-			var colorFromKey = key.replace(theme+"-", "");
-			var color = $.AdminLTE.options.colors[colorFromKey];
-			var $href = $("<a href='' data-colorKey='"+colorFromKey+"' data-skin='"+value+"' class='clearfix full-opacity-hover'></a>");
+	// Show/hide notifications submenu
+	function showNotificationsMenu($a) {
+		if ($a.length == 0 || $(".notif.val-notif-count", $a).text() == "0") { return false; }
+		
+		var hide = $a.closest(".dropdown").is(".open");
+		$a.closest(".menu").find(".dropdown").removeClass("open");
+		!hide && $a.closest(".dropdown").addClass("open");
+	}
+	
+	// Generate notifications contents in both the menu and the "All notifications" panel
+	function renderNotificationsList(key) {
+		var data = notificationsList[topics[key].topic] || [];
+		data.sort(function (a, b) { return (a.timestamp == b.timestamp) ? 0 : (Date.parse(a.timestamp) < Date.parse(b.timestamp) ? 1 : -1); });
+		
+		var no = data.length;
+		var $notifMenu = $("#" + key + "_notif_menu");
+		var $notifPane = $("#" + key + "_notif_panel");
+		($(".notif-list", $notifMenu).length == 0) && $notifMenu.append('<ul class="notif-list thin-scrollbar onhover"></ul>');
+		($(".notif-list", $notifPane).length == 0) && $notifPane.append('<ul class="notif-list thin-scrollbar"></ul>');
+		
+		if (no > 0) {
+			// Remove previous list content
+			$(".notif-list", $notifMenu).html('');
+			$(".notif-list", $notifPane).html('');
 			
-			$href.append("<i class='fa "+ (selectedColor === colorFromKey ? 'fa-check-circle' : 'fa-circle') +"' style='padding:0 1rem;color:"+color+"'></i>");
-			$("#selectThemeColor").append($href);
+			// Render the list
+			$.each(data, function (index, value) {
+				if ($('[data-nid="' + value.id + '"]', $notifMenu).length == 0) {
+					var title = topics[key].topic.toUpperCase().trim();
+					var payload = "";
+					switch (value.topic) {
+						case "transfer":
+						case "product.progress":
+							payload = JSON.parse(value.data).Payload;
+							break;
+						case "info":
+						case "warn":
+						case "execution.status.changed":
+						case "authentication":
+							title = value.topic.toUpperCase().trim();
+							payload = JSON.parse(value.data).Message;
+							break;
+						default:
+							payload = value.data.substring(12, 200);
+							break;
+					}
+					var fromNow      = moment(value.timestamp, "YYYY-MM-DDThh:mm:ssZ").fromNow();
+					var formatDate   = moment(value.timestamp).format("YY-MM-DD HH:mm:ss");
+					var markAsReadId = value.timestamp + '_' + value.user;
+					var $li = $('<li data-nid="' + value.id + '">' +
+									'<div class="media payload">' +
+										'<div class="media-left"><i class="' + topics[key].icon + ' dbl-size" style="color:#fff;background-color:' + topics[key].color + ';"></i></div>' +
+										'<div class="media-body">' +
+											'<p class="title bold">' + title + '</p>' +
+											'<p class="text">' + payload + '</p>' +
+											//'<p class="full-payload">' + value.data + '</p>' +
+											'<small class="pull-left"><i class="fa fa-clock-o"></i>&nbsp;&nbsp;' + formatDate + '</small>' +
+											'<small class="pull-right">' + fromNow + '</small>' +
+											'<a class="markasread pull-right" id="' + markAsReadId + '" data-topic="' + topics[key].topic + '" href="#"><i class="fa fa-times-circle" title="mark as read" ></i></a>' +
+										'</div>' +
+									'</div>' +
+								'</li>');
+					$(".notif-list", $notifMenu).append($li);
+					// Events
+					$(".markasread", $li).on("click", function (e) {
+						e.preventDefault(); e.stopPropagation();
+						markAsRead(key, value.id);
+					});
+					$(".notif-list", $notifPane).append($li.clone(true, true));
+				}
+			});
+		} else {
+			$(".notif-list", $notifPane).html(
+				'<div class="panel-list-empty callout callout-empty collapse" style="display: block;">' +
+					'<p>No new ' + topics[key].title.toLowerCase() + ' to show</p>' +
+				'</div>'
+			);
+		}
+	}
+	
+	// Update notifications numbers in both the menu and the "All notifications" panel
+	function updateNotificationsMenu(key) {
+		var data = notificationsList[topics[key].topic] || [];
+		
+		var $menu = $(".notif-menu ." + key + "-notif-menu");
+		if ($menu.length && $.isArray(data)) {
+			var no = data.length;
+			$('[href="#' + key + '_notif_panel"] .val-notif-count', $myModalNotif).html(no);
+			$('option[data-target="#' + key + '_notif_panel"]', $myModalNotif).html(topics[key].title + " (" + no + ")");
+			if (no == 0) {
+				$menu.addClass("empty");
+				$menu.removeClass("open");
+				$(".val-notif-count", $menu).html("0");
+				$(".from-now"       , $menu).html('No new ' + topics[key].title.toLowerCase());
+				$(".dropdown-menu"  , $menu).remove();
+				$(".notif-list", "#" + key + "_notif_panel").html("");
+			} else {
+				$menu.removeClass("empty");
+				$(".val-notif-count", $menu).html(no);
+				$(".from-now"       , $menu).html('Last Update ' + moment(data[0].timestamp, "YYYY-MM-DDThh:mm:ssZ").fromNow());
+				
+				var $ul = $(".dropdown-menu", $menu);
+				if ($ul.length == 0) {
+					var $ul = $('<ul class="dropdown-menu">' +
+									'<li class="header">' +
+										'<a class="do-closenotif media pull-right" href="#"><i class="fa fa-times"></i></a>' +
+										'<p class="title">Notifications<span class="' + topics[key].badge + ' val-notif-count">' + no + '</span></p>' +
+										'<a class="do-markallasread" href="#">Mark all as read</a>' +
+									'</li>' +
+									'<li id="' + key + '_notif_menu" class="notif-menu-panel"></li>' +
+								'</ul>');
+					$menu.append($ul);
+					
+					// Events
+					$("a.do-closenotif", $ul).on("click", function (e) {
+						e.preventDefault(); e.stopPropagation();
+						showNotificationsMenu($(e.currentTarget));
+					});
+					$("a.do-markallasread", $ul).on("click", function (e) {
+						e.preventDefault(); e.stopPropagation();
+						markAsRead(key);
+					});
+				}
+			}
+			// Generate notifications contents
+			renderNotificationsList(key);
+		}
+		
+		// Update the badges with the notifications count
+		var totalNo = $.map($(".notif-menu .notif.val-notif-count"), function (el) { return (parseInt($(el).text()) || 0); }).reduce(function (sum, a) { return sum + a; }, 0);
+		$(".val-messages-count").html(totalNo);
+		$(".notif.val-messages-count").html(totalNo > 0 ? " " : "");
+		$(".notif-menu>.dropdown-menu>.header>span").html((totalNo > 0 ? 'You have ' + totalNo + ' new notifications' : 'No new events to show') + '<i class="fa fa-refresh fa-spin-hover pull-right"></i>');
+		$(".notif-menu>.dropdown-menu>.header>span>.fa.fa-refresh").on("click", function (e) {
+			// Close all notifications submenus
+			showNotificationsMenu($(".dropdown.open>.do-shownotif").parent());
+			
+			getUnreadNotifications();
 		});
 	}
-
-	function applyStyle(styleClass) {
-		removeClassStartingWith($("body"),"skin-");
-		if ($("#widget-master-nodemonitor").length > 0) {
-			removeClassStartingWith($("#widget-master-nodemonitor"),"bg-");
-			$("#widget-master-nodemonitor").addClass("bg-"+selectedColor);
-		}
-		$("#style_css_file").attr("href", "./assets/dist/css/skins/"+styleClass+".min.css");
-		$("body").addClass(styleClass);
-		var style = document.querySelector('[data="test"]');
-		//change input[type='range'] clor based on selected style
-		if (style !== null) {
-			style.innerHTML = ".slider::-webkit-slider-thumb { background:"+inputRangeColor(selectedColor)+" !important; }";
-		}
-        removeClassStartingWith($('#iframe-nodemonitor').contents().find('body'),"skin-");
-        $('#iframe-nodemonitor').contents().find('body').addClass(styleClass);
+	
+	// Create empty notifications menu
+	function createNotificationsMenu(key) {
+		$(".notif-menu .menu ." + key + "-notif-menu").remove();
+		var $li = $('<li class="dropdown ' + key + '-notif-menu"></li>');
+		var $a = $('<a class="media do-shownotif" href="#">' +
+						'<div class="media-left"><i class="' + topics[key].icon + ' dbl-size"><span class="' + topics[key].badge + ' notif val-notif-count">0</span></i></div>' +
+						'<div class="media-body"><p class="text bold">' + topics[key].title + '</p><small class="from-now">No new ' + topics[key].title.toLowerCase() + ' to show</small></div>' +
+					'</a>');
+		$(".notif-menu .menu").append($li.append($a));
+		// Events
+		$a.on("click", function (e) {
+			e.preventDefault(); e.stopPropagation();
+			showNotificationsMenu($(e.currentTarget));
+		});
 	}
-
-    function settingsApplyChange(attribute, value, save){
-        if(attribute === "body_size"){
-            $("body").removeClass(function (index, className) {
-            return (className.match (/\bsize-\S+/g) || []).join(' ');
-            });
-            $("body").addClass(value);
-			document.documentElement.style.setProperty('--body-font-size', $("body").css("font-size"));
-
-			if ($("input[type='checkbox'].switch_elem", "#list-config-accordion").length > 0) {
-				$("input[type='checkbox'].switch_elem", "#list-config-accordion").bootstrapSwitch("size", bootstrapSwitchSize(value));
+	
+	// Create empty notifications panel
+	function createNotificationsPanel(key, active) {
+		// Combobox option
+		$('#selectActiveNotifPanel select>option[data-target="#' + key + '_notif_panel"]').remove();
+		$('#selectActiveNotifPanel select').append('<option class="role" data-target="#' + key + '_notif_panel" value="show_' + key + '_notif"' + (active ? ' selected' : '') + '>' + topics[key].title + ' (0)</option>');
+		
+		// Tab control
+		$('#selectActiveNotifPanel .nav-tabs>li>[href="#' + key + '_notif_panel"]').parent().remove();
+		var $li = $('<li class="role' + (active ? ' active' : '') + '"><a href="#' + key + '_notif_panel" data-toggle="tab" data-action="show_' + key + '_notif" aria-expanded="' + (active ? 'true' : 'false') + '">' + topics[key].title + '<span class="' + topics[key].badge + ' val-notif-count">0</span></a></li>');
+		$('#selectActiveNotifPanel .nav-tabs.hidden-xs').append($li);
+		
+		// Tab panel
+		$('#' + key + '_notif_panel').remove();
+		var $tabPane = $('<div id="' + key + '_notif_panel" class="tab-pane notif-tab-panel' + (active ? ' active' : '') + '"><a class="do-markallasread" href="#">Mark all as read</a></div>');
+		$('.tab-content', $myModalNotif).append($tabPane);
+		
+		// Events
+		// Change active notifications tab (using the tab controls)
+		$("a", $li).on("click", function (e) {
+			if (e.originalEvent && $(this).attr("aria-expanded") == "false") { $("#selectActiveNotifPanel select").val("show_" + key + "_notif"); }
+		});
+		
+		// Change active notifications tab (using the combobox)
+		if (active) {
+			$("#selectActiveNotifPanel").on("change", "select", function (e) {
+				$('#selectActiveNotifPanel a[data-action="' + this.value + '"]').eq(0).click();
+			});
+		}
+		
+		// Mark all as read
+		$(".do-markallasread", $tabPane).on("click", function (e) {
+			e.preventDefault();
+			markAsRead(key);
+		});
+	}
+	
+	// Get unread notifications
+    function getUnreadNotifications() {
+		notificationsList = [];
+		$.ajax({
+			cache   : false,
+			url     : baseRestApiURL + "monitor/notification/unread/",
+			type    : "GET",
+			dataType: "json",
+			headers : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"user"        : taoUserProfile.username,
+				"X-Auth-Token": window.tokenKey
 			}
-
-            $('#iframe-nodemonitor').contents().find('body').removeClass(function (index, className) {
-            return (className.match (/\bsize-\S+/g) || []).join(' ');
-            });
-            $('#iframe-nodemonitor').contents().find('body').addClass(value);
-
-            $(document).trigger("size-change", [{size: value}]);
-
-        }
-        return true;
-    }
+		}).done(function (notificationsResponse) {
+			var r = chkTSRF(notificationsResponse);
+			if (r instanceof Object) {
+				notificationsList = r;
+				$.each(notificationsList, function (topic, notifications) {
+					var key = _.findKey(topics, { "topic": topic });
+					if (key) {
+						updateNotificationsMenu(key);
+					}
+				});
+			}
+		}).fail(function (jqXHR, textStatus) {
+			chkXHR(jqXHR.status);
+		});
+		
+		// Prevent closing menus when clicking the dropdown menu (except action buttons)
+		$('.dropdown-menu').on("click.bs.dropdown", function (e) {
+			e.preventDefault();
+			var $a = $(e.target).closest("a");
+			if ($a.length == 0) {
+				e.stopPropagation();
+			} else {
+				menuActions(e);
+			}
+		});
+ 	}
+	
+	// Intercept notifications on WebSockets
+	function interceptWsNotifications(key) {
+		$(".notif-menu ." + key + "-notif-menu").on("wsmessage", function (e, wsdna) {
+			// Add wsdna to main notification list
+			notificationsList[topics[key].topic].push(wsdna);
+			
+			// Update the notifications menu
+			updateNotificationsMenu(key);
+		});
+	}
+	
+	// Initialize notifications
+	function initNotifications() {
+		// Notifications: menus, interception, management
+		$.each(topics, function (key, topic) {
+			createNotificationsMenu(key);
+			createNotificationsPanel(key, topic.showFirst);
+			interceptWsNotifications(key);
+		});
+		
+		// Close all notifications submenus when the main menu is closed
+		$(".notif-menu").on("hidden.bs.dropdown", function (e) {
+			$("li.open", e.delagateTarget).removeClass("open");
+		});
+		
+		// Define notifications panel modal
+		$myModalNotif.modal({ keyboard: true, backdrop: true, show: false });
+		
+		// Sync deleting notif history with notifications menu
+		$(document).on("refresh:toolbar", function (e) { getUnreadNotifications(); });
+		
+		// Get unread notifications
+		getUnreadNotifications();
+	}
+	
+	// Apply selected settings
+	function applySettingsChange(attribute, value) {
+		if (attribute === "body_size") {
+			// Add body size class
+			$("body").removeClass(function (index, className) { return (className.match(/\bsize-\S+/g) || []).join(' '); }).addClass(value);
+			
+			// Set body font size
+			document.documentElement.style.setProperty('--body-font-size', $("body").css("font-size"));
+			
+			// Adjust bootstrapSwitch size
+			$('.bootstrap-switch input[type="checkbox"]').length && $('.bootstrap-switch input[type="checkbox"]').bootstrapSwitch("size", bootstrapSwitchSize(value));
+			
+		} else if (attribute === "body_style") {
+			$("body").removeClass(function (index, className) { return (className.match(/\bskin-\S+/g) || []).join(' '); }).addClass("skin-" + value.scheme).addClass("skin-" + value.scheme + "-" + value.color);
+			$("#root_css_file").attr("href", "./assets/dist/css/root/" + value.scheme + "/" + value.css);
+		}
+		
+		$(document).trigger("settings-change");
+	}
     
-    function refreshSettings(){
-        //size
-        settingsApplyChange("body_size", window.themeParameters.size,0);
-
-        //color
-		applyStyle(window.themeParameters.color);
-
-        $(document).trigger("settings-change");
-    }
-
-
-    $(document).ready( function(){
-		// Load favicon
-		$("link[rel*='icon']").remove();
-		$('head').append('<link type="image/x-icon" rel="shortcut icon" href="' + (typeof window.favicon !== "undefined" ? window.favicon : "./favicon.ico") + '">');
+	// Refresh current settings
+	function refreshSettings() {
+		// Size && Style
+		applySettingsChange("body_size" , selectedSize );
+		applySettingsChange("body_style", selectedStyle);
+	}
+	
+	// Populate accent color options for all available themes
+	function populateAvailableStyles() {
+		var selectSchemeAccent = function ($el, $a, checked) {
+			var $clone = $a.clone();
+			$(".fa", $clone).attr("class", checked ? "fa fa-check-circle" : "fa fa-circle");
+			$el.find(".selected-accent").html("").prepend($clone);
+		};
 		
-        window.themeParameters = {
-            size: "normal",
-            color: "skin-navy"
-        }
-
-        $("#logoSmall").attr('src',window.logoSmall);
-        $("#logoText").text(window.logoText);
-
-		// on receiving the notifications
-		$(".info-notif-menu").on("wsmessage", function (e, wsdna) {
-
-            // create notification html
-            var li = getNotification(wsdna, "info");
-            // add wsdna to main notif list
-            wsdna.timestamp = moment(wsdna.timestamp).format();
-            notificationsList.info.push(wsdna);
-
-            // add notif html to dropdown menu
-            $(".info-notif-menu .dropdown-menu .menu").prepend(li);
-            // set the notification the ability to delete it
-            canDeleteNotification("info");
-            updateNotificationNr("info", wsdna.topic);
-		});     
-
-        // execution status
-        $(".execution-notif-menu").on("wsmessage", function (e, wsdna) {
-
-            var li = getNotification(wsdna, "execution.status.changed");
-            wsdna.timestamp = moment(wsdna.timestamp).format();
-            notificationsList["execution.status.changed"].push(wsdna);
-
-            $(".execution-notif-menu .dropdown-menu .menu").prepend(li);
-            canDeleteNotification("execution");
-            updateNotificationNr("execution", wsdna.topic);
-		});     
-        
-        // on receiving an error
-        $(".error-notif-menu").on("wsmessage", function (e, wsdna) {
-           
-            var li = getNotification(wsdna, "error");
-            wsdna.timestamp = moment(wsdna.timestamp).format();
-            notificationsList.error.push(wsdna);
-
-            $(".error-notif-menu .dropdown-menu .menu").prepend(li);
-            canDeleteNotification("error");
-            updateNotificationNr("error", wsdna.topic);
-        }); 
-        
-		if(taoUserProfile.preferences.find( function(item) { return item.key == "refresh_rate" } )){
-       // if(taoUserProfile.preferences.find( function(item) { return item.key == "refresh_rate" } ) ){
-            $('#btnRestore').prop('disabled', false); 
-            $('#selectSettingsRefreshRate').val( taoUserProfile.preferences.find( function(item) { return item.key == "refresh_rate" } ).value);
-        }
-		if (taoUserProfile.preferences.find( function(item) { return item.key == "body_size" } )) {
-			 $('#selectSettingsBodySize').val( taoUserProfile.preferences.find( function(item) { return item.key == "body_size" } ).value);
-            //settingsApplyChange("body_size",  taoUserProfile.preferences.find( function(item) { return item.key == "body_size" } ).value,0);
-            window.themeParameters.size = $('#selectSettingsBodySize').val();
-            refreshSettings();
-		}
-		if (taoUserProfile.preferences.find( function(item) { return item.key == "body_theme" } )) {
-			$("#selectSettingsTheme").find("option[value='" + taoUserProfile.preferences.find( function(item) { return item.key == "body_theme" } ).value + "']").prop("selected",true);
-			selectedColor = taoUserProfile.preferences.find( function(item) { return item.key == "body_theme_color" } ).value;
-			//applyStyle(taoUserProfile.preferences.find( function(item) { return item.key == "body_theme_class" } ).value);
-            window.themeParameters.color = taoUserProfile.preferences.find( function(item) { return item.key == "body_theme_class" } ).value;
-            refreshSettings();
-		}else {
-            //applyStyle($.AdminLTE.options.styles[defaultStyle]);
-            window.themeParameters.color = $.AdminLTE.options.styles[defaultStyle];
-            refreshSettings();
-		}
-		populateAvailableStyles();
+		$.each($(".theme", "#selectThemeColor"), function (idx, elm) {
+			var $el     = $(elm).html("");
+			var scheme  = $el.data("scheme");
+			var title   = $el.data("title");
+			var desc    = $el.data("desc");
+			var accents = $el.data("accents").split(",");
+			
+			$el.append('<div class="selected-accent"></div><div><label class="title">' + title + '<br /><small>' + desc + '</small></label>' + (accents.length > 1 ? '<section class="accent-colors"></section>' : '') + '</div>');
+			$.each(accents, function (idx, accent) {
+				if ($.AdminLTE.options.styles[accent]) {
+					var style = {
+						scheme: scheme,
+						color : accent,
+						css   : $.AdminLTE.options.styles[accent]
+					};
+					var $a = $('<a data-scheme="' + style.scheme + '" data-color="' + style.color + '" data-css="' + style.css + '" class="full-opacity-hover" href="#"><i class="fa fa-circle" style="color:' + $.AdminLTE.options.colors[accent] + '"></i></a>');
+					$(".accent-colors", $el).append($a);
+					var selected = (selectedStyle.scheme === style.scheme && selectedStyle.color === style.color);
+					if (accents.length == 1 || selected) {
+						selectSchemeAccent($el, $a, selected);
+					}
+				}
+			});
+			if ($(".selected-accent>a", $el).length == 0) {
+				var $a = $('<a class="disabled" href="#"><i class="fa fa-circle" style="color:#ccc"></i></a>');
+				selectSchemeAccent($el, $a, false);
+			}
+		});
 		
-    	if (taoUserProfile.userRole !== "ADMIN") {
-    		$("li.routed-admin-topology.routed-admin-users").css("display","none");
-            $("li.routed-my-components.routed-my-containers").css("display","");
-    	}else{
-    		$("li.routed-admin-topology.routed-admin-users").css("display","");
-            $("li.routed-my-components.routed-my-containers").css("display","none");
-    	}
-    	
-        $("#selectPane").on("change", function(event){
-            var current_pane = $(this).val() || 0;
-            //to do
-            // $("a[data-action='" + current_pane +"']",'#pane-gen').trigger( "click" );
-        });
-		
+		// Change theme color
 		$("#selectThemeColor").on("click", "a", function (e) {
 			e.preventDefault();
-			var prevStyleClass = $(this).parent().find(".fa-check-circle").parent().attr("data-skin");
-			$(this).parent().find(".fa-check-circle").removeClass("fa-check-circle").addClass("fa-circle");
-			$(this).find(".fa-circle").removeClass("fa-circle").addClass("fa-check-circle");
-			
-			selectedColor = $(this).attr("data-colorKey");
-			//applyStyle($(this).attr("data-skin"),prevStyleClass);
-
-            window.themeParameters.color = $(this).attr("data-skin"),prevStyleClass;
-            refreshSettings();
+			var $a = $(e.currentTarget);
+			if (!$a.hasClass("disabled")) {
+				$(".fa-check-circle", e.delegateTarget).attr("class", "fa fa-circle");
+				if ($a.closest(".accent-colors").length > 0) {
+					selectSchemeAccent($a.closest(".theme"), $a, true);
+				} else {
+					$(".fa", $a).attr("class", "fa fa-check-circle");
+				}
+				
+				selectedStyle = {
+					scheme: $a.attr("data-scheme"),
+					color : $a.attr("data-color"),
+					css   : $.AdminLTE.options.styles[$a.attr("data-color")]
+				};
+				refreshSettings();
+			}
+		});
+	}
+	
+	// Update current settings to match user persisted preferences
+	function getUserPrefferences() {
+		var prefsList = $.map(taoUserProfile.preferences, function (item, idx) { return item.key; });
+		// Refresh rate
+		if ($.inArray("refresh_rate", prefsList) > -1) {
+			$("#selectSettingsRefreshRate").val(taoUserProfile.preferences.find(function (item) { return (item.key == "refresh_rate"); })?.value || 10000);
+			$("#btnRestore").prop("disabled", false); 
+		}
+		// Body size
+		if ($.inArray("body_size", prefsList) > -1) {
+			selectedSize = taoUserProfile.preferences.find(function (item) { return (item.key == "body_size"); })?.value || defaultSize;
+			$('#selectSettingsBodySize [data-action="'+ selectedSize +'"]').addClass("selected").siblings().removeClass("selected");
+		}
+		// Theme
+		if ($.inArray("body_theme", prefsList) > -1) {
+			var prefTheme = taoUserProfile.preferences.find(function (item) { return (item.key == "body_theme"); })?.value;
+			try {
+				prefTheme = JSON.parse(prefTheme);
+				if (prefTheme.scheme && prefTheme.color) {
+					selectedStyle = {
+						scheme: prefTheme.scheme,
+						color : prefTheme.color,
+						css   : $.AdminLTE.options.styles[prefTheme.color]
+					};
+				}
+			} catch (exception) {}
+		}
+		refreshSettings();
+		populateAvailableStyles();
+	}
+	
+	// Voice controls
+	function initVoiceControls() {
+		if (taoUserProfile.preferences.find(function (item) { return (item.key == "voice_enabled"); })) {
+			voiceSettings.setEnabled(taoUserProfile.preferences.find(function (item) { return (item.key == "voice_enabled"); }).value);
+		}
+		if (taoUserProfile.preferences.find(function (item) { return (item.key == "voice_language"); })) {
+			voiceSettings.setLanguage(taoUserProfile.preferences.find(function (item) { return (item.key == "voice_language"); }).value);
+		}
+		speak("Greetings " + taoUserProfile.firstName);
+	}
+	
+	// Intercept custom menu actions defined for all "a[data-action]" links in the "sidebar main menu"
+	function interceptCustomMenuActions() {
+		$(".main-sidebar .sidebar-menu").on("click", "a[data-action]", function (e) {
+			menuActions(e);
+		});
+	}
+	
+	$(document).ready(function () {
+		// Load app favicon and logo
+		$('link[rel*="icon"]').remove();
+		$("head").append('<link type="image/x-icon" rel="shortcut icon" href="' + (typeof window.favicon !== "undefined" ? window.favicon : "./favicon.ico") + '">');
+		$("#logoSmall").attr("src", window.logoSmall);
+		$("#logoText").text(window.logoText);
+		
+		getUserPrefferences();
+		
+		initNotifications();
+		
+		initVoiceControls();
+		
+		interceptCustomMenuActions();
+		
+		// Disable main menu's scrollbar when collapsed
+		$("body").on("collapsed.pushMenu expanded.pushMenu", function () {
+			$("body").is(".sidebar-collapse") ? $(".main-sidebar .sidebar").removeClass("thin-scrollbar") : $(".main-sidebar .sidebar").addClass("thin-scrollbar");
 		});
 		
-        //
-        $('#myModalOperation').modal({
-            keyboard: false,
-            backdrop: 'static',
-            show: false
-        });
-        $('.modal.modal-keep-empty').on('hidden.bs.modal', function () {
-            $(this).find('.modal-dialog').html("");
-        });
-        $(document)
-            .on('shown.bs.modal', ".modal.modal-form-focus", function () {
-				$("form#frmExecNodeEdit input:enabled:visible:first").focus();
-            })
-            .on('hidden.bs.modal', function (event) {
-				if ($('.modal:visible').length) {
-					$('body').addClass('modal-open');
+		// Modal dialog open/close events
+		$(document)
+		.on("shown.bs.modal", ".modal:not(.no-trigger)", function (e) {
+			var $modal = $(e.currentTarget);
+			
+			// .modal-stretched
+			if ($modal.hasClass("modal-stretched")) {
+				$modal.css({ "overflow": "hidden" });
+				var $dialog = $(".modal-dialog", $modal);
+				if ($dialog.length) {
+					var margin = $modal.data("margin") || 20;
+					$dialog.css({ "margin": margin + "px" });
+					
+					var $scroll = $(($modal.data("scrollelement") || ".foo") + ":visible", $dialog).eq(0);
+					if ($scroll.length) {
+						var scrollH = $dialog.outerHeight(true) + $dialog.offset().top - $scroll.outerHeight(true) - margin;
+						$($modal.data("scrollelement"), $dialog).css({ "height": "calc(100vh - " + parseInt(scrollH + 0.5) + "px)" });
+					}
 				}
-				$(".modal-backdrop").remove();
-			});
-
-
-// .modal-backdrop classes
-        $(".modal-fullscreen").on('show.bs.modal', function () {
-            setTimeout( function() {
-                $(".modal-backdrop").addClass("modal-backdrop-fullscreen");
-            }, 0);
-        }).on('hidden.bs.modal', function () {
-            $(".modal-backdrop").addClass("modal-backdrop-fullscreen");
-        });
-
-        
-
-        $("#control-sidebar-settings-tab").on("change", ".form-changesettings", function(event){
-           // event.preventDefault();
-            if($(this).attr('id') === "selectSettingsBodySize"){
-                //settingsApplyChange("body_size", $(this).val(),0);
-                window.themeParameters.size = $(this).val();
-                refreshSettings();
-            }
-			if($(this).attr('id') === "selectSettingsTheme") {
-				populateAvailableStyles(this.value);
-				//applyStyle($("i.fa-check-circle","#selectThemeColor").closest("a").attr("data-skin"));
-                window.themeParameters.color = $("i.fa-check-circle","#selectThemeColor").closest("a").attr("data-skin");
-                refreshSettings();
 			}
-        }).on("click", ".btn", function(event){
-            event.preventDefault();
-           
-            if($(this).data('action') === "save-settings"){
-                var body_size = $('#selectSettingsBodySize').val() || '';
-                var refresh_rate = $('#selectSettingsRefreshRate').val() || '1';
-                var	postdata = '[{"key" :"body_size", "value": "' + body_size + '"},{"key" :"refresh_rate", "value": "' + refresh_rate + '"},{"key": "body_theme", "value": "' + $("#selectSettingsTheme").val() + '"},{"key": "body_theme_class", "value": "' + $("i.fa-check-circle","#selectThemeColor").closest("a").attr("data-skin") + '"},{"key":"body_theme_color", "value": "' + $("i.fa-check-circle","#selectThemeColor").closest("a").attr("data-colorKey") + '"}]';
-                //alert(postdata);
-                $.ajax({
-                        cache: false,
-                        url: baseRestApiURL + "user/prefs",
-                        data:postdata,
-        			    type: 'POST',
-        			    headers: {
-        			                "Accept": "application/json",
-                                    "Content-Type": "application/json",
-        			                "X-Auth-Token": window.tokenKey
-        			            }
-        				}).done(function (response) {
-                           
-                           /* var notification = $("#notificationonsave");
-                            notification.addClass("show");
-                            setTimeout(function(){
-                                notification.removeClass("show");
-                            }, 1000);*/
-
-                          // alert("User preferences saved!");
- 
-        				}).fail(function (jqXHR, textStatus) {
-							chkXHR(jqXHR.status);
-        			     }).complete(function(){
-                            $('#btnRestore').prop('disabled', false);
-                            
-    	             });
-				
-            }
-
-            if($(this).data('action') === "restore-settings"){
-                //var	postdata = [];
-                var	postdata = ["body_size","refresh_rate","body_theme","body_theme_class","body_theme_color"];
-
-                $.ajax({
-                        cache: false,
-                        url: baseRestApiURL + "user/prefs",
-                        data:JSON.stringify(postdata),
-        			    type: 'DELETE',
-        			    headers: {
-        			                "Accept": "application/json",
-                                    "Content-Type": "application/json",
-        			                "X-Auth-Token": window.tokenKey
-        			            }
-        				}).done(function (response) {
-                         
-                         /*  var notification = $("#notificationondelete");
-                            notification.addClass("show");
-                            setTimeout(function(){
-                                notification.removeClass("show");
-                            }, 1000);*/
-                         
-        					//alert("User preferences deleted!");
-        				}).fail(function (jqXHR, textStatus) {
-						  chkXHR(jqXHR.status);
-        			     }).complete(function(){
-                           // alert("complete");
-                            $('#selectSettingsBodySize').val("size-normal");
-                            $('#selectSettingsRefreshRate').val(10000);
-							selectedColor = defaultStyle.substr(defaultStyle.indexOf("-") + 1);
-							//applyStyle($.AdminLTE.options.styles[defaultStyle]);
-                            $('#btnRestore').prop('disabled', true); 
-
-                            //settingsApplyChange("body_size", "size-normal",0);
-                            window.themeParameters.color = $.AdminLTE.options.styles[defaultStyle];
-                            window.themeParameters.size = "size-normal";
-                            refreshSettings();
-                            populateAvailableStyles();
-    	             });
-          
-            }
-
-        });
-
-        //trigger some events
-        $(document).trigger( "quota:update" );
-                
-        //get unreaded notification for toolbar
-        getUnreadNotifications();
-        
-        // sync deleting notif history with notification bar
-        $(document).on("refresh:toolbar", function( event ) {
-            getUnreadNotifications();
-        });
-        if (taoUserProfile.preferences.find( function(item) { return item.key == "voice_enabled" } )) {
-            voiceSettings.setEnabled(taoUserProfile.preferences.find( function(item) { return item.key == "voice_enabled" } ).value);
-        }
-        if (taoUserProfile.preferences.find( function(item) { return item.key == "voice_language" } )) {
-            voiceSettings.setLanguage(taoUserProfile.preferences.find( function(item) { return item.key == "voice_language" } ).value);
-        }
-        speak('Greetings ' + taoUserProfile.firstName);
-    });
+			
+			// .modal-form-focus
+			if ($modal.hasClass("modal-form-focus")) {
+				$(".form-control:enabled:visible:first", $modal).focus();
+			}
+			
+			// .modal-fullscreen
+			if ($modal.hasClass("modal-fullscreen")) {
+				setTimeout( function (e) {
+					$(".modal-backdrop").addClass("modal-backdrop-fullscreen");
+				}, 0);
+			}
+		})
+		.on("hidden.bs.modal", ".modal:not(.no-trigger)", function (e) {
+			var $modal = $(e.currentTarget);
+			
+			// .modal-keep-empty
+			if ($modal.hasClass("modal-keep-empty")) {
+				$(".modal-dialog", $modal).html("");
+			}
+			
+			// Persist body modal-open class when other modals are still open
+			if ($(".modal:visible").length) {
+				$("body").addClass("modal-open");
+			}
+			
+			$(".modal-backdrop").remove();
+		});
+		
+		// User settings form
+		$("#frmSettings")
+		.on("click", ".btn", function (e) {
+			e.preventDefault();
+			if ($(this).data("action").startsWith("size-") && !$(this).hasClass("selected")) {
+				$(this).siblings().removeClass("selected");
+				$(this).addClass("selected");
+				selectedSize = $(this).data("action");
+				refreshSettings();
+			} else if ($(this).data("action") === "save-settings") {
+				var $a = $("i.fa-check-circle", "#selectThemeColor").closest("a");
+				var	postdata = [
+					{ key: "body_size"   , value: $("#selectSettingsBodySize [data-action].selected").data("action") || "" },
+					{ key: "refresh_rate", value: $("#selectSettingsRefreshRate").val() || "1" },
+					{ key: "body_theme"  , value: JSON.stringify({ scheme: $a.attr("data-scheme"), color: $a.attr("data-color") }) }
+				];
+				$.ajax({
+					cache  : false,
+					url    : baseRestApiURL + "user/prefs",
+					data   : JSON.stringify(postdata),
+					type   : "POST",
+					headers: {
+						"Accept"      : "application/json",
+						"Content-Type": "application/json",
+						"X-Auth-Token": window.tokenKey
+					}
+				}).done(function (response) {
+					// Done
+				}).fail(function (jqXHR, textStatus) {
+					chkXHR(jqXHR.status);
+				}).complete(function(){
+					$("#btnRestore").prop("disabled", false);
+				});
+			} else if ($(this).data('action') === "restore-settings") {
+				var	postdata = [ "body_size", "refresh_rate", "body_theme" ];
+				$.ajax({
+					cache  : false,
+					url    : baseRestApiURL + "user/prefs",
+					data   : JSON.stringify(postdata),
+					type   : "DELETE",
+					headers: {
+						"Accept"      : "application/json",
+						"Content-Type": "application/json",
+						"X-Auth-Token": window.tokenKey
+					}
+				}).done(function (response) {
+					// Done
+				}).fail(function (jqXHR, textStatus) {
+					chkXHR(jqXHR.status);
+				}).complete(function(){
+					// Size
+					selectedSize = window.defaultSize;
+					$('#selectSettingsBodySize [data-action="' + selectedSize + '"]').addClass("selected").siblings().removeClass("selected");
+					// Theme
+					selectedStyle = {
+						scheme: window.defaultScheme,
+						color : window.defaultStyle,
+						css   : $.AdminLTE.options.styles[window.defaultStyle]
+					};
+					refreshSettings();
+					populateAvailableStyles();
+					// Refresh rate
+					$('#selectSettingsRefreshRate').val(10000);
+					
+					$("#btnRestore").prop("disabled", true);
+				});
+			}
+		});
+		
+		// Trigger some events
+		$(document).trigger("quota:update");
+	});
 </script>
+</body>
+</html>

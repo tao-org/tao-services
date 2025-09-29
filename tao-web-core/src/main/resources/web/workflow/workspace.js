@@ -79,7 +79,7 @@ function describeArc(x, y, radius, startAngle, endAngle){
                 e.stopPropagation();
     	        a.close();
             });
-            a.elTBS.on("click", ".toolbox-sidebar-handler", function(){
+            a.elTBS.on("click", ".toolbox-handler", function(){
                 a.open();
             });
             a.elTBS.on("click", function(e){
@@ -91,10 +91,9 @@ function describeArc(x, y, radius, startAngle, endAngle){
             componentCategories = getTaoEnums("ComponentCategory");
 			$.each(componentCategories, function(index, category) {
 				var $componentHeader = $("h3","#componentTemplate").clone().append(category.value).css('textTransform', 'capitalize');
-				var $componentContent = $("#componentTemplateBody","#componentTemplate").clone().attr("id", category.key);
+				var $componentContent = $("#componentTemplateBody","#componentTemplate").clone().addClass("thin-scrollbar onhover").attr("id", category.key);
 				$( ".toolboxAccordion", a.elTBS).append($componentHeader).append($componentContent);
 			});
-			
 			
 			//init accordion
             $( ".toolboxAccordion", a.elTBS).accordion({
@@ -108,16 +107,17 @@ function describeArc(x, y, radius, startAngle, endAngle){
             .resize(function() {
                 $( ".toolboxAccordion", a.elTBS).accordion( "refresh" );
             });
-            //intercept and cancell scroll events in order to stop propagate to parents
-            $('.nano-content', a.elTBS).on( 'mousewheel DOMMouseScroll', function (e) {
-                var e0 = e.originalEvent;
+            //intercept and cancel scroll events in order to stop propagate to parents
+            /*$('.nano-content', a.elTBS).on( 'mousewheel DOMMouseScroll', function (e) {
+				var e0 = e.originalEvent;
                 var delta = e0.wheelDelta || -e0.detail;
-                this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+                $(this).closest(".nano").parent().get(0).scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
                 e.preventDefault();
-            });
+				
+            });*/
 
-            $( ".fa-search", a.elTBS).show();
-            $( ".fa-times", a.elTBS).hide().on("click",function(){
+            $( ".toolbox-search .fa-search", a.elTBS).show();
+            $( ".toolbox-search .fa-times", a.elTBS).hide().on("click",function(){
                 $(this).parent().find("input").val("").trigger("keyup");
             });
 
@@ -146,6 +146,7 @@ function describeArc(x, y, radius, startAngle, endAngle){
             this.elTBS.addClass("outside");
 		},
 		refresh: function() {
+			this.elTBS.trigger("ready");
 			$( ".toolboxAccordion",this.elTBS).accordion( "refresh" );
 		}
     };
@@ -171,6 +172,7 @@ function describeArc(x, y, radius, startAngle, endAngle){
 			$elComponentsList.empty();
 				
 			$.each(wfTools.toolboxnodes.pc, function(i, item) {
+				var prettyLabel = (item.label || "").replace(/([A-Z])([a-z])/g, ' $1$2').trim();
 				if ($elComponentsList.length !== 0 && (jQuery.inArray(tag.key, item.dna.tags) !== -1 || (typeof item.dna.category !== "undefined" && tag.key === item.dna.category))) {
 					item.image = "./media/"+item.dna.containerId+".png";
 					if(item.dna.category === "CONDITION"){
@@ -178,7 +180,7 @@ function describeArc(x, y, radius, startAngle, endAngle){
                         var html ='<sortable_item class="item selected" id="'+item.id+'" data-componentid="'+item.dna.id+'" data-componenttype="cc" data-toolboxid="'+item.id+'">\n' +
                         '\t\t\t\t\t<div class="item-info">\n' +
                         '\t\t\t\t\t  <div class="item-label text-left"> \n' +
-                        '\t\t\t\t\t\t<img src="'+item.image+'" style="width: 15%; height: 15%;">\n' +item.label+
+                        '\t\t\t\t\t\t<img src="'+item.image+'">\n' +'<span>'+prettyLabel+'</span>'+
                         '\t\t\t\t\t</div>\n' +
                         '\t\t\t\t\t</div>\n' +
                         '\t\t\t\t</sortable_item>';
@@ -187,7 +189,7 @@ function describeArc(x, y, radius, startAngle, endAngle){
                         var html ='<sortable_item class="item selected" id="'+item.id+'" data-componentid="'+item.dna.id+'" data-componenttype="pc" data-toolboxid="'+item.id+'">\n' +
                             '\t\t\t\t\t<div class="item-info">\n' +
                             '\t\t\t\t\t  <div class="item-label text-left"> \n' +
-                            '\t\t\t\t\t\t<img src="'+item.image+'" style="width: 15%; height: 15%;">\n' +item.label+
+                            '\t\t\t\t\t\t<img src="'+item.image+'">\n' +'<span>'+prettyLabel+'</span>'+
                             '\t\t\t\t\t</div>\n' +
                             '\t\t\t\t\t</div>\n' +
                             '\t\t\t\t</sortable_item>';
@@ -199,7 +201,7 @@ function describeArc(x, y, radius, startAngle, endAngle){
 					var html ='<sortable_item class="item selected" id="'+item.id+'" data-componentid="'+item.dna.id+'" data-componenttype="pc" data-toolboxid="'+item.id+'">\n' +
 						'\t\t\t\t\t<div class="item-info">\n' +
 						'\t\t\t\t\t  <div class="item-label text-left"> \n' +
-						'\t\t\t\t\t\t<img src="'+item.image+'" style="width: 20%; height: 20%;">\n' +item.label+
+						'\t\t\t\t\t\t<img src="'+item.image+'">\n' +'<span>'+prettyLabel+'</span>'+
 						'\t\t\t\t\t</div>\n' +
 						'\t\t\t\t\t</div>\n' +
 						'\t\t\t\t</sortable_item>';
@@ -212,22 +214,24 @@ function describeArc(x, y, radius, startAngle, endAngle){
 		});
 		// data source component category is removed from toolbox (is linked with app.js wfTools.datasources commented zones)
         /*$.each(wfTools.toolboxnodes.ds, function(i, item) {
-            item.image = "./media/module-ds.png";
+            var prettyLabel = (item.label || "").replace(/([A-Z])([a-z])/g, ' $1$2').trim();
+			item.image = "./media/module-ds.png";
         	var html ='<sortable_item class="item selected" id = "'+item.id+'" data-componentid="'+item.dna.id+'" data-componenttype="ds" data-toolboxid="'+item.id+'">\n' +
                 '\t\t\t\t\t<div class="item-info">\n' +
                 '\t\t\t\t\t  <div class="item-label text-left"> \n' +
-                '\t\t\t\t\t\t<img src="'+item.image+'" style="width: 15%; height: 15%;">\n' +item.label+
+                '\t\t\t\t\t\t<img src="'+item.image+'">\n' +'<span>'+prettyLabel+'</span>'+
                 '\t\t\t\t\t</div>\n' +
                 '\t\t\t\t\t</div>\n' +
                 '\t\t\t\t</sortable_item>';
             $elDatasurcesList.append(html);
         });*/
         $.each(wfTools.toolboxnodes.uds, function(i, item) {
-            item.image = "./media/module-ds.png";
+            var prettyLabel = (item.label || "").replace(/([A-Z])([a-z])/g, ' $1$2').trim();
+			item.image = "./media/module-ds.png";
             var html ='<sortable_item class="item selected" id = "'+item.id+'" data-componentid="'+item.dna.id+'" data-componenttype="uds" data-toolboxid="'+item.id+'">\n' +
                 '\t\t\t\t\t<div class="item-info">\n' +
                 '\t\t\t\t\t  <div class="item-label text-left"> \n' +
-                '\t\t\t\t\t\t<img src="'+item.image+'" style="width: 15%; height: 15%;">\n' +item.label+
+                '\t\t\t\t\t\t<img src="'+item.image+'">\n' +'<span>'+prettyLabel+'</span>'+
                 '\t\t\t\t\t</div>\n' +
                 '\t\t\t\t\t</div>\n' +
                 '\t\t\t\t</sortable_item>';
@@ -380,7 +384,8 @@ function describeArc(x, y, radius, startAngle, endAngle){
 	function makeWFPreview() {
 			console.log("f:makeWFPreview");
             var $wfPreview		= $("#img-wf-preview");
-			var wfPreviewSize	= 200;
+			var wfPreviewSizeX	= $wfPreview.width();
+			var wfPreviewSizeY	= $wfPreview.height();
 			var minLeft			= 0;
 			var minTop			= 0;
 			var maxBottom		= 0;
@@ -389,6 +394,8 @@ function describeArc(x, y, radius, startAngle, endAngle){
 			var spanX			= 0;
 			var nodes			= [];
 			var itemOffset		= {};
+			
+			$wfPreview.closest(".ui-widget-content").css({ "width": wfPreviewSizeX + "px" });
 			
 			//fake node. viewport.
 			itemOffset.left = 0;
@@ -404,7 +411,6 @@ function describeArc(x, y, radius, startAngle, endAngle){
 			minTop = itemOffset.top;
 			maxBottom = itemOffset.bottom;
 			maxRight = itemOffset.right;
-			//
 			
 			$(".w", $elCanvas).each(function(index) {
 				//var itemOffset = getTopLeftOffset($(this));
@@ -421,13 +427,6 @@ function describeArc(x, y, radius, startAngle, endAngle){
                 if($(this).hasClass("g")){
                     itemOffset.selected = -2;
 				}
-				
-//				if(index == 0){
-//					minLeft = itemOffset.left;
-//					minTop = itemOffset.top;
-//					maxBottom = itemOffset.bottom;
-//					maxRight = itemOffset.right;
-//				} 
 				minLeft = Math.min(minLeft,itemOffset.left);
 				minTop = Math.min(minTop,itemOffset.top);
 				maxBottom = Math.max(maxBottom,itemOffset.bottom);
@@ -437,13 +436,13 @@ function describeArc(x, y, radius, startAngle, endAngle){
 			
 			spanX = maxRight-minLeft;
 			spanY = maxBottom-minTop;
-	
-			previewScale = Math.min(wfPreviewSize/spanX, wfPreviewSize/spanY);
+			
+			previewScale = Math.min(wfPreviewSizeX/spanX, wfPreviewSizeY/spanY);
 			rezidualSpace = {
-				left: (wfPreviewSize-spanX*previewScale)/2,
-				top: (wfPreviewSize-spanY*previewScale)/2
+				left: (wfPreviewSizeX-spanX*previewScale)/2,
+				top: (wfPreviewSizeY-spanY*previewScale)/2
 			};
-
+			
 			$wfPreview.empty();
         	var pHtml = '';
 			$.each( nodes, function( key, itemMatrix ) {
@@ -456,7 +455,7 @@ function describeArc(x, y, radius, startAngle, endAngle){
                 if(itemMatrix.selected === -2){
                     pHtml += "<div class=\"preview-node group\" style=\"top:"+(rezidualSpace.top+(itemMatrix.top-minTop)*previewScale)+"px;left:"+(rezidualSpace.left+(itemMatrix.left-minLeft)*previewScale)+"px;width:"+itemMatrix.w*previewScale+"px;height:"+itemMatrix.h*previewScale+"px\"></div>";
                 }
-
+				
 				//add Viewfinder
 				if(itemMatrix.selected === -1){
 					pHtml += "<div class=\"preview-node viewfinder\" style=\"top:"+(rezidualSpace.top+(itemMatrix.top-minTop)*previewScale)+"px;left:"+(rezidualSpace.left+(itemMatrix.left-minLeft)*previewScale)+"px;width:"+itemMatrix.w*previewScale+"px;height:"+itemMatrix.h*previewScale+"px\"></div>";
@@ -464,7 +463,7 @@ function describeArc(x, y, radius, startAngle, endAngle){
 			});
         	$wfPreview.append(pHtml);
     }
-
+	
 	//prevent browser zooming on mouse scroll only.
 	$(window).bind('mousewheel DOMMouseScroll', function (event) {
 			if (event.ctrlKey === true) {

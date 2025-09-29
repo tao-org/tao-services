@@ -1,8 +1,6 @@
 <style>
 	textarea{resize: none;}
 	.nodes-item-core-box .box-top .box-text{line-height:1.3em;white-space:nowrap;overflow:hidden}
-	.nodes-item-core-box .box-description{background:#e3f3fc;padding:5px 15px;margin:10px -15px 10px -15px;line-height:1.2em;color:#555}
-	.nodes-item-core-box .box-bottom{padding:0}
 	img.base64image{position:relative;display:block;width:100px;height:100px;margin:5px 0 0 0;border-radius:15px;background-color:white;padding:5px;box-shadow:3px 3px 5px 0 rgba(51, 51, 51, 0.12);border-bottom:2px solid #3c8dbc}
 	img.base64image.empty{box-shadow:none;border:0}
 	img.base64image.empty::before{content:" ";position:absolute;display:block;width:100%;height:100%;background-color:white}
@@ -52,16 +50,16 @@
 				<ul class="nav nav-tabs visible-xs-block"> <!-- visible-xs-block -->
 					<li class="role-dropdown active">
 						<select id="selectNodePanel" name="selectNodePanel" class="form-control form-changepane" title="Select desired node view.">
-							<option class="role role-admin" value="wps_nodes">WPS</option>
-							<option class="role role-admin" value="wms_nodes">WMS</option>
-							<option class="role role-admin" value="stac_nodes">STAC</option>
+							<option class="role" value="wps_nodes">WPS</option>
+							<option class="role" value="wms_nodes">WMS</option>
+							<option class="role" value="stac_nodes">STAC</option>
 						</select>
 					</li>
 				</ul>
 				<ul class="nav nav-tabs hidden-xs">
-					<li class="role role-admin active"><a href="#panel-nodes" data-toggle="tab" data-action="wps_nodes" aria-expanded="true">WPS</a></li>
-					<li class="role role-admin"><a href="#panel-nodes" data-toggle="tab" data-action="wms_nodes" aria-expanded="true">WMS</a></li>
-					<li class="role role-admin"><a href="#panel-nodes" data-toggle="tab" data-action="stac_nodes" aria-expanded="false">STAC</a></li>
+					<li class="role active"><a href="#panel-nodes" data-toggle="tab" data-action="wps_nodes" aria-expanded="true">WPS</a></li>
+					<li class="role"><a href="#panel-nodes" data-toggle="tab" data-action="wms_nodes" aria-expanded="true">WMS</a></li>
+					<li class="role"><a href="#panel-nodes" data-toggle="tab" data-action="stac_nodes" aria-expanded="false">STAC</a></li>
 				</ul>
 				
 				<div class="tab-content">

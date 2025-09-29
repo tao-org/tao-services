@@ -23,12 +23,12 @@
                 <ul class="nav nav-tabs visible-xs-block"> <!-- visible-xs-block -->
                     <li class="role-dropdown active">
                         <select id="selectUserPanel" name="selectUserPanel" class="form-control form-changepane" title="Select desired node view.">
-                            <option class="role role-admin" value="active_nodes">Components</option>
+                            <option class="role" value="active_nodes">Components</option>
                         </select>
                     </li>
                 </ul>
                 <ul class="nav nav-tabs hidden-xs">
-                    <li class="role role-admin active"><a href="#panel-nodes" data-toggle="tab" data-action="active_nodes" aria-expanded="true">Components</a></li>
+                    <li class="role active"><a href="#panel-nodes" data-toggle="tab" data-action="active_nodes" aria-expanded="true">Components</a></li>
                 </ul>
 
                 <div class="tab-content">
@@ -171,8 +171,6 @@
 </section><!-- /.content -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ace.min.js" type="text/javascript" charset="utf-8"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ext-language_tools.min.js" type="text/javascript" charset="utf-8"></script>
-<link rel="stylesheet" type="text/css" href="assets/libs/select2/4.1.0/select2.min.css" />
-<script type="text/javascript" src="assets/libs/select2/4.1.0/select2.min.js"></script>
 <script>
     deleteProcessingComponentById = function(id){
         $.ajax({

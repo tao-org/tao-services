@@ -321,9 +321,8 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
 	    var lcl_n = $propbar.nodeData = wfPlumbCanvasData.nodes[nid];
         $(".val-propbar-name", widgetRootEl).html(lcl_n.name);
         $(".val-propbar-componentid", widgetRootEl).html(lcl_n.componentId);
-        var backgroundURL = '';
-        //$('.app-user-avatar-img',widgetRootEl).css('background-image', 'url('+backgroundURL+')');
-
+        var naBackgroundURL = "./media/module01.png";
+		var backgroundURL = naBackgroundURL;
 
         var lclTBOID = "tboid"+jsHashCode(lcl_n.componentId);
         var componentTemplate = null;
@@ -349,15 +348,12 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
                 topologyList = getTopologyResponse.data;
             });
 
-        if(lcl_n.componentType === "PROCESSING"){
-            console.log(lcl_n);
+        if (lcl_n.componentType === "PROCESSING") {
             $propbar.ntype = "PROCESSING";
-            backgroundURL = './media/module01.png';
 			if(wfTools.toolboxnodes.pc[lclTBOID]){
                 componentTemplate = wfPlumbCanvasData.nodeTemplates.pc[lclTBOID].dna;
                 backgroundURL = "./media/"+componentTemplate.containerId+".png";
 			}
-
             
             var getTokens = function(id){
                 return $.ajax({
@@ -394,17 +390,14 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
                 .fail(function () {
                     alert("Could not retrive query for current datasource.");
                 });
-        }
-        if(lcl_n.componentType === "CONDITION"){
-            console.log(lcl_n);
+        } else if (lcl_n.componentType === "CONDITION") {
             $propbar.ntype = "CONDITION";
-            backgroundURL = './media/module01.png';
+			backgroundURL = './media/cond-comp.png';
 			if(wfTools.toolboxnodes.cc[lclTBOID]){
                 componentTemplate = wfPlumbCanvasData.nodeTemplates.cc[lclTBOID].dna;
                 if(lcl_n.additionalInfo?.[0].parameterName === "nodeAffinity"){
                     componentTemplate['nodeAffinity'] = lcl_n.additionalInfo[0].parameterValue
                 }
-                backgroundURL = './media/cond-comp.png';
 			}
             var getTokens = function(id){
                 return $.ajax({
@@ -441,19 +434,14 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
                 .fail(function () {
                     alert("Could not retrive query for current datasource.");
                 });
-            // if (componentTemplate) {
-			// 	wf_loadModuleProcessing(nid,lcl_n,componentTemplate);
-			// } else {
-			// 	alert("Condition Component template not found.");
-			// }
-        }
-        if(lcl_n.componentType === "DATASOURCE"){
+        } else if (lcl_n.componentType === "DATASOURCE") {
             $propbar.ntype = "DATASOURCE";
             backgroundURL = './media/module-ds.png';
 			// data source component category is removed from toolbox (is linked with workspace.js wfTools.toolboxnodes.ds, app.js wfTools.datasources commented zones)
-           /* if(wfTools.toolboxnodes.ds[lclTBOID]){
+			/*if(wfTools.toolboxnodes.ds[lclTBOID]){
                 componentTemplate = wfTools.toolboxnodes.ds[lclTBOID].dna;
-            } else */if (wfTools.toolboxnodes.uds[lclTBOID]) {
+            } else */
+			if (wfTools.toolboxnodes.uds[lclTBOID]) {
                 componentTemplate = wfTools.toolboxnodes.uds[lclTBOID].dna;
             }
             if(wfTools.toolboxnodes.q[lclTBOID]){
@@ -465,10 +453,10 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
 				alert("Component template not found.");
 			}
         }
-        $('.app-user-avatar-img',widgetRootEl).attr('src', backgroundURL);
-        if(componentTemplate === null){
-            console.log("comp template not found!!!!!!!!!!!!!!!!!!");
-        }
+        $('.app-user-avatar-img',widgetRootEl).attr("src", backgroundURL)
+			.off("error").one("error", function (e) {
+				$(this).attr("src", naBackgroundURL);
+			});
     };
 
 	var wf_loadModuleDatasource = function(nid,lcl_n,componentTemplate,queryTemplate){

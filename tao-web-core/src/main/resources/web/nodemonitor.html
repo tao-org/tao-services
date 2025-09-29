@@ -10,10 +10,12 @@
     <!-- Font Awesome Icons -->
     <link href="./assets/libs/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
     <!-- Theme style -->
-    <link href="./assets/dist/css/AdminLTE.min.css" rel="stylesheet" type="text/css" />
-    <link href="./assets/dist/css/AdminLTEplus.css" rel="stylesheet" type="text/css" />
-    <link href="./assets/dist/css/size-customization.css" rel="stylesheet" type="text/css" />
-    <link href="./assets/dist/css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" id="style_css_file"/>
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTE.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEplus.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEextra.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEskin.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEspecific.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/root/full/light-hsl.css" id="root_css_file" />
 	
     <link rel="shortcut icon" type="image/x-icon" href="/media/icons/dunia-favicon.ico" />
     
@@ -36,7 +38,7 @@
 	
 </head>
 
-<body class="sidebar-mini size-normal noselect bg-navy">
+<body class="sidebar-mini noselect">
         <!-- Monitor master -->
         <div id="widget-master-monitor" class="box box-solid bg-navy">
             <div class="box-header">
@@ -343,9 +345,16 @@
 		$("link[rel*='icon']").remove();
 		$('head').append('<link type="image/x-icon" rel="shortcut icon" href="' + (typeof window.favicon !== "undefined" ? window.favicon : "./favicon.ico") + '">');
 		
-		$("#style_css_file").attr("href", "./assets/dist/css/skins/"+$.AdminLTE.options.styles[defaultStyle]+".min.css");
-		$("body").addClass($.AdminLTE.options.styles[defaultStyle]);
-	
+		var selectedSize  = window.defaultSize;
+		var selectedStyle = {
+			scheme: window.defaultScheme,
+			color : window.defaultStyle,
+			css   : $.AdminLTE.options.styles[window.defaultStyle]
+		};
+		// Add body size class
+		$("body").addClass(selectedSize).addClass("skin-" + selectedStyle.scheme).addClass("skin-" + selectedStyle.scheme + "-" + selectedStyle.color);
+		$("#root_css_file").attr("href", "./assets/dist/css/root/" + selectedStyle.scheme + "/" + selectedStyle.css);
+		
         var node = jsGetUrlQueryValue("node");      
           
         if( node === undefined || node == null || node.length === 0){

@@ -1319,8 +1319,6 @@ font-weight:600
 	$("#frmImportProducts").submit(function (event) {
 		event.preventDefault();
 		if ($(this).valid()) {
-			routeLoading('show');
-			
 			var data = "sourceDir=" + encodeURI($("input[name='path']").val()) + "&linkOnly=" + $("input[name='symbolicLink']:checked").val();
 			var xhr = new XMLHttpRequest();
 			xhr.open("POST", baseRestApiURL + "product/import");
@@ -1330,7 +1328,6 @@ font-weight:600
 			
 			xhr.addEventListener("readystatechange", function () {
 				if (this.readyState === this.DONE) {
-					routeLoading('hide');
 					if ($.type(this.response) === 'object') {
 						if (this.response.status === "SUCCEEDED") {
 							$("#myImportProducts").modal('hide');
@@ -1347,7 +1344,6 @@ font-weight:600
 				}
 			});
 			xhr.onerror = function (jqXHR, textStatus) {
-				routeLoading('hide');
 				showMsg("Operation failed. Please try again or contact app admin.", "FAIL");
 			}
 			xhr.send(data);			

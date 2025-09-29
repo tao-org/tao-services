@@ -1,3 +1,8 @@
+@import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic);
+/*
+ * App: Workflow Layout Style
+ * -------------------------
+ */
 *,
 *:before,
 *:after {
@@ -12,15 +17,24 @@ html {
     padding: 0;
     margin: 0
 }
+
 body {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
     background-color: #FFF;
     color: #434343;
-    font-family: "Lato", sans-serif;
+	font-family: 'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
     font-size: 14px;
     font-weight: 400;
     height: 100%;
-    padding: 0
+    padding: 0;
 }
+
+body.size-small  {font-size: 12px;}
+body.size-normal {font-size: 14px;}
+body.size-large  {font-size: 16px;}
+body.size-larger {font-size: 18px;}
+
 @media only screen and (max-width: 320px) {
     body {
         margin-top: 51px
@@ -52,6 +66,7 @@ pre {
 	height:10000px;
 	width:10000px;
 	
+	font-family: "Lato", sans-serif;
     border: 1px solid #0a0a0a;
     background-color: white;
     display: flex;
@@ -69,9 +84,8 @@ pre {
 .w {
     padding: 0;
     position: absolute;
-    border: 1px solid #2e6f9a;
+    outline: #2e6f9a solid 1px;
     box-shadow: 2px 2px 19px #e0e0e0;
-    -o-box-shadow: 2px 2px 19px #e0e0e0;
     -webkit-box-shadow: 2px 2px 19px #e0e0e0;
     -moz-box-shadow: 2px 2px 19px #e0e0e0;
     -moz-border-radius: 8px;
@@ -85,15 +99,11 @@ pre {
     transition: background-color 0.25s ease-in;
 }
 
-.w:hover {
-    /*background-color: #5c96bc;
-    color: white;*/
+.w:not(.g):hover {
 	-webkit-box-shadow: 0 0 20px 0 rgba(0,0,0,0.5);
 	-moz-box-shadow: 0 0 20px 0 rgba(0,0,0,0.5);
 	box-shadow: 0 0 20px 0 rgba(0,0,0,0.5);
-	border: 2px solid #2e6f9a;
-	margin-left: -1px;
-    margin-top: -1px;
+	outline-width: 2px;
 }
 
 .w.unknown-w{
@@ -103,11 +113,11 @@ pre {
     background: #fd6868;
 }
 .w.selected {
-    /*border: 4px solid #2e6f9a;*/
 	z-index: 4;
 	background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHhtbG5zOnhsaW5rPSdodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rJyB3aWR0aD0nNicgaGVpZ2h0PSc2Jz4KICA8cmVjdCB3aWR0aD0nNicgaGVpZ2h0PSc2JyBmaWxsPScjZWVlZWVlJy8+CiAgPGcgaWQ9J2MnPgogICAgPHJlY3Qgd2lkdGg9JzMnIGhlaWdodD0nMycgZmlsbD0nI2U2ZTZlNicvPgogICAgPHJlY3QgeT0nMScgd2lkdGg9JzMnIGhlaWdodD0nMicgZmlsbD0nI2Q4ZDhkOCcvPgogIDwvZz4KICA8dXNlIHhsaW5rOmhyZWY9JyNjJyB4PSczJyB5PSczJy8+Cjwvc3ZnPg==");
 	background-repeat: repeat;
     opacity: 1 !important;
+	outline: #2e6f9a solid 2px;
 }
 .w.unknown-w.selected{
     background: #fd6868;
@@ -338,13 +348,12 @@ float: right;
 }
 
 .w.g {
-    border: 1px dashed #2e6f9a;
+    outline-style: dashed;
     border-radius: 0;
     box-shadow: none;
 }
 .w.g:hover {
     box-shadow: none;
-    border: 1px dashed #2e6f9a;
 }
 .dragHover {
     border: 2px solid orange;
@@ -353,7 +362,7 @@ float: right;
 path, .jtk-endpoint { cursor:pointer; }
 
 .ui-tooltip-content .tooltip-paragraph{margin:0}
-.ui-tooltip-content .tooltip-paragraph label{font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;color:#347fab;margin:0;display:block}
+.ui-tooltip-content .tooltip-paragraph label{font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;color:#2e6f9a;margin:0;display:block}
 .ui-tooltip-content .tooltip-paragraph span{font-weight:400;color:#555}
 
 .row--form-block{
@@ -369,7 +378,8 @@ path, .jtk-endpoint { cursor:pointer; }
     stroke-width: 2px;
 }
 .w.node-to-be-deleted{
-    border: 4px solid red !important;
+    outline: red solid 2px;
+	border-color:red;
 }
 
 .canvas-grid {

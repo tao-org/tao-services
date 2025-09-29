@@ -1,235 +1,185 @@
 <style>
-	.node-root .nodes-item-core-box .box-top-tags span.status{
-		font-weight: 700;
-		background-color: #91ff91;
-		border-color: #009600;
-		color: #555;
+	/*------BOX APPEARANCE------*/
+	#panel-nodes {
+		.nodes-item-core-box .with-label>label::before {min-width:7.0em;}
+		.nodes-item-core-box .box-description {min-height:5.688em;max-height:5.688em;color:inherit;
+			.with-label>label                 {margin-left:1em;opacity:.8;}
+			.with-label>label::before         {min-width:8.5em;}
+		}
+		
+		
+		.node-root.online  .btn[data-action="resume"] {display:none;}
+		.node-root.online  .status {color:#fff;background-color:var(--status-success);border-color:var(--status-success);}
+		.node-root.offline .btn[data-action="pause" ] {display:none;}
+		.node-root.offline .status {color:#fff;background-color:var(--status-danger);border-color:var(--status-danger);}
+		
+		@media (min-width: 768px) {
+			core-cell-list .box-description {padding-right:21em;margin-bottom:0;}
+			core-cell-list .box-bottom      {position:absolute;bottom:calc(1.1em + 0.4em - 0.15em);right:1.1em;width:fit-content;}
+		}
 	}
-	.node-root.offline .nodes-item-core-box .box-stats .box-stats-gfx,
-	.node-root.offline .nodes-item-core-box .square-box,
-	.node-root.offline .nodes-item-core-box .box-top-tags span.status,
-	.node-root.offline .nodes-item-core-box .box-description{
-		background-color: #ffdada;
-		border-color: red;
-	}
-	.node-root.tristate .nodes-item-core-box .box-stats .box-stats-gfx,
-	.node-root.tristate .nodes-item-core-box .square-box,
-	.node-root.tristate .nodes-item-core-box .box-top-tags span.status,
-	.node-root.tristate .nodes-item-core-box .box-description{
-		background-color: #e2e2e2;
-		border-color: #929292;
-		color: #5d5d5d;
-	}
-	.nodes-item-core-box .box-top .box-title{
-		font-size: 1.2em;
-		font-weight: 600;
-		margin-bottom: 5px;
-	}
-	.nodes-item-core-box .box-top .box-title:hover{color:#66b1dc}
-	.nodes-item-core-box .box-top .box-text{line-height:1.3em;white-space:nowrap;overflow:hidden}
-	.nodes-item-core-box .box-description{background:#e3f3fc;padding:5px 15px 5px 30px;margin:10px -15px 10px -15px;line-height:1.2em;color:#555;min-height:5.4em;white-space:nowrap}
-	.nodes-item-core-box .box-description:hover{overflow:hidden;min-height:5.4em}
-	.nodes-item-core-box .box-bottom{padding:0}
-	.nodes-item-core-box .box-description:hover .val-workflowName{color:#3c8dbc}
 	
-	core-cell-list .nodes-item-core-box .box-top{width:50%;float:left}
-	core-cell-list .nodes-item-core-box .box-description{width:50%;float:right;margin-top:0}
-	core-cell-list .nodes-item-core-box .box-description~div.row{padding-top:10px;clear:both}
-	core-cell-list .nodes-item-core-box .box-top .box-icon{top:auto;bottom:-45px;right:-100%;font-size:40px}
-	
+	/*------CUSTOM COLUMNS------*/
+	.col-custom {
+		padding-left:0.7em;padding-right:0.7em;
+		@media (min-width: 768px) {& {width:100%;float:left;}}
+		@media (min-width:1040px) {& {width: 50%;}}
+		@media (min-width:1410px) {& {width: 33%;}}
+		@media (min-width:1760px) {& {width: 25%;}}
+		@media (min-width:2130px) {& {width: 20%;}}
+		@media (min-width:2480px) {& {max-width: 37em;}}
+	}
 </style>
-<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog"></div>
-</div>
-<section class="content-header tao-async-ph">
-	<h1>Scheduled Jobs<small>Here you can schedule <strong>workflow executions</strong> and manage them.</small></h1>
-	<ol class="breadcrumb">
-		<li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
-		<li class="active">Scheduled Jobs</li>
-	</ol>
+
+<!-- Content Header -->
+<section class="content-header">
+	<h1>Here you can schedule <strong>workflow executions</strong> and manage them.</small></h1>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"> </i>Home</a></li><li class="active">Scheduled Jobs</li></ol>
 </section>
-<!-- Main content -->
-<section class="content tao-async-mc">
-	<div id="panel-topo-wrapper" class="row collapseX">
-		<div class="col-md-12">
-			<div class="nav-tabs-custom">
-				<ul class="nav nav-tabs visible-xs-block">
-					<!--<li class="role-dropdown active">
-						<select id="selectNodePanel" name="selectNodePanel" class="form-control form-changepane" title="Select desired node view.">
-							<option class="role role-admin" value="all_nodes">All schedulers</option>
-						</select>
-					</li>-->
-				</ul>
-				<ul class="nav nav-tabs hidden-xs">
-					<!--li class="role role-admin active"><a href="#panel-nodes" data-toggle="tab" data-action="all_nodes" aria-expanded="true">All schedulers</a></li-->
-				</ul>
-				<div class="tab-content">
-					<div class="tab-pane active" id="panel-nodes">
-						<div class="row">
-							<div class="col-md-12" id="list-master-controls">
-								<div class="box-tools pull-left">
-									<button class="btn btn-master-tool text-black" data-action="op-plus" data-toggle="tooltip" data-original-title="Create a scheduled task"><i class="fa fa-plus"></i></button>
-								</div>
-								<div class="box-tools pull-left">
-									<button class="btn btn-master-tool text-black" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
-								</div>
-								<div class="box-tools pull-left">
-									<form class="search-container collapse" action="">
-										<input id="search-box" type="text" class="search-box" name="q" placeholder="Search by label" />
-										<label for="search-box"><i class="fa fa-search search-icon" aria-hidden="true"></i></label>
-										<input type="submit" id="search-submit" />
-									</form>
-								</div>
-								<div class="box-tools pull-right">
-									<button class="btn btn-master-tool text-black" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"><i class="fa fa-refresh fa-spin-hover"></i></button>
-									<button class="btn btn-master-tool text-black" data-action="view-list" data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
-									<button class="btn btn-master-tool text-black" data-action="view-table" data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
-								</div>
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-md-12 like collapse">
-								<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search" aria-hidden="true"></i></span>
-							</div>
-							<div class="col-md-12 tags collapse">
-								<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw" aria-hidden="true"></i></span>
-							</div>
-						</div>
-						<div class="row" id="list-work-users">
-							<div class="col-sm-12">
-								<div class="box box-success">
-									<div class="box-header">
-										<i class="fa fa-clock-o" aria-hidden="true"></i>
-										<h3 class="box-title">Scheduled Jobs - <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span></h3>
-										<div class="box-tools pull-right nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
-									</div>
-									<div class="nppaginatedcells-empty callout callout-empty">
-										<p>List is empty. <span class="results-empty">You do not have any scheduled task.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
-									</div>
-									<div class="box-body chat users-box">
-										<div class="nppaginatedcells-panel-body">
-										</div>
-										<div class="cell-templates collapse">
-											<core-cell-list>
-												<div class="col-md-12 col-sm-12">
-													<div class="nodes-item-core-box">
-														<div class="box-top-tags">
-															<span>Tag1</span><span>Tag2</span><span>Tag3</span>
-														</div>
-														<div class="box-top">
-															<div class="box-title"><span class="val-friendlyName">Lynx Node</span></div>
-															<div class="box-subtitle"><span class="val-id"></span></div>
-															<div class="box-icon">
-																<i class="fa fa-clock-o"></i>
-															</div>
-															<div class="box-text">
-																Start time: <strong><span class="val-startTime"></span></strong><br/>
-																Repeat interval: <strong><span class="val-repeatInterval"></span></strong><br/>
-																Scheduling mode: <strong><span class="val-mode"></span></strong>
-															</div>
-														</div>
-														<div class="box-description row">
-															<strong style="margin-left:-10px">Workflow information:</strong><br/>
-															<span class="val-workflowName"></span><br/>
-															Last execution time: <strong><span class="val-lastExecutionTime"></span></strong><br/>
-															Last execution status: <strong><span class="val-lastExecutionStatus"></span></strong>
-														</div>
-														<div class="row">
-															<div class="col-md-6 col-sm-12 col-xs-12">
-																<div>
-																	<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="edit"><i class="fa fa-pencil fa-fw" aria-hidden="true"></i><span class="span-muted">&nbsp;Edit</span></button>
-																	<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop collapse only-v-1" data-action="pause"><i class="fa fa-pause fa-fw" aria-hidden="true"></i><span class="span-muted">&nbsp;Pause</span></button>
-																	<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop collapse only-v-0" data-action="resume"><i class="fa fa-play fa-fw" aria-hidden="true"></i><span class="span-muted">&nbsp;Resume</span></button>
-																	<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="delete"><i class="fa fa-trash-o fa-fw" aria-hidden="true"></i><span class="span-muted">&nbsp;Delete</span></button>
-																</div>
-															</div>
-														</div>
-													</div>
-												</div>
-											</core-cell-list>
-											<core-cell-grid>
-												<div class="col-lg-3 col-md-4 col-sm-6">
-													<div class="nodes-item-core-box">
-														<div class="box-top-tags">
-															<span>Tag1</span><span>Tag2</span><span>Tag3</span>
-														</div>
-														<div class="box-top">
-															<div class="box-title"><span class="val-friendlyName">GEOCODED TERRAIN CORRECTED SIGMA0</span></div>
-															<div class="box-subtitle">Id: <span class="val-id"></span></div>
-															<div class="box-icon">
-																<i class="fa fa-clock-o"></i>
-															</div>
-															<div class="box-text">
-																Start time: <strong><span class="val-startTime"></span></strong><br/>
-																Repeat interval: <strong><span class="val-repeatInterval"></span></strong><br/>
-																Scheduling mode: <strong><span class="val-mode"></span></strong>
-															</div>
-														</div>
-														<div class="box-description">
-															<strong style="margin-left:-10px">Workflow information:</strong><br/>
-															<span class="val-workflowName"></span><br/>
-															Last execution time: <strong><span class="val-lastExecutionTime"></span></strong><br/>
-															Last execution status: <strong><span class="val-lastExecutionStatus"></span></strong>
-														</div>
-														<div class="box-bottom">
-															<div class="">
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="edit"><i class="fa fa-pencil fa-fw" aria-hidden="true" data-toggle="tooltip" data-original-title="Edit"></i><span class="span-muted collapse">&nbsp;Edit</span></button>
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop collapse only-v-1" data-action="pause" data-toggle="tooltip" data-original-title="Pause"><i class="fa fa-pause fa-fw" aria-hidden="true"></i><span class="span-muted collapse">&nbsp;Pause</span></button>
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop collapse only-v-0" data-action="resume"><i class="fa fa-play fa-fw" aria-hidden="true" data-toggle="tooltip" data-original-title="Resume"></i><span class="span-muted collapse">&nbsp;Resume</span></button>
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="delete"><i class="fa fa-trash-o fa-fw" aria-hidden="true" data-toggle="tooltip" data-original-title="Delete"></i><span class="span-muted collapse">&nbsp;Delete</span></button>
-															</div>
-														</div>
-													</div>
-												</div>
-											</core-cell-grid>
-										</div>
-									</div>
-									<div class="box-footer clearfix no-border">
-										<div class="box-tools pull-right">
-											<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline">
-												<li><a href="#" data-page="prev">«</a></li>
-												<li class="active"><a href="#" data-page="0">1</a></li>
-												<li><a href="#" data-page="1">2</a></li>
-												<li><a href="#" data-page="2">3</a></li>
-												<li><a href="#" data-page="next">»</a></li>
-											</ul>
-										</div>
-									</div>
-									<div class="box-notification"><p><span>List updated</span></p></div>
-								</div>
-							</div>
-						</div>
-					</div><!-- /.tab-pane -->
 
-					<div class="tab-pane" id="panel-nodesX">
-					</div><!-- /.tab-pane -->
-
+<!-- Content Body -->
+<section class="content">
+	<!-- Custom Tabs -->
+	<div id="panel-nodes" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select desired schedulers view.">
+						<option class="role" data-target="#paginatedcells" value="manage_jobs" selected>All schedulers</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role active"><a href="#paginatedcells" data-toggle="tab" data-action="manage_jobs" aria-expanded="true">All schedulers</a></li>
+					</ul>
 				</div>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="op-plus"   data-toggle="tooltip" data-original-title="Create a scheduled task"><i class="fa fa-plus"></i></button>
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search workflow"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">scheduled task</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				 <div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-sm-12 col-md-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-friendlyName"></span></div>
+									<div class="box-subtitle"><span class="val-id"></span></div>
+									<div class="box-text">
+										Start time: <strong><span class="val-startTime"> - </span></strong> |
+										Repeat interval: <strong><span class="val-repeatInterval"> - </span></strong> |
+										Scheduling mode: <strong><span class="val-mode"> - </span></strong>
+									</div>
+									<div class="box-icon"><i class="fa fa-clock-o"></i></div>
+								</div>
+								<div class="box-description">
+									<span><strong>Workflow information:</strong></span><br/>
+									<div class="box-text with-label"><label>Name: </label><strong><span class="val-workflowName"></span></strong></div>
+									<div class="box-text with-label"><label>Last execution time: </label><strong><span class="val-lastExecutionTime"></span></strong></div>
+									<div class="box-text with-label"><label>Last execution status: </label><strong><span class="val-lastExecutionStatus"></span></strong></div>
+								</div>
+								<div class="box-bottom">
+									<div class="text-right flat-buttons">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"  ><i class="fa fa-pencil fa-fw" ></i> Edit</button>
+										<button class="btn btn-primary btn-nodeop" data-action="pause" ><i class="fa fa-pause fa-fw"  ></i> Pause</button>
+										<button class="btn btn-primary btn-nodeop" data-action="resume"><i class="fa fa-play fa-fw"   ></i> Resume</button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"><i class="fa fa-trash-o fa-fw"></i> Delete</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-custom">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-friendlyName"></span></div>
+									<div class="box-subtitle">ID: <span class="val-id"></span></div>
+									<div class="box-text with-label"><label>Start time: </label><strong><span class="val-startTime"></span></strong></div>
+									<div class="box-text with-label"><label>Repeat interval: </label><strong><span class="val-repeatInterval"></span></strong></div>
+									<div class="box-text with-label"><label>Scheduling mode: </label><strong><span class="val-mode"></span></strong></div>
+									<div class="box-icon"><i class="fa fa-clock-o"></i></div>
+								</div>
+								<div class="box-description">
+									<span><strong>Workflow information:</strong></span><br/>
+									<div class="box-text with-label"><label>Name: </label><strong><span class="val-workflowName"></span></strong></div>
+									<div class="box-text with-label"><label>Last execution time: </label><strong><span class="val-lastExecutionTime"></span></strong></div>
+									<div class="box-text with-label"><label>Last execution status: </label><strong><span class="val-lastExecutionStatus"></span></strong></div>
+								</div>
+								<div class="box-bottom clearfix">
+									<div class="pull-left">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"   data-toggle="tooltip" data-original-title="Edit"  ><i class="fa fa-pencil fa-fw" ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete" data-toggle="tooltip" data-original-title="Delete"><i class="fa fa-trash-o fa-fw"></i></button>
+									</div>
+									<div class="pull-right">
+										<button class="btn btn-primary btn-nodeop" data-action="pause"  data-toggle="tooltip" data-original-title="Pause" ><i class="fa fa-pause fa-fw"  ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="resume" data-toggle="tooltip" data-original-title="Resume"><i class="fa fa-play fa-fw"   ></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix">
+			<div class="controls-left">
+				<div><i class="fa fa-clock-o"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> scheduled jobs</div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
 			</div>
 		</div>
 	</div>
 </section>
-<script>
+
+<!-- Modal for user actions -->
+<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog">
+	<div class="modal-dialog"></div>
+</div>
+
+<script type="text/javascript">
 	var deleteNodeById = function (id) {
 		$.ajax({
-			cache: false,
-			url: baseRestApiURL + "scheduling/remove?id=" + id,
-			dataType : 'json',
-			type: 'GET',
-			headers: {
-				"Accept": "application/json",
-				"Content-Type": "application/json",
-				"X-Auth-Token": window.tokenKey
-			},
-			error : function (jqXHR, textStatus, errorThrown) {
-				// console.log("error");
-				if(jqXHR.status === 500 ){
+			cache   : false,
+			url     : baseRestApiURL + "scheduling/remove?id=" + id,
+			dataType: "json",
+			type    : "GET",
+			headers : { "Accept": "application/json", "Content-Type": "application/json", "X-Auth-Token": window.tokenKey },
+			error   : function (jqXHR, textStatus, errorThrown) {
+				if (jqXHR.status === 500) {
 					showMsg("Unable to delete scheduled task. Please try again.", "ERROR");
 				} else {
 					alert('An error has occurred, please try again or contact app admin.');
 				}
 			},
-			success: function(data) {
+			success: function (data) {
 				if (data.status == responseStatus.success) {
 					showMsg("Scheduled task successfully deleted.", "SUCCESS");
 				} else {
@@ -239,35 +189,37 @@
 			}
 		});
 	};
+	
 	var manageNodeStatus = function (dna, action) {
 		if (!dna && !dna.id) {
 			showMsg("Invalid action requested.", "FAILED");
 			return;
 		}
 		$.ajax({
-			cache: false,
-			url: baseRestApiURL + "scheduling/" + action + "?id=" + dna.id,
-			dataType : 'json',
-			type: 'GET',
-			headers: { "Accept": "application/json", "Content-Type": "application/json", "X-Auth-Token": window.tokenKey },
-			error: function (jqXHR, textStatus, errorThrown) {
-				if (jqXHR.status === 500 ) {
+			cache   : false,
+			url     : baseRestApiURL + "scheduling/" + action + "?id=" + dna.id,
+			dataType: "json",
+			type    : "GET",
+			headers : { "Accept": "application/json", "Content-Type": "application/json", "X-Auth-Token": window.tokenKey },
+			error   : function (jqXHR, textStatus, errorThrown) {
+				if (jqXHR.status === 500) {
 					showMsg("Unable to perform requested action. Please try again.", "ERROR");
-					return;
+				} else {
+					showMsg("Unknown error. Unable to update the scheduled task status. Please try again.", "ERROR");
 				}
-				showMsg("Unknown error. Unable to update the scheduled task status. Please try again.", "ERROR");
 			},
-			success: function(response, textStatus, jqXHR) {
+			success: function (response) {
 				if (response.status == responseStatus.success) {
 					showMsg(response.message, "SUCCESS");
-					panelComp.refreshData();
-				} else if (response.status == responseStatus.fail) {
+					window.panelComp.refreshData();
+				} else {
 					showMsg(response.message, "FAILED");
 				}
 			}
 		});
 	};
-	var myModalNodesOpShow = function(operationid, args){
+	
+	var myModalNodesOpShow = function (operationid, args) {
 		var $modal = $("#myModalNodes");
 		$(".modal-dialog",$modal).removeClass("modal-lg");
 		var rm_contentUrl = '';
@@ -299,39 +251,71 @@
 			alert("TAO - Operation mismatch");
 		}
 	};
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
 	$(document).ready(function () {
+		var $selectActivePanel = $("#selectActivePanel");
 		var urls = [ baseRestApiURL + "scheduling/list" ];
-		window.panelComp = $('#panel-nodes').npPaginatedCells({
-			headerUser: taoUserProfile.username,
-			url: urls,
-			viewMode: preferences.viewMode,
-			filterAttribute: "friendlyName",
-			order:[
-				{
-					"label":"Name ascending",
-					"objAttributeName":"friendlyName",
-					"direction":"ASC"
-				},
-				{
-					"label":"Name descending",
-					"objAttributeName":"friendlyName",
-					"direction":"DSC"
+		var actionsSet = {
+			"manage_jobs": { badgeLabel: "All schedulers", pagLabel: "scheduled jobs", emptyLabel: "scheduled job", url: urls[0] }
+			
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
 				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+			}
+			return selected;
+		};
+		window.panelComp = $("#panel-nodes").npPaginatedCells({
+			headerUser: taoUserProfile.username,
+			url       : urls,
+			viewMode  : preferences.viewMode,
+			order:[
+				{ "label": "Name ascending" , "objAttributeName": "friendlyName", "direction": "ASC" },
+				{ "label": "Name descending", "objAttributeName": "friendlyName", "direction": "DSC" }
 			],
-			doDataPreprocessing: function (data) {
-				if (data) {
-					for (var i = 0; i < data.length; i++) {
-						data[i].startTime = moment.utc(data[i].startTime).format("YYYY-MM-DD HH:mm:ss");
-						if (!data[i].tags) data[i].tags = [];
-						data[i].tags.push(data[i].mode);
-						data[i].tags.push(data[i].state == "NORMAL" ? "RUNNING" : data[i].state);
-						data[i].lastExecutionTime = data[i].jobs.length > 0 ? moment.utc(data[i].jobs[data[i].jobs.length - 1].endTime).format("YYYY-MM-DD HH:mm:ss") : "-";
-						data[i].lastExecutionStatus = data[i].jobs.length > 0 ? data[i].jobs[data[i].jobs.length - 1].status : "-";
-					}
-					return data;
+			filterAttribute: "friendlyName",
+			doDataPreprocessing: function (data, sets) {
+				var activeSet = getActiveSet(data, sets);
+				$.each(activeSet, function (index, elX) {
+					elX.startTime = moment.utc(elX.startTime).format("YYYY-MM-DD HH:mm:ss");
+					if (!elX.tags) elX.tags = [];
+					elX.tags.push(elX.mode);
+					elX.tags.push(elX.state == "NORMAL" ? "RUNNING" : elX.state);
+					elX.lastExecutionTime = elX.jobs.length > 0 ? moment.utc(elX.jobs[elX.jobs.length - 1].endTime).format("YYYY-MM-DD HH:mm:ss") : "-";
+					elX.lastExecutionStatus = elX.jobs.length > 0 ? elX.jobs[elX.jobs.length - 1].status : "-";
+				});
+				return activeSet;
+			},
+			doCustomRender: function($elClone, elX) {
+				$(".box-top-tags span:last-child", $elClone).addClass("status");
+				$("button[data-action='resume']" , $elClone).removeClass("collapse");
+				
+				$(".val-friendlyName", $elClone).attr("title", elX.friendlyName);
+				
+				if (elX.state == "NORMAL") {
+					$elClone.addClass("online");
+				} else if (elX.state == "PAUSED") {
+					$elClone.addClass("offline");
 				} else {
-					return [];
+					$elClone.addClass("offline");
 				}
 			},
 			doAction: function (action, args) {
@@ -355,32 +339,9 @@
 						callbackCancel: function () {}
 					});
 				}
-			},
-			doCustomRender: function($elClone, elX) {
-				$(".box-top-tags span:last-child", $elClone).addClass("status");
-				$("button[data-action='resume']" , $elClone).removeClass("collapse");
-				
-				$(".val-friendlyName", $elClone).attr("title", elX.friendlyName);
-				$(".box-description", $elClone).attr("title", elX.workflowName + "\n" + elX.lastExecutionTime + "\n" + elX.lastExecutionStatus);
-				
-				if (elX.state == "NORMAL") {
-					// show "Pause" node action
-					$elClone.addClass("online");
-					$("button[data-action='pause']", $elClone).removeClass("collapse");
-					$("button[data-action='resume']" , $elClone).addClass("collapse");
-				} else if (elX.state == "PAUSED") {
-					$elClone.addClass("offline");
-					// show "Resume" node action
-					$("button[data-action='pause']", $elClone).addClass("collapse");
-					$("button[data-action='resume']" , $elClone).removeClass("collapse");
-				} else {
-					$elClone.addClass("tristate");
-					// show "Resume" node action
-					$("button[data-action='pause']", $elClone).addClass("collapse");
-					$("button[data-action='resume']" , $elClone).removeClass("collapse");
-				}
 			}
 		});
 	});
-	//# sourceURL=scheduling-admin2.fragment.js
+	
+//# sourceURL=scheduling-admin2.fragment.js
 </script>

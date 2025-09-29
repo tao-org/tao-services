@@ -113,6 +113,7 @@
 			hide: true,
 			delimiter: ',',
 			unique: true,
+			cssClass: '',
 			removeWithBackspace: true
 		}, options);
 
@@ -154,7 +155,8 @@
 				callbacks[id]['onChange'] = settings.onChange;
 			}
 
-			var markup = $('<div>', {id: id + '_tagsinput', class: 'tagsinput'}).append(
+			var cssClass = 'tagsinput ' + (data?.cssClass && data.cssClass !== '' ? data.cssClass.trim() : $(this).attr("class"));
+			var markup = $('<div>', {id: id + '_tagsinput', class: cssClass.trim() }).append(
 				$('<div>', {id: id + '_addTag'}).append(
 					settings.interactive ? $('<input>', {id: id + '_tag', class: 'tag-input', value: '', placeholder: settings.placeholder}) : null
 				)

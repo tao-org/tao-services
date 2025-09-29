@@ -1,8 +1,9 @@
 <style>
  /* ===== HEADER ===== */
-.tree-content .loading{height:60px;overflow:hidden;text-align:center;width:100%}
-.tree-content .loading img{margin-top:-122px}
-.tree-content .box-body{padding:10px}
+.tree-content .empty::after,
+.tree-content .loading{width:100%;display:block;padding:0 10px;text-align:left;font-size:1em;line-height:16px;height:auto;}
+.tree-content .box{box-shadow:none;}
+.tree-content .box-body{padding:0 10px 10px 10px;}
 .separator{padding:5px;font-size:24px;color:lightgray}
 .fa-add-star::after{content:"*";position:absolute;top:0;right:0}
 .box-tools .fa-paste{color:orange}
@@ -18,52 +19,36 @@
 #repositories{padding-bottom:0}
 .tree-content .treeview{overflow-y:auto;padding-left:1em;min-height:100px}
 .tree-content .treeview input[type="checkbox"]{display:none}
-.tree-content .treeview a{display:block;cursor:pointer;padding:0;line-height:1.8em;max-height:1.8em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border:1px solid transparent;margin-bottom:1px}
+.tree-content .treeview a{display:block;cursor:pointer;padding:0;line-height:1.8em;max-height:1.8em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-bottom:1px;color:inherit;}
 .tree-content .treeview a span{float:right;padding:0 10px 0 7px;width:110px;text-align:right}
 .tree-content .treeview label>a{font-weight:600}
 .tree-content .treeview .fa{float:none;width:30px}
 .tree-content .treeview .fa-folder{color:#ffb85d}
-.tree-content .foldercontent .fa-folder{color:#ffb85d;font-size: 14px;}
+.tree-content .foldercontent .fa-folder{color:#ffb85d;font-size: 14px;margin-right:5px;}
 .tree-content .treeview .fa-public{position:relative}
 .tree-content .treeview .fa-public::after{position:absolute;content:"\f064";font-size:10px;color:#00a65a;right:5px;bottom:-5px;}
-.tree-content .treeview label{position:relative;color:#5c5d5e;display:block;margin-bottom:0}
+.tree-content .treeview label{position:relative;display:block;margin-bottom:0}
 .tree-content .treeview label::before{content:'\f105';margin-left:0;display:block;position:absolute;top:0;left:-17px;font-family:'FontAwesome';font-size:18px;padding:0 7px;color:transparent}
 .tree-content .treeview input:checked+label::before{content:'\f107';margin-left:-3px}
+.tree-content .treeview input:disabled+label::before{display:none;}
 .tree-content .treeview input:checked+label .fa-folder::before{content:'\f07c'}
 .tree-content .treeview:hover div>label::before{color:#b9b9b9}
 .tree-content .treeview:hover input:checked+label::before{color:#5c5d5e}
 .tree-content .treeview .sub{display:none;margin-left:22px}
 .tree-content .treeview input:checked~.sub{display:block}
-.tree-content .treeview input:checked~.sub.loading{color:#72afd2;width:100%;display:block;padding:0 10px;text-align:left;font-size:1em;line-height:16px;height:auto}
-.tree-content .treeview input:checked~.sub.empty{height:auto}
-.tree-content .treeview input:checked~.sub.empty::after{content:"Empty...";color:#b1d3e6;width:100%;display:inline-block;padding:0 10px;text-align:left;font-size:0.8em;line-height:16px}
-/* .tree-content .treeview input:checked~.sub.loading::after{content:"Loading...";color:#72afd2;width:100%;display:block;padding:0 10px;text-align:left;font-size:1em;line-height:16px} */
-.tree-content .treeview input:checked~.sub.loading::after{content:" .";animation: dots 1s steps(5,end) infinite;color:#72afd2;display:inline-block;text-align:left;font-size:1em;line-height:16px}
+.tree-content .treeview input:checked~.sub.loading{color:#72afd2;}
+.tree-content .treeview input:checked~.sub.empty::after{content:"Empty...";color:#b1d3e6;}
+.tree-content .treeview input:checked~.sub.loading::after{content:" .";animation: dots 1s steps(5,end) infinite;color:#72afd2;display:inline-block;text-align:left;font-size:1em;line-height:16px;}
 
 @keyframes dots {
-  0%, 20% {
-    color: rgba(0,0,0,0);
-    text-shadow:
-      .25em 0 0 rgba(0,0,0,0),
-      .5em 0 0 rgba(0,0,0,0);}
-    
-  40% {
-    color: #72afd2;
-    text-shadow:
-      .25em 0 0 rgba(0,0,0,0),
-      .5em 0 0 rgba(0,0,0,0);}
-  60% {
-    text-shadow:
-      .25em 0 0 #72afd2,
-      .5em 0 0 rgba(0,0,0,0);}
-  80%, 100% {
-    text-shadow:
-      .25em 0 0 #72afd2,
-      .5em 0 0 #72afd2;}}
+  0%, 20%   {text-shadow:.25em 0 0 rgb(0 0 0/0),0.5em 0 0 rgb(0 0 0/0);color:rgb(0 0 0/0);}
+  40%       {text-shadow:.25em 0 0 rgb(0 0 0/0),0.5em 0 0 rgb(0 0 0/0);color:#72afd2;}
+  60%       {text-shadow:.25em 0 0 #72afd2     ,0.5em 0 0 rgb(0 0 0/0);}
+  80%, 100% {text-shadow:.25em 0 0 #72afd2     ,0.5em 0 0 #72afd2;}}
 /* ===== PRODUCTS ===== */
 .tree-content .treeview label.select-for{position:absolute;margin:0;top:0;left:0;width:23px;height:25px;cursor:pointer}
 .tree-content .treeview label.select-for::before{position:absolute;left:7px;top:9px;content:"\002713";line-height:0;padding:0}
-.tree-content .treeview label.select-for::after{content:'';position:absolute;width:13px;height:13px;border:1px solid rgba(89, 161, 185, 0.25);left:6px;top:5px}
+.tree-content .treeview label.select-for::after{content:"";position:absolute;width:13px;height:13px;border:1px solid rgba(89, 161, 185, 0.25);left:6px;top:5px}
 .tree-content .treeview label.select-for~a{margin-left:23px}
 .tree-content .treeview label.select-for.checked::after{border:1px solid #59a1b9}
 .tree-content .treeview label.select-for.checked::before{color:#ff7000}
@@ -71,64 +56,66 @@
 .tree-content .treeview label.select-for.checked:hover::after{border:1px solid #ff7000}
 .tree-content .has-selectable-for>div>label>a>span.fa-folder{margin-left:-2px}
 .tree-content .has-selectable-for>div>.sub{margin-left:43px}
+.tree-content .fa-fw {margin-right:5px;}
+.tree-content .treeview.compact {width:55%;}
+
+.selection-row {margin-left:15px;display:inline-flex;align-items:center;}
 .nothing{height:0px}
 
 /* ===== FOLDER CONTENT ===== */
 .fileexplorer-content { width: 100%; flex-grow: 1; display: flex; flex-flow: row; min-height: 400px; min-width: 0; max-height:60vh}
-.foldertree { width: 250px; overflow: auto; overflow-x: auto; flex-shrink: 0; border-right: 1px solid #eee; }
-.foldercontent { overflow: auto; flex-grow: 1; border-left: 0px solid #eee; padding-left: 5px; }
+.foldertree { width: 250px; overflow: auto; overflow-x: auto; flex-shrink: 0; }
+.foldercontent { overflow: auto; flex-grow: 1; }
 .foldercontent .fa-product{position:relative}
 .foldercontent .fa-product::after{position:absolute;content:"\f0ac";font-size:10px;color:#00a65a;right:0;bottom:-3px;}
-.foldercontent-icon { float: left; font-size: 14px; padding: 5px 5px 0 0; background-repeat: no-repeat; background-position: center center; }
-.foldercontent .foldercontent-item a { display: block; cursor: pointer; padding: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border: 1px solid transparent; margin-bottom: 1px }
-.foldercontent .foldercontent-item { border: 1px solid #FFF }
+.foldercontent-icon { float: left; font-size: 14px; padding: 0 5px; background-repeat: no-repeat; background-position: center center; line-height:1.8;}
+.foldercontent .foldercontent-item a { display: block; cursor: pointer; padding: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: inherit;}
 .foldercontent .foldercontent-item.selected{position: relative;}
 .foldercontent-item { width: 100%; }
-.foldercontent-item { line-height: 1.8em; max-height: 1.8em; display: inline-block; vertical-align: top; font-size: 14px; font-weight: 600; padding: 0 10px 0 7px; }
-.foldercontent-label { white-space: nowrap; vertical-align: top; cursor: pointer; overflow: hidden; text-overflow: ellipsis;display:block; padding: 0 2px; }
-.foldercontent-subitem-1 { vertical-align: top; width: 90px; padding-right: 5px; float: right; padding-left: 5px; border-left: #eee solid 1px; border-right: #eee solid 1px; overflow: hidden; text-align: right; text-overflow: ellipsis; }
-.foldercontent-subitem-0 { float: right; display: block; width: 90px; padding-right: 5px; overflow: hidden; text-overflow: ellipsis; text-align: right; }
-.foldercontent.loading {color: #72afd2; width: 100%; display: inline-block; padding: 0 10px; text-align: left; font-size: 1em; line-height: 16px }
-.foldercontent.loading::after { content:" .";animation: dots 1s steps(5,end) infinite; color: #72afd2; display: inline-block; text-align: left; font-size: 1em; line-height: 16px }
-.gutter.gutter-horizontal { cursor: col-resize; }
+.foldercontent-item { line-height: 1.8em; max-height: 1.8em; display: inline-block; vertical-align: top; font-size: 14px; font-weight: 600; }
+.foldercontent-label { white-space: nowrap; vertical-align: top; cursor: pointer; overflow: hidden; text-overflow: ellipsis;display:block; padding: 0 5px; }
+.foldercontent-subitem-1 { vertical-align: top; width: 90px; padding: 0 5px; float: right; border-left: #eee solid 1px; border-right: #eee solid 1px; overflow: hidden; text-align: right; text-overflow: ellipsis; }
+.foldercontent-subitem-0 { float: right; display: block; width: 90px; padding: 0 5px; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+.foldercontent.loading {color: #72afd2}
+.foldercontent.loading::after {content:" .";animation: dots 1s steps(5,end) infinite;color:#72afd2;display:inline-block;text-align:left;font-size:1em;line-height:16px;}
 .foldercontent-item .rename-item { position: absolute; top: -2px; left: 25px; line-height: 1.5em; width: calc(100% - 25px);}
+.gutter.gutter-horizontal {cursor:col-resize;position:relative;}
+.gutter.gutter-horizontal::after{content:"\f0c9";font-family:'FontAwesome';position:absolute;top:50%;left:1px;width:7px;line-height:1;overflow:hidden;color:#ccc;}
+.tree-content .treeview,.foldercontent{box-shadow: 0 0 5px 1px rgb(0 0 0/0.1);border:1px solid #ddd;padding:20px;}
 
 .page-next {height:5%; cursor: pointer;}
 .page-next i.fa {margin-top:5px; margin-left: 3px}
 
-/* ===== PROPERTIES ===== */
-#properties.folder .for-files { display: none }
-#properties.file .for-folders { display: none }
-#properties { position: fixed; right: 0.8%; width: 30%; z-index: 998 }
 
-#properties .download-holder a.loading button { position: relative }
-#properties .download-holder a.loading button::after { content: "Loading link ..."; position: absolute; display: flex; width: 100%; height: 100%; top: 0; left: 0; background-color: #e7e7e7; color: gray; font-weight: 700; justify-content: center; align-items: center; pointer-events: none }
-#properties button.close { position: absolute; top: 10px; right: 12px; opacity: 1; color: #3c8dbc; outline: 0 }
-#properties button.close:hover { color: #8bccf3 }
-#properties .properties-content { background-color: white; border-radius: 5px; overflow: hidden }
-#properties .box-header { overflow-x: hidden }
-#properties .callout { padding: 0; border: 0; background-color: white; margin: 0; border-radius: 0 }
-#properties h4 { margin: 0; font-weight: 400; padding: 0 10px; width: 90%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; line-height: 2.2em; max-height: 2.2em }
-#properties .btn.bg-green { float: right; width: 140px; margin: 5px 0 }
-#properties .btn.bg-green.btn-xs { margin: 0 }
-#properties .btn.bg-green:disabled { border: 1px solid #dadada; color: #9a9a9a !important; background-color: white !important; opacity: 0.6 }
-#properties table { width: 100%; margin-bottom: 0 }
-#properties table td { padding: 5px 10px; line-height: 1.2em }
-#properties table td:first-child { width: 25% }
-#properties .properties-holder .holder { overflow: auto }
-#properties .actions-holder td:last-child { width: 140px; text-align: right; height: 50px }
-#properties .action-name { font-size: 16px; font-weight: 600;}
-#properties .imagepreview-holder { text-align: center; margin: 10px 0; position: relative }
-#properties .imagepreview-holder > div { text-align: center; display: inline-block; position: relative }
-#properties .imagepreview-holder img { width: 100% }
-#properties .imagepreview-holder .full-preview { position: absolute; top: 10px; right: 10px; font: normal normal normal 14px/1 FontAwesome; font-size: 18px; color: white; background-color: #00a65a; border: 2px solid white; border-radius: 5px; width: 28px; height: 28px; margin: 0; padding: 3px; cursor: pointer }
-#properties .imagepreview-holder .full-preview:hover { background-color: #00894b }
-.tab-content .full-screen { position: fixed; top: 0; z-index: 9999; left: 0; width: 100%; margin: 0; padding: 0; background-color: rgba(0, 0, 0, 0.5); height: 100%; cursor: pointer; overflow: auto }
-.tab-content .full-screen > div { position: unset }
-.tab-content .full-screen img { position: absolute; top: 0; bottom: 0; left: 0; right: 0; margin: auto; width: auto; border: 5px solid rgba(255, 255, 255, 0.3); border-radius: 5px; max-width: 100%; max-height: 100% }
-.tree-content .fa-fw { margin-right: 5px }
-.tree-content .treeview.compact { width: 55% }
-.selection-row {margin-left:15px; display: inline-flex; align-items: center;}
+/* ===== PROPERTIES ===== */
+#properties {position:fixed;right:0.8%;width:30%;z-index:998}
+#properties.folder .for-files {display:none;}
+#properties.file .for-folders {display:none;}
+#properties .properties-content {background-color:white;border-radius:5px;overflow:hidden;}
+#properties .callout {padding:0;border:0;}
+#properties .callout-title {border-top:5px solid var(--primary-color);background-color:var(--list-hover-bkg);color:var(--primary-color);}
+#properties .callout-title h4 {margin:0;font-weight:400;padding:0 10px;width:calc(100% - 2em);line-height:2.2em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+#properties .properties-holder .holder {overflow:auto;}
+#properties table {width:100%;margin-bottom:0;}
+#properties table td {padding:5px 10px;line-height:1.2em;}
+#properties table td:first-child {width:25%;}
+#properties .imagepreview-holder {text-align:center;margin:10px 0;position:relative;}
+#properties .imagepreview-holder > div {text-align:center;display:inline-block;position:relative;}
+#properties .imagepreview-holder img {width:100%;}
+#properties .actions-holder td:last-child {width:140px;text-align:right;height:50px;}
+#properties .action-name {font-size:16px;font-weight:600;}
+#properties button.close {position:absolute;top:5px;right:5px;width:32px;height:32px;line-height:32px;outline:0;opacity:1;}
+#properties .download-holder a.loading button {position:relative}
+#properties .download-holder a.loading button::after {content:"Loading link ...";position:absolute;display:flex;top:0;left:0;right:0;bottom:0;background-color:#e7e7e7;color:#aaa;font-weight:700;justify-content:center;align-items:center;pointer-events:none;}
+#properties .btn:disabled {border:1px solid #ccc;color:#aaa;background-color:white;opacity:0.6;}
+#properties .btn:not(:disabled):hover {box-shadow:inset 0 0 100px rgb(0 0 0/.2);}
+#properties .btn.btn-green {float:right;width:140px;margin:5px 0;}
+#properties .btn.btn-green.btn-xs {margin:0}
+#properties .full-preview {position:absolute;top:10px;right:10px;font-size:18px;color:white;background-color:#00a65a;border:2px solid white;border-radius:5px;width:28px;height:28px;margin:0;padding:3px;cursor:pointer;}
+#properties .full-preview:hover {background-color:#00894b;}
+.tab-content .full-screen {position:fixed;top:0;z-index:9999;left:0;width:100%;margin:0;padding:0;background-color:rgba(0,0,0,0.5);height:100%;cursor:pointer;overflow:auto}
+.tab-content .full-screen > div {position:unset;}
+.tab-content .full-screen img {position:absolute;top:0;bottom:0;left:0;right:0;margin:auto;width:auto;border:5px solid rgba(255,255,255,0.3);border-radius:5px;max-width:100%;max-height:100%;}
 
 /* ===== UPLOAD ===== */
 .upload-message.error { color: red }
@@ -215,9 +202,9 @@
 #confirm-dialog .folder { color: #f58b00 }
 #confirm-dialog .file { color: #3c8dbc }
 
-.btn-red { background-color: #ff0000 !important }
-.btn-orange { background-color: #ffa500 !important }
-.btn-green { background-color: #00a65a !important }
+.btn.btn-red    {background-color:#ff0000 !important}
+.btn.btn-orange {background-color:#ffa500 !important}
+.btn.btn-green  {background-color:#00a65a;color:white;}
 .btn-primary { position: relative; margin-top: 3px; border-color: rgba(0,0,0,0.1) !important }
 .btn-primary:hover::after,
 .btn-primary:active::after,
@@ -230,8 +217,9 @@
 
 .tab-content [data-action="rp-open-file"] .fa-file-o::after{position:absolute;content:"\f002";font-size:0.5em;color:#3c8dbc;right:35%;bottom:35%;}
 /* ===== Back one folder section style ===== */
-.back-one-folder{position:relative;}
+.back-one-folder{position:relative;line-height:1.8em;}
 .back-one-folder:hover>*{opacity:0.7;}
+.back-one-folder~.foldercontent-item{margin-left:7px;width:calc(100% - 7px);}
 .fa-folder.fa-back::after {position:absolute;content:"\21B5";font-size:10px;color:#333;top:25%;left:25%;}
 .search-submit { position: relative; left: -5000px; }
 
@@ -257,9 +245,6 @@
 .extra-files-container>input[type="file"]::after{content:"\f014";font:normal normal normal 16px/1 FontAwesome;display:inline-block;cursor:pointer;padding:2px;position:absolute;left:91%;color:red}
 
 </style>
-<!-- includes for bootstrap-toggle
-<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
-<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script> -->
 
 <div id="view_file_content" class="hidden">
     <div class="box-shadow--6dp file-content">
@@ -279,8 +264,6 @@
 		</div>
     </div>
 </div>
-
-
 
 <div id="view_on_map" class="map in-background">
 	<div class="box-shadow--6dp view_on_map-content">
@@ -314,7 +297,7 @@
                 <tr class="action download-holder">
                     <td><span class="action-name">Download</span></td>
                     <td><span class="action-info"></span></td>
-                    <td><a href="#"><button class="btn bg-green btn-flat"><i class="fa fa-download fa-fw"></i>Download folder</button></a></td>
+                    <td><a href="#"><button class="btn btn-green btn-flat"><i class="fa fa-download fa-fw"></i>Download folder</button></a></td>
                 </tr>
                 <tr class="action share-holder">
                     <td><span class="action-name">Share</span></td>
@@ -331,7 +314,7 @@
                 <tr class="action download-holder">
                     <td><span class="action-name">Download</span></td>
                     <td><span class="action-info"></span></td>
-                    <td><a href="#"><button class="btn bg-green btn-flat"><i class="fa fa-download fa-fw"></i>Download file</button></a></td>
+                    <td><a href="#"><button class="btn btn-green btn-flat"><i class="fa fa-download fa-fw"></i>Download file</button></a></td>
                 </tr>
             </table>
         </div>
@@ -348,7 +331,7 @@
 
 <div id="tab_pane_template" class="tab-pane tree-pane hidden">
     <div class="row">
-        <div class="col-md-12"> <!--class="list-master-controls"-->
+        <div class="col-md-12">
             <div class="box-tools pull-left" data-toggle="tooltip" data-original-title="New File">
                 <button class="btn btn-master-tool text-black" data-action="rp-upload" disabled><i class="fa fa-upload"></i></button>
             </div>
@@ -482,7 +465,7 @@
                     <div class="tab-pane active" id="panel-nodes">
                         
                         <div class="row">
-                            <div class="col-md-12" id="list-master-controls">
+                            <div id="list-master-controls" class="col-md-12">
                                 <div class="box-tools pull-left">
                                     <button class="btn btn-master-tool text-black" data-action="rp-plus" data-toggle="tooltip" data-original-title="Add new repository"><i class="fa fa-plus"></i></button>
                                 </div>
@@ -511,9 +494,9 @@
                                 <span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw" aria-hidden="true"></i></span>
                             </div>
                         </div>
-                        <div class="row" id="list-work-users">
+                        <div id="list-work-users" class="row">
                             <div class="col-sm-12">
-                                <div class="box box-success">
+                                <div class="box box-primary">
                                     <div class="box-header">
                                         <i class="fa fa-random" aria-hidden="true"></i>
                                         <h3 class="box-title">Repositories - <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span></h3>
@@ -808,7 +791,7 @@
                 if (root) $(".loading", $tree).addClass("hidden");
                 if (root) $compsTree.closest(".box").addClass("box-warning");
                 showMsg(response.message, "FAIL");
-                deferred.reject(jqXHR, textStatus, "Error while loading files.");
+                deferred.reject(null, response.status, "Error while loading files.");
             }
         });
         return deferred.promise();
@@ -1342,7 +1325,7 @@
         var size = 0;
         $.each(attributes, function (name, value) {
             if (name == "productType" && value == "GeoTIFF" && attributes.fileInfo.fileType != "folder") {
-                tableBody.append('<tr><td>' + name + '</td><td>' + value + '<button class="btn bg-green btn-flat btn-xs image-preview"><i class="fa fa-eye fa-fw"></i>Toggle quick view</button></td></tr>');
+                tableBody.append('<tr><td>' + name + '</td><td>' + value + '<button class="btn btn-green btn-flat btn-xs image-preview"><i class="fa fa-eye fa-fw"></i>Toggle quick view</button></td></tr>');
             } else if (name != "fileInfo") {
                 tableBody.append('<tr><td>' + name + '</td><td>' + value.replace(/[\r\n\x0B\x0C\u0085\u2028\u2029]+/g, "<br/>") + '</td></tr>');
             } else {
@@ -1363,7 +1346,7 @@
         $("#properties").removeClass("hidden");
         $compsTree.addClass("compact");
 
-        $(".properties-content").draggable({
+        $("#properties").draggable({
             cursor: "move",
 			containment: ".content-wrapper",
             handle: ".callout-title",
@@ -2280,7 +2263,7 @@
                     sizes: [25, 75],
                     direction: 'horizontal',
                     cursor: 'col-resize',
-                    gutterSize: 5,
+                    gutterSize: 9,
                 });
 
                 //select root folder

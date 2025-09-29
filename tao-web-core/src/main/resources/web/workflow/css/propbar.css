@@ -75,12 +75,15 @@ app-modal-overlay.on-screen app-modal{
     float: right;
 }
 .app-user-avatar-img {
-    width: 60px;
+    width: auto;
+    max-width: 100px;
     height: 60px;
+    object-fit: contain;
     border-radius: 50%;
+    background: white;
     border: solid 2px #fff;
-    margin: 10px 10px 0;
-    box-shadow: 0 0 5px rgba(0,0,0,.2);
+    margin: 10px 0 0 10px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, .2);
     transition: box-shadow .2s ease-in-out;
 }
 .app-user-avatar-img:hover{
@@ -326,6 +329,14 @@ btn-avatar{
 }
 .pni-editable.edit span{
     display:none;
+}
+
+.form-control:focus {
+	outline: 0;
+}
+
+.npsyntaxeditor {
+	border: 2px dashed #bdbdbd; 
 }
 
 .ui-dialog {z-index:10001;box-shadow: 0 0 0 1px rgb(0 0 0 / 10%), 0 12px 18px 1px rgb(0 0 0 / 20%);}

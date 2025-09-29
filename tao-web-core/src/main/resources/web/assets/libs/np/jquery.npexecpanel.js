@@ -313,11 +313,11 @@ jQuery.fn.npExecPanels = function(options){
 
 					if(task.taskStatus === "DONE" || task.taskStatus === "FAILED"){
 						htmlContent += '<button id="task_log_info_'+task.taskId+'" class="icon fa fa-info-circle log-info" value="'+task.taskId+'"></button>';
-						htmlContent +='<div id="task_log_modal'+task.taskId+'" class="log-modal"><div class="log-modal-content"><div class="log-title-button"><div class="log-title"><h4 class="title">Task Log</h4></div><button type="button" class="log-close">&times;</button></div><p class="log_text">'+'</p></div></div>';
+						htmlContent +='<div id="task_log_modal'+task.taskId+'" class="log-modal"><div class="log-modal-content"><div class="log-title-button"><div class="log-title"><h4 class="title">Task Log</h4></div><button type="button" class="log-close">&times;</button></div><p class="log-text">'+'</p></div></div>';
 
 						if (typeof task.command !== "undefined" && task.command !== "") {
 							htmlContent += '<button id="task_command_info_'+task.taskId+'" class="icon fa fa-terminal log-info" value="'+task.taskId+'"></button>';
-							htmlContent += '<div id="command_info_modal'+task.taskId+'" class="command-modal"><div class="command-modal-content"><div class="command-title-button"><div class="command-title"><h4 class="title">Command Line</h4></div><button type="button" class="command-close">&times;</button></div><p class="command_text">'+'</p></div></div>';
+							htmlContent += '<div id="command_info_modal'+task.taskId+'" class="command-modal"><div class="command-modal-content"><div class="command-title-button"><div class="command-title"><h4 class="title">Command Line</h4></div><button type="button" class="command-close">&times;</button></div><p class="command-text">'+'</p></div></div>';
 						}
 					}
 
@@ -638,7 +638,7 @@ jQuery.fn.npExecPanels = function(options){
 			var output = ((typeof response.data.output === 'undefined' || response.data.output === '') ? 'There is no log message for the selected task': response.data.output);
 
 			$modal = $("#task_log_modal"+taskId);
-			$(".log_text", $modal).html(output);
+			$(".log-text", $modal).html(output);
 
 			$modal.show();
         }).fail(function (jqXHR, status, textStatus) {
@@ -662,8 +662,8 @@ jQuery.fn.npExecPanels = function(options){
 			$modal = $("#command_info_modal"+taskId);
 
 			var commandArea = "<textarea class='command-line' disabled>"+ command+"</textarea>";
-			$(".command_text", $modal).html(commandArea);
-			$('<style>.command-line { width:100%;height:90%;font-family:"Courier New";white-space:pre; resize: vertical; height: 40vh}</style>').appendTo($modal);
+			$(".command-text", $modal).html(commandArea);
+			$("style#commandLineStyle").length == 0 && $('<style id="commandLineStyle">.command-line { width:100%;height:90%;font-family:"Courier New";white-space:pre; resize: vertical; height: 40vh}</style>').appendTo($modal);
 			$modal.show();
         }).fail(function (jqXHR, status, textStatus) {
             console.log("fail to command");

@@ -245,7 +245,7 @@ var toolboxModules = {
         });
 	},
 	newModule: function(n){
-		$( "#selectable" ).append( '<li id="mti_'+n.blockid+'" class="ui-widget-content" data-dna='+JSON.stringify(n)+'>Item '+n.blockid+'</li>' );
+		$( "#selectable" ).append( '<li id="mti_'+n.nodeID+'" class="ui-widget-content" data-dna='+JSON.stringify(n)+'>Item '+n.nodeID+'</li>' );
 	},
 	rescanSelected: function(){
 		toolboxModules.selected = [];
