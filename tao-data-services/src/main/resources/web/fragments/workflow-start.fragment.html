@@ -218,9 +218,6 @@
     </div> -->
 </div><!-- /.modal-content -->
 <script type="text/javascript" src="./assets/libs/openlayers/ol-poly.js"></script>
-<!-- include select2 -->
-<link rel="stylesheet" type="text/css" href="assets/libs/select2/4.1.0/select2.min.css" />
-<script type="text/javascript" src="assets/libs/select2/4.1.0/select2.min.js"></script>
 
 <style>
     .chosen-input{margin-left: 10px;font-weight: bold;}
@@ -360,6 +357,12 @@
             wfSubmitUrl = baseRestApiURL + "orchestrator/script";
             pupulateJobTypes();
         }
+         if (window.userOpStack[0].action && window.userOpStack[0].action === "wf_simpipe") {
+             $("#myModalLabel").html("Execute Simpipe");
+             $(".info-box-content .info-box-text", "#wf-header").html("Selected workflow for simpipe execution");
+             wfSubmitUrl = baseRestApiURL + "simpipe/execute";
+         }
+
         if (window.userOpStack[0].dna && window.userOpStack[0].dna.id) {
             getWFDataById(window.userOpStack[0].dna.id);
         } else {
@@ -625,7 +628,7 @@
                     $(this).siblings(".var-value").val($(this).val());
                 }
             })
-            .submit(function (e) {
+            .on("submit", function (e) {
                 e.preventDefault();
                 if ($(this).valid()) {
                     if ($("#inputWorkflowLabel",$(this)).val() === "") {
@@ -643,7 +646,7 @@
                     formData['jobType'] = "EXECUTION";
                     if (!$("select", "#chooseScriptType").hasClass("hidden")) {
                         formData['jobType'] = $("select", "#chooseScriptType").val();
-                    } else if(formData['environment'] === "SIMPIPE"){
+                    } else if(window.userOpStack[0].action === "wf_simpipe"){
                          formData['jobType'] = "ARGO_EXPORT";
                      }
                     /*var isValid =  true;*/

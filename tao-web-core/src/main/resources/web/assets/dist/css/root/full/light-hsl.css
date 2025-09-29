@@ -1,0 +1,149 @@
+:root {
+	--primary-color             : #4d627b;
+	--hairline                  : rgb(0 0 0/.05);
+	--hairline-inv              : rgb(255 255 255/.05);
+	--hairline-strong           : rgb(0 0 0/.3);
+	--hairline-strong-inv       : rgb(255 255 255/.3);
+	
+	--header-color              : #4d627b;
+	--header-bkg                : #fafafa;
+	--header-logo-color         : #4d627b;
+	--header-logo-bkg           : #fff;
+	
+	--dropdown-color            : #7a878e;
+	--dropdown-bkg              : #fff;
+	--dropdown-header-border    : rgb(0 0 0/.05);
+	--dropdown-hover-color      : #587da9;
+	--dropdown-hover-bkg        : #fafafa;
+	--dropdown-open-color       : #fff;
+	--dropdown-open-bkg         : #587da9;
+	
+	--sidebar-color             : #7a878e;
+	--sidebar-bkg               : #fff;
+	--sidebar-border            : rgb(0 0 0/.05);
+	
+	--menu-color                : #9099a2;
+	--menu-bkg                  : #fff;
+	--menu-border               : transparent;
+	--menu-header-color         : #707b86;
+	--menu-header-bkg           : transparent;
+	--menu-header-border        : rgb(0 0 0/.05);
+	--menu-hover-color          : #587da9;
+	--menu-hover-bkg            : #fafafa;
+	--menu-hover-border         : transparent;
+	--menu-active-color         : #587da9;
+	--menu-active-bkg           : #fafafa;
+	--menu-active-border        : transparent;
+	--menu-selected-color       : #fff;
+	--menu-selected-bkg         : #587da9;
+	--menu-selected-border      : transparent;
+	--submenu-color             : #7a878e;
+	--submenu-bkg               : #fafafa;
+	--submenu-selected-color    : #587da9;
+	--submenu-mini-bkg          : #f0f0f0;
+	
+	--content-color             : hsl(210   8%  52% / 1);
+	--content-bkg               : #fafafa;
+	--content-header-color      : #555;
+	--content-header-bkg        : transparent;
+	
+	--footer-color              : hsl(210  17%  40% / 1);
+	--footer-bkg                : #fafafa;
+	--footer-border             : #e3e6e8;
+	--footer-hover-color        : #587da9;
+	
+	--btn-default-color         : #7a878e;
+	--btn-default-bkg           : #f0f0f0;
+	--btn-default-border        : rgb(0 0 0/.07);
+	--btn-default-hover-bkg     : #ededed;
+	
+	--btn-nodeop-color          : #fff;
+	--btn-nodeop-bkg            : #587da9;
+	--btn-nodeop-border         : #587da9;
+	--btn-nodeop-hover-bkg      : #4b6c92;
+	
+	--btn-primary-color         : #fff;
+	--btn-primary-bkg           : #587da9;
+	--btn-primary-border        : #587da9;
+	--btn-primary-hover-bkg     : #4b6c92;
+	
+	--tab-color                 : #707070;
+	--tab-bkg                   : hsl(210 25% 90% / 1);
+	--tab-border                : #e3e6e8;
+	--tab-hover-bkg             : hsl(210 30% 98% / 1);
+	--tab-hover-border          : transparent;
+	--tab-active-color          : #587da9;
+	--tab-active-bkg            : #fff;
+	--tab-active-border         : #587da9;
+	--tab-topo-active-border    : #587da9;
+	--pill-active-color         : #fff;
+	--pill-active-bkg           : #587da9;
+	--pill-active-border        : #587da9;
+	--pill-topo-active-border   : #587da9;
+	
+	--panel-color               : #676767;
+	--panel-bkg                 : hsl(210  10%  96% / 1);
+	--panel-border              : transparent;
+	--panel-hover-color         : hsl(210  30%  50% / 1);
+	--panel-hover-bkg           : hsl(210  50%  95% / 1);
+	--panel-body-color          : #777;
+	--panel-body-bkg            : hsl(210  10%  99% / 1);
+	--panel-text-shadow         : #fff;
+	
+	--box-color                 : #587da9;
+	--box-bkg                   : #fff;
+	--box-border                : hsl(210  33%  90% / 1);
+	--box-desc-color            : #555;
+	--box-desc-bkg              : hsl(210  23%  95% / 1);
+	--box-disabled-bkg          : hsl(210  23%  95% / 1);
+	
+	--callout-empty-color       : #444;
+	--callout-empty-bkg         : hsl(210  10%  96% / 1);
+	--callout-empty-border      : hsl(210  10%  70% / 1);
+	--callout-empty-shadow      : #fff;
+	
+	--log-color                 : #444;
+	--log-bkg                   : #fff;
+	--log-header-color          : #444;
+	--log-header-bkg            : hsl(210  23%  95% / 1);
+	
+	--list-hover-color          : #587da9;
+	--list-hover-bkg            : hsl(210  33%  90% / 1);
+	--list-selected-color       : #fff;
+	--list-selected-bkg         : #587da9;
+	
+	--modal-color               : #555;
+	--modal-bkg                 : #fafafa;
+	--modal-border              : #e3e6e8;
+	--modal-header-color        : #fff;
+	--modal-header-bkg          : #587da9;
+	
+	--form-control-color        : #555;
+	--form-control-placeholder  : #bbb;
+	--form-control-bkg          : #fff;
+	--form-control-border       : #e3e6e8;
+	--form-control-focus-border : #587da9;
+	--form-control-disabled-bkg : #f0f0f0;
+	
+	--pag-color                 : hsl(210   8%  52% / 1);
+	--pag-bkg                   : transparent;
+	--pag-border                : rgb(0 0 0/.07);
+	--pag-hover-color           : #587da9;
+	--pag-active-color          : #fff;
+	--pag-active-bkg            : #587da9;
+	--pag-disabled-color        : hsl(210   8%  52% / 1);
+	--pag-disabled-bkg          : transparent;
+	
+	--status-default            : #94979e;
+	--status-primary            : #587da9;
+	--status-info               : #03a9f4;
+	--status-success            : #00a65a;
+	--status-danger             : #dd4b39;
+	--status-warning            : #f39c12;
+	--status-unavailable        : #808080;
+	
+	--scrollbar-default-thumb   : #4f7199;
+	--scrollbar-default-track   : transparent;
+	--scrollbar-onhover-thumb   : #4f7199;
+	--scrollbar-onhover-track   : rgb(0 0 0/.1);
+}

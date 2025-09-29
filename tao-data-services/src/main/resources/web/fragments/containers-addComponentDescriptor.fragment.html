@@ -525,8 +525,8 @@
 									<div class="col-md-12">
 										<div class="responsive box-shadow--6dp" style="margin-bottom:20px;overflow:auto">
 											<table class="table table-bordered tbl-edt" id="tbl-edt-sources" style="margin:0">
+												<thead><tr><th colspan="100%" class="table-title">Sources</th></tr></thead>
 												<thead>
-												<tr><th colspan="8" class="table-title">Sources</th></tr>
 												<tr>
 													<th></th>
 													<th>Source Name</th>
@@ -568,8 +568,7 @@
 										</div>
 										<div class="responsive box-shadow--6dp" style="margin-bottom:20px;overflow:auto">
 											<table class="table table-bordered tbl-edt" id="tbl-edt-targets" style="margin:0">
-												<thead>
-												<tr><th colspan="9" class="table-title">Targets</th></tr>
+												<thead><tr><th colspan="100%" class="table-title">Targets</th></tr></thead>
 												<tr>
 													<th></th>
 													<th>Target Name</th>
@@ -708,17 +707,8 @@ li.select2-search.select2-search--inline {display:none}
 	editor.$blockScrolling = Infinity;
 	editor.setShowPrintMargin(false);
 	
-	switch(window.themeParameters.size){
-		case 'size-normal':
-			editor.setFontSize(14);
-			break;
-		case 'size-large':
-			editor.setFontSize(16);
-			break;
-		case 'size-larger':
-			editor.setFontSize(18);
-			break;
-	}
+	var fontSize = parseInt(document.documentElement.style.getPropertyValue('--body-font-size'));
+	editor.setFontSize(fontSize);
 	
 	function fieldFormat(){
 		$(".tag-format", "#tbl-edt-paramdesc").tagsInput({

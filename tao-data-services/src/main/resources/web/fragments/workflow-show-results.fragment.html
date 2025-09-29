@@ -4,7 +4,7 @@
 			@media (min-width: 768px) {& {white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}}
 		}
 		.details {
-			.row {font-style:italic;color:white;line-height:1.2em;font-weight:300;margin-top:10px;>* {margin:0;}}
+			.row {font-style:italic;line-height:1.2em;font-weight:300;margin-top:10px;>* {margin:0;}}
 			@media (min-width: 768px) {.row {padding-left:45px;margin-top:5px;}}
 		}
 		#rm_result_attr   {min-height:15em;max-height:calc(100vh - 23em);overflow-y:auto;padding:10px 10px 10px 0;margin-right:-10px;margin-bottom:-10px;
@@ -17,11 +17,11 @@
 				.time     {line-height:1;margin-top:0.4em;margin-bottom:-0.4em;small {display:block;}}
 			}
 			.btns         {display:flex;align-items:center;justify-content:center;gap:0.7em;flex-grow:0;flex-shrink:0;}
-			.btns a       {cursor:default;}
+			.btns a       {cursor:default;text-shadow:none;}
 			.panel-attr   {word-break:break-all;
 				p         {display:flex;line-height:1.2em;text-align:right;}
-				p>label   {margin:0 1em 0 0;min-width:6em;flex-shrink:0;color:#333;}
-				p>span    {text-align:left;flex-grow:1;max-height:3.6em;overflow-y:auto;color:#333;}
+				p>label   {margin:0 1em 0 0;min-width:6em;flex-shrink:0;}
+				p>span    {text-align:left;flex-grow:1;max-height:3.6em;overflow-y:auto;}
 			}
 			/* Responsive */
 						   @media (max-width: 767px) {& {max-height:unset;}}
@@ -30,7 +30,7 @@
 						   @media (max-width: 450px) {& {max-width:100%;}}}
 			.panel-attr p {@media (max-width: 450px) {& {flex-direction:column;text-align:left;}}}
 		}
-		#rm_preview_img   {position:fixed;cursor:pointer;top:1em;bottom:1em;left:1%;right:1%;border-radius:5px;width:98%;height:calc(100% - 2em);object-fit:contain;background-color:rgba(0,0,0,0.5);
+		#rm_preview_img   {position:fixed;cursor:pointer;top:1em;bottom:1em;left:1%;right:1%;border-radius:5px;width:98%;height:calc(100% - 2em);object-fit:contain;background-color:rgba(0,0,0,0.5);z-index:1070;
 			.modal-dialog:has(&.full-screen) {-webkit-transform:none;transform:none;transition:none;}
 		}
 	}
@@ -134,8 +134,8 @@
 				var type = file.format;
 				var size = formatSizeUnits(file.size);
 				var time = moment(file.endTime).format("YYYY-MM-DD") + ' <small>' + moment(file.endTime).format("HH:mm:ss") + '</small>';
-				var btns = (type === "RASTER") ? '<a class="quickview" href="' + (baseRestApiURL + file.previewUrl.substr(1)) + '"><button class="btn btn-success btn-nodeop" data-toggle="tooltip" data-original-title="Quick view" data-action="preview" ><i class="fa fa-eye      fa-fw"></i></button></a>' : '';
-					btns = btns +                '<a class="download"  href="' + (baseRestApiURL + file.url.substr(1))        + '"><button class="btn btn-primary btn-nodeop" data-toggle="tooltip" data-original-title="Download"   data-action="download"><i class="fa fa-download fa-fw"></i></button></a>';
+				var btns = (type === "RASTER") ? '<a class="quickview" href="' + (baseRestApiURL + file.previewUrl.substr(1)) + '"><button class="btn btn-success btn-nodeop" data-toggle="tooltip" data-placement="bottom" data-original-title="Quick view" data-action="preview" ><i class="fa fa-eye      fa-fw"></i></button></a>' : '';
+					btns = btns +                '<a class="download"  href="' + (baseRestApiURL + file.url.substr(1))        + '"><button class="btn btn-primary btn-nodeop" data-toggle="tooltip" data-placement="bottom" data-original-title="Download"   data-action="download"><i class="fa fa-download fa-fw"></i></button></a>';
 				var $el = $('<div class="job-history-one success panel">' +
 								'<div class="panel-header">' +
 									'<a href="#' + pidx + '" class="helper collapsed" data-toggle="collapse">' +
@@ -149,7 +149,7 @@
 								'<div id="' + pidx + '" class="panel-attr collapse" data-parent="#' + $resultAttr.attr("id") + '"></div>' +
 							'</div>');
 				$.each(file, function (key, value) {
-					$("#" + pidx, $el).append('<p><label>' + key + ':</label><span>' + value + '</span></p>');
+					$("#" + pidx, $el).append('<p><label>' + key + ':</label><span class="thin-scrollbar onhover">' + value + '</span></p>');
 				});
 				$resultAttr.append($el);
 			});

@@ -179,7 +179,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 #myModalNodes .info-message>span:first-child{padding-right:5px;font-style:italic}
 
 @media (max-width: 767px) {
-.sidebar-open #myModalNodes{width:70%;width: calc(100% - 230px)}
+.sidebar-open #myModalNodes{width:70%;width: calc(100% - 16em)}
 #queryExtent .modal-body {min-height:45vh;max-height:calc(100vh - 22em)!important;}
 }
 

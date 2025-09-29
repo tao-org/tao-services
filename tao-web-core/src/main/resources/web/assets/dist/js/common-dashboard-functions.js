@@ -4,7 +4,7 @@ function updateRservice(task){
     var tasklogs = '';
     if(task.data.Payload === "DONE" || task.data.Payload === "FAILED"){
         tasklogs = ' <button id="task_log_info_'+task.source+'" class="fa fa-info-circle log-info" value="'+task.source+'"></button>';
-        tasklogs +='<div id="task_log_modal'+task.source+'" class="log-modal"><div class="log-modal-content"><div class="log-title-button"><div class="log-title"><h4 class="title">Task Log</h4></div><button type="button" class="log-close">&times;</button></div><p class="log_text">'+'</p></div></div>';
+        tasklogs +='<div id="task_log_modal'+task.source+'" class="log-modal"><div class="log-modal-content"><div class="log-title-button"><div class="log-title"><h4 class="title">Task Log</h4></div><button type="button" class="log-close">&times;</button></div><p class="log-text">'+'</p></div></div>';
     
         if($("#task_log_info_" + task.source).length === 0){
             $("#"+ task.source +".one-task strong:first").after(tasklogs);

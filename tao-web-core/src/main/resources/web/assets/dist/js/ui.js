@@ -212,7 +212,40 @@ $(function () {
 });
 
 (function(){
-    var $elModalProfile = $("#myModalWorkFlow");
+	var $elModalProfile = $('<div id="myModalUserProfile" class="modal modal-fullscreen fade" tabindex="-1" role="dialog" aria-labelledby="User Profile" aria-hidden="true">' +
+								'<div class="modal-dialog"></div>' +
+							'</div>');
+    
+	function logout(e) {
+        e.preventDefault();
+        var postLogout = $.ajax({
+            cache: false,
+            url: baseRestApiURL + "auth/logout",
+            type: 'POST',
+            data: '',
+            headers: {
+                "X-Auth-Token": window.tokenKey
+            }
+        });
+        $.when(postLogout)
+            .done(function (postLogoutResponse) {
+				//location.reload(true);
+				window.location = 'login.html';
+            })
+            .fail(function(jqXHR, textStatus){
+                console.log(jqXHR);
+                console.log(textStatus);
+                alert("Could not logout. It seems you are already logged out.");
+            });
+        taoUserProfile = {};
+        _settings.createCookie("tokenKey",'');
+        _settings.createCookie("userMatrix",'{}');
+        _settings.createCookie("refreshToken","");
+        _settings.createCookie("userRole","");
+        _settings.createCookie("TaoUserId","");
+        _settings.createCookie("TaoUserName","");
+	}
+	
     function updateProfile(formData){
         var userData = {
             "id": 0,
@@ -275,89 +308,60 @@ $(function () {
     	});
 
     }
-
-    function f(){
+	
+    function f() {
         $.ajax({ cache: false,
             url: "./fragments/profile.fragment.html"
-        })
-            .done(function (data) {
-                $(".modal-dialog",$elModalProfile).html(data);
-                var gravatarUrl = "https://www.gravatar.com/avatar/"+taoUserProfile.userEmailMD5+"?d=mp&s=160";
-                $(".card-profile img",$elModalProfile).attr("src", gravatarUrl).css({'width':'50%', 'height':'50%'});
-                $(".val-user-fullname",$elModalProfile).html(taoUserProfile.lastName+" "+taoUserProfile.firstName);
+        }).done(function (data) {
+			$(".modal-dialog",$elModalProfile).html(data);
+			var gravatarUrl = "https://www.gravatar.com/avatar/"+taoUserProfile.userEmailMD5+"?d=mp&s=160";
+			$(".card-profile img",$elModalProfile).attr("src", gravatarUrl).css({'width':'50%', 'height':'50%'});
+			$(".val-user-fullname",$elModalProfile).html(taoUserProfile.lastName+" "+taoUserProfile.firstName);
 
-                $(".val-user-fname",$elModalProfile).html(taoUserProfile.firstName);
-                $(".val-user-lname",$elModalProfile).html(taoUserProfile.lastName);
+			$(".val-user-fname",$elModalProfile).html(taoUserProfile.firstName);
+			$(".val-user-lname",$elModalProfile).html(taoUserProfile.lastName);
 
-                $(".val-user-role",$elModalProfile).html(taoUserProfile.userRole);
-                $(".val-user-email",$elModalProfile).html(taoUserProfile.email);
-                $(".val-user-email2",$elModalProfile).html(taoUserProfile.alternativeEmail);
-                $(".val-user-org",$elModalProfile).html(taoUserProfile.organization);
-                $(".val-user-name",$elModalProfile).html(taoUserProfile.username);
-                $(".val-user-phone",$elModalProfile).html(taoUserProfile.phone);
-                $("[contenteditable]").css({"word-wrap":"break-word", "white-space": "pre-wrap"});
+			$(".val-user-role",$elModalProfile).html(taoUserProfile.userRole);
+			$(".val-user-email",$elModalProfile).html(taoUserProfile.email);
+			$(".val-user-email2",$elModalProfile).html(taoUserProfile.alternativeEmail);
+			$(".val-user-org",$elModalProfile).html(taoUserProfile.organization);
+			$(".val-user-name",$elModalProfile).html(taoUserProfile.username);
+			$(".val-user-phone",$elModalProfile).html(taoUserProfile.phone);
+			$("[contenteditable]").css({"word-wrap":"break-word", "white-space": "pre-wrap"});
 
-                $(".btn-edit-profile").on("click", function(){
-                	if($(this).attr("data-action") === "edit"){//make divs available to edit
-                		$(this).text('Save').attr("data-action","save");
-                    	$.each($(".card-body div[contenteditable]"),function(){
-                    		$(this).attr("contenteditable","true").css({"background":"#fff"});
-                    	});
-                	}else{
-                		//save
-                	    var formData = {
-                                "id" : taoUserProfile.id,
-                                "username" : taoUserProfile.username,
-                                "email" : $("div.val-user-email[contenteditable='true']").text(),
-                                "alternativeEmail" : $("div.val-user-email2[contenteditable='true']").text(),
-                                "lastName" : $("div.val-user-lname[contenteditable='true']").text(),
-                                "firstName" : $("div.val-user-fname[contenteditable='true']").text(),
-                                "phone" : $("div.val-user-phone[contenteditable='true']").text(),
-                                "organization" : $("div.val-user-org[contenteditable='true']").text()
-                            };
-                		updateProfile(formData);
-                	}
-            	});
-                $elModalProfile.modal("show");
-            })
-            .fail(function (jqXHR, textStatus) {
-                alert("Could not load user profile... Try later.");
-            });
+			$(".btn-edit-profile").on("click", function(){
+				if($(this).attr("data-action") === "edit"){//make divs available to edit
+					$(this).text('Save').attr("data-action","save");
+					$.each($(".card-body div[contenteditable]"),function(){
+						$(this).attr("contenteditable","true").css({"background":"#fff"});
+					});
+				}else{
+					//save
+					var formData = {
+							"id" : taoUserProfile.id,
+							"username" : taoUserProfile.username,
+							"email" : $("div.val-user-email[contenteditable='true']").text(),
+							"alternativeEmail" : $("div.val-user-email2[contenteditable='true']").text(),
+							"lastName" : $("div.val-user-lname[contenteditable='true']").text(),
+							"firstName" : $("div.val-user-fname[contenteditable='true']").text(),
+							"phone" : $("div.val-user-phone[contenteditable='true']").text(),
+							"organization" : $("div.val-user-org[contenteditable='true']").text()
+						};
+					updateProfile(formData);
+				}
+			});
+			$elModalProfile.modal("show");
+		})
+		.fail(function (jqXHR, textStatus) {
+			alert("Could not load user profile... Try later.");
+		});
     }
-    $(".do-editprofile").on("click", function(e){
-        e.preventDefault();
-        f();
-    });
-    $(".do-logout").on("click", function(e){
-        e.preventDefault();
-        var postLogout = $.ajax({
-            cache: false,
-            url: baseRestApiURL + "auth/logout",
-            type: 'POST',
-            data: '',
-            headers: {
-                "X-Auth-Token": window.tokenKey
-            }
-        });
-        $.when(postLogout)
-            .done(function (postLogoutResponse) {
-				//location.reload(true);
-				window.location = 'login.html';
-            })
-            .fail(function(jqXHR, textStatus){
-                console.log(jqXHR);
-                console.log(textStatus);
-                alert("Could not logout. It seems you are already logged out.");
-            });
-        taoUserProfile = {};
-        _settings.createCookie("tokenKey",'');
-        _settings.createCookie("userMatrix",'{}');
-        _settings.createCookie("refreshToken","");
-        _settings.createCookie("userRole","");
-        _settings.createCookie("TaoUserId","");
-        _settings.createCookie("TaoUserName","");
-
-    });
+	
+	$elModalProfile
+	.on("editprofile", function (e) { f();       })
+	.on("logout"     , function (e) { logout(e); });
+	
+	$("body").append($elModalProfile);
 }());
 
 (function(){
@@ -433,22 +437,19 @@ $(function () {
             var usageHTML =
             '        <h4 class="control-sidebar-subheading">Resource usage:</h4>' + inputQ + processQ;
 
-            $elQuota.find("a.holder").empty().html(usageHTML);
+            $elQuota.find(".holder").empty().html(usageHTML);
             $elQuotaSmall.find(".arc1").attr("d",describeArc(20, 20, 16, 0, (pctinputQ>=100?99.99:pctinputQ)/100*360));
             $elQuotaSmall.find(".arc2").attr("d",describeArc(20, 20, 9, 0, (pctprocessQ>=100?99.99:pctprocessQ)/100*360));
             $elQuotaSmall.find(".quota-icon").attr("data-original-title", '<div class="quota-tool-tip">'+usageHTML+'</div>');
         });
 
-//      var quota_usage_details = "using: "+q.used+"GB<br>"+q.files+" Files, "+q.folders+" Folders";
-
         var usageHTML =
-            '        <h4 class="control-sidebar-subheading">Resource usage:</h4>' +
+            //'        <h4 class="control-sidebar-subheading"<span>Resource usage</span></h4>' +
             '        <h4 class="control-sidebar-subheading"><i class="fa fa-arrow-right fa-fw" aria-hidden="true"></i>storage:&nbsp;<span>'+lblInputQ+'</span><span class="label label-danger pull-right">'+lblInputPercent+'</span></h4>' +
             '        <div class="progress progress-xxs"><div class="progress-bar progress-bar-danger progress-bar-graph" style="width: '+pctI+'%;"></div></div>' +
             '        <h4 class="control-sidebar-subheading"><i class="fa fa-bolt fa-fw" aria-hidden="true"></i>processing:&nbsp;<span>'+lblProcessingQ+'</span><span class="label label-danger pull-right">'+lblProcessingPercent+'</span></h4>' +
             '        <div class="progress progress-xxs"><div class="progress-bar progress-bar-danger progress-bar-graph" style="width: '+pctP+'%;"></div></div>';
-//            '        <p style="color: #4b646f;"><small>'+quota_usage_details+'</small></p>';
-        $elQuota.find("a.holder").empty().html(usageHTML);
+        $elQuota.find(".holder").empty().html(usageHTML);
         $elQuotaSmall.find(".arc1").attr("d",describeArc(20, 20, 16, 0, (pctI>=100?99.99:pctI)/100*360));
         $elQuotaSmall.find(".arc2").attr("d",describeArc(20, 20, 9, 0, (pctP>=100?99.99:pctP)/100*360));
         $elQuotaSmall.find(".quota-icon").attr("data-original-title", '<div class="quota-tool-tip">'+usageHTML+'</div>');
@@ -459,13 +460,13 @@ $(function () {
 
         var $elQuotaTime = $("#wrapper-quota-time");
         usageHTML =
-            '        <h4 class="control-sidebar-subheading">Time usage:</h4>' +
+            //'        <h4 class="control-sidebar-subheading"><span>Time usage</span></h4>' +
             '        <h4 class="control-sidebar-subheading"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i>spent:&nbsp;<span>'+timer+'</h4>' +
             '        <div class="progress progress-xxs"><div class="progress-bar progress-bar-info progress-bar-graph" style="width: 0%;"></div></div>' +
             '        <h4 class="control-sidebar-subheading"><i class="fa fa-bolt fa-fw" aria-hidden="true"></i>processing:&nbsp;<span>'+processed+'</h4>' +
             '        <div class="progress progress-xxs"><div class="progress-bar progress-bar-info progress-bar-graph" style="width: 0%;"></div></div>';
 
-        $elQuotaTime.find("a.holder").empty().html(usageHTML);
+        $elQuotaTime.find(".holder").empty().html(usageHTML);
         return true;
     }
 
@@ -525,54 +526,6 @@ $(function () {
 
 
 (function () {
-    //var version = '0.3',
-    //    $elMsgBox = $("#messagesBox"),
-    //    my_messages_index = 0;
-	//function checkLocked() {
-	//	if ($(".messagesBoxItem.locked", $elMsgBox).length > 0) {
-	//		$elMsgBox.addClass("locked");
-	//	} else {
-	//		$elMsgBox.removeClass("locked");
-	//	}
-	//}
-	//function messagestack(msg, status) {
-	//	var o = {
-	//		msg     : msg,
-	//		status  : status,
-	//		lifetime: 4000,
-	//		closable: true
-	//	};
-
-	//	// Set message color
-	//	var collor_class = "";
-	//	switch (o.status.toUpperCase()) {
-	//		case 'SUCCESS': collor_class = " msg-green" ; break;
-	//		case 'INFO'   : collor_class = " msg-blue"  ; break;
-	//		case 'WARN'   : collor_class = " msg-yellow"; break;
-	//		case 'WARNING': collor_class = " msg-yellow"; break;
-	//		case 'FAIL'   : collor_class = " msg-red locked"; o.closable = false; break;
-	//		case 'FAILED' : collor_class = " msg-red locked"; o.closable = false; break;
-	//		case 'ERROR'  : collor_class = " msg-red locked"; o.closable = false; break;
-	//	}
-
-	//	// Set message ID
-	//	my_messages_index++;
-
-	//	// Add message to stack
-	//	$elMsgBox.append('<div id="messagesBoxItem'+my_messages_index+'" class="messagesBoxItem'+collor_class+'"><span class="glyphicon glyphicon-remove"></span>'+o.msg+'</div>');
-
-	//	// Manual close
-	//	$elMsgBox.on("click", "#messagesBoxItem"+my_messages_index+" span.glyphicon-remove", function () {
-	//		$(this).closest(".messagesBoxItem").remove();
-	//		checkLocked();
-	//	});
-
-	//	// Automatic close
-	//	if (o.closable) { $('#messagesBoxItem'+my_messages_index).delay(o.lifetime).fadeOut(function () { $(this).remove(); checkLocked(); }); }
-	//	checkLocked();
-    //}
-    //window.showMsg=messagestack;
-
     //VPA 2022.08 Added Gritter for notifications
     function showGritterMessage(message, title) {
         $.gritter.add({
@@ -624,39 +577,6 @@ $(function () {
     }
     window.showMsg = showGritter;
 	return this;
-}());
-
-(function () {
-    var version = '0.2',
-        $elMsgBox = $("#messagesBox"),
-        my_messages_index = 0;
-    function f(msg, status, closable){
-        if (msg === ""){
-            return false;
-        }
-        my_messages_index++;
-        var collor_class = "";
-        if(status === 'SUCCESS'){
-            collor_class = " msg-green";
-        }
-        if(status === 'INFO'){
-            collor_class = " msg-yellow";
-        }
-        if(status === 'WARN'){
-            collor_class = " msg-yellow";
-        }
-        if(status === 'FAIL'){
-            collor_class = " msg-red";
-        }
-        if(status === 'ERROR'){
-            collor_class = " msg-red";
-        }
-        $elMsgBox.prepend('<div id="messagesBoxItem'+my_messages_index+'" class="messagesBoxItem'+collor_class+'">'+msg+'</div>');
-        $('#messagesBoxItem'+my_messages_index).delay(4000).fadeOut(function(){$(this).remove();});
-        return true;
-    }
-    window.showMsgOld=f;
-    return true;
 }());
 
 (function () {

@@ -534,8 +534,8 @@
 									<div class="col-md-12">
 										<div class="responsive box-shadow--6dp" style="margin-bottom:20px;overflow:auto">
 											<table class="table table-bordered tbl-edt" id="tbl-edt-sources" style="margin:0">
+												<thead><tr><th colspan="100%" class="table-title">Sources</th></tr></thead>
 												<thead>
-												<tr><th colspan="9" class="table-title">Sources</th></tr>
 												<tr>
 													<th></th>
 													<th>Source Name</th>
@@ -581,8 +581,8 @@
 										</div>
 										<div class="responsive box-shadow--6dp" style="margin-bottom:20px;overflow:auto">
 											<table class="table table-bordered tbl-edt" id="tbl-edt-targets" style="margin:0">
+												<thead><tr><th colspan="100%" class="table-title">Targets</th></tr></thead>
 												<thead>
-												<tr><th colspan="9" class="table-title">Targets</th></tr>
 												<tr>
 													<th></th>
 													<th>Target Name</th>
@@ -734,25 +734,12 @@ form .taginput .tag{background-color:#f0f0f0; border:1px solid #dedede; color: b
 	.modal-lg { width: 60%; }
 }
 
-textarea {resize: none;}
-.var-description{min-width: 190px;}
+textarea {resize:none;}
+textarea::placeholder {color:#bbb;}
+.var-description {min-width: 190px;}
 #ace-css{ margin-left: 6px; margin-right: 0px;}
 
-.select2-container--default .select2-selection--multiple{border-color:#d2d6de;line-height:2rem;overflow:auto !important;height:auto !important;max-height:9rem}
-.select2-container::after{content:"\25be";font-size:32px;color:#79bde4;position:absolute;display:block;right:0;top:0;line-height:3.2rem;pointer-events:none}
-.select2-container--default.select2-container--open::after{content:"\25b4"}
-.select2-container.overflow::after{right:1.5rem}
-.select2-container--default.select2-container--open .select2-selection--multiple{border-color:#79bde4}
-.select2-selection__choice{background-color:#79bde4;border-color:#79bde4;color:black;line-height:2rem}
-.select2-container--default .select2-selection--multiple .select2-selection__choice__remove{color:white !important;border-right:1px solid rgba(255,255,255,0.3) !important}
-.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover{background-color:#41a0d8}
-.select2-container--default .select2-search--inline .select2-search__field::placeholder{font-family:"Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;color:#bbb}
-.select2-selection__clear{display:none !important;}
-/* .select2-container--open{top:unset !important; left: unset !important;} */
-.select2-dropdown {z-index:99999;}
 .shifted .select2{display:none}
-li.select2-search.select2-search--inline {display:none}
-
 </style>
 
    <link rel="stylesheet" href="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" type="text/css" />
@@ -775,18 +762,9 @@ li.select2-search.select2-search--inline {display:none}
 	editor.$blockScrolling = Infinity;
 	editor.setShowPrintMargin(false);
 	
-	switch(window.themeParameters.size){
-		case 'size-normal':
-			editor.setFontSize(14);
-			break;
-		case 'size-large':
-			editor.setFontSize(16);
-			break;
-		case 'size-larger':
-			editor.setFontSize(18);
-			break;
-	}
-
+	var fontSize = parseInt(document.documentElement.style.getPropertyValue('--body-font-size'));
+	editor.setFontSize(fontSize);
+	
     var action = 'op-plus';
 	var apachezeppelinContainerId = null;
 	var paramType_ui = "REGULAR";

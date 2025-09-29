@@ -5,24 +5,29 @@
 		--box-list-logo-size: 5.0em;
 		--box-list-icon-size: 2.3em;
 	}
-	#panel-nodes {
-		.node-root.disabled .box-icon {opacity:0.65;}
-		.nodes-item-core-box {
+	
+	#tao-async-wf {margin:0;}
+	#panel-nodes                      {
+		.node-root.disabled .box-icon {opacity:.5;}
+		.nodes-item-core-box          {
 			.with-label>label::before {min-width:4em;}
 			.box-top .box-subtitle    {cursor:pointer;}
-			.box-description          {color:#555;font-size:0.9em;background:#efefef;@media (min-width: 768px) {&,&:hover {min-height:1.8em;max-height:4.2em;}}}
 		}
 	}
-	.spacer               {display:inline-block;width:2em;text-align:center;&::before{content:"|";opacity:0.65;}&:has(+.hidden,+.invisible){display:none;}}
+	
+	.spacer               {display:inline-block;width:2em;text-align:center;float:left;&::before{content:"|";opacity:0.65;}&:has(+.hidden,+.invisible){display:none;}}
 	.fa-trash-ban         {position:relative;background:inherit;&::before{content:"\f014"}&::after {content:"\f1b8";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.1em;background:inherit;border-radius:50%;}}
 	.fa-dry-run           {position:relative;background:inherit;&::before{content:"\f0ae"}&::after {content:"\f046";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.3em;background:inherit;border-radius:50%;}}
-	.fa-code-fork::before {display:block;transform:scaleX(-1.3) scaleY(1.3) rotate(180deg)}
-	.fa-tasks::before     {display:block;transform:scaleX(1.3);}
-	.fa-dry-run::before   {display:block;transform:scaleX(1.3);}
-	.fa-gg::before        {display:block;transform:scaleX(1.5) rotate(90deg);}
+	.fa-code-fork::before {display:inline-block;transform:scaleX(-1.3) scaleY(1.3) rotate(180deg)}
+	.fa-tasks::before     {display:inline-block;transform:scaleX(1.3);}
+	.fa-dry-run::before   {display:inline-block;transform:scaleX(1.3);}
+	.fa-gg::before        {display:inline-block;transform:scaleX(1.5) rotate(90deg);}
+	
+	.tooltip-up label,.tooltip-down label {line-height:1.8em;}
 	
 	.col-custom {
-		@media (min-width: 768px) {& {width:100%;float:left;}
+		padding-left:10px;padding-right:10px;
+		@media (min-width: 768px) {& {width:100%;float:left;}}
 		@media (min-width:1040px) {& {width: 50%;}}
 		@media (min-width:1410px) {& {width: 33%;}}
 		@media (min-width:1760px) {& {width: 25%;}}
@@ -33,177 +38,149 @@
 
 <!-- Content Workflow -->
 <section id="tao-async-wf" class="content tao-async-wf collapse">
-	<div class="row">
-		<div class="col-sm-12 col-md-12" id="wfIframeWrapper" style="line-height:0"></div>
-	</div>
+	<div id="wfIframeWrapper"></div>
 </section>
 
 <!-- Content Header -->
 <section class="content-header tao-async-ph">
 	<h1>Workflows <small>The list of user created <strong>graphs</strong> that consists in one or more connected <strong>processing modules</strong> that will produce a result.</small></h1>
-	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li><li class="active">Workflows</li></ol>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"> </i>Home</a></li><li class="active">Workflows</li></ol>
 </section>
 
 <!-- Content Body -->
 <section class="content tao-async-mc">
-	<div id="panel-topo-wrapper" class="row collapseX">
-		<div class="col-sm-12 col-md-12">
-			<!-- Custom Tabs -->
-			<div class="nav-tabs-custom">
-				<ul class="nav nav-tabs visible-xs-block">
-					<li class="role-dropdown active">
-						<select id="selectUserPanel" name="selectUserPanel" class="form-control form-changepane" title="Select desired workflows view.">
-							<option class="role role-admin" value="active_nodes"   data-target="#panel-nodes">Active workflows</option>
-							<option class="role role-admin" value="disabled_nodes" data-target="#panel-nodes">Inactive workflows</option>
-						</select>
-					</li>
-				</ul>
-				<ul class="nav nav-tabs hidden-xs">
-					<li class="role role-admin active"><a href="#panel-nodes" data-toggle="tab" data-action="active_nodes"   aria-expanded="true" >Active workflows</a></li>
-					<li class="role role-admin"       ><a href="#panel-nodes" data-toggle="tab" data-action="disabled_nodes" aria-expanded="false">Inactive workflows</a></li>
-				</ul>
-				<div class="tab-content">
-					<div id="panel-nodes" class="tab-pane active">
-						<div class="row">
-							<div id="list-master-controls" class="col-sm-12 col-md-12">
-								<div class="box-tools pull-left">
-									<button class="btn btn-master-tool text-black" data-action="wf-plus" data-toggle="tooltip" data-original-title="Add new workflow"><i class="fa fa-plus"></i></button>
+	<!-- Custom Tabs -->
+	<div id="panel-nodes" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select workflows by status.">
+						<option class="role" data-target="#paginatedcells" value="active_nodes">Active workflows</option>
+						<option class="role" data-target="#paginatedcells" value="disabled_nodes">Inactive workflows</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="active_nodes"   aria-expanded="false">Active workflows</a></li>
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="disabled_nodes" aria-expanded="false">Inactive workflows</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="wf-plus" data-showwhen="active_nodes" data-toggle="tooltip" data-original-title="Add new workflow"><i class="fa fa-plus"></i></button>
+				<button class="btn btn-master-tool" data-action="wf-plus-import" data-showwhen="active_nodes" data-toggle="tooltip" data-original-title="Import workflow"><i class="fa fa-upload"></i></button>
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search workflow"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">workflow</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				<div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-sm-12 col-md-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title    icon-shift"><span class="val-name"></span></div>
+									<div class="box-subtitle icon-shift"><span>Owner: <span class="val-userId"></span></span></div>
+									<div class="box-text     icon-shift"><span>Created: <strong><span class="val-created"></span></strong> | Visibility: <strong><span class="val-visibility"></span></strong> | Status: <strong><span class="val-status"></span></strong></span></div>
+									<div class="box-icon icon"><i class="fa fa-sitemap"></i></div>
 								</div>
-								<div class="box-tools pull-left">
-									<button class="btn btn-master-tool text-black" data-action="wf-plus-import" data-toggle="tooltip" data-original-title="Import workflow"><i class="fa fa-upload"></i></button>
-								</div>
-								<div class="box-tools pull-left">
-									<button class="btn btn-master-tool text-black" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
-								</div>
-								<div class="box-tools pull-left">
-									<form class="search-container collapse" action="">
-										<input id="search-box" type="text" class="search-box" name="q" placeholder="Search..." />
-										<label for="search-box"><i class="fa fa-search search-icon"></i></label>
-										<input id="search-submit" type="submit" />
-									</form>
-								</div>
-								<div class="box-tools pull-right">
-									<button class="btn btn-master-tool text-black" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
-									<button class="btn btn-master-tool text-black" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
-									<button class="btn btn-master-tool text-black" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+								<div class="box-description"><span class="val-description"> - </span></div>
+								<div class="box-bottom">
+									<div class="text-left">
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-edit-description" data-toggle="tooltip" data-original-title="Edit description"         ><i class="fa fa-pencil fa-fw"      ></i></button>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-edit-workflow"    data-toggle="tooltip" data-original-title="Edit workflow"            ><i class="fa fa-paint-brush fa-fw" ></i></button>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-clone"            data-toggle="tooltip" data-original-title="Clone workflow"           ><i class="fa fa-clone fa-fw"       ></i></button>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-script"           data-toggle="tooltip" data-original-title="Generate script"          ><i class="fa fa-code fa-fw"        ></i></button>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-export"           data-toggle="tooltip" data-original-title="Export workflow"          ><i class="fa fa-download fa-fw"    ></i></button>
+										<button class="btn btn-primary btn-nodeop hidden" data-action="wf-delete"           data-toggle="tooltip" data-original-title="Disable workflow"         ><i class="fa fa-trash-ban fa-fw"   ></i></button>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-delete"           data-toggle="tooltip" data-original-title="Delete workflow"          ><i class="fa fa-trash-o fa-fw"     ></i></button>
+										<div class="spacer"></div>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-start"            data-toggle="tooltip" data-original-title="Start execution"          ><i class="fa fa-paper-plane fa-fw" ></i></button>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-view-results"     data-toggle="tooltip" data-original-title="Execution results"        ><i class="fa fa-tasks fa-fw"       ></i></button>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-history"          data-toggle="tooltip" data-original-title="Executions history"       ><i class="fa fa-code-fork fa-fw"   ></i></button>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-execute-simpipe"  data-toggle="tooltip" data-original-title="Execute SIMPIPE"          ><i class="fa fa-gg fa-fw"          ></i></button>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-dry-run-results"  data-toggle="tooltip" data-original-title="Dry Run results"          ><i class="fa fa-dry-run fa-fw"     ></i></button>
+										<div class="spacer"></div>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-subscribe"        data-toggle="tooltip" data-original-title="Subscribe to workflow"    ><i class="fa fa-plus-circle fa-fw" ></i></button>
+										<button class="btn btn-primary btn-nodeop"        data-action="wf-unsubscribe"      data-toggle="tooltip" data-original-title="Unsubscribe from workflow"><i class="fa fa-minus-circle fa-fw"></i></button>
+									</div>
 								</div>
 							</div>
 						</div>
-						<div class="row">
-							<div class="col-sm-12 col-md-12 like collapse">
-								<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
-							</div>
-							<div class="col-sm-12 col-md-12 tags collapse">
-								<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-sm-12 col-md-12">
-								<div class="box box-success">
-									<div class="box-header">
-										<i class="fa fa-sitemap"></i>
-										<h3 class="box-title">Workflows - <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span></h3>
-										<div class="box-tools pull-right nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
-									</div>
-									<div class="nppaginatedcells-empty callout callout-empty">
-										<p>List is empty. <span class="results-empty">You do not have any workflows.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
-									</div>
-									<div class="box-body">
-										<div class="nppaginatedcells-panel-body"></div>
-										<div class="cell-templates collapse">
-											<core-cell-list>
-												<div class="col-sm-12 col-md-12">
-													<div class="nodes-item-core-box">
-														<div class="box-top-tags"></div>
-														<div class="box-top">
-															<div class="box-title    icon-shift"><span class="val-name"></span></div>
-															<div class="box-subtitle icon-shift"><span>Owner: <strong><span class="val-userId"></span></strong></span></div>
-															<div class="box-text     icon-shift"><span>Created: <strong><span class="val-created"></span></strong> | Visibility: <strong><span class="val-visibility"></span></strong> | Status: <strong><span class="val-status"></span></strong></span></div>
-															<div class="box-icon icon"><i class="fa fa-sitemap"></i></div>
-														</div>
-														<div class="box-description"><span class="val-description">Description</span></div>
-														<div class="box-bottom">
-															<div class="text-left">
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-edit-description" data-toggle="tooltip" data-original-title="Edit description"         ><i class="fa fa-pencil fa-fw"      ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-edit-workflow"    data-toggle="tooltip" data-original-title="Edit workflow"            ><i class="fa fa-paint-brush fa-fw" ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-clone"            data-toggle="tooltip" data-original-title="Clone workflow"           ><i class="fa fa-clone fa-fw"       ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-script"           data-toggle="tooltip" data-original-title="Generate script"          ><i class="fa fa-code fa-fw"        ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-export"           data-toggle="tooltip" data-original-title="Export workflow"          ><i class="fa fa-download fa-fw"    ></i></button>
-																<button class="btn btn-primary btn-nodeop hidden" data-action="wf-delete"           data-toggle="tooltip" data-original-title="Disable workflow"         ><i class="fa fa-trash-ban fa-fw"   ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-delete"           data-toggle="tooltip" data-original-title="Delete workflow"          ><i class="fa fa-trash-o fa-fw"     ></i></button>
-																<div class="spacer"></div>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-start"            data-toggle="tooltip" data-original-title="Start execution"          ><i class="fa fa-paper-plane fa-fw" ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-view-results"     data-toggle="tooltip" data-original-title="Execution results"        ><i class="fa fa-tasks fa-fw"       ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-history"          data-toggle="tooltip" data-original-title="Executions history"       ><i class="fa fa-code-fork fa-fw"   ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-dry-run-results"  data-toggle="tooltip" data-original-title="Dry Run results"          ><i class="fa fa-dry-run fa-fw"     ></i></button>
-																<div class="spacer"></div>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-subscribe"        data-toggle="tooltip" data-original-title="Subscribe to workflow"    ><i class="fa fa-plus-circle fa-fw" ></i></button>
-																<button class="btn btn-primary btn-nodeop"        data-action="wf-unsubscribe"      data-toggle="tooltip" data-original-title="Unsubscribe from workflow"><i class="fa fa-minus-circle fa-fw"></i></button>
-															</div>
-														</div>
-													</div>
-												</div>
-											</core-cell-list>
-											<core-cell-grid>
-												<div class="col-lg-3 col-custom">
-													<div class="nodes-item-core-box">
-														<div class="box-top-tags"></div>
-														<div class="box-top">
-															<div class="box-title"><span class="val-name"></span></div>
-															<div class="box-subtitle with-label"><label>Owner: </label><strong><span class="val-userId"></span></strong></div>
-															<div class="box-text     with-label icon-shift"><label>Created: </label><strong><span class="val-created"></span></strong></div>
-															<div class="box-text     with-label icon-shift"><label>Visibility: </label><strong><span class="val-visibility"></span></strong></div>
-															<div class="box-text     with-label icon-shift"><label>Status: </label><strong><span class="val-status"></span></strong></div>
-															<div class="box-icon icon bottom"><i class="fa fa-sitemap"></i></div>
-														</div>
-														<div class="box-bottom with-line">
-															<div class="with-label wrap text-left">
-																<label>Manage:</label>
-																<div>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-edit-description" data-toggle="tooltip" data-original-title="Edit description"         ><i class="fa fa-pencil fa-fw"      ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-edit-workflow"    data-toggle="tooltip" data-original-title="Edit workflow"            ><i class="fa fa-paint-brush fa-fw" ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-clone"            data-toggle="tooltip" data-original-title="Clone workflow"           ><i class="fa fa-clone fa-fw"       ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-script"           data-toggle="tooltip" data-original-title="Generate script"          ><i class="fa fa-code fa-fw"        ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-export"           data-toggle="tooltip" data-original-title="Export workflow"          ><i class="fa fa-download fa-fw"    ></i></button>
-																	<button class="btn btn-primary btn-nodeop hidden" data-action="wf-delete"           data-toggle="tooltip" data-original-title="Disable workflow"         ><i class="fa fa-trash-ban fa-fw"   ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-delete"           data-toggle="tooltip" data-original-title="Delete workflow"          ><i class="fa fa-trash-o fa-fw"     ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-subscribe"        data-toggle="tooltip" data-original-title="Subscribe to workflow"    ><i class="fa fa-plus-circle fa-fw" ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-unsubscribe"      data-toggle="tooltip" data-original-title="Unsubscribe from workflow"><i class="fa fa-minus-circle fa-fw"></i></button>
-																</div>
-															</div>
-															<div class="with-label wrap text-left">
-																<label>Execute:</label>
-																<div>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-start"            data-toggle="tooltip" data-original-title="Start execution"          ><i class="fa fa-paper-plane fa-fw" ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-view-results"     data-toggle="tooltip" data-original-title="Execution results"        ><i class="fa fa-tasks fa-fw"       ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-history"          data-toggle="tooltip" data-original-title="Execution  history"       ><i class="fa fa-code-fork fa-fw"   ></i></button>
-																	<button class="btn btn-primary btn-nodeop"        data-action="wf-dry-run-results"  data-toggle="tooltip" data-original-title="Dry Run results"          ><i class="fa fa-dry-run fa-fw"     ></i></button>
-																</div>
-															</div>
-														</div>
-													</div>
-												</div>
-											</core-cell-grid>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-custom">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-name"></span></div>
+									<div class="box-subtitle with-label"><label>Owner: </label><span class="val-userId"></span></div>
+									<div class="box-text     with-label icon-shift"><label>Created: </label><strong><span class="val-created"></span></strong></div>
+									<div class="box-text     with-label icon-shift"><label>Visibility: </label><strong><span class="val-visibility"></span></strong></div>
+									<div class="box-text     with-label icon-shift"><label>Status: </label><strong><span class="val-status"></span></strong></div>
+									<div class="box-icon icon bottom"><i class="fa fa-sitemap"></i></div>
+								</div>
+								<div class="box-bottom with-line">
+									<div class="with-label text-left tooltip-up">
+										<label>Manage:</label>
+										<div>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-edit-description" data-toggle="tooltip" data-original-title="Edit description"         ><i class="fa fa-pencil fa-fw"      ></i></button>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-edit-workflow"    data-toggle="tooltip" data-original-title="Edit workflow"            ><i class="fa fa-paint-brush fa-fw" ></i></button>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-clone"            data-toggle="tooltip" data-original-title="Clone workflow"           ><i class="fa fa-clone fa-fw"       ></i></button>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-script"           data-toggle="tooltip" data-original-title="Generate script"          ><i class="fa fa-code fa-fw"        ></i></button>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-export"           data-toggle="tooltip" data-original-title="Export workflow"          ><i class="fa fa-download fa-fw"    ></i></button>
+											<button class="btn btn-primary btn-nodeop hidden" data-action="wf-delete"           data-toggle="tooltip" data-original-title="Disable workflow"         ><i class="fa fa-trash-ban fa-fw"   ></i></button>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-delete"           data-toggle="tooltip" data-original-title="Delete workflow"          ><i class="fa fa-trash-o fa-fw"     ></i></button>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-subscribe"        data-toggle="tooltip" data-original-title="Subscribe to workflow"    ><i class="fa fa-plus-circle fa-fw" ></i></button>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-unsubscribe"      data-toggle="tooltip" data-original-title="Unsubscribe from workflow"><i class="fa fa-minus-circle fa-fw"></i></button>
 										</div>
 									</div>
-									<div class="box-footer clearfix no-border">
-										<div class="box-tools pull-right">
-											<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline">
-												<li><a href="#" data-page="prev">«</a></li>
-												<li class="active"><a href="#" data-page="0">1</a></li>
-												<li><a href="#" data-page="1">2</a></li>
-												<li><a href="#" data-page="2">3</a></li>
-												<li><a href="#" data-page="next">»</a></li>
-											</ul>
+									<div class="with-label text-left tooltip-down">
+										<label>Execute:</label>
+										<div>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-start"            data-toggle="tooltip" data-original-title="Start execution"    ><i class="fa fa-paper-plane fa-fw" ></i></button>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-view-results"     data-toggle="tooltip" data-original-title="Execution results"  ><i class="fa fa-tasks fa-fw"       ></i></button>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-history"          data-toggle="tooltip" data-original-title="Execution  history" ><i class="fa fa-code-fork fa-fw"   ></i></button>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-execute-simpipe"  data-toggle="tooltip" data-original-title="Execute SIMPIPE"    ><i class="fa fa-gg fa-fw"          ></i></button>
+											<button class="btn btn-primary btn-nodeop"        data-action="wf-dry-run-results"  data-toggle="tooltip" data-original-title="Dry Run results"    ><i class="fa fa-dry-run fa-fw"     ></i></button>
 										</div>
 									</div>
-									<div class="box-notification"><p><span>List updated</span></p></div>
 								</div>
 							</div>
 						</div>
-					</div><!-- /.tab-pane -->
-				</div><!-- /.tab-content -->
-			</div><!-- nav-tabs-custom -->
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix">
+			<div class="controls-left">
+				<div><i class="fa fa-sitemap"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> <span class="val-title">workflows</span></div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
+			</div>
 		</div>
 	</div>
 </section>
@@ -215,21 +192,24 @@
 
 <script type="text/javascript">
 	var clicking = false;
-
-	tao_showWorkflow = function (currentWfID) {
+	
+	var tao_showWorkflow = function (currentWfID) {
 		$(".tao-async-ph, .tao-async-mc").fadeOut("slow").promise().done(function () {
-			var iH                  = $(".content-wrapper").innerHeight() || 1080;
-			var parentIframe        = document.getElementById("wfIframeWrapper");
-			var iframe              = document.createElement("iframe");
-				iframe.id           = "WorkflowBuilder" + Math.floor(Math.random() * 10000000);
-				iframe.src          = "./workflow/index.html?_wf=" + currentWfID;
-				iframe.title        ="WorkflowBuilder";
-				iframe.style.margin = "0";
-				iframe.style.width  = "100%";
-				iframe.style.height = iH + "px";
-				iframe.style.border = "0";
-				iframe.scrolling    = "no";
-
+			var topH                 = $(".main-header").outerHeight(true);
+			var footH                = $(".main-footer").is(":visible") ? $(".main-footer").outerHeight(true) : 0;
+			var iH                   = "calc(100vh - " + parseInt(topH + footH + 0.5) + "px)";
+			var parentIframe         = document.getElementById("wfIframeWrapper");
+			var iframe               = document.createElement("iframe");
+				iframe.id            = "WorkflowBuilder" + Math.floor(Math.random() * 10000000);
+				iframe.src           = "./workflow/index.html?_wf=" + currentWfID;
+				iframe.title         ="WorkflowBuilder";
+				iframe.scrolling     = "no";
+				iframe.style.margin  = "0";
+				iframe.style.border  = "0";
+				iframe.style.display = "block";
+				iframe.style.width   = "100%";
+				iframe.style.height  = iH;
+			
 			while (parentIframe.hasChildNodes()) {
 				parentIframe.removeChild(parentIframe.lastChild);
 			}
@@ -239,15 +219,15 @@
 		history.pushState(null, null, "#my/workflows::edit="+currentWfID+"|page=0");
 		return 1;
 	};
-
-	tao_closeWorkflow = function () {
+	
+	var tao_closeWorkflow = function () {
 		$(".tao-async-wf").fadeOut("slow");
 		$(".tao-async-ph").fadeIn("slow");
 		$(".tao-async-mc").fadeIn("slow");
 		history.pushState(null, null, "#my/workflows");
 	};
-
-	myModalNodesOpShow = function (operationid, dna) {
+	
+	var myModalNodesOpShow = function (operationid, dna) {
 		window.userOpStack = [];
 		var rm_contentUrl = "";
 		switch (operationid) {
@@ -256,11 +236,14 @@
 			case "wf-edit-description":	window.userOpStack =  { "action": "wf_edit"           , "dna": dna } ; rm_contentUrl = "./fragments/workflow-plus.fragment.html"            ; break;
 			case "wf-script"          : window.userOpStack = [{ "action": "wf_script"         , "dna": dna }]; rm_contentUrl = "./fragments/workflow-start.fragment.html"           ; break;
 			case "wf-start"           : window.userOpStack = [{ "action": "wf_edit"           , "dna": dna }]; rm_contentUrl = "./fragments/workflow-start.fragment.html"           ; break;
+			case "wf-execute-simpipe" : window.userOpStack = [{ "action": "wf_simpipe"        , "dna": dna }]; rm_contentUrl = "./fragments/workflow-start.fragment.html"           ; break;
 			case "wf-view-results"    : window.userOpStack =  { "action": "wf_edit"           , "dna": dna } ; rm_contentUrl = "./fragments/workflow-show-results.fragment.html"    ; break;
 			case "wf-history"         : window.userOpStack =  { "action": "wf_edit"           , "dna": dna } ; rm_contentUrl = "./fragments/workflow-trace-executions.fragment.html"; break;
 			case "wf-dry-run-results" : window.userOpStack = [{ "action": "wf_dry_run_results", "dna": dna }]; rm_contentUrl = "./fragments/workflow-dry-run-results.fragment.html" ; break;
 		}
-		if (rm_contentUrl !== "") {
+		if (rm_contentUrl === "") {
+			alert("TAO - Operation mismatch");
+		} else {
 			$.ajax({
 				url: rm_contentUrl + "?" + Math.random(),
 				error: function (jqXHR, textStatus, errorThrown) {
@@ -281,12 +264,10 @@
 					}
 				}
 			});
-		} else {
-			alert("TAO - Operation mismatch");
 		}
 	};
-
-	cloneWorkflowById = function (id) {
+	
+	var cloneWorkflowById = function (id) {
 		var cloneWf = $.ajax({
 			cache  : false,
 			url    : baseRestApiURL + "workflow/clone?workflowId=" + id,
@@ -309,8 +290,8 @@
 			showMsg("Workflow clone failed. " + errorThrown, "ERROR");
 		});
 	};
-
-	exportAsJson = function (id) {
+	
+	var exportAsJson = function (id) {
 		$.ajax({
 			cache   : false,
 			url     : baseRestApiURL + "workflow/"+ id + "/export",
@@ -342,8 +323,8 @@
 			}
 		});
 	};
-
-	deleteWorkflowById = function (id, purge) {
+	
+	var deleteWorkflowById = function (id, purge) {
 		var deleteWf = $.ajax({
 			cache  : false,
 			url    : baseRestApiURL + "workflow/" + id + "/" + (purge ? "remove" : ""),
@@ -365,8 +346,8 @@
 			showMsg("Workflow delete failed. " + errorThrown, "ERROR");
 		});
 	};
-
-	unsubscribeWorkflow = function(userId, workflowId){
+	
+	var unsubscribeWorkflow = function(userId, workflowId){
 		var unsubWf = $.ajax({
 			cache  : false,
 			url    : baseRestApiURL + "workflow/unsubscribe?userId=" + userId + "&workflowId=" + workflowId,
@@ -388,8 +369,8 @@
 			showMsg("Workflow unsubscribe failed. " + errorThrown, "ERROR");
 		});
 	};
-
-	subscribeWorkflow = function(userId, workflowId){
+	
+	var subscribeWorkflow = function(userId, workflowId){
 		var subWf = $.ajax({
 			cache  : false,
 			url    : baseRestApiURL + "workflow/subscribe?userId=" + userId + "&workflowId=" + workflowId,
@@ -411,10 +392,10 @@
 			showMsg("Workflow subscribe failed. " + errorThrown, "ERROR");
 		});
 	};
-
+	
 	$(document).ready(function () {
 		var username = "";
-		getUsername = function (guid) {
+		var getUsername = function (guid) {
 			var getName = $.ajax({
 				cache  : false,
 				url    : baseRestApiURL + "user/name/" + guid,
@@ -434,26 +415,54 @@
 				}
 			});
 		};
-
-		var urls = [ baseRestApiURL + "workflow/" ];
+		
+		var $selectActivePanel = $("#selectActivePanel");
+		var urls = [];
+		var actionsSet = {
+			"active_nodes"  : { badgeLabel: "Active workflows"  , pagLabel: "workflows", emptyLabel: "active workflow"  , url: baseRestApiURL + "workflow/?active=1", filter: { active: true  } },
+			"disabled_nodes": { badgeLabel: "Inactive workflows", pagLabel: "workflows", emptyLabel: "inactive workflow", url: baseRestApiURL + "workflow/?active=0", filter: { active: false } }
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
+				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+			}
+			return selected;
+		};
 		window.panelComp = $("#panel-nodes").npPaginatedCells({
 			headerUser: taoUserProfile.username,
-			url: urls,
-			viewMode: preferences.viewMode,
-			filterAttribute: "_wfFilterBy",
-			order: [
-				{"label": "Name ascending" , "objAttributeName": "name"   , "direction": "ASC"},
-				{"label": "Name descending", "objAttributeName": "name"   , "direction": "DSC"},
-				{"label": "Date ascending" , "objAttributeName": "created", "direction": "ASC"},
-				{"label": "Date descending", "objAttributeName": "created", "direction": "DSC"}
+			url       : urls,
+			viewMode  : preferences.viewMode,
+			order     : [
+				{ "label": "Name ascending" , "objAttributeName": "name"   , "direction": "ASC", "default": true },
+				{ "label": "Name descending", "objAttributeName": "name"   , "direction": "DSC" },
+				{ "label": "Date ascending" , "objAttributeName": "created", "direction": "ASC" },
+				{ "label": "Date descending", "objAttributeName": "created", "direction": "DSC" }
 			],
-			doDataPreprocessing: function (data) {
-				var trimmed = [];
-				$.each(data, function (index, elX) {
+			filterAttribute: "_wfFilterBy",
+			doDataPreprocessing: function (data, sets) {
+				var activeSet = getActiveSet(data, sets);
+				$.each(activeSet, function (index, elX) {
 					elX._wfFilterBy = ("[" + elX.name + "][" + elX.userId + "][" + elX.created + "][" + elX.visibility + "][" + elX.status + "]");
-					trimmed.push(elX);
 				});
-				return trimmed;
+				return activeSet;
 			},
 			doCustomRender: function ($elClone, elX) {
 				var isAdmin        = taoUserProfile.userRole === "ADMIN";
@@ -463,10 +472,13 @@
 				var isPublic       = elX.visibility === "PUBLIC";
 				var isSubscription = elX.visibility === "SUBSCRIPTION";
 				var isReadOnly     = isPublished && (isPublic || isSubscription);
-
+				
+				$('.tooltip-up   [data-toggle="tooltip"]', $elClone).attr({ "data-placement": "top"    });
+				$('.tooltip-down [data-toggle="tooltip"]', $elClone).attr({ "data-placement": "bottom" });
+				
 				// Format values
 				$(".val-created", $elClone).html(moment(elX.created).format("YY-MM-DD") + ' <small>' + moment(elX.created).format("HH:mm:ss") + '</small>');
-
+				
 				// Set action buttons availabilities
 				$('[data-action="wf-edit-description"]', $elClone).prop("disabled", !((isUserOwner || (isAdmin && !isActive)) && !isSubscription));
 				$('[data-action="wf-edit-workflow"   ]', $elClone).prop("disabled", !(isActive && !isReadOnly));
@@ -477,19 +489,20 @@
 				$('[data-action="wf-start"           ]', $elClone).prop("disabled", !(isActive));
 				$('[data-action="wf-view-results"    ]', $elClone).prop("disabled", !(isActive));
 				$('[data-action="wf-history"         ]', $elClone).prop("disabled", !(isActive));
+				$('[data-action="wf-execute-simpipe" ]', $elClone).prop("disabled", !(isActive));
 				$('[data-action="wf-dry-run-results" ]', $elClone).prop("disabled", !(isActive));
 				$('[data-action="wf-subscribe"       ]', $elClone).prop("disabled", !(isActive && !isSubscription && isPublished)).addClass(!isActive || isSubscription || !isPublished ? "hidden1" : "");
 				$('[data-action="wf-unsubscribe"     ]', $elClone).prop("disabled", !(isActive &&  isSubscription               )).addClass(!isActive || !isSubscription                ? "hidden1" : "");
-
+				
 				// Show "disable" button istead of "delete" when workflow is active
 				isActive && $('[data-action="wf-delete"]', $elClone).toggleClass("hidden");
-
+				
 				// Show image
 				if (typeof elX.image !== "undefined") {
 					var iconHtml = $(".box-icon", $elClone).html();
 					// Replace existing icon with image
 					$(".box-icon", $elClone).addClass("logo").html('<img src="data:image/jpeg;base64, ' + elX.image + '" />');
-
+					
 					// Check image validity and its layout (portrait/landscape)
 					var img = $(".box-icon>img", $elClone).get(0);
 					img.decode().then(function () {
@@ -498,7 +511,7 @@
 						$(".box-icon", $elClone).removeClass("logo").html(iconHtml); // Restore default icon when image is not valid
 					});
 				}
-
+				
 				// Show username when press & hold on the subtitle field
 				var timeoutId = false;
 				var userguid = "";
@@ -543,7 +556,7 @@
 					case "wf-delete":			if (taoUserProfile.userRole === "ADMIN" || taoUserProfile.id === dna.userId) {
 													$("#confirm-dialog").modal("confirm", {
 														msg: dna.active ? 'Are you sure you want to deactivate workflow <strong>' + dna.name + '</strong>?' :
-																			   'Are you sure you want to <span style="color:red">permanently delete</span> workflow <strong>' + dna.name + '</strong>?',
+																		  'Are you sure you want to <span style="color:red">permanently delete</span> workflow <strong>' + dna.name + '</strong>?',
 														callbackConfirm: function () { deleteWorkflowById(dna.id, !dna.active); }
 													});
 												} else { alert("Not allowed"); }
@@ -556,6 +569,9 @@
 												break;
 					// Executions history		------------------------------------------
 					case "wf-history":			myModalNodesOpShow(action, dna);
+												break;
+					// Execute Simpipe			------------------------------------------
+					case "wf-execute-simpipe":	myModalNodesOpShow(action, dna);
 												break;
 					// Dry Run results			------------------------------------------
 					case "wf-dry-run-results":	myModalNodesOpShow(action, dna);
@@ -570,22 +586,26 @@
 			}
 		});
 		
-		// Show or hide specific toolbar icons when active tab changes
-		$('a[data-toggle="tab"]', "#panel-topo-wrapper").on("shown.bs.tab", function (e) {
-			$('[data-action="wf-plus"],[data-action="wf-plus-import"]').addClass("hidden");
-			($(this).data("action") === "active_nodes") && $('[data-action="wf-plus"],[data-action="wf-plus-import"]').removeClass("hidden");
-		});
-		
+		$selectActivePanel
+		// Change active tab (using the tab controls)
+		.on("click", '[data-toggle="tab"][aria-expanded="false"]', function (e) {
+			var action = $(this).data("action");
+			e.originalEvent && $("select", e.delegateTarget).val(action);
+			
+			urls = (urls.length == 0) ? $.map(actionsSet, function (set, idx) { return set.url; }) : [ actionsSet[action].url ];
+			window.panelComp.refreshData(urls);
+		})
 		// Change active tab (using the combobox)
-		$("#selectUserPanel").on("change", function (e) {
-			$('a[data-action="' + this.value + '"]', ".nav-tabs-custom").eq(0).click();
+		.on("change", "select", function (e) {
+			$('a[data-action="' + this.value + '"]', e.delegateTraget).eq(0).click();
+		})
+		// Show or hide specific toolbar icons when active tab changes
+		.on("shown.bs.tab", '[data-toggle="tab"][aria-expanded]', function (e) {
+			// Toggle visibility of specific toolbar icons
+			$('[data-showwhen]', ".top-controls").addClass("hidden").filter('[data-showwhen="' + $(e.currentTarget).data("action") + '"]').removeClass("hidden");
 		});
-		
-		// Change active tab (using the tab control)
-		$('a[data-toggle="tab"]', ".nav-tabs-custom").on("click", function (e) {
-			var action = $('a[data-toggle="tab"][aria-expanded="true"]', "#panel-topo-wrapper").data("action");
-			($(this).data("action") !== action) && window.panelComp.refreshData(baseRestApiURL);
-		});
+		// Start with active workflows
+		$('[data-toggle="tab"][data-action="active_nodes"]', $selectActivePanel).eq(0).click();
 	});
 	
 //# sourceURL=workflows-admin2.fragment.js

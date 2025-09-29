@@ -1,0 +1,49 @@
+:root {
+	--toolbox-color                : #333;
+	--toolbox-bkg                  : #fff;
+	
+	--toolbox-space-color          : #fff;
+	--toolbox-space-bkg            : hsl(218  15%  24% / 1);
+	
+	--sidebar-color                : #ababab;
+	--sidebar-bkg                  : hsl(218  15%  24% / 1);
+	
+	--sidebar-topbar-color         : hsl(199  80%  43% / 1);
+	--sidebar-topbar-bkg           : hsl(218  15%  24% / 1);
+	
+	--sidebar-header-color         : #ababab;
+	--sidebar-header-bkg           : hsl(218  15%  24% / 1);
+	--sidebar-header-border        : transparent;
+	--sidebar-header-hover-color   : #fff;
+	--sidebar-header-hover-bkg     : hsl(218  15%  28% / 1);
+	--sidebar-header-hover-border  : transparent;
+	--sidebar-header-active-color  : #fff;
+	--sidebar-header-active-bkg    : #03a9f4;
+	--sidebar-header-active-border : transparent;
+	
+	--sidebar-content-color        : #ababab;
+	--sidebar-content-bkg          : hsl(218  15%  26% / 1);
+	
+	--sidebar-item-color           : #ababab;
+	--sidebar-item-bkg             : hsl(218  16%  30% / 1);
+	--sidebar-item-border          : hsl(218  11%  35% / 1);
+	--sidebar-item-hover-color     : #fff;
+	--sidebar-item-hover-bkg       : hsl(218  16%  30% / 1);
+	--sidebar-item-hover-border    : #03a9f4;
+	
+	--form-control-color           : #ababab;
+	--form-control-placeholder     : #9e9e9e;
+	--form-control-bkg             : hsl(218  16%  30% / 1);
+	--form-control-border          : hsl(218  11%  35% / 1);
+	--form-control-focus-border    : #03a9f4;
+	--form-control-disabled-bkg    : #505b6d;
+	
+	--toolbar-color                : #fff;
+	--toolbar-bkg                  : hsl(218  15%  24% / 1);
+	--toolbar-hover-color          : #fff;
+
+	--scrollbar-default-thumb      : #d1dbe3;
+	--scrollbar-default-track      : transparent;
+	--scrollbar-onhover-thumb      : #03a9f4;
+	--scrollbar-onhover-track      : rgb(0 0 0/.1);
+}

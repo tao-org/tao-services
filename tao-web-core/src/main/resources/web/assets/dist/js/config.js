@@ -25,7 +25,10 @@
 		"./media/backgrounds/africa_background_2.jpg",
 		"./media/backgrounds/africa_background_3.jpg"
 	];
-	window.favicon   = "./media/icons/tao-favicon.ico";
-	window.logoText  = "Agriculture Virtual Lab";
-	window.logoSmall = "./media/images/avl_logo_small_transparent.png";
+	window.favicon       = "./media/icons/tao-favicon.ico";
+	window.logoText      = "Agriculture Virtual Lab";
+	window.logoSmall     = "./media/images/avl_logo_small_transparent.png";
+	window.defaultSize   = "size-normal";
+	window.defaultScheme = "full";
+	window.defaultStyle  = "light";
 })();

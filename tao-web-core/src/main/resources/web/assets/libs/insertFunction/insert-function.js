@@ -178,6 +178,12 @@
 			);
 			$container.append($dialog);
 			
+			// Resolve $.fn.button conflict between jQuery UI and Bootstrap
+			if (typeof $.fn.button.noConflict === "function") {
+				var btn = $.fn.button.noConflict();	// Reverts $.fn.button to jQuery UI btn
+				$.fn.btn = btn;						// Assigns Bootstrap button functionality to $.fn.btn
+			}
+			
 			// Apply dialog control
 			$dialog.dialog({
 				title        : "Insert Function",

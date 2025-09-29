@@ -1,4 +1,3 @@
-var defaultStyle = "dark-navy";
 var utterance = new SpeechSynthesisUtterance();
 utterance.lang = 'en-en';
 utterance.onerror = (e) => { console.log(e.error); };
@@ -722,13 +721,13 @@ function closePolygonMap() {
 
 //UI loading indicator management
 function contentLoading(action){
-	var taoLoadingDiv = $("#myModalLoading",window.parent.jQuery(window.parent.document));
-	if(action === "show"){			
-		taoLoadingDiv.modal('show');			
-	}
-	if(action === "hide"){
-		setTimeout(function(){
-			taoLoadingDiv.modal('hide');
+	var taoLoadingDiv = $("#myModalLoading", window.parent.jQuery(window.parent.document));
+	if (action === "show") {
+		(taoLoadingDiv.data("bs.modal")?.$backdrop == null) && taoLoadingDiv.modal("show");
+	} else if (action === "hide") {
+		setTimeout(function () {
+			taoLoadingDiv.modal("hide");
+			$.AdminLTE.layout.fix();
 		}, 100);
 	}
 }
@@ -790,19 +789,6 @@ function removeClassStartingWith($element, filter) {
     });
     return $element;
 };
-
-function inputRangeColor (color) {
-	switch (color) {
-      case "navy": return "#00587a"; break;
-      case "black": return "#25131b"; break;
-      case "blue": return "#2e6da4"; break;
-      case "green": return "#006d34"; break;
-      case "purple": return "#523c90"; break;
-      case "red": return "#830000"; break;
-      case "yellow": return "#e57c00"; break;
-      default: return "#d3d3d3";
-    }
-}
 
 function checkIfOldVersion() {
 	return taoVersion < taoReferenceVersion;

@@ -500,17 +500,17 @@
 					<ul class="nav nav-tabs visible-xs-block"> <!-- visible-xs-block -->
 						<li class="role-dropdown active">
 							<select id="selectNodePanel" name="selectNodePanel" class="form-control form-changepane">
-								<option class="role role-admin" value="all_users">Available Users</option>
-								<option class="role role-admin" value="all_vms">Available VM's</option>
-								<option class="role role-admin" value="queued_jobs">Queued Jobs</option>
+								<option class="role" value="all_users">Available Users</option>
+								<option class="role" value="all_vms">Available VM's</option>
+								<option class="role" value="queued_jobs">Queued Jobs</option>
 							</select>
 						</li>
 					</ul>
 
 					<ul class="nav nav-tabs hidden-xs">
-						<li class="role role-admin active"><a href="#panel-nodes" data-toggle="tab" data-action="all_users" aria-expanded="true">Available Users</a></li>
-						<li class="role role-admin"><a href="#panel-nodes" data-toggle="tab" data-action="all_vms" aria-expanded="false">Available VM's</a></li>
-						<li class="role role-admin"><a href="#panel-nodes" data-toggle="tab" data-action="queued_jobs" aria-expanded="false">Queued Jobs</a></li>
+						<li class="role active"><a href="#panel-nodes" data-toggle="tab" data-action="all_users" aria-expanded="true">Available Users</a></li>
+						<li class="role"><a href="#panel-nodes" data-toggle="tab" data-action="all_vms" aria-expanded="false">Available VM's</a></li>
+						<li class="role"><a href="#panel-nodes" data-toggle="tab" data-action="queued_jobs" aria-expanded="false">Queued Jobs</a></li>
 					</ul>
 					<div class="tab-content">
 						<div class="tab-pane active" id="panel-nodes">
@@ -1293,10 +1293,10 @@
 					var tasklogs ='';
 					if(wsdna.data.Payload === "DONE" || wsdna.data.Payload === "FAILED"){
 						tasklogs = ' <button id="task_log_info_'+wsdna.source+'" class="fa fa-info-circle log-info" value="'+wsdna.source+'"></button>';
-						tasklogs +='<div id="task_log_modal'+wsdna.source+'" class="log-modal"><div class="log-modal-content"><div class="log-title-button"><div class="log-title"><h4 class="title">Task Log</h4></div><button type="button" class="log-close">&times;</button></div><p class="log_text">'+'</p></div></div>';
+						tasklogs +='<div id="task_log_modal'+wsdna.source+'" class="log-modal"><div class="log-modal-content"><div class="log-title-button"><div class="log-title"><h4 class="title">Task Log</h4></div><button type="button" class="log-close">&times;</button></div><p class="log-text">'+'</p></div></div>';
 					
 						tasklogs += '<button id="task_command_info_'+wsdna.source+'" class="fa fa-terminal log-info" value="'+wsdna.source+'"></button>';
-						tasklogs += '<div id="command_info_modal'+wsdna.source+'" class="log-modal"><div class="log-modal-content"><div class="command-title-button"><div class="command-title"><h4 class="title">Command Line</h4></div><button type="button" class="command-close">&times;</button></div><p class="command_text">'+'</p></div></div>';
+						tasklogs += '<div id="command_info_modal'+wsdna.source+'" class="log-modal"><div class="log-modal-content"><div class="command-title-button"><div class="command-title"><h4 class="title">Command Line</h4></div><button type="button" class="command-close">&times;</button></div><p class="command-text">'+'</p></div></div>';
 					
 						if($("#task_log_info_" + wsdna.source).length === 0){
 							$("#"+ wsdna.source +".one-task strong:first").after(tasklogs);
@@ -1589,7 +1589,7 @@
 			headerUser: taoUserProfile.username,
 			url: urls,
 			viewMode: preferences.adminViewMode,
-			filterAttribute: tabAction === "all_users" ? "fullName" : "id",
+			filterAttribute: "fullName",
 			itemsOnPage: 10,
 			order:[
 				{
@@ -1605,6 +1605,8 @@
 			],
 			doDataPreprocessing: function(data) {
 				if (tabAction === "all_users") {
+					this.filterAttribute = "fullName";
+					
 					var onlineUsers = [];
 					allUsers=[];
 					data.forEach(function(user){
@@ -1632,8 +1634,9 @@
 						data[i]["online"] = online;
 						data[i].ago = niceIsoTime(data[i].lastLoginDate);
 					}
-				}
-				if (tabAction === "all_vms") {
+				} else if (tabAction === "all_vms") {
+					this.filterAttribute = "id";
+					
 					var vmsRuntimeInfo = [];
 					$.ajax({
 						cache: false,
@@ -1665,8 +1668,9 @@
 						}
 						$.extend(vm,runtimeInfo);
 					});
-				}
-				if (tabAction === "queued_jobs"){
+				} else if (tabAction === "queued_jobs"){
+					this.filterAttribute = "jobName";
+					
 					var queuedJobs = [];
 					$.ajax({
 						cache: false,
@@ -1686,7 +1690,6 @@
 							queuedJobs = result.data;
 						}
 					});
-								
 				}
 				return data;
 			},

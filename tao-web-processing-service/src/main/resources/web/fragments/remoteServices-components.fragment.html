@@ -1,191 +1,172 @@
-<!-- modal nodes op -->
-<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-    </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-<!-- modal nodes op -->
-<!-- Content Header (Page header) -->
-<section class="content-header tao-async-ph">
-    <h1>Remote Services<small>The list of  available processing-like <strong>modules</strong> based on external web services.</small></h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
-        <li class="active">Remote Services</li>
-    </ol>
+<style>
+	/*------BOX APPEARANCE------*/
+	#panel-nodes {
+		.nodes-item-core-box .with-label>label::before {min-width:4em;}
+		@media (min-width: 768px) {
+			core-cell-list .box-description {padding-right:25em;margin-bottom:0;}
+			core-cell-list .box-bottom      {position:absolute;bottom:calc(1.1em + 0.4em - 0.15em);right:1.1em;width:fit-content;}
+		}
+	}
+	
+	/*------CUSTOM COLUMNS------*/
+	.col-custom {
+		padding-left:0.7em;padding-right:0.7em;
+		@media (min-width: 768px) {& {width:100%;float:left;}}
+		@media (min-width:1040px) {& {width: 50%;}}
+		@media (min-width:1410px) {& {width: 33%;}}
+		@media (min-width:1760px) {& {width: 25%;}}
+		@media (min-width:2130px) {& {width: 20%;}}
+		@media (min-width:2480px) {& {max-width: 37em;}}
+	}
+</style>
+
+<!-- Content Header -->
+<section class="content-header">
+	<h1>Remote Services <small>The list of  available processing-like <strong>modules</strong> based on external web services.</small></h1>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"> </i>Home</a></li><li class="active">Remote Services</li></ol>
 </section>
-<!-- /Content Header (Page header) -->
 
-<!-- Main content -->
-<section class="content tao-async-mc">
-    <div id="panel-remote-user-wrapper" class="row collapseX">
-        <div class="col-md-12">
-            <!-- Custom Tabs -->
-            <div class="nav-tabs-custom">
-                <ul class="nav nav-tabs visible-xs-block"> <!-- visible-xs-block -->
-					<li class="role-dropdown active">
-						<select id="selectNodePanel" name="selectNodePanel" class="form-control form-changepane" title="Select desired node view.">
-							<option class="role" value="wps_nodes">WPS</option>
-							<option class="role" value="wms_nodes">WMS</option>
-						</select>
-					</li>
-				</ul>
-				<ul class="nav nav-tabs hidden-xs">
-					<li class="role  active"><a href="#panel-nodes" data-toggle="tab" data-action="wps_nodes" aria-expanded="true">WPS</a></li>
-					<li class="role"><a href="#panel-nodes" data-toggle="tab" data-action="wms_nodes" aria-expanded="true">WMS</a></li>
-				</ul>
+<!-- Content Body -->
+<section class="content">
+	<!-- Custom Tabs -->
+	<div id="panel-nodes" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select desired product sets view.">
+						<option class="role" data-target="#paginatedcells" value="wps_nodes">WPS</option>
+						<option class="role" data-target="#paginatedcells" value="wms_nodes">WMS</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="wps_nodes" aria-expanded="false">WPS</a></li>
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="wms_nodes" aria-expanded="false">WMS</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="op-plus"   data-toggle="tooltip" data-original-title="Add new web service" data-showwhen="ADMIN"><i class="fa fa-plus"></i></button>
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search workflow">
+					<input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label>
+				</form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">processing module</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				<div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-sm-12 col-md-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-label"></span></div>
+									<div class="box-subtitle"><span class="val-id"></span></div>
+									<div class="box-text">
+										Version: <strong><span class="val-version"></span></strong> | 
+										Authors: <strong><span class="val-authors"></span></strong> | 
+										Copyright: <strong><span class="val-copyright"></span></strong> 
+									</div>
+									<div class="box-icon"><i class="fa fa-plug"></i></div>
+								</div>
+								<div class="box-description"><span class="val-description"></span></div>
+								<div class="box-bottom">
+									<div class="text-right flat-buttons">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"     ><i class="fa fa-pencil fa-fw"     ></i> Edit</button>
+										<button class="btn btn-primary btn-nodeop" data-action="wps-start"><i class="fa fa-paper-plane fa-fw"></i> Start execution</button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"   ><i class="fa fa-trash-o fa-fw"    ></i> Delete</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-custom">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-label"></span></div>
+									<div class="box-subtitle"><span class="val-id"></span></div>
+									<div class="box-text with-label"><label>Version: </label><strong><span class="val-version"></span></strong></div>
+									<div class="box-text with-label"><label>Authors: </label><strong><span class="val-authors"></span></strong></div>
+									<div class="box-text with-label"><label>Copyright: </label><strong><span class="val-copyright"></span></strong></div>
+									<div class="box-icon"><i class="fa fa-plug"></i></div>
+								</div>
+								<div class="box-description thin-scrollbar onhover"><span class="val-description"></span></div>
+								<div class="box-bottom">
+									<div class="text-left">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"      data-toggle="tooltip" data-original-title="Edit"           ><i class="fa fa-pencil fa-fw"     ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="wps-start" data-toggle="tooltip" data-original-title="Start execution"><i class="fa fa-paper-plane fa-fw"></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"    data-toggle="tooltip" data-original-title="Delete"         ><i class="fa fa-trash-o fa-fw"    ></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix">
+			<div class="controls-left">
+				<div><i class="fa fa-plug"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> remote services</div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
+			</div>
+		</div>
+	</div>
+</section>
 
-                <div class="tab-content">
-                    <div class="tab-pane active" id="panel-nodes">
-                        <div class="row">
-                            <div class="col-md-12" id="list-master-controls">
-                                <div class="box-tools pull-left">
-                                    <button class="btn btn-master-tool text-black" data-action="op-plus" data-toggle="tooltip" data-original-title="Add new web service"><i class="fa fa-plus"></i></button>
-                                </div>
-                                <div class="box-tools pull-left">
-                                    <button class="btn btn-master-tool text-black" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
-                                </div>
-                                <div class="box-tools pull-left">
-                                    <form class="search-container collapse" action="">
-                                        <input id="search-box" type="text" class="search-box" name="q" placeholder="Search by label" />
-                                        <label for="search-box"><i class="fa fa-search search-icon" aria-hidden="true"></i></label>
-                                        <input type="submit" id="search-submit" />
-                                    </form>
-                                </div>
-                                <div class="box-tools pull-right">
-                                    <button class="btn btn-master-tool text-black" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"><i class="fa fa-refresh fa-spin-hover"></i></button>
-                                    <button class="btn btn-master-tool text-black" data-action="view-list" data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
-                                    <button class="btn btn-master-tool text-black" data-action="view-table" data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12 like collapse">
-                                <span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search" aria-hidden="true"></i></span>
-                            </div>
-                            <div class="col-md-12 tags collapse">
-                                <span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw" aria-hidden="true"></i></span>
-                            </div>
-                        </div>
-                        <div class="row" id="list-work-users">
-                            <div class="col-sm-12">
-                                <div class="box box-success">
-                                    <div class="box-header">
-                                        <i class="fa fa-server"></i>
-                                        <h3 class="box-title">Remote Services -  <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span></h3>
-                                        <div class="box-tools pull-right nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
-                                    </div>
-                                    <div class="nppaginatedcells-empty callout callout-empty">
-                                        <p>List is empty. <span class="results-empty">You do not have any processing modules.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
-                                    </div>
-                                    <div class="box-body chat users-box">
-                                        <div class="nppaginatedcells-panel-body">
-                                        </div>
-                                        <div class="cell-templates collapse">
-                                            <core-cell-list>
-                                                <div class="col-md-12 col-sm-12">
-                                                    <div class="nodes-item-core-box">
-                                                        <div class="box-top-tags">
-                                                        </div>
-                                                        <div class="box-top">
-                                                            <div class="box-title"><span class="val-label"></span></div>
-                                                            <div class="box-subtitle"><span class="val-id"></span></div>
-                                                            <div class="box-text">
-																Version: <strong><span class="val-version"></span></strong> | 
-																Authors: <strong><span class="val-authors"></span></strong> | 
-                                                                Copyright: <strong><span class="val-copyright"></span></strong> 
-                                                            </div>
-                                                            <div class="box-desc">
-                                                                <span class="val-description "></span>
-                                                            </div>
-                                                            <div class="box-icon">
-                                                                <i class="fa fa-plug"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row" >
-                                                            <div class="col-sm-12 col-xs-12">
-                                                                <div class="text-right" style="padding-top: 5px;">
-                                                                    <button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="edit"><i class="fa fa-pencil fa-fw" aria-hidden="true"></i><span class="span-muted">&nbsp;Edit</span></button>
-                                                                    <button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="wps-start"><i class="fa fa-paper-plane fa-fw" aria-hidden="true"></i><span class="span-muted">&nbsp;Start execution</span></button>
-																	<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="delete"><i class="fa fa-trash-o fa-fw" aria-hidden="true"></i><span class="span-muted">&nbsp;Delete</span></button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </core-cell-list>
-                                            <core-cell-grid>
-                                                <div class="col-md-3 col-sm-6">
-                                                    <div class="nodes-item-core-box">
-                                                        <div class="box-top-tags">
-                                                        </div>
-                                                        <div class="box-top">
-                                                            <div class="box-title"><span class="val-label"></span></div>
-                                                            <div class="box-subtitle"><span class="val-id"></span></div>
-                                                            <div class="box-text">Version:<strong> <span class="val-version"></span></strong></div>
-                                                            <div class="box-text">Authors: <strong><span class="val-authors"></span></strong></div>
-                                                            <div class="box-text">Copyright: <strong><span class="val-copyright"></span></strong></div>
-                                                            <div class="box-desc"><span class="val-description"></span></div>
-                                                            <div class="box-icon">
-                                                                <i class="fa fa-plug"></i>
-                                                            </div>
-                                                        </div>
-                                                      
-                                                        <div class="box-bottom with-line">
-                                                            <div class="">
-                                                                <button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="edit"><i class="fa fa-pencil fa-fw" aria-hidden="true" data-toggle="tooltip" data-original-title="Edit"></i><span class="span-muted collapse">&nbsp;Edit</span></button>
-																<button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="wps-start" data-toggle="tooltip" data-original-title="Start execution"><i class="fa fa-paper-plane fa-fw" aria-hidden="true"></i><span class="span-muted collapse">&nbsp;Start execution</span></button>
-                                                                <button type="button" class="btn btn-primary btn-sm btn-flat btn-action btn-nodeop" data-action="delete" data-toggle="tooltip" data-original-title="Remove"><i class="fa fa-trash-o fa-fw" aria-hidden="true"></i><span class="span-muted collapse">&nbsp;Delete</span></button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </core-cell-grid>
-                                        </div>
-                                    </div>
-                                    <div class="box-footer clearfix no-border">
-                                        <div class="box-tools pull-right">
-                                            <ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline">
-                                                <li><a href="#" data-page="prev">«</a></li>
-                                                <li class="active"><a href="#" data-page="0">1</a></li>
-                                                <li><a href="#" data-page="1">2</a></li>
-                                                <li><a href="#" data-page="2">3</a></li>
-                                                <li><a href="#" data-page="next">»</a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <div class="box-notification"><p><span>List updated</span></p></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div><!-- /.tab-pane -->
+<!-- Modal for user actions -->
+<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog">
+	<div class="modal-dialog"></div>
+</div>
 
-                    <div class="tab-pane" id="panel-nodesX">
-                    </div><!-- /.tab-pane -->
+<script type="text/javascript">
+	window.navCleanup = function () {
+	};
+</script>
 
-                </div><!-- /.tab-content -->
-            </div><!-- nav-tabs-custom -->
-        </div>
-    </div>
-</section><!-- /.content -->
-<script>
-    var nameListRSU = [];
-    deleteRemoteServiceById = function(id, urls){
+<script type="text/javascript">
+    var deleteRemoteServiceById = function(id, urls){
         $.ajax({
-            cache: false,
-            url: urls +"?id="+ id,
-            type: 'DELETE',
+            cache      : false,
+            url        : urls + "?id=" + id,
+            type       : "DELETE",
 			processData: false,
-            headers: {
-                "X-Auth-Token": window.tokenKey
-            },
+            headers    : {
+				"X-Auth-Token": window.tokenKey
+			},
             error : function (jqXHR, textStatus, errorThrown) {
-                if(jqXHR.status === 500 ){
+                if (jqXHR.status === 500) {
                     showMsg("Unable to delete node. Please try again.", "ERROR");
                 } else {
                     showMsg("An error has occurred, please try again or contact app admin.", "ERROR");
                 }
             },
-            success: function(data) {
-				if(data.status !== responseStatus.success) {
+            success: function (data) {
+				if (data.status !== responseStatus.success) {
 					if (typeof data.message != "undefined" && data.message !== null && data.message !== "") {
 						showMsg(data.message, "ERROR");
 					} else {
@@ -193,19 +174,19 @@
 					}
 				} else {
 					showMsg("Processing module successfully deleted.", "SUCCESS");
-					panelRemoteServices.refreshData();
+					window.panelComp.refreshData();
 				}
             }
         });
     };
-
-    myModalNodesOpShow = function(operationid, args){
+	
+    var myModalNodesOpShow = function(operationid, args){
         var $modal = $("#myModalNodes");
         $(".modal-dialog",$modal).removeClass("modal-lg");
         var rm_contentUrl = '';
         var rmContent = '';
         window.userOpStack = [];
-
+		
         if(operationid === "op-plus"){
             $(".modal-dialog",$modal).addClass("modal-lg");
             rm_contentUrl="./fragments/remoteServices-components-plus.fragment.html?" + Math.random();
@@ -244,84 +225,94 @@
             }
         });
     };
-
-    $( document ).ready(function() {
-
-        var url;
-		var urls = [baseRestApiURL +  "wpscomponent/"];
-		$("a[data-toggle='tab']", "#panel-remote-user-wrapper").on("shown.bs.tab", function (e) {
-			var action = $(this).data("action");
-			if (action === "wps_nodes") {
-                url = baseRestApiURL +  "wpscomponent/";
-            }else if(action === "wms_nodes"){
-				url = baseRestApiURL +  "wmscomponent/";
+	
+    $(document).ready(function() {
+		var $selectActivePanel = $("#selectActivePanel");
+		var urls = [];
+		var actionsSet = {
+			"wps_nodes": { badgeLabel: "WPS", pagLabel: "remote services", emptyLabel: "processing module", url: baseRestApiURL + "wpscomponent/" },
+			"wms_nodes": { badgeLabel: "WMS", pagLabel: "remote services", emptyLabel: "processing module", url: baseRestApiURL + "wmscomponent/" }
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
+				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
 			}
-            urls = [ url ];
-			window.panelRemoteServices.refreshData(urls);
-		});
-
-        $("#selectNodePanel").on("change", function (event) {
-            var current_pane = $(this).val() || 0;
-            $("a[data-action='" + current_pane +"']", '#panel-remote-user-wrapper').trigger("click");
-        });
-		
-		window.panelRemoteServices = $("#panel-nodes").npPaginatedCells({
+			return selected;
+		};
+		window.panelComp = $("#panel-nodes").npPaginatedCells({
 			headerUser: taoUserProfile.username,
-			url: urls,
-			viewMode: preferences.viewMode,
-			filterAttribute: "label",
-			order:[
-				{
-					"label":"Name ascending",
-					"objAttributeName":"label",
-					"direction":"ASC"
-				},
-				{
-					"label":"Name descending",
-					"objAttributeName":"label",
-					"direction":"DSC"
-				}
+			url       : urls,
+			viewMode  : preferences.viewMode,
+			order     : [
+				{ "label": "Name ascending" , "objAttributeName": "label", "direction": "ASC" },
+				{ "label": "Name descending", "objAttributeName": "label", "direction":"DSC" }
 			],
-            doDataPreprocessing: function (data) {
-				for (var i = 0; i < data.length; i ++) {
-					data[i].paramCount = data[i].parameters.length;
-					data[i].sourcesCount = data[i].sources.length;
-                    data[i].targetsCount = data[i].targets.length;
-					//data[i].tags = [data[i].tag];
-					nameListRSU.push(data[i].label);
-				}
-				return data;
+			filterAttribute: "label",
+            doDataPreprocessing: function (data, sets) {
+				var activeSet = getActiveSet(data, sets);
+				return activeSet;
 			},
-			doAction: function(action, args){
-				if(action === "op-plus"){
-					// if( taoUserProfile.userRole !== "ADMIN"){
-					// 	showMsg("Only admin roles can add remote services.", "ERROR");
-					// 	return;
-					// }
+			doCustomRender: function ($elClone, elX) {
+				// Hide "delete" button when not ADMIN
+				(taoUserProfile.userRole !== "ADMIN") && $('[data-action="delete"]', $elClone).remove();
+			},
+			doAction: function (action, args) {
+				if (action === "op-plus") {
 					myModalNodesOpShow(action, args);
-				}
-				if((action === "edit") || (action === "wps-start")) myModalNodesOpShow(action, args);
-				if(action === "delete"){
-					// if( taoUserProfile.userRole !== "ADMIN"){
-					// 	alert("not allowed");
-					// 	return;
-					// }
-					$('#confirm-dialog').modal('confirm',{
-						msg:"Are you sure you want to delete the remote service: <strong>"+args.dna.label+"</strong>?",
-						callbackConfirm: function() {
-							deleteRemoteServiceById(args.dna.id, urls);
-						},
-						callbackCancel:function(){}
+				} else if ((action === "edit") || (action === "wps-start")) {
+					myModalNodesOpShow(action, args);
+				} else if (action === "delete") {
+					$("#confirm-dialog").modal("confirm", {
+						msg            : "Are you sure you want to delete the remote service: <strong>" + args.dna.label + "</strong>?",
+						callbackConfirm: function () { deleteRemoteServiceById(args.dna.id, urls); },
+						callbackCancel : function () {}
 					});
 				}
 			}
 		});
-		//contextual location based variations
 		
-		if (taoUserProfile.userRole !== "ADMIN") {
-			$("#list-master-controls").find("button[data-action='op-plus']").hide();
-			$("#list-work-users").find("button[data-action='delete']").hide();
-		}
-    });
-    //# sourceURL=remoteServices-components.js
+		$selectActivePanel
+		// Change active tab (using the tab controls)
+		.on("click", '[data-toggle="tab"][aria-expanded="false"]', function (e) {
+			navCleanup();
+			
+			var action = $(this).data("action");
+			e.originalEvent && $("select", e.delegateTarget).val(action);
+			
+			urls = (urls.length == 0) ? $.map(actionsSet, function (set, idx) { return set.url; }) : [ actionsSet[action].url ];
+			window.panelComp.refreshData(urls);
+		})
+		// Change active tab (using the combobox)
+		.on("change", "select", function (e) {
+			$('[data-toggle="tab"][data-action="' + this.value + '"]', e.delegateTraget).eq(0).click();
+		})
+		// Manage content when active tab changes
+		.on("shown.bs.tab", '[data-toggle="tab"][aria-expanded]', function (e) {
+			// Toggle visibility of specific toolbar icons
+			$('[data-showwhen]', ".top-controls").addClass("hidden").filter('[data-showwhen="' + taoUserProfile.userRole + '"]').removeClass("hidden");
+		});
+		
+		// Start with WPS remote services
+		$('[data-toggle="tab"][data-action="wps_nodes"]', $selectActivePanel).eq(0).click();
+	});
+	
+//# sourceURL=remoteServices-components.js
 </script>

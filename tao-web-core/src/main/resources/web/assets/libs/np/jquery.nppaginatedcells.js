@@ -1,5 +1,5 @@
 /*!
- * npNotificationsPanels jQuery plugin
+ * npPaginatedCells jQuery plugin
  *
  * it only applies to a single DOM element and options must include end-point url
  * creates paginated cell view, grid or list
@@ -86,7 +86,7 @@ jQuery.fn.npPaginatedCells = function(options){
             });
             req.push(getDataAjax);
         }
-		contentLoading("show");
+		contentLoading("!!!show");
         $.when.apply($, req).done(function(){
             var retData = [];
             if(req.length === 1){
@@ -94,12 +94,14 @@ jQuery.fn.npPaginatedCells = function(options){
             }
             if(req.length > 1){
                 var response = [];
-                for (var i = 0; i < req.length; i++){
+                var sets = {};
+				for (var i = 0; i < req.length; i++){
                     response = $.merge(response,arguments[i][0].data);
+					sets[settings.url[i]] = arguments[i][0].data;
                 }
                 retData = response;
             }
-            retData = settings.doDataPreprocessing(retData);
+            retData = settings.doDataPreprocessing(retData, sets);
 			
 			var currentPage = $("section.content-header").find("li.active")[0].textContent.toLowerCase();
 			if (currentPage.indexOf("workflows") >= 0) {
@@ -129,14 +131,14 @@ jQuery.fn.npPaginatedCells = function(options){
 				dataFull = retData;
 			}
 
-            if(settings.url[0] === baseRestApiURL + "orchestrator/queued/jobs"){
+            if (settings.url[0] === baseRestApiURL + "orchestrator/queued/jobs") {
                 $.each(dataFull, function(index, job){
                     job.tags = [];
                     job.tags[0] = job.userId;
                 });
             }
 
-            if(settings.url[0] ===  baseRestApiURL + "admin/users?status=ACTIVE"){
+            if (settings.url[0] ===  baseRestApiURL + "admin/users?status=ACTIVE") {
                 if(typeof dataFull[0].online !== 'undefined'){
                     $.each(dataFull, function(index, user){
                         user.tags = [];
@@ -145,29 +147,20 @@ jQuery.fn.npPaginatedCells = function(options){
                 }
             }
 
-            if(settings.url[0] === baseRestApiURL + "repository/"){
+            if (settings.url[0] === baseRestApiURL + "repository/") {
                 $.each(dataFull, function(index, job){
                     job.tags = [];
                     job.tags[0] = job.type;
                 });
             }
 
-            if(settings.url[0] === baseRestApiURL + "component/naming/"){
+            if (settings.url[0] === baseRestApiURL + "component/naming/") {
                settings.filterAttribute = "sensor";
-               settings.order  =  [
-                    {
-                        "label":"Name ascending",
-                        "objAttributeName": "sensor",
-                        "direction":"ASC"
-                    },
-                    {
-                        "label":"Name descending",
-                        "objAttributeName": "sensor",
-                        "direction":"DSC"
-                    }
+               settings.order = [
+                    { "label": "Name ascending" , "objAttributeName": "sensor", "direction": "ASC" },
+                    { "label": "Name descending", "objAttributeName": "sensor", "direction": "DSC" }
                 ]
             }
-			
 			
             if( (orderIndex === -1) && (settings.order.length>0) ){
                 orderIndex = 0;
@@ -188,38 +181,9 @@ jQuery.fn.npPaginatedCells = function(options){
             //console.log("data loaded");
             repaint();
         }).fail(function(jqXHR, textStatus, errorThrown) {
-			routeLoading('hide');
+			contentLoading("hide");
 			chkXHR(jqXHR.status);
         });
-
-/*
-        $.when(req[0])
-            .done(function (getDataAjaxResponse) {
-                data = getDataAjaxResponse.data;
-                dataFull = getDataAjaxResponse.data;
-                if( (orderIndex === -1) && (settings.order.length>0) ){
-                    orderIndex = 0;
-                }
-                if(orderIndex !== -1){
-                    repaintOrder();
-                    changeOrder();
-                }
-                dataAllTags = [];
-                for (var j = 0; j < dataFull.length; j++){
-                    if(dataFull[j].tags!=null){
-                        dataAllTags = _.union(dataAllTags,dataFull[j].tags);
-                    }
-                }
-                dataAllTags.sort();
-                repaintTags();
-                repaintSearchBox();
-                console.log("data loaded");
-                repaint();
-            })
-            .fail(function () {
-                alert("Plugin: Could not retrive data.");
-            });
-*/
     };
 
     var clearCells = function() {
@@ -239,7 +203,6 @@ jQuery.fn.npPaginatedCells = function(options){
                 drawCell(index, value);
             }
         });
-        //console.log("rendered");
 		settings.doDataPostprocessing();
     };
     var drawCell = function(index, elX) {
@@ -287,7 +250,7 @@ jQuery.fn.npPaginatedCells = function(options){
         settings.doCustomRender($elClone, elX);
         $elClone.fadeIn('slow');
     };
-//show/hide/append ui elements based on dataset and configuration
+	//show/hide/append ui elements based on dataset and configuration
     var repaintSearchBox = function(){
         if((settings.filterAttribute === undefined) || (settings.filterAttribute === '')){
             $searchForm.hide();
@@ -306,7 +269,7 @@ jQuery.fn.npPaginatedCells = function(options){
         }
     };
     var repaintOrder = function(){
-        html = "<label for=\"npOrderIndex\">Order:&nbsp;</label><select id=\"npOrderIndex\" name=\"npOrderIndex\" class=\"\">\n";
+        html = '<label for="npOrderIndex" class="master-label">Sort by:&nbsp;</label><select id="npOrderIndex" name="npOrderIndex" class="field-master-tool">';
         for (var j = 0; j < settings.order.length; j++){
             html += '<option value="'+j+'"'+((orderIndex === j) ?' selected="selected"':'')+'>'+settings.order[j]["label"]+'</option>';
         }
@@ -401,12 +364,12 @@ jQuery.fn.npPaginatedCells = function(options){
         }
     };
     var repaint = function(){
-		contentLoading('hide');
         ui_showRefreshNotification();
         filterData();
         clearCells();
         repaintPagination();
         renderCells();
+		contentLoading("hide");
     };
     var ui_showRefreshNotification = function(){
         $refreshNotification.addClass("show");
@@ -448,35 +411,6 @@ jQuery.fn.npPaginatedCells = function(options){
 		   changeOrder();
 		   repaint();
         });
-
-    $selectedEl.on("click", '#search-box-nodes', function(event){
-        var action = $($(this).parents(".nav-tabs-custom").find(".role-admin.active").children()[0]).data("action");
-        if(action === "all_vms"){
-            settings.filterAttribute ="id";
-        }
-        if(action === "queued_jobs"){
-            settings.filterAttribute ="jobName";
-        }
-    });
-
-    $selectedEl.on("click", '#npOrderIndex', function(event){
-        var action = $($(this).parents(".nav-tabs-custom").find(".role-admin.active").children()[0]).data("action");
-        if(action === "all_nodes"){
-            settings.filterAttribute ="label";
-            settings.order  =  [
-                {
-                    "label":"Name ascending",
-                    "objAttributeName": "label",
-                    "direction":"ASC"
-                },
-                {
-                    "label":"Name descending",
-                    "objAttributeName": "label",
-                    "direction":"DSC"
-                }
-            ]
-        }
-    });
 
     $selectedEl
         .on("click", '.btn-master-tool', function(event){
@@ -612,16 +546,15 @@ jQuery.fn.npPaginatedCells = function(options){
         });
     //call load data
     getFromEndpoint();
-
+	
     return {
-        sayChainability : function(){
-            $(selectedObjects).each(function(){});
+        sayChainability: function () {
+            $(selectedObjects).each(function () {});
             return selectedObjects;
         },
-        getDebug : function(){
+        getDebug: function () {
             console.log("<<<< all tags >>>>");
             console.log(dataAllTags);
-
             console.log("<<<< data >>>>");
             console.log(dataFilter);
             console.log("<<<< data >>>>");
@@ -630,9 +563,9 @@ jQuery.fn.npPaginatedCells = function(options){
             console.log(dataFull);
             return selectedObjects;
         },
-        refreshData : function(url){
-            if(url && (url instanceof Array)){
-                console.log('change url');
+        refreshData: function (url) {
+            if (url && (url instanceof Array)) {
+                console.log("change url");
                 settings.url = url;
             }
             getFromEndpoint();
