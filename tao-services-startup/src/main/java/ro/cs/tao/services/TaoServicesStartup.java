@@ -69,6 +69,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -199,6 +200,7 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
         final String url = cfgProvider.getValue("tao.services.base");
         final String path = cfgProvider.getValue("site.path");
         Path configJsPath = Paths.get(path).resolve("assets").resolve("dist").resolve("js").resolve("config.js");
+        Path sapPath = Paths.get(path).resolve("sap.html");
         try (Stream<String> stream = Files.lines(configJsPath)) {
             final List<String> lines = stream.map(line -> {
                 if (line.contains("baseWssUrl") &&
@@ -219,6 +221,13 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
                 }
             }).collect(Collectors.toList());
             Files.write(configJsPath, lines);
+            String sapContents = Files.readString(sapPath);
+            int idx = sapContents.indexOf("Version ");
+            if (idx < 0) {
+                idx = sapContents.indexOf("&copy");
+                sapContents = sapContents.substring(0, idx) + "Version " + ConfigurationManager.getInstance().getValue("tao.version") + " " + sapContents.substring(idx);
+                Files.writeString(sapPath, sapContents, StandardOpenOption.TRUNCATE_EXISTING);
+            }
         } catch (IOException e) {
             logger.severe(e.getMessage());
         }
