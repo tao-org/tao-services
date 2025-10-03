@@ -87,7 +87,7 @@ jQuery.fn.npNotificationsPanels = function (options) {
 					case "product.progress"        :
 					default                        : key = "info"     ; break;
 				}
-				var fromNow    = moment(value.timestamp, "YYYY-MM-DDThh:mm:ssZ").fromNow();
+				var fromNow    = moment(value.timestamp).fromNow();
 				var formatDate = moment(value.timestamp).format("YY-MM-DD HH:mm:ss");
 				var $li = $('<li>' +
 								'<div class="media payload">' +
