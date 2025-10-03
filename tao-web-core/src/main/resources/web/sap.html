@@ -378,7 +378,6 @@
 	// Generate notifications contents in both the menu and the "All notifications" panel
 	function renderNotificationsList(key) {
 		var data = notificationsList[topics[key].topic] || [];
-		data.sort(function (a, b) { return (a.timestamp == b.timestamp) ? 0 : (Date.parse(a.timestamp) < Date.parse(b.timestamp) ? 1 : -1); });
 		
 		var no = data.length;
 		var $notifMenu = $("#" + key + "_notif_menu");
@@ -399,20 +398,21 @@
 					switch (value.topic) {
 						case "transfer":
 						case "product.progress":
-							payload = JSON.parse(value.data).Payload;
+							try { payload = JSON.parse(value.data).Payload; } catch (error) {}
 							break;
 						case "info":
 						case "warn":
 						case "execution.status.changed":
 						case "authentication":
 							title = value.topic.toUpperCase().trim();
-							payload = JSON.parse(value.data).Message;
+							try { payload = JSON.parse(value.data).Message; } catch (error) {}
 							break;
 						default:
 							payload = value.data.substring(12, 200);
 							break;
 					}
-					var fromNow      = moment(value.timestamp, "YYYY-MM-DDThh:mm:ssZ").fromNow();
+					var isTimestamp = !isNaN(value.timestamp);
+					var fromNow      = isTimestamp ? moment(value.timestamp).fromNow() : moment(value.timestamp).fromNow();
 					var formatDate   = moment(value.timestamp).format("YY-MM-DD HH:mm:ss");
 					var markAsReadId = value.timestamp + '_' + value.user;
 					var $li = $('<li data-nid="' + value.id + '">' +
@@ -463,9 +463,10 @@
 				$(".dropdown-menu"  , $menu).remove();
 				$(".notif-list", "#" + key + "_notif_panel").html("");
 			} else {
+				data.sort(function (a, b) { return (a.timestamp == b.timestamp) ? 0 : (Date.parse(a.timestamp) < Date.parse(b.timestamp) ? 1 : -1); });
 				$menu.removeClass("empty");
 				$(".val-notif-count", $menu).html(no);
-				$(".from-now"       , $menu).html('Last Update ' + moment(data[0].timestamp, "YYYY-MM-DDThh:mm:ssZ").fromNow());
+				$(".from-now"       , $menu).html('Last Update ' + moment(data[0].timestamp).fromNow());
 				
 				var $ul = $(".dropdown-menu", $menu);
 				if ($ul.length == 0) {
@@ -603,8 +604,10 @@
 	// Intercept notifications on WebSockets
 	function interceptWsNotifications(key) {
 		$(".notif-menu ." + key + "-notif-menu").on("wsmessage", function (e, wsdna) {
+			!isNaN(wsdna.timestamp) && (wsdna.timestamp = moment(wsdna.timestamp).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"));
+			
 			// Add wsdna to main notification list
-			notificationsList[topics[key].topic].push(wsdna);
+			notificationsList[topics[key].topic].unshift(wsdna);
 			
 			// Update the notifications menu
 			updateNotificationsMenu(key);
