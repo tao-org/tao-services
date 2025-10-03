@@ -432,7 +432,6 @@ a:hover,a:active,a:focus {
 	display: block;
 	padding: 0.85em 1.1em;
 	margin-left: -0.23em;
-	min-width: var(--main-menu-size);
 	border-radius: inherit;
 }
 
@@ -488,7 +487,7 @@ a:hover,a:active,a:focus {
 }
 
 .sidebar-menu .treeview-menu>li>a {
-	padding: 0.35em 0.35em 0.35em 1.1em;
+	padding: 0.35em 0.35em 0.35em 2.2em;
 	display: block;
 }
 
@@ -593,7 +592,11 @@ a:hover,a:active,a:focus {
 		box-shadow: 0.5em 0.3em 0.7em -0.22em rgb(0 0 0/.2);
 		opacity: 1;
 	}
-
+	
+	.sidebar-mini.sidebar-collapse .sidebar-menu>li:hover>.treeview-menu>li>a {
+		padding-left: 1.1em;
+	}
+	
 	.sidebar-mini.sidebar-collapse .sidebar-menu>li:hover>a>span {
 		top: 0;
 		left: var(--sidebar-mini-size);
@@ -1991,12 +1994,12 @@ tr.has-error td:nth-child(2) .select2-selection {
 
 .pagination>li>a,
 .pagination>li>span {
-	background: #fafafa;
+	background: #f9fafb;
 	color: #666;
 	font-size: 0.857em;
 	padding: 0.42em 0.83em;
 	border-radius: 0.3em;
-	margin-right: 0.15em;
+	margin-left: 0.084em;
 	transition:all .3s;
 }
 

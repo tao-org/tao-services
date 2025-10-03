@@ -1,0 +1,59 @@
+body.skin-modern {
+	/* Skin specific values */
+	--toolbox-space-color          : #fff;
+	--toolbox-space-bkg            : var(--primary-color);
+	
+	--toolbar-color                : #fff;
+	--toolbar-bkg                  : var(--primary-color);
+	--toolbar-hover-color          : #fff;
+	
+	/* Redefined root variables */.foo{}
+	&.skin-modern-navy {
+		--primary-color            : hsl(210  48%  28% / 1);
+		--primary-bkg              : hsl(210  30%  97% / 1);
+		--primary-bkg-darker       : hsl(210  33%  94% / 1);
+		--active-color             : #4d627b;
+		--default-color            : #7a878e;
+		--scroll-color             : hsl(210  38%  38% / 1);
+	}
+	&.skin-modern-purple {
+		--primary-color            : hsl(282  40%  40% / 1);
+		--primary-bkg              : hsl(282  30%  97% / 1);
+		--primary-bkg-darker       : hsl(282  33%  94% / 1);
+		--active-color             : #4d627b;
+		--default-color            : #7a878e;
+		--scroll-color             : hsl(282  30%  50% / 1);
+	}
+	&.skin-modern-green {
+		--primary-color            : hsl(153  48%  28% / 1);
+		--primary-bkg              : hsl(153  30%  97% / 1);
+		--primary-bkg-darker       : hsl(153  33%  94% / 1);
+		--active-color             : #4d627b;
+		--default-color            : #7a878e;
+		--scroll-color             : hsl(153  38%  38% / 1);
+	}
+	&.skin-modern-red {
+		--primary-color            : hsl(  0  65%  50% / 1);
+		--primary-bkg              : hsl(  0  30%  97% / 1);
+		--primary-bkg-darker       : hsl(  0  33%  94% / 1);
+		--active-color             : #4d627b;
+		--default-color            : #7a878e;
+		--scroll-color             : hsl(  0  55%  60% / 1);
+	}
+	&.skin-modern-teal {
+		--primary-color            : hsl(174 100%  29% / 1);
+		--primary-bkg              : hsl(174  30%  97% / 1);
+		--primary-bkg-darker       : hsl(174  33%  94% / 1);
+		--active-color             : #4d627b;
+		--default-color            : #7a878e;
+		--scroll-color             : hsl(174  90%  36% / 1);
+	}
+	&.skin-modern-indigo {
+		--primary-color            : hsl(243  40%  45% / 1);
+		--primary-bkg              : hsl(243  30%  97% / 1);
+		--primary-bkg-darker       : hsl(243  33%  94% / 1);
+		--active-color             : #4d627b;
+		--default-color            : #7a878e;
+		--scroll-color             : hsl(243  30%  55% / 1);
+	}
+}

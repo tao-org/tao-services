@@ -130,7 +130,31 @@ $(function () {
 			});
 		return deferred.promise();
 	}
-	
+	var iconMapping = {
+		"Dashboard"              : "fa fa-columns"    ,
+		"My Datasets"            : "fa fa-database"   ,
+			"Search"             : "fa fa-search"     ,
+			"Sites"              : "fa fa-map"        ,
+			"Repositories"       : "fa fa-folder-open",
+			"Product Sets"       : "fa fa-cubes"      ,
+			"Shared Datasets"    : "fa fa-database"   ,
+		"My Workflows"           : "fa fa-sitemap"    ,
+			"Workflows"          : "fa fa-sitemap"    ,
+			"Remote Services"    : "fa fa-plug"       ,
+			"Scheduled Jobs"     : "fa fa-clock-o"    ,
+		"My Components"          : "fa fa-briefcase"  ,
+		"Admin area"             : "fa fa-sliders"    ,
+			"System Dashboard"   : "fa fa-columns"    ,
+			"Toolbox Containers" : "fa fa-archive"    ,
+			"Processing Modules" : "fa fa-microchip"  ,
+			"Configuration"      : "fa fa-server"     ,
+			"Public Repositories": "fa fa-folder-open",
+			"Remote Web Services": "fa fa-globe"      ,
+			"Data Sources"       : "fa fa-database"   ,
+			"Topology"           : "fa fa-share-alt"  ,
+			"Users"              : "fa fa-users"      ,
+		"How To"                 : "fa fa-book"
+	}
 	// Get dynamic menu data
 	$.when(getSidebarMenu()).done(function (menu) {
 		var sidebarMenu = [];
@@ -144,21 +168,16 @@ $(function () {
 		
 		// Navigation
 		sidebarMenu.push({"position":-1000,"title":"NAVIGATION"});
-
 		
 		// Actual menu entries from server
 		$.each(menu, function (index, entry) {
-			switch (entry.title) {
-				case "Dashboard"    : entry.icon = "fa fa-columns"  ; break;
-				case "My Datasets"  : entry.icon = "fa fa-database" ; break;
-				case "My Workflows" : entry.icon = "fa fa-sitemap"  ; break;
-				case "My Components": entry.icon = "fa fa-briefcase"; break;
-				case "Admin area"   : entry.icon = "fa fa-sliders"  ; break;
-				default             : entry.icon = "fa fa-bars"     ; break;
-			}
+			entry.icon = iconMapping[entry.title] || "fa fa-bars";
 			entry.items = $.map(entry.items, function (item) { if ($.inArray(taoUserProfile.userRole, item.visibility) > -1) { return item; } });
 			if (entry.items.length > 0) {
 				entry.items.sort(function (a, b) { return (a.position < b.position ? -1 : (a.position > b.position ? 1 : 0)); });
+				$.each(entry.items, function (idx, item) {
+					item.icon = iconMapping[item.name] || "fa fa-bars";
+				});
 				sidebarMenu.push(entry);
 			}
 		});
@@ -166,7 +185,7 @@ $(function () {
 		
 		// Documentation
 		sidebarMenu.push({"position":1001,"title":"DOCUMENTATION"});
-		sidebarMenu.push({"items":[{"name":"How To","route":"howto/intro","location":"./fragments/tao-howto.fragment.html","visibility":["USER","ADMIN"],"section":"DOCUMENTATION","position":1}],"position":1002,"title":"How To","icon":"fa fa-book"});
+		sidebarMenu.push({"items":[{"name":"How To","route":"howto/intro","location":"./fragments/tao-howto.fragment.html","visibility":["USER","ADMIN"],"section":"DOCUMENTATION","position":1}],"position":1002,"title":"How To","icon":iconMapping["How To"]});
 		// Quota resource & time
 		sidebarMenu.push({"position":1003,"title":"RESOURCE USAGE","wrapper_id":"#wrapper-quota"     });
 		sidebarMenu.push({"position":1004,"title":"TIME USAGE"    ,"wrapper_id":"#wrapper-quota-time"});
@@ -192,7 +211,7 @@ $(function () {
 							hashRoutesMap[item.route] = item.location;
 							var cls = "routed-" + item.route.replaceAll("/", "-");
 							$hli.addClass(cls);
-							$li = $('<li class="routed ' + cls + '"><a href="#' + item.route + '"><i class="fa fa-empty"></i><span class="title">' + item.name + '</span></a></li>');
+							$li = $('<li class="routed ' + cls + '"><a href="#' + item.route + '">' + (entry.icon ? '<i class="' + item.icon + '"></i>' : '') + '<span class="title">' + item.name + '</span></a></li>');
 						} else if (item.action) {
 							$li = $('<li class="routed"><a href="#default" data-action="' + item.action + '">' + item.name + '</a></li>');
 						}

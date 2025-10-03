@@ -30,5 +30,5 @@
 	window.logoSmall     = "./media/images/avl_logo_small_transparent.png";
 	window.defaultSize   = "size-normal";
 	window.defaultScheme = "full";
-	window.defaultStyle  = "light";
+	window.defaultAccent = "light";
 })();

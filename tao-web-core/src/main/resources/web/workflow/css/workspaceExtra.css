@@ -11,8 +11,8 @@
 	&.outside:hover                {left:calc(var(--sidebar-mini-size) - var(--sidebar-size) + 2em);}
 	&.outside:hover .ui-accordion  {opacity:.5;}
 	&.outside       .ui-accordion  {opacity:0;pointer-events:none;}
-	.toolbox-bar                   {color:inherit;}
-	.ui-accordion-header           {color:inherit;min-width:var(--sidebar-size);border:0;border-left:0.23em solid transparent;border-radius:0;padding:0.72em 1.1em 0.72em 0.87em;outline:transparent solid 1px;outline-offset:0;.foo{}
+	.toolbox-bar                   {color:inherit;background:inherit;}
+	.ui-accordion-header           {color:inherit;min-width:var(--sidebar-size);border:0;border-left:0.23em solid transparent;border-radius:0;padding:0.85em 1.1em 0.85em 0.87em;outline:transparent solid 1px;outline-offset:0;.foo{}
 		&.ui-state-active          {border-left-color:transparent;}
 		.icon                      {width:1em;margin-right:0.714em;}
 		&[aria-controls="QUERIES"  ] .icon::before {content:"\f1c0";}
@@ -59,7 +59,7 @@
 /* Rounded menu items */
 .toolbox-sidebar                          {.foo{}
 	body.skin-full &,body.skin-modern &   {.foo{}
-		.ui-accordion-header              {min-width:calc(var(--sidebar-size) - 1em);margin:0.5em 0.5em 0;border-radius:0.3em;.foo{}
+		.ui-accordion-header              {min-width:calc(var(--sidebar-size) - 1em);padding:0.72em 1.1em 0.72em 0.87em;margin:0.5em 0.5em 0;border-radius:0.3em;.foo{}
 			&.ui-state-hover              {outline-color:rgb(0 0 0/.05);box-shadow:0 0 0.50em 0 rgb(0 0 0/.1);}
 			&.ui-state-active             {outline-color:rgb(0 0 0/.05);box-shadow:0 0 0.22em 0 rgb(0 0 0/.1);border-radius:0.3em 0.3em 0 0;}
 		}

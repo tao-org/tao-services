@@ -105,25 +105,25 @@ $.AdminLTE.options = {
 	},
 	//Define the set of colors to use globally around the website
 	colors: {
-		lightBlue: "#3c8dbc",
-		red      : "#d22d2d",
-		green    : "#009451",
-		aqua     : "#00c0ef",
-		yellow   : "#f39c12",
-		blue     : "#0073b7",
-		navy     : "#245c95",
-		teal     : "#00b3a1",
-		olive    : "#3d9970",
-		lime     : "#01ff70",
-		orange   : "#ff851b",
-		fuchsia  : "#f012be",
-		indigo   : "#534dcb",
-		purple   : "#8e2eb8",
-		maroon   : "#d81b60",
-		black    : "#000000",
-		gray     : "#d2d6de",
 		light    : "#ffffff",
-		dark     : "#000000"
+		dark     : "#000000",
+		navy     : "#245c95",
+		purple   : "#8e2eb8",
+		green    : "#009451",
+		red      : "#d22d2d",
+		teal     : "#00b3a1",
+		indigo   : "#534dcb",
+//		aqua     : "#00c0ef",
+//		yellow   : "#f39c12",
+//		blue     : "#0073b7",
+//		olive    : "#3d9970",
+//		lime     : "#01ff70",
+//		orange   : "#ff851b",
+//		fuchsia  : "#f012be",
+//		maroon   : "#d81b60",
+//		black    : "#000000",
+//		gray     : "#d2d6de",
+//		lightBlue: "#3c8dbc",
 	},
 	//The standard screen sizes that bootstrap uses.
 	//If you change these in the variables.less file, change
@@ -133,19 +133,6 @@ $.AdminLTE.options = {
 		sm: 768,
 		md: 992,
 		lg: 1200
-	},
-	styles: {
-		"light" : "light-hsl.css",
-		"dark"  : "dark-hsl.css",
-		"navy"  : "navy-hsl.css",
-		"blue"  : "blue-hsl.css",
-		"black" : "black-hsl.css",
-		"red"   : "red-hsl.css",
-		"teal"  : "teal-hsl.css",
-		"yellow": "yellow-hsl.css",
-		"indigo": "indigo-hsl.css",
-		"purple": "purple-hsl.css",
-		"green" : "green-hsl.css"
 	}
 };
 

@@ -9,13 +9,11 @@
     <link href="./assets/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
     <!-- Font Awesome Icons -->
     <link href="./assets/libs/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
-    <!-- Theme style -->
+    <!-- TAO -->
 	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTE.css" />
 	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEplus.css" />
 	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEextra.css" />
-	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEskin.css" />
-	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEspecific.css" />
-	<link type="text/css" rel="stylesheet" href="./assets/dist/css/root/full/light-hsl.css" id="root_css_file" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/skins/skins.css" />
 	
     <link rel="shortcut icon" type="image/x-icon" href="/media/icons/dunia-favicon.ico" />
     
@@ -346,14 +344,10 @@
 		$('head').append('<link type="image/x-icon" rel="shortcut icon" href="' + (typeof window.favicon !== "undefined" ? window.favicon : "./favicon.ico") + '">');
 		
 		var selectedSize  = window.defaultSize;
-		var selectedStyle = {
-			scheme: window.defaultScheme,
-			color : window.defaultStyle,
-			css   : $.AdminLTE.options.styles[window.defaultStyle]
-		};
+		var selectedStyle = { "scheme": window.defaultScheme, "accent": window.defaultAccent };
+		
 		// Add body size class
-		$("body").addClass(selectedSize).addClass("skin-" + selectedStyle.scheme).addClass("skin-" + selectedStyle.scheme + "-" + selectedStyle.color);
-		$("#root_css_file").attr("href", "./assets/dist/css/root/" + selectedStyle.scheme + "/" + selectedStyle.css);
+		$("body").addClass(selectedSize).addClass("skin-" + selectedStyle.scheme).addClass("skin-" + selectedStyle.scheme + "-" + selectedStyle.accent);
 		
         var node = jsGetUrlQueryValue("node");      
           

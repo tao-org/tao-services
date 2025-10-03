@@ -20,8 +20,7 @@
 	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTE.css" />
 	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEplus.css" />
 	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEextra.css" />
-	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEskin.css" />
-	<link type="text/css" rel="stylesheet" href="./assets/dist/css/root/full/light-hsl.css" id="root_css_file" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/skins/skins.css" />
 	
 	<!-- External -->
 	<script type="text/javascript" src="./assets/libs/jQuery/jQuery-2.2.4.min.js"></script>
@@ -97,21 +96,18 @@
 			.image>img                     {width:100%;max-width:100%;height:auto;}
 		}
 		
-		.main-sidebar .sidebar-menu>li:first-of-type {
-			&+.header                                {padding-top:0;border:0;}
-			>a                                       {min-width:15em;}
-			.title>*                                 {display:block;line-height:1.4;text-align:center;font-size:1em;color:var(--sidebar-color);}
-			.title>br,.val-user-role                 {display:none};
-			.treeview-menu                           {padding:0 0.85em;}
-			.treeview-menu p                         {margin-bottom:0.23em;}
-			body.sidebar-collapse &                  {display:none};
+		.sidebar-menu>li:first-of-type {
+			&+.header                  {padding-top:0;border:0;}
+			.title>*                   {display:block;line-height:1.2;text-align:center;font-size:1em;}
+			.treeview-menu p           {margin-bottom:0.23em;}
+			.val-user-role,
+			body.sidebar-collapse &    {display:none};
 		}
 		.fa.fa-empty::before{content:"";}
-		
 	</style>
 </head>
 
-<body class="sidebar-mini size-normal noselect">
+<body class="sidebar-mini noselect">
 <div class="wrapper" style="opacity:0;">
 	<!-- Main Header -->
 	<header class="main-header">
@@ -139,7 +135,7 @@
 					<ul class="dropdown-menu">
 						<li class="header user-header">
 							<img src="https://www.gravatar.com/avatar/0000000000?d=mp&s=160" class="img-circle val-user-avatar"/>
-							<div><span class="val-user val-user-fullname bold"></span><br /><span class="val-user val-user-role user-role"></span><br /><small class="val-user val-user-email thin"></small></div>
+							<div><span class="val-user val-user-fullname bold"></span><span class="val-user val-user-role user-role"></span><small class="val-user val-user-email thin"></small></div>
 						</li>
 						<li><ul class="menu">
 							<li><a data-action="editprofile"       class="media" href="#"><div class="media-left"><i class="fa fa-user-o"></i></div><div class="media-body"><p class="text">Profile</p></div></a></li>
@@ -243,7 +239,7 @@
 	
 	<!-- Main Footer -->
 	<footer class="main-footer">
-		<span>&copy; 2024 <a href="https://www.c-s.ro">CS GROUP - ROMANIA</a></span>
+		<span>&copy; 2024 <a href="//www.c-s.ro/">CS GROUP Romania</a></span>
 	</footer>
 	
 	<!-- bot-notifications -->
@@ -328,11 +324,7 @@
 	var $myModalNotif = $("#myModalNotifications");
 	
 	var selectedSize  = window.defaultSize;
-	var selectedStyle = {
-		scheme: window.defaultScheme,
-		color : window.defaultStyle,
-		css   : $.AdminLTE.options.styles[window.defaultStyle]
-	};
+	var selectedStyle = { "scheme": window.defaultScheme, "accent" : window.defaultAccent };
 	var notificationsList = [];
 	var topics = {
 		info     : { topic: "info"                    , title: "Info messages"   , badge: "badge label-success", icon: "fa fa-flag-o"              , color: "var(--status-success)", showFirst: true  },
@@ -656,8 +648,7 @@
 			$('.bootstrap-switch input[type="checkbox"]').length && $('.bootstrap-switch input[type="checkbox"]').bootstrapSwitch("size", bootstrapSwitchSize(value));
 			
 		} else if (attribute === "body_style") {
-			$("body").removeClass(function (index, className) { return (className.match(/\bskin-\S+/g) || []).join(' '); }).addClass("skin-" + value.scheme).addClass("skin-" + value.scheme + "-" + value.color);
-			$("#root_css_file").attr("href", "./assets/dist/css/root/" + value.scheme + "/" + value.css);
+			$("body").removeClass(function (index, className) { return (className.match(/\bskin-\S+/g) || []).join(' '); }).addClass("skin-" + value.scheme).addClass("skin-" + value.scheme + "-" + value.accent);
 		}
 		
 		$(document).trigger("settings-change");
@@ -672,9 +663,9 @@
 	
 	// Populate accent color options for all available themes
 	function populateAvailableStyles() {
-		var selectSchemeAccent = function ($el, $a, checked) {
+		var selectSchemeAccent = function ($el, $a, selected) {
 			var $clone = $a.clone();
-			$(".fa", $clone).attr("class", checked ? "fa fa-check-circle" : "fa fa-circle");
+			$(".fa", $clone).attr("class", selected ? "fa fa-check-circle" : "fa fa-circle");
 			$el.find(".selected-accent").html("").prepend($clone);
 		};
 		
@@ -687,15 +678,11 @@
 			
 			$el.append('<div class="selected-accent"></div><div><label class="title">' + title + '<br /><small>' + desc + '</small></label>' + (accents.length > 1 ? '<section class="accent-colors"></section>' : '') + '</div>');
 			$.each(accents, function (idx, accent) {
-				if ($.AdminLTE.options.styles[accent]) {
-					var style = {
-						scheme: scheme,
-						color : accent,
-						css   : $.AdminLTE.options.styles[accent]
-					};
-					var $a = $('<a data-scheme="' + style.scheme + '" data-color="' + style.color + '" data-css="' + style.css + '" class="full-opacity-hover" href="#"><i class="fa fa-circle" style="color:' + $.AdminLTE.options.colors[accent] + '"></i></a>');
+				if ($.AdminLTE.options.colors[accent]) {
+					var style = { "scheme": scheme, "accent" : accent };
+					var $a = $('<a data-scheme="' + style.scheme + '" data-accent="' + style.accent + '" class="full-opacity-hover" href="#"><i class="fa fa-circle" style="color:' + $.AdminLTE.options.colors[accent] + '"></i></a>');
 					$(".accent-colors", $el).append($a);
-					var selected = (selectedStyle.scheme === style.scheme && selectedStyle.color === style.color);
+					var selected = (selectedStyle.scheme === style.scheme && selectedStyle.accent === style.accent);
 					if (accents.length == 1 || selected) {
 						selectSchemeAccent($el, $a, selected);
 					}
@@ -719,11 +706,7 @@
 					$(".fa", $a).attr("class", "fa fa-check-circle");
 				}
 				
-				selectedStyle = {
-					scheme: $a.attr("data-scheme"),
-					color : $a.attr("data-color"),
-					css   : $.AdminLTE.options.styles[$a.attr("data-color")]
-				};
+				selectedStyle = { "scheme": $a.attr("data-scheme"), "accent": $a.attr("data-accent") };
 				refreshSettings();
 			}
 		});
@@ -737,22 +720,21 @@
 			$("#selectSettingsRefreshRate").val(taoUserProfile.preferences.find(function (item) { return (item.key == "refresh_rate"); })?.value || 10000);
 			$("#btnRestore").prop("disabled", false); 
 		}
+		
 		// Body size
+		selectedSize = defaultSize;
 		if ($.inArray("body_size", prefsList) > -1) {
 			selectedSize = taoUserProfile.preferences.find(function (item) { return (item.key == "body_size"); })?.value || defaultSize;
-			$('#selectSettingsBodySize [data-action="'+ selectedSize +'"]').addClass("selected").siblings().removeClass("selected");
 		}
+		$('#selectSettingsBodySize [data-action="'+ selectedSize +'"]').addClass("selected").siblings().removeClass("selected");
+		
 		// Theme
 		if ($.inArray("body_theme", prefsList) > -1) {
 			var prefTheme = taoUserProfile.preferences.find(function (item) { return (item.key == "body_theme"); })?.value;
 			try {
 				prefTheme = JSON.parse(prefTheme);
-				if (prefTheme.scheme && prefTheme.color) {
-					selectedStyle = {
-						scheme: prefTheme.scheme,
-						color : prefTheme.color,
-						css   : $.AdminLTE.options.styles[prefTheme.color]
-					};
+				if (prefTheme.scheme && prefTheme.accent) {
+					selectedStyle = { "scheme": prefTheme.scheme, "accent": prefTheme.accent };
 				}
 			} catch (exception) {}
 		}
@@ -861,7 +843,7 @@
 				var	postdata = [
 					{ key: "body_size"   , value: $("#selectSettingsBodySize [data-action].selected").data("action") || "" },
 					{ key: "refresh_rate", value: $("#selectSettingsRefreshRate").val() || "1" },
-					{ key: "body_theme"  , value: JSON.stringify({ scheme: $a.attr("data-scheme"), color: $a.attr("data-color") }) }
+					{ key: "body_theme"  , value: JSON.stringify({ scheme: $a.attr("data-scheme"), accent: $a.attr("data-accent") }) }
 				];
 				$.ajax({
 					cache  : false,
@@ -901,11 +883,7 @@
 					selectedSize = window.defaultSize;
 					$('#selectSettingsBodySize [data-action="' + selectedSize + '"]').addClass("selected").siblings().removeClass("selected");
 					// Theme
-					selectedStyle = {
-						scheme: window.defaultScheme,
-						color : window.defaultStyle,
-						css   : $.AdminLTE.options.styles[window.defaultStyle]
-					};
+					selectedStyle = { "scheme": window.defaultScheme, "accent": window.defaultAccent };
 					refreshSettings();
 					populateAvailableStyles();
 					// Refresh rate

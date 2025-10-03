@@ -311,6 +311,10 @@ body.sidebar-mini.sidebar-collapse .main-sidebar .sidebar {
 	width: var(--main-menu-size);
 }
 
+.sidebar-menu>li.header:has(>.sidebar-quota) {
+	width: auto;
+}
+
 .sidebar-quota {
 	padding: 1.1em;
 	width: var(--main-menu-size);
