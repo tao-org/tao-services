@@ -1,22 +1,17 @@
-:root {
+body.skin-full-dark {
 	--primary-color             : #d4d4d4;
-	--hairline                  : rgb(255 255 255/.05);
-	--hairline-inv              : rgb(0 0 0/.05);
-	--hairline-strong           : rgb(255 255 255/.3);
-	--hairline-strong-inv       : rgb(0 0 0/.3);
+	--primary-bkg               : #f9fafb;
+	--side-color                : #ababab;
+	--side-bkg                  : #fff;
+	--side-bkg-darker           : #434c5c;
+	--side-bkg-lighter          : #434c5c;
+	--alt-border                : #168ec5;
+	--alt-color                 : #fff;
 	
 	--header-color              : #fff;
 	--header-bkg                : hsl(218  15%  24% / 1);
 	--header-logo-color         : #fff;
 	--header-logo-bkg           : hsl(218  15%  28% / 1);
-	
-	--dropdown-color            : #d4d4d4;
-	--dropdown-bkg              : #434c5c;
-	--dropdown-header-border    : rgb(255 255 255/.05);
-	--dropdown-hover-color      : #d4d4d4;
-	--dropdown-hover-bkg        : hsl(218  15%  28% / 1);
-	--dropdown-open-color       : #fff;
-	--dropdown-open-bkg         : hsl(199  98%  51% / 1);
 	
 	--sidebar-color             : #ababab;
 	--sidebar-bkg               : hsl(218  15%  28% / 1);
@@ -25,7 +20,7 @@
 	--menu-color                : #ababab;
 	--menu-bkg                  : hsl(218  15%  28% / 1);
 	--menu-border               : transparent;
-	--menu-header-color         : hsl(199  80%  43% / 1);
+	--menu-header-color         : #168ec5;
 	--menu-header-bkg           : transparent;
 	--menu-header-border        : rgb(255 255 255/.03);
 	--menu-hover-color          : #fff;
@@ -40,32 +35,11 @@
 	--submenu-color             : #ababab;
 	--submenu-bkg               : #434c5c;
 	--submenu-selected-color    : #fff;
-	--submenu-mini-bkg          : hsl(218  15%  24% / 1);
 	
 	--content-color             : #ababab;
 	--content-bkg               : hsl(218  15%  24% / 1);
-	--content-header-color      : inherit;
+	--content-header-color      : #d4d4d4;
 	--content-header-bkg        : transparent;
-	
-	--footer-color              : #d4d4d4;
-	--footer-bkg                : hsl(218  15%  21% / 1);
-	--footer-border             : rgb(255 255 255/.05);
-	--footer-hover-color        : #ababab;
-	
-	--btn-default-color         : #ababab;
-	--btn-default-bkg           : #414a59;
-	--btn-default-border        : rgb(255 255 255/.03);
-	--btn-default-hover-bkg     : #38404d;
-	
-	--btn-nodeop-color          : #ababab;
-	--btn-nodeop-bkg            : #414a59;
-	--btn-nodeop-border         : rgb(255 255 255/.03);
-	--btn-nodeop-hover-bkg      : #38404d;
-	
-	--btn-primary-color         : #fff;
-	--btn-primary-bkg           : hsl(199  98%  51% / 1);
-	--btn-primary-border        : hsl(199  98%  51% / 1);
-	--btn-primary-hover-bkg     : hsl(199  97%  42% / 1);
 	
 	--tab-color                 : #ababab;
 	--tab-bkg                   : hsl(218  15%  24% / 1);
@@ -80,6 +54,36 @@
 	--pill-active-bkg           : hsl(199  98%  51% / 1);
 	--pill-active-border        : hsl(199  98%  51% / 1);
 	--pill-topo-active-border   : hsl(199  98%  51% / 1);
+	
+	--btn-nodeop-color          : #ababab;
+	--btn-nodeop-bkg            : #414a59;
+	--btn-nodeop-border         : rgb(255 255 255/.03);
+	
+	--btn-primary-color         : #fff;
+	--btn-primary-bkg           : hsl(199  98%  51% / 1);
+	--btn-primary-border        : hsl(199  98%  51% / 1);
+	
+	--btn-default-color         : #ababab;
+	--btn-default-bkg           : #414a59;
+	--btn-default-border        : rgb(255 255 255/.03);
+	
+	--hairline                  : rgb(255 255 255/.05);
+	--hairline-inv              : rgb(0 0 0/.05);
+	--hairline-strong           : rgb(255 255 255/.3);
+	--hairline-strong-inv       : rgb(0 0 0/.3);
+	
+	--dropdown-color            : #d4d4d4;
+	--dropdown-bkg              : #434c5c;
+	--dropdown-header-border    : rgb(255 255 255/.05);
+	--dropdown-hover-color      : #d4d4d4;
+	--dropdown-hover-bkg        : hsl(218  15%  28% / 1);
+	--dropdown-open-color       : #fff;
+	--dropdown-open-bkg         : hsl(199  98%  51% / 1);
+	
+	--footer-color              : #d4d4d4;
+	--footer-bkg                : hsl(218  15%  21% / 1);
+	--footer-border             : rgb(255 255 255/.05);
+	--footer-hover-color        : #ababab;
 	
 	--panel-color               : #bbb;
 	--panel-bkg                 : rgb(255 255 255/.04);
@@ -142,8 +146,8 @@
 	--status-warning            : #f39c12;
 	--status-unavailable        : #808080;
 	
-	--scrollbar-default-thumb   : hsl(199  80%  43% / 1);
+	--scrollbar-default-thumb   : #168ec5;
 	--scrollbar-default-track   : transparent;
-	--scrollbar-onhover-thumb   : hsl(199  80%  43% / 1);
+	--scrollbar-onhover-thumb   : #168ec5;
 	--scrollbar-onhover-track   : rgb(0 0 0/.1);
 }

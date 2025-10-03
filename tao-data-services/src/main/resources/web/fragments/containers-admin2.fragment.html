@@ -142,11 +142,11 @@
 </section>
 
 <!-- Modal for user actions -->
-<div id="myModalNodes" class="modal fade" tabindex="-1" data-backdrop="static" role="dialog">
+<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog">
 	<div class="modal-dialog"></div>
 </div>
 
-<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ace.js" charset="utf-8"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ace.min.js" charset="utf-8"></script>
 
 <script type="text/javascript">
 	window.navCleanup = function () {
@@ -251,8 +251,8 @@
 			url       : urls,
 			viewMode  : preferences.viewMode,
 			order     : [
-				{"label": "Name ascending" , "objAttributeName": "name", "direction": "ASC" },
-				{"label": "Name descending", "objAttributeName": "name", "direction": "DSC" }
+				{ "label": "Name ascending" , "objAttributeName": "name", "direction": "ASC" },
+				{ "label": "Name descending", "objAttributeName": "name", "direction": "DSC" }
 			],
 			filterAttribute: "name",
 			doDataPreprocessing: function (data, sets) {

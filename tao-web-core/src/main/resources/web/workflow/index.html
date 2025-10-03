@@ -15,14 +15,9 @@
 	<link type="text/css" rel="stylesheet" href="./app.css" />
 	<link type="text/css" rel="stylesheet" href="./workspace.css" />
 	<link type="text/css" rel="stylesheet" href="./css/workspaceExtra.css" />
-	<link type="text/css" rel="stylesheet" href="./css/workspaceSkin.css" />
-<!--<link type="text/css" rel="stylesheet" href="./css/size-customization.css" />-->
+	<link type="text/css" rel="stylesheet" href="./css/skins/skins.css" />
 	<link type="text/css" rel="stylesheet" href="./css/propbar.css" />
 	<link type="text/css" rel="stylesheet" href="./css/npFileName.css" />
-<!--<link type="text/css" rel="stylesheet" href="./css/nanoscroller.css" />-->
-	
-	<!-- Skins -->
-	<link type="text/css" rel="stylesheet" href="./css/root/root-skin.css" id="root_wf_css_file" />
 	
 	<script type="text/javascript" src="//code.jquery.com/jquery-1.12.4.js"></script>
 	<script type="text/javascript" src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -326,8 +321,7 @@
 		// Size
 		$("body").removeClass(function (index, className) { return (className.match(/\bsize-\S+/g) || []).join(' '); }).addClass(myParent.selectedSize);
 		// Color
-		$("body").removeClass(function (index, className) { return (className.match(/\bskin-\S+/g) || []).join(' '); }).addClass("skin-" + myParent.selectedStyle.scheme).addClass("skin-" + myParent.selectedStyle.scheme + "-" + myParent.selectedStyle.color);
-		$("#root_wf_css_file").attr("href", "./css/root/" + myParent.selectedStyle.scheme + "/" + myParent.selectedStyle.css);
+		$("body").removeClass(function (index, className) { return (className.match(/\bskin-\S+/g) || []).join(' '); }).addClass("skin-" + myParent.selectedStyle.scheme).addClass("skin-" + myParent.selectedStyle.scheme + "-" + myParent.selectedStyle.accent);
 		setTimeout(function () {
 			$("#toolboxSidebar .toolboxAccordion").data("uiAccordion") && $("#toolboxSidebar .toolboxAccordion").accordion("refresh");
 		}, 1500);

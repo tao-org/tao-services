@@ -8,7 +8,6 @@
 	
 	#tao-async-wf {margin:0;}
 	#panel-nodes                      {
-		.node-root.disabled .box-icon {opacity:.5;}
 		.nodes-item-core-box          {
 			.with-label>label::before {min-width:4em;}
 			.box-top .box-subtitle    {cursor:pointer;}
@@ -16,8 +15,8 @@
 	}
 	
 	.spacer               {display:inline-block;width:2em;text-align:center;float:left;&::before{content:"|";opacity:0.65;}&:has(+.hidden,+.invisible){display:none;}}
-	.fa-trash-ban         {position:relative;background:inherit;&::before{content:"\f014"}&::after {content:"\f1b8";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.1em;background:inherit;border-radius:50%;}}
-	.fa-dry-run           {position:relative;background:inherit;&::before{content:"\f0ae"}&::after {content:"\f046";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.3em;background:inherit;border-radius:50%;}}
+	.fa-trash-ban         {position:relative;&::before{content:"\f014"}&::after {content:"\f1b8";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.1em;background:var(--btn-nodeop-bkg);border-radius:50%;}}
+	.fa-dry-run           {position:relative;&::before{content:"\f0ae"}&::after {content:"\f046";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.3em;background:var(--btn-nodeop-bkg);border-radius:50%;}}
 	.fa-code-fork::before {display:inline-block;transform:scaleX(-1.3) scaleY(1.3) rotate(180deg)}
 	.fa-tasks::before     {display:inline-block;transform:scaleX(1.3);}
 	.fa-dry-run::before   {display:inline-block;transform:scaleX(1.3);}
@@ -472,6 +471,8 @@
 				var isPublic       = elX.visibility === "PUBLIC";
 				var isSubscription = elX.visibility === "SUBSCRIPTION";
 				var isReadOnly     = isPublished && (isPublic || isSubscription);
+				
+				!isActive && $elClone.addClass("disabled");
 				
 				$('.tooltip-up   [data-toggle="tooltip"]', $elClone).attr({ "data-placement": "top"    });
 				$('.tooltip-down [data-toggle="tooltip"]', $elClone).attr({ "data-placement": "bottom" });

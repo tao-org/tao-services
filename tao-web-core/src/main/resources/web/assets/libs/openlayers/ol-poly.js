@@ -96,7 +96,7 @@
 			interactions: ol.interaction.defaults({ mouseWheelZoom: true, doubleClickZoom: false, shiftDragZoom: false }),
 			layers: [
 				new ol.layer.Tile({ name: "Map"   , source: new ol.source.OSM() }), 						//raster
-				new ol.layer.Vector({ name: "Features" , source: _self.source, style: _self.defaultStyle })	//vector
+				new ol.layer.Vector({ name: "Features" , source: _self.source, style: _self.styleDefault })	//vector
 			],
 			target: 'map',
 			view  : new ol.View({

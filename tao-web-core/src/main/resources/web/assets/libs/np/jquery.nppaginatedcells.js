@@ -4,7 +4,7 @@
  * it only applies to a single DOM element and options must include end-point url
  * creates paginated cell view, grid or list
  *
- * Copyright  CS ROMANIA, http://c-s.ro
+ * Copyright  CS ROMANIA, https://www.c-s.ro
  *
  * Licensed under the ....;
  * you may not use this file except in compliance with the License.
@@ -40,20 +40,18 @@ jQuery.fn.npPaginatedCells = function(options){
     var $searchForm = $("form.search-container",$selectedEl);
     var $orderEl =  $(".nppaginatedcells-order",$selectedEl);
 
-	
-
     var settings = $.extend({
         itemsOnPage: 8,
         url: '',
         order:[],
         filterAttribute: "",
         viewMode: "list",
-        doAction: function (actionName) {},
+        loading: false,
+		doAction: function (actionName) {},
         doDataPreprocessing: function(data){return data;},
         doCustomRender: function($el, data){return;},
 		doDataPostprocessing : function(){return;}
     }, options );
-
 
     var dataPagination = {
         directPagesNo: 3,
@@ -86,17 +84,16 @@ jQuery.fn.npPaginatedCells = function(options){
             });
             req.push(getDataAjax);
         }
-		contentLoading("!!!show");
-        $.when.apply($, req).done(function(){
+		settings.loading && contentLoading("show");
+        $.when.apply($, req).done(function () {
             var retData = [];
-            if(req.length === 1){
+            if (req.length == 1) {
                 retData = arguments[0].data;
-            }
-            if(req.length > 1){
+            } else if (req.length > 1) {
                 var response = [];
                 var sets = {};
-				for (var i = 0; i < req.length; i++){
-                    response = $.merge(response,arguments[i][0].data);
+				for (var i = 0; i < req.length; i++) {
+                    response = $.merge(response, arguments[i][0].data);
 					sets[settings.url[i]] = arguments[i][0].data;
                 }
                 retData = response;
@@ -106,21 +103,14 @@ jQuery.fn.npPaginatedCells = function(options){
 			var currentPage = $("section.content-header").find("li.active")[0].textContent.toLowerCase();
 			if (currentPage.indexOf("workflows") >= 0) {
 				var action = $("a[data-toggle='tab'][aria-expanded='true']", ".nav-tabs-custom").attr("data-action");
-				var active = false;
-				var system = false;
-				if (action === "active_nodes" || action === "system_nodes") {
-					active = true;
-				}
+				var active = (action === "system_nodes" || action === "active_nodes");
+				var system = (action === "system_nodes");
 				
-				if (action === "system_nodes"){
-					system = true;
-				}
-				
-				dataFull = retData.filter(function(item){
+				dataFull = retData.filter(function(item) {
 					if (system && item.visibility.toLowerCase() === "system") {
-							return item;
+						return item;
 					} else if (!system && item.visibility.toLowerCase() !== "system") {
-						if(typeof item.active !== "undefined" && item.active === active) {
+						if (typeof item.active !== "undefined" && item.active === active) {
 							return item;
 						} else if (typeof item.active === "undefined") {
 							return item;
@@ -132,23 +122,23 @@ jQuery.fn.npPaginatedCells = function(options){
 			}
 
             if (settings.url[0] === baseRestApiURL + "orchestrator/queued/jobs") {
-                $.each(dataFull, function(index, job){
+                $.each(dataFull, function(index, job) {
                     job.tags = [];
                     job.tags[0] = job.userId;
                 });
             }
 
             if (settings.url[0] ===  baseRestApiURL + "admin/users?status=ACTIVE") {
-                if(typeof dataFull[0].online !== 'undefined'){
-                    $.each(dataFull, function(index, user){
+                if (typeof dataFull[0].online !== 'undefined') {
+                    $.each(dataFull, function (index, user) {
                         user.tags = [];
-                        user.tags[0] = user.online? "ONLINE":"OFFLINE";
+                        user.tags[0] = user.online ? "ONLINE" : "OFFLINE";
                     });
                 }
             }
 
             if (settings.url[0] === baseRestApiURL + "repository/") {
-                $.each(dataFull, function(index, job){
+                $.each(dataFull, function(index, job) {
                     job.tags = [];
                     job.tags[0] = job.type;
                 });
@@ -162,23 +152,22 @@ jQuery.fn.npPaginatedCells = function(options){
                 ]
             }
 			
-            if( (orderIndex === -1) && (settings.order.length>0) ){
+            if ((orderIndex === -1) && (settings.order.length>0)) {
                 orderIndex = 0;
             }
-            if(orderIndex !== -1){
+            if (orderIndex !== -1) {
                 repaintOrder();
                 changeOrder();
             }
             dataAllTags = [];
-            for (var j = 0; j < dataFull.length; j++){
-                if(dataFull[j].tags!=null){
-                    dataAllTags = _.union(dataAllTags,dataFull[j].tags);
+            for (var j = 0; j < dataFull.length; j++) {
+                if (dataFull[j].tags != null) {
+                    dataAllTags = _.union(dataAllTags, dataFull[j].tags);
                 }
             }
             dataAllTags.sort();
             repaintTags();
             repaintSearchBox();
-            //console.log("data loaded");
             repaint();
         }).fail(function(jqXHR, textStatus, errorThrown) {
 			contentLoading("hide");
@@ -243,9 +232,6 @@ jQuery.fn.npPaginatedCells = function(options){
         $elClone.addClass("node-root").hide();
 		$elClone.prop("id", "node-"+elID ).appendTo( $body ).data("dna", elX);
 		var currentPage = $("section.content-header").find("li.active")[0].textContent.toLowerCase();//workaround for inherited active property
-        if(elX.active === false && currentPage.toLowerCase() !== "remote services"){
-            $elClone.addClass("disabled");
-        }
         //render custom
         settings.doCustomRender($elClone, elX);
         $elClone.fadeIn('slow');
