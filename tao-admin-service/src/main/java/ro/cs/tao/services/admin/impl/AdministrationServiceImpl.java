@@ -18,29 +18,48 @@ package ro.cs.tao.services.admin.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.docker.Container;
+import ro.cs.tao.docker.ContainerVisibility;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.NodeDBProvider;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.ResourceSubscriptionProvider;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.persistence.repository.NodeFlavorRepository;
-import ro.cs.tao.services.interfaces.AdministrationService;
+import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.services.factory.StorageServiceFactory;
+import ro.cs.tao.services.interfaces.*;
+import ro.cs.tao.services.model.component.ProcessingComponentInfo;
 import ro.cs.tao.services.model.user.DisableUserInfo;
 import ro.cs.tao.services.model.user.UserMapping;
 import ro.cs.tao.services.model.user.UserUnicityInfo;
+import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.subscription.FlavorSubscription;
 import ro.cs.tao.subscription.ResourceSubscription;
+import ro.cs.tao.subscription.SubscriptionType;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.NodeFlavor;
 import ro.cs.tao.topology.TopologyException;
 import ro.cs.tao.topology.TopologyManager;
+import ro.cs.tao.topology.docker.DockerManager;
 import ro.cs.tao.user.Group;
 import ro.cs.tao.user.User;
+import ro.cs.tao.user.UserPreference;
 import ro.cs.tao.user.UserStatus;
+import ro.cs.tao.utils.FileUtilities;
+import ro.cs.tao.workflow.enums.Status;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -56,6 +75,18 @@ public class AdministrationServiceImpl implements AdministrationService {
     @Autowired
     @Qualifier("nodeFlavorRepository")
     private NodeFlavorRepository nodeFlavorRepository;
+    @Autowired
+    private WorkflowService workflowService;
+    @Autowired
+    private ComponentService componentService;
+    @Autowired
+    private ContainerService containerService;
+    @Autowired
+    private RepositoryService repositoryService;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private ResourceSubscriptionProvider resourceSubscriptionProvider;
 
     @Override
     public User addNewUser(User newUserInfo) throws PersistenceException {
@@ -110,8 +141,117 @@ public class AdministrationServiceImpl implements AdministrationService {
 
     @Override
     public void disableUser(String userId, DisableUserInfo additionalDisableActions) throws PersistenceException {
+        final Logger logger = Logger.getLogger(AdministrationService.class.getName());
         userProvider.disable(userId);
-        // TODO delete private resources or other additional actions
+        if (additionalDisableActions != null && Boolean.TRUE.equals(additionalDisableActions.getDeletePrivateResources())) {
+            // 1. Delete user private workflows
+            logger.fine("Deleting private workflows of user: " + userId + "");
+            try {
+                List<WorkflowInfo> workflows = workflowService.getUserWorkflowsByStatus(userId, Status.DRAFT);
+                for (WorkflowInfo workflow : workflows) {
+                    workflowService.deleteWorkflowImage(workflow.getId());
+                    workflowService.delete(workflow.getId());
+                }
+            } catch (PersistenceException e) {
+                logger.warning(e.getMessage());
+            }
+            // 2. Delete user private components
+            logger.fine("Deleting private components of user: " + userId + "");
+            try {
+                List<ProcessingComponentInfo> components = componentService.getUserScriptComponents(userId);
+                components.addAll(componentService.getUserProcessingComponents(userId));
+                for (ProcessingComponentInfo component : components) {
+                    componentService.delete(component.getId());
+                }
+            } catch (PersistenceException e) {
+                logger.warning(e.getMessage());
+            }
+            // 3. Delete user private containers
+            try {
+                logger.fine("Deleting private containers of user: " + userId + "");
+                List<Container> containers = containerService.listUserContainers(userId);
+                for (Container container : containers) {
+                    if (!ContainerVisibility.PUBLIC.equals(container.getVisibility())) {
+                        containerService.delete(container.getId());
+                        if (!DockerManager.removeImage(container.getId())) {
+                            logger.warning("Failed to remove docker image " + container.getId());
+                        }
+                    } else {
+                        container.setOwnerId(SystemPrincipal.instance().getName());
+                        containerService.update(container);
+                    }
+                }
+            } catch (Exception e) {
+                logger.warning(e.getMessage());
+            }
+            // 4. Delete user subscriptions
+            logger.fine("Deleting user subscriptions of user: " + userId + "");
+            try {
+                ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
+                if (subscription != null) {
+                    subscription.setEnded(LocalDateTime.now());
+                    resourceSubscriptionProvider.update(subscription);
+                    for (Map.Entry<String, FlavorSubscription> entry : subscription.getFlavors().entrySet()) {
+                        try {
+                            if (!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                deleteFlavorNodesForSubscription(subscription, entry.getValue(), entry.getValue().getQuantity());
+                            }
+                        } catch (PersistenceException | TopologyException e) {
+                            logger.warning(e.getMessage());
+                        }
+                    }
+                }
+            } catch (PersistenceException e) {
+                logger.warning(e.getMessage());
+            }
+            // 5. Delete other user nodes
+            logger.fine("Deleting other user nodes of user: " + userId + "");
+            try {
+                List<NodeDescription> allNodes = nodeDBProvider.list();
+                allNodes.removeIf(n -> !userId.equals(n.getOwner()));
+                for (NodeDescription node : allNodes) {
+                    TopologyManager.getInstance().removeNode(node.getId());
+                }
+            } catch (TopologyException e) {
+                logger.warning(e.getMessage());
+            }
+            // 6. Delete user preferences
+            logger.fine("Deleting user preferences of user: " + userId + "");
+            try {
+                List<UserPreference> preferences = userProvider.listPreferences(userId);
+                if (preferences != null) {
+                    userService.removeUserPreferences(userId,
+                                                      preferences.stream()
+                                                                 .map(UserPreference::getKey)
+                                                                 .collect(Collectors.toList()));
+                }
+            } catch (PersistenceException e) {
+                logger.warning(e.getMessage());
+            }
+            // 7. Delete user repositories
+            logger.fine("Deleting user repositories of user: " + userId + "");
+            List<Repository> repositories = repositoryService.getByUser(userId);
+            for (Repository repository : repositories) {
+                try {
+                    if (repository.isEditable() && !repository.isReadOnly()) {
+                        StorageService storageService = StorageServiceFactory.getInstance(repository);
+                        storageService.associate(repository);
+                        try {
+                            if (repository.getType() == RepositoryType.LOCAL) {
+                                FileUtilities.deleteTree(Paths.get(SystemVariable.ROOT.value()).resolve(userId));
+                            } else {
+                                storageService.remove("/");
+                            }
+                        } catch (IOException e) {
+                            logger.warning(e.getMessage());
+                        }
+                    }
+                    repositoryService.delete(repository.getId());
+                } catch (Exception e) {
+                    logger.warning(e.getMessage());
+                }
+            }
+        }
     }
 
     @Override

@@ -34,6 +34,7 @@ import ro.cs.tao.persistence.ResourceSubscriptionProvider;
 import ro.cs.tao.persistence.managers.AuditManager;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.AuthenticationMode;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.admin.beans.Flavor;
 import ro.cs.tao.services.admin.beans.ResourceSubscriptionRequest;
 import ro.cs.tao.services.admin.beans.ResourceSubscriptionResponse;
@@ -608,23 +609,27 @@ public class AdministrationController extends BaseController {
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @RoleRequired(roles = "admin")
-    public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("userId") String userId) {
-        /*if (!isCurrentUserAdmin()) {
-            return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }*/
+    public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("userId") String userId,
+                                                         @RequestParam(value = "deletePrivateResources", required = false, defaultValue = "false") boolean deletePrivateResources) {
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
-        try {
-            adminService.deleteUser(userId);
-            // TODO delete private resources
-            /*if (deletePrivateResources){
-
-            }*/
-            return prepareResult(String.format("User %s was deleted", userId), ResponseStatus.SUCCEEDED);
-        } catch (Exception ex) {
-            return handleException(ex);
-        }
+        final TriConsumer<String, Exception, String> callback = makeCallbackMessage(SystemPrincipal.instance().getName());
+        asyncExecute(() -> {
+            try {
+                if (deletePrivateResources) {
+                    DisableUserInfo disableUserInfo = new DisableUserInfo(true);
+                    adminService.disableUser(userId, disableUserInfo);
+                    adminService.deleteUser(userId);
+                } else {
+                    adminService.deleteUser(userId);
+                }
+            } catch (Exception ex) {
+                logger.warning(ex.getMessage());
+            }
+        } ,"User " + userId + (deletePrivateResources ? " and the associated resources were" : " was") + " deleted", callback);
+        return prepareResult(String.format("User %s is being deleted. Private resources will be removed in backround",
+                                           userId), ResponseStatus.SUCCEEDED);
     }
 
     /**
