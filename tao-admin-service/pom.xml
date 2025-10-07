@@ -36,6 +36,12 @@
             <artifactId>tao-auth-service</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ro.c-s.tao</groupId>
+            <artifactId>tao-data-services</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
 
     </dependencies>
 
