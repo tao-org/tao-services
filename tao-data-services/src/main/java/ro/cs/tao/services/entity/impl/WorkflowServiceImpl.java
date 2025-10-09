@@ -203,8 +203,8 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public List<WorkflowInfo> getUserVisibleWorkflows(String userId) {
-        final List<WorkflowDescriptor> list = workflowProvider.listUserVisible(userId);
+    public List<WorkflowInfo> getUserVisibleWorkflows(String userId, boolean active) {
+        final List<WorkflowDescriptor> list = workflowProvider.listUserVisible(userId, active);
         if (list == null || list.isEmpty()) {
             return List.of();
         }
