@@ -6,7 +6,7 @@ import ro.cs.tao.services.interfaces.TAOService;
 import java.util.List;
 
 /**
- * Interface for simpipe service
+ * Interface for SIMPIPE service
  *
  * @author Efrem-Hagiu Ion-Stefan
  */
