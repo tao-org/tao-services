@@ -87,18 +87,19 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
      * @param pageSize      (optional) The page size
      * @param sortByField   (optional) The field to sort on
      * @param sortDirection (optional) The sort direction
+     * @param active        Active or Inactive workflows required
      */
-    @Override
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
+    @RequestMapping(value = "/", params = "active", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> listActive(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
-                                                   @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection) {
+                                                   @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection,
+                                                   @RequestParam(name = "active") int active) {
         if (pageNumber.isPresent() && sortByField.isPresent()) {
             Sort sort = new Sort().withField(sortByField.get(), sortDirection.orElse(SortDirection.ASC));
             return prepareResult(service.list(pageNumber, pageSize, sort));
         } else {
-            return prepareResult(service.getUserVisibleWorkflows(currentUser()));
+            return prepareResult(service.getUserVisibleWorkflows(currentUser(), active != 0));
         }
     }
 

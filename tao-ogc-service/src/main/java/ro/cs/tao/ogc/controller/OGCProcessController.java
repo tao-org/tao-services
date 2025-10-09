@@ -120,7 +120,7 @@ public class OGCProcessController extends BaseController {
     @RequestMapping(value = "/processes", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getProcessSummaries(HttpServletRequest request) {
         try {
-            final List<WorkflowInfo> workflows = workflowService.getPublicWorkflows();
+            final List<WorkflowInfo> workflows = workflowService.getUserVisibleWorkflows(currentUser(), true);
             final ProcessList list = new ProcessList();
             Link link = new Link();
             link.setType(MediaType.APPLICATION_JSON_VALUE);
@@ -138,13 +138,13 @@ public class OGCProcessController extends BaseController {
                 self.setTitle("Process description");
                 self.setType(MediaType.APPLICATION_JSON_VALUE);
                 self.setRel("self");
-                self.setHref(request.getRequestURI() + "/" + w.getId());
+                self.setHref(normalizeUri(request) + "/" + w.getId());
                 list.addLink(self);
                 Link linkExecution = new Link();
                 linkExecution.setTitle("Process execution");
                 linkExecution.setType(MediaType.APPLICATION_JSON_VALUE);
                 linkExecution.setRel("http://www.opengis.net/def/rel/ogc/1.0/execute");
-                linkExecution.setHref(request.getRequestURI() + "/" + w.getId() + "/execution");
+                linkExecution.setHref(normalizeUri(request) + "/" + w.getId() + "/execution");
                 list.addLink(linkExecution);
                 p.addJobControlOption(JobControlOptions.ASYNC_EXECUTE);
                 p.addOutputTransmission(TransmissionMode.VALUE);
@@ -609,6 +609,13 @@ public class OGCProcessController extends BaseController {
         if (StringUtilities.isNullOrEmpty(path)) {
             ex = new IllegalArgumentException("Empty path");
         }
+    }
+
+    public static String normalizeUri(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return uri.endsWith("/") && uri.length() > 1
+                ? uri.substring(0, uri.length() - 1)
+                : uri;
     }
 
     @RequestMapping(value = "/jobs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
