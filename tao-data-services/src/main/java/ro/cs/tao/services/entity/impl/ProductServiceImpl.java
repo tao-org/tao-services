@@ -190,7 +190,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 					final double size = files.size();
 					for (Path file : files) {
 						try {
-							if (inspectionExclusions.stream().anyMatch(file::endsWith)) {
+							if (inspectionExclusions.stream().anyMatch(e -> file.toString().endsWith(e))) {
 								continue;
 							}
 							Path targetPath;
@@ -400,7 +400,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		} else {
 			product = list.get(0);
 		}
-		if (product != null) {
+		if (product != null && !StringUtilities.isNullOrEmpty(product.getQuicklookLocation())) {
 			try {
 				Path quicklook = OutputDataHandlerManager.getInstance().applyHandlers(targetPath);
 				if (quicklook != null) {
