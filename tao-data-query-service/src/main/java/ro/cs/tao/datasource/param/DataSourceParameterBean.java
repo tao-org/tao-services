@@ -24,7 +24,7 @@ public class DataSourceParameterBean {
     }
 
     public String getType() {
-        return parameter.type.friendlyName();
+        return parameter.type != null ? parameter.type.friendlyName() : JavaType.STRING.friendlyName();
     }
 
     public boolean isRequired() {
