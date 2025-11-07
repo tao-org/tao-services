@@ -1029,9 +1029,9 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 					$category.children("label").children("a").attr("title", category).append(category);
 					$dataSourceTree.append($category);
 				}
-				var sensorId = categoryId + "_" + v.sensor.replace(/[\/ \\]/g, "_").replace(/[()]/g, "");
+				var sensorId = categoryId + "_" + v.sensor.replace(/[\/ \\:]/g, "_").replace(/[()]/g, "");
 				if (typeof v.mission !== "undefined" && v.mission !== null) {
-					sensorId = categoryId + "_" + v.mission.replace(/[\/ \\]/g, "_");
+					sensorId = categoryId + "_" + v.mission.replace(/[\/ \\:]/g, "_");
 				}
 				// var $dataSource = '<div class="dataset"><a href="#" title="' +  v.dataSourceLabel + '"id="' + k + '"><span class="fa fa-cube"></span>' +  v.dataSourceLabel + '</a></div>';
 				// if (typeof v.description !== "undefined" && v.description !== null && v.description.trim() !== "") {
