@@ -26,12 +26,16 @@ import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
 import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.datasource.param.JavaType;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
+import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.persistence.ContainerProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
 import ro.cs.tao.persistence.TagProvider;
+import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
+import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.serialization.*;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
@@ -64,6 +68,10 @@ public class ComponentServiceImpl
     private TagProvider tagProvider;
     @Autowired
     private ContainerProvider containerProvider;
+    @Autowired
+    private SourceDescriptorRepository sourceDescriptorRepository;
+    @Autowired
+    private TargetDescriptorRepository targetDescriptorRepository;
 
     @Override
     public ProcessingComponent findById(String id) {
@@ -279,6 +287,103 @@ public class ComponentServiceImpl
         serializer.addMixIn(ParameterDescriptor.class, DataTypeMixIn.class);
         serializer.setIgnoreNullFields();
         return serializer.serialize(component);
+    }
+
+    @Override
+    public void transformIntoSource(String parameterId, ProcessingComponent parentComponent) {
+        if (parentComponent == null) {
+            throw new NullPointerException("parentComponent");
+        }
+        if (StringUtilities.isNullOrEmpty(parameterId)) {
+            throw new IllegalArgumentException("parameterId");
+        }
+        ParameterDescriptor parameterDescriptor = parentComponent.getParameterDescriptors().stream()
+                                                                 .filter(p -> p.getId().equals(parameterId))
+                                                                 .findFirst().orElse(null);
+        if (parameterDescriptor == null) {
+            throw new IllegalArgumentException("Parameter with id " + parameterId + " does not exist");
+        }
+        String sourceName = parameterDescriptor.getName();
+        if (parentComponent.getSources().stream().anyMatch(s -> s.getName().equals(parameterDescriptor.getName()))) {
+            sourceName += "_2";
+        }
+        final SourceDescriptor source = new SourceDescriptor(parameterDescriptor.getId());
+        source.setName(sourceName);
+        source.setCardinality(1);
+        source.setDataDescriptor(new DataDescriptor(DataFormat.ANY));
+        parentComponent.addSource(source);
+        parentComponent.getParameterDescriptors().removeIf(p -> p.equals(parameterDescriptor));
+        save(parentComponent);
+    }
+
+    @Override
+    public void transformIntoTarget(String parameterId, ProcessingComponent parentComponent) {
+        if (parentComponent == null) {
+            throw new NullPointerException("parentComponent");
+        }
+        if (StringUtilities.isNullOrEmpty(parameterId)) {
+            throw new IllegalArgumentException("parameterId");
+        }
+        ParameterDescriptor parameterDescriptor = parentComponent.getParameterDescriptors().stream()
+                                                                 .filter(p -> p.getId().equals(parameterId))
+                                                                 .findFirst().orElse(null);
+        if (parameterDescriptor == null) {
+            throw new IllegalArgumentException("Parameter with id " + parameterId + " does not exist");
+        }
+        String targetName = parameterDescriptor.getName();
+        if (parentComponent.getTargets().stream().anyMatch(t -> t.getName().equals(parameterDescriptor.getName()))) {
+            targetName += "_2";
+        }
+        final TargetDescriptor target = new TargetDescriptor(parameterDescriptor.getId());
+        target.setName(targetName);
+        target.setCardinality(1);
+        target.setDataDescriptor(new DataDescriptor(DataFormat.ANY));
+        parentComponent.addTarget(target);
+        parentComponent.getParameterDescriptors().removeIf(p -> p.equals(parameterDescriptor));
+        save(parentComponent);
+    }
+
+    @Override
+    public void transformIntoParameter(String sourceOrTargetDescriptorId, ProcessingComponent parentComponent) {
+        if (parentComponent == null) {
+            throw new NullPointerException("parentComponent");
+        }
+        if (StringUtilities.isNullOrEmpty(sourceOrTargetDescriptorId)) {
+            throw new IllegalArgumentException("sourceOrTargetDescriptorId");
+        }
+        SourceDescriptor sourceDescriptor = parentComponent.getSources().stream()
+                                                           .filter(p -> p.getId().equals(sourceOrTargetDescriptorId))
+                                                           .findFirst().orElse(null);
+        String name;
+        if (sourceDescriptor != null) {
+            name = sourceDescriptor.getName();
+            if (parentComponent.getParameterDescriptors().stream().anyMatch(p -> p.getName().equals(sourceDescriptor.getName()))) {
+                name += "_2";
+            }
+            ParameterDescriptor descriptor = new ParameterDescriptor(sourceDescriptor.getId());
+            descriptor.setDataType(JavaType.STRING.value());
+            descriptor.setName(name);
+            parentComponent.addParameter(descriptor);
+            parentComponent.getSources().removeIf(s -> s.equals(sourceDescriptor));
+        } else {
+            TargetDescriptor targetDescriptor = parentComponent.getTargets().stream()
+                                                               .filter(p -> p.getId().equals(sourceOrTargetDescriptorId))
+                                                               .findFirst().orElse(null);
+            if (targetDescriptor != null) {
+                name = targetDescriptor.getName();
+                if (parentComponent.getParameterDescriptors().stream().anyMatch(p -> p.getName().equals(targetDescriptor.getName()))) {
+                    name += "_2";
+                }
+                ParameterDescriptor descriptor = new ParameterDescriptor(targetDescriptor.getId());
+                descriptor.setDataType(JavaType.STRING.value());
+                descriptor.setName(name);
+                parentComponent.addParameter(descriptor);
+                parentComponent.getTargets().removeIf(s -> s.equals(targetDescriptor));
+            } else {
+                throw new IllegalArgumentException("There is no source/target descriptor with id " + sourceOrTargetDescriptorId);
+            }
+        }
+        save(parentComponent);
     }
 
     @Override
