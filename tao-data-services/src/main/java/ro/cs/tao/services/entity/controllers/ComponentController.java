@@ -562,4 +562,44 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         }
     }
 
+    @RequestMapping(value = "/change", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> changeParameter(@RequestParam("parameterId") String parameterId,
+                                                              @RequestParam("componentId") String componentId,
+                                                              @RequestParam("toSourceDescriptor") boolean toSourceDescriptor) {
+        try {
+            if (StringUtilities.isNullOrEmpty(componentId)) {
+                throw new IllegalArgumentException("Invalid component id");
+            }
+            final ProcessingComponent component = this.service.findById(componentId);
+            if (component == null) {
+                throw new IllegalArgumentException("Component does not exist");
+            }
+            if (toSourceDescriptor) {
+                service.transformIntoSource(parameterId, component);
+            } else {
+                service.transformIntoTarget(parameterId, component);
+            }
+            return prepareResult("Processing component updated", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/toParameter", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> changeDescriptor(@RequestParam("descriptorId") String descriptorId,
+                                                              @RequestParam("componentId") String componentId) {
+        try {
+            if (StringUtilities.isNullOrEmpty(componentId)) {
+                throw new IllegalArgumentException("Invalid component id");
+            }
+            final ProcessingComponent component = this.service.findById(componentId);
+            if (component == null) {
+                throw new IllegalArgumentException("Component does not exist");
+            }
+            service.transformIntoParameter(descriptorId, component);
+            return prepareResult("Processing component updated", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
 }
