@@ -80,6 +80,9 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     @Autowired
     private ConditionComponentService conditionComponentService;
 
+    @Autowired
+    private ContainerService containerService;
+
     /**
      * Lists the workflows that are visible to the current user, optionally specifying the pagination of results.
      *
@@ -115,15 +118,33 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         if (entity == null) {
             response = prepareResult(String.format("Entity [%s] not found", id), ResponseStatus.FAILED);
         } else {
+            Map<String, List<String>> containerFormats = new HashMap<>();
             entity.getNodes().forEach(n -> {
                 if (n.getComponentId() != null) {
                     TaoComponent component = componentService.findById(n.getComponentId());
-                    if(component == null)
+                    if(component == null) {
                         component = conditionComponentService.findById(n.getComponentId());
+                    }
                     if (component != null
                             && (n.getAdditionalInfo() == null || n.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))
                             && component.getNodeAffinity() != null) {
                         n.addInfo("nodeAffinity", component.getNodeAffinity().getValue());
+                        String format = component.getTargets().stream()
+                                                 .filter(t -> !StringUtilities.isNullOrEmpty(t.getDataDescriptor().getFormatName()))
+                                                 .map(t -> t.getDataDescriptor().getFormatName())
+                                                 .findFirst().orElse(null);
+                        if (StringUtilities.isNullOrEmpty(format) && component instanceof ProcessingComponent) {
+                            String containerId = ((ProcessingComponent) component).getContainerId();
+                            if (!containerFormats.containsKey(containerId)) {
+                                Set<String> formats = containerService.findById(containerId).getFormat();
+                                if (formats != null && !formats.isEmpty()) {
+                                    containerFormats.put(containerId,
+                                                         new ArrayList<>(formats).stream().sorted().collect(Collectors.toList()));
+                                }
+                            }
+                            n.addInfo("formatNameValues", String.join(",", containerFormats.get(containerId)));
+                        }
+                        n.addInfo("formatName", format);
                     }
                 }
             });
