@@ -29,6 +29,7 @@ import ro.cs.tao.Tag;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.enums.Visibility;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
@@ -129,22 +130,32 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                             && (n.getAdditionalInfo() == null || n.getAdditionalInfo().stream().noneMatch(p -> "nodeAffinity".equals(p.getParameterName())))
                             && component.getNodeAffinity() != null) {
                         n.addInfo("nodeAffinity", component.getNodeAffinity().getValue());
-                        String format = component.getTargets().stream()
-                                                 .filter(t -> !StringUtilities.isNullOrEmpty(t.getDataDescriptor().getFormatName()))
-                                                 .map(t -> t.getDataDescriptor().getFormatName())
-                                                 .findFirst().orElse(null);
-                        if (StringUtilities.isNullOrEmpty(format) && component instanceof ProcessingComponent) {
-                            String containerId = ((ProcessingComponent) component).getContainerId();
-                            if (!containerFormats.containsKey(containerId)) {
-                                Set<String> formats = containerService.findById(containerId).getFormat();
+                    }
+                    String format = component.getTargets().stream()
+                                             .filter(t -> !StringUtilities.isNullOrEmpty(t.getDataDescriptor().getFormatName()))
+                                             .map(t -> t.getDataDescriptor().getFormatName())
+                                             .findFirst().orElse(null);
+                    if (component instanceof ProcessingComponent) {
+                        String containerId = ((ProcessingComponent) component).getContainerId();
+                        if (!containerFormats.containsKey(containerId)) {
+                            Container container = containerService.findById(containerId);
+                            if (container.getFormatNameParameter() != null) {
+                                Set<String> formats = container.getFormat();
                                 if (formats != null && !formats.isEmpty()) {
                                     containerFormats.put(containerId,
                                                          new ArrayList<>(formats).stream().sorted().collect(Collectors.toList()));
+                                } else {
+                                    containerFormats.put(containerId, new ArrayList<>());
                                 }
                             }
-                            n.addInfo("formatNameValues", String.join(",", containerFormats.get(containerId)));
                         }
-                        n.addInfo("formatName", format);
+                        List<String> list = containerFormats.get(containerId);
+                        if (list != null) {
+                            n.addInfo("formatName", format != null ? format : "");
+                            if (!list.isEmpty()) {
+                                n.addInfo("formatNameValues", String.join(",", list));
+                            }
+                        }
                     }
                 }
             });
