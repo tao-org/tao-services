@@ -21,7 +21,8 @@
 
 jQuery.fn.npExecPanels = function(options){
     var settings = $.extend({
-        msgEmpty:"Empty dataset",
+        category:"",
+		msgEmpty:"Empty dataset",
         msgEnd:"No more records",
         itemsOnPage: 3,
 		type: "job",
@@ -93,6 +94,7 @@ jQuery.fn.npExecPanels = function(options){
 	//append ui elements based on configuration
     var repaintFilterBox = function() {
 		$panelFilter.empty();
+		$like.empty();
         if (!$.isEmptyObject(filterAttributes)) {
 			var htmlContent = "<div class='box-tools pull-left'>" +
 								"<div class='filter-inputs' style='display:none;'>";
@@ -279,7 +281,7 @@ jQuery.fn.npExecPanels = function(options){
 	
 	var drawJobCell = function (index, job, accordionID) {
 		// replace special characters with _ or remove them 
-		var pID = job.id + "_" + job.jobName.replace(/[#_: /,]/g,'').replace(/[(]/g,'_').replace(/[)]/g,'').replace(/[&]/g,'And').replace(/[^a-zA-Z0-9]/g,'_');
+		var pID = job.id + "_" + job.jobName.replace(/[#_: /,]/g,'').replace(/[(]/g,'_').replace(/[)]/g,'').replace(/[&]/g,'And').replace(/[^a-zA-Z0-9]/g,'_') + (settings.category != "" ? "_" + settings.category : "");
 		var htmlContent =
 		'<div class="panel-header">' +
 		'	<a data-toggle="collapse" href="#' + pID + '" class="helper collapsed">' +
@@ -332,11 +334,11 @@ jQuery.fn.npExecPanels = function(options){
 				}
 				htmlContent += '</div>';
 			}
-			// check if buttons mus be displayed, in order to create element for them
-			if ((typeof settings.cancelURL !== "undefined" && settings.cancelURL !== '') || 
-				(typeof settings.pauseURL !== "undefined" && settings.pauseURL !== '' && job.jobStatus === "RUNNING") || 
+			// check if buttons must be displayed, in order to create element for them
+			if ((typeof settings.cancelURL !== "undefined" && settings.cancelURL !== ''                                 ) || 
+				(typeof settings.pauseURL  !== "undefined" && settings.pauseURL  !== '' && job.jobStatus === "RUNNING"  ) || 
 				(typeof settings.resumeURL !== "undefined" && settings.resumeURL !== '' && job.jobStatus === "SUSPENDED")) {
-				htmlContent += "<div style='text-align:right'>";
+				htmlContent += "<div style='text-align:right;margin-bottom:1em;'>";
 				// pause or resume job button
 				if (typeof settings.pauseURL !== "undefined" && settings.pauseURL !== '' && job.jobStatus === "RUNNING") {
 					htmlContent += "<button class='btn btn-default pause-job'><i class='fa fa-pause-circle' style='color:#3c8dbc'></i> Pause</button>";
@@ -350,7 +352,7 @@ jQuery.fn.npExecPanels = function(options){
 				htmlContent += '</div>';
 			}
 				
-		htmlContent = htmlContent +	'</div>';
+		htmlContent += '</div>';
 
 		var css = 'job-history-one'+ui_getJobStatusClass(job.jobStatus)+' collapse panel';
 		var $newEl = $('<div>',{

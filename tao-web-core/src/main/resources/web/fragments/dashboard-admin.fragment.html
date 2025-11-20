@@ -25,7 +25,7 @@
 				<div class="like collapse"></div>
 				<div class="box-body thin-scrollbar">
 					<div class="panel-list"></div>
-					<div class="panel-list-empty callout callout-empty collapse"><p>Results history is empty. It looks you did not run any workflows yet.</p></div>
+					<div class="panel-list-empty callout callout-empty collapse"><p>No jobs are currently running.</p></div>
 				</div>
 				<div class="box-footer clearfix no-border">
 					<div class="box-tools pull-right">
@@ -339,6 +339,7 @@
 		
 		// IMPORTANT: pauseURL must be uncommented if the action should appear i UI
 		$jobsPanel.npExecPanels({
+			category: "jobs",
 			msgEnd: "No more job to show.",
 			msgEmpty: "No job is currently running.",
 			itemsOnPage: runJobs,
@@ -350,6 +351,7 @@
 		
 		// IMPORTANT: resumeURL must be uncommented if the action should appear in UI
 		$histPanel.npExecPanels({
+			category: "hist",
 			msgEnd: "You reached the end of execution list. Nothing more to show.",
 			msgEmpty: "Results history is empty. User did not run any workflows yet.",
 			itemsOnPage: histJobs,
@@ -450,12 +452,12 @@
 			var htmlContent, task = wsdna.data;
 			// find all running jobs
 			var $jobs = $(".panel-list .job-history-one", $jobsPanel);
-			if ($jobs.length === 0){
+			if ($jobs.length === 0) {
 				$jobsPanel.trigger("panel:refresh");
 			}
 
 			// if no task with id is there
-			if( ( (typeof wsdna.data.Payload !== 'undefined') && ($.find("#"+ wsdna.source +".one-task")).length !== 1) || ((wsdna.source === null) && ($.find("#"+ wsdna.data.taskId +".one-task")).length !== 1) ){
+			if (((typeof wsdna.data.Payload !== 'undefined') && ($.find("#"+ wsdna.source +".one-task")).length !== 1) || ((wsdna.source === null) && ($.find("#"+ wsdna.data.taskId +".one-task")).length !== 1)) {
 				$jobsPanel.trigger("panel:refresh");
 			}
 

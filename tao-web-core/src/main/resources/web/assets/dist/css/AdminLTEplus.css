@@ -645,7 +645,7 @@ core-cell-list .nodes-item-core-box .box-description{
 	box-shadow: 0 0.35em 0.42em -0.42 #2c3b41;
 }
 .box-shadow--6dp {
-    box-shadow: 0 0.42 0.7em 0 rgb(0 0 0/.14), 0 1px 1.28em 0 rgb(0 0 0/.12), 0 0.22em 0.35em -1px rgb(0 0 0/.2);
+    box-shadow: 0 0.42em 0.7em 0 rgb(0 0 0/.14), 0 1px 1.28em 0 rgb(0 0 0/.12), 0 0.22em 0.35em -1px rgb(0 0 0/.2);
 }
 
 /* .modal-fullscreen */
@@ -748,7 +748,7 @@ core-cell-list .nodes-item-core-box .box-description{
     bottom: -0.1em;
     cursor: pointer;
     font-size: 1.714em;
-    font-weight: 600;
+    font-weight: 400;
 	width:0;
 	transition: color .6s;
 }

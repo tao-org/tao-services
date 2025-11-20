@@ -55,7 +55,7 @@
 			<div class="top-actions pull-left">
 				<button class="btn btn-master-tool" data-action="op-plus" data-showwhen="active_nodes" data-toggle="tooltip" data-original-title="Add new toolbox container"><i class="fa fa-plus"></i></button>
 				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
-				<form class="search-container" data-toggle="tooltip" data-original-title="Search workflow"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
 			</div>
 			<div class="top-actions pull-right">
 				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
@@ -243,6 +243,7 @@
 				// Change texts specific to current action set
 				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
 				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+				$(".top-controls .search-container").attr("data-original-title", "Search " + (actionsSet[action]?.emptyLabel || action));
 			}
 			return selected;
 		};
