@@ -5,6 +5,10 @@
 	--default-color             : #7a878e;
 	--scroll-color              : #8399af;
 }
+html {
+	--scrollbar-default-thumb   : #d1dbe3;
+	--scrollbar-default-track   : transparent;
+}
 body {
 	--content-color             : var(--default-color);
 	--content-bkg               : var(--primary-bkg);
@@ -148,4 +152,8 @@ body {
 	--scrollbar-default-track   : transparent;
 	--scrollbar-onhover-thumb   : var(--scroll-color);
 	--scrollbar-onhover-track   : rgb(0 0 0/.1);
+	
+	--tree-folder-color         : #ffb85d;
+	--tree-caret-color          : #b9b9b9;
+	--tree-hover-caret-color    : #5c5d5e;
 }

@@ -2293,6 +2293,10 @@ table.text-center th {
 
 .modal-title {
 	font-size: 1.285em;
+	max-width: calc(100% - 1.5em);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
 }
 
 .modal-footer {

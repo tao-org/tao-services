@@ -663,7 +663,7 @@ $(function () {
                 }
 
                 // append the html to box
-                $($el).prependTo(".direct-chat-messages", "#bot-notice-chat");
+                $el.prependTo(".direct-chat-messages", "#bot-notice-chat");
 
                 // update the notification number
                 var count = $(".direct-chat-messages > .direct-chat-msg").length;

@@ -435,10 +435,7 @@ function humanFileSize(size) {
     var i = Math.floor( Math.log(size) / Math.log(1024) );
     return size > 0 ? (size/Math.pow(1024, i)).toFixed(2) * 1 + ' ' + ['B', 'KB', 'MB', 'GB', 'TB'][i] : '0 GB';
 }
-function getFileSizeAsGB(size){
-    return ( size / Math.pow(1024, 3) ).toFixed(2) * 1 ;
-}
-function getFileSize(size,toUnit){
+function getFileSize(size, toUnit) {
 	var arrayOfUnits = ['B', 'KB', 'MB', 'GB', 'TB'];
 	var sizeNumber = size.replace(/[^0-9.]/g,'');
 	var sizeUnit = size.replace(/[0-9. ]/g,'');
