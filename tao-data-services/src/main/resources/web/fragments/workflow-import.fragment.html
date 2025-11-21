@@ -1,0 +1,167 @@
+<style>
+	#file {padding:0.43em;line-height:1.6em;height:2.6em;}
+</style>
+<div class="modal-content">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+		<h4 class="modal-title">Import processing module</h4>
+	</div>
+	<div class="modal-body">
+		<div class="row ">
+			<div class="col-sm-12 col-md-12">
+				<form id="frmUploadFile" class="form-horizontal clearfix" role="form">
+					<div>
+						<div class="form-group">
+							<label class="col-sm-12 col-md-12" for="importType">Import type</label>
+							<div class="col-sm-12 col-md-12">
+								<select id="importType" class="form-control" name="importType" autocomplete="off">
+									<option value="" selected="" disabled="">-- Please select a type --</option>
+									<option value="JSON_IMPORT">Import from JSON</option>
+									<option value="CWL_IMPORT">Import from CWL</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group" id="JSON_IMPORT" style="display: none;">
+							<label class="col-sm-12 col-md-12">File</label>
+							<div class="col-sm-12 col-md-12">
+								<input id="jsonFile" type="file" class="form-control" name="file" formenctype="multipart/form-data" />
+							</div>
+						</div>
+						<div class="form-group" id="CWL_IMPORT" style="display:none;">
+							<label class="col-sm-12 col-md-12">Directory</label>
+							<div class="col-sm-12 col-md-12">
+								<input id="cwlDirectory" type="file" name="file" class="form-control" webkitdirectory mozdirectory msdirectory odirectory directory >
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-md-12 col-sm-12 modal-footer">
+							<button type="submit" class="btn btn-flat btn-primary">Upload file</button>
+							<button type="button" class="btn btn-flat btn-default" data-dismiss="modal">Close</button>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="col-sm-12 col-md-12 undefined collapse">
+				<div class="form-group">
+					<label class="col-sm-12 col-md-12">This import operation has not been yet implemented!</label>
+				</div>
+				<div class="form-group">
+					<div class="col-md-12 col-sm-12 modal-footer">
+						<button type="button" class="btn btn-flat btn-default" data-dismiss="modal">Close</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+		var $myModalNodes = $("#myModalNodes");
+		var $form = $("#frmUploadFile");
+		
+		var endpoint = "";
+		switch (window.userOpStack[0].action) {
+			case "comp_import": $(".modal-title").html("Import processing module"); endpoint = "component/import"; break;
+			case "wf_import"  : $(".modal-title").html("Import workflow"         ); endpoint = "workflow/import/fromFiles" ; break;
+			default           : $(".modal-title").html("Undefined import"        );                                break;
+		}
+		if (endpoint !== "") {
+			// Custom validation for file type
+			$.validator.addMethod("isValidFileType", function (value, element, params) {
+				var validFileType = false;
+				$.validator.messages.isValidFileType = "Invalid file.";
+				var fileType = element.id;
+				switch (fileType) {
+					case "jsonFile":
+						$.validator.messages.isValidFileType = "Invalid configuration Json file.";
+						validFileType = (value.length == 0 || $.inArray(element.files[0]["type"], params[element.id]) > -1);
+						break;
+					case "cwlDirectory":
+						$.validator.messages.isValidFileType = "Invalid configuration CWL file. The directory must contain al least one CWL file and one YAML file.";
+						var foundExtentions = {};
+						params[element.id].forEach(ext => foundExtentions[ext] = false);
+						
+						$.each(element.files, function (idx, file) {
+							var fileName = file?.name || '';
+							var fileExtension = fileName.split('.').pop().toLowerCase();
+							if (foundExtentions.hasOwnProperty(fileExtension)) {
+								foundExtentions[fileExtension] = true;
+							}
+						});
+						var allRequiredFound = true;
+						for (var ext in foundExtentions) {
+							if (!foundExtentions[ext]) {
+								allRequiredFound = false;
+								break;
+							}
+						}
+						validFileType = (value.length === 0 || allRequiredFound);
+						break;
+				}
+				return validFileType;
+			}, $.validator.messages.isValidFileType);
+			
+			// Validate form before submit
+			$form.validate({
+				rules: {
+					file: {
+						required: true,
+						isValidFileType: {
+							"jsonFile": ["application/json"],
+							"cwlDirectory": ["cwl", "yaml"]
+						}
+					}
+				},
+				highlight     : function (element, errorClass) { $(element).parent().addClass("has-error"); },
+				unhighlight   : function (element, errorClass) { $(element).parent().removeClass("has-error"); },
+				errorPlacement: function (error, element) { error.appendTo(element.parent()); },
+				success       : function (label) { label.remove(); }
+			});
+			
+			// Submit form
+			$form.submit(function (e) {
+				e.preventDefault();
+				if ($(this).valid()) {
+					$("input[type='file']:hidden", this).prop("disabled", true);//disable hidden fields, to be ignored
+					$.ajax({
+						cache      : false,
+						url        : baseRestApiURL + endpoint,
+						type       : "POST",
+						contentType: false,
+						processData: false,
+						data       : new FormData(this),
+						headers    : { "X-Auth-Token": window.tokenKey },
+						error      : function (jqXHR, textStatus, errorThrown) {
+							showMsg("Error importing file. Please check your data and try again.", "ERROR");
+						},
+						success    : function (response) {
+							if (response.status == responseStatus.success) {
+								showMsg("The file was successfully uploaded.", "SUCCESS");
+								$myModalNodes.modal("hide");
+								panelComp.refreshData();
+							} else {
+								showMsg("The file could not be imported. Please check your data and try again.", "ERROR");
+							}
+						}
+					});
+					return false; // To avoid actual submission of the form
+				}
+			});
+		} else {
+			$form.remove();
+			$(".undefined", $myModalNodes).removeClass("collapse");
+		}
+		
+		$("form#frmUploadFile").on("change", "#importType", function(e) {
+			var selectedTypeValue = $("option:selected", this).val();
+			if (selectedTypeValue != "") {
+				var $ancestor = $(this).closest("div.form-group");
+				$ancestor.siblings().hide(); //hide div for all options
+				$ancestor.parent().find("div#"+selectedTypeValue).show().prop("disabled", false); //show only the div for the selected option
+			}
+        });
+
+    });
+    //# sourceURL=workflow-import.js
+</script>

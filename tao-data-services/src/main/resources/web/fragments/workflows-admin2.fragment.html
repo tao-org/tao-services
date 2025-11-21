@@ -231,7 +231,7 @@
 		var rm_contentUrl = "";
 		switch (operationid) {
 			case "wf-plus"            :	window.userOpStack =  { "action": "wf_plus"                        } ; rm_contentUrl = "./fragments/workflow-plus.fragment.html"            ; break;
-			case "wf-plus-import"     : window.userOpStack = [{ "action": "wf_import"                      }]; rm_contentUrl = "./fragments/components-import.fragment.html"        ; break;
+			case "wf-plus-import"     : window.userOpStack = [{ "action": "wf_import"                      }]; rm_contentUrl = "./fragments/workflow-import.fragment.html"        ; break;
 			case "wf-edit-description":	window.userOpStack =  { "action": "wf_edit"           , "dna": dna } ; rm_contentUrl = "./fragments/workflow-plus.fragment.html"            ; break;
 			case "wf-script"          : window.userOpStack = [{ "action": "wf_script"         , "dna": dna }]; rm_contentUrl = "./fragments/workflow-start.fragment.html"           ; break;
 			case "wf-start"           : window.userOpStack = [{ "action": "wf_edit"           , "dna": dna }]; rm_contentUrl = "./fragments/workflow-start.fragment.html"           ; break;
