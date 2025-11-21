@@ -20,6 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.BaseException;
@@ -31,6 +32,8 @@ import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.enums.Visibility;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.persistence.WorkflowNodeProvider;
@@ -54,6 +57,9 @@ import ro.cs.tao.workflow.enums.Status;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -131,11 +137,11 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                             && component.getNodeAffinity() != null) {
                         n.addInfo("nodeAffinity", component.getNodeAffinity().getValue());
                     }
-                    String format = component.getTargets().stream()
-                                             .filter(t -> !StringUtilities.isNullOrEmpty(t.getDataDescriptor().getFormatName()))
-                                             .map(t -> t.getDataDescriptor().getFormatName())
-                                             .findFirst().orElse(null);
                     if (component instanceof ProcessingComponent) {
+                        String format = component.getTargets().stream()
+                                .filter(t -> !StringUtilities.isNullOrEmpty(t.getDataDescriptor().getFormatName()))
+                                .map(t -> t.getDataDescriptor().getFormatName())
+                                .findFirst().orElse(null);
                         String containerId = ((ProcessingComponent) component).getContainerId();
                         if (!containerFormats.containsKey(containerId)) {
                             Container container = containerService.findById(containerId);
@@ -633,6 +639,58 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     }
 
     /**
+     * Import a workflow descriptor from a json file.
+     * @param files    The one cwl file or directory containing the workflow descriptor
+     *
+     */
+    @RequestMapping(value = "/import/fromFiles", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ServiceResponse<?>> importWorkflow(@RequestParam(value = "file") List<MultipartFile> files, @RequestParam("importType") String importType) {
+        final String userId = currentUser();
+        List<Path> fileList = new ArrayList<>();
+        for (MultipartFile file : files) {
+            try {
+                Path targetBase = Paths.get(SystemVariable.CACHE.value());
+                Path target = resolveMultiPartFile(file, targetBase);
+                fileList.add(target);
+            } catch (Exception e) {
+                return prepareResult("File upload failed", ResponseStatus.FAILED);
+            }
+        }
+        asyncExecute(() -> {
+            try {
+                WorkflowDescriptor workflowDescriptor = null;
+                if (importType == null || importType.isEmpty()) {
+                    Messaging.send(userId, Topic.ERROR.getCategory(),
+                            "Empty import type");
+                }
+                if (fileList.isEmpty()) {
+                    Messaging.send(userId, Topic.ERROR.getCategory(),
+                            "Empty file list");
+                }
+                if (importType.toLowerCase().contains("cwl")) {
+                    workflowDescriptor = service.importWorkflow(fileList);
+                } else {
+                    try (InputStream stream = Files.newInputStream(fileList.getFirst())) {
+                        workflowDescriptor = service.importWorkflow(stream);
+                    } catch (Exception e) {
+                        warn(e.getMessage());
+                    }
+                }
+                if (workflowDescriptor != null) {
+                    Messaging.send(userId, Topic.INFORMATION.getCategory(),
+                            "Workflow was created to the user [" + userId + "] workspace");
+                } else {
+                    Messaging.send(userId, Topic.INFORMATION.getCategory(),
+                            "Unable to create Workflow to the user [" + userId + "] workspace");
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(getClass().getName()).warning(ex.getMessage());
+            }
+        });
+        return prepareResult("CWL import queued", ResponseStatus.SUCCEEDED);
+    }
+
+    /**
      * Marks a workflow as published.
      *
      * @param workflowId The workflow identifier
@@ -841,4 +899,19 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         return visibility;
     }
 
+    private Path resolveMultiPartFile(MultipartFile file, Path targetBase) throws IOException {
+        if (file == null) {
+            throw new IOException("Failed to store empty file");
+        }
+        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+        if (fileName.contains("..")) {
+            // This is a security check
+            throw new IOException( "Cannot store docker file with relative path outside image directory " + fileName);
+        }
+        FileUtilities.createDirectories(targetBase);
+        Path destination = targetBase.resolve(fileName);
+        FileUtilities.createDirectories(destination.getParent());
+        file.transferTo(destination.toAbsolutePath().toFile());
+        return destination;
+    }
 }

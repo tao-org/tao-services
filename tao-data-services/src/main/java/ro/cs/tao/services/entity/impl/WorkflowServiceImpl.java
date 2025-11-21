@@ -68,6 +68,7 @@ import ro.cs.tao.subscription.WorkflowSubscription;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.Tuple;
+import ro.cs.tao.utils.executors.CWLImportExecutor;
 import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
@@ -75,9 +76,11 @@ import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
 import ro.cs.tao.workflow.enums.Status;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -109,6 +112,8 @@ public class WorkflowServiceImpl
     private DataSourceComponentProvider dataSourceComponentProvider;
     @Autowired
     private ProcessingComponentProvider componentProvider;
+    @Autowired
+    private ContainerProvider containerProvider;
     @Autowired
     private ComponentService componentService;
     @Autowired
@@ -1216,6 +1221,16 @@ public class WorkflowServiceImpl
             return GraphParser.parse(componentProvider, this, graphXml);
         } catch (Exception e) {
             throw new SAXException(e);
+        }
+    }
+
+    @Override
+    public WorkflowDescriptor importWorkflow(List<Path> sources) throws IOException, PersistenceException {
+        try {
+            CWLImportExecutor executor = new CWLImportExecutor(componentService, containerProvider, this);
+            return executor.parse(sources);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 
