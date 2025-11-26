@@ -48,6 +48,7 @@ import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -525,7 +526,6 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 default:
                     StorageService client = StorageServiceFactory.getInstance(repository.getUrlPrefix());
                     client.associate(repository);
-                    final Path path;
                     if (isFile) {
                         String strPath = repository.resolve(fileName);
                         if (repository.getType() == RepositoryType.FTP || repository.getType() == RepositoryType.FTPS) {
@@ -533,12 +533,12 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                         } else {
                             strPath = strPath.replace(repository.getUrlPrefix() + "://", "");
                         }
-                        path = Paths.get(strPath);
-                        try (InputStream stream = (InputStream) client.download(path.toString())) {
+                        final String fName = Paths.get(strPath).getFileName().toString();
+                        try (InputStream stream = (InputStream) client.download(strPath)) {
                             response.setContentType(contentType);
                             response.setStatus(HttpServletResponse.SC_OK);
                             if (!base64) {
-                                response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
+                                response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fName);
                                 IOUtils.copy(stream, response.getOutputStream());
                                 response.flushBuffer();
                             } else {
@@ -548,9 +548,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                             }
                         }
                     } else {
-                        path = Paths.get(repository.resolve(folder).replace(repository.getUrlPrefix() + "://", ""));
+                        final Path path = Paths.get(repository.resolve(folder).replace(repository.getUrlPrefix() + "://", ""));
                         response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
+                        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName() + ".zip");
                         response.setStatus(HttpServletResponse.SC_OK);
                         try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
                             client.streamToZip(path.toString(), zipOutputStream);
@@ -561,6 +561,13 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
         } catch (IOException e) {
             error(e.getMessage());
+            try {
+                if (e instanceof FileNotFoundException) {
+                    response.sendError(404, e.getMessage());
+                } else {
+                    response.sendError(400, e.getMessage());
+                }
+            } catch (IOException ignored) {}
         }
     }
     /**
