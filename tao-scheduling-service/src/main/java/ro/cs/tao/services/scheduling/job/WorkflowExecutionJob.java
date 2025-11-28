@@ -3,6 +3,7 @@ package ro.cs.tao.services.scheduling.job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.PersistJobDataAfterExecution;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionRequest;
 import ro.cs.tao.orchestration.Orchestrator;
@@ -135,6 +136,7 @@ public class WorkflowExecutionJob extends AbstractJob {
 		request.setWorkflowId(workflowId);
 		request.setName(description);
 		request.setLabel(description);
+        request.setOptimize(ConfigurationManager.getInstance().getBooleanValue("optimize.workflows"));
 		request.setParameters(new HashMap<>(inputs));
 		final ExecutionJob job = orchestrator.startWorkflow(context, request);
 		
