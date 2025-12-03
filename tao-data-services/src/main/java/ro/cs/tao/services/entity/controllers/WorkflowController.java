@@ -703,8 +703,8 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Override
     public ResponseEntity<ServiceResponse<?>> update(Long id, WorkflowDescriptor entity) {
-        if (entity != null && id != null && entity.getStatus() != null) {
-            ResponseEntity<ServiceResponse<?>> response = super.update(id, entity);
+        if (entity != null && entity.getId() != null && entity.getStatus() != null) {
+            ResponseEntity<ServiceResponse<?>> response = super.update(entity.getId(), entity);
             Visibility workflowVisibility = getConfiguredPublishedWorkflowVisibility();
             // If the configured visibility is SUBSCRIPTION, the workflow will only be saved.
             // Otherwise, the intermediate status READY should be replaced by PUBLISHED

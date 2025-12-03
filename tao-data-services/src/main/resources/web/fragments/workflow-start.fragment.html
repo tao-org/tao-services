@@ -1039,6 +1039,17 @@
                         "X-Auth-Token": window.parent.tokenKey
                     }
                 });
+                var getPassThroughComponentsList = $.ajax({
+                    cache: false,
+                    url: baseRestApiURL + "passthrough/list?id="+componentsListQueryString,
+                    dataType : 'json',
+                    type: 'GET',
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "X-Auth-Token": window.parent.tokenKey
+                    }
+                });
                 var getDatasourcesList = $.ajax({
                     cache: false,
                     url: baseRestApiURL + "datasource/list?id="+componentsListQueryString,
@@ -1079,10 +1090,11 @@
                 });
 
                 // console.log("workflow response:");console.log(response);
-                $.when(getComponentsList, getConditionComponentsList, getDatasourcesList, getGroupsList/*, getDSGroup*/)
-                .done(function addSources(getComponentsListResponse, getConditionComponentsListResponse, getDatasourcesListResponse, getGroupsListResponse,/* getDSGroupResponse*/) {
+                $.when(getComponentsList, getConditionComponentsList, getPassThroughComponentsList, getDatasourcesList, getGroupsList/*, getDSGroup*/)
+                .done(function addSources(getComponentsListResponse, getConditionComponentsListResponse, getPassThroughComponentsListResponse, getDatasourcesListResponse, getGroupsListResponse,/* getDSGroupResponse*/) {
                     var currentWfComponentsList = chkTSRF(getComponentsListResponse[0]);
                     var currentWfConditionComponentsList = chkTSRF(getConditionComponentsListResponse[0]);
+                    var currentWfPassThroughComponentsList = chkTSRF(getPassThroughComponentsListResponse[0]);
                     var currentWfDatasourcesList = chkTSRF(getDatasourcesListResponse[0]);
                     var currentWfGroupsList = chkTSRF(getGroupsListResponse?[0] : []);
                     //var currentWfDSGroups = chkTSRF(getDSGroupResponse[0]);
@@ -1124,6 +1136,13 @@
                                 break;
                             case "CONDITION":
                                 $.each(currentWfConditionComponentsList, function(i, component){
+                                    if( node.componentId === component.id){
+                                        node.sources = component.sources;
+                                    }
+                                });
+                                break;
+                            case "PASS_THROUGH":
+                                $.each(currentWfPassThroughComponentsList, function(i, component){
                                     if( node.componentId === component.id){
                                         node.sources = component.sources;
                                     }
