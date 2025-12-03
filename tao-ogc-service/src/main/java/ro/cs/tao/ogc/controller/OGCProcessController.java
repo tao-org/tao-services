@@ -121,6 +121,7 @@ public class OGCProcessController extends BaseController {
     public ResponseEntity<?> getProcessSummaries(HttpServletRequest request) {
         try {
             final List<WorkflowInfo> workflows = workflowService.getUserVisibleWorkflows(currentUser(), true);
+            workflows.removeIf(s -> !s.isActive());
             final ProcessList list = new ProcessList();
             Link link = new Link();
             link.setType(MediaType.APPLICATION_JSON_VALUE);
@@ -166,9 +167,11 @@ public class OGCProcessController extends BaseController {
         try {
             final WorkflowDescriptor workflow = workflowService.findById(Long.parseLong(processId));
             final Process process = new Process();
+            process.setId(processId);
+            process.setVersion("1.0"); // we do not have yet a version of the workflow
             final List<WorkflowNodeDescriptor> nodes = workflow.getNodes();
             // Describe inputs
-            final List<InputDescription<?>> inputs = new ArrayList<>();
+            final Map<String, InputDescription<?>> inputs = new LinkedHashMap<>();
             final List<WorkflowNodeDescriptor> firstLevelNodes = WorkflowUtilities.findFirstLevel(nodes);
             for (WorkflowNodeDescriptor node : nodes) {
                 final TaoComponent component = WorkflowUtilities.findComponent(node);
@@ -212,9 +215,9 @@ public class OGCProcessController extends BaseController {
                             schema.setTitle("Parameter Schema");
                             schema.setDescription(descriptor.getDescription());
                             input.setMinOccurs(1);
-                            input.setTitle(descriptor.getId());
-                            input.setDescription(descriptor.getName());
-                            inputs.add(input);
+                            input.setTitle(descriptor.getName());
+                            input.setDescription(descriptor.getDescription());
+                            inputs.put(descriptor.getId(), input);
                         }
                     }
                 }
@@ -222,7 +225,7 @@ public class OGCProcessController extends BaseController {
                 final List<SourceDescriptor> sources = component.getSources();
                 for (SourceDescriptor source : sources) {
                     final InputDescription input = InputDescription.of(Type.STRING);
-                    input.setTitle(source.getId());
+                    input.setTitle(source.getName());
                     input.setDescription(source.getName());
                     Descriptor schema;
                     final DataDescriptor dataDescriptor = source.getDataDescriptor();
@@ -266,19 +269,19 @@ public class OGCProcessController extends BaseController {
                         metadata.add(m);
                     }
                     input.setMetadata(metadata);
-                    inputs.add(input);
+                    inputs.put(source.getId(), input);
                 }
             }
-            process.setInputDescription(inputs);
+            process.setInputs(inputs);
 
             // Describe outputs
             final List<WorkflowNodeDescriptor> terminalNodes = WorkflowUtilities.findTerminals(nodes);
-            final List<OutputDescription> outputs = new ArrayList<>();
+            final Map<String, OutputDescription> outputs = new LinkedHashMap<>();
             for (WorkflowNodeDescriptor node : terminalNodes) {
                 final List<TargetDescriptor> targets = WorkflowUtilities.findComponent(node).getTargets();
                 for (TargetDescriptor target : targets) {
                     final OutputDescription output = new OutputDescription();
-                    output.setTitle(target.getId());
+                    output.setTitle(target.getName());
                     output.setDescription(target.getName());
                     Descriptor schema;
                     final DataDescriptor dataDescriptor = target.getDataDescriptor();
@@ -322,9 +325,9 @@ public class OGCProcessController extends BaseController {
                         metadata.add(m);
                     }
                     output.setMetadata(metadata);
-                    outputs.add(output);
+                    outputs.put(target.getId(), output);
                 }
-                process.setOutputDescription(outputs);
+                process.setOutputs(outputs);
             }
 
             return ResponseEntity.ok(process);
