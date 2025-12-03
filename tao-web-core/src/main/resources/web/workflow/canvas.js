@@ -195,6 +195,17 @@ var tao_setWF2CanvasData = function(currentWfData){
                     "X-Auth-Token": window.parent.tokenKey
                 }
             });
+            var getPassThroughComponentsList = $.ajax({
+                cache: false,
+                url: baseRestApiURL + "passthrough/list?id="+componentsListQueryString,
+                dataType : 'json',
+                type: 'GET',
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "X-Auth-Token": window.parent.tokenKey
+                }
+            });
             var getDatasourcesList = $.ajax({
                 cache: false,
                 url: baseRestApiURL + "datasource/list?id="+componentsListQueryString,
@@ -238,10 +249,11 @@ var tao_setWF2CanvasData = function(currentWfData){
 
 
 
-            $.when(getComponentsList, getConditionComponentsList, getDatasourcesList, getGroupsList/*, getDSGroup*/)
-                .done(function (getComponentsListResponse, getConditionComponentsListResponse, getDatasourcesListResponse, getGroupsListResponse/*, getDSGroupResponse*/) {
+            $.when(getComponentsList, getConditionComponentsList, getPassThroughComponentsList, getDatasourcesList, getGroupsList/*, getDSGroup*/)
+                .done(function (getComponentsListResponse, getConditionComponentsListResponse, getPassThroughComponentsListResponse, getDatasourcesListResponse, getGroupsListResponse/*, getDSGroupResponse*/) {
                     var currentWfComponentsList = chkTSRF(getComponentsListResponse[0]);
                     var currentWfConditionComponentsList = chkTSRF(getConditionComponentsListResponse[0]);
+                    var currentWfPassThroughComponentsList = chkTSRF(getPassThroughComponentsListResponse[0]);
                     var currentWfDatasourcesList = chkTSRF(getDatasourcesListResponse[0]);
                     var currentWfGroupsList = chkTSRF(getGroupsListResponse[0]);
                     //var currentWfDSGroups = chkTSRF(getDSGroupResponse[0]);
@@ -281,6 +293,19 @@ var tao_setWF2CanvasData = function(currentWfData){
                             wfPlumbCanvasData.nodeTemplates.cc[hash] = {
                                 id: hash,
                                 type: "condition",
+                                label: item.label,
+                                dna: item
+                            };
+                        }
+                    });
+                    $.each(currentWfPassThroughComponentsList, function(i, item) {
+                        var hash = "tboid"+jsHashCode(item.id);
+                        if(wfPlumbCanvasData.nodeTemplates.pt[hash]){
+                            alert("Pass-throu module collision. duplicate id detected");
+                        }else{
+                            wfPlumbCanvasData.nodeTemplates.pt[hash] = {
+                                id: hash,
+                                type: "pass-through",
                                 label: item.label,
                                 dna: item
                             };
@@ -333,6 +358,9 @@ var tao_setWF2CanvasData = function(currentWfData){
                         }
                         if(wfOneNode.componentType === "CONDITION"){
                             ntype = "cc";
+                        }
+                        if(wfOneNode.componentType === "PASS_THROUGH"){
+                            ntype = "pt";
                         }
                         var nodeData = {
                             "ntype":ntype,
@@ -423,6 +451,9 @@ var tao_setWF2CanvasData = function(currentWfData){
         if( dna.ntype === "cc" && wfPlumbCanvasData.nodeTemplates.cc[dna.ntemplateid] ){
             componentTemplate = wfPlumbCanvasData.nodeTemplates.cc[dna.ntemplateid].dna;
         }
+        if( dna.ntype === "pt" && wfPlumbCanvasData.nodeTemplates.pt[dna.ntemplateid] ){
+            componentTemplate = wfPlumbCanvasData.nodeTemplates.pt[dna.ntemplateid].dna;
+        }
         //datasources groups are stored in wfPlumbCanvasData.nodeTemplates.dsg
         /*if( dna.ntype === "dsg" && wfPlumbCanvasData.nodeTemplates.dsg[dna.ntemplateid] ){
             componentTemplate = wfPlumbCanvasData.nodeTemplates.dsg[dna.ntemplateid].dna;
@@ -471,7 +502,7 @@ var tao_setWF2CanvasData = function(currentWfData){
 
 
             //try to get component template from server,  usedComponents
-            if(dna.ntype === "pc"){
+            if (dna.ntype === "pc"){
                 console.log("get "+ dna.mtype);
 
                 var getProcessingComponentById = $.ajax({
@@ -508,7 +539,7 @@ var tao_setWF2CanvasData = function(currentWfData){
                     canvasRenderer.createNode(componentTemplate, dna);
                 });
             }
-            if(dna.ntype === "cc"){
+            if (dna.ntype === "cc"){
                 console.log("get "+ dna.mtype);
                 var getConditionComponentById = $.ajax({
                     cache: false,
@@ -540,7 +571,43 @@ var tao_setWF2CanvasData = function(currentWfData){
                     canvasRenderer.createNode(componentTemplate, dna);
                 })
                 .fail(function () {
-                    alert("Could not retrive pc data.", "ERROR");
+                    alert("Could not retrive cc data.", "ERROR");
+                    canvasRenderer.createNode(componentTemplate, dna);
+                });
+            }
+            if (dna.ntype === "pt") {
+                console.log("get "+ dna.mtype);
+                var getPassThroughComponentById = $.ajax({
+                    cache: false,
+                    url: baseRestApiURL + "passthrough/list?id="+dna.mtype,
+                    dataType : 'json',
+                    type: 'GET',
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "X-Auth-Token": window.parent.tokenKey
+                    }
+                });
+                $.when(getPassThroughComponentById)
+                .done(function (getPassThroughComponentByIdResponse) {
+                    var ptData = chkTSRF(getPassThroughComponentByIdResponse);
+                    console.log("pt data:"); console.log(ptData);
+                    if(ptData[0] && ptData[0].id && (ptData[0].id === dna.mtype)) {
+                        //template returned, add to used pc, add template too
+                        var hash = "tboid" + jsHashCode(dna.mtype);
+                        componentTemplate = ptData[0];
+                        wfPlumbCanvasData.usedComponents.push(dna.mtype);
+                        wfPlumbCanvasData.nodeTemplates.pt[hash] = {
+                            "dna": componentTemplate,
+                            "id": hash,
+                            "label": "xxxxx",
+                            "type": "pass-through"
+                        };
+                    }
+                    canvasRenderer.createNode(componentTemplate, dna);
+                })
+                .fail(function () {
+                    alert("Could not retrive pt data.", "ERROR");
                     canvasRenderer.createNode(componentTemplate, dna);
                 });
             }
@@ -697,6 +764,9 @@ var canvasRenderer = {
             case "cc":
                 nodeIcon = "./media/cond-comp.png";
                 break;
+            case "pt":
+                nodeIcon = "./media/cond-comp.png";
+                break;
             default:
                 nodeIcon = "./media/module-ds.png";
         }
@@ -726,7 +796,7 @@ var canvasRenderer = {
                 "  </g>\n" +
                 "</svg>";
         }
-        if(dna.ntype === "pc" || dna.ntype === "cc") {
+        if(dna.ntype === "pc" || dna.ntype === "cc" || dna.ntype === "pt") {
             innerHTML += "<svg class=\"development_icon\" x=\"0px\" y=\"0px\" width=\"32px\" height=\"32px\"><path class=\"icon-cog\" d=\"m13.331,1c-1.152,0.296 -2.248,0.712 -3.285,1.126c0.865,4.027 -2.535,5.329 -4.955,3.612c-0.922,0.652 -1.614,1.541 -1.902,2.785c2.535,1.716 1.268,6.275 -2.189,5.861c0,1.303 0,2.604 0,3.91c3.688,-0.357 4.494,4.204 2.189,6.157c0.635,0.947 0.922,2.252 2.189,2.547c2.189,-1.835 5.531,-0.178 4.667,3.613c1.038,0.414 2.132,0.83 3.284,1.124c0.463,-3.198 5.244,-3.198 5.763,0c1.153,-0.294 2.247,-0.71 3.286,-1.124c-0.864,-4.027 2.533,-5.332 4.955,-3.613c0.922,-0.65 1.61,-1.541 1.9,-2.784c-2.535,-1.716 -1.267,-6.275 2.19,-5.862c0,-1.302 0,-2.605 0,-3.908c-3.687,0.298 -4.495,-4.203 -2.19,-6.159c-0.635,-0.948 -0.865,-2.251 -2.189,-2.487c-2.191,1.836 -5.53,0.178 -4.666,-3.614c-1.039,-0.413 -2.133,-0.829 -3.286,-1.124c-0.806,3.256 -4.954,3.256 -5.761,-0.06zm8.586,15.398c0,3.196 -2.536,5.804 -5.705,5.804c-3.17,0 -5.705,-2.607 -5.705,-5.804c0,-3.197 2.535,-5.805 5.705,-5.805c3.17,-0.057 5.705,2.548 5.705,5.805z\" fill=\"#5c96bc\"/></svg>";
         }
         /*if(dna.ntype === "dsg") {

@@ -184,8 +184,18 @@ function describeArc(x, y, radius, startAngle, endAngle){
                         '\t\t\t\t\t</div>\n' +
                         '\t\t\t\t\t</div>\n' +
                         '\t\t\t\t</sortable_item>';
-                    $elComponentsList.append(html);
-                    }else{
+                        $elComponentsList.append(html);
+                    } else if (item.dna.category === "PASS_THROUGH") {
+                        item.image = "./media/cond-comp.png";
+                         var html ='<sortable_item class="item selected" id="'+item.id+'" data-componentid="'+item.dna.id+'" data-componenttype="pt" data-toolboxid="'+item.id+'">\n' +
+                         '\t\t\t\t\t<div class="item-info">\n' +
+                         '\t\t\t\t\t  <div class="item-label text-left"> \n' +
+                         '\t\t\t\t\t\t<img src="'+item.image+'">\n' +'<span>'+prettyLabel+'</span>'+
+                         '\t\t\t\t\t</div>\n' +
+                         '\t\t\t\t\t</div>\n' +
+                         '\t\t\t\t</sortable_item>';
+                         $elComponentsList.append(html);
+                    } else {
                         var html ='<sortable_item class="item selected" id="'+item.id+'" data-componentid="'+item.dna.id+'" data-componenttype="pc" data-toolboxid="'+item.id+'">\n' +
                             '\t\t\t\t\t<div class="item-info">\n' +
                             '\t\t\t\t\t  <div class="item-label text-left"> \n' +

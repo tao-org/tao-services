@@ -11,6 +11,7 @@ var tao_resetShadowData = function(){
     wfTools={
         components:[],
         conditionComponents:[],
+        passThroughComponents:[],
         datasources:[],
         queries:[],
         sensors:[],
@@ -20,6 +21,7 @@ var tao_resetShadowData = function(){
             ds:{},
             pc:{},
             cc:{},
+            pt:{},
             q:{},
             d:{}
         }
@@ -372,11 +374,13 @@ jsPlumb.bind("tao_dropNewNode", function(params) {
                     case "SCRIPT":
                         ntype = "sc";
                         break;
+                    case "CONDITION":
+                        ntype = "cc";
+                        break;
+                    case "PASS_THROUGH":
+                        ntype="pt";
                     default:
                         ntype = "unknown";
-                }
-                if(r.componentType === "CONDITION"){
-                    ntype = "cc";
                 }
                 var nodeData = {
                     "ntype":ntype,
@@ -420,6 +424,7 @@ jsPlumb.bind("tao_loadWorkflowById", function() {
         $.when(
             getAllComponents(),
             getConditionComponents(),
+            getPassThroughComponents(),
             getAllQueries(),
             getAllDatasources(),
             getAllUserDatasources(),
@@ -427,10 +432,11 @@ jsPlumb.bind("tao_loadWorkflowById", function() {
             getAllDockers(),
             /*getConfigEnums(),*/
             getConfigGroupers()
-        ).done(function (getAllComponentsResponse,getConditionComponentsResponse, getAllQueriesResponse, getAllDatasourcesResponse, getAllUserDatasourcesResponse, getAllSensorsResponse, getAllDockersResponse, /*getConfigEnumsResponse,*/ getConfigGroupersResponse) {
+        ).done(function (getAllComponentsResponse,getConditionComponentsResponse, getPassThroughComponentsResponse, getAllQueriesResponse, getAllDatasourcesResponse, getAllUserDatasourcesResponse, getAllSensorsResponse, getAllDockersResponse, /*getConfigEnumsResponse,*/ getConfigGroupersResponse) {
 			console.log("Workspace components init start.");
 			wfTools.components = getAllComponentsResponse[0]['data'];
             wfTools.conditionComponents = getConditionComponentsResponse[0]['data'];
+            wfTools.passThroughComponents = getPassThroughComponentsResponse[0]['data'];
 			wfTools.queries = getAllQueriesResponse[0]['data'];
 			//wfTools.datasources = getAllDatasourcesResponse[0]['data'];
 			wfTools.udatasources = getAllUserDatasourcesResponse[0]['data'];
@@ -439,7 +445,7 @@ jsPlumb.bind("tao_loadWorkflowById", function() {
 			//wfTools.taoEnums = getConfigEnumsResponse[0]['data'];
 			wfTools.configGroupers = getConfigGroupersResponse[0]['data'];
 
-            wfTools.components = $.merge(wfTools.components, wfTools.conditionComponents);
+            wfTools.components = $.merge(wfTools.components, wfTools.conditionComponents, wfTools.passThroughComponents);
 
 			//parse components, try to detect orphan and collapsing data, recreate local IDs
 			$.each(wfTools.components, function (i, item) {
@@ -463,6 +469,19 @@ jsPlumb.bind("tao_loadWorkflowById", function() {
                     wfTools.toolboxnodes.cc[hash] = {
                         id: hash,
                         type: "condition",
+                        label: item.label,
+                        dna: item
+                    };
+                }
+            });
+            $.each(wfTools.passThroughComponents, function (i, item) {
+                var hash = "tboid" + jsHashCode(item.id);
+                if (wfTools.toolboxnodes.pt[hash]) {
+                    alert("Pass-through module collision. Duplicate id detected");
+                } else {
+                    wfTools.toolboxnodes.pt[hash] = {
+                        id: hash,
+                        type: "pass-through",
                         label: item.label,
                         dna: item
                     };
@@ -1660,6 +1679,20 @@ function getConditionComponents(){
     return $.ajax({
         cache: false,
         url: baseRestApiURL + "conditioncomponent/",
+        dataType: 'json',
+        type: 'GET',
+        headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-Auth-Token": window.parent.tokenKey
+        }
+    });
+}
+
+function getPassThroughComponents(){
+    return $.ajax({
+        cache: false,
+        url: baseRestApiURL + "passthrough/",
         dataType: 'json',
         type: 'GET',
         headers: {
