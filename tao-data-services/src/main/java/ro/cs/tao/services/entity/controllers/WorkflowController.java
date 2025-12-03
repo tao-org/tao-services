@@ -691,6 +691,34 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     }
 
     /**
+     * Updates a workflow descriptor identified by its ID or publishes it, depending on the value of
+     * the configuration key 'other.workflows.visibility'.
+     * If this is set to SUBSCRIPTION, then only an update occurs.
+     * If this is set to PUBLIC, and the new workflow status is READY, the workflow should be directly published.
+     *
+     * @param id the unique identifier of the workflow descriptor to be updated or publishe3d
+     * @param entity an instance of {@link WorkflowDescriptor} containing the updated workflow; must not be null
+     * @return a {@link ResponseEntity} wrapping the service response indicating the outcome of the operation
+     */
+    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @Override
+    public ResponseEntity<ServiceResponse<?>> update(Long id, WorkflowDescriptor entity) {
+        if (entity != null && id != null && entity.getStatus() != null) {
+            ResponseEntity<ServiceResponse<?>> response = super.update(id, entity);
+            Visibility workflowVisibility = getConfiguredPublishedWorkflowVisibility();
+            // If the configured visibility is SUBSCRIPTION, the workflow will only be saved.
+            // Otherwise, the intermediate status READY should be replaced by PUBLISHED
+            return Visibility.PUBLIC == workflowVisibility &&
+                   entity.getStatus() == Status.READY &&
+                   entity.getVisibility() == Visibility.PUBLIC
+                    ? publish(id, null)
+                    : response;
+        } else {
+            return handleException(new IllegalArgumentException("Invalid entity status"));
+        }
+    }
+
+    /**
      * Marks a workflow as published.
      *
      * @param workflowId The workflow identifier
