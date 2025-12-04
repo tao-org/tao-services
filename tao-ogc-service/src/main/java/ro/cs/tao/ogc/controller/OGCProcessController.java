@@ -668,8 +668,12 @@ public class OGCProcessController extends BaseController {
                 double progress = 0;
                 final List<ExecutionTaskSummary> tasks = summary.getTaskSummaries();
                 for (int i = 1; i <= tasks.size(); i++) {
-                    progress = ((double) 1 / i) * (i - 1) * progress + tasks.get(i).getPercentComplete();
+                    double percentageTask = tasks.get(i-1).getPercentComplete();
+                    if(percentageTask < 0.0)
+                        percentageTask = 0.0;
+                    progress += percentageTask / 100.0;
                 }
+                progress = progress / tasks.size();
                 info.setProgress((int) (progress * 100));
                 info.setLinks(new ArrayList<>() {{
                     Link self = new Link();
@@ -720,8 +724,12 @@ public class OGCProcessController extends BaseController {
             double progress = 0;
             final List<ExecutionTaskSummary> tasks = summary.getTaskSummaries();
             for (int i = 1; i <= tasks.size(); i++) {
-                progress = ((double) 1 / i) * (i - 1) * progress + tasks.get(i).getPercentComplete();
+                double percentageTask = tasks.get(i-1).getPercentComplete();
+                if(percentageTask < 0.0)
+                    percentageTask = 0.0;
+                progress += percentageTask / 100.0;
             }
+            progress = progress / tasks.size();
             info.setProgress((int) (progress * 100));
             info.setLinks(new ArrayList<>() {{
                 Link self = new Link();
