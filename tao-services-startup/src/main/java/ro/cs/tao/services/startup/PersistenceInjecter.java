@@ -183,6 +183,16 @@ public class PersistenceInjecter extends BaseLifeCycle {
                 logger.warning(e.getMessage());
             }
         }
+        component = this.persistenceManager.conditionComponents()
+                                           .get(ConditionComponent.PASS_THROUGH_COMPONENT_ID);
+        if (component == null) {
+            component = ConditionComponent.passThroughComponent();
+            try {
+                this.persistenceManager.conditionComponents().save(component);
+            } catch (PersistenceException e) {
+                logger.warning(e.getMessage());
+            }
+        }
     }
 
     @Override
