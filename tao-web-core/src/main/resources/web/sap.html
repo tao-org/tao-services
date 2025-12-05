@@ -722,7 +722,7 @@
 	}
 	
 	// Update current settings to match user persisted preferences
-	function getUserPreferences() {
+	function getUserPrefferences() {
 		var prefsList = $.map(taoUserProfile.preferences, function (item, idx) { return item.key; });
 		// Refresh rate
 		if ($.inArray("refresh_rate", prefsList) > -1) {
@@ -776,7 +776,7 @@
 		$("#logoSmall").attr("src", window.logoSmall);
 		$("#logoText").text(window.logoText);
 		
-		getUserPreferences();
+		getUserPrefferences();
 		
 		initNotifications();
 		
