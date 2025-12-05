@@ -76,6 +76,7 @@ import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
 import ro.cs.tao.workflow.enums.Status;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1133,7 +1134,7 @@ public class WorkflowServiceImpl
                                                                   Parameter.stringValueSet(paramType.getEnumConstants()) :
                                                                   Parameter.stringValueSet(descriptor.getValueSet()),
                                                           descriptor.isNotNull()));
-                        if (descriptor instanceof TemplateParameterDescriptor){
+                        if(descriptor instanceof TemplateParameterDescriptor){
                             for(ParameterDescriptor param : ((TemplateParameterDescriptor) descriptor).getParameters()){
                                 Class<?> descriptorParamType = param.getDataType();
                                 componentParams.add(new Parameter(descriptor.getName() + "~" + param.getName(),
@@ -1161,7 +1162,7 @@ public class WorkflowServiceImpl
                                         Parameter.stringValueSet(paramType.getEnumConstants()) :
                                         Parameter.stringValueSet(descriptor.getValueSet()),
                                 descriptor.isNotNull()));
-                        if (descriptor instanceof TemplateParameterDescriptor){
+                        if(descriptor instanceof TemplateParameterDescriptor){
                             for(ParameterDescriptor param : ((TemplateParameterDescriptor) descriptor).getParameters()){
                                 Class<?> descriptorParamType = param.getDataType();
                                 componentParams.add(new Parameter(descriptor.getName() + "~" + param.getName(),
@@ -1175,14 +1176,6 @@ public class WorkflowServiceImpl
                             }
                         }
                     }
-                    break;
-                case PASS_THROUGH:
-                    SourceDescriptor sourceDescriptor = component.getSources().get(0);
-                    componentParams.add(new Parameter(sourceDescriptor.getName(),
-                                                      JavaType.STRING.friendlyName(),
-                                                      sourceDescriptor.getDataDescriptor() != null
-                                                              ? sourceDescriptor.getDataDescriptor().getLocation()
-                                                              : null));
                     break;
                 case GROUP:
                     continue;

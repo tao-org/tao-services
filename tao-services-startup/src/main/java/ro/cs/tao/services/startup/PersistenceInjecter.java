@@ -1,8 +1,6 @@
 package ro.cs.tao.services.startup;
 
-import org.slf4j.LoggerFactory;
 import ro.cs.tao.component.ConditionComponent;
-import ro.cs.tao.component.PassThroughComponent;
 import ro.cs.tao.component.constraints.ConstraintFactory;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
@@ -10,7 +8,6 @@ import ro.cs.tao.execution.Executor;
 import ro.cs.tao.execution.TaskStatusListener;
 import ro.cs.tao.execution.drmaa.ConditionExecutor;
 import ro.cs.tao.execution.drmaa.DRMAAExecutor;
-import ro.cs.tao.execution.drmaa.PassThroughExecutor;
 import ro.cs.tao.execution.local.NullExecutor;
 import ro.cs.tao.execution.local.QueryExecutor;
 import ro.cs.tao.execution.model.ExecutionStatus;
@@ -60,8 +57,6 @@ import java.util.logging.Logger;
  * and persistence integration across the application.
  */
 public class PersistenceInjecter extends BaseLifeCycle {
-
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(PersistenceInjecter.class);
 
     @Override
     public int priority() {
@@ -146,7 +141,6 @@ public class PersistenceInjecter extends BaseLifeCycle {
         NullExecutor.setWorkflowNodeProvider(persistenceManager.workflowNodes());
         NullExecutor.setComponentProvider(persistenceManager.processingComponents());
         ConditionExecutor.setTaskProvider(persistenceManager.tasks());
-        PassThroughExecutor.setTaskProvider(persistenceManager.tasks());
         Messaging.setPersister(this.persistenceManager.notifications());
         logger.fine("Persistence injection completed");
         SpringSessionProvider.setPersistenceManager(this.persistenceManager);
@@ -185,17 +179,6 @@ public class PersistenceInjecter extends BaseLifeCycle {
             component = ConditionComponent.twoConditionsComponent();
             try {
                 this.persistenceManager.conditionComponents().save(component);
-            } catch (PersistenceException e) {
-                logger.warning(e.getMessage());
-            }
-        }
-
-        PassThroughComponent passThroughComponent = this.persistenceManager.passThroughComponents()
-                                                                           .get(PassThroughComponent.COMPONENT_ID);
-        if (passThroughComponent == null) {
-            passThroughComponent = PassThroughComponent.passThroughComponent();
-            try {
-                this.persistenceManager.passThroughComponents().save(passThroughComponent);
             } catch (PersistenceException e) {
                 logger.warning(e.getMessage());
             }
