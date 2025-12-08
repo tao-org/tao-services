@@ -702,7 +702,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
      */
     @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Override
-    public ResponseEntity<ServiceResponse<?>> update(Long id, WorkflowDescriptor entity) {
+    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") Long id, @RequestBody WorkflowDescriptor entity) {
         if (entity != null && id != null && entity.getStatus() != null) {
             ResponseEntity<ServiceResponse<?>> response = super.update(id, entity);
             Visibility workflowVisibility = getConfiguredPublishedWorkflowVisibility();
