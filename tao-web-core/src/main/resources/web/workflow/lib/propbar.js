@@ -60,18 +60,17 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
         }
         window.$propbar.menu("close");
     })
-    .on("click", ".var-default",function(e){
-		if ($(".var-value-string:visible", $(this).parent()).length > 0) {
-            if(/\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/.test($(this).html())){
-                $(this).siblings(".var-value-string").val($(this).html().split("T")[0]);
-            }else{
-                $(this).siblings(".var-value-string").val($(this).html());
-            }
-            $(this).siblings(".var-value-string").trigger("change");
+    .on("click", ".var-default", function (e) {
+		var dval = $(this).html();
+		var $vstr = $(".var-value-string:visible", $(this).parent());
+		if ($vstr.length) {
+			$vstr.val(/\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/.test(dval) ? dval.split("T")[0] : dval);
+			$vstr.trigger("change");
 		}
-		if ($(".var-value-list:visible", $(this).parent()).length > 0) {
-			$(this).siblings(".var-value-list").val($(this).html());
-			$(this).siblings(".var-value-list").trigger("change");
+		var $vlist = $(".var-value-list:visible", $(this).parent());
+		if ($vlist.length) {
+			$vlist.val(dval);
+			$vlist.trigger("change");
 		}
 	});
 	
@@ -673,19 +672,23 @@ var $propbar = {notify:{e:10,f:-4},zindex:500,nid:null,ntype:null,nodeData:null,
             ($('.tag-format', $el).length > 0) && fieldFormat($('.tag-format', $el));
             return $el;
         };
-        if (typeof lcl_n.additionalInfo != 'undefined') {
-            lcl_n.additionalInfo.forEach(element => {
-                var obj = {
-                    "label": element.parameterName,
-                    "description": element.parameterName,
-                    "dataType": "string",
-                    "defaultValue": element.parameterValue,
-                    "required": true,
-                    "valueSet": topologyList,
-                    "value": element.parameterValue,
-                    "name": element.parameterName
-                };
-                helper_addSTblEdtRow($("#tbl-edt-sysvar"), obj);
+        if (typeof lcl_n.additionalInfo !== "undefined") {
+			var format      =  _.findWhere(lcl_n.additionalInfo, { "parameterName": "formatName"       });
+			var formatNames = (_.findWhere(lcl_n.additionalInfo, { "parameterName": "formatNameValues" })?.parameterValue || "").split(",");
+			lcl_n.additionalInfo.forEach(element => {
+                if (element.parameterName != "formatNameValues") {
+					var obj = {
+						label       : element.parameterName,
+						description : element.parameterName,
+						dataType    : "string",
+						defaultValue: element.parameterValue,
+						required    : element.parameterName != "formatName",
+						valueSet    : element.parameterName != "formatName" ? topologyList : formatNames,
+						value       : element.parameterValue,
+						name        : element.parameterName
+					};
+					helper_addSTblEdtRow($("#tbl-edt-sysvar"), obj);
+				}
             });
         }
 		
