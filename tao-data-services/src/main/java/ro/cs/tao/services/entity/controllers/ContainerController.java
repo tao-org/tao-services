@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.google.common.base.Strings;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -210,10 +211,6 @@ public class ContainerController extends DataEntityController<Container, String,
             return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
         }*/
         try {
-            final List<MultipartFile> dockerFiles = request.getDockerFiles();
-            if (dockerFiles == null || dockerFiles.isEmpty()) {
-                throw new IllegalArgumentException("Empty file list");
-            }
             final MultipartFile jsonContainerFile = request.getJsonContainerDescriptor();
             if (jsonContainerFile == null) {
                 throw new IllegalArgumentException("Please attach a json file with the container and applications descriptors");
@@ -221,6 +218,16 @@ public class ContainerController extends DataEntityController<Container, String,
             String json;
             json = new String(jsonContainerFile.getBytes());
             final Container container = JsonMapper.instance().readValue(json, Container.class);
+            final List<MultipartFile> dockerFiles = request.getDockerFiles();
+            final boolean noFilePresent = dockerFiles == null || dockerFiles.isEmpty();
+            Container existingImage = DockerManager.getDockerImage(container.getName());
+            if (noFilePresent && existingImage == null) {
+                throw new IllegalArgumentException("Empty file list");
+            }
+            // set id to Docker id if possible
+            if (existingImage != null && !Strings.isNullOrEmpty(existingImage.getId())) {
+                container.setId(existingImage.getId());
+            }
 
             final MultipartFile logoFile = request.getContainerLogo();
             if (logoFile != null) {
@@ -233,67 +240,86 @@ public class ContainerController extends DataEntityController<Container, String,
                 json = new String(jsonComponentsFile.getBytes());
                 components = JsonMapper.instance().readValue(json, ProcessingComponent[].class);
             } else {
-                components = null;
+                components = new ProcessingComponent[0];
             }
+            final Runnable uploadCode;
 
-            final MultipartFile dockerFile = dockerFiles.stream().filter(f -> "Dockerfile".equals(f.getOriginalFilename())).findFirst().orElse(null);
-            if (dockerFile == null) {
-                throw new IllegalArgumentException("Dockerfile not found");
-            }
-            final String name = request.getName();
-            if (name == null) {
-                throw new IllegalArgumentException("[name] cannot be null");
-            }
-            if (!name.equals(container.getName())) {
-                container.setName(name);
-            }
-            if (container.getType() == null) {
-                container.setType(ContainerType.DOCKER);
-            }
-            container.setVisibility(ContainerVisibility.PRIVATE);
-            dockerFiles.remove(dockerFile);
-            final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
-            final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
-            for (MultipartFile file : dockerFiles) {
-                try {
-                    Path auxFile = resolveMultiPartFile(file, dockerImagesPath);
-                    AuxiliaryData data = new AuxiliaryData();
-                    data.setId(UUID.randomUUID().toString());
-                    data.setLocation(auxFile.toString());
-                    data.setDescription(String.format("Auxiliary file for container '%s'", name));
-                    data.setUserId(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
-                    data.setCreated(LocalDateTime.now());
-                    data.setModified(data.getCreated());
-                    auxiliaryDataProvider.save(data);
-                } catch (IOException e) {
-                    error(e.getMessage());
-                }
-            }
-            List<MultipartFile> auxiliaryFiles = request.getAuxiliaryFiles();
-            if (auxiliaryFiles != null) {
-                Path auxiliaryFilesPath = request.isSystem() ?
-                        Paths.get(SystemVariable.SHARED_FILES.value()) :
-                        SessionStore.currentContext().getUploadPath();
-                for (MultipartFile file : auxiliaryFiles) {
+            final Principal principal = currentPrincipal();
+            if(noFilePresent){
+                // The container was pulled from Docker Hub
+                uploadCode = () -> {
                     try {
-                        resolveMultiPartFile(file, auxiliaryFilesPath);
+                        initializeContainer(container, components);
+                        Messaging.send(principal, Topic.INFORMATION.value(), this,
+                                String.format("Docker image '%s' successfully registered", container.getName()));
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                };
+            } else {
+                final MultipartFile dockerFile = dockerFiles.stream().filter(f -> "Dockerfile".equals(f.getOriginalFilename())).findFirst().orElse(null);
+                if (dockerFile == null) {
+                    boolean isLocalContainer = service.list().stream().anyMatch(c -> c.getName().equals(container.getName().split(":")[0]));
+                    if (!isLocalContainer) {
+                        throw new IllegalArgumentException("Dockerfile not found");
+                    }
+                }
+                final String name = request.getName();
+                if (name == null) {
+                    throw new IllegalArgumentException("[name] cannot be null");
+                }
+                if (!name.equals(container.getName())) {
+                    container.setName(name);
+                }
+                if (container.getType() == null) {
+                    container.setType(ContainerType.DOCKER);
+                }
+                container.setVisibility(ContainerVisibility.PRIVATE);
+                dockerFiles.remove(dockerFile);
+                final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
+                final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
+                for (MultipartFile file : dockerFiles) {
+                    try {
+                        Path auxFile = resolveMultiPartFile(file, dockerImagesPath);
+                        AuxiliaryData data = new AuxiliaryData();
+                        data.setId(UUID.randomUUID().toString());
+                        data.setLocation(auxFile.toString());
+                        data.setDescription(String.format("Auxiliary file for container '%s'", name));
+                        data.setUserId(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
+                        data.setCreated(LocalDateTime.now());
+                        data.setModified(data.getCreated());
+                        auxiliaryDataProvider.save(data);
                     } catch (IOException e) {
                         error(e.getMessage());
                     }
                 }
-            }
-            final String description = request.getDescription();
-            if (description != null && !description.equals(container.getDescription())) {
-                container.setDescription(description);
-            }
-            container.setOwnerId(currentUser());
-            asyncExecute(() -> {
-                try {
-                    service.registerContainer(dockerPath, container, components);
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
+                List<MultipartFile> auxiliaryFiles = request.getAuxiliaryFiles();
+                if (auxiliaryFiles != null) {
+                    Path auxiliaryFilesPath = request.isSystem() ?
+                            Paths.get(SystemVariable.SHARED_FILES.value()) :
+                            SessionStore.currentContext().getUploadPath();
+                    for (MultipartFile file : auxiliaryFiles) {
+                        try {
+                            resolveMultiPartFile(file, auxiliaryFilesPath);
+                        } catch (IOException e) {
+                            error(e.getMessage());
+                        }
+                    }
                 }
-            }, "Docker image registration completed", this::exceptionCallbackHandler);
+                final String description = request.getDescription();
+                if (description != null && !description.equals(container.getDescription())) {
+                    container.setDescription(description);
+                }
+                container.setOwnerId(currentUser());
+                uploadCode = () -> {
+                    try {
+                        service.registerContainer(dockerPath, container, components);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                };
+            }
+            asyncExecute(uploadCode, "Docker image registration completed", this::exceptionCallbackHandler);
             return prepareResult("Docker image registration started. A notification will be send when the process completes",
                                  ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
@@ -345,8 +371,13 @@ public class ContainerController extends DataEntityController<Container, String,
             final Container container = mapper.readerFor(Container.class).readValue(containerDescriptor);
             final List<MultipartFile> dockerFiles = request.getDockerFiles();
             final boolean noFilePresent = dockerFiles == null || dockerFiles.isEmpty();
-            if (noFilePresent && DockerManager.getDockerImage(container.getName()) == null) {
+            Container existingImage = DockerManager.getDockerImage(container.getName());
+            if (noFilePresent && existingImage == null) {
                 throw new IllegalArgumentException("Empty file list");
+            }
+            // set id to Docker id if possible
+            if (existingImage != null && !Strings.isNullOrEmpty(existingImage.getId())) {
+                container.setId(existingImage.getId());
             }
             final String description = request.getDescription();
             if (description != null && !description.equals(container.getDescription())) {
