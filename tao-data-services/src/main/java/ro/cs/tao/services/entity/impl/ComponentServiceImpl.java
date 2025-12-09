@@ -75,7 +75,9 @@ public class ComponentServiceImpl
 
     @Override
     public ProcessingComponent findById(String id) {
-        return processingComponentProvider.get(id);
+        ProcessingComponent component = processingComponentProvider.get(id);
+        addInputOutputDescription(component);
+        return component;
     }
 
     @Override
@@ -83,6 +85,7 @@ public class ComponentServiceImpl
         List<ProcessingComponent> components = null;
         try {
             components = processingComponentProvider.list();
+            components.forEach(this::addInputOutputDescription);
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
@@ -91,16 +94,21 @@ public class ComponentServiceImpl
 
     @Override
     public List<ProcessingComponent> list(Iterable<String> ids) {
-        return processingComponentProvider.list(ids);
+        List<ProcessingComponent> components = processingComponentProvider.list(ids);
+        components.forEach(this::addInputOutputDescription);
+        return components;
     }
 
     @Override
     public List<ProcessingComponent> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
+        List<ProcessingComponent> components;
         if (pageNumber.isPresent() && pageSize.isPresent()) {
-            return processingComponentProvider.list(pageNumber.get(), pageSize.get(), sort);
+            components = processingComponentProvider.list(pageNumber.get(), pageSize.get(), sort);
         } else {
-            return processingComponentProvider.list();
+            components = processingComponentProvider.list();
         }
+        components.forEach(this::addInputOutputDescription);
+        return components;
     }
 
     @Override
@@ -147,6 +155,7 @@ public class ComponentServiceImpl
             } else {
                 try {
                     addTagsIfNew(component);
+                    addInputOutputDescription(component);
                     return processingComponentProvider.save(component);
                 } catch (PersistenceException e) {
                     logger.severe(e.getMessage());
@@ -161,6 +170,7 @@ public class ComponentServiceImpl
     public ProcessingComponent update(ProcessingComponent component) {
         try {
             addTagsIfNew(component);
+            addInputOutputDescription(component);
             return processingComponentProvider.update(component);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
@@ -257,10 +267,10 @@ public class ComponentServiceImpl
         if (StringUtilities.isNullOrEmpty(entity.getId())) {
             entity.setId(UUID.randomUUID().toString());
         }
-        for(SourceDescriptor sourceDescriptor : entity.getSources()){
+        for (SourceDescriptor sourceDescriptor : entity.getSources()){
             sourceDescriptor.setParentId(entity.getId());
         }
-        for(TargetDescriptor targetDescriptor : entity.getTargets()){
+        for (TargetDescriptor targetDescriptor : entity.getTargets()){
             targetDescriptor.setParentId(entity.getId());
         }
         entity.setTemplateType(TemplateType.VELOCITY);
@@ -286,6 +296,7 @@ public class ComponentServiceImpl
         final BaseSerializer<ProcessingComponent> serializer = SerializerFactory.create(ProcessingComponent.class, MediaType.JSON);
         serializer.addMixIn(ParameterDescriptor.class, DataTypeMixIn.class);
         serializer.setIgnoreNullFields();
+        addInputOutputDescription(component);
         return serializer.serialize(component);
     }
 
@@ -311,6 +322,7 @@ public class ComponentServiceImpl
         source.setName(sourceName);
         source.setCardinality(1);
         source.setDataDescriptor(new DataDescriptor(DataFormat.ANY));
+        source.setDescription(parameterDescriptor.getDescription());
         parentComponent.addSource(source);
         parentComponent.getParameterDescriptors().removeIf(p -> p.equals(parameterDescriptor));
         save(parentComponent);
@@ -338,6 +350,7 @@ public class ComponentServiceImpl
         target.setName(targetName);
         target.setCardinality(1);
         target.setDataDescriptor(new DataDescriptor(DataFormat.ANY));
+        target.setDescription(parameterDescriptor.getDescription());
         parentComponent.addTarget(target);
         parentComponent.getParameterDescriptors().removeIf(p -> p.equals(parameterDescriptor));
         save(parentComponent);
@@ -351,6 +364,7 @@ public class ComponentServiceImpl
         if (StringUtilities.isNullOrEmpty(sourceOrTargetDescriptorId)) {
             throw new IllegalArgumentException("sourceOrTargetDescriptorId");
         }
+        addInputOutputDescription(parentComponent);
         SourceDescriptor sourceDescriptor = parentComponent.getSources().stream()
                                                            .filter(p -> p.getId().equals(sourceOrTargetDescriptorId))
                                                            .findFirst().orElse(null);
@@ -363,6 +377,7 @@ public class ComponentServiceImpl
             ParameterDescriptor descriptor = new ParameterDescriptor(sourceDescriptor.getId());
             descriptor.setDataType(JavaType.STRING.value());
             descriptor.setName(name);
+            descriptor.setDescription(sourceDescriptor.getDescription());
             parentComponent.addParameter(descriptor);
             parentComponent.getSources().removeIf(s -> s.equals(sourceDescriptor));
         } else {
@@ -377,6 +392,7 @@ public class ComponentServiceImpl
                 ParameterDescriptor descriptor = new ParameterDescriptor(targetDescriptor.getId());
                 descriptor.setDataType(JavaType.STRING.value());
                 descriptor.setName(name);
+                descriptor.setDescription(targetDescriptor.getDescription());
                 parentComponent.addParameter(descriptor);
                 parentComponent.getTargets().removeIf(s -> s.equals(targetDescriptor));
             } else {

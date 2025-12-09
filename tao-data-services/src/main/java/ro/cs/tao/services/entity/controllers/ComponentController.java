@@ -55,6 +55,38 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * The ComponentController class manages various operations related to components,
+ * including listing, retrieving, creating, updating, and deleting components,
+ * as well as handling naming rules and tokens associated with components.
+ *
+ * This controller provides RESTful endpoints for component and naming rule management.
+ * The class includes user-specific functionality, comprehensive query options, and administrative operations.
+ *
+ * Fields:
+ * - componentCache: Manages caching for components to enhance performance.
+ * - groupComponentService: Manages operations related to group components.
+ * - nameTokenService: Handles services regarding naming rules and tokens.
+ * - containerRepository: Repository for managing component data persistence.
+ *
+ * Methods:
+ * - listUserComponents: Lists components of a specified type visible to the current user.
+ * - list: Lists all registered components with optional pagination and sorting.
+ * - list (overloaded): Retrieves descriptors for specified component IDs.
+ * - findLabels: Finds and suggests labels for components based on input text.
+ * - getGroupComponent: Retrieves descriptors for group components by their IDs.
+ * - getNamingRules: Returns a list of available naming rules.
+ * - getTokens: Gets naming rule tokens associated with a specific sensor.
+ * - getNamingRuleDetails (overloaded 1): Retrieves tokens available for a workflow node by its ID.
+ * - getNamingRuleDetails (overloaded 2): Retrieves details of a naming rule by its ID.
+ * - saveRule: Creates a new naming rule.
+ * - updateRule: Updates an existing naming rule.
+ * - deleteRule: Deletes a naming rule by its ID.
+ * - get: Retrieves a processing component descriptor by its ID.
+ * - export: Exports a processing component descriptor as a JSON file.
+ * - save: Creates a new processing component for the current user.
+ * - update: Updates a processing component, accessible only to the owner or an administrator.
+ * - updateTemplateParameter: Updates a template parameter of a processing component; restricted to owners or administrators.
+ *
  * @author Cosmin Cara
  */
 @RestController

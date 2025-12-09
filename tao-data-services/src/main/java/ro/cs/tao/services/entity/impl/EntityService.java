@@ -15,9 +15,15 @@
  */
 package ro.cs.tao.services.entity.impl;
 
+import ro.cs.tao.component.DataDescriptor;
+import ro.cs.tao.component.SourceDescriptor;
+import ro.cs.tao.component.TaoComponent;
+import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.eodata.enums.DataFormat;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -32,6 +38,19 @@ import java.util.logging.Logger;
  * @author Cosmin Cara
  */
 public abstract class EntityService<T> {
+
+    protected static final EnumMap<DataFormat, String> templates;
+
+    static {
+        templates = new EnumMap<>(DataFormat.class);
+        templates.put(DataFormat.RASTER, "raster file");
+        templates.put(DataFormat.VECTOR, "vector file");
+        templates.put(DataFormat.OTHER, "file");
+        templates.put(DataFormat.DB_CONNECTION, "connection string");
+        templates.put(DataFormat.FOLDER, "folder");
+        templates.put(DataFormat.JSON, "JSON file");
+        templates.put(DataFormat.ANY, "file");
+    }
 
     protected Logger logger = Logger.getLogger(getClass().getName());
 
@@ -57,6 +76,40 @@ public abstract class EntityService<T> {
             ValidationException ex = new ValidationException("Entity has validation errors");
             errors.forEach(e -> ex.addAdditionalInfo(e, null));
             throw ex;
+        }
+    }
+
+    protected <C extends TaoComponent> void addInputOutputDescription(C component) {
+        if (component == null) {
+            return;
+        }
+        List<SourceDescriptor> sources = component.getSources();
+        if (sources != null) {
+            int cardinality;
+            for (SourceDescriptor descriptor : sources) {
+                if (descriptor.getDescription() == null) {
+                    cardinality = descriptor.getCardinality();
+                    DataDescriptor dataDescriptor = descriptor.getDataDescriptor();
+                    if (dataDescriptor == null) {
+                        dataDescriptor = new DataDescriptor(DataFormat.ANY);
+                    }
+                    descriptor.setDescription("The" + (cardinality != 1 ? " list of " : " ") + "input " + templates.get(dataDescriptor.getFormatType()) + (cardinality != 1 ? "s": ""));
+                }
+            }
+        }
+        List<TargetDescriptor> targets = component.getTargets();
+        if (targets != null) {
+            int cardinality;
+            for (TargetDescriptor descriptor : targets) {
+                if (descriptor.getDescription() != null) {
+                    cardinality = descriptor.getCardinality();
+                    DataDescriptor dataDescriptor = descriptor.getDataDescriptor();
+                    if (dataDescriptor == null) {
+                        dataDescriptor = new DataDescriptor(DataFormat.ANY);
+                    }
+                    descriptor.setDescription("The" + (cardinality != 1 ? " list of " : " ") + "output " + templates.get(descriptor.getDataDescriptor().getFormatType()) + (cardinality != 1 ? "s" : ""));
+                }
+            }
         }
     }
 
