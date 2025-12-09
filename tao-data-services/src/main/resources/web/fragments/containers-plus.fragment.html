@@ -329,6 +329,94 @@
 			}
 		});
 	}
+
+	function registerUploadImage(formData){
+		var xhr = new XMLHttpRequest();
+		if($('#switchContainerDescriptors').is(':checked')){
+			xhr.open("POST", baseRestApiURL + "docker/register", true);
+		}
+		else{
+			xhr.open("POST", baseRestApiURL + "docker/upload", true);
+		}
+
+		xhr.responseType = "json";
+		xhr.setRequestHeader("X-Auth-Token", tokenKey);
+		xhr.onload = function (e) {
+			if (this.status == 200) {
+				var data = this.response;
+				
+				// Fix for IE not honoring responseType 'json' when the requested data is not of 'json' type
+				if (detectIE()) {
+					if (data.status == undefined && typeof(data) === "string") {
+						// Force JSON parse in IE
+						data = JSON.parse(data);
+					}
+				}
+				if (!data || typeof data.status === "undefined") {
+					// Inconclusive response from server
+					showMsg("Operation failed. Please try again or contact app admin.", "ERROR");
+				} else if (data.status == responseStatus.success) {
+
+					//if register
+					if($('#switchContainerDescriptors').is(':checked')){
+						for (var key in dictTemplateDescriptors) {
+						if (dictTemplateDescriptors.hasOwnProperty(key)) { 
+						// 	// for each template parameter
+							for (var i = 0; i < dictTemplateDescriptors[key].length; i++){
+
+								$.ajax({
+										cache: false,
+										url: baseRestApiURL + "component/" + dictTemplateDescriptors[key].id + "/null",
+										dataType: 'json',
+										type: "PUT",
+										data: JSON.stringify(dictTemplateDescriptors[key][i]),
+										headers: {
+											"Accept": "application/json",
+											"Content-Type": "application/json",
+											"X-Auth-Token": window.tokenKey
+										},
+										error : function (jqXHR, textStatus, errorThrown) {
+											if(jqXHR.status === 500){
+												showMsg("Error adding or updating template parameter. Please check your data and try again.", "ERROR");
+												return;
+											}
+											showMsg("Unknown error. Unable to update processing module. Please try again.", "ERROR");
+										},
+										success: function(response,textStatus, jqXHR) {
+											var r = chkTSRF(response);
+											if (response.status === "FAILED") {
+												if (response.message) {
+													showMsg("Error adding or updating template parameter. Please check your data, one or more values for the attributes was not in the acceptable range.", "ERROR");
+													return;
+												}
+											}
+										}
+									});
+							}
+						}
+					}
+					}
+					$("#myModalNodes").modal('hide');
+					showMsg(data.message, "SUCCESS");
+				} else {
+					$(".error-container", ".modal-error").html('<i class="fa fa-exclamation-triangle fa-fw"></i>' + data.message);
+					$(".error-container", ".modal-error").css('display', 'inline-block');
+					$(".modal-error ").fadeIn("slow");
+					$('#myModalNodes').animate({scrollTop: 0}, 250);
+				}
+			} else {
+				// Failed to connect to server
+				showMsg("Operation failed.<br/>" + this.response.error, "ERROR");
+			}
+		}
+		xhr.onerror = function (e, x, y) {
+			// Failed to connect to server
+			showMsg("Operation failed. Please try again or contact app admin.", "ERROR");
+		}
+		xhr.send(formData);
+
+	}
+
 	//////////////////////////////////////////////////////////////////////////////////////
     $(document).ready( function() {
 		// Choose Docker type
@@ -368,6 +456,7 @@
 			e.preventDefault();
 			var $modal = $("#myModalNodesContDesc");
 			$(".modal-dialog", $modal).removeClass("modal-lg");
+			
 			var rm_contentUrl = '';
 			var rmContent = '';
 			window.userOpStack = [];
@@ -491,7 +580,7 @@
 					required: true
 				},
 				containerLogo: {
-					required: true,
+					required: false,
 					isValidFileType: { fileType: "image" , typesList: [ "image/gif", "image/jpeg", "image/png" ] }
 				},
 			dockerFiles: {
@@ -566,7 +655,11 @@
 								success: function (response) {
 									if (response.status === "SUCCEEDED" && response.data !== undefined){
 										console.log(response);
+										//Remove docker files whe using DockerHub
+										formData.delete("dockerFiles");
+										registerUploadImage(formData);
 										showMsg("Operation succeeded. Toolbox container added.", "SUCCESS");
+
 
 									} else {
 										// Docker image could not be pulled
