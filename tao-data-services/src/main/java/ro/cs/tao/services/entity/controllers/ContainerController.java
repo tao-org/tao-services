@@ -540,6 +540,21 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
+    @RequestMapping(value = "/{id:.+}/export", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> export(@PathVariable("id") String id, @RequestParam("folder") String folder) {
+        try {
+            Container entity;
+            entity = service.findById(id);
+            if (entity == null) {
+                return prepareResult(HttpServletResponse.SC_NOT_FOUND);
+            } else {
+                return prepareResult(service.exportContainer(entity, false, Paths.get(folder)).toString());
+            }
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
     @RequestMapping(value = "/update/{id:.+}", method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
     @RoleRequired(roles = "admin")
     public ResponseEntity<ServiceResponse<?>> updateComponents(@PathVariable("id") String containerId,
