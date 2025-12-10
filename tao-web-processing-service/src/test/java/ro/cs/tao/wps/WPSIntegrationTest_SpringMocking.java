@@ -7,7 +7,6 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -57,7 +56,7 @@ public class WPSIntegrationTest_SpringMocking {
     @MockBean
     private ExecutionJobProvider jobProvider;
     @MockBean
-    private StorageService<MultipartFile, FileSystemResource> storageService;
+    private StorageService<MultipartFile> storageService;
 
     @Before
     public void setUp() throws Exception {
