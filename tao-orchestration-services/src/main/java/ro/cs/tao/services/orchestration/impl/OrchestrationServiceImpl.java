@@ -429,7 +429,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 // try to also remove any files and folders for failed jobs
                 Executors.newSingleThreadExecutor().execute(() -> {
                     Repository repository = TaskUtilities.getUserLocalRepository(job);
-                    final StorageService<?, ?> localStorage = StorageServiceFactory.getInstance(repository);
+                    final StorageService<?> localStorage = StorageServiceFactory.getInstance(repository);
                     try {
                         localStorage.remove(job.getJobOutputPath());
                         UserQuotaManager.getInstance().updateUserProcessingQuota(new UserPrincipal(userId));

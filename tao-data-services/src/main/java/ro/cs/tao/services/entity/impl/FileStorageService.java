@@ -55,7 +55,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class FileStorageService extends BaseStorageService<MultipartFile, FileSystemResource> {
+public class FileStorageService extends BaseStorageService<MultipartFile> {
 
     private static final String PROTOCOL = "file";
     private static final Set<String> SIMPLE_PRODUCT_EXTENSIONS = new HashSet<>() {{
@@ -101,10 +101,12 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     @Override
-    public void storeFile(InputStream stream, long length,String relativeFolder, String description) throws Exception {
-        storeFile(stream, Paths.get(repository().resolve(relativeFolder)));
+    public String storeFile(InputStream stream, String relativeFolder, String description) throws Exception {
+        String path = repository().resolve(relativeFolder);
+        storeFile(stream, Paths.get(path));
         // Update user processing quota
         UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
+        return path;
     }
 
     @Override
@@ -566,10 +568,10 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     @Override
-    public FileSystemResource download(String path) throws IOException {
+    public InputStream download(String path) throws IOException {
         FileSystemResource resource = new FileSystemResource(path);
         if (resource.exists() || resource.isReadable()) {
-            return resource;
+            return resource.getInputStream();
         } else {
             throw new IOException("Could not read file: " + path);
         }
@@ -606,8 +608,8 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     @Override
-    public String readAsText(FileSystemResource resource, int lines, int skipLines) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));
+    public String readAsText(InputStream resource, int lines, int skipLines) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource));
              Stream<String> stream = reader.lines()) {
             return lines > 0
                    ? stream.skip(skipLines).limit(lines).collect(Collectors.joining("\n"))

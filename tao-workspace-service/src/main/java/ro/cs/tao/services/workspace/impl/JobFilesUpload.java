@@ -109,7 +109,7 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
     		return;
     	}
     	
-    	final StorageService<?, ?> localStorage = StorageServiceFactory.getInstance(localRepository);
+    	final StorageService<?> localStorage = StorageServiceFactory.getInstance(localRepository);
     	
     	// get all produced files and folders
     	final List<FileObject> producedItems;
