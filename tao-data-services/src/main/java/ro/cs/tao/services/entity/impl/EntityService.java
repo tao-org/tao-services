@@ -79,6 +79,14 @@ public abstract class EntityService<T> {
         }
     }
 
+    /**
+     * Adds input and output descriptions to the given component by analyzing its sources and targets.
+     * Generates a description for inputs and outputs based on the data format and cardinality.
+     *
+     * @param <C> The type of TaoComponent.
+     * @param component The TaoComponent for which input and output descriptions need to be added.
+     *                  If the component is null, the method will return without performing any operations.
+     */
     protected <C extends TaoComponent> void addInputOutputDescription(C component) {
         if (component == null) {
             return;
