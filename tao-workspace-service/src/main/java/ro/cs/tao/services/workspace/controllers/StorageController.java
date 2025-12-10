@@ -923,7 +923,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     throw new IllegalArgumentException("Not a file");
                 }
                 final Repository workspace = getLocalWorkspace(principal.getName());
-                final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(principal.getName());
+                final StorageService<MultipartFile> repositoryService = getLocalRepositoryService(principal.getName());
                 final List<ItemAction> actions = repositoryService.getRegisteredActions();
                 if (actions != null) {
                     final ItemAction itemAction = actions.stream().filter(a -> a.name().equals(action)).findFirst().orElse(null);
@@ -986,7 +986,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (StringUtilities.isNullOrEmpty(item)) {
                 throw new IllegalArgumentException("Not a file");
             }
-            final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(user);
+            final StorageService<MultipartFile> repositoryService = getLocalRepositoryService(user);
             try {
                 repositoryService.rename(item, newName);
             } catch (IOException e) {
@@ -1014,7 +1014,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         if (!Files.exists(path)) {
             throw new IOException(String.format("File '%s' does not exist", path));
         }
-        return getLocalRepositoryService(user).download(path.toString());
+        return new FileSystemResource(path);
+        //return getLocalRepositoryService(user).download(path.toString());
     }
 
     private Repository getOwnedWorkspace(String user, String workspaceId) throws IOException {
@@ -1050,7 +1051,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return instance;
     }
 
-    private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService(String user) {
+    private StorageService<MultipartFile> getLocalRepositoryService(String user) {
         return getRepositoryService(repositoryProvider.getUserSystemRepositories(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
     }
 

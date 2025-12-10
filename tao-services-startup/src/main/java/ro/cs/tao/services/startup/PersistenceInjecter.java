@@ -155,6 +155,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
         StorageServiceFactory.setProductProvider(this.persistenceManager.rasterData());
         StorageServiceFactory.setVectorDataProvider(this.persistenceManager.vectorData());
         StorageServiceFactory.setAuxiliaryDataProvider(this.persistenceManager.auxiliaryData());
+        StorageServiceFactory.setRepositoryProvider(this.persistenceManager.repositories());
         ServiceRegistry<ItemAction> registry = registryManager.getServiceRegistry(ItemAction.class);
         Set<ItemAction> services = registry.getServices();
         for (ItemAction action : services) {
