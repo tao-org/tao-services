@@ -7,13 +7,16 @@ import com.github.benmanes.caffeine.cache.RemovalListener;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.json.JSONObject;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.WebSocketSession;
+import ro.cs.tao.persistence.NodeDBProvider;
 import ro.cs.tao.services.monitoring.impl.SSHSession;
 import ro.cs.tao.services.monitoring.impl.SSHWebSocketHandler;
 import ro.cs.tao.services.monitoring.impl.UpdateListener;
+import ro.cs.tao.topology.NodeDescription;
 
 import java.io.IOException;
 import java.util.Base64;
@@ -37,6 +40,8 @@ public class SSHController implements DisposableBean {
 
     private static final String SESSION_KEY_TERM_UUID = "TERM-UUID";
 
+    @Autowired
+    private NodeDBProvider nodeDBProvider;
     private Logger log = Logger.getLogger(SSHController.class.getName());
 
     public final WebSocketHandler wsHandler = new SSHWebSocketHandler(this);
@@ -156,7 +161,12 @@ public class SSHController implements DisposableBean {
             String event = o.optString("event");
             if (event != null) {
                 if (event.equals("connect")) {
-                    ts.connect(o.getString("target"));
+                    NodeDescription node = nodeDBProvider.get(o.getString("target"));
+                    if (node != null) {
+                        ts.connect(node);
+                    } else {
+                        ts.connect(o.getString("target"));
+                    }
                 } else if (event.equals("type")) {
                     if (ts == null) {
                         synchronized (wss) {
