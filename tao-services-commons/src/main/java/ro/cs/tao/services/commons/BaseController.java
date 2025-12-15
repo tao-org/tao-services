@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 public abstract class BaseController extends ControllerBase {
 
     private static AuditProvider auditProvider;
-    private static UserProvider userProvider;
+    protected static UserProvider userProvider;
     private static final Map<String, String> userTokens = new HashMap<>();
 
     /**

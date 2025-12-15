@@ -46,6 +46,7 @@ import ro.cs.tao.workspaces.RepositoryType;
 
 import javax.servlet.http.HttpServletRequest;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -247,6 +248,21 @@ public class UserController extends BaseController {
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    @RequestMapping(value = "/{userId}/apikey", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> updateApiKey(@PathVariable("userId") String userId) {
+        if (StringUtilities.isNullOrEmpty(userId) || !currentUser().equals(userId)) {
+            return prepareResult("Not allowed", ResponseStatus.FAILED, HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            Long days = Long.parseLong(ConfigurationManager.getInstance().getValue("api.key.expiration"));
+            String key = UUID.randomUUID().toString();
+            userProvider.updateUserApiKey(userId, key, LocalDateTime.now().plusDays(days));
+            return prepareResult(key, HttpStatus.OK);
         } catch (Exception ex) {
             return handleException(ex);
         }

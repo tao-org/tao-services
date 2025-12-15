@@ -24,4 +24,5 @@ public interface TokenCache extends TokenKeeper {
 
     default void setAuthenticationFactory(BiFunction<String, String, Authentication> function) { }
 
+    default void addAuthenticationFactory(BiFunction<String, String, Authentication> function) { }
 }

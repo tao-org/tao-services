@@ -25,16 +25,22 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Component;
-import ro.cs.tao.configuration.ConfigurationManager;
+import org.springframework.web.context.request.RequestContextHolder;
+import ro.cs.tao.persistence.AuditProvider;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
-import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.security.TokenCacheManager;
 import ro.cs.tao.user.Group;
+import ro.cs.tao.user.LogEvent;
 import ro.cs.tao.user.User;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * The TokenAuthenticationProvider class is an implementation of the AuthenticationProvider interface
@@ -53,7 +59,7 @@ import java.util.List;
  * - Creates specific authentication tokens based on the user and their roles.
  *
  * Dependencies:
- * This class utilizes the following services:
+ * This class uses the following services:
  * - TokenManagementService: Manages token validation, creation, and retrieval operations.
  * - UserProvider: Retrieves user-specific information needed for authentication.
  *
@@ -70,6 +76,8 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
     private TokenManagementService tokenManagementService;
     @Autowired
     private UserProvider userProvider;
+    @Autowired
+    private AuditProvider auditProvider;
 
     private List<GrantedAuthority> apiAuthority;
     private boolean isFactorySet;
@@ -80,12 +88,26 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
         if (token == null || token.isEmpty()) {
             throw new BadCredentialsException("Invalid token");
         }
-        if (token.equals(ConfigurationManager.getInstance().getValue("api.token"))) {
+        final User user = getUser(token);
+        // The case of an user's API key
+        if (user != null) {
+            final UserPrincipal principal = new UserPrincipal(user.getId(),
+                                                              user.getGroups().stream()
+                                                                  .map(Group::getName)
+                                                                  .collect(Collectors.toSet()));
             if (this.apiAuthority == null) {
                 this.apiAuthority = new ArrayList<>();
-                apiAuthority.add(new JaasGrantedAuthority("ADMIN", SystemPrincipal.instance()));
+                apiAuthority.add(new JaasGrantedAuthority(user.getGroups().get(0).getName(), principal));
             }
-            return new JaasAuthenticationToken(SystemPrincipal.instance(), token, this.apiAuthority, null);
+            try {
+                auditProvider.save(new LogEvent(LocalDateTime.now(),
+                                                user.getId(),
+                                                RequestContextHolder.currentRequestAttributes().getSessionId(),
+                                                "Login via API"));
+            } catch (PersistenceException e) {
+                Logger.getLogger(getClass().getName()).warning(e.getMessage());
+            }
+            return new JaasAuthenticationToken(principal, token, this.apiAuthority, null);
         }
         if (!isFactorySet) {
             TokenCacheManager.getCache().setAuthenticationFactory(this::createAuthentication);
@@ -108,8 +130,11 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
     }
 
     private Authentication createAuthentication(String token, String userId) {
-        final User user = userProvider.get(userId);
-        return tokenManagementService.createAuthentication(token, user.getId(),
-                                                           user.getGroups().stream().map(Group::getName).toList());
+        return tokenManagementService.createAuthentication(token, userId,
+                                                           userProvider.get(userId).getGroups().stream().map(Group::getName).toList());
+    }
+
+    private User getUser(String token) {
+        return userProvider.getByApiKey(token);
     }
 }
