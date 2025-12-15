@@ -46,6 +46,7 @@ import ro.cs.tao.messaging.system.StartupCompletedMessage;
 import ro.cs.tao.persistence.AuditProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.TransactionalMethod;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.BaseController;
@@ -100,6 +101,8 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
     private ResourceUsageProvider resourceUsageProvider;
     @Autowired
     private ResourceUsageReportProvider resourceUsageReportProvider;
+    @Autowired
+    private UserProvider userProvider;
 
     private final static Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
     private static final Map<String, Class> plugins = new LinkedHashMap<String, Class>() {{
@@ -269,6 +272,15 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
             }
         } catch (IOException e) {
             logger.warning("Exception encountered while cleaning up cache: " + e.getMessage());
+        }
+    }
+
+    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.DAYS)
+    public void evictExpiredApiKeys() {
+        try {
+            userProvider.deleteExpiredApiKeys();
+        } catch (Exception e) {
+            logger.warning("Exception encountered while purging expired API keys: " + e.getMessage());
         }
     }
 

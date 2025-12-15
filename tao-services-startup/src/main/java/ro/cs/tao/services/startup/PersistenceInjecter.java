@@ -33,6 +33,7 @@ import ro.cs.tao.topology.NodeFlavor;
 import ro.cs.tao.utils.ExceptionUtils;
 
 import javax.security.auth.spi.LoginModule;
+import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -66,6 +67,10 @@ public class PersistenceInjecter extends BaseLifeCycle {
     @Override
     public void onStartUp() {
         SystemPrincipal.refresh(persistenceManager.users());
+        persistenceManager.users().updateUserApiKey(SystemPrincipal.instance().getName(),
+                                                    SystemPrincipal.instance().getApiKey(),
+                                                    LocalDateTime.now().plusDays(Long.parseLong(ConfigurationManager.getInstance()
+                                                                                                                    .getValue("api.key.expiration", "60"))));
         Executor.addStatusListener(new TaskStatusListener() {
             final EnumSet<ExecutionStatus> stoppedStates = EnumSet.of(ExecutionStatus.DONE,
                                                                       ExecutionStatus.FAILED,
@@ -129,6 +134,7 @@ public class PersistenceInjecter extends BaseLifeCycle {
         DRMAAExecutor.setTaskProvider(persistenceManager.tasks());
         DRMAAExecutor.setJobProvider(persistenceManager.jobs());
         DRMAAExecutor.setContainerProvider(persistenceManager.containers());
+        DRMAAExecutor.setNodeDBProvider(persistenceManager.nodes());
         WPSExecutor.setTaskProvider(persistenceManager.tasks());
         WPSExecutor.setJobProvider(persistenceManager.jobs());
         WPSExecutor.setAuthenticationProvider(persistenceManager.webServiceAuthentication());
