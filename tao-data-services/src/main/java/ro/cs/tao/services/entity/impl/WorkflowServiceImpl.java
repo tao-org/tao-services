@@ -76,7 +76,6 @@ import ro.cs.tao.workflow.WorkflowNodeGroupDescriptor;
 import ro.cs.tao.workflow.enums.ComponentType;
 import ro.cs.tao.workflow.enums.Status;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1225,7 +1224,7 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public WorkflowDescriptor importWorkflow(List<Path> sources) throws IOException, PersistenceException {
+    public WorkflowDescriptor importWorkflow(List<Path> sources, String userId) throws IOException, PersistenceException {
         try {
             CWLImportExecutor executor = new CWLImportExecutor(componentService, containerProvider, this);
             return executor.parse(sources);
@@ -1260,7 +1259,7 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public WorkflowDescriptor importWorkflow(InputStream source) throws IOException, SerializationException, PersistenceException {
+    public WorkflowDescriptor importWorkflow(InputStream source, String userId) throws IOException, SerializationException, PersistenceException {
         final ObjectMapper mapper = new ObjectMapper();
         mapper.registerModules(new JavaTimeModule());
         mapper.setAnnotationIntrospector(new JaxbAnnotationIntrospector());
@@ -1288,6 +1287,7 @@ public class WorkflowServiceImpl
             }
             node.setId(null);
         }
+        descriptor.setUserId(userId);
         return workflowProvider.save(descriptor);
     }
 
