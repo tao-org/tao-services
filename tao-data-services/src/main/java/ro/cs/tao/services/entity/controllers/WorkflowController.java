@@ -668,10 +668,10 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                             "Empty file list");
                 }
                 if (importType.toLowerCase().contains("cwl")) {
-                    workflowDescriptor = service.importWorkflow(fileList);
+                    workflowDescriptor = service.importWorkflow(fileList, userId);
                 } else {
                     try (InputStream stream = Files.newInputStream(fileList.getFirst())) {
-                        workflowDescriptor = service.importWorkflow(stream);
+                        workflowDescriptor = service.importWorkflow(stream, userId);
                     } catch (Exception e) {
                         warn(e.getMessage());
                     }
@@ -846,7 +846,7 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
                 throw new IOException("Empty file");
             }
             try (InputStream stream = file.getInputStream()) {
-                return prepareResult(service.importWorkflow(stream));
+                return prepareResult(service.importWorkflow(stream, currentUser()));
             }
         } catch (Exception e) {
             return handleException(e);
