@@ -15,11 +15,7 @@
  */
 package ro.cs.tao.services.entity.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -45,7 +41,6 @@ import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
-import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.persistence.*;
 import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
 import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
@@ -55,6 +50,7 @@ import ro.cs.tao.serialization.MediaType;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.commons.dev.MockData;
+import ro.cs.tao.services.entity.beans.Workflow;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.GroupComponentService;
@@ -860,7 +856,7 @@ public class WorkflowServiceImpl
                 final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(entry.getValue());
                 final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
                 final WorkflowNodeDescriptor targetNode = workflowNodeProvider.findClonedNode(clone.getId(), entry.getKey());
-                final TaoComponent targetComponent = TaskUtilities.getComponentFor(targetNode);
+                final TaoComponent targetComponent = componentService.getComponent(targetNode.getComponentId());
                 final String targetSourceId = targetComponent.getSources().get(0).getId();
                 WorkflowNodeDescriptor node;
                 final List<WorkflowNodeDescriptor> descriptors = workflowNodeProvider.listByComponentId(clone.getId(), entry.getValue());
@@ -1260,11 +1256,14 @@ public class WorkflowServiceImpl
 
     @Override
     public WorkflowDescriptor importWorkflow(InputStream source, String userId) throws IOException, SerializationException, PersistenceException {
-        final ObjectMapper mapper = new ObjectMapper();
+        /*final ObjectMapper mapper = new ObjectMapper();
         mapper.registerModules(new JavaTimeModule());
         mapper.setAnnotationIntrospector(new JaxbAnnotationIntrospector());
         final ObjectReader objectReader = mapper.readerFor(WorkflowDescriptor.class);
-        WorkflowDescriptor descriptor = objectReader.readValue(source);
+        WorkflowDescriptor descriptor = objectReader.readValue(source);*/
+        BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, MediaType.JSON);
+        serializer.setOverrideJAXBPrecedence();
+        WorkflowDescriptor descriptor = serializer.deserialize(source);
         WorkflowDescriptor existing;
         if (descriptor.getId() != null) {
             existing = getFullDescriptor(descriptor.getId());
@@ -1278,24 +1277,54 @@ public class WorkflowServiceImpl
         if (existing != null) {
             descriptor.setName(descriptor.getName() + " (imported " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + ")");
         }
-        // Verify that all the components from nodes are registered with this instance
-        final List<WorkflowNodeDescriptor> nodes = descriptor.getNodes();
+        // Make a copy of the node collection
+        final List<WorkflowNodeDescriptor> nodes = new ArrayList<>(descriptor.getNodes());
+        final Map<Long, Long> nodeIdMap = new HashMap<>();
+        final Map<Long, Set<ComponentLink>> nodeLinks = new HashMap<>();
+        // First save the empty workflow to get a new ID
+        descriptor.setUserId(userId);
+        descriptor.getNodes().clear();
+        descriptor.setId(null);
+        descriptor.setStatus(Status.DRAFT);
+        descriptor.setVisibility(Visibility.PRIVATE);
+        descriptor = workflowProvider.save(descriptor);
+        // and then re-add the nodes to get the new workflow ID
         for (WorkflowNodeDescriptor node : nodes) {
             final String componentId = node.getComponentId();
-            if (StringUtilities.isNullOrEmpty(componentId) || componentService.findById(componentId) == null) {
+            if (StringUtilities.isNullOrEmpty(componentId) || componentService.getComponent(componentId) == null) {
                 throw new IOException("Component for node [" + node.getName() + "] is missing or not registered");
             }
+            Long oldId = node.getId();
+            Set<ComponentLink> links = node.getIncomingLinks();
             node.setId(null);
+            node.setIncomingLinks(null);
+            node = workflowNodeProvider.save(node);
+            descriptor.addNode(node);
+            nodeIdMap.put(oldId, node.getId());
+            if (links != null && !links.isEmpty()) {
+                nodeLinks.put(node.getId(), links);
+            }
         }
-        descriptor.setUserId(userId);
+        for (Map.Entry<Long, Set<ComponentLink>> entry : nodeLinks.entrySet()) {
+            WorkflowNodeDescriptor node = nodes.stream().filter(n -> entry.getKey().equals(n.getId())).findFirst().get();
+            for (ComponentLink link : entry.getValue()) {
+                final ComponentLink fLink = link;
+                TaoComponent fromComponent = componentService.getComponent(nodes.stream().filter(n -> n.getId().equals(nodeIdMap.get(fLink.getSourceNodeId())))
+                                                                                .findFirst().get().getComponentId());
+                TaoComponent toComponent = componentService.getComponent(node.getComponentId());
+                ComponentLink convertedLink = convertLink(link, fromComponent, toComponent);
+                addLink(nodeIdMap.get(convertedLink.getSourceNodeId()), convertedLink.getInput().getId(),
+                        node.getId(), convertedLink.getOutput().getId());
+            }
+        }
         return workflowProvider.save(descriptor);
     }
 
     @Override
     public String exportWorkflow(WorkflowDescriptor descriptor) throws SerializationException {
-        final BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, MediaType.JSON);
+        final BaseSerializer<Workflow> serializer = SerializerFactory.create(Workflow.class, MediaType.JSON);
         serializer.enable(SerializationFeature.EAGER_SERIALIZER_FETCH);
-        return serializer.serialize(descriptor);
+        return serializer.serialize(new Workflow(descriptor));
     }
 
     @Override
@@ -1406,6 +1435,27 @@ public class WorkflowServiceImpl
         groupComponentService.save((GroupComponent) component);
         outsideNode.addLink(new ComponentLink(targetNodeId, linkInput, linkOutput));
         return workflowNodeProvider.update(outsideNode);
+    }
+
+    private ComponentLink convertLink(ComponentLink link, TaoComponent fromComponent, TaoComponent toComponent) {
+        TargetDescriptor input = link.getInput();
+        SourceDescriptor output = link.getOutput();
+        final ComponentLink convertedLink = new ComponentLink();
+        convertedLink.setSourceNodeId(link.getSourceNodeId());
+        convertedLink.setAggregator(link.getAggregator());
+        TargetDescriptor tgtDescriptor = fromComponent.getTargets().stream().filter(t -> t.getName().equals(input.getName())).findFirst().get();
+        if (!tgtDescriptor.equals(input)) {
+            convertedLink.setInput(tgtDescriptor);
+        } else {
+            convertedLink.setInput(input);
+        }
+        SourceDescriptor srcDescriptor = toComponent.getSources().stream().filter(s -> s.getName().equals(output.getName())).findFirst().get();
+        if (!srcDescriptor.equals(output)) {
+            link.setOutput(srcDescriptor);
+        } else {
+            link.setOutput(output);
+        }
+        return convertedLink;
     }
 
     private void validateNode(WorkflowDescriptor workflow, WorkflowNodeDescriptor node, List<String> errors) {

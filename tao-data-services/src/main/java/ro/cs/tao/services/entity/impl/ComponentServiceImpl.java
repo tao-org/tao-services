@@ -27,17 +27,17 @@ import ro.cs.tao.component.template.TemplateException;
 import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.datasource.param.JavaType;
+import ro.cs.tao.datasource.persistence.DataSourceComponentProvider;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
 import ro.cs.tao.eodata.enums.DataFormat;
-import ro.cs.tao.persistence.ContainerProvider;
-import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.persistence.ProcessingComponentProvider;
-import ro.cs.tao.persistence.TagProvider;
+import ro.cs.tao.persistence.*;
 import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
 import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.serialization.*;
+import ro.cs.tao.services.bridge.spring.SpringContextBridge;
+import ro.cs.tao.services.bridge.spring.SpringContextBridgedServices;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
@@ -62,6 +62,8 @@ public class ComponentServiceImpl
     extends EntityService<ProcessingComponent>
         implements ComponentService {
 
+    private static Set<EntityProvider<? extends TaoComponent, String>> otherComponentProviders;
+
     @Autowired
     private ProcessingComponentProvider processingComponentProvider;
     @Autowired
@@ -77,6 +79,26 @@ public class ComponentServiceImpl
     public ProcessingComponent findById(String id) {
         ProcessingComponent component = processingComponentProvider.get(id);
         addInputOutputDescription(component);
+        return component;
+    }
+
+    @Override
+    public TaoComponent getComponent(String id) {
+        TaoComponent component = processingComponentProvider.get(id);
+        if (component == null) {
+            if (otherComponentProviders == null) {
+                otherComponentProviders = new HashSet<>();
+                SpringContextBridgedServices context = SpringContextBridge.services();
+                otherComponentProviders.add(context.getService(DataSourceComponentProvider.class));
+                otherComponentProviders.add(context.getService(ConditionComponentProvider.class));
+                otherComponentProviders.add(context.getService(GroupComponentProvider.class));
+            }
+            for (EntityProvider<? extends TaoComponent, String> provider : otherComponentProviders) {
+                if ((component = provider.get(id)) != null) {
+                    break;
+                }
+            }
+        }
         return component;
     }
 
