@@ -1256,14 +1256,10 @@ public class WorkflowServiceImpl
 
     @Override
     public WorkflowDescriptor importWorkflow(InputStream source, String userId) throws IOException, SerializationException, PersistenceException {
-        /*final ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new JavaTimeModule());
-        mapper.setAnnotationIntrospector(new JaxbAnnotationIntrospector());
-        final ObjectReader objectReader = mapper.readerFor(WorkflowDescriptor.class);
-        WorkflowDescriptor descriptor = objectReader.readValue(source);*/
-        BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, MediaType.JSON);
+        BaseSerializer<Workflow> serializer = SerializerFactory.create(Workflow.class, MediaType.JSON);
         serializer.setOverrideJAXBPrecedence();
-        WorkflowDescriptor descriptor = serializer.deserialize(source);
+        Workflow bean = serializer.deserialize(source);
+        WorkflowDescriptor descriptor = bean.toEntity();
         WorkflowDescriptor existing;
         if (descriptor.getId() != null) {
             existing = getFullDescriptor(descriptor.getId());
@@ -1294,16 +1290,16 @@ public class WorkflowServiceImpl
             if (StringUtilities.isNullOrEmpty(componentId) || componentService.getComponent(componentId) == null) {
                 throw new IOException("Component for node [" + node.getName() + "] is missing or not registered");
             }
-            Long oldId = node.getId();
-            Set<ComponentLink> links = node.getIncomingLinks();
+            long oldId = node.getId();
+            nodeIdMap.put(oldId, node.getId());
             node.setId(null);
+            Set<ComponentLink> links = node.getIncomingLinks();
+            if (links != null && !links.isEmpty()) {
+                nodeLinks.put(node.getId(), new HashSet<>(links));
+            }
             node.setIncomingLinks(null);
             node = workflowNodeProvider.save(node);
             descriptor.addNode(node);
-            nodeIdMap.put(oldId, node.getId());
-            if (links != null && !links.isEmpty()) {
-                nodeLinks.put(node.getId(), links);
-            }
         }
         for (Map.Entry<Long, Set<ComponentLink>> entry : nodeLinks.entrySet()) {
             WorkflowNodeDescriptor node = nodes.stream().filter(n -> entry.getKey().equals(n.getId())).findFirst().get();
@@ -1317,6 +1313,9 @@ public class WorkflowServiceImpl
                         node.getId(), convertedLink.getOutput().getId());
             }
         }
+        if (!StringUtilities.isNullOrEmpty(bean.getImage())) {
+            workflowProvider.addWorkflowImage(descriptor.getId(), bean.getImage());
+        }
         return workflowProvider.save(descriptor);
     }
 
@@ -1324,7 +1323,9 @@ public class WorkflowServiceImpl
     public String exportWorkflow(WorkflowDescriptor descriptor) throws SerializationException {
         final BaseSerializer<Workflow> serializer = SerializerFactory.create(Workflow.class, MediaType.JSON);
         serializer.enable(SerializationFeature.EAGER_SERIALIZER_FETCH);
-        return serializer.serialize(new Workflow(descriptor));
+        Workflow workflow = new Workflow(descriptor);
+        workflow.setImage(workflowProvider.getWorkflowImage(descriptor.getId()));
+        return serializer.serialize(workflow);
     }
 
     @Override

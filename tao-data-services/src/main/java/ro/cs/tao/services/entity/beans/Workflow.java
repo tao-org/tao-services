@@ -28,6 +28,7 @@ public class Workflow {
     private float zoom;
     private boolean temporary;
     private List<String> tags;
+    private String image;
 
     public Workflow(WorkflowDescriptor descriptor) {
         this.id = descriptor.getId();
@@ -122,5 +123,33 @@ public class Workflow {
 
     public List<String> getTags() {
         return tags;
+    }
+
+    public String getImage() { return image; }
+
+    public void setImage(String image) { this.image = image; }
+
+    public WorkflowDescriptor toEntity() {
+        final WorkflowDescriptor descriptor = new WorkflowDescriptor();
+        descriptor.setId(id);
+        descriptor.setName(name);
+        descriptor.setDescription(description);
+        descriptor.setCreated(created);
+        descriptor.setCustomValues(customValues);
+        descriptor.setUserId(userId);
+        descriptor.setStatus(status);
+        descriptor.setVisibility(visibility);
+        descriptor.setActive(active);
+        descriptor.setxCoord(xCoord);
+        descriptor.setyCoord(yCoord);
+        descriptor.setZoom(zoom);
+        descriptor.setTemporary(temporary);
+        descriptor.setTags(tags);
+        descriptor.setPath(path);
+        descriptor.setCreatedFromWorkflowId(createdFromWorkflowId);
+        if (nodes != null) {
+            descriptor.setNodes(nodes.stream().map(WorkflowNode::toEntity).toList());
+        }
+        return descriptor;
     }
 }
