@@ -472,10 +472,14 @@
     };
 
     $("#myModalSSH").on('hide.bs.modal', function(){
-        var nodeId = $(".val-sshHost", "#myModalSSH").data("id");
+        //var nodeId = $(".val-sshHost", "#myModalSSH").data("id");
+        if (sessionId === undefined || sessionId == null) {
+            return;
+        }
         $.ajax({
             cache: false,
-            url: baseRestApiURL + "session/"+nodeId+"/close",
+            //url: baseRestApiURL + "session/"+nodeId+"/close",
+            url: baseRestApiURL + "session/" + sessionId + "/close",
             type: 'POST',
             headers: {
                 "X-Auth-Token": window.tokenKey
