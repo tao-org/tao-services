@@ -104,4 +104,24 @@ public class WorkflowNode {
     public Long getCreatedFromNodeId() {
         return createdFromNodeId;
     }
+
+    public WorkflowNodeDescriptor toEntity() {
+        final WorkflowNodeDescriptor descriptor = new WorkflowNodeDescriptor();
+        descriptor.setId(id);
+        descriptor.setName(name);
+        descriptor.setDescription(description);
+        descriptor.setCreated(created);
+        descriptor.setCustomValues(customValues);
+        descriptor.setComponentId(componentId);
+        descriptor.setComponentType(componentType);
+        descriptor.setxCoord(xCoord);
+        descriptor.setyCoord(yCoord);
+        descriptor.setLevel(level);
+        descriptor.setIncomingLinks(incomingLinks);
+        descriptor.setPreserveOutput(preserveOutput);
+        descriptor.setAdditionalInfo(additionalInfo);
+        descriptor.setBehavior(behavior);
+        descriptor.setCreatedFromNodeId(createdFromNodeId);
+        return descriptor;
+    }
 }
