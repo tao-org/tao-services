@@ -23,6 +23,7 @@ import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.*;
 import ro.cs.tao.quota.QuotaException;
+import ro.cs.tao.quota.StorageReport;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.UserPrincipal;
@@ -994,6 +995,31 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
         }, successMessage, callback);
         return prepareResult(String.format("Renaming %s started", item), ResponseStatus.SUCCEEDED);
+    }
+
+    /**
+     * Retrieves a storage report based on the repository type and size filter.
+     * Returns a list of user storage usage sorted in descending order by size.
+     *
+     * @param repositoryType an optional parameter specifying the type of repository to filter the storage report.
+     *                        If null or empty, no filtering is applied based on the repository type.
+     * @param size an optional parameter specifying the size threshold to filter the storage report, in megabytes.
+     *             If null, no filtering is applied based on size.
+     * @return a {@code ResponseEntity} containing a {@code ServiceResponse} with the storage report data.
+     */
+    @GetMapping(value = "/report", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> rename(@RequestParam(name = "repositoryType", required = false) String repositoryType,
+                                                     @RequestParam(name = "size", required = false) Double size) {
+        try {
+            RepositoryType type = StringUtilities.isNullOrEmpty(repositoryType) ? null : RepositoryType.valueOf(repositoryType);
+            final StorageReport report = UserQuotaManager.getInstance().getStorageReport(type);
+            final Map<String, Tuple<Double, MemoryUnit>> values = size == null ? report.getUserStorageBySizeDescending() : report.getUserStorageBySizeDescending(size, MemoryUnit.MB);
+            return prepareResult(values.entrySet()
+                                       .stream().collect(Collectors.toMap(Map.Entry::getKey,
+                                                                          e -> String.valueOf(e.getValue().getKeyOne()) + " " + e.getValue().getKeyTwo().name())));
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
 
     private void queueFile(String batchId, FileObject file, Repository source, Repository destination, String folder, boolean move, boolean overwrite) {

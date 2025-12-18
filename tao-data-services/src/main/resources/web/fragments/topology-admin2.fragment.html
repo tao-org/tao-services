@@ -659,7 +659,7 @@
     }
 
     function connect(sshNode) {
-        term = new Terminal({cols: 80, rows:30, scrollback:0, windowsMode:false});
+        term = new Terminal({cols: 80, rows:25, scrollback:0, windowsMode:false});
         const fitAddon = new FitAddon.FitAddon();
         term.loadAddon(fitAddon);
         term.open(document.getElementById("sshIframeWrapper"));
@@ -714,7 +714,7 @@
         sendMessage('tm', {event:"type", text:s});
     }
     async function connected(node) {
-        term.write('Connected to backend! \r\n');
+        //term.write('Connected to backend! \r\n');
         sendMessage('tm', {event: "connect", target: node.id});
         term.onData((s) => {
             write(s);
