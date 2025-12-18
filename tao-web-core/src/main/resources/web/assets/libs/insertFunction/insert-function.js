@@ -243,7 +243,7 @@
 		},
 		
 		// Define events
-		defineEvents: function (data) {
+		defineEvents: function () {
 			var _self = this;
 			
 			// Update output function definition when category is changed

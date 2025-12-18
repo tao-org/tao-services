@@ -169,7 +169,7 @@ var tao_setWF2CanvasData = function(currentWfData){
             console.log("workflow data:"); console.log(currentWfData);
             tao_setWF2CanvasData(currentWfData);
             //render workflow header
-            toolboxHeader.populate(wfPlumbCanvasData.header).open();
+            toolboxTopHeader.populate(wfPlumbCanvasData.header).open();
 
             //get component templates for all components in workflow
             var componentsListQueryString = wfPlumbCanvasData.usedComponents.join(',');

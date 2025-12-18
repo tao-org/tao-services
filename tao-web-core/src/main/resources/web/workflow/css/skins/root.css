@@ -27,6 +27,10 @@ body {
 	--sidebar-item-hover-bkg       : #fff;
 	--sidebar-item-hover-border    : var(--primary-color);
 	
+	--btn-primary-color            : #fff;
+	--btn-primary-bkg              : var(--primary-color);
+	--btn-primary-border           : var(--primary-color);
+	
 	--form-control-color           : var(--default-color);
 	--form-control-placeholder     : #bbb;
 	--form-control-bkg             : #fff;
