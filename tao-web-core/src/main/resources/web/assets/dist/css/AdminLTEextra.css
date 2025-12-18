@@ -277,13 +277,13 @@
 	&.select2 .select2-selection--single                     {border:1px solid #e3e6e8;padding:0.42em 0.85em;height:2.43em;.foo{}
 		.select2-selection__rendered                         {padding:0;color:inherit;line-height:inherit;}
 	}
-	&.select2 .select2-selection--multiple                   {height:auto;min-height:2.0em;max-height:8.8em;overflow:auto;border:1px solid #e3e6e8;padding:0 1.8em 0.23em 0;.foo{}
+	&.select2 .select2-selection--multiple                   {height:auto;min-height:2.4em;max-height:8.8em;overflow:auto;border:1px solid #e3e6e8;padding:0 1.8em 0.23em 0;.foo{}
 		.select2-selection__choice                           {float:left;color:#fff;background-color:#3c8dbc;border-color:#367fa9;padding:0.15em 0.15em 0.15em 1.6em;margin:0.23em 0 0 0.23em;border-radius:0;}
 		&.form-control .select2-selection__choice            {border-radius:0.22em;}
 		.select2-selection__choice__display                  {padding:0.15em 0.3em 0.15em 0.15em;}
 		.select2-selection__choice__remove                   {color:inherit;background-color:inherit;padding:0.15em 0.4em;}
 		.select2-selection__choice__remove:hover             {box-shadow:inset 0 0 5em rgb(0 0 0/.2);}
-		.select2-search--inline .select2-search__field       {float:left;font-family:inherit;font-size:inherit;line-height:inherit;padding:0.15em 0.3em;margin:0.23em 0 0 0.23em;height:1.8em;min-width:100%;.foo{}&:focus-visible {outline:-webkit-focus-ring-color auto 1px;}}
+		.select2-search--inline .select2-search__field       {float:left;font-family:inherit;font-size:inherit;line-height:inherit;padding:0.15em 0.3em;margin:0.23em 0 0 0.23em;height:1.8em;min-width:calc(100% - 0.23em);.foo{}&:focus-visible {outline:-webkit-focus-ring-color auto 1px;}}
 		&:has(.select2-selection__choice)
 			.select2-search--inline .select2-search__field   {min-width:1em;}
 	}

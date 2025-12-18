@@ -803,8 +803,8 @@ var npDOMhelper = {
                 hiddenEl = $("<input type='hidden' />").attr(genuineElAttr).insertBefore(genuineEl);
             }
             genuineElAttr.id = genuineEl.id;
-			var tooltipdesc = "In order to trigger autocomplete press CTRL+Space. Also you can fill the field with the following sintax: ${index:}, where index is the input source index (starting from 1)."
-			var htmlStr = '<div class="textviewWrapper" data-placement="bottom" data-original-title="' + tooltipdesc + '"><div class="npsyntaxeditortooltip">!<div class="tooltiptext"></div></div><div class="npsyntaxeditor input form-control" spellcheck="false" contenteditable="true" role="textbox" dir="ltr" aria-multiline="false" aria-readonly="false"><div role="presentation" class="sintaxLine has-focus"><span class="ltr has-focus">'+genuineElAttr.value+'</span></div></div>'
+			var tooltipdesc = "Press CTRL+Space to trigger autocomplete. You can also use the following syntax: ${index:}, where index is the input source index (starting from 1)."
+			var htmlStr = '<div class="textviewWrapper" data-placement="top" data-original-title="' + tooltipdesc + '"><div class="npsyntaxeditortooltip">!<div class="tooltiptext"></div></div><div class="npsyntaxeditor input form-control" spellcheck="false" contenteditable="true" role="textbox" dir="ltr" aria-multiline="false" aria-readonly="false"><div role="presentation" class="sintaxLine has-focus"><span class="ltr has-focus">'+genuineElAttr.value+'</span></div></div>'
                 +'<div class="npsyntaxeditordropdown text-dropdown text-position-below"><div class="text-list"></div></div>'
                 +'</div>';
 			

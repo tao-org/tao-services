@@ -15,9 +15,14 @@
 	<link type="text/css" rel="stylesheet" href="./app.css" />
 	<link type="text/css" rel="stylesheet" href="./workspace.css" />
 	<link type="text/css" rel="stylesheet" href="./css/workspaceExtra.css" />
-	<link type="text/css" rel="stylesheet" href="./css/skins/skins.css" />
-	<link type="text/css" rel="stylesheet" href="./css/propbar.css" />
+	<link type="text/css" rel="stylesheet" href="./lib/toolbox.css" />
+	<link type="text/css" rel="stylesheet" href="./lib/propbar.css" />
 	<link type="text/css" rel="stylesheet" href="./css/npFileName.css" />
+	<link type="text/css" rel="stylesheet" href="../assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" />
+	<link type="text/css" rel="stylesheet" href="../assets/libs/select2/4.1.0/select2.min.css" />
+	<link type="text/css" rel="stylesheet" href="../assets/libs/sideControl/side-control.css" />
+	<link type="text/css" rel="stylesheet" href="../assets/libs/insertFunction/insert-function.css" />
+	<link type="text/css" rel="stylesheet" href="./css/skins/skins.css" />
 	
 	<script type="text/javascript" src="//code.jquery.com/jquery-1.12.4.js"></script>
 	<script type="text/javascript" src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -43,6 +48,11 @@
 	<script type="text/javascript" src="../assets/dist/js/general-functions.js"></script>
 	<script type="text/javascript" src="../assets/dist/js/config.js"></script>
 	<script type="text/javascript" src="../assets/libs/np/jquery.npmodalconfirm.js"></script>
+
+<!-- JQuery libs -->
+<script type="text/javascript" src="../assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.js"></script>
+<script type="text/javascript" src="../assets/libs/select2/4.1.0/select2.min.js"></script>
+
 	
 	<style>
 		#frmConnectorEdit .form-buttons {display:inline-flex;}
@@ -50,24 +60,6 @@
 	</style>
 </head>
 <body class="jtk-bootstrap jtk-bootstrap-wide noselect">
-<div id="toolboxSidebar" class="toolbox-sidebar">
-	<div class="toolbox-bar">
-		<span class="title">TOOLBOX</span>
-		<button class="toolbox-bar-close" title="Close Toolbox"><i class="fa fa-times"></i></button>
-		<div class="toolbox-handler"><i class="fa fa-caret-right"></i></div>
-	</div>
-	<div class="toolboxAccordion">
-		<h3 class="hidden"><i class="fa icon"></i><i class="fa fa-angle-right"></i>Product sets / queries</h3>
-		<div id="QUERIES" style="display:none;">
-			<div class="toolbox-search">
-				<input type="text" class="form-control" placeholder="Search..."><i class="fa fa-search"></i><i class="fa fa-times"></i>
-			</div>
-			<div class="nano">
-				<div id="udatasourceslist" class="modulesholder nano-content"></div>
-			</div>
-		</div>
-	</div>
-</div>
 <div id="infoband">
 	<span class="v-lastaction"></span>
 </div>
@@ -101,17 +93,9 @@
 		</div>
 	</div>
 </div>
-<div id="tools-toolbox" class="ui-widget-content collapse">
-	<p class="ui-widget-header">Toolbox</p>
-	<button id="np-enable-select" type="button" class="btn btn-default btn-lg">
-		<i class="fa fa-magic fa-fw" aria-hidden="true"></i><span class="sr-only">Enable select mode</span>
-	</button>
-</div>
 <div id="draggable-toolbox-modules" class="ui-widget-content collapse">
 	<p class="ui-widget-header">Modules</p>
 	<ol id="selectable"></ol>
-</div>
-<div id="draggable-toolbox-modules-source" class="ui-widget-content">
 </div>
 <div id="draggable-toolbox-preview" class="ui-widget-content">
     <div class="header">
@@ -159,18 +143,69 @@
 		</div>
 	</div>
 </div>
-<div class="toolbox-header outside" id="toolboxHeader">
+<div id="toolboxTopHeader" class="toolbox-top-header outside">
     <div class="toolbox-space">
         <div>
             <span class="val-title">ToolBox</span>
-            <button class="toolbox-header-close" title="Close workflow info.">×</button>
+            <button class="toolbox-top-header-close" title="Close workflow info.">×</button>
         </div>
         <div class="toolbox-footer">
             <span class="val-meta">ToolBox</span>
         </div>
     </div>
 </div>
-<div id="rubberband" style="display:none;"></div>
+<div id="toolboxComponents" class="toolboxAccordion">
+	<h3 class="hidden"><i class="fa icon"></i><i class="fa fa-angle-right"></i>Product sets / queries</h3>
+	<div id="QUERIES" style="display:none;">
+		<div class="toolbox-search">
+			<input type="text" class="form-control" placeholder="Search..."><i class="fa fa-search"></i><i class="fa fa-times"></i>
+		</div>
+		<div class="nano">
+			<div id="udatasourceslist" class="modulesholder nano-content"></div>
+		</div>
+	</div>
+</div>
+<div id="toolboxProperties">
+	<div class="propbar-header">
+		<label class="pni-editable">
+			<span class="val-propbar-name"></span>
+			<i class="fa fa-pencil fa-fw pni-edit-btn"></i>
+			<input class="pni-edit-input" type="text" value="" />
+		</label>
+		<p class="val-propbar-componentid"></p>
+		<p class="val-propbar-details"></p>
+		<img class="val-propbar-logo" src="" alt="component logo" />
+	</div>
+	<div class="propbar-content thin-scrollbar onhover">
+		<div class="app-card">
+			<div class="app-card-header">Custom values</div>
+			<div class="app-card-content clearfix">
+				<table class="tbl-edt">
+					<tbody><tr class="tpl-sample-row"><td>
+						<span class="var-id hidden"></span><span class="var-name hidden"></span>
+						<span class="var-parent-id hidden"></span><span class="var-parent-name hidden"></span>
+						<span class="var-label"></span> (<span class="var-dataType"></span>)<br />
+						<span class="var-type hidden"></span>
+						<div class="div-params">
+							<span class="var-description"></span><br />
+							<div class="var-values">
+								<input  class="var-value" type="hidden" value="" />
+								<input  class="var-value-string form-control collapse" type="text" placeholder="input variable's value" value="" />
+								<select class="var-value-list   form-control collapse"></select>
+							</div>
+							<span class="var-default-label">Default value:</span> <span class="var-default"></span>
+						</div>
+					</td></tr></tbody>
+					<tbody class="tbl-edt-body"></tbody>
+				</table>
+				<div id="propbarMap"></div>
+			</div>
+		</div>
+	</div>
+	<div class="propbar-footer">
+		<input type="submit" value="Apply" />
+	</div>
+</div>
 
 <!-- modal SortAndGroup -->
 <div id="modalSortAndGroup" class="modal fade modal-form-focus" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -312,7 +347,10 @@
 <script type="text/javascript" src="./workspace.js"></script>
 <script type="text/javascript" src="./app.js"></script>
 <script type="text/javascript" src="./canvas.js"></script>
+<script type="text/javascript" src="./lib/toolbox.js"></script>
 <script type="text/javascript" src="./lib/propbar.js"></script>
+<script type="text/javascript" src="../assets/libs/sideControl/side-control.js"></script>
+<script type="text/javascript" src="../assets/libs/insertFunction/insert-function.js"></script>
 
 <script type="text/javascript">
 	var myParent = window.parent;
@@ -323,11 +361,15 @@
 		// Color
 		$("body").removeClass(function (index, className) { return (className.match(/\bskin-\S+/g) || []).join(' '); }).addClass("skin-" + myParent.selectedStyle.scheme).addClass("skin-" + myParent.selectedStyle.scheme + "-" + myParent.selectedStyle.accent);
 		setTimeout(function () {
-			$("#toolboxSidebar .toolboxAccordion").data("uiAccordion") && $("#toolboxSidebar .toolboxAccordion").accordion("refresh");
+			$("#toolboxComponents").data("uiAccordion") && $("#toolboxComponents").accordion("refresh");
 		}, 1500);
 	}
 	
-	$(document).ready(function () { 
+	function showCustomValues(nodeID) {
+		$("#toolboxProperties").propBar(nodeID);
+	}
+	
+	$(document).ready(function () {
 		refreshSettingsWorkflow();
 		
 		myParent.$(myParent.document).on("settings-change", function (e, args) {
@@ -347,10 +389,29 @@
 		
 		$('div[rel="timeline-tooltip"]').tooltip({ container: "body" });
 		
-		$("#toolboxSidebar").on("ready", function (e) {
+		$("#toolboxComponents").on("ready", function (e) {
 			$('[aria-controls="QUERIES"]', e.delegateTarget).removeClass("hidden");
 		});
-	 });
+		
+		$("#toolboxComponents").toolbox({
+			title: "Toolbox",
+			peep : "2em"
+		});
+		
+		$("#toolboxProperties").propBar({
+			ready: function (_self) { $("#toolboxProperties").toolbox("show"); },
+			done : function (_self) { $("#toolboxProperties").toolbox("hide"); }
+		});
+		$("#toolboxProperties").toolbox({
+			width   : "35em",
+			position: "right",
+			title   : "Node editor",
+			zIndex  : 500,
+			closed  : true,
+			backdrop: true
+		});
+	});
+//# sourceURL=wf-index.js	 
 </script>
 </body>
 </html>

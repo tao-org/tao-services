@@ -314,7 +314,8 @@ jsPlumb.bind("jsPlumbLoaded", function(instance) {
 		wfTools.taoEnums = getConfigEnumsResponse['data'];
 		getTaoVersion();
 		wfTools.isOldVersion = wfTools.taoVersion < wfTools.taoReferenceVersion;
-		toolboxSidebar.init();
+		toolboxComponents.init();
+		//propBar.init();
 	});
 });
 jsPlumb.bind("tao_showConnMenu", function(params) {
@@ -488,20 +489,6 @@ jsPlumb.bind("tao_loadWorkflowById", function() {
 					});
 				}
 			});
-			// data source component category is removed from toolbox (is linked with workspace.js wfTools.toolboxnodes.ds commented zones)
-			/*$.each(wfTools.datasources, function (i, item) {
-				var hash = "tboid" + jsHashCode(item.id);
-				if (wfTools.toolboxnodes.ds[hash]) {
-					alert("Datasource collision. Duplicate id detected");
-				} else {
-					wfTools.toolboxnodes.ds[hash] = {
-						id: hash,
-						type: "datasource",
-						label: item.label,
-						dna: item
-					};
-				}
-			});*/
 			//user datasources
 			$.each(wfTools.udatasources, function (i, item) {
 				var hash = "tboid" + jsHashCode(item.id);
@@ -521,7 +508,7 @@ jsPlumb.bind("tao_loadWorkflowById", function() {
 			wf_populateSortersAndGroupers();
 			console.log("Workspace components toolbox init done.");
 			$.when(wf_loadWorkflowById(currentWfID)).done(function(){
-				toolboxSidebar.refresh();
+				toolboxComponents.refresh();
 				contentLoading("hide");
 			});
 		}).fail(function (jqXHR) {
@@ -598,7 +585,7 @@ jsPlumb.ready(function () {
                 matrix[5] = window.panStart.dy - deltaY;
                 pz.panzoom("setMatrix", matrix);
             } else if (window.selectStart) {
-                drawSelectRectangle(window.selectStart, { x: e.pageX, y: e.pageY });
+                //drawSelectRectangle(window.selectStart, { x: e.pageX, y: e.pageY });
             }
         })
         .on("mouseup touchend touchcancel", function(e) {
@@ -704,7 +691,7 @@ jsPlumb.ready(function () {
 			}
             if(action === "show-info"){
                 console.log("show-info");
-                toolboxHeader.open();
+                toolboxTopHeader.open();
             }
             if (action === "align-left") {
                 console.log("align-left");
@@ -1180,11 +1167,10 @@ updateModuleStatus("", {"state":"completed", "progress":68});
             callbackCancel: function () { }
         });
     })
-    .on( "click",".btn-action-editmodule", function(e) { //erase module on trash icon click
-            e.stopPropagation();
-            var nodeID = $(this).closest(".w").attr("id");
-            $propbar.menu("open", {"nodeid":nodeID});
-            console.log("propbar invocation");
+    .on( "click",".btn-action-editmodule", function(e) { // show module custom values
+		e.stopPropagation();
+		var nodeID = $(this).closest(".w").attr("id");
+		showCustomValues(nodeID);
     })
 	.on( "click", function(e) {
 		//check if own event is propagated and do nothing

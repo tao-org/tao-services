@@ -4,13 +4,55 @@
 @import url("skin-modern.css");
 @import url("skin-nav.css");
 
+body {background:var(--sidebar-item-bkg);}
+
+/* Form */
+.form-control                                  {color:var(--form-control-color);background-color:var(--form-control-bkg);.foo{}
+	&,&[readonly]:focus                        {border-color:var(--form-control-border);}
+	&:focus,&.focus                            {border-color:var(--form-control-focus-border);}
+	&::-webkit-input-placeholder               {color:var(--form-control-placeholder);}
+	&[disabled],&[readonly]                    {background-color:var(--form-control-disabled-bkg);}
+}
+
+/* Tags */
+div.tagsinput                                  {color:var(--form-control-color);background-color:var(--form-control-bkg);border-color:var(--form-control-border);.foo{}
+	&.focus                                    {border-color:var(--form-control-focus-border);}
+	.tag                                       {background-color:var(--form-control-focus-border);}
+	.tag-input::-webkit-input-placeholder      {color:var(--form-control-placeholder);}
+}
+
+/* Select2 */
+.select2-container.select2-container--default                {.foo{}
+	&.select2 .select2-selection--single                     {background-color:var(--form-control-bkg);border-color:var(--form-control-border);}
+	&.select2 .select2-selection--multiple                   {background-color:var(--form-control-bkg);border-color:var(--form-control-border);.foo{}
+		.select2-selection__choice                           {color:var(--btn-primary-color);background-color:var(--btn-primary-bkg);border-color:var(--btn-primary-border);}
+		.select2-selection__choice__remove:hover             {}
+	}
+
+	.select2-dropdown                                        {background-color:var(--form-control-bkg);border-color:var(--form-control-border);.foo{}
+		&.select2-dropdown--below                            {border-color:var(--form-control-bkg);}
+		.select2-results__option                             {.foo{}
+			&:hover                                          {color:var(--btn-primary-color);background-color:var(--btn-primary-bkg);}
+			&.select2-results__option--selected              {color:var(--btn-primary-color);background-color:var(--btn-primary-bkg);.foo{}
+				&:hover                                      {color:var(--btn-primary-color);background-color:var(--btn-primary-bkg);}
+			}
+		}
+	}
+	&.select2-container--open .select2-dropdown,
+	&.select2-container--open .select2-selection--single,
+	&.select2-container--focus .select2-selection--single,
+	&.select2-container--open .select2-selection--multiple,
+	&.select2-container--focus .select2-selection--multiple  {border-color:var(--form-control-focus-border);}
+}
+
+
 /* ToolBox */
-.toolbox-sidebar                               {color:var(--sidebar-color);background-color:var(--sidebar-bkg);.foo{}
+.toolbox                                       {color:var(--sidebar-color);background-color:var(--sidebar-bkg);.foo{}
 	&.outside:hover .toolbox-handler           {color:var(--sidebar-header-hover-color);}
-	.toolbox-bar                               {.foo{}
+	.toolbox-header                            {.foo{}
 		.title                                 {color:var(--sidebar-topbar-color);}
-		.toolbox-bar-close,.toolbox-handler    {color:var(--sidebar-color);}
-		.toolbox-bar-close:hover,
+		.toolbox-close,.toolbox-handler        {color:var(--sidebar-color);}
+		.toolbox-close:hover,
 		.toolbox-handler:hover                 {color:var(--sidebar-header-hover-color);}
 	}
 	.ui-accordion                              {background-color:transparent;}
@@ -27,7 +69,28 @@
 	}
 	.toolbox-search input::placeholder         {color:var(--form-control-placeholder);}
 }
-.toolbox-header                                {.foo{}
+
+/* PropBar */
+.propbar                                       {.foo{}
+	.propbar-header                            {.foo{}
+		.pni-edit-btn:hover                    {color:var(--primary-color);}
+		.val-propbar-logo                      {border-color:var(--form-control-focus-border);}
+	}
+	.propbar-content                           {.foo{}
+		.app-card-header                       {color:var(--sidebar-header-active-color);background-color:var(--sidebar-header-active-bkg);border-color:var(--sidebar-header-active-border);}
+		.app-card-content                      {color:var(--sidebar-content-color);background-color:var(--sidebar-content-bkg);}
+		.div-params                            {border-color:var(--scroll-color);.foo{}
+			.textviewWrapper .npsyntaxeditor   {border-color:var(--form-control-focus-border);}
+			.var-default                       {color:var(--primary-color);}
+		}
+		.has-side-control+i.side-control       {color:var(--primary-color);}
+		.has-side-control.focus                {border-color:var(--form-control-focus-border);}
+	}
+	.propbar-footer [type="submit"]            {color:var(--sidebar-header-active-color);background-color:var(--sidebar-header-active-bkg);border-color:var(--sidebar-header-active-border);}
+}
+
+/* Misc */
+.toolbox-top-header                            {.foo{}
 	.toolbox-space                             {color:var(--toolbox-space-color);background-color:var(--toolbox-space-bkg);}
 	.toolbox-footer                            {color:var(--toolbox-space-color);}
 }
@@ -37,20 +100,6 @@
 .ui-widget-content                             {color:var(--toolbar-color);background-color:var(--toolbar-bkg);.foo{}
 	.icon:hover                                {color:var(--toolbar-hover-color);}
 }
-
-/*** Form ***/
-.form-control                                  {color:var(--form-control-color);background-color:var(--form-control-bkg);.foo{}
-	&,&[readonly]:focus                        {border-color:var(--form-control-border);}
-	&:focus                                    {border-color:var(--form-control-focus-border);}
-	&::-webkit-input-placeholder               {color:var(--form-control-placeholder);}
-	&[disabled],&[readonly]                    {background-color:var(--form-control-disabled-bkg);}
-}
-
-/* Propbar */
-.l-form__submit {background-color:var(--form-control-focus-border);.foo{}
-	&:hover     {background-color:var(--form-control-focus-border);}
-}
-.npsyntaxeditor {border-color:var(--form-control-focus-border);}
 
 /*** Thin scrollbar ***/
 .thin-scrollbar               {--scroll-thumb:var(--scrollbar-default-thumb);--scroll-track:var(--scrollbar-default-track);}

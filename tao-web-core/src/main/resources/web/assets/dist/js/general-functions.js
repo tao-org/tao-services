@@ -669,7 +669,19 @@ function initializeTagsInputAutocomplete(id, url){
  	$(".ui-autocomplete").css({ "max-height": "400px", "overflow-y": "scroll", "overflow-x": "hidden","z-index":"1100"});
 }
 
-function openPolygonMap(mapContainer, footprintField) {
+function closePolygonMap() {
+	if (typeof window.myPolygonMap !== "undefined") {
+		var $poly2D = window.myPolygonMap.container.closest(".for-poly2D");
+		// Clear bound field focus
+		var $footprintField = $poly2D.data("footprintField");
+		$footprintField.length && $footprintField.removeClass("focus");
+		// Remove poly2D map
+		$poly2D.remove();
+		delete window.myPolygonMap;
+	}
+}
+
+function openPolygonMap($mapContainer, $footprintField) {
 	var newfootprint = "";
 	// Create simple window for map
 	var $poly2D = $("<div class='for-poly2D' style='position:fixed;top:10%;left:10%;width:80%;height:80%;background-color:white;border:3px solid #3c8dbc;border-radius:10px;overflow:hidden'>" +
@@ -682,38 +694,32 @@ function openPolygonMap(mapContainer, footprintField) {
 					"		<button class='btn btn-primary btn-submit use-footprint' disabled >Use selected polygons</button>" +
 					"	</div>" +
 					"</div>");
+	$poly2D.data({ "footprintField": $footprintField });
+	$footprintField.addClass("focus");
 	$(".use-footprint", $poly2D).on("click", function () {
-		if ($(this).hasClass("btn-submit") && newfootprint !== footprintField.val()) {
-			if (footprintField.is("select") && typeof footprintField.data("select2") !== "undefined") {
+		if ($(this).hasClass("btn-submit") && newfootprint !== $footprintField.val()) {
+			if ($footprintField.is("select") && typeof $footprintField.data("select2") !== "undefined") {
 				var newOption = new Option(newfootprint, newfootprint, false, true);
-				footprintField.append(newOption).trigger("change");
+				$footprintField.append(newOption).trigger("change");
 			} else {
-				footprintField.val(newfootprint).trigger("change");
+				$footprintField.val(newfootprint).trigger("change");
 			}
 		}
-		$(this).closest(".for-poly2D").remove();
+		closePolygonMap();
 	});
-	mapContainer.append($poly2D);
+	$mapContainer.append($poly2D);
 	
-	var olPoly = $("#mapExtent", mapContainer).poly2D({ maxFeaturesNo: 1, defaultFootprint: (footprintField.val() !== null ? footprintField.val() : "")});
+	var olPoly = $("#mapExtent", $mapContainer).poly2D({ maxFeaturesNo: 1, defaultFootprint: ($footprintField.val() !== null ? $footprintField.val() : "")});
 	$.when(olPoly).done(function (result) {
 		window.myPolygonMap = result;
 		window.myPolygonMap.fitAllFeatures();
 		window.myPolygonMap.el.on("newfootprint", function (evt, footprint) {
-			/*footprintField.val(footprint);
-			footprintField.trigger("change");*/
 			newfootprint = footprint;
 			if (footprint !== "") {
 				$(".btn-submit.use-footprint", $poly2D).prop("disabled", false);
 			}
 		});
 	});
-}
-function closePolygonMap() {
-	if (typeof window.myPolygonMap !== "undefined") {
-		window.myPolygonMap.container.closest(".for-poly2D").remove();
-		delete window.myPolygonMap;
-	}
 }
 
 //UI loading indicator management
@@ -724,7 +730,7 @@ function contentLoading(action){
 	} else if (action === "hide") {
 		setTimeout(function () {
 			taoLoadingDiv.modal("hide");
-			$.AdminLTE.layout.fix();
+			(typeof $.AdminLTE !== "undefined") && $.AdminLTE.layout.fix();
 		}, 100);
 	}
 }

@@ -41,11 +41,11 @@ function describeArc(x, y, radius, startAngle, endAngle){
     var preferences = {};
 	var componentCategories;
 
-    var toolboxHeader = {
-        elTBH: $("#toolboxHeader"),
+    var toolboxTopHeader = {
+        elTBH: $("#toolboxTopHeader"),
         init: function () {
             var a = this;
-            a.elTBH.on("click", ".toolbox-header-close", function(e){
+            a.elTBH.on("click", ".toolbox-top-header-close", function(e){
                 e.stopPropagation();
                 a.close();
             });
@@ -69,58 +69,37 @@ function describeArc(x, y, radius, startAngle, endAngle){
             return this;
         }
     };
-    toolboxHeader.init();
+    toolboxTopHeader.init();
 
-    var toolboxSidebar = {
-    	elTBS: $("#toolboxSidebar"),
+    var toolboxComponents = {
+    	elTBS: $("#toolboxComponents"),
         init: function () {
             var a = this;
-    	    a.elTBS.on("click", ".toolbox-bar-close", function(e){
-                e.stopPropagation();
-    	        a.close();
-            });
-            a.elTBS.on("click", ".toolbox-handler", function(){
-                a.open();
-            });
-            a.elTBS.on("click", function(e){
-                e.stopPropagation();
-                if(a.elTBS.hasClass("outside")){
-                    a.open();
-                }
-            });
             componentCategories = getTaoEnums("ComponentCategory");
 			$.each(componentCategories, function(index, category) {
 				var $componentHeader = $("h3","#componentTemplate").clone().append(category.value).css('textTransform', 'capitalize');
 				var $componentContent = $("#componentTemplateBody","#componentTemplate").clone().addClass("thin-scrollbar onhover").attr("id", category.key);
-				$( ".toolboxAccordion", a.elTBS).append($componentHeader).append($componentContent);
+				a.elTBS.append($componentHeader).append($componentContent);
 			});
 			
 			//init accordion
-            $( ".toolboxAccordion", a.elTBS).accordion({
+            a.elTBS.accordion({
                 heightStyle: "fill",
                 collapsible: true,
                 active: false,
                 animate: 500
             });
-            //add resize handler
-            $( window )
-            .resize(function() {
-                $( ".toolboxAccordion", a.elTBS).accordion( "refresh" );
+            
+			//add resize handler
+            $(window).resize(function () {
+                a.elTBS.accordion("refresh");
             });
-            //intercept and cancel scroll events in order to stop propagate to parents
-            /*$('.nano-content', a.elTBS).on( 'mousewheel DOMMouseScroll', function (e) {
-				var e0 = e.originalEvent;
-                var delta = e0.wheelDelta || -e0.detail;
-                $(this).closest(".nano").parent().get(0).scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
-                e.preventDefault();
-				
-            });*/
-
+			
             $( ".toolbox-search .fa-search", a.elTBS).show();
             $( ".toolbox-search .fa-times", a.elTBS).hide().on("click",function(){
                 $(this).parent().find("input").val("").trigger("keyup");
             });
-
+			
             a.elTBS.on('keyup','.toolbox-search>input', function(e){
                 var q = $(this).val();
                 var $s = $(this).parent();
@@ -136,21 +115,12 @@ function describeArc(x, y, radius, startAngle, endAngle){
                     $( "sortable_item", $l).show();
                 }
             });
-			//opens drawable by default
-            a.open();
         },
-        open: function () {
-            this.elTBS.removeClass("outside");
-        },
-        close: function () {
-            this.elTBS.addClass("outside");
-		},
 		refresh: function() {
 			this.elTBS.trigger("ready");
-			$( ".toolboxAccordion",this.elTBS).accordion( "refresh" );
+			this.elTBS.accordion("refresh");
 		}
     };
-
 
 	function setWFConnectorsToStateMachine(){
 		window.preferences.workFlowConnectors = "S";
@@ -212,19 +182,6 @@ function describeArc(x, y, radius, startAngle, endAngle){
 				$("h3[aria-controls='" + tag.key + "']").removeClass("hidden");
 			}
 		});
-		// data source component category is removed from toolbox (is linked with app.js wfTools.datasources commented zones)
-        /*$.each(wfTools.toolboxnodes.ds, function(i, item) {
-            var prettyLabel = (item.label || "").replace(/([A-Z])([a-z])/g, ' $1$2').trim();
-			item.image = "./media/module-ds.png";
-        	var html ='<sortable_item class="item selected" id = "'+item.id+'" data-componentid="'+item.dna.id+'" data-componenttype="ds" data-toolboxid="'+item.id+'">\n' +
-                '\t\t\t\t\t<div class="item-info">\n' +
-                '\t\t\t\t\t  <div class="item-label text-left"> \n' +
-                '\t\t\t\t\t\t<img src="'+item.image+'">\n' +'<span>'+prettyLabel+'</span>'+
-                '\t\t\t\t\t</div>\n' +
-                '\t\t\t\t\t</div>\n' +
-                '\t\t\t\t</sortable_item>';
-            $elDatasurcesList.append(html);
-        });*/
         $.each(wfTools.toolboxnodes.uds, function(i, item) {
             var prettyLabel = (item.label || "").replace(/([A-Z])([a-z])/g, ' $1$2').trim();
 			item.image = "./media/module-ds.png";
@@ -413,7 +370,6 @@ function describeArc(x, y, radius, startAngle, endAngle){
 			maxRight = itemOffset.right;
 			
 			$(".w", $elCanvas).each(function(index) {
-				//var itemOffset = getTopLeftOffset($(this));
 				itemOffset = {};
 				itemOffset = $(this).offset();
                 itemOffset.selected = 0;
@@ -506,7 +462,6 @@ function describeArc(x, y, radius, startAngle, endAngle){
 	});
 
 $( function() {
-	console.log("pref");
 	if(_settings.readCookie("preferences_workFlowConnectors")){
 		if(_settings.readCookie("preferences_workFlowConnectors") === "F"){
 			setWFConnectorsToFlowchart();
@@ -519,8 +474,6 @@ $( function() {
 	}
 
 		toolboxModules.rescanBuild();
-		$( "#tools-toolbox" ).draggable({ handle: "p" });
-		$( "#draggable-toolbox-modules-source" ).draggable({ handle: "p" });
 		$( "#draggable-toolbox-preview" ).draggable({ handle: "p" });
 		$( "#draggable-toolbox-modules" ).draggable({ handle: "p" });
 		$( "#selectable" ).selectable({
@@ -580,93 +533,3 @@ $( function() {
         return confirmationMessage;                                //Webkit, Safari, Chrome etc.
     });
 });
-	
-////////////// FOR RUBER BAND ////////////
-        var startPoint = {};
-		var rubberBand = {
-			"start":{},
-			"visible":false,
-			paint: function(statespace){
-				$("#rubberband").css({top:statespace.top, left:statespace.left, height:statespace.h, width:statespace.w, position:'absolute'});
-				if(rubberBand.visible) {
-					$("#rubberband").show();
-				}else{
-					$("#rubberband").hide();
-				}
-				return true;
-			},  
-			mouseDown: function(event) {
-				//if(envVars.selectenable === false){return;} //check if select mode enabled
-				rubberBand.start = {"x": event.pageX, "y": event.pageY};
-				startPoint.x = event.pageX;
-				startPoint.y = event.pageY;
-				rubberBand.visible = true;
-				rubberBand.paint({top:startPoint.y, left:startPoint.x, h:1,w:1});
-				console.log("rubber:mouse down");
-				return true;
-			},
-			mouseUp: function(event) {
-				if(!rubberBand.visible){ return; }
-				rubberBand.visible = false;
-				//if(envVars.selectenable === false){return;} //check if select mode enabled
-				//diagramContainer_FindSelectedItem();
-				$("#rubberband").hide();
-				console.log("rubber:mouse up");
-			},
-			mouseMove: function(event) {
-				//if(envVars.selectenable === false){return;} //check if select mode enabled
-				if(!rubberBand.visible){ return; }
-				
-				
-				
-				var t = (event.pageY > startPoint.y) ? startPoint.y : event.pageY;
-				var l = (event.pageX >= startPoint.x) ? startPoint.x : event.pageX;
-				
-				wcalc = event.pageX - startPoint.x;
-				var w = (event.pageX > startPoint.x) ? wcalc : (wcalc * -1); 
-				
-				hcalc = event.pageY - startPoint.y;
-				var h = (event.pageY > startPoint.y) ? hcalc : (hcalc * -1); 
-
-				rubberBand.paint({top:t, left:l, h:h,w:w});
-				$("#infoband").html("top:"+t+", left:"+l+", height:"+h+", width:"+w);
-			}
-		};
-        
-		function diagramContainer_FindSelectedItem() {
-            if($("#rubberband").is(":visible") !== true) { return; }
-            var rubberbandOffset = getTopLeftOffset($("#rubberband"));
-			
-            $(".item").each(function() {
-                var itemOffset = getTopLeftOffset($(this));
-                if( itemOffset.top > rubberbandOffset.top &&
-                    itemOffset.left > rubberbandOffset.left &&
-                    itemOffset.right < rubberbandOffset.right &&
-                    itemOffset.bottom < rubberbandOffset.bottom) {
-                    
-					$(this).addClass("selected");
-                    var elementid = $(this).attr('id');
-                    jsPlumb.addToDragSelection(elementid);
-					toolboxModules.rescanSelected();
-                }
-            });
-        }
-
-		function getTopLeftOffset(element) {
-            var elementDimension = {};
-            elementDimension.left = element.offset().left;
-            elementDimension.top =  element.offset().top;
-            elementDimension.right = elementDimension.left + element.outerWidth();
-            elementDimension.bottom = elementDimension.top + element.outerHeight();
-            return elementDimension;
-        }
-		function diagramContainer_Click(event) {
-            if(startPoint.x === event.pageX && startPoint.y === event.pageY)
-            {
-                toolboxModules.clearAllSelectedModules();
-				jsPlumb.clearDragSelection();
-                $(".item").each(function() {
-                    $(this).removeClass("selected");
-                });
-            }
-        }

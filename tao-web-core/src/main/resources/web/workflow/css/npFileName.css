@@ -17,7 +17,6 @@
 .npsyntaxeditor.input {
     -moz-appearance: textfield;
     -webkit-appearance: textfield;
-    background-color: white;
     background-color: -moz-field;
     overflow:hidden;
 }
