@@ -99,6 +99,7 @@ public class SSHController implements DisposableBean {
         SSHSession s = sessions.getIfPresent(UUID.fromString(id));
         if (s != null) {
             s.destroy();
+            log.fine("SSH session " + id + " closed");
         }
 
     }
@@ -154,7 +155,8 @@ public class SSHController implements DisposableBean {
                     }
                 }, wss);
                 wss.getAttributes().put(SESSION_KEY_TERM_UUID, s.getUUID());
-                sendMessage(wss, "{ \"cause\": \"new-session\", \"sessionId\": \"" + s.getUUID().toString() + "\"}");
+                log.fine("SSH session " + s.getUUID() + " created");
+                sendMessage(wss, "{ \"cause\": \"new-session\", \"sessionId\": \"" + s.getUUID() + "\"}");
             }
         } else if (data instanceof JSONObject) {
             JSONObject o = (JSONObject) data;
@@ -185,15 +187,6 @@ public class SSHController implements DisposableBean {
                 }
             }
         }
-    }
-
-    @SuppressWarnings("unused")
-    private String debugBytes(byte[] d) {
-        StringBuilder sb = new StringBuilder(d.length * 3);
-        for (byte b: d) {
-            sb.append(String.format("%02x ", b & 0xFF));
-        }
-        return sb.toString();
     }
 
     public WebSocketHandler getWsHandler() {

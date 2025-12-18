@@ -35,9 +35,13 @@ import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.storage.BaseStorageService;
+import ro.cs.tao.topology.NodeDescription;
+import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.utils.executors.*;
 import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import javax.validation.constraints.NotNull;
 import java.io.*;
@@ -61,6 +65,8 @@ public class FileStorageService extends BaseStorageService<MultipartFile> {
     private static final Set<String> SIMPLE_PRODUCT_EXTENSIONS = new HashSet<>() {{
        add(".tif"); add(".nc"); add(".hd5");
     }};
+    private static final String FOLDER_SIZE_WINDOWS_CMD = "dir /-C /a /s %s";
+    private static final String FOLDER_SIZE_LINUX_CMD = "du -h --max-depth=1 %s";
     private EOProductProvider productProvider;
     private VectorDataProvider vectorDataProvider;
     private AuxiliaryDataProvider auxiliaryDataProvider;
@@ -83,6 +89,11 @@ public class FileStorageService extends BaseStorageService<MultipartFile> {
     @Override
     public boolean isIntendedFor(String protocol) {
         return PROTOCOL.equalsIgnoreCase(protocol);
+    }
+
+    @Override
+    public boolean isIntendedFor(RepositoryType repositoryType) {
+        return RepositoryType.LOCAL.equals(repositoryType);
     }
 
     @Override
@@ -622,6 +633,18 @@ public class FileStorageService extends BaseStorageService<MultipartFile> {
         return FileUtilities.computeHash(Path.of(path), "MD5");
     }
 
+    @Override
+    public Map<String, Long> getUserStorage() {
+        final Path root = Path.of(SystemVariable.ROOT.value());
+        if (SystemUtils.IS_OS_LINUX) {
+            return getFoldersSizeWindows(root);
+        } else if (SystemUtils.IS_OS_WINDOWS) {
+            return getFoldersSizeLinux(root);
+        } else {
+            return new HashMap<>();
+        }
+    }
+
     private List<FileObject> getResults(Long workflowId, Long jobId) {
         if ((workflowId == null) == (jobId == null)) {
             throw new IllegalArgumentException("Exactly one of [workflowId] or [jobId] should be passed");
@@ -746,5 +769,80 @@ public class FileStorageService extends BaseStorageService<MultipartFile> {
         } else {
             FileUtilities.deleteTree(folder);
         }
+    }
+
+    private Map<String, Long> getFoldersSizeWindows(Path root) {
+        final List<Path> folders;
+        try {
+            folders = FileUtilities.listFolders(root, 1);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        final Map<String, Long> result = new HashMap<>();
+        for  (Path folder : folders) {
+            String userId = folder.getFileName().toString();
+            if (StringUtilities.isGUID(userId)) {
+                final List<String> commands = ProcessHelper.tokenizeCommands(FOLDER_SIZE_WINDOWS_CMD, folder);
+                NodeDescription nodeInfo = TopologyManager.getInstance().getMasterNodeInfo();
+                ExecutionUnit job = new ExecutionUnit(ExecutorType.PROCESS,
+                                                      nodeInfo.getId(),
+                                                      nodeInfo.getUserName(),
+                                                      nodeInfo.getUserPass(),
+                                                      commands, false, SSHMode.EXEC);
+                final OutputAccumulator accumulator = new OutputAccumulator();
+                accumulator.preserveLineSeparator(true);
+                int retCode;
+                final Executor<?> executor = Executor.execute(accumulator, job);
+                if ((retCode = executor.getReturnCode()) == 0) {
+                    String[] lines = accumulator.getOutput().split("\n");
+                    String line = lines[lines.length - 3].trim();
+                    int idx1 = line.lastIndexOf(" ", line.indexOf("File(s)") + 7) + 1;
+                    int idx2 = line.indexOf(" ", idx1);
+                    result.put(userId, Long.parseLong(line.substring(idx1, idx2)));
+                }
+            }
+        }
+        return result;
+    }
+
+    private Map<String, Long> getFoldersSizeLinux(Path root) {
+        final List<String> commands = ProcessHelper.tokenizeCommands(FOLDER_SIZE_LINUX_CMD, root);
+        NodeDescription nodeInfo = TopologyManager.getInstance().getMasterNodeInfo();
+        ExecutionUnit job = new ExecutionUnit(ExecutorType.PROCESS,
+                                              nodeInfo.getId(),
+                                              nodeInfo.getUserName(),
+                                              nodeInfo.getUserPass(),
+                                              commands, false, SSHMode.EXEC);
+        final OutputAccumulator accumulator = new OutputAccumulator();
+        accumulator.preserveLineSeparator(true);
+        int retCode;
+        final Executor<?> executor = Executor.execute(accumulator, job);
+        if ((retCode = executor.getReturnCode()) == 0) {
+            String output = accumulator.getOutput();
+            String[] lines = output.split("\n");
+            final Map<String, Long> result = new HashMap<>();
+            for  (String line : lines) {
+                if (line.contains("\t")) {
+                    String[] values = line.split("\t");
+                    String userId = values[1].substring(values[1].lastIndexOf('/') + 1);
+                    if (StringUtilities.isGUID(userId)) {
+                        long value;
+                        if (values[0].endsWith("T")) {
+                            value = (long) (Double.parseDouble(values[0].substring(0, values[0].length() - 1)) * MemoryUnit.TB.value());
+                        } else if (values[0].endsWith("G")) {
+                            value = (long) (Double.parseDouble(values[0].substring(0, values[0].length() - 1)) * MemoryUnit.GB.value());
+                        } else if (values[0].endsWith("M")) {
+                            value = (long) (Double.parseDouble(values[0].substring(0, values[0].length() - 1)) * MemoryUnit.MB.value());
+                        } else if (values[0].endsWith("K")) {
+                            value = (long) (Double.parseDouble(values[0].substring(0, values[0].length() - 1)) * MemoryUnit.KB.value());
+                        } else {
+                            value = Long.parseLong(values[0]);
+                        }
+                        result.put(userId, value);
+                    }
+                }
+            }
+        }
+        return new HashMap<>();
     }
 }
