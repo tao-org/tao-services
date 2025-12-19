@@ -498,6 +498,9 @@
 				
 				// Show parameters
 				$(".tpl-sample-row", _self.el).closest(".app-card").show();
+				$.each($(".val-row .npsyntaxeditor", _self.el), function () {
+					$(this).css({ "width": ($(this).closest(".div-params").width() - 4) + "px" });
+				});
 			}
 		},
 		
