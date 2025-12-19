@@ -42,6 +42,7 @@ import ro.cs.tao.services.commons.RoleRequired;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.beans.WorkflowGroupNodeRequest;
 import ro.cs.tao.services.interfaces.*;
+import ro.cs.tao.services.model.execution.ExecutionTaskInfo;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.spi.ServiceRegistry;
 import ro.cs.tao.spi.ServiceRegistryManager;
@@ -616,7 +617,12 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
     public ResponseEntity<ServiceResponse<?>> getWorkflowExecutionTasks(@PathVariable("executionId") long executionId) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            responseEntity = prepareResult(service.getWorkflowExecutionTasks(executionId));
+            List<ExecutionTaskInfo> taskInfos = service.getWorkflowExecutionTasks(executionId);
+            Map<Long, String> nodeNames = workflowNodeProvider.getNodeNames(taskInfos.stream()
+                                                                                     .map(t -> Long.parseLong(t.getWorkflowNodeId()))
+                                                                                     .collect(Collectors.toSet()));
+            taskInfos.forEach(t -> t.setWorkflowNodeId(nodeNames.get(Long.parseLong(t.getWorkflowNodeId()))));
+            responseEntity = prepareResult(taskInfos);
         } catch (PersistenceException e) {
             responseEntity = handleException(e);
         }
