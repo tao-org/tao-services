@@ -1,23 +1,16 @@
 <style>
 	#manageRepository .modal-body{padding-left:30px;padding-right:30px}
-	
 	label.error{display:block;font-size:0.9em}
-	
-	.select-repository{list-style:none;font-size:1.2em;padding-left:0}
-	.select-repository li{padding:0 0.5em;cursor:pointer;margin:5px -0.5em}
-	.select-repository li:hover{text-decoration:underline}
-	.select-repository li.selected{color:white}
-	.select-repository li.selected::marker{color:#3c8dbc}
-	.select-repository li.disabled{pointer-events:none;color:gray}
-	
+	.select-repository{list-style:none;padding-left:0;}
+	.select-repository li.btn {display:block;margin-bottom:0.3em;}
+	.radio-inline>[type="radio"] {visibility:hidden;}
 	.repo-parameters{position:relative;padding:10px 0}
 	.repo-parameters::before{content:"";display:block;position:absolute;left:0;top:0;width:5px;background-color:rgba(0,0,0,0.1);height:100%}
 	.repo-parameters input{margin-bottom:5px}
 	.repo-parameters label.error{margin-top:-5px;margin-bottom:5px}
-	
 	.form-group{margin-bottom:0}
 	.form-group+.form-group{margin-top:10px}
-	/*.btn-primary[disabled]{background-color:rgba(0,0,0,0.1);border-color:rgba(0,0,0,0.2);color:rgba(0,0,0,0.3)}*/
+	.form-group+hr {border-color:var(--hairline);}
 </style>
 
 <div id="manageRepository" class="modal-content">
@@ -36,10 +29,10 @@
 				<div class="row" id="repoCategory">
 					<label for="category" class="col-md-4 control-label" >Repository category</label>
 					<div class="col-md-8">
-						<label class="radio-inline">
+						<label class="radio-inline btn btn-default btn-primary">
 							<input type="radio" name="repOpt" id="newOpt" value="new" checked>New
 						</label>
-						<label class="radio-inline">
+						<label class="radio-inline btn btn-default">
 							<input type="radio" name="repOpt" id="templateOpt" value="template" >Public Repository
 						</label>
 					</div>
@@ -71,7 +64,7 @@
 				<div class="row">
 					<label for="inputDescription" class="col-md-4 control-label">Description</label>
 					<div class="col-md-8">
-						<textarea class="form-control" id="inputDescription" name="inputDescription" autocomplete="off" value="" placeholder="Describe your repository..."  style="resize:vertical; max-height:100px"></textarea>
+						<textarea class="form-control thin-scrollbar onhover" id="inputDescription" name="inputDescription" autocomplete="off" value="" placeholder="Describe your repository..."  style="resize:vertical; max-height:100px"></textarea>
 					</div>
 				</div>
 			</div>
@@ -103,11 +96,6 @@
 							</div>
                         </div>                        
                     </div>
-					<!-- <div class="col-md-offset-4 col-md-8">
-						<button id="saveExecNode" type="submit" class="btn btn-primary btn-submit" name="btnSave" disabled>Add new repository</button>
-					</div> -->
-				</div>
-			</div>
 		</div>
 	</form>
 	<div class="modal-note collapse">
@@ -120,9 +108,6 @@
 			</div>
 		</div>
 	</div>
-	<!-- <div class="modal-footer">
-	<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-	</div> -->
 </div>
 <script type="text/javascript">
 	$(document).ready( function(){
@@ -147,12 +132,12 @@
 						$(".select-repository", $form).html("");
 						$.each(response.data, function (idx, repoD) {
 							if (!repoD.singleton) {
-								var $li = $('<li data-name="'+repoD.name+'">' + repoD.description + ' </li>');
+								var $li = $('<li class="btn btn-default" data-name="'+repoD.name+'">' + repoD.description + ' </li>');
 								$li.data({ "definition": repoD });
 								if (rp_plus) {
 									$(".select-repository", $form).append($li);
 								} else if (rp_edit && repo.type == repoD.name) {
-									$(".select-repository", $form).append($li.addClass("selected"));
+									$(".select-repository", $form).append($li.addClass("selected btn-primary"));
 									return false;
 								}
 							}
@@ -203,6 +188,8 @@
 		}
 		
 		$form.on("click", ".select-repository li:not(.selected):not(.template)", function (e) {
+			$(this).siblings().removeClass("btn-primary");
+			$(this).addClass("btn-primary");
 			var repoD = $(e.target).data("definition");
 			$(e.target).siblings("li").removeClass("selected");
 			$(e.target).addClass("selected");
@@ -225,7 +212,6 @@
 				$("#saveExecNode", e.delegateTarget).prop("disabled", false);
 			}
 		});
-		
 		$.validator.addClassRules("control-required", { required: true });
 		$form.validate({
 			ignore: ":hidden:not(.validate)",
@@ -294,6 +280,8 @@
 							return false;
 						}
 					});
+				} else {
+					showMsg("Please select a repository type from the list above.", "WARNING");
 				}
 			}
 		});
@@ -376,14 +364,17 @@
 	var repoEdit = true;
 	$('input[name="repOpt"]').change(function(){
 		var repChoice = document.querySelector('input[name="repOpt"]:checked').value;
+		$('.radio-inline').removeClass("btn-primary");
+		$('input[name="repOpt"]:checked').closest('.radio-inline').addClass("btn-primary");
 		if(repChoice === "template"){
+			$(".repo-types").hide();
 			$("#inputName").val("");
 			$("#inputName").prop('disabled', true);
 			$("#inputDescription").val("");
 			$("#inputDescription").prop('disabled', true);
 			$("#templateList").prop('disabled', false);
 			$("li",".select-repository").addClass("template");
-			$("li.selected",".select-repository").removeClass("selected");
+			$("li.selected",".select-repository").removeClass("selected btn-primary");
 			$(".repo-parameters").find("input").val("");
 			$(".repo-parameters").find("input").remove();
 			$(".repo-parameters").find("label").remove();
@@ -391,6 +382,8 @@
 			repoEdit = false;
 		}
 		else{
+			$(".repo-types").show();
+			
 			$("#inputName").prop('disabled', false);
 			$("#inputName").val("");
 			$("#inputDescription").prop('disabled', false);

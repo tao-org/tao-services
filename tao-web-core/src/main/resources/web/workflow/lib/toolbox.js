@@ -34,7 +34,7 @@
 			_self.container = $(
 				'<div class="toolbox' + (_self.options.peep ? ' peep' : '') + (_self.options.closed ? ' outside' : '') + '">' +
 					'<div class="toolbox-header">' +
-						'<span class="title">TOOLBOX</span>' +
+						'<span class="title">' + _self.options.title + '</span>' +
 						'<button class="toolbox-close" title="Close Toolbox"><i class="fa fa-times"></i></button>' +
 						'<div class="toolbox-handler"><i class="fa ' + (_self.options.position === "left" ? 'fa-caret-right' : 'fa-caret-left') + '"></i></div>' +
 					'</div>' +
