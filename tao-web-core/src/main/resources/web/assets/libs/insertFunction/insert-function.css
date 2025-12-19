@@ -5,6 +5,9 @@
 	select[name],input[name] {width:100%;font-size:inherit;height:2em;padding:0.2em 0.5em;margin-bottom:0.36em;border:1px solid #ccc;}
 	select[name][size]       {height:unset;padding:0;}
 	select[name] option      {padding:0.3em 0.7em;}
+	.fn-sel {.foo{}
+		b {color:blue;}
+	}
 	.fn-search {
 		position:relative;padding-left:2em;margin-bottom:1em;.foo{}
 		label               {margin:0;}

@@ -1,23 +1,16 @@
 <style>
 	#manageRepository .modal-body{padding-left:30px;padding-right:30px}
-	
 	label.error{display:block;font-size:0.9em}
-	
-	.select-repository{list-style:none;font-size:1.2em;padding-left:0}
-	.select-repository li{padding:0 0.5em;cursor:pointer;margin:5px -0.5em}
-	.select-repository li:hover{text-decoration:underline}
-	.select-repository li.selected{color:white}
-	.select-repository li.selected::marker{color:#3c8dbc}
-	.select-repository li.disabled{pointer-events:none;color:gray}
-	
+	.select-repository{list-style:none;padding-left:0;}
+	.select-repository li.btn {display:block;margin-bottom:0.3em;}
+	.radio-inline>[type="radio"] {visibility:hidden;}
 	.repo-parameters{position:relative;padding:10px 0}
 	.repo-parameters::before{content:"";display:block;position:absolute;left:0;top:0;width:5px;background-color:rgba(0,0,0,0.1);height:100%}
 	.repo-parameters input{margin-bottom:5px}
 	.repo-parameters label.error{margin-top:-5px;margin-bottom:5px}
-	
 	.form-group{margin-bottom:0}
 	.form-group+.form-group{margin-top:10px}
-	/*.btn-primary[disabled]{background-color:rgba(0,0,0,0.1);border-color:rgba(0,0,0,0.2);color:rgba(0,0,0,0.3)}*/
+	.form-group+hr {border-color:var(--hairline);}
 </style>
 
 <div id="manageRepository" class="modal-content">
@@ -45,7 +38,7 @@
 				<div class="row">
 					<label for="inputDescription" class="col-md-4 control-label">Description</label>
 					<div class="col-md-8">
-						<textarea class="form-control" id="inputDescription" name="inputDescription" autocomplete="off" rows="2" value="" placeholder="Describe your repository..." style="resize:vertical; max-height:100px;"></textarea>
+						<textarea class="form-control thin-scrollbar onhover" id="inputDescription" name="inputDescription" autocomplete="off" rows="2" value="" placeholder="Describe your repository..." style="resize:vertical; max-height:100px;"></textarea>
 					</div>
 				</div>
 			</div>
@@ -67,7 +60,7 @@
 			</div>
 			<div class="form-group">
 				<div class="row">
-                    <div class="col-md-12">
+					<div class="col-md-12">
                         <div class="form-group">
                             <div>
 								<div class="modal-footer">
@@ -78,17 +71,9 @@
                         </div>                        
                     </div>
                 </div>
-				<!-- <div class="row">
-					<div class="col-md-offset-4 col-md-8">
-						<button id="saveExecNode" type="submit" class="btn btn-primary btn-submit" name="btnSave" disabled>Add new public repository</button>
-					</div> -->
-				</div>
 			</div>
 		</div>
 	</form>
-	<!-- <div class="modal-footer">
-	<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-	</div> -->
 
 </div><!-- /.modal-content -->
 
@@ -150,12 +135,12 @@ form .taginput .tag{background-color:#f0f0f0; border:1px solid #dedede; color: b
 						$(".select-repository", $form).html("");
 						$.each(response.data, function (idx, repoD) {
 							if (!repoD.singleton) {
-								var $li = $('<li data-name="'+repoD.name+'">' + repoD.description + ' </li>');
+								var $li = $('<li class="btn btn-default" data-name="'+repoD.name+'">' + repoD.description + ' </li>');
 								$li.data({ "definition": repoD });
 								if (rp_plus) {
 									$(".select-repository", $form).append($li);
 								} else if (rp_edit && repo.type == repoD.name) {
-									$(".select-repository", $form).append($li.addClass("selected"));
+									$(".select-repository", $form).append($li.addClass("selected btn-primary"));
 									return false;
 								}
 							}
@@ -169,6 +154,8 @@ form .taginput .tag{background-color:#f0f0f0; border:1px solid #dedede; color: b
 		}
 
 		$form.on("click", ".select-repository li:not(.selected)", function (e) {
+			$(this).siblings().removeClass("btn-primary");
+			$(this).addClass("btn-primary");
 			var repoD = $(e.target).data("definition");
 			$(e.target).siblings("li").removeClass("selected");
 			$(e.target).addClass("selected");
@@ -254,10 +241,11 @@ form .taginput .tag{background-color:#f0f0f0; border:1px solid #dedede; color: b
 							return false;
 						}
 					});
+				} else {
+					showMsg("Please select a repository type from the list above.", "WARNING");
 				}
 			}
 		});
-		
 		getRepositoryTypes($form);
 
 
