@@ -44,6 +44,7 @@ import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
 import ro.cs.tao.persistence.*;
 import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
 import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
+import ro.cs.tao.persistence.repository.WorkflowNodeDescriptorRepository;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.serialization.BaseSerializer;
 import ro.cs.tao.serialization.MediaType;
@@ -119,6 +120,8 @@ public class WorkflowServiceImpl
     private SourceDescriptorRepository sourceDescriptorRepository;
     @Autowired
     private TargetDescriptorRepository targetDescriptorRepository;
+    @Autowired
+    private WorkflowNodeDescriptorRepository workflowNodeDescriptorRepository;
     @Autowired
     private WorkflowSubscriptionProvider workflowSubscriptionProvider;
 
@@ -502,7 +505,7 @@ public class WorkflowServiceImpl
     //region Links
     @Override
     public WorkflowNodeDescriptor addLink(long sourceNodeId, String sourceTargetId,
-                                      long targetNodeId, String targetSourceId) throws PersistenceException {
+                                          long targetNodeId, String targetSourceId) throws PersistenceException {
         if (sourceTargetId == null || targetSourceId == null || sourceNodeId == 0 || targetNodeId == 0) {
             throw new PersistenceException("Invalid link data");
         }
@@ -1291,26 +1294,30 @@ public class WorkflowServiceImpl
                 throw new IOException("Component for node [" + node.getName() + "] is missing or not registered");
             }
             long oldId = node.getId();
-            nodeIdMap.put(oldId, node.getId());
             node.setId(null);
             Set<ComponentLink> links = node.getIncomingLinks();
             if (links != null && !links.isEmpty()) {
-                nodeLinks.put(node.getId(), new HashSet<>(links));
+                nodeLinks.put(oldId, new HashSet<>(links));
             }
             node.setIncomingLinks(null);
             node = workflowNodeProvider.save(node);
+            nodeIdMap.put(oldId, node.getId());
+            nodeLinks.put(node.getId(), nodeLinks.get(oldId));
+            nodeLinks.remove(oldId);
             descriptor.addNode(node);
         }
         for (Map.Entry<Long, Set<ComponentLink>> entry : nodeLinks.entrySet()) {
-            WorkflowNodeDescriptor node = nodes.stream().filter(n -> entry.getKey().equals(n.getId())).findFirst().get();
-            for (ComponentLink link : entry.getValue()) {
-                final ComponentLink fLink = link;
-                TaoComponent fromComponent = componentService.getComponent(nodes.stream().filter(n -> n.getId().equals(nodeIdMap.get(fLink.getSourceNodeId())))
-                                                                                .findFirst().get().getComponentId());
-                TaoComponent toComponent = componentService.getComponent(node.getComponentId());
-                ComponentLink convertedLink = convertLink(link, fromComponent, toComponent);
-                addLink(nodeIdMap.get(convertedLink.getSourceNodeId()), convertedLink.getInput().getId(),
-                        node.getId(), convertedLink.getOutput().getId());
+            if (entry.getValue() != null) {
+                WorkflowNodeDescriptor node = nodes.stream().filter(n -> entry.getKey().equals(n.getId())).findFirst().get();
+                for (ComponentLink link : entry.getValue()) {
+                    final ComponentLink fLink = link;
+                    TaoComponent fromComponent = componentService.getComponent(nodes.stream().filter(n -> n.getId().equals(nodeIdMap.get(fLink.getSourceNodeId())))
+                                                                                    .findFirst().get().getComponentId());
+                    TaoComponent toComponent = componentService.getComponent(node.getComponentId());
+                    ComponentLink convertedLink = convertLink(link, fromComponent, toComponent);
+                    convertedLink.setSourceNodeId(nodeIdMap.get(convertedLink.getSourceNodeId()));
+                    node.addLink(convertedLink);
+                }
             }
         }
         if (!StringUtilities.isNullOrEmpty(bean.getImage())) {
@@ -1452,9 +1459,9 @@ public class WorkflowServiceImpl
         }
         SourceDescriptor srcDescriptor = toComponent.getSources().stream().filter(s -> s.getName().equals(output.getName())).findFirst().get();
         if (!srcDescriptor.equals(output)) {
-            link.setOutput(srcDescriptor);
+            convertedLink.setOutput(srcDescriptor);
         } else {
-            link.setOutput(output);
+            convertedLink.setOutput(output);
         }
         return convertedLink;
     }
