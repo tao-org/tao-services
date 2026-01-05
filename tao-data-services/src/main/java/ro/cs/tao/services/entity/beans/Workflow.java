@@ -57,6 +57,9 @@ public class Workflow {
         }
     }
 
+    public Workflow() {
+    }
+
     public Long getId() {
         return id;
     }
@@ -126,6 +129,74 @@ public class Workflow {
     }
 
     public String getImage() { return image; }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setCreated(LocalDateTime created) {
+        this.created = created;
+    }
+
+    public void setCustomValues(List<ParameterValue> customValues) {
+        this.customValues = customValues;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public void setCreatedFromWorkflowId(Long createdFromWorkflowId) {
+        this.createdFromWorkflowId = createdFromWorkflowId;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public void setNodes(List<WorkflowNode> nodes) {
+        this.nodes = nodes;
+    }
+
+    public void setxCoord(float xCoord) {
+        this.xCoord = xCoord;
+    }
+
+    public void setyCoord(float yCoord) {
+        this.yCoord = yCoord;
+    }
+
+    public void setZoom(float zoom) {
+        this.zoom = zoom;
+    }
+
+    public void setTemporary(boolean temporary) {
+        this.temporary = temporary;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
 
     public void setImage(String image) { this.image = image; }
 
