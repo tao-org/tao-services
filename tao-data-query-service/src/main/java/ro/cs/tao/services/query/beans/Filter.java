@@ -1,5 +1,8 @@
 package ro.cs.tao.services.query.beans;
 
+/**
+ * Represents a filter for querying EOProducts based on category, collection, and provider.
+ */
 public class Filter {
     private final String category;
     private final String collection;

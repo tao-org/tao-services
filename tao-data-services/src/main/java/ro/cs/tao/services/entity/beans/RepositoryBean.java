@@ -3,6 +3,11 @@ package ro.cs.tao.services.entity.beans;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+/**
+ * Represents a repository bean, encapsulating information about a data repository
+ * including its identifier, name, description, URL prefix, root key, type, system flag,
+ * read-only status, editable status, page item, order, persistence, parameters, and actions.
+ */
 public class RepositoryBean {
     private String id;
     private String name;

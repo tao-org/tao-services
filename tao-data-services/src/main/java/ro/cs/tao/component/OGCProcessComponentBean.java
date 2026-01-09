@@ -7,6 +7,30 @@ import ro.cs.tao.docker.ContainerType;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Represents a component bean for an OGC process, encapsulating various
+ * metadata and configuration details required for its execution and management.
+ * This class maps data between an {@code OGCProcessComponent} and its
+ * corresponding representation in the application.
+ *
+ * The {@code OGCProcessComponentBean} is used for handling metadata
+ * related to the process, such as unique identifiers, versioning, source
+ * and target configurations, tags, visibility, and ownership information.
+ * It also includes details regarding execution parameters for the process.
+ *
+ * The class provides constructors for instantiation, along with accessors
+ * and mutators for manipulating and retrieving process data.
+ *
+ * Key Features:
+ * - Metadata storage for process information such as ID, label, version,
+ *   authors, copyright, and description.
+ * - Support for input sources and output targets via {@code SourceDescriptor}
+ *   and {@code TargetDescriptor}.
+ * - Configuration for node affinity and visibility behavior.
+ * - Management of process parameters using a list of
+ *   {@code ParameterDescriptorBean}.
+ * - Linking the component with a specific service and remote execution details.
+ */
 public class OGCProcessComponentBean {
 
     private String id;

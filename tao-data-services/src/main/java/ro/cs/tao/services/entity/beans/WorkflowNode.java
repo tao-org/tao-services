@@ -10,6 +10,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Represents a workflow node bean, encapsulating information about a workflow node
+ * including its identifier, name, description, creation timestamp, custom parameter values,
+ * component identifier, component type, coordinates, level, incoming links, preserve output flag,
+ * additional information, transition behavior, and creation source node identifier.
+ */
 public class WorkflowNode {
     private Long id;
     private String name;

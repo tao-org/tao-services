@@ -4,6 +4,10 @@ import ro.cs.tao.component.ParameterDependency;
 
 import java.util.List;
 
+/**
+ * Wrapper class for {@link DataSourceParameter}, providing an interface for accessing
+ * the details of a data source query parameter.
+ */
 public class DataSourceParameterBean {
     final DataSourceParameter parameter;
 

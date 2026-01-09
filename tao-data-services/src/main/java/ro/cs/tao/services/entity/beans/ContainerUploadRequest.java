@@ -4,6 +4,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+/**
+ * Represents a request for uploading a container with associated metadata and files.
+ * This class encapsulates the necessary information for creating or updating a container
+ * configuration, including its name, description, system flag, and associated files.
+ */
 public class ContainerUploadRequest {
     private String name;
     private String description;

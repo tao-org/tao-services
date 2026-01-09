@@ -85,7 +85,45 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * @author Cosmin Cara
+ * The DataSourceController class serves as the main REST controller for managing data sources,
+ * providers, sensors, tile operations, and performing data queries. It provides a variety of
+ * endpoints for interacting with the underlying data services, including listing data sources,
+ * querying products, managing footprints, and fetching data.
+ *
+ * This class extends the functionality of the BaseController class and relies on several services
+ * and components to interact with repository and data source systems.
+ *
+ * Fields:
+ * - s2TilePattern: The pattern used for Sentinel-2 tile identification.
+ * - l8TilePattern: The pattern used for Landsat-8 tile identification.
+ * - aoiGeometry: The area of interest geometry utility.
+ * - dataSourceService: A service responsible for managing data source interactions.
+ * - dataSourceComponentService: A component service for auxiliary data source processing.
+ * - repositoryProvider: A provider for accessing repository instances.
+ * - siteProvider: A provider for accessing site-specific configurations.
+ *
+ * Methods:
+ * - getRegisteredSources: Lists all available data sources.
+ * - getRegisteredSourcesSummary: Provides a summary of the available data sources.
+ * - getProviders: Lists the registered providers (e.g., USGS) and their available collections.
+ * - getSupportedSensors: Retrieves the list of supported sensors or data collections.
+ * - getFilter: Returns the defined filters applicable for data sources.
+ * - getDataSourcesForSensor: Lists data sources related to a given sensor or collection.
+ * - getSupportedParameters: Returns the parameters supported for a sensor within a specific data source.
+ * - getTileFootprint: Retrieves the WKT footprint in WGS84 format for a specific tile product.
+ * - getTilesForFootprint: Finds tiles intersecting a specified area of interest.
+ * - doCount: Returns the count of products matching the specified search criteria.
+ * - doQuery: Executes a query on data sources and retrieves results based on the specified mode (list or details).
+ * - doFetch: Fetches products specified in the request.
+ * - inspect: Inspects a path in the user workspace to find supported products.
+ *
+ * Private Methods:
+ * - checkContentRestriction: Validates content restrictions for a provided query.
+ * - getLocalRepository: Retrieves a local repository instance for the specified user.
+ * - getLocalRepositoryService: Accesses the service managing local repositories.
+ *
+ * Superclasses:
+ * - BaseController: The parent class providing common REST functionalities.
  */
 @RestController
 @RequestMapping("/query")
