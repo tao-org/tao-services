@@ -6,6 +6,11 @@ import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Represents a bean class used to encapsulate the data for a condition component.
+ * This serves as a transfer object for transferring condition component details
+ * between layers or systems.
+ */
 public class ConditionComponentBean {
     private String id;
     private String label;

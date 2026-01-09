@@ -8,6 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Represents a wrapper for encapsulating a {@link ParameterDescriptor}.
+ * This class provides getter and setter methods to interact with and modify
+ * the underlying {@link ParameterDescriptor} object. It also includes utility
+ * methods to facilitate interaction with template parameters and expansions.
+ */
 public class ParameterDescriptorBean {
     private ParameterDescriptor descriptor;
 

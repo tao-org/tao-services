@@ -10,6 +10,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a workflow bean, encapsulating information about a workflow
+ * including its identifier, name, description, creation timestamp, custom parameter values,
+ * user identifier, visibility, status, path, creation source workflow identifier,
+ * active flag, nodes, coordinates, zoom level, temporary flag, tags, and image.
+ */
 public class Workflow {
     private Long id;
     private String name;

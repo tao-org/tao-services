@@ -7,6 +7,15 @@ import ro.cs.tao.docker.ContainerType;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Represents a WMS (Workflow Management System) component as a data transfer object.
+ * This class serves as a container for the metadata and configuration properties of
+ * a WMS component, including its identifiers, descriptive information, affiliations,
+ * source and target descriptors, parameters, and status.
+ *
+ * It allows mapping between the raw WMSComponent entity and its corresponding
+ * serialized or transferable representation.
+ */
 public class WMSComponentBean {
 
     private String id;

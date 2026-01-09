@@ -27,7 +27,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Cosmin Cara
+ * Entry-point class for launching the Data Entities Service within the application.
+ *
+ * The {@code DataServicesLauncher} class extends the base {@code ServiceLauncher},
+ * providing an implementation specific to data-related features and functionality.
+ * It registers service entries associated with managing datasets, workflows,
+ * components, containers, and administrative configurations.
+ *
+ * The class utilizes Spring Boot's {@code @SpringBootApplication} annotation for
+ * automatic configuration, scanning, and launching of the application.
+ * Additionally, it imports resource files for configuring the application context
+ * to support data services and persistence.
  */
 @SpringBootApplication()
 @ImportResource({"classpath:tao-data-services-context.xml", "classpath*:tao-persistence-context.xml" })

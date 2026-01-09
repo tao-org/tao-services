@@ -2,6 +2,9 @@ package ro.cs.tao.services.entity.beans;
 
 import java.util.List;
 
+/**
+ * Represents a request for managing a product set, including its label and associated product paths.
+ */
 public class ProductSetRequest {
     private String label;
     private List<String> productPaths;

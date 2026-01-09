@@ -4,6 +4,9 @@ import ro.cs.tao.component.Variable;
 
 import java.util.List;
 
+/**
+ * Represents a request for fetching files from remote URLs, including authentication details and URL variables.
+ */
 public class FetchFilesRequest {
     private String user;
     private String password;

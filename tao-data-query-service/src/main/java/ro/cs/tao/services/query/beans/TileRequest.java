@@ -1,5 +1,8 @@
 package ro.cs.tao.services.query.beans;
 
+/**
+ * Represents a request for fetching EOProducts based on a tile query, including satellite, WKT, user, and password.
+ */
 public class TileRequest {
     private String satellite;
     private String wkt;

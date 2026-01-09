@@ -4,6 +4,9 @@ import ro.cs.tao.eodata.EOProduct;
 
 import java.util.List;
 
+/**
+ * Represents a request for managing a data source, including its products, type, data source, label, and associated query.
+ */
 public class DataSourceRequest {
     private List<EOProduct> products;
     private String productType;

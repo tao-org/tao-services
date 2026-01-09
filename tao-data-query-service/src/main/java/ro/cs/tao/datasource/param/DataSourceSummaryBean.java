@@ -2,6 +2,9 @@ package ro.cs.tao.datasource.param;
 
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 
+/**
+ * A bean class representing a summary of a data source, providing access to its descriptor details.
+ */
 public class DataSourceSummaryBean {
     private final DataSourceDescriptor descriptor;
 

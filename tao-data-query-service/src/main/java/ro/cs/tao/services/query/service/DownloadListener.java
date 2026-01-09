@@ -20,6 +20,23 @@ import java.security.Principal;
 import java.util.Set;
 import java.util.logging.Logger;
 
+/**
+ * Implementation of the {@link ProductStatusListener} interface to handle various events during the
+ * lifecycle of a product download, such as start, completion, failure, abortion, and queuing.
+ * This class is annotated as a service and orchestrates actions based on the state of the product
+ * and user-related quotas.
+ *
+ * Responsibilities include:
+ * - Validating user input quotas before initiating a download.
+ * - Persisting product updates and maintaining consistency across references and statuses.
+ * - Handling quota rolls and updates in case of failures or completions.
+ * - Managing lifecycle states such as downloading, downloaded, queued, or failed.
+ *
+ * This implementation also logs all significant events and errors for monitoring.
+ *
+ * It integrates with the {@link EOProductProvider} for product-related persistence and the
+ * {@link UserQuotaManager} for quota validations and updates.
+ */
 @Service("downloadListener")
 public class DownloadListener implements ProductStatusListener {
     private final Logger logger = Logger.getLogger(DownloadListener.class.getName());

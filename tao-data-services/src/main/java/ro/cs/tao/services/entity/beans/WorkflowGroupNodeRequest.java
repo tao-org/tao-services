@@ -1,5 +1,9 @@
 package ro.cs.tao.services.entity.beans;
 
+/**
+ * Represents a request for managing workflow group nodes, including the workflow identifier,
+ * group node identifiers, and group node name.
+ */
 public class WorkflowGroupNodeRequest {
     private long workflowId;
     private Long[] groupNodeIds;

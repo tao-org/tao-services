@@ -110,7 +110,7 @@ public abstract class BaseController extends ControllerBase {
     @ExceptionHandler(Exception.class)
     public void handleUncaughtException(Exception exception, WebRequest request) {
         error(exception.getMessage());
-       final StringWriter writer = new StringWriter();
+        final StringWriter writer = new StringWriter();
         final PrintWriter printWriter = new PrintWriter(writer);
         exception.printStackTrace(printWriter);
         Messaging.send(request.getUserPrincipal(), Topic.ERROR.getCategory(),
