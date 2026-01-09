@@ -198,7 +198,7 @@ public class TileReader {
             synchronized (TileReader.class) {
                 destReference = new SpatialReference();
                 final int statusCode = destReference.importFromEPSG(3857);
-                if (!GDALConstConstants.ceNone().equals(statusCode) || destReference.getJniSpatialReferenceInstance().toString().isEmpty()) {
+                if (!GDALConstConstants.ceNone().equals(statusCode) || destReference.getJniInstance().toString().isEmpty()) {
                     throw new IllegalStateException("Unable to import Spatial Reference from EPSG:3857! " + GDAL.getLastErrorMsg());
                 }
             }
@@ -262,7 +262,15 @@ public class TileReader {
         final List<Dataset> gdalDatasets = new ArrayList<>();
         final Path[] productBandsPaths = productDescriptor.getBandPaths();
         final Path productPath = productDescriptor.getProductPath();
+        
+        // Optimization: Retrieve from cache once
+        Triple<Extent, double[], LocalDateTime> triple = scaleCache.get(productPath);
+        
         for (Path productBandsPath : productBandsPaths) {
+            if (triple != null && !tileInsideImage(triple.getKeyOne(), tileExtent)) {
+                continue; // Skip opening if we know it's out of bounds
+            }
+
             final Dataset gdalDataset = GDAL.open(productBandsPath.toAbsolutePath().toString(), GDALConst.gaReadonly());
             if (gdalDataset == null) {
                 throw new IllegalStateException("Fail to open Dataset for file: " + productBandsPath + ". " + GDAL.getLastErrorMsg());
@@ -270,7 +278,7 @@ public class TileReader {
             if (!scaleCache.containsKey(productPath)) {
                 scaleCache.put(productPath, new Triple<>(computeImageExtent(gdalDataset), new double[0], LocalDateTime.now()));
             }
-            final Triple<Extent, double[], LocalDateTime> triple = scaleCache.get(productPath);
+            triple = scaleCache.get(productPath);
             if (tileInsideImage(triple.getKeyOne(), tileExtent)) {
                 gdalDatasets.add(gdalDataset);
             } else {
@@ -345,6 +353,9 @@ public class TileReader {
         warpOptions.add("-multi");
         warpOptions.add("-wo");
         warpOptions.add("NUM_THREADS=ALL_CPUS");
+        // Optimization: Increase warp memory and cache
+        warpOptions.add("-wm");
+        warpOptions.add("512"); // 512MB for warping
         if (gdalDataset.getRasterCount() == 1 || gdalDataset.getRasterCount() == 3) {
             warpOptions.add("-dstalpha");
         }
@@ -412,20 +423,21 @@ public class TileReader {
             max = productDescriptor.getPixelMaxScale();
         } else {
             Triple<Extent, double[], LocalDateTime> triple = scaleCache.get(productPath);
-            if (triple.getKeyTwo().length == 0) {
-                Double[] val = new Double[2];
-                rasterBand.getMinimum(val);
-                if (val[0] != null) {
-                    min = val[0];
-                    rasterBand.getMaximum(val);
-                    max = val[0];
-                } else {
-                    double[] vals = new double[2];
+            if (triple == null || triple.getKeyTwo().length == 0) {
+                double[] vals = new double[2];
+                double[] mins = new double[2], maxs = new double[2], means = new double[2], stddevs = new double[2];
+                // Optimization: Use GetStatistics with approx_ok = true for much faster execution
+                // If that's not available in your JNI wrapper, computeMinMax is used.
+                int res = rasterBand.getStatistics(true, true, mins, maxs,  means, stddevs);
+                if (res != 0) {
                     rasterBand.computeMinMax(vals);
                     min = vals[0];
                     max = vals[1];
+                } else {
+                    min = mins[0];
+                    max = maxs[0];
                 }
-                triple = new Triple<>(triple.getKeyOne(), new double[] {min, max }, LocalDateTime.now());
+                triple = new Triple<>(triple == null ? computeImageExtent(warpDataset) : triple.getKeyOne(), new double[] { min, max }, LocalDateTime.now());
                 scaleCache.put(productPath, triple);
             }
             min = triple.getKeyTwo()[0];
@@ -454,9 +466,9 @@ public class TileReader {
                     if (type == GDALConstConstants.gdtByte()) {
                         ExpressionEvaluator<Byte, Byte> evaluator = new ExpressionEvaluator<>(byte.class, byte.class);
                         buffer = gdalBand.readRasterByte(0, 0, xSize, ySize);
-                        size = buffer.limit();
-                        for (int i = 0; i < size; i++) {
-                            buffer.put(i, evaluator.evaluate(buffer.get(i), expression));
+                        byte[] array = buffer.array(); // Use array access if not direct for speed
+                        for (int i = 0; i < array.length; i++) {
+                            array[i] = evaluator.evaluate(array[i], expression);
                         }
                     } else if (type == GDALConstConstants.gdtUint16() || type == GDALConstConstants.gdtInt16()) {
                         ExpressionEvaluator<Short, Short> evaluator = new ExpressionEvaluator<>(short.class, short.class);

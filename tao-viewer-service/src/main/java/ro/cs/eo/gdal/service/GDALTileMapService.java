@@ -63,7 +63,7 @@ public class GDALTileMapService {
         } catch (FileNotFoundException | IndexOutOfBoundsException e) {
             throw e;
         } catch (Exception ex) {
-            throw new IllegalStateException("Failed to compute the tile for level " + z + " and (X,Y) (" + x + "," + y + ").", ex);
+            throw new IllegalStateException(String.format("Failed to compute the tile for level " + z + " and (X,Y) (" + x + "," + y + ") - %s", ex.getMessage()), ex);
         }
     }
 
