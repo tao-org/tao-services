@@ -390,12 +390,14 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (workspace.getType().equals(RepositoryType.LOCAL)) {
                 asyncExecute(() -> {
                     try {
-                        if(SystemUtils.IS_OS_WINDOWS){
-                            for(String f : files){
+                        if (SystemUtils.IS_OS_WINDOWS){
+                            for (String f : files){
                                 FileUtilities.deleteTree(Path.of(workspace.resolve(f)));
                             }
                         } else {
-                            FileUtilities.deleteTreesUnix(files);
+                            for (String f : files) {
+                                FileUtilities.deleteTreeUnix(Path.of(workspace.resolve(f)));
+                            }
                         }
                     } catch (IOException e){
                         throw new RuntimeException(e);
