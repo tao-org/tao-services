@@ -859,6 +859,27 @@ public class WorkflowController extends DataEntityController<WorkflowDescriptor,
         }
     }
 
+    /**
+     * Handles the creation of resources from a set of component ID pairs.
+     *
+     * @param name the name identifier for the workflow; must not be null or empty.
+     * @param pairs a 2D array of pairs representing the links between components;
+     *              must not be null or empty.
+     * @return a ResponseEntity containing the resulted workflow.
+     */
+    @RequestMapping(value = "/create", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ServiceResponse<?>> createFromPairs(@RequestParam("name") String name,
+                                                              @RequestParam("pairs") String[][] pairs) {
+        try {
+            if (StringUtilities.isNullOrEmpty(name) || pairs == null || pairs.length == 0) {
+                throw new IOException("Empty list");
+            }
+            return prepareResult(service.createFromPairs(name, pairs));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
     private void validateValueTypes(WorkflowNodeDescriptor node) throws ValidationException {
         final List<ParameterValue> customValues = node.getCustomValues();
         if (customValues != null) {

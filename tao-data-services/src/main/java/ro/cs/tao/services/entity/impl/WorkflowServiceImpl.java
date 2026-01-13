@@ -50,6 +50,7 @@ import ro.cs.tao.serialization.BaseSerializer;
 import ro.cs.tao.serialization.MediaType;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.serialization.SerializerFactory;
+import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.services.commons.dev.MockData;
 import ro.cs.tao.services.entity.beans.Workflow;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
@@ -1614,5 +1615,38 @@ public class WorkflowServiceImpl
                 }
             }
         }
+    }
+
+    @Override
+    public WorkflowDescriptor createFromPairs(String name, String[][] listOfPairs) throws PersistenceException {
+        if (listOfPairs == null || listOfPairs.length == 0) {
+            throw new PersistenceException("Empty list");
+        }
+        final Map<String, WorkflowNodeDescriptor> createdNodes = new HashMap<>();
+        WorkflowBuilderBase workflowBuilder = new WorkflowBuilderBase() {
+            @Override
+            protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
+
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+        };
+        WorkflowDescriptor workflow = workflowBuilder.createWorkflowDescriptor();
+        for (int i = 0; i < listOfPairs.length; i++) {
+            String[] pair = listOfPairs[i];
+            if (pair.length != 2) {
+                throw new PersistenceException(String.format("Invalid pair at index %d: expected 2 elements, got %d", i, pair.length));
+            }
+            WorkflowNodeDescriptor parentNode = createdNodes.get(pair[0]);
+            if (parentNode == null) {
+                parentNode = workflowBuilder.addNode(workflow, pair[0], pair[0], null, null, WorkflowBuilderBase.Direction.BOTTOM);
+                createdNodes.put(pair[0], parentNode);
+            }
+            createdNodes.put(pair[1], workflowBuilder.addNode(workflow, pair[1], pair[1], null, parentNode, null));
+        }
+        return workflow;
     }
 }
