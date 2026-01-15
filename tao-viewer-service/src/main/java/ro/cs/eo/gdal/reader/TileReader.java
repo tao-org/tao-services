@@ -466,9 +466,18 @@ public class TileReader {
                     if (type == GDALConstConstants.gdtByte()) {
                         ExpressionEvaluator<Byte, Byte> evaluator = new ExpressionEvaluator<>(byte.class, byte.class);
                         buffer = gdalBand.readRasterByte(0, 0, xSize, ySize);
-                        byte[] array = buffer.array(); // Use array access if not direct for speed
-                        for (int i = 0; i < array.length; i++) {
-                            array[i] = evaluator.evaluate(array[i], expression);
+                        byte[] array;
+                        // The underlying DirectByteBuffer is implementation-dependent and may not be backed by a Java array
+                        if (buffer.hasArray()) {
+                            array = buffer.array(); // Use array access if not direct for speed
+                            for (int i = 0; i < array.length; i++) {
+                                buffer.put(i, evaluator.evaluate(array[i], expression));
+                            }
+                        } else {
+                            size = buffer.limit();
+                            for (int i = 0; i < size; i++) {
+                                buffer.put(i, evaluator.evaluate(buffer.get(i), expression));
+                            }
                         }
                     } else if (type == GDALConstConstants.gdtUint16() || type == GDALConstConstants.gdtInt16()) {
                         ExpressionEvaluator<Short, Short> evaluator = new ExpressionEvaluator<>(short.class, short.class);
