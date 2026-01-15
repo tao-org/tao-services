@@ -535,10 +535,12 @@ public class TileReader {
         }
         Dataset translateDataset = null;
         try {
-            translateDataset = GDAL.translate(tileFilePath, warpDataset, new TranslateOptions(translateOptions));
+            synchronized (GDAL.class) {
+                translateDataset = GDAL.translate(tileFilePath, warpDataset, new TranslateOptions(translateOptions));
+            }
         } catch (Throwable e) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(50);
             } catch (InterruptedException ex) {
                 throw new RuntimeException(ex);
             }
