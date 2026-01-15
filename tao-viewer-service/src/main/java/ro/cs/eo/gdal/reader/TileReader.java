@@ -12,6 +12,7 @@ import ro.cs.eo.gdal.reader.info.ProductDescriptor;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.Triple;
+import ro.cs.tao.utils.async.Parallel;
 import ro.cs.tao.utils.executors.Executor;
 import ro.cs.tao.utils.executors.ExecutorType;
 
@@ -484,33 +485,45 @@ public class TileReader {
                         buffer = gdalBand.readRasterShort(0, 0, xSize, ySize);
                         final ShortBuffer sBuffer = buffer.asShortBuffer();
                         size = sBuffer.limit();
-                        for (int i = 0; i < size; i++) {
-                            sBuffer.put(i, evaluator.evaluate(sBuffer.get(i), expression));
-                        }
+                        //for (int i = 0; i < size; i++) {
+                        Parallel.For(0, size, Math.max(Runtime.getRuntime().availableProcessors() / 4, 2), (i) -> {
+                            try {
+                                sBuffer.put(i, evaluator.evaluate(sBuffer.get(i), expression));
+                            } catch (Throwable t) {}
+                        });
                     } else if (type == GDALConstConstants.gdtUint32() || type == GDALConstConstants.gdtInt32()) {
                         ExpressionEvaluator<Integer, Integer> evaluator = new ExpressionEvaluator<>(int.class, int.class);
                         buffer = gdalBand.readRasterInt(0, 0, xSize, ySize);
                         final IntBuffer iBuffer = buffer.asIntBuffer();
                         size = iBuffer.limit();
-                        for (int i = 0; i < size; i++) {
-                            iBuffer.put(i, evaluator.evaluate(iBuffer.get(i), expression));
-                        }
+                        //for (int i = 0; i < size; i++) {
+                        Parallel.For(0, size, Math.max(Runtime.getRuntime().availableProcessors() / 4, 2), (i) -> {
+                            try {
+                                iBuffer.put(i, evaluator.evaluate(iBuffer.get(i), expression));
+                            } catch (Throwable t) {}
+                        });
                     } else if (type == GDALConstConstants.gdtFloat32()) {
                         ExpressionEvaluator<Float, Float> evaluator = new ExpressionEvaluator<>(float.class, float.class);
                         buffer = gdalBand.readRasterFloat(0, 0, xSize, ySize);
                         final FloatBuffer fBuffer = buffer.asFloatBuffer();
                         size = fBuffer.limit();
-                        for (int i = 0; i < size; i++) {
-                            fBuffer.put(i, evaluator.evaluate(fBuffer.get(i), expression));
-                        }
+                        //for (int i = 0; i < size; i++) {
+                        Parallel.For(0, size, Math.max(Runtime.getRuntime().availableProcessors() / 4, 2), (i) -> {
+                            try {
+                                fBuffer.put(i, evaluator.evaluate(fBuffer.get(i), expression));
+                            } catch (Throwable t) {}
+                        });
                     } else if (type == GDALConstConstants.gdtFloat64()) {
                         ExpressionEvaluator<Double, Double> evaluator = new ExpressionEvaluator<>(double.class, double.class);
                         buffer = gdalBand.readRasterDouble(0, 0, xSize, ySize);
                         final DoubleBuffer dBuffer = buffer.asDoubleBuffer();
                         size = dBuffer.limit();
-                        for (int i = 0; i < size; i++) {
-                            dBuffer.put(i, evaluator.evaluate(dBuffer.get(i), expression));
-                        }
+                        //for (int i = 0; i < size; i++) {
+                        Parallel.For(0, size, Math.max(Runtime.getRuntime().availableProcessors() / 4, 2), (i) -> {
+                            try {
+                                dBuffer.put(i, evaluator.evaluate(dBuffer.get(i), expression));
+                            } catch (Throwable t) {}
+                        });
                     }
                     if (buffer != null) {
                         gdalBand.writeRasterDirect(0, 0, xSize, ySize, type, buffer);
