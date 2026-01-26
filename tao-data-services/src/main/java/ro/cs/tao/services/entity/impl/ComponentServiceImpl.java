@@ -427,12 +427,12 @@ public class ComponentServiceImpl
     @Override
     protected void validateFields(ProcessingComponent entity, List<String> errors) {
         String value = entity.getId();
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[id] cannot be empty");
         }
         value = entity.getContainerId();
         Container container = null;
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[containerId] cannot be empty");
         } else {
             container = containerProvider.get(value);
@@ -447,15 +447,15 @@ public class ComponentServiceImpl
             }
         }
         value = entity.getLabel();
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[label] cannot be empty");
         }
         value = entity.getVersion();
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[version] cannot be empty");
         }
         value = entity.getFileLocation();
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[fileLocation] cannot be empty");
         } else {
             if (container != null) {
@@ -469,7 +469,7 @@ public class ComponentServiceImpl
             }
         }
         value = entity.getWorkingDirectory();
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[workingDirectory] cannot be empty");
         } else {
             try {
@@ -487,7 +487,7 @@ public class ComponentServiceImpl
             errors.add("[templateType] cannot be determined");
         } else {
             Template template = entity.getTemplate();
-            if (template == null || template.getContents() == null || template.getContents().isEmpty()) {
+            if (template == null || StringUtilities.isNullOrEmpty(template.getContents())) {
                 errors.add("[template] cannot be empty");
             } else {
                 try {
@@ -500,36 +500,29 @@ public class ComponentServiceImpl
         Set<ParameterDescriptor> parameterDescriptors = entity.getParameterDescriptors();
         if (parameterDescriptors != null) {
             for (ParameterDescriptor descriptor : parameterDescriptors) {
-                String descriptorId = descriptor.getName();
-                /*if (descriptorId == null || descriptorId.trim().isEmpty()) {
-                    errors.add("Invalid parameter found (missing id)");
-                    continue;
-                }*/
+                final String descriptorId = descriptor.getName();
                 value = descriptor.getLabel();
-                if (value == null || value.trim().isEmpty()) {
+                if (StringUtilities.isNullOrEmpty(value)) {
                     errors.add(String.format("[$%s] label cannot be empty", descriptorId));
                 }
-                Class<?> dataType = descriptor.getDataType();
+                final Class<?> dataType = descriptor.getDataType();
                 if (dataType == null) {
                     errors.add(String.format("[$%s] cannot determine type", descriptorId));
                 }
                 if (LocalDateTime.class.equals(dataType)) {
                     value = descriptor.getFormat();
-                    if (value == null || value.trim().isEmpty()) {
+                    if (StringUtilities.isNullOrEmpty(value)) {
                         errors.add(String.format("[$%s] format for date parameter not specified", descriptorId));
                     }
                 }
                 value = descriptor.getDefaultValue();
-                if (!descriptor.isNotNull() && (value == null || value.trim().isEmpty())) {
-                    errors.add(String.format("[$%s] is optional, but has no default value", descriptorId));
-                }
                 if (descriptor.isNotNull() && value != null) {
                     errors.add(String.format("[$%s] is mandatory, but has a default value", descriptorId));
                 }
             }
         }
-        List<SourceDescriptor> sources = entity.getSources();
-        Set<String> uniques = new HashSet<>();
+        final List<SourceDescriptor> sources = entity.getSources();
+        final Set<String> uniques = new HashSet<>();
         if (sources == null || sources.isEmpty()) {
             errors.add("[sources] at least one source must be defined");
         } else {
@@ -547,7 +540,7 @@ public class ComponentServiceImpl
                 uniques.clear();
             }
         }
-        List<TargetDescriptor> targets = entity.getTargets();
+        final List<TargetDescriptor> targets = entity.getTargets();
         if (targets == null || targets.isEmpty()) {
             errors.add("[targets] at least one target must be defined");
         } else {
@@ -568,7 +561,7 @@ public class ComponentServiceImpl
     }
 
     private void addTagsIfNew(TaoComponent component) {
-        List<String> tags = component.getTags();
+        final List<String> tags = component.getTags();
         if (tags != null) {
             List<Tag> componentTags = tagProvider.list(TagType.COMPONENT);
             for (String value : tags) {
