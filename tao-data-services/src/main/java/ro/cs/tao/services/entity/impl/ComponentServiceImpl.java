@@ -520,8 +520,11 @@ public class ComponentServiceImpl
                     }
                 }
                 value = descriptor.getDefaultValue();
-                if (descriptor.isNotNull() && (value == null || value.trim().isEmpty())) {
-                    errors.add(String.format("[$%s] is mandatory, but has no default value", descriptorId));
+                if (!descriptor.isNotNull() && (value == null || value.trim().isEmpty())) {
+                    errors.add(String.format("[$%s] is optional, but has no default value", descriptorId));
+                }
+                if (descriptor.isNotNull() && value != null) {
+                    errors.add(String.format("[$%s] is mandatory, but has a default value", descriptorId));
                 }
             }
         }
