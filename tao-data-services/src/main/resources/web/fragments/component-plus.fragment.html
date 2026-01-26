@@ -1101,6 +1101,7 @@ textarea::placeholder {color:#bbb;}
 		$('input.var-name', $el).val(obj.name);
 		$('textarea.var-description', $el).val(obj.description);
 		$('input.var-label', $el).val(obj.label);
+		$('input.var-notnull', $el).prop({ "checked": obj.notNull });
 
 		var td = $('.var-default', $el).parent();
 		$('.var-default', $el).remove();
