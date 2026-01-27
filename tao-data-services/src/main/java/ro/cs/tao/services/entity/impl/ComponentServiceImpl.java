@@ -337,8 +337,10 @@ public class ComponentServiceImpl
             throw new IllegalArgumentException("Parameter with id " + parameterId + " does not exist");
         }
         String sourceName = parameterDescriptor.getName();
-        if (parentComponent.getSources().stream().anyMatch(s -> s.getName().equals(parameterDescriptor.getName()))) {
-            sourceName += "_2";
+        // Ensure uniqueness
+        List<SourceDescriptor> sources = parentComponent.getSources();
+        for (SourceDescriptor source : sources) {
+            sourceName = StringUtilities.incrementIfDuplicate(sourceName, source.getName());
         }
         final SourceDescriptor source = new SourceDescriptor(parameterDescriptor.getId());
         source.setName(sourceName);
@@ -365,8 +367,9 @@ public class ComponentServiceImpl
             throw new IllegalArgumentException("Parameter with id " + parameterId + " does not exist");
         }
         String targetName = parameterDescriptor.getName();
-        if (parentComponent.getTargets().stream().anyMatch(t -> t.getName().equals(parameterDescriptor.getName()))) {
-            targetName += "_2";
+        List<TargetDescriptor> targets = parentComponent.getTargets();
+        for (TargetDescriptor target : targets) {
+            targetName = StringUtilities.incrementIfDuplicate(targetName, target.getName());
         }
         final TargetDescriptor target = new TargetDescriptor(parameterDescriptor.getId());
         target.setName(targetName);
@@ -393,8 +396,9 @@ public class ComponentServiceImpl
         String name;
         if (sourceDescriptor != null) {
             name = sourceDescriptor.getName();
-            if (parentComponent.getParameterDescriptors().stream().anyMatch(p -> p.getName().equals(sourceDescriptor.getName()))) {
-                name += "_2";
+            Set<ParameterDescriptor> parameterDescriptorSet = parentComponent.getParameterDescriptors();
+            for (ParameterDescriptor parameterDescriptor : parameterDescriptorSet) {
+                name = StringUtilities.incrementIfDuplicate(name, parameterDescriptor.getName());
             }
             ParameterDescriptor descriptor = new ParameterDescriptor(sourceDescriptor.getId());
             descriptor.setDataType(JavaType.STRING.value());
@@ -408,8 +412,9 @@ public class ComponentServiceImpl
                                                                .findFirst().orElse(null);
             if (targetDescriptor != null) {
                 name = targetDescriptor.getName();
-                if (parentComponent.getParameterDescriptors().stream().anyMatch(p -> p.getName().equals(targetDescriptor.getName()))) {
-                    name += "_2";
+                Set<ParameterDescriptor> parameterDescriptorSet = parentComponent.getParameterDescriptors();
+                for (ParameterDescriptor parameterDescriptor : parameterDescriptorSet) {
+                    name = StringUtilities.incrementIfDuplicate(name, parameterDescriptor.getName());
                 }
                 ParameterDescriptor descriptor = new ParameterDescriptor(targetDescriptor.getId());
                 descriptor.setDataType(JavaType.STRING.value());
