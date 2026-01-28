@@ -521,7 +521,7 @@ public class ComponentServiceImpl
                     }
                 }
                 value = descriptor.getDefaultValue();
-                if (descriptor.isNotNull() && value != null) {
+                if (descriptor.isNotNull() && !StringUtilities.isNullOrEmpty(value)) {
                     errors.add(String.format("[$%s] is mandatory, but has a default value", descriptorId));
                 }
             }
