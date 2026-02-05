@@ -153,9 +153,9 @@
 					
                     <div class="col-md-12">
                         <div class="form-group has-feedback">
-                            <label for="jsonComponentDescriptor" class="col-sm-2 col-md-2 control-label">Component descriptor</label>
+                            <label for="jsonComponentsDescriptor" class="col-sm-2 col-md-2 control-label">Component descriptor</label>
                            <div class="col-sm-6 col-md-6">
-								<input type="file" id="jsonComponentDescriptor" class="form-control json-file for-validation" name="jsonComponentDescriptor" disabled />
+								<input type="file" id="jsonComponentsDescriptor" class="form-control json-file for-validation" name="jsonComponentsDescriptor" disabled />
 							</div>
 							<div class="col-sm-4 col-md-4">
 								<button id="btnAddComponentDescriptor" name="btnAddComponentDescriptor" class="btn btn-primary btn-submit btn-cont-addnewcomp">Add component descriptor</button>
@@ -593,7 +593,7 @@
 					required: true,
 					isValidFileType: { fileType: "json"  , typesList: [ "application/json" ] }
 				},
-				jsonComponentDescriptor: {
+				jsonComponentsDescriptor: {
 					required: true,
 					isValidFileType: { fileType: "json"  , typesList: [ "application/json" ] }
 				},*/
@@ -775,8 +775,8 @@
 						$("#jsonContainerDescriptor").val(null);
 
 						$('#btnAddComponentDescriptor').prop('disabled', false); 
-						$('#jsonComponentDescriptor').prop('disabled',true);
-						$('#jsonComponentDescriptor').val(null);
+						$('#jsonComponentsDescriptor').prop('disabled',true);
+						$('#jsonComponentsDescriptor').val(null);
 
 					//	$('#idsystem').val("false");
 
@@ -788,7 +788,7 @@
 						$("#containerDescriptor").val(null);
 
 						$('#btnAddComponentDescriptor').prop('disabled', true); 
-						$('#jsonComponentDescriptor').prop('disabled',false);
+						$('#jsonComponentsDescriptor').prop('disabled',false);
 						$("#componentDescriptors").val(null);
 					//	$('#idsystem').val("true");
 					}
