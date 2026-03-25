@@ -22,8 +22,8 @@ import ro.cs.tao.ogc.model.common.ConfClasses;
 import ro.cs.tao.ogc.model.common.Exception;
 import ro.cs.tao.ogc.model.common.LandingPage;
 import ro.cs.tao.ogc.model.common.Link;
-import ro.cs.tao.ogc.model.processes.core.Process;
 import ro.cs.tao.ogc.model.processes.core.*;
+import ro.cs.tao.ogc.model.processes.core.Process;
 import ro.cs.tao.ogc.model.processes.core.execution.*;
 import ro.cs.tao.ogc.model.processes.dru.ExecutionRequest;
 import ro.cs.tao.persistence.PersistenceException;
@@ -57,6 +57,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/process")
@@ -756,19 +757,27 @@ public class OGCProcessController extends BaseController {
             final String batchId = job.getBatchId();
             final List<String> terminalTasksOutputs = new ArrayList<>();
             if (StringUtilities.isNullOrEmpty(batchId)) {
-                terminalTasksOutputs.addAll(job.getTasks().stream()
-                                               .filter(t -> TaskUtilities.isTerminalTask(t) && t.getExecutionStatus() == ExecutionStatus.DONE)
-                                               .map(ExecutionTask::getInstanceTargetOutput)
-                                               .collect(Collectors.toList()));
+                try (Stream<ExecutionTask> terminalTasks = job.getTasks().stream()
+                                                         .filter(t -> TaskUtilities.isTerminalTask(t) && t.getExecutionStatus() == ExecutionStatus.DONE)) {
+                    terminalTasks.forEach(t -> {
+                        if (t.getInstanceTargetOutput() != null) {
+                            terminalTasksOutputs.addAll(t.getInstanceTargetOutput().values());
+                        }
+                    });
+                }
             } else {
                 final List<ExecutionJob> jobs = executionJobProvider.list(new ArrayList<String>() {{
                     add(batchId);
                 }});
                 for (ExecutionJob eJob : jobs) {
-                    terminalTasksOutputs.addAll(eJob.getTasks().stream()
-                                                   .filter(t -> TaskUtilities.isTerminalTask(t) && t.getExecutionStatus() == ExecutionStatus.DONE)
-                                                   .map(ExecutionTask::getInstanceTargetOutput)
-                                                   .collect(Collectors.toList()));
+                    try (Stream<ExecutionTask> terminalTasks = eJob.getTasks().stream()
+                                                                   .filter(t -> TaskUtilities.isTerminalTask(t) && t.getExecutionStatus() == ExecutionStatus.DONE)) {
+                        terminalTasks.forEach(t -> {
+                            if (t.getInstanceTargetOutput() != null) {
+                                terminalTasksOutputs.addAll(t.getInstanceTargetOutput().values());
+                            }
+                        });
+                    }
                 }
             }
             return ResponseEntity.ok(terminalTasksOutputs);
