@@ -126,14 +126,17 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
         List<ExecutionTask> tasks = job.getTasks();
         for (ExecutionTask task : tasks) {
             if (TaskUtilities.isTerminalTask(task)) {
-                final String output = task.getInstanceTargetOutput();
-                if (output != null) {
-                    Path path = Paths.get(output);
-                    if (Files.isRegularFile(path)) {
-                        path = path.getParent();
-                    }
-                    terminalFolders.add(workspaceRoot.relativize(path).toString());
-                }
+				Map<String, String> outputs = task.getInstanceTargetOutput();
+				for (Map.Entry<String, String> entry : outputs.entrySet()) {
+					final String output = entry.getValue();
+					if (output != null) {
+						Path path = Paths.get(output);
+						if (Files.isRegularFile(path)) {
+							path = path.getParent();
+						}
+						terminalFolders.add(workspaceRoot.relativize(path).toString());
+					}
+				}
             }
         }
         final List<FileObject> finalItems = new ArrayList<>();
@@ -359,27 +362,30 @@ public class JobFilesUpload extends Notifiable implements JobCompletedListener {
 		public void onTransferCompleted(String user, String srcPath, String dstPath) {
 			final ExecutionTask task = TaskUtilities.findTaskByOutput(srcPath);
 			if (task != null) {
-				String targetOutput = task.getInstanceTargetOutput();
-				if (targetOutput == null) {
-					targetOutput = dstPath;
-				} else {
-					targetOutput = targetOutput.replace(srcPath, dstPath);
-				}
-				task.setInstanceTargetOutput(targetOutput);
-                try {
-                    JobFilesUpload.this.executionTaskProvider.update(task);
-					logger.fine("Output for task " + task.getId() + " updated to " + targetOutput);
-					final List<EOProduct> products = JobFilesUpload.this.productProvider.getByLocation(srcPath);
-					if (products != null) {
-						for (EOProduct product : products) {
-							product.setLocation(dstPath.substring(0, srcPath.lastIndexOf('/')));
-							JobFilesUpload.this.productProvider.update(product);
-							logger.fine("Product location for " + product.getName() + " updated to " + dstPath);
-						}
+				Map<String, String> output = task.getInstanceTargetOutput();
+				for (Map.Entry<String, String> entry : output.entrySet()) {
+					String targetOutput = entry.getValue();
+					if (targetOutput == null) {
+						targetOutput = dstPath;
+					} else {
+						targetOutput = targetOutput.replace(srcPath, dstPath);
 					}
-				} catch (Exception e) {
-                    logger.warning(e.getMessage());
-                }
+					task.setInstanceTargetOutput(entry.getKey(), targetOutput);
+					try {
+						JobFilesUpload.this.executionTaskProvider.update(task);
+						logger.fine("Output for task " + task.getId() + " updated to " + targetOutput);
+						final List<EOProduct> products = JobFilesUpload.this.productProvider.getByLocation(srcPath);
+						if (products != null) {
+							for (EOProduct product : products) {
+								product.setLocation(dstPath.substring(0, srcPath.lastIndexOf('/')));
+								JobFilesUpload.this.productProvider.update(product);
+								logger.fine("Product location for " + product.getName() + " updated to " + dstPath);
+							}
+						}
+					} catch (Exception e) {
+						logger.warning(e.getMessage());
+					}
+				}
             }
 		}
 	}
