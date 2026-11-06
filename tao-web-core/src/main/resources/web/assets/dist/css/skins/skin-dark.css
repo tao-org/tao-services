@@ -1,0 +1,159 @@
+html:has(>.skin-full-dark) {
+	--scrollbar-default-thumb   : #168ec5;
+	--scrollbar-default-track   : transparent;
+}
+body.skin-full-dark {
+	--primary-color             : #d4d4d4;
+	--primary-bkg               : #f9fafb;
+	--primary-bkg-lighter       : hsl(199.1, 87.5%, 52.9%);	
+	--side-color                : #ababab;
+	--side-bkg                  : #fff;
+	--side-bkg-darker           : #434c5c;
+	--side-bkg-lighter          : #434c5c;
+	--alt-border                : #168ec5;
+	--alt-color                 : #fff;
+	
+	--header-color              : #fff;
+	--header-bkg                : hsl(218  15%  24% / 1);
+	--header-logo-color         : #fff;
+	--header-logo-bkg           : hsl(218  15%  28% / 1);
+	
+	--sidebar-color             : #ababab;
+	--sidebar-bkg               : hsl(218  15%  28% / 1);
+	--sidebar-border            : transparent;
+	--sidebar-item-bkg          : #d4d4d4bf;
+	
+	--menu-color                : #ababab;
+	--menu-bkg                  : hsl(218  15%  28% / 1);
+	--menu-border               : transparent;
+	--menu-header-color         : #168ec5;
+	--menu-header-bkg           : transparent;
+	--menu-header-border        : rgb(255 255 255/.03);
+	--menu-hover-color          : #fff;
+	--menu-hover-bkg            : #434c5c;
+	--menu-hover-border         : transparent;
+	--menu-active-color         : #fff;
+	--menu-active-bkg           : #434c5c;
+	--menu-active-border        : transparent;
+	--menu-selected-color       : #fff;
+	--menu-selected-bkg         : hsl(199  98%  51% / 1);
+	--menu-selected-border      : transparent;
+	--submenu-color             : #ababab;
+	--submenu-bkg               : #434c5c;
+	--submenu-selected-color    : #fff;
+	
+	--content-color             : #ababab;
+	--content-bkg               : hsl(218  15%  24% / 1);
+	--content-header-color      : #d4d4d4;
+	--content-header-bkg        : transparent;
+	
+	--tab-color                 : #ababab;
+	--tab-bkg                   : hsl(218  15%  24% / 1);
+	--tab-border                : hsl(218  11%  35% / 1);
+	--tab-hover-bkg             : hsl(218  15%  28% / 1);
+	--tab-hover-border          : transparent;
+	--tab-active-color          : hsl(199  98%  51% / 1);
+	--tab-active-bkg            : hsl(218  15%  28% / 1);
+	--tab-active-border         : hsl(199  98%  51% / 1);
+	--tab-topo-active-border    : hsl(199  98%  51% / 1);
+	--pill-active-color         : #fff;
+	--pill-active-bkg           : hsl(199  98%  51% / 1);
+	--pill-active-border        : hsl(199  98%  51% / 1);
+	--pill-topo-active-border   : hsl(199  98%  51% / 1);
+	
+	--btn-nodeop-color          : #ababab;
+	--btn-nodeop-bkg            : #414a59;
+	--btn-nodeop-border         : rgb(255 255 255/.03);
+	
+	--btn-primary-color         : #fff;
+	--btn-primary-bkg           : hsl(199  98%  51% / 1);
+	--btn-primary-border        : hsl(199  98%  51% / 1);
+	
+	--btn-default-color         : #ababab;
+	--btn-default-bkg           : #414a59;
+	--btn-default-border        : rgb(255 255 255/.03);
+	
+	--hairline                  : rgb(255 255 255/.05);
+	--hairline-inv              : rgb(0 0 0/.05);
+	--hairline-strong           : rgb(255 255 255/.3);
+	--hairline-strong-inv       : rgb(0 0 0/.3);
+	
+	--dropdown-color            : #d4d4d4;
+	--dropdown-bkg              : #434c5c;
+	--dropdown-header-border    : rgb(255 255 255/.05);
+	--dropdown-hover-color      : #d4d4d4;
+	--dropdown-hover-bkg        : hsl(218  15%  28% / 1);
+	--dropdown-open-color       : #fff;
+	--dropdown-open-bkg         : hsl(199  98%  51% / 1);
+	
+	--footer-color              : #d4d4d4;
+	--footer-bkg                : hsl(218  15%  21% / 1);
+	--footer-border             : rgb(255 255 255/.05);
+	--footer-hover-color        : #ababab;
+	
+	--panel-color               : #bbb;
+	--panel-bkg                 : rgb(255 255 255/.04);
+	--panel-border              : rgb(255 255 255/.05);
+	--panel-hover-color         : hsl(199  98%  51% / 1);
+	--panel-hover-bkg           : rgb(255 255 255/.07);
+	--panel-body-color          : hsl(218   8% 60% / 1);
+	--panel-body-bkg            : rgb(255 255 255/.03);
+	--panel-text-shadow         : #333;
+	
+	--box-color                 : #d4d4d4;
+	--box-bkg                   : hsl(218  15%  28% / 1);
+	--box-border                : rgb(255 255 255/.03);
+	--box-desc-color            : #a0a0a0;
+	--box-desc-bkg              : hsl(218  16%  26% / 1);
+	--box-disabled-bkg          : hsl(218   8%  35% / 1);
+	
+	--callout-empty-color       : #aaa;
+	--callout-empty-bkg         : hsl(218   8%  44% / 1);
+	--callout-empty-border      : hsl(218  12%  22% / 1);
+	--callout-empty-shadow      : #333;
+	
+	--log-color                 : #444;
+	--log-bkg                   : #fff;
+	--log-header-color          : #444;
+	--log-header-bkg            : hsl(197  23%  95% / 1);
+	
+	--list-hover-color          : hsl(197   0%  24% / 1);
+	--list-hover-bkg            : hsl(197  33%  90% / 1);
+	--list-selected-color       : #fff;
+	--list-selected-bkg         : hsl(197   0%  24% / 1);
+	
+	--modal-color               : #ababab;
+	--modal-bkg                 : hsl(218  15%  28% / 1);
+	--modal-border              : transparent;
+	--modal-header-color        : #d4d4d4;
+	--modal-header-bkg          : hsl(218  15%  28% / 1);
+	
+	--form-control-color        : #ababab;
+	--form-control-placeholder  : hsl(210   8%  52% / 1);
+	--form-control-bkg          : hsl(218  16%  30% / 1);
+	--form-control-border       : hsl(218  11%  35% / 1);
+	--form-control-focus-border : #03a9f4;
+	--form-control-disabled-bkg : #505b6d;
+	
+	--pag-color                 : #ababab;
+	--pag-bkg                   : rgb(242 242 242/.03);
+	--pag-border                : rgb(255 255 255/.03);
+	--pag-hover-color           : hsl(199  98%  51% / 1);
+	--pag-active-color          : #fff;
+	--pag-active-bkg            : hsl(199  98%  51% / 1);
+	--pag-disabled-color        : hsl(210   8%  48% / 1);
+	--pag-disabled-bkg          : transparent;
+	
+	--status-default            : #94979e;
+	--status-primary            : hsl(197   0%  24% / 1);
+	--status-info               : #03a9f4;
+	--status-success            : #00a65a;
+	--status-danger             : #dd4b39;
+	--status-warning            : #f39c12;
+	--status-unavailable        : #808080;
+	
+	--scrollbar-default-thumb   : #168ec5;
+	--scrollbar-default-track   : transparent;
+	--scrollbar-onhover-thumb   : #168ec5;
+	--scrollbar-onhover-track   : rgb(0 0 0/.1);
+}

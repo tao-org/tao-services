@@ -26,10 +26,14 @@ import ro.cs.tao.services.commons.ServiceLauncher;
 @Configuration
 @ImportResource("classpath:auth-service-context.xml")
 
-public class AuthenticationServiceLauncher implements ServiceLauncher {
+public class AuthenticationServiceLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(AuthenticationServiceLauncher.class, args);
+    }
+
+    public AuthenticationServiceLauncher() {
+        super();
     }
 
     @Override

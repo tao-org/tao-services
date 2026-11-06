@@ -1,6 +1,5 @@
 package ro.cs.tao.services.entity.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -33,6 +32,7 @@ import ro.cs.tao.stac.core.STACClient;
 import ro.cs.tao.stac.core.model.Collection;
 import ro.cs.tao.stac.core.model.CollectionList;
 import ro.cs.tao.utils.StringUtilities;
+import tools.jackson.databind.ObjectMapper;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -42,7 +42,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 @RestController
-@RequestMapping("/stac")
+@RequestMapping({ "/stac", "/stac/" })
 @Tag(name = "STAC Components", description = "Operations related to STAC components management")
 public class STACServiceController extends BaseController {
     @Autowired
@@ -58,7 +58,7 @@ public class STACServiceController extends BaseController {
 
     private final Logger logger = Logger.getLogger(STACServiceController.class.getName());
 
-    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = {"/list", "/list/"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> list() {
         try {
             final List<Container> containers = containerService.listByType(ContainerType.STAC);
@@ -77,7 +77,7 @@ public class STACServiceController extends BaseController {
      * Creates a new STAC component (client). The new component will act as a TAO data source.
      * @param bean  Structure defining connection and authentication information for the remote STAC service
      */
-    @RequestMapping(value = "/", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/", "" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createSTACService(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
@@ -94,7 +94,7 @@ public class STACServiceController extends BaseController {
                 container.setId(UUID.randomUUID().toString());
             }
             WebServiceAuthentication auth = ServiceTransformUtils.getAuthenticationPart(bean);
-            container.setOwnerId(currentUser());
+            container.setOwnerId(currentOwner());
             container = containerService.save(container);
             auth.setId(container.getId());
             auth = webServiceAuthenticationService.save(auth);
@@ -104,14 +104,14 @@ public class STACServiceController extends BaseController {
                 for (Application application : applications) {
                     DataSourceComponent component = new DataSourceComponent(application.getPath(), container.getName());
                     component.setSystem(false);
-                    component.setUserName(currentUser());
+                    component.setUserName(currentOwner());
                     component.setFetchMode(FetchMode.OVERWRITE);
                     component.setVersion("1.0");
                     component.setDescription(bean.getDescription());
-                    component.setAuthors("AVL Team");
-                    component.setCopyright("(C) AVL Team");
+                    component.setAuthors("TAO Team");
+                    component.setCopyright("(C) TAO Team");
                     component.setNodeAffinity(NodeAffinity.Any);
-                    final String newId = String.join("-", "stac", "service", container.getName(), application.getPath(), currentUser());
+                    final String newId = String.join("-", "stac", "service", container.getName(), application.getPath(), currentOwner());
                     component.setId(newId);
                     component.getSources().forEach(s -> s.setParentId(newId));
                     component.getTargets().forEach(t -> t.setParentId(newId));
@@ -119,13 +119,10 @@ public class STACServiceController extends BaseController {
                     SourceDescriptor sourceDescriptor = component.getSources().stream().filter(s -> s.getName().equals(DataSourceComponent.QUERY_PARAMETER)).findFirst().get();
                     sourceDescriptor.getDataDescriptor().setSensorType(SensorType.UNKNOWN);
                     sourceDescriptor.setCardinality(0);
-                    sourceDescriptorRepository.save(sourceDescriptor);
                     TargetDescriptor targetDescriptor = component.getTargets().get(0);
-                    targetDescriptor.setId(UUID.randomUUID().toString());
                     targetDescriptor.setParentId(newId);
                     targetDescriptor.setCardinality(0);
                     targetDescriptor.addConstraint("Same cardinality");
-                    targetDescriptorRepository.save(targetDescriptor);
                     component = dataSourceComponentService.save(component);
                     dataSourceComponentService.tag(component.getId(), new ArrayList<>() {{
                         add(bean.getName());
@@ -144,7 +141,7 @@ public class STACServiceController extends BaseController {
      * Updates a STAC component definition.
      * @param bean  Structure defining connection and authentication information for the remote STAC service
      */
-    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/", "" }, method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> updateSTACService(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
@@ -175,14 +172,14 @@ public class STACServiceController extends BaseController {
                 for (Application application : applications) {
                     DataSourceComponent component = new DataSourceComponent(application.getPath(), container.getName());
                     component.setSystem(false);
-                    component.setUserName(currentUser());
+                    component.setUserName(currentOwner());
                     component.setFetchMode(FetchMode.OVERWRITE);
                     component.setVersion("1.0");
                     component.setDescription(bean.getDescription());
-                    component.setAuthors("AVL Team");
-                    component.setCopyright("(C) AVL Team");
+                    component.setAuthors("TAO Team");
+                    component.setCopyright("(C) TAO Team");
                     component.setNodeAffinity(NodeAffinity.Any);
-                    final String newId = String.join("-", "stac", "service", container.getName(), application.getPath(), currentUser());
+                    final String newId = String.join("-", "stac", "service", container.getName(), application.getPath(), currentOwner());
                     component.setId(newId);
                     component.getSources().forEach(s -> s.setParentId(newId));
                     component.getTargets().forEach(t -> t.setParentId(newId));
@@ -217,7 +214,7 @@ public class STACServiceController extends BaseController {
      * Removes a STAC component.
      * @param id    The component identifier
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/{id:.+}", "/{id:.+}/" }, method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> deleteSTACService(@PathVariable("id") String id) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -243,7 +240,7 @@ public class STACServiceController extends BaseController {
      * @param endpoint  The remote STAC endpoint (URL)
      * @param authentication    If needed, authentication information for the remote service
      */
-    @RequestMapping(value = "/collections", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/collections", "/collections/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> inspectSTACService(@RequestParam(name = "remoteAddress") String endpoint,
                                                 @RequestParam(name = "authentication", required = false) String authentication) {
         try {

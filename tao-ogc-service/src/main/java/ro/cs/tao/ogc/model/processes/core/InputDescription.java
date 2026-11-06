@@ -1,11 +1,19 @@
 package ro.cs.tao.ogc.model.processes.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Arrays;
 import java.util.List;
 
 public abstract class InputDescription<D extends Descriptor<?>> extends DescriptionType {
     private D schema;
     private int minOccurs;
+
+    @JsonProperty("x-ui-advanced")
+    private Boolean uiAdvanced;
+    @JsonProperty("x-ui-order")
+    private String uiOrder;
+
     private List<ValuePassing> valuePassing;
 
     public static <N extends Number> NumericDescriptor<N> of(N value) {
@@ -71,6 +79,22 @@ public abstract class InputDescription<D extends Descriptor<?>> extends Descript
 
     public void setValuePassing(List<ValuePassing> valuePassing) {
         this.valuePassing = valuePassing;
+    }
+
+    public Boolean getUiAdvanced() {
+        return uiAdvanced;
+    }
+
+    public void setUiAdvanced(Boolean uiAdvanced) {
+        this.uiAdvanced = uiAdvanced;
+    }
+
+    public String getUiOrder() {
+        return uiOrder;
+    }
+
+    public void setUiOrder(String uiOrder) {
+        this.uiOrder = uiOrder;
     }
 
     public static class NumericInputDescriptor<E extends Number> extends InputDescription<NumericDescriptor<E>> {

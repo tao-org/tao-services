@@ -71,6 +71,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -84,10 +85,48 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * @author Cosmin Cara
+ * The DataSourceController class serves as the main REST controller for managing data sources,
+ * providers, sensors, tile operations, and performing data queries. It provides a variety of
+ * endpoints for interacting with the underlying data services, including listing data sources,
+ * querying products, managing footprints, and fetching data.
+ *
+ * This class extends the functionality of the BaseController class and relies on several services
+ * and components to interact with repository and data source systems.
+ *
+ * Fields:
+ * - s2TilePattern: The pattern used for Sentinel-2 tile identification.
+ * - l8TilePattern: The pattern used for Landsat-8 tile identification.
+ * - aoiGeometry: The area of interest geometry utility.
+ * - dataSourceService: A service responsible for managing data source interactions.
+ * - dataSourceComponentService: A component service for auxiliary data source processing.
+ * - repositoryProvider: A provider for accessing repository instances.
+ * - siteProvider: A provider for accessing site-specific configurations.
+ *
+ * Methods:
+ * - getRegisteredSources: Lists all available data sources.
+ * - getRegisteredSourcesSummary: Provides a summary of the available data sources.
+ * - getProviders: Lists the registered providers (e.g., USGS) and their available collections.
+ * - getSupportedSensors: Retrieves the list of supported sensors or data collections.
+ * - getFilter: Returns the defined filters applicable for data sources.
+ * - getDataSourcesForSensor: Lists data sources related to a given sensor or collection.
+ * - getSupportedParameters: Returns the parameters supported for a sensor within a specific data source.
+ * - getTileFootprint: Retrieves the WKT footprint in WGS84 format for a specific tile product.
+ * - getTilesForFootprint: Finds tiles intersecting a specified area of interest.
+ * - doCount: Returns the count of products matching the specified search criteria.
+ * - doQuery: Executes a query on data sources and retrieves results based on the specified mode (list or details).
+ * - doFetch: Fetches products specified in the request.
+ * - inspect: Inspects a path in the user workspace to find supported products.
+ *
+ * Private Methods:
+ * - checkContentRestriction: Validates content restrictions for a provided query.
+ * - getLocalRepository: Retrieves a local repository instance for the specified user.
+ * - getLocalRepositoryService: Accesses the service managing local repositories.
+ *
+ * Superclasses:
+ * - BaseController: The parent class providing common REST functionalities.
  */
 @RestController
-@RequestMapping("/query")
+@RequestMapping({ "/query", "/query/" })
 @Tag(name = "Product search", description = "Operations related to product search and download")
 public class DataSourceController extends BaseController {
 
@@ -108,11 +147,11 @@ public class DataSourceController extends BaseController {
     /**
      * Lists the available data sources
      */
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/", "" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getRegisteredSources() {
         //if (cachedDataSources.isEmpty()) {
         //    synchronized (cachedDataSources) {
-                List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
+                List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances(currentUser());
                 if (instances == null) {
                     instances = new ArrayList<>();
                 }
@@ -126,9 +165,9 @@ public class DataSourceController extends BaseController {
     /**
      * Lists the short description of the available data sources
      */
-    @RequestMapping(value = "/summary", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/summary", "/summary/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getRegisteredSourcesSummary() {
-        List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances();
+        List<DataSourceDescriptor> instances = dataSourceService.getDatasourceInstances(currentUser());
         if (instances == null) {
             instances = new ArrayList<>();
         }
@@ -138,7 +177,7 @@ public class DataSourceController extends BaseController {
     /**
      * Lists the registered providers (e.g. USGS) and the collections available from them
      */
-    @RequestMapping(value = "/providers", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/providers", "/providers/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getProviders() {
         Map<String, String[]> providers = dataSourceService.getDataSourceProviders();
         if (providers == null) {
@@ -150,7 +189,7 @@ public class DataSourceController extends BaseController {
     /**
      * Lists the registered sensors (or collections)
      */
-    @RequestMapping(value = "/sensor/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/sensor/", "/sensor" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getSupportedSensors() {
         Set<String> sensors = dataSourceService.getSupportedSensors();
         if (sensors == null) {
@@ -162,7 +201,7 @@ public class DataSourceController extends BaseController {
     /**
      * Returns any defined filter for data sources
      */
-    @RequestMapping(value = "/filter/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/filter/", "/filter" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getFilter() {
         final String prefix = "datasource.filter.";
         final Map<String, String> values = ConfigurationManager.getInstance().getValues(prefix);
@@ -179,7 +218,7 @@ public class DataSourceController extends BaseController {
      * Lists the data sources that provide the given sensor or collection
      * @param sensorName    The sensor (or collection) name
      */
-    @RequestMapping(value = "/sensor/{name}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/sensor/{name}", "/sensor/{name}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getDataSourcesForSensor(@PathVariable("name") String sensorName) {
         List<String> sources = dataSourceService.getDatasourcesForSensor(sensorName);
         if (sources == null) {
@@ -193,7 +232,7 @@ public class DataSourceController extends BaseController {
      * @param sensorName        The sensor (or collection) name
      * @param dataSourceName   The name of the data source
      */
-    @RequestMapping(value = "/sensor/{name}/{source:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/sensor/{name}/{source:.+}", "/sensor/{name}/{source:.+}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getSupportedParameters(@PathVariable("name") String sensorName,
                                                                      @PathVariable("source") String dataSourceName) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(sensorName, dataSourceName);
@@ -213,7 +252,7 @@ public class DataSourceController extends BaseController {
      * @param satellite The satellite. Supported values are 'sentinel2' and 'landsat8'
      * @param tile  The tile identifier (for Landsat-8, this is the path and row)
      */
-    @RequestMapping(value = "/footprint", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/footprint", "/footprint/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getTileFootprint(@RequestParam("satellite") String satellite, @RequestParam("tile") String tile) {
         try {
             if (StringUtilities.isNullOrEmpty(satellite)) {
@@ -280,7 +319,7 @@ public class DataSourceController extends BaseController {
      * Returns a list of product tiles that intersect an area of interest.
      * @param request   A structure containing: the area of interest (as WKT), the satellite (supported values: 'sentinel2', 'landsat8')
      */
-    @RequestMapping(value = "/tiles", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/tiles", "/tiles/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getTilesForFootprint(@RequestBody TileRequest request) {
         try {
             if (request == null) {
@@ -334,7 +373,7 @@ public class DataSourceController extends BaseController {
      * Returns the number of products that match the search criteria.
      * @param query The search critera
      */
-    @RequestMapping(value = "/count", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/count", "/count/" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> doCount(@RequestBody Query query) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
                                                                                     query.getDataSource());
@@ -392,7 +431,7 @@ public class DataSourceController extends BaseController {
      * @param mode  The return mode: 'list' (only the product names) or 'details'
      * @param query The search criteria
      */
-    @RequestMapping(value = "/exec", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/exec", "/exec/" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> doQuery(@RequestParam(name = "mode", required = false) String mode,
                                                       @RequestBody Query query) {
         List<DataSourceParameter> params = dataSourceService.getSupportedParameters(query.getSensor(),
@@ -428,11 +467,12 @@ public class DataSourceController extends BaseController {
      * Retrieves the products given in the request.
      * @param request   The request structure
      */
-    @RequestMapping(value = "/fetch", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/fetch", "/fetch/" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> doFetch(@RequestBody FetchRequest request) {
         final String userId = currentUser();
+        final Principal principal = currentPrincipal();
         final StorageService repositoryService = getLocalRepositoryService();
-        final Repository localWorkspace = getLocalRepository(currentUser());
+        final Repository localWorkspace = getLocalRepository(currentOwner());
         asyncExecute(() -> {
             try {
                 List<EOProduct> results;
@@ -465,7 +505,7 @@ public class DataSourceController extends BaseController {
                             productPaths.set(i, path);
                         }
                         final String label = StringUtilities.isNullOrEmpty(query.getLabel()) ? results.get(0).getProductType() : query.getLabel();
-                        dataSourceComponentService.createForLocations(productPaths, label, currentPrincipal());
+                        dataSourceComponentService.createForLocations(productPaths, label, principal);
                         Messaging.send(userId, Topic.INFORMATION.getCategory(),
                                        "Product set [" + label + "] was added to the user [" + userId + "] workspace");
                     } catch (Exception e) {
@@ -484,13 +524,13 @@ public class DataSourceController extends BaseController {
      * A product, besides the files constituting it, holds additional metadata in the TAO database.
      * @param productPath   The path to inspect, relative to the user workspace
      */
-    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/inspect", "/inspect/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> inspect(@RequestParam("path") String productPath) {
         Set<MetadataInspector> services = ServiceRegistryManager.getInstance()
                 .getServiceRegistry(MetadataInspector.class)
                 .getServices();
         MetadataInspector metadataInspector = null;
-        final Path path = Paths.get(SystemVariable.USER_WORKSPACE.value(), productPath);
+        final Path path = Paths.get(SystemVariable.UserWorkspace(currentOwner()).value(), productPath);
         if (services != null) {
             metadataInspector = services.stream()
                     .filter(s -> s.decodeQualification(path) == DecodeStatus.SUITABLE)
@@ -560,9 +600,9 @@ public class DataSourceController extends BaseController {
     }
 
     private StorageService getLocalRepositoryService() {
-        Repository repository = getLocalRepository(currentUser());
+        Repository repository = getLocalRepository(currentOwner());
         if (repository == null) {
-            throw new RuntimeException("User [" + currentUser() + "] doesn't have a local repository");
+            throw new RuntimeException("User [" + currentOwner() + "] doesn't have a local repository");
         }
         StorageService instance = StorageServiceFactory.getInstance(repository);
         instance.associate(repository);

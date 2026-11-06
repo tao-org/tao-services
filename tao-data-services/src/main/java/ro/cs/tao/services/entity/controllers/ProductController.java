@@ -17,8 +17,8 @@
 package ro.cs.tao.services.entity.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,6 +38,7 @@ import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -118,8 +119,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
     public ResponseEntity<?> downloadPreview(@RequestParam("fileName") String fileName) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
-            FileSystemResource file = loadAsResource(fileName + ".png");
-            String result = Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(file.getPath())));
+            String result = Base64.getEncoder().encodeToString(IOUtils.toByteArray(loadAsResource(fileName + ".png")));
             responseEntity = prepareResult(result);
         } catch (IOException ex) {
             responseEntity = handleException(ex);
@@ -127,7 +127,7 @@ public class ProductController extends DataEntityController<EOProduct, String, P
         return responseEntity;
     }
 
-    private FileSystemResource loadAsResource(String fileName) throws IOException {
+    private InputStream loadAsResource(String fileName) throws IOException {
         if (fileName == null || fileName.isEmpty()) {
             throw new IOException("[fileName] cannot be null or empty");
         }
@@ -139,10 +139,10 @@ public class ProductController extends DataEntityController<EOProduct, String, P
     }
 
     private Repository getLocalRepository() {
-        return repositoryProvider.getUserSystemRepositories(currentUser()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
+        return repositoryProvider.getUserSystemRepositories(currentOwner()).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get();
     }
 
-    private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService() {
+    private StorageService<MultipartFile> getLocalRepositoryService() {
         return StorageServiceFactory.getInstance(getLocalRepository());
     }
 }

@@ -1,0 +1,118 @@
+/* Nav */
+body.skin-nav {
+	/* Skin specific values */
+	--header-color              : var(--default-color);
+	--header-logo-color         : #fff;
+	--header-logo-bkg           : var(--primary-darklv2);
+	
+	--sidebar-color             : var(--primary-lightlv2);
+	--sidebar-bkg               : var(--primary-darklv2);
+	--sidebar-border            : var(--primary-color);
+	
+	--menu-color                : var(--primary-lightlv2);
+	--menu-header-color         : var(--primary-lightlv1);
+	--menu-header-border        : rgb(255 255 255/.05);
+	--menu-hover-color          : #fff;
+	--menu-hover-bkg            : var(--primary-darklv1);
+	--menu-hover-border         : transparent;
+	--menu-active-color         : #fff;
+	--menu-active-bkg           : var(--primary-darklv1);
+	--menu-hover-border         : transparent;
+	--menu-selected-color       : var(--alt-color);
+	--menu-selected-border      : var(--alt-color);
+	--submenu-color             : var(--primary-lightlv2);
+	--submenu-bkg               : var(--primary-darklv1);
+	--submenu-selected-color    : var(--alt-color);
+	
+	/* Nav: Redefined root variables */.foo{}
+	&.skin-nav-navy {
+		--primary-color         : hsl(210  48%  28% / 1);
+		--primary-bkg           : hsl(210  30%  97% / 1);
+		--primary-bkg-lighter   : #7eb9da;
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(210  48%  40% / 1);
+		--alt-color             : hsl( 35  90%  50% / 1);
+		--primary-darklv3       : hsl(210  48%  13% / 1);
+		--primary-darklv2       : hsl(210  48%  18% / 1);
+		--primary-darklv1       : hsl(210  48%  23% / 1);
+		--primary-lightlv1      : hsl(210  50%  50% / 1);
+		--primary-lightlv2      : hsl(210  15%  75% / 1);
+		--sidebar-item-bkg		: hsl(212  29%  55% / 1);
+	}
+	&.skin-nav-purple {
+		--primary-color         : hsl(282  40%  40% / 1);
+		--primary-bkg           : hsl(282  30%  97% / 1);
+		--primary-bkg-lighter   : hsl(281  48%  57% / 1);
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(282  40%  50% / 1);
+		--alt-color             : hsl( 50  90%  50% / 1);
+		--primary-darklv3       : hsl(282  40%  25% / 1);
+		--primary-darklv2       : hsl(282  40%  30% / 1);
+		--primary-darklv1       : hsl(282  40%  35% / 1);
+		--primary-lightlv1      : hsl(282  60%  60% / 1);
+		--primary-lightlv2      : hsl(282  15%  85% / 1);
+		--sidebar-item-bkg      : hsl(282  28%  46% / 1);
+	}
+	&.skin-nav-green {
+		--primary-color         : hsl(153  48%  28% / 1);
+		--primary-bkg           : hsl(153  30%  97% / 1);
+		--primary-bkg-lighter   : hsl(153  45%  43% / 1);
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(153  48%  38% / 1);
+		--alt-color             : hsl( 16  90%  50% / 1);
+		--primary-darklv3       : hsl(153  48%  16% / 1);
+		--primary-darklv2       : hsl(153  48%  20% / 1);
+		--primary-darklv1       : hsl(153  48%  24% / 1);
+		--primary-lightlv1      : hsl(153  50%  50% / 1);
+		--primary-lightlv2      : hsl(153  15%  75% / 1);
+		--sidebar-item-bkg      : hsl(153  37%  44% / 1);
+	}
+	&.skin-nav-red {
+		--primary-color         : hsl(  0  65%  50% / 1);
+		--primary-bkg           : hsl(  0  30%  97% / 1);
+		--primary-bkg-lighter   : hsl(  0  82%  70% / 1);
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(  0  65%  60% / 1);
+		--alt-color             : hsl(145  90%  50% / 1);
+		--primary-darklv3       : hsl(  0  65%  35% / 1);
+		--primary-darklv2       : hsl(  0  65%  40% / 1);
+		--primary-darklv1       : hsl(  0  65%  45% / 1);
+		--primary-lightlv1      : hsl(  0  75%  65% / 1);
+		--primary-lightlv2      : hsl(  0  15%  85% / 1);
+		--sidebar-item-bkg      : hsl(  0  61%  62% / 1);
+	}
+	&.skin-nav-teal {
+		--primary-color         : hsl(174 100%  29% / 1);
+		--primary-bkg           : hsl(174  30%  97% / 1);
+		--primary-bkg-lighter   : hsl(174  96%  41% / 1);
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(174 100%  29% / 1);
+		--alt-color             : hsl( 16 100%  66% / 1);
+		--primary-darklv3       : hsl(174 100%  14% / 1);
+		--primary-darklv2       : hsl(174 100%  19% / 1);
+		--primary-darklv1       : hsl(174 100%  24% / 1);
+		--primary-lightlv1      : hsl(174  50%  50% / 1);
+		--primary-lightlv2      : hsl(174  15%  80% / 1);
+		--sidebar-item-bkg      : hsl(173  65%  44% / 1);
+	}
+	&.skin-nav-indigo {
+		--primary-color         : hsl(243  40%  45% / 1);
+		--primary-bkg           : hsl(243  30%  97% / 1);
+		--primary-bkg-lighter   : hsl(242  86%  68% / 1);
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(243  40%  55% / 1);
+		--alt-color             : hsl( 40  90%  50% / 1);
+		--primary-darklv3       : hsl(243  40%  27% / 1);
+		--primary-darklv2       : hsl(243  40%  33% / 1);
+		--primary-darklv1       : hsl(243  40%  39% / 1);
+		--primary-lightlv1      : hsl(243  60%  65% / 1);
+		--primary-lightlv2      : hsl(243  15%  85% / 1);
+		--sidebar-item-bkg      : hsl(242  44%  56% / 1);
+	}
+}

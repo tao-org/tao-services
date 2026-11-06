@@ -1,6 +1,6 @@
 package ro.cs.tao.services.entity.controllers;
 
-import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.boot.webmvc.error.ErrorController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 

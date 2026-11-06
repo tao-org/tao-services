@@ -1,0 +1,515 @@
+<style>
+	#frmContainer {
+		.control-label              {text-align:inherit;@media (max-width:767px) {word-break:break-word;}}
+		[name="description"]        {resize:none;}
+		[name="logo"       ]~.error {display:block;text-align:right;max-width:40%;margin-top:-15px;float:right;@media (max-width:991px) {& {max-width:100%;}}}
+		[name="btnSave"    ]        {float:left;}
+		
+		.with-button {
+			>div>button                   {width:100%;}
+			>div:has(>button.hidden)      {display:none;}
+			@media (min-width: 768px)     {
+				>div                      {flex-grow:1}
+				>div:has(button)          {padding-left:0;}
+				&:has(>div>button.hidden) {display:flex;}
+			}
+		}
+	}
+</style>
+<div class="modal-content">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+		<h4 id="myModalLabel" class="modal-title">Add new workflow</h4>
+	</div>
+	<div class="modal-body">
+		<!-- FORM -->
+		<form id="frmContainer" class="form-horizontal clearfix" role="form">
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="form-group">
+						<label class="col-sm-12 group-label control-label">Workflow description</label>
+					</div>
+					<div class="form-group">
+						<label for="name" class="col-sm-2 control-label">Name</label>
+						<div class="col-sm-8">
+							<input id="name" type="text" class="form-control" name="name" placeholder="Workflow name" value="" autocomplete="off" />
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="description" class="col-sm-2 control-label">Description</label>
+						<div class="col-sm-8">
+							<textarea id="description" class="form-control" rows="4" name="description" placeholder="Add workflow description" autocomplete="off"></textarea>
+						</div>
+					</div>
+				</div>
+				<div class="col-sm-2 floating-image">
+					<img id="previewLogo" src="" class="empty" />
+					<div class="image-controls">
+						<button id="wf-upload-image" type="button" class="btn btn-primary"        data-toggle="tooltip" data-original-title="Upload new image"     ><i class="fa fa-upload"></i></button>
+						<button id="wf-clear-image"  type="button" class="btn btn-primary hidden" data-toggle="tooltip" data-original-title="Clear uploaded image" ><i class="fa fa-times" ></i></button>
+						<button id="wf-delete-image" type="button" class="btn btn-primary"        data-toggle="tooltip" data-original-title="Delete image" disabled><i class="fa fa-trash" ></i></button>
+					</div>
+				</div>
+			</div>
+			<input id="logo" type="file" class="form-control for-validation hidden" name="logo" />
+			<div class="form-group with-button">
+				<label for="status" class="col-sm-2 control-label">Status</label>
+				<div class="col-sm-8">
+					<input id="status" type="text" class="form-control" name="status" value="DRAFT" autocomplete="off" readonly />
+				</div>
+				<div class="col-sm-2">
+					<button id="lockUnlock" type="button" class="btn btn-primary hidden">Lock</button>
+				</div>
+			</div>
+			<div class="form-group with-button">
+				<label for="visibility" class="col-sm-2 control-label">Visibility</label>
+				<div class="col-sm-8">
+					<input id="visibility" type="text" class="form-control" name="visibility" value="PRIVATE" autocomplete="off" readonly/>
+				</div>
+				<div class="col-sm-2">
+					<button id="publishNode" type="button" class="btn btn-primary hidden">Publish</button>
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="active" class="col-sm-2 control-label">Active</label>
+				<div class="col-sm-10">
+					<select id="active" name="active" class="form-control" disabled>
+						<option value="true" selected="">Active</option>
+						<option value="false">Inactive</option>
+					</select>
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="formTags" class="col-sm-2 control-label">Tags</label>
+				<div class="col-sm-10">
+					<input id="formTags" name="formTags" class="form-control" value="">
+				</div>
+			</div>
+			<div class="modal-footer">
+				<div class="row">
+					<div class="col-md-offset-2 col-sm-10 col-sm-offset-2 col-md-10">
+						<button id="btnSave"   type="submit" class="btn btn-flat btn-primary" name="btnSave">Add new workflow</button>
+						<button id="btnCancel" type="button" class="btn btn-flat btn-default" name="btnCancel" data-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div><!-- /.modal-body -->
+</div><!-- /.modal-content -->
+
+<link    rel="stylesheet"     href="./assets/libs/jQuery-datepicker/jquery-ui.css" type="text/css" />
+<script type="text/javascript" src="./assets/libs/jQuery-datepicker/jquery-ui.js"></script>
+<link    rel="stylesheet"     href="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" type="text/css" />
+<script type="text/javascript" src="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.js"></script>
+
+<script>
+    var wfHasImage   = false;
+	var wfImageSrc   = false;
+    var $previewLogo = $("#previewLogo");
+	
+	// Update workflow status and visibility (lock, unlock, publish)
+    function updateWfStatus($form, initData, payload) {
+		var formData = $.extend({}, initData, payload);
+		$.ajax({
+			cache   : false,
+			url     : baseRestApiURL + "workflow/"+ formData.id + "/",
+			dataType: "json",
+			type    : "PUT",
+			data    : JSON.stringify(formData),
+			headers : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				showMsg("Unknown error. Unable to update workflow. Please try again.", "ERROR");
+			},
+			success: function (r) {
+				var response = chkTSRF(r);
+				showMsg("Workflow successfully saved.", "SUCCESS");
+				
+				// Update payload
+				$.each(initData, function (key, value) { delete initData[key] });
+				$.extend(initData, response);
+				
+				// Refresh form data
+				$('[name="status"    ]', $form).val(response.status);
+				$('[name="visibility"]', $form).val(response.visibility);
+				
+				if (response.status === "DRAFT") {
+					// Update buttons availability (Lock/Unlock, Publish) and continue editing
+					$("#lockUnlock").removeClass("hidden").html("Lock");
+					$("#publishNode").addClass("hidden");
+					$('[name="name"]       ', $form).prop("readonly", false);
+					$('[name="description"]', $form).prop("readonly", false);
+				} else {
+					// If not DRAFT, according to the payload values, status can either be READY or PUBLISHED
+					// Since all fields except tags should be locked for these statuses, end the editing
+					$("#myModalNodes").modal("hide");
+				}
+				
+				window.panelComp.refreshData();
+			}
+		});
+    }
+	
+    // Get workflow image from server
+	function getWfImage(wfID) {
+		return $.ajax({
+			type   : "GET",
+			url    : baseRestApiURL + "workflow/"+ wfID +"/image",
+			headers: { "Accept": "application/json", "X-Auth-Token": window.tokenKey }
+		});
+	}
+	
+    // Upload image to server to be linked with the selected workflow
+	function uploadWfImage(wfID, image) {
+		var formData = new FormData();
+		formData.append("image", image);
+		$.ajax({
+			type       : wfHasImage ? "PUT" : "POST",
+			url        : baseRestApiURL + "workflow/" + wfID + "/image",
+			contentType: false,
+			processData: false,
+			data       : formData,
+			headers    : {
+				"Accept"      : "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				showMsg("Could not upload image. " + errorThrown, "ERROR");
+			},
+			success: function (response) {
+				if (response.status !== window.responseStatus.success) {
+					showMsg("Could not upload image. " + response.message, "ERROR");
+				}
+			}
+		});
+	}
+	
+    // Remove workflow image from server
+	function deleteWfImage(wfID) {
+        $.ajax({
+            type   : "DELETE",
+            url    : baseRestApiURL + "workflow/" + wfID + "/image",
+            headers: {
+                "Accept"      : "application/json",
+                "X-Auth-Token": window.tokenKey
+            },
+			error: function (jqXHR, textStatus, errorThrown) {
+				showMsg("The image could not be deleted. " + errorThrown, "ERROR");
+			},
+			success: function (response) {
+                if (response.status === window.responseStatus.success) {
+					// Mark the current workflow as not having an image on the server
+                    wfHasImage = false;
+					wfImageSrc = false;
+					
+					// Clear the image preview, disable the delete button, and refresh the workflows list
+					var $form = $("#frmContainer");
+                    validateLogoFile($('[name="logo"]', $form).get(0), "");
+                    $("#wf-delete-image", $form).prop("disabled", true);
+                    window.panelComp.refreshData();
+					
+                    showMsg("Image successfully deleted.", "SUCCESS");
+                } else {
+                    showMsg(response.message != "" ? response.message : "The image could not be deleted.", response.status);
+                }
+            }
+        });
+    }
+	
+	// Validate logo image file control (file control is empty or image source is not corrupted)
+	function validateLogoFile(element, src) {
+		if (typeof src === "undefined" || src === "") {
+			$("#wf-delete-image").removeClass("hidden");
+			$("#wf-clear-image" ).addClass("hidden");
+			
+			// Restore the original workflow image or clear contents if not availlable
+			if (wfHasImage && wfImageSrc) {
+				$previewLogo.attr("src", wfImageSrc).removeClass("empty");
+			} else {
+				$previewLogo.attr("src", "").addClass("empty");
+			}
+			$(element).removeClass("invalid").val("").valid();
+		} else {
+			$("#wf-delete-image").addClass("hidden");
+			$("#wf-clear-image" ).removeClass("hidden");
+			
+			$previewLogo.attr("src", src);
+			$(element).removeClass("invalid").valid();
+		}
+	}
+	
+	// Invalidate logo image file control (selected file is not an image or the image file is corrupt)
+	function invalidateLogoFile(element, message) {
+		$("#wf-delete-image").addClass("hidden");
+		$("#wf-clear-image" ).removeClass("hidden");
+		
+		$previewLogo.attr("src", "").addClass("empty");
+		$(element).addClass("invalid").data({ "error": message }).valid();
+	}
+	
+	// Create a temporary scaled down canvas for the preview image
+    function resizeBase64Img(base64, size) {
+		var deferred = $.Deferred();
+			$("<img />").attr("src", base64).one("load", function (e) {
+				var canvas    = document.createElement("canvas");
+				var ratio     = this.width/this.height;
+				canvas.width  = ratio > 1 ? size : parseInt(size*ratio);
+				canvas.height = ratio < 1 ? size : parseInt(size/ratio);
+				
+				var context   = canvas.getContext("2d");
+				context.scale(canvas.width/this.width,  canvas.height/this.height);
+				context.drawImage(this, 0, 0);
+				deferred.resolve(canvas.toDataURL());
+			}).one("error", function (e) {
+				deferred.reject(null, "ERROR", "Invalid image source.");
+			});
+		return deferred.promise();
+	}
+	
+	// Check the validity of the logo image source and the integrity of the image
+	function checkLogoFile(element, imageTypes) {
+		if (element.files.length == 0) {
+			validateLogoFile(element, "");
+		} else if (element.files.length > 0 && $.inArray(element.files[0]["type"], imageTypes) == -1) {
+			invalidateLogoFile(element, "The selected file is not of the required type " + JSON.stringify(imageTypes).replace(/(image\/)|(")/g, "").replaceAll(",", ", ") + ".");
+		} else {
+			// The selected file is of the required image type: Check the image integrity
+			var file = element.files[0];
+			var reader = new FileReader();
+			reader.onload = function () {
+				// Scale down the base64 image to 128px
+				$.when(resizeBase64Img(reader.result, 128)).done(function (response) {
+					// The selected image file is OK: Set the new logo preview and set the file control as being VALID
+					validateLogoFile(element, response);
+				}).fail(function (jqXHR, textStatus, errorThrown) {
+					invalidateLogoFile(element, "Invalid image source.");
+				});
+			}
+			reader.readAsDataURL(file);
+		}
+	}
+	
+	// Initialize form
+    function initializeForm($form, initData) {
+		// Form labels
+		$(".modal-title" ).html("Edit workflow");
+		$("#btnSave").html("Save workflow");
+		
+		// Refresh workflow data
+		$.ajax({
+			cache      : false,
+			url        : baseRestApiURL + "workflow/"+ initData.id +"/",
+			type       : "GET",
+			dataType   : "json",
+			contentType: "application/json; charset=utf-8",
+			headers: {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				if (jqXHR.status === 500) {
+					alert("Workflow node nolonger found.");
+				} else {
+					alert("An error has occurred, please try again or contact app admin.");
+				}
+			},
+			success: function (r) {
+				var response = chkTSRF(r);
+				
+				// Update payload
+				$.each(initData, function (key, value) { delete initData[key] });
+				$.extend(initData, response);
+				
+				// Populate form data
+				$('[name="name"       ]', $form).val(response.name);
+				$('[name="description"]', $form).val(response.description);
+				$('[name="status"     ]', $form).val(response.status);
+				$('[name="visibility" ]', $form).val(response.visibility);
+				$('[name="active"     ] option[value]'                          , $form).prop("selected", false);
+				$('[name="active"     ] option[value="' + response.active + '"]', $form).prop("selected", true);
+				(response.tags != null && response.tags != "") && $("#formTags").importTags(response.tags.join());
+				$.when(getWfImage(response.id)).done(function (response) {
+					if (response.status === window.responseStatus.success && typeof response.data !== "undefined") {
+						// Mark the current workflow as having an image on the server
+						wfHasImage = true;
+						wfImageSrc = "data:image/png;base64, " + response.data;
+						$previewLogo.attr("src", wfImageSrc);
+						// Enable button to delete image logo
+						initData.active && $("#wf-delete-image", $form).removeAttr("disabled");
+					}
+				});
+				
+				// Customize form fields based on workflow status, visibility and availability
+				if (response.active) {
+					switch (response.status) {
+						case "DRAFT":	$("#lockUnlock").removeClass("hidden").html("Lock");
+										break;
+						case "READY":	$("#lockUnlock").removeClass("hidden").html("Unlock");
+										(response.visibility === "PRIVATE") && $("#publishNode").removeClass("hidden");
+						default     :   $('[name="name"       ]', $form).prop("readonly", true);
+										$('[name="description"]', $form).prop("readonly", true);
+					}
+					$("#formTags_tag", $form).prop("readonly", false);
+				} else  {
+					$('[name="name"       ]', $form).prop("readonly", true);
+					$('[name="description"]', $form).prop("readonly", true);
+					$('[name="active"     ]', $form).prop("disabled", false);
+					$(".image-controls .btn", $form).prop("disabled", true);
+					$("#formTags_tag"       , $form).prop("readonly", true);
+				}
+			}
+		});
+    }
+	
+    $(document).ready(function () {
+		var $form    = $("#frmContainer");
+		var action   = window.userOpStack?.action || "";
+		var initData = $.extend({}, window.userOpStack?.dna || {});
+		
+		// Initialize form
+		(action == "wf_edit") && initializeForm($form, initData);
+		
+		// Verify the integrity and validity of the logo image each time its source changes
+		$previewLogo.on("load", function (e) {
+			e.target.decode().then(function () {
+				$previewLogo.removeClass("empty");
+				(e.target.naturalWidth < e.target.naturalHeight) && $previewLogo.addClass("portrait");
+			}).catch(function (error) {
+				$previewLogo.addClass("empty"); // Restore the default icon when the image is not valid
+			});
+		});
+		
+		// Form events
+		$form
+			.on("change", '[name="logo"]' , function (e) {
+				// Select and validate the logo image
+				checkLogoFile(this, [ "image/gif", "image/jpeg", "image/png" ]);
+			})
+			.on("click", "#wf-upload-image", function (e) {
+				// Select the logo image
+				$('[name="logo"]', $form).trigger("click");
+			})
+			.on("click", "#wf-clear-image", function (e) {
+				// Remove logo image preview
+				validateLogoFile($('[name="logo"]', $form).get(0), "");
+			})
+			.on("click", "#wf-delete-image", function (e) {
+				// Delete workflow image from server
+				$("#confirm-dialog").modal("confirm", {
+					msg: "Are you sure you want to delete the image?",
+					callbackConfirm: function () { deleteWfImage(initData.id); }
+				});
+			})
+			.on("click", "#lockUnlock", function (e) {
+				// Lock/Unlock workflow (change its status & visibility)
+				var payload = {
+					status    : $(e.currentTarget).text() === "Lock" ? "READY" : "DRAFT",
+					visibility: "PRIVATE"
+				}
+				updateWfStatus($form, initData, payload);
+			})
+			.on("click", "#publishNode", function (e) {
+				// Publish workflow (change its status & visibility)
+				var payload = {
+					status    : "READY",
+					visibility: "PUBLIC"
+				}
+				updateWfStatus($form, initData, payload);
+			});
+		
+		// Custom validation for logo image
+		$.validator.addMethod("validImage", function (value, element, params) {
+			$.validator.messages.validImage = (typeof $(element).data("error") !== "undefined") ? $(element).data("error") : "Invalid image source.";
+			return !$(element).hasClass("invalid");
+		}, $.validator.messages.validImage);
+		
+		// Validate form before submit
+		$form.validate({
+			ignore: ':hidden:not(.for-validation)',
+			rules: {
+				name: { required  : true },
+				logo: { validImage: true }
+			},
+			highlight     : function(element, errorClass) { $(element).parent().addClass("has-error"); },
+			unhighlight   : function(element, errorClass) { $(element).parent().removeClass("has-error"); },
+			messages      : {},
+			success       : function(label) { label.remove(); },
+			errorPlacement: function(error, element) { error.appendTo(element.parent()); }
+		});
+		
+		// Submit form
+		$form.on("submit", function (e) {
+			e.preventDefault();
+			if ($(this).valid()) {
+				tags = null;
+				if ($(".tagsinput .tag .tag-text").length >= 1) {
+					tags = []; $(".tagsinput .tag .tag-text").each(function () { tags.push($(this).text()) });
+				}
+				
+				// Define form data depending on current operation (wf_edit, wf-plus)
+				var formData         = (action == "wf_edit") ? initData : { "userId": taoUserProfile.id, "created": arrayFromDatetime(), "xCoord": 0, "yCoord": 0, "zoom": 1 };
+				var ajaxType         = (action == "wf_edit") ? "PUT" : "POST";
+				var ajaxURL          = (action == "wf_edit") ? formData.id + "/" : "";
+				
+				// Update form data with user input
+				formData.name        = $('[name="name"       ]', this).val();
+				formData.description = $('[name="description"]', this).val();
+				formData.status      = $('[name="status"     ]', this).val();
+				formData.visibility  = $('[name="visibility" ]', this).val();
+				formData.active      = $('[name="active"     ]', this).val();
+				formData.tags        = tags;
+				
+				$.ajax({
+					cache   : false,
+					url     : baseRestApiURL + "workflow/" + ajaxURL,
+					dataType: "json",
+					type    : ajaxType,
+					data    : JSON.stringify(formData),
+					headers : {
+						"Accept"      : "application/json",
+						"Content-Type": "application/json",
+						"X-Auth-Token": window.tokenKey
+					},
+					error: function (jqXHR, textStatus, errorThrown) {
+						// Handle error messages
+						switch (jqXHR.status) {
+							case 400: showMsg(typeof jqXHR.responseJSON === "undefined" ? textStatus : jqXHR.responseJSON.error                           , "ERROR"); break;
+							case 406: showMsg("Please check your data for inconsistent attributes values."                                                , "ERROR"); break;
+							case 500: showMsg("Error " + (action == "wf_edit" ? "updating" : "adding") + " workflow. Please check you data and try again.", "ERROR"); break;
+							default : showMsg("Unknown error. Unable to " + (action == "wf_edit" ? "update" : "add") + " workflow. Please try again."     , "ERROR"); break;
+						}
+					},
+					success: function (response) {
+						if (response.status === window.responseStatus.success) {
+							var isFromTour = window.__guidedTourContext.active === true;
+							$("#myModalNodes").modal("hide");
+							showMsg("Workflow successfully saved.", "SUCCESS");
+							// Upload the image
+							if (!$previewLogo.hasClass("empty") && typeof $('[name="logo"]', $form).prop("files")[0] !== "undefined") {
+								uploadWfImage(response.data.id, $('[name="logo"]', $form).prop("files")[0]);
+							}
+							window.panelComp.refreshData();
+							// used when an workflow is create within guided-tours
+							if (window.__guidedTourContext.active) {
+								window.__guidedTourContext.workflowCreated = true;
+								window.__guidedTourContext.waitingForWorkflow = false;
+								$(document).trigger("guidedTour:workflow-created");
+							}
+							(action != "wf_edit" && !isFromTour) && tao_showWorkflow(response.data.id);
+						} else {
+							showMsg(response.message, response.status);
+						}
+					}
+				});
+			}
+		});
+		
+		initializeTagsInputAutocomplete("#formTags", "workflow");
+    });
+	
+//# sourceURL=workflow-plus.js
+</script>

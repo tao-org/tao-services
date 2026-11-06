@@ -15,15 +15,16 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.h2.util.IOUtils;
+import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -34,10 +35,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.SortDirection;
+import ro.cs.tao.TaoEnum;
 import ro.cs.tao.component.*;
+import ro.cs.tao.component.enums.ComponentCategory;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.param.JavaType;
 import ro.cs.tao.docker.*;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Messaging;
@@ -46,10 +50,16 @@ import ro.cs.tao.persistence.AuxiliaryDataProvider;
 import ro.cs.tao.persistence.ContainerInstanceProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
+import ro.cs.tao.persistence.repository.ParameterDescriptorRepository;
+import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
+import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.Token;
+import ro.cs.tao.serialization.BaseSerializer;
 import ro.cs.tao.serialization.JsonMapper;
+import ro.cs.tao.serialization.SerializationException;
+import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.RoleRequired;
@@ -63,9 +73,12 @@ import ro.cs.tao.topology.docker.DockerManager;
 import ro.cs.tao.topology.docker.SingletonContainer;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.deser.std.StdDeserializer;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -83,7 +96,7 @@ import java.util.*;
  * @author Cosmin Cara
  */
 @RestController
-@RequestMapping("/docker")
+@RequestMapping({ "/docker", "/docker/" })
 @Tag(name = "Containers", description = "Operations related to docker containers")
 public class ContainerController extends DataEntityController<Container, String, ContainerService> {
 
@@ -94,7 +107,15 @@ public class ContainerController extends DataEntityController<Container, String,
     @Autowired
     private ProcessingComponentProvider processingComponentProvider;
     @Autowired
+    private ParameterDescriptorRepository parameterDescriptorRepository;
+    @Autowired
+    private SourceDescriptorRepository sourceDescriptorRepository;
+    @Autowired
+    private TargetDescriptorRepository targetDescriptorRepository;
+    @Autowired
     private TokenManagementService tokenManagementService;
+    @Autowired
+    private ContainerService containerService;
 
     /**
      * Lists the docker images available on the system.
@@ -105,7 +126,7 @@ public class ContainerController extends DataEntityController<Container, String,
      * @param sortDirection (optional) The sort direction
      */
     @Override
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/", "" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false)Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortByField", required = false)Optional<String> sortByField,
@@ -115,7 +136,7 @@ public class ContainerController extends DataEntityController<Container, String,
         if (isCurrentUserAdmin()) {
             objects = service.listByType(ContainerType.DOCKER);
         } else {
-            objects = service.listContainersVisibleToUser(currentUser());
+            objects = service.listContainersVisibleToUser(currentOwner());
         }
         if (objects == null) {
             objects = new ArrayList<>();
@@ -129,7 +150,7 @@ public class ContainerController extends DataEntityController<Container, String,
      * @param typeId    The container type identifier
      * @param visibilityId  The container visibility identifier
      */
-    @RequestMapping(value = "/type", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/type", "/type/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listByType(@RequestParam("type") int typeId,
                                                          @RequestParam("visibility") int visibilityId) {
         if (!isCurrentUserAdmin()) {
@@ -147,10 +168,10 @@ public class ContainerController extends DataEntityController<Container, String,
      * Lists the docker images for the current user.
      *
      */
-    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/user", "/user/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listByUser() {
         try {
-            return prepareResult(service.listUserContainers(currentUser()));
+            return prepareResult(service.listUserContainers(currentOwner()));
         } catch (Exception e) {
             return handleException(e);
         }
@@ -161,7 +182,7 @@ public class ContainerController extends DataEntityController<Container, String,
      *
      * @param containerId   The container identifier
      */
-    @RequestMapping(value = "/formats", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/formats", "/formats/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getFormats(@RequestParam("containerId") String containerId) {
         try {
             Container container = service.findById(containerId);
@@ -181,8 +202,8 @@ public class ContainerController extends DataEntityController<Container, String,
      *
      * @param request   The structure containing the necessary information
      */
-    @RequestMapping(value = "/upload", method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RequestMapping(value = { "/upload", "/upload/" }, method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> upload(HttpServletRequest servletRequest,
                                                      @ModelAttribute ContainerUploadRequest request,
                                                      Model model) {
@@ -190,10 +211,6 @@ public class ContainerController extends DataEntityController<Container, String,
             return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
         }*/
         try {
-            final List<MultipartFile> dockerFiles = request.getDockerFiles();
-            if (dockerFiles == null || dockerFiles.isEmpty()) {
-                throw new IllegalArgumentException("Empty file list");
-            }
             final MultipartFile jsonContainerFile = request.getJsonContainerDescriptor();
             if (jsonContainerFile == null) {
                 throw new IllegalArgumentException("Please attach a json file with the container and applications descriptors");
@@ -201,6 +218,16 @@ public class ContainerController extends DataEntityController<Container, String,
             String json;
             json = new String(jsonContainerFile.getBytes());
             final Container container = JsonMapper.instance().readValue(json, Container.class);
+            final List<MultipartFile> dockerFiles = request.getDockerFiles();
+            final boolean noFilePresent = dockerFiles == null || dockerFiles.isEmpty();
+            Container existingImage = DockerManager.getDockerImage(container.getName());
+            if (noFilePresent && existingImage == null) {
+                throw new IllegalArgumentException("Empty file list");
+            }
+            // set id to Docker id if possible
+            if (existingImage != null && !Strings.isNullOrEmpty(existingImage.getId())) {
+                container.setId(existingImage.getId());
+            }
 
             final MultipartFile logoFile = request.getContainerLogo();
             if (logoFile != null) {
@@ -213,67 +240,87 @@ public class ContainerController extends DataEntityController<Container, String,
                 json = new String(jsonComponentsFile.getBytes());
                 components = JsonMapper.instance().readValue(json, ProcessingComponent[].class);
             } else {
-                components = null;
+                components = new ProcessingComponent[0];
             }
+            final Runnable uploadCode;
 
-            final MultipartFile dockerFile = dockerFiles.stream().filter(f -> "Dockerfile".equals(f.getOriginalFilename())).findFirst().orElse(null);
-            if (dockerFile == null) {
-                throw new IllegalArgumentException("Dockerfile not found");
-            }
-            final String name = request.getName();
-            if (name == null) {
-                throw new IllegalArgumentException("[name] cannot be null");
-            }
-            if (!name.equals(container.getName())) {
-                container.setName(name);
-            }
-            if (container.getType() == null) {
-                container.setType(ContainerType.DOCKER);
-            }
-            container.setVisibility(ContainerVisibility.PRIVATE);
-            dockerFiles.remove(dockerFile);
-            final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
-            final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
-            for (MultipartFile file : dockerFiles) {
-                try {
-                    Path auxFile = resolveMultiPartFile(file, dockerImagesPath);
-                    AuxiliaryData data = new AuxiliaryData();
-                    data.setId(UUID.randomUUID().toString());
-                    data.setLocation(auxFile.toString());
-                    data.setDescription(String.format("Auxiliary file for container '%s'", name));
-                    data.setUserId(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
-                    data.setCreated(LocalDateTime.now());
-                    data.setModified(data.getCreated());
-                    auxiliaryDataProvider.save(data);
-                } catch (IOException e) {
-                    error(e.getMessage());
-                }
-            }
-            List<MultipartFile> auxiliaryFiles = request.getAuxiliaryFiles();
-            if (auxiliaryFiles != null) {
-                Path auxiliaryFilesPath = request.isSystem() ?
-                        Paths.get(SystemVariable.SHARED_FILES.value()) :
-                        SessionStore.currentContext().getUploadPath();
-                for (MultipartFile file : auxiliaryFiles) {
+            final Principal principal = currentPrincipal();
+            if(noFilePresent){
+                // The container was pulled from Docker Hub
+                uploadCode = () -> {
                     try {
-                        resolveMultiPartFile(file, auxiliaryFilesPath);
+                        initializeContainer(container, components);
+                        Messaging.send(principal, Topic.INFORMATION.value(), this,
+                                String.format("Docker image '%s' successfully registered", container.getName()));
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                };
+            } else {
+                final MultipartFile dockerFile = dockerFiles.stream().filter(f -> "Dockerfile".equals(f.getOriginalFilename())).findFirst().orElse(null);
+                if (dockerFile == null) {
+                    boolean isLocalContainer = service.list().stream().anyMatch(c -> c.getName().equals(container.getName().split(":")[0]));
+                    if (!isLocalContainer) {
+                        throw new IllegalArgumentException("Dockerfile not found");
+                    }
+                }
+                final String name = request.getName();
+                if (name == null) {
+                    throw new IllegalArgumentException("[name] cannot be null");
+                }
+                if (!name.equals(container.getName())) {
+                    container.setName(name);
+                }
+                if (container.getType() == null) {
+                    container.setType(ContainerType.DOCKER);
+                }
+                container.setVisibility(ContainerVisibility.PRIVATE);
+                dockerFiles.remove(dockerFile);
+                final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
+                final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
+                final String ownerId = currentOwner();
+                for (MultipartFile file : dockerFiles) {
+                    try {
+                        Path auxFile = resolveMultiPartFile(file, dockerImagesPath);
+                        AuxiliaryData data = new AuxiliaryData();
+                        data.setId(UUID.randomUUID().toString());
+                        data.setLocation(auxFile.toString());
+                        data.setDescription(String.format("Auxiliary file for container '%s'", name));
+                        data.setUserId(request.isSystem() ? SystemPrincipal.instance().getName() : ownerId);
+                        data.setCreated(LocalDateTime.now());
+                        data.setModified(data.getCreated());
+                        auxiliaryDataProvider.save(data);
                     } catch (IOException e) {
                         error(e.getMessage());
                     }
                 }
-            }
-            final String description = request.getDescription();
-            if (description != null && !description.equals(container.getDescription())) {
-                container.setDescription(description);
-            }
-            container.setOwnerId(currentUser());
-            asyncExecute(() -> {
-                try {
-                    service.registerContainer(dockerPath, container, components);
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
+                List<MultipartFile> auxiliaryFiles = request.getAuxiliaryFiles();
+                if (auxiliaryFiles != null) {
+                    Path auxiliaryFilesPath = request.isSystem() ?
+                            Paths.get(SystemVariable.SHARED_FILES.value()) :
+                            SessionStore.currentContext().getUploadPath();
+                    for (MultipartFile file : auxiliaryFiles) {
+                        try {
+                            resolveMultiPartFile(file, auxiliaryFilesPath);
+                        } catch (IOException e) {
+                            error(e.getMessage());
+                        }
+                    }
                 }
-            }, "Docker image registration completed", this::exceptionCallbackHandler);
+                final String description = request.getDescription();
+                if (description != null && !description.equals(container.getDescription())) {
+                    container.setDescription(description);
+                }
+                container.setOwnerId(ownerId);
+                uploadCode = () -> {
+                    try {
+                        service.registerContainer(dockerPath, container, components);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                };
+            }
+            asyncExecute(uploadCode, "Docker image registration completed", this::exceptionCallbackHandler);
             return prepareResult("Docker image registration started. A notification will be send when the process completes",
                                  ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
@@ -285,7 +332,7 @@ public class ContainerController extends DataEntityController<Container, String,
      * Checks if a Docker image exists in the Docker Hub repository
      * @param image     The name of the image
      */
-    @RequestMapping(value = "/check", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/check", "/check/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> checkExists(@RequestParam("image") String image) {
         try {
             return prepareResult(DockerManager.publicImageExists(image));
@@ -298,7 +345,7 @@ public class ContainerController extends DataEntityController<Container, String,
      * Pulls a Docker image to the local repository
      * @param image     The name of the Docker image
      */
-    @RequestMapping(value = "/pull", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/pull", "/pull/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> pullFromHub(@RequestParam("image") String image) {
         try {
             return prepareResult(DockerManager.pullImage(image));
@@ -312,7 +359,7 @@ public class ContainerController extends DataEntityController<Container, String,
      *
      * @param request   The structure containing the necessary information
      */
-    @RequestMapping(value = "/register", method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/register", "/register/" }, method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> upload(HttpServletRequest servletRequest,
                                                      @ModelAttribute ContainerRequest request,
                                                      Model model) {
@@ -325,8 +372,13 @@ public class ContainerController extends DataEntityController<Container, String,
             final Container container = mapper.readerFor(Container.class).readValue(containerDescriptor);
             final List<MultipartFile> dockerFiles = request.getDockerFiles();
             final boolean noFilePresent = dockerFiles == null || dockerFiles.isEmpty();
-            if (noFilePresent && DockerManager.getDockerImage(container.getName()) == null) {
+            Container existingImage = DockerManager.getDockerImage(container.getName());
+            if (noFilePresent && existingImage == null) {
                 throw new IllegalArgumentException("Empty file list");
+            }
+            // set id to Docker id if possible
+            if (existingImage != null && !Strings.isNullOrEmpty(existingImage.getId())) {
+                container.setId(existingImage.getId());
             }
             final String description = request.getDescription();
             if (description != null && !description.equals(container.getDescription())) {
@@ -347,7 +399,8 @@ public class ContainerController extends DataEntityController<Container, String,
             if (logoFile != null) {
                 container.setLogo(Base64.getEncoder().encodeToString(logoFile.getBytes()));
             }
-            container.setOwnerId(currentUser());
+            final String ownerId = currentUser();
+            container.setOwnerId(ownerId);
             final String componentDescriptors = request.getComponentDescriptors();
             final ProcessingComponent[] components;
             if (componentDescriptors != null) {
@@ -386,7 +439,7 @@ public class ContainerController extends DataEntityController<Container, String,
                         data.setId(UUID.randomUUID().toString());
                         data.setLocation(auxFile.toString());
                         data.setDescription(String.format("Auxiliary file for container '%s'", name));
-                        data.setUserId(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
+                        data.setUserId(request.isSystem() ? SystemPrincipal.instance().getName() : ownerId);
                         data.setCreated(LocalDateTime.now());
                         data.setModified(data.getCreated());
                         auxiliaryDataProvider.save(data);
@@ -425,7 +478,18 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
-    @RequestMapping(value = "/start", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value ="/instances", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> listInstances(@RequestParam(name = "containerName", required = false) String containerName) {
+        try {
+            return prepareResult(StringUtilities.isNullOrEmpty(containerName)
+                                         ? containerService.getUserInstances(currentOwner())
+                                         : containerService.getUserInstance(currentOwner(), containerName));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = { "/start", "/start/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> startContainer(@RequestParam("id") String imageId) {
         try {
             if (StringUtilities.isNullOrEmpty(imageId)) {
@@ -433,7 +497,7 @@ public class ContainerController extends DataEntityController<Container, String,
             }
             Container container = service.findById(imageId);
             if (container == null) {
-                container = service.listContainersVisibleToUser(currentUser())
+                container = service.listContainersVisibleToUser(currentOwner())
                                    .stream().filter(c -> c.getName().equals(imageId)).findFirst().orElse(null);
                 if (container == null) {
                     throw new IllegalArgumentException(String.format("[%s] not registered", imageId));
@@ -448,11 +512,13 @@ public class ContainerController extends DataEntityController<Container, String,
             if (installer != null) {
                 try {
                     installer.getClass().getMethod("start", String.class, String.class);
-                    final String user = currentUser();
+                    final String user = currentOwner();
                     final Token token = tokenManagementService.getUserToken(user);
                     return prepareResult(((SingletonContainer) installer).start(user, user));//token.getToken()));
                 } catch (Exception e) {
-                    return prepareResult(((SingletonContainer) installer).start());
+                    //handle exception instead of starting container?
+                    //return prepareResult(((SingletonContainer) installer).start());
+                    return handleException(e);
                 }
             } else {
                 final String name = SystemPrincipal.instance().getName();
@@ -464,7 +530,7 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
-    @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/stop", "/stop/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> stopContainerInstance(@RequestParam("id") String instanceId) {
         try {
             if (StringUtilities.isNullOrEmpty(instanceId)) {
@@ -474,8 +540,9 @@ public class ContainerController extends DataEntityController<Container, String,
             if (instance == null) {
                 throw new IllegalArgumentException(String.format("[%s] not found", instanceId));
             }
-            if (!currentUser().equals(instance.getUserId()) && !isCurrentUserAdmin()) {
-                prepareResult("Not authorized", HttpStatus.FORBIDDEN);
+            if (!(currentUser().equals(instance.getUserId()) ||
+                  currentOwner().equals(instance.getUserId()))&& !isCurrentUserAdmin()) {
+                return prepareResult("Not authorized", HttpStatus.FORBIDDEN);
             }
             DockerManager.stopInstance(instance.getContainerId(), instance.getUserId());
             return prepareResult("Container [" + instanceId + "] stopped", ResponseStatus.SUCCEEDED);
@@ -484,35 +551,105 @@ public class ContainerController extends DataEntityController<Container, String,
         }
     }
 
-    @RequestMapping(value = "/connect", method = RequestMethod.GET)
+    @RequestMapping(value = { "/connect", "/connect/" }, method = RequestMethod.GET)
     public void tunnel(@RequestParam(name = "host", required = false) String host,
                        @RequestParam(name = "port", required = false) Integer port,
                        @RequestParam(name = "query", required = false) String query,
                        HttpServletRequest request, HttpServletResponse response) {
         try {
-            HttpUriRequest proxiedRequest = createHttpUriRequest(request,
-                                                                 host != null ? host : "127.0.0.1",
-                                                                 port != null ? port : 8888,
-                                                                 query);
-            try (CloseableHttpClient httpClient = HttpClients.createMinimal()) {
-                HttpResponse proxiedResponse = httpClient.execute(proxiedRequest);
-                writeToResponse(proxiedResponse, response);
-            }
+            // The legacy arbitrary-host proxy is retired. Instance-aware notebook tunnels remain available.
+            response.sendError(HttpServletResponse.SC_GONE, "Use the authenticated instance tunnel");
         } catch (Exception e) {
             error(e.getMessage());
         }
     }
 
     @Override
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE)
+    @RequestMapping(value = { "/{id:.+}", "/{id:.+}/" }, method = RequestMethod.DELETE)
     public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") String id) {
         try {
             final Container container = service.findById(id);
-            if (isCurrentUserAdmin() || currentUser().equals(container.getOwnerId())) {
+            if (isCurrentUserAdmin() || currentUser().equals(container.getOwnerId()) ||
+                currentOwner().equals(container.getOwnerId())) {
                 return super.delete(id);
             } else {
                 return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
             }
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = { "/{id:.+}/export", "/{id:.+}/export/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> export(@PathVariable("id") String id, @RequestParam("folder") String folder) {
+        try {
+            Container entity;
+            entity = service.findById(id);
+            if (entity == null) {
+                return prepareResult(HttpServletResponse.SC_NOT_FOUND);
+            } else {
+                return prepareResult(service.exportContainer(entity, false, Paths.get(folder)).toString());
+            }
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = { "/update/{id:.+}", "/update/{id:.+}/" }, method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
+    public ResponseEntity<ServiceResponse<?>> updateComponents(@PathVariable("id") String containerId,
+                                                               @RequestParam("file") MultipartFile file) {
+        try {
+            final Container container = service.findById(containerId);
+            if (container == null) {
+                throw new IllegalArgumentException(String.format("[%s] not found", containerId));
+            }
+            final String contents = new String(file.getBytes());
+            int added = 0, updated = 0;
+            List<ProcessingComponent> components = deserialize(contents);
+            for (ProcessingComponent component : components) {
+                component.setContainerId(containerId);
+                component.addTags(container.getName());
+                if (component.getCategory() == null) {
+                    component.setCategory(ComponentCategory.MISC);
+                }
+                for (SourceDescriptor descriptor : component.getSources()) {
+                    descriptor.setParentId(component.getId());
+                }
+                for (TargetDescriptor descriptor : component.getTargets()) {
+                    descriptor.setParentId(component.getId());
+                }
+                ProcessingComponent existing = null;
+                if ((existing = this.processingComponentProvider.get(component.getId(), containerId)) == null) {
+                    this.processingComponentProvider.save(component);
+                    added++;
+                } else {
+                    List<SourceDescriptor> existingSources = existing.getSources();
+                    List<TargetDescriptor> existingTargets = existing.getTargets();
+                    List<SourceDescriptor> sources = component.getSources();
+                    List<TargetDescriptor> targets = component.getTargets();
+                    if (existingSources != null) {
+                        for (SourceDescriptor source : sources) {
+                            SourceDescriptor descriptor = existingSources.stream().filter(s -> s.getId().equals(source.getId()) || s.getName().equals(source.getName())).findFirst().orElse(null);
+                            if (descriptor != null) {
+                                source.setId(descriptor.getId());
+                            }
+                        }
+                    }
+                    if (existingTargets != null) {
+                        for (TargetDescriptor target : targets) {
+                            TargetDescriptor descriptor = existingTargets.stream().filter(t -> t.getId().equals(target.getId()) || t.getName().equals(target.getName())).findFirst().orElse(null);
+                            if (descriptor != null) {
+                                target.setId(descriptor.getId());
+                            }
+                        }
+                    }
+                    this.processingComponentProvider.update(component);
+                    updated++;
+                }
+            }
+            return prepareResult(String.format("Components: %d added, %d updated", added, updated),
+                                 ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
         }
@@ -620,4 +757,31 @@ public class ContainerController extends DataEntityController<Container, String,
         file.transferTo(destination.toAbsolutePath().toFile());
         return destination;
     }
+
+    private List<ProcessingComponent> deserialize(String contents) throws SerializationException {
+        final BaseSerializer<ProcessingComponent> componentSerializer = SerializerFactory.create(ProcessingComponent.class, ro.cs.tao.serialization.MediaType.JSON);
+        componentSerializer.setIgnoreNullFields();
+        componentSerializer.setFormatOutput(true);
+        Reflections reflections = new Reflections("ro.cs.tao");
+        Set<Class<? extends TaoEnum>> enums = reflections.getSubTypesOf(TaoEnum.class);
+        for (Class anEnum : enums) {
+            componentSerializer.addDeserializer(anEnum, new StdDeserializer(anEnum) {
+
+                @Override
+                public Object deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws JacksonException {
+                    if (anEnum.equals(JavaType.class)) {
+                        return JavaType.fromFriendlyName(jsonParser.getText());
+                    } else {
+                        try {
+                            return EnumUtils.getEnumConstantByName(anEnum, jsonParser.getText());
+                        } catch (IllegalArgumentException e) {
+                            return EnumUtils.getEnumConstantByValue(anEnum, jsonParser.getText());
+                        }
+                    }
+                }
+            });
+        }
+        return componentSerializer.deserialize(ProcessingComponent.class, contents);
+    }
 }
+

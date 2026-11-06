@@ -1,0 +1,57 @@
+body {
+	--toolbox-space-color          : var(--active-color);
+	--toolbox-space-bkg            : var(--primary-bkg);
+	
+	--sidebar-color                : var(--default-color);
+	--sidebar-bkg                  : var(--primary-bkg);
+	
+	--sidebar-topbar-color         : var(--active-color);
+	
+	--sidebar-header-color         : var(--default-color);
+	--sidebar-header-bkg           : transparent;
+	--sidebar-header-border        : transparent;
+	--sidebar-header-hover-color   : var(--primary-color);
+	--sidebar-header-hover-bkg     : var(--primary-bkg-darker);
+	--sidebar-header-hover-border  : var(--primary-color);
+	--sidebar-header-active-color  : #fff;
+	--sidebar-header-active-bkg    : var(--primary-color);
+	--sidebar-header-active-border : transparent;
+	
+	--sidebar-content-color        : var(--default-color);
+	--sidebar-content-bkg          : var(--primary-bkg-darker);
+	
+	--sidebar-item-color           : var(--default-color);
+	--sidebar-item-bkg             : #fff;
+	--sidebar-item-border          : #e3e6e8;
+	--sidebar-item-hover-color     : var(--primary-color);
+	--sidebar-item-hover-bkg       : #fff;
+	--sidebar-item-hover-border    : var(--primary-color);
+	
+	--btn-primary-color            : #fff;
+	--btn-primary-bkg              : var(--primary-color);
+	--btn-primary-border           : var(--primary-color);
+	
+	--form-control-color           : var(--default-color);
+	--form-control-placeholder     : #bbb;
+	--form-control-bkg             : #fff;
+	--form-control-border          : #e3e6e8;
+	--form-control-focus-border    : var(--primary-color);
+	--form-control-disabled-bkg    : #e3e6e8;
+	
+	--toolbar-color                : var(--default-color);
+	--toolbar-bkg                  : var(--primary-bkg);
+	--toolbar-hover-color          : var(--default-color);
+	
+	--scrollbar-default-thumb      : #d1dbe3;
+	--scrollbar-default-track      : transparent;
+	--scrollbar-onhover-thumb      : var(--scroll-color);
+	--scrollbar-onhover-track      : rgb(0 0 0/.1);
+}
+:root {
+	--primary-color                : #587da9;
+	--primary-bkg                  : #f9fafb;
+	--primary-bkg-darker           : #eff2f5;
+	--active-color                 : #4d627b;
+	--default-color                : #7a878e;
+	--scroll-color                 : #8399af;
+}

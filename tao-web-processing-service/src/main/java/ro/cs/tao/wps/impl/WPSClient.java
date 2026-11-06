@@ -27,11 +27,17 @@ import java.security.Principal;
 import java.util.*;
 
 public class WPSClient {
+    private final boolean publicOnly;
     private final String url;
     private final WebServiceAuthentication authentication;
     private final Principal currentPrincipal;
 
     public WPSClient(String url, WebServiceAuthentication authentication, Principal principal) {
+        this(url, authentication, principal, false);
+    }
+
+    public WPSClient(String url, WebServiceAuthentication authentication, Principal principal, boolean publicOnly) {
+        this.publicOnly = publicOnly;
         this.url = url;
         this.authentication = authentication;
         this.currentPrincipal = principal;
@@ -144,7 +150,7 @@ public class WPSClient {
 
     private WebProcessingService getService() throws ServiceException, IOException {
         return new WebProcessingService(new URL(this.url),
-                                        new WPSHttpClient(this.authentication),
+                                        publicOnly ? new ro.cs.tao.component.PublicServiceHttpClient(this.authentication, new URL(this.url)) : new WPSHttpClient(this.authentication),
                                         null);
     }
 }

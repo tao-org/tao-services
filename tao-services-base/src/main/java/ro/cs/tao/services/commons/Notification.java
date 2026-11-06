@@ -18,6 +18,11 @@ package ro.cs.tao.services.commons;
 import java.util.Calendar;
 
 /**
+ * Represents a notification entity that encapsulates information about a notification.
+ * A notification contains details such as the user it is associated with,
+ * a timestamp indicating when it was generated, its source, topic, and data.
+ * It also tracks whether the notification has been read or not.
+ *
  * @author Cosmin Cara
  */
 public class Notification {

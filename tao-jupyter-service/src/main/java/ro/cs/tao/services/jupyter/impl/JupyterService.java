@@ -1,17 +1,16 @@
 package ro.cs.tao.services.jupyter.impl;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.services.jupyter.model.Cell;
 import ro.cs.tao.services.jupyter.model.Notebook;
 import ro.cs.tao.services.jupyter.model.NotebookParams;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
@@ -46,8 +45,9 @@ public class JupyterService {
     }
 
     public void writeNotebook(Path path, Notebook notebook) {
-        var mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        var mapper = JsonMapper.builder()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .build();
         try {
             var json = mapper.writeValueAsString(notebook);
             Files.write(path.resolve("templateNotebook.ipynb"), json.getBytes());
@@ -58,7 +58,7 @@ public class JupyterService {
 
     public String readNotebook(Path path)
     {
-        Path notebookPath = Paths.get(path.toString() + path.getRoot().toString() + "templateNotebook.ipynb");
+        Path notebookPath = path.resolve("templateNotebook.ipynb");
         try {
             ObjectMapper mapper = new ObjectMapper();
             Notebook notebook = mapper.readValue(notebookPath.toFile(), Notebook.class);

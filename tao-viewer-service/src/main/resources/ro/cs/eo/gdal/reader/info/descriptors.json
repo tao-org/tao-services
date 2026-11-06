@@ -97,15 +97,45 @@
     "bands": [
       {
         "indexInRaster": 1,
-        "pattern": "B04_10m"
+        "pattern": "B04_10m",
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
       },
       {
         "indexInRaster": 1,
-        "pattern": "B03_10m"
+        "pattern": "B03_10m",
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
       },
       {
         "indexInRaster": 1,
-        "pattern": "B02_10m"
+        "pattern": "B02_10m",
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
+      }
+    ],
+    "pixelMinScale": 0,
+    "pixelMaxScale": 8191,
+    "noDataValue": -10000,
+    "priority": 1
+  },
+  {
+    "namePatterns": [
+      "S2[ABCD]_MSIL1C_\\d{8}T\\d{6}_N\\d{4}_R\\d{3}_T\\d{2}\\w{3}_\\d{8}T\\d{6}.SAFE"
+    ],
+    "subfolderPattern": "IMG_DATA",
+    "bands": [
+      {
+        "indexInRaster": 1,
+        "pattern": "B04",
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
+      },
+      {
+        "indexInRaster": 1,
+        "pattern": "B03",
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
+      },
+      {
+        "indexInRaster": 1,
+        "pattern": "B02",
+        "expression": "($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000"
       }
     ],
     "pixelMinScale": 0,
@@ -117,7 +147,7 @@
     "namePatterns": [
       "S2[ABCD]_MSIL2A_(\\d{8})T\\d{6}_N\\d{4}_R\\d{3}_T(\\d{2}\\w{3})_\\d{8}T\\d{6}.SAFE"
     ],
-    "subfolderPattern": "SENTINEL2[A-D]_%s-\\d{6}-\\d{3}_L2A_T%s.*",
+    "subfolderPattern": "SENTINEL2[A-D]_\\d{8}-\\d{6}-\\d{3}_L2A_T\\d{2}[A-Z]{3}.*",
     "bands": [
       {
         "indexInRaster": 1,
@@ -139,6 +169,21 @@
   },
   {
     "namePatterns": [
+      "S2[ABCD]_MSIFMASK_\\d{8}T\\d{6}_N\\d{4}_R\\d{3}_T\\d{2}\\w{3}_\\d{8}T\\d{6}.SAFE"
+    ],
+    "bands": [
+      {
+        "indexInRaster": 1,
+        "pattern": "Fmask\\d_10m"
+      }
+    ],
+    "pixelMinScale": 0,
+    "pixelMaxScale": 5,
+    "noDataValue": 255,
+    "priority": 1
+  },
+  {
+    "namePatterns": [
       "S2[ABCD]_MSIL2AMSK_\\d{8}T\\d{6}_N\\d{4}_R\\d{3}_T\\d{2}\\w{3}_\\d{8}T\\d{6}.SAFE"
     ],
     "bands": [
@@ -154,7 +199,7 @@
   },
   {
     "namePatterns": [
-      "[A-Za-z0-9_-]+\\.(tif|TIF|tiff|TIFF)"
+      "[A-Za-z0-9_-]+\\.(tif|TIF|tiff|TIFF|nc|NC)"
     ],
     "bands": [
       {

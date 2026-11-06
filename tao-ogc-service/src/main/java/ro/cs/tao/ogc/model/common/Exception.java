@@ -1,11 +1,19 @@
 package ro.cs.tao.ogc.model.common;
 
+import org.springframework.http.HttpStatus;
+
 public class Exception {
     private String type;
     private String title;
     private int status;
     private String detail;
     private String instance;
+
+    public Exception(Throwable e, int status) {
+        this.title = e.getClass().getSimpleName();
+        this.detail = e.getMessage();
+        this.status = HttpStatus.INTERNAL_SERVER_ERROR.value();
+    }
 
     public String getDetail() {
         return detail;

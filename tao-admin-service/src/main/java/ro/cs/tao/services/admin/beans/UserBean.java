@@ -5,6 +5,10 @@ import ro.cs.tao.user.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * A wrapper class for the {@link User} object that provides convenient getter methods
+ * and additional properties, such as processing time.
+ */
 public class UserBean {
     private final User user;
     private int processingTime;
@@ -116,4 +120,7 @@ public class UserBean {
     public void setProcessingTime(int processingTime) {
         this.processingTime = processingTime;
     }
+
+    public String getWorkspaceId() { return user.getWorkspaceId(); }
+
 }

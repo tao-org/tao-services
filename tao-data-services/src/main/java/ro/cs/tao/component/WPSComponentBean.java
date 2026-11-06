@@ -7,6 +7,20 @@ import ro.cs.tao.docker.ContainerType;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Represents a WPS (Web Processing Service) component bean that contains metadata,
+ * configurations, and parameters for a processing component.
+ *
+ * This class provides getters and setters for various properties such as ID,
+ * label, version, description, authorship information, node affinity, input and
+ * output descriptors, visibility, ownership, and activation status.
+ *
+ * The class also includes a method to convert its state into a {@link WPSComponent}
+ * entity and a constructor for initializing from a {@link WPSComponent}.
+ *
+ * Designed to support processing systems by defining configurations and constraints
+ * for a specific processing component within a service.
+ */
 public class WPSComponentBean {
 
     private String id;

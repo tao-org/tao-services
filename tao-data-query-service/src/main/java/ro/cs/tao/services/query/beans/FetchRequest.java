@@ -22,6 +22,10 @@ import ro.cs.tao.eodata.EOProduct;
 
 import java.util.List;
 
+/**
+ * Represents a request for fetching EOProducts based on a query, with options for
+ * specifying the fetch mode, local path, and path format.
+ */
 public class FetchRequest {
     private Query query;
     private List<EOProduct> products;

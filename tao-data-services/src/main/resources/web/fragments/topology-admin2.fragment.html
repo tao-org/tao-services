@@ -1,0 +1,790 @@
+<style>
+	:root {
+		--box-grid-icon-size: 2em;
+		--box-list-icon-size: 2em;
+	}
+	
+	/*------BOX APPEARANCE------*/
+	#panel-nodes {
+		core-cell-list .flex-row            {column-gap:0.6em;}
+		core-cell-list svg                  {max-width:5em;}
+		core-cell-grid .icon                {margin-bottom:1em;}
+		core-cell-grid .box-description     {padding-right:4em;}
+		core-cell-grid .box-top-tags        {left:1em;}
+		@media (min-width: 992px)           {
+			core-cell-list .box-description {padding-right:calc(100% - 25em);margin-bottom:0;}
+			core-cell-list .box-bottom      {position:absolute;bottom:calc(1.1em + 0.4em - 0.15em);right:1.1em;width:calc(100% - 25.8em);}
+		}
+	}
+	
+	/*------CUSTOM COLUMNS------*/
+	.col-custom {
+		padding-left:0.7em;padding-right:0.7em;
+		@media (min-width: 768px) {& {width:100%;float:left;}}
+		@media (min-width:1040px) {& {width: 50%;}}
+		@media (min-width:1410px) {& {width: 33%;}}
+		@media (min-width:1760px) {& {width: 25%;}}
+		@media (min-width:2130px) {& {width: 20%;}}
+		@media (min-width:2480px) {& {max-width: 37em;}}
+	}
+	
+	/*------MISC------*/
+	.flex-row {display:flex;gap:0 1.2em;align-items:center;}
+	
+	/*------SVG & TAGS------*/
+	.node-root             {
+		svg                {width:100%;height:100%;}
+		svg circle         {stroke:var(--box-color);stroke-width:2px;fill:var(--box-color);}
+		svg text           {font-size:1.3em;font-weight:600;stroke-width:0;fill:var(--box-color);text-anchor:middle;}
+		svg text.footnote  {font-size:0.8em;font-weight:400;fill:var(--box-color)!important;}
+		span.status        {font-weight:700;border-color:var(--status-default);color:var(--status-default);}
+		&.online           {
+			svg circle     {stroke:var(--status-success);fill:var(--box-bkg);}
+			span.status    {border-color:var(--status-success);color:var(--status-success);}
+		}
+		&.offline          {
+			svg circle     {stroke:var(--status-danger);fill:var(--status-danger);}
+			span.status    {border-color:var(--status-danger);color:var(--status-danger);}
+		}
+		&.tristate         {
+			svg circle     {stroke:var(--status-default);fill:var(--status-default);}
+			svg text       {fill:var(--pag-disabled-color);}
+			span.status    {background-color:var(--box-disabled-bkg);}
+		}
+	}
+	
+	/* new node */
+	.node_type{padding-bottom:10px;float:right;}
+	.node_type .radio-inline{font-weight:700;}
+</style>
+
+<!-- Content Header -->
+<section class="content-header">
+	<h1>Topology <small>The available <strong>nodes</strong> (machines) that can be used for executing workflows.</small></h1>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"> </i>Home</a></li><li class="active">Topology</li></ol>
+</section>
+
+<!-- Content Body -->
+<section class="content">
+	<!-- Custom Tabs -->
+	<div id="panel-nodes" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">				
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select users.">
+						<option class="role" data-target="#paginatedcells" value="active_nodes" selected>Active nodes</option>
+						<option class="role" data-target="#paginatedcells" value="inactive_nodes">Inactive nodes</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="active_nodes" aria-expanded="false">Active nodes</a></li>
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="inactive_nodes" aria-expanded="false">Inactive nodes</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="op-plus" data-toggle="tooltip" data-original-title="Add new node" data-showwhen="active_nodes"><i class="fa fa-plus"></i></button>
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">user</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				<div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-sm-12 col-md-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-id"></span></div>
+									<br />
+									<div class="box-icon icon vcenter"><i class="fa fa-vm-tao"></i></div>
+									<div class="flex-row">
+										<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48"></circle><text x="50%" y="56%" class="val-processorCount" ></text></svg>
+										<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48"></circle><text x="50%" y="56%" class="val-memorySizeGB"   ></text></svg>
+										<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48"></circle><text x="50%" y="56%" class="val-diskSpaceSizeGB"></text></svg>
+									</div>
+								</div>
+								<div class="box-description"><span class="val-description"></span></div>
+								<div class="box-bottom">
+									<div class="text-right flat-buttons">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"   ><i class="fa fa-pencil fa-fw"     ></i> Edit</button>
+										<button class="btn btn-primary btn-nodeop" data-action="disable"><i class="fa fa-pause fa-fw"      ></i> Disable</button>
+										<button class="btn btn-primary btn-nodeop" data-action="enable" ><i class="fa fa-play fa-fw"       ></i> Enable</button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete" ><i class="fa fa-trash-o fa-fw"    ></i> Delete</button>
+										<button class="btn btn-primary btn-nodeop" data-action="ssh"    ><i class="fa fa-terminal fa-fw"   ></i> SSH Terminal</button>
+										<button class="btn btn-primary btn-nodeop" data-action="monitor"><i class="fa fa-area-chart fa-fw" ></i> Monitor</button>
+										<button class="btn btn-primary btn-nodeop" data-action="status" ><i class="fa fa-stethoscope fa-fw"></i> Service status</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-custom">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"><span></span></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-id"></span></div>
+									<div class="box-description thin-scrollbar onhover"><span class="val-description"></span></div>
+									<div class="box-icon icon bottom"><i class="fa fa-vm-tao"></i></div>
+								</div>
+								<div class="flex-row">
+									<svg viewBox="0 0 100 120"><circle cx="50" cy="50" r="48"></circle><text x="50%" y="46%" class="val-processorCount" ></text><text x="50%" y="98%" class="footnote">PROCESSOR</text></svg>
+									<svg viewBox="0 0 100 120"><circle cx="50" cy="50" r="48"></circle><text x="50%" y="46%" class="val-memorySizeGB"   ></text><text x="50%" y="98%" class="footnote">MEMORY</text></svg>
+									<svg viewBox="0 0 100 120"><circle cx="50" cy="50" r="48"></circle><text x="50%" y="46%" class="val-diskSpaceSizeGB"></text><text x="50%" y="98%" class="footnote">STORAGE</text></svg>
+								</div>
+								<div class="box-bottom with-line">
+									<div class="text-left">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"    data-toggle="tooltip" data-original-title="Edit description"   ><i class="fa fa-pencil fa-fw"     ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="disable" data-toggle="tooltip" data-original-title="Disable node"       ><i class="fa fa-pause fa-fw"      ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="enable"  data-toggle="tooltip" data-original-title="Enable node"        ><i class="fa fa-play fa-fw"       ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"  data-toggle="tooltip" data-original-title="Delete node"        ><i class="fa fa-trash-o fa-fw"    ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="ssh"     data-toggle="tooltip" data-original-title="Access SSH terminal"><i class="fa fa-terminal fa-fw"   ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="monitor" data-toggle="tooltip" data-original-title="View resource usage"><i class="fa fa-area-chart fa-fw" ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="status"  data-toggle="tooltip" data-original-title="View service usage" ><i class="fa fa-stethoscope fa-fw"></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix">
+			<div class="controls-left">
+				<div><i class="fa fa-topology-tao"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> <span class="val-title">nodes</span></div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- modal nodes op -->
+<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!-- modal nodes op -->
+
+<!-- modal monitoring -->
+<div id="myModalMonitor" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">Node monitor </h4>
+            </div>
+            <div class="modal-body">
+                <section>
+                    <!-- row -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <!-- small box -->
+                            <div class="small-box bg-yellow">
+                                <div class="inner">
+                                    <h3>Node monitor</h3>
+                                    <p style="line-height: 1em;">
+                                        Hostname: <span class="val-sshHost"></span>
+                                    </p>
+                                </div>
+                                <div class="icon"><i class="fa fa-exclamation-triangle"></i></div>
+                                <a href="#" class="small-box-footer">Open in new window instead <i class="fa fa-arrow-circle-right"></i></a>
+                            </div>
+                        </div>
+                    </div><!-- /.row -->
+                    <div class="row">
+                        <div class="col-md-12" id="monitorIframeWrapper"></div><!-- /.col -->
+                    </div>
+                </section>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div>
+<!-- modal monitoring -->
+
+<!-- modal ssh -->
+<div id="myModalSSH" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel2" aria-hidden="false">
+    <div class="modal-dialog modal-lg modal-xlg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel2">SSH terminal </h4>
+            </div>
+            <div class="modal-body">
+                <!-- document timeline content -->
+                <section>
+                    <!-- row -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <!-- small box -->
+                            <div class="small-box bg-yellow">
+                                <div class="inner">
+                                    <h3>SSH Terminal</h3>
+                                    <p style="line-height: 1em;">
+                                        Hostname: <span class="val-sshHost"></span>
+                                    </p>
+                                </div>
+                                <div class="icon"><i class="fa fa-exclamation-triangle"></i></div>
+                                <a href="#" class="small-box-footer">Open in new window instead <i class="fa fa-arrow-circle-right"></i></a>
+                            </div>
+                        </div>
+                    </div><!-- /.row -->
+                    <!-- row -->
+                    <div class="row">
+                        <div class="col-md-12" id="sshIframeWrapper"></div><!-- /.col -->
+                    </div><!-- /.row -->
+                </section>
+                <!-- /.timeline content -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div>
+<!-- modal ssh -->
+
+<!-- modal satus -->
+<div id="myModalSatus" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel2" aria-hidden="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Services status </h4>
+            </div>
+            <div class="modal-body">
+                <!-- document timeline content -->
+                <section>
+                    <!-- row -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <!-- small box -->
+                            <div class="small-box bg-yellow">
+                                <div class="inner">
+                                    <h3>Services Status</h3>
+                                    <p style="line-height: 1em;">
+                                        Hostname: <span class="val-sshHost"></span>
+                                    </p>
+                                </div>
+                                <div class="icon"><i class="fa fa-exclamation-triangle"></i></div>
+                                <p>&nbsp;</p>
+                            </div>
+                        </div>
+                    </div><!-- /.row -->
+                    <!-- row -->
+                    <div class="row">
+                        <div class="col-md-12" id="servicesStatusWrapper">
+                            <div class="box box-primary">
+                                <!-- /.box-header -->
+                                <div class="box-body">
+                                </div>
+                                <!-- /.box-body -->
+                            </div>
+                            <strong><i class="fa fa-file-text-o fa-fw"></i> Notes</strong>
+                            <p>Only installed services are present in the services status.</p>
+                        </div><!-- /.col -->
+                    </div><!-- /.row -->
+                </section>
+                <!-- /.timeline content -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div>
+<!-- modal status -->
+
+<link rel="stylesheet" href="./assets/libs/jQuery-datepicker/jquery-ui.css" type="text/css" />
+<script src="./assets/libs/jQuery-datepicker/jquery-ui.js" type="text/javascript"></script>
+<script src="./assets/libs/np/jquery.npmultilineselect.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+	window.navCleanup = function () {
+		$("iframe", "#myModalSSH,#myModalMonitor").remove();
+	};
+</script>
+
+<script type="text/javascript">
+    var sock = null;
+	var sessionId = null;
+	var closed = { STDOUT:false, STDERR:false };
+	var term = null;
+	
+	// Enable/Disable/Delete execution node
+	var manageNode = function (action, dna) {
+		if (action === "delete") {
+			$.ajax({
+				cache    : false,
+				url      : baseRestApiURL + "topology/" + dna.id + "/",
+				type     : "DELETE",
+				dataType : "json",
+				headers  : {
+					"Accept"      : "application/json",
+					"Content-Type": "application/json",
+					"X-Auth-Token": window.tokenKey
+				},
+				error: function (jqXHR, textStatus, errorThrown) {
+					if (jqXHR.status === 500) {
+						showMsg("Unable to delete node. Please try again.", "ERROR");
+					} else {
+						alert("An error has occurred, please try again or contact app admin.");
+					}
+				},
+				success: function (data) {
+					showMsg("Execution node successfully deleted.", "SUCCESS");
+					panelComp.refreshData();
+				}
+			});
+		} else if (action === "enable" || action === "disable") {
+			var formData = {
+				id         : dna.id,
+				userName   : dna.userName,
+				userPass   : dna.userPass,
+				flavor     : dna.flavor,
+				volatile   : dna.volatile,
+				description: dna.description,
+				active     : action === "enable",
+				tags       : dna.tags
+			};
+			if ($.inArray("ONLINE"   , formData.tags) > -1) { formData.tags.splice($.inArray("ONLINE"   , formData.tags), 1); } else
+			if ($.inArray("OFFLINE"  , formData.tags) > -1) { formData.tags.splice($.inArray("OFFLINE"  , formData.tags), 1); } else
+			if ($.inArray("INACTIVE" , formData.tags) > -1) { formData.tags.splice($.inArray("INACTIVE" , formData.tags), 1); } else
+			if ($.inArray("UNDEFINED", formData.tags) > -1) { formData.tags.splice($.inArray("UNDEFINED", formData.tags), 1); }
+			if ($.inArray("VOLATILE" , formData.tags) > -1) { formData.tags.splice($.inArray("VOLATILE" , formData.tags), 1); }
+			if (formData.tags.length == 0) { delete formData.tags; }
+			$.ajax({
+				cache   : false,
+				url     : baseRestApiURL + "topology/" + dna.id + "/",
+				type    : "PUT",
+				dataType: "json",
+				data    : JSON.stringify(formData),
+				headers : {
+					"Accept"      : "application/json",
+					"Content-Type": "application/json",
+					"X-Auth-Token": window.tokenKey
+				},
+				error: function (jqXHR, textStatus, errorThrown) {
+					showMsg("Error updating execution node [" + textStatus + "]. Please check your data and try again.", "ERROR");
+				},
+				success: function(response, textStatus, jqXHR) {
+					if (response.status === responseStatus.success) {
+						showMsg("Execution node successfully updated.", "SUCCESS");
+						panelComp.refreshData();
+					} else if (response.status == responseStatus.fail) {
+						showMsg(response.message, "FAILED");
+					}
+				}
+			});
+		} else {
+			alert("Action not implemented.");
+		}
+	};
+	
+    var monitorNode = function (dna) {
+		var $sshModal = $("#myModalMonitor");
+		$(".val-sshHost", $sshModal).text(dna.id);
+		var sshURL = './nodemonitor.html?node='+dna.id;
+		var parentIframe = document.getElementById("monitorIframeWrapper");
+		//$("#monitorIframeWrapper").hide();
+		var iframe = document.createElement('iframe');
+		iframe.id = "randomid"+Math.floor(Math.random() * 10000000);
+		iframe.src = sshURL;
+		iframe.style.width = "100%";
+		iframe.style.height = "400px";
+		iframe.style.border = "0";
+		parentIframe.appendChild(iframe);
+		$sshModal.modal('show');
+		$sshModal
+			.off("click", ".small-box-footer")
+			.on("click", ".small-box-footer", function(e){
+
+				e.preventDefault();
+				var newwindow = window.open(sshURL, "_blank", "resizable=yes, scrollbars=yes, titlebar=yes, width=800, height=405, top=10, left=10");
+				$sshModal.modal('hide');
+			});
+    };
+	
+    var sshNode = function (nodeDNA) {
+        var $sshModal = $("#myModalSSH");
+        $(".val-sshHost", $sshModal).text(nodeDNA.id);
+        $(".val-sshHost", $sshModal).data("id", nodeDNA.appId);
+        var target = nodeDNA.id;
+        var parentIframe = document.getElementById("sshIframeWrapper");
+        /*var iframe = document.createElement('iframe');
+        iframe.id="randomid"+Math.floor(Math.random() * 10000000);
+        iframe.src = sshURL;
+        iframe.style.width = "100%";
+        iframe.style.height = "500px";
+        parentIframe.appendChild(iframe);*/
+        $sshModal.modal('show');
+        if($("#myModalSSH").find("#sshIframeWrapper").find(".xterm").length === 0){
+            connect(nodeDNA);
+        }else{
+            $("#myModalSSH").find("#sshIframeWrapper").find(".xterm").remove();
+            connect(nodeDNA);
+        }
+        $sshModal
+            .off("click", ".small-box-footer")
+            .on("click", ".small-box-footer", function(e){
+                e.preventDefault();
+                var windowObjectReference;
+                var strWindowFeatures = "menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes";
+                windowObjectReference = window.open(sshURL, "SSH terminal to "+nodeDNA.id, strWindowFeatures);
+                $sshModal.modal('hide');
+            });
+        return 1;
+    };
+	
+    $("#myModalSSH").on('hide.bs.modal', function(){
+        //var nodeId = $(".val-sshHost", "#myModalSSH").data("id");
+        if (sessionId === undefined || sessionId == null) {
+            return;
+        }
+        $.ajax({
+            cache: false,
+            url: baseRestApiURL + "session/" + sessionId + "/close",
+            type: 'POST',
+            headers: {
+                "X-Auth-Token": window.tokenKey
+            }
+        }).done(function (response) {
+            console.log(response);
+        }).fail(function (jqXHR, textStatus) {
+                chkXHR(jqXHR.status);
+        });
+    });
+	
+    var statusNode = function (nodeDNA) {
+        var $sshModal = $("#myModalSatus");
+        $(".val-sshHost",$sshModal).text(nodeDNA.id);
+
+        var html = "";
+        for (var i = 0; i < nodeDNA.servicesStatus.length; i++){
+            html += '<p class="pull-right"><span class="label label-success">' + nodeDNA.servicesStatus[i].status + '</span></p>' +
+                '<strong><i class="fa fa-check-circle fa-fw"></i>' + nodeDNA.servicesStatus[i].serviceDescription.name + '</strong>, ' +
+				'version: ' + nodeDNA.servicesStatus[i].serviceDescription.version +
+				'<br>' + nodeDNA.servicesStatus[i].serviceDescription.description + '<hr>\n';
+        }
+        if(html === ""){
+            html = '<strong><i class="fa fa-exclamation-triangle fa-fw"></i> No installed services reported</strong>';
+        }
+        $("#servicesStatusWrapper .box-body").html(html);
+        $sshModal.modal('show');
+    };
+	
+	var getOnlineNodes = function () {
+		var onlineNodes = [];
+		$.ajax({
+			cache   : false,
+			url     : baseRestApiURL + "monitor/",
+			dataType: "json",
+			type    : "GET",
+			async   : false,
+			headers: {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error  : function (jqXHR, textStatus, errorThrown) { },
+			success: function (result) { onlineNodes = result.data; }
+		});
+		return onlineNodes;
+	}
+	
+	// WS functions
+    async function sendMessage(to, d) {
+			return sock.send(JSON.stringify({to, d}));
+    }
+    function connect(sshNode) {
+        term = new Terminal({cols: 80, rows:25, scrollback:0, windowsMode:false});
+        const fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+        term.open(document.getElementById("sshIframeWrapper"));
+        sock = new SockJS('/ws-terminal', undefined, {transports: null});
+        sock.onopen = function (){
+            sendMessage('tm', 'new-session');
+        };
+        sock.onmessage = async function (e) {
+            if (e.data) {
+                let data = JSON.parse(e.data);
+                if (data.cause == "new-session") {
+                    sessionId = data.sessionId;
+                    await connected(sshNode);
+                } else if (data.cause == "update") {
+                    const binary = atob(data.b64);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < bytes.length; i++) {
+                        bytes[i] = binary.charCodeAt(i);
+                    }
+                    await new Promise((a, r) => term.write(bytes, a)); // block onmessage until written
+                } else if (data.cause == "ask-for-password") {
+                    term.write("Password needed.");
+                    setTimeout(() => {
+                        let password = window.prompt("Enter your password");
+                        sendMessage('tm', {event:"password", password});
+                    }, 100);
+                } else if (data.cause == "EOF") {
+                    closed[data.stream] = true;
+                    if (Object.keys(closed).filter(x=>!closed[x]).length == 0) {
+                        term.write("\r\n\r\n-- END -- Reload the page to restart --", ()=>{
+                            sock.close();
+                        });
+                    }
+                } else {
+                    console.log('unknown message', e);
+                }
+            }
+        };
+        sock.onclose = function () {
+            console.log('close');
+            sessionId = null;
+            term.disableStdin = true;
+            term.onKey(e => {
+                term.blur();
+            });
+            term.blur();
+        };
+    }
+    async function write(s) {
+        // console.debug("debug output", s);
+        sendMessage('tm', {event:"type", text:s});
+    }
+    async function connected(node) {
+        //term.write('Connected to backend! \r\n');
+        sendMessage('tm', {event: "connect", target: node.id});
+        term.onData((s) => {
+            write(s);
+        });
+        term.onResize(evt => resized(evt));
+        const xterm_resize_ob = new ResizeObserver(function (entries) {
+            // since we are observing only a single element, so we access the first element in entries array
+            try {
+                fitAddon && fitAddon.fit();
+            } catch (err) {
+                console.log(err);
+            }
+        });
+        xterm_resize_ob.observe(document.querySelector("#myModalSSH"));
+        term.focus();
+    }
+    async function resized(evt) {
+        console.log("resize", evt)
+        return fetch('/session/' + sessionId + '/resized', {
+            method: 'POST',
+            body: JSON.stringify(evt),
+            headers: {
+                "Accept": "application/json"
+            }
+        }).then(response => response.json())
+        .then((data) => {
+            console.log("resize response", data);
+        })
+        .catch(e => console.error("resize error", e));
+    }
+	
+    var myModalNodesOpShow = function (operationid, dna) {
+		window.userOpStack = [];
+		var rm_contentUrl = "";
+		var $modal  = $("#myModalNodes");
+		var $dialog = $(".modal-dialog", $modal).removeClass("modal-lg").removeAttr("style");
+		switch (operationid) {
+			case "op-plus": window.userOpStack = { "action": "plus"             }; rm_contentUrl = "./fragments/topology-plus.fragment.html?"  + Math.random(); break;
+			case "edit"   : window.userOpStack = { "action": "edit", "dna": dna }; rm_contentUrl = "./fragments/topology-plus.fragment.html?"  + Math.random(); break;
+		}
+		if (rm_contentUrl !== "") {
+			$.ajax({
+				url    : rm_contentUrl,
+				success: function (result) {
+					if (result !== "") {
+						$dialog.html(result);
+					} else {
+						alert("Could not retrive needed data from server.");
+						return e.preventDefault();
+					}
+					$modal.modal("show");
+				}
+			});
+		} else {
+			alert("TAO - Operation mismatch");
+		}
+    };
+	
+    $(document).ready(function () {
+		var $selectActivePanel = $("#selectActivePanel");
+		var urls = [];
+		var actionsSet = {
+			"active_nodes"  : { badgeLabel: "Active nodes"  , pagLabel: "active nodes"  , emptyLabel: "active node"  , url: baseRestApiURL + "topology/active"   },
+			"inactive_nodes": { badgeLabel: "Inactive nodes", pagLabel: "inactive nodes", emptyLabel: "inactive node", url: baseRestApiURL + "topology/inactive" }
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
+				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+				$(".top-controls .search-container").attr("data-original-title", "Search " + (actionsSet[action]?.emptyLabel || action));
+			}
+			return selected;
+		};
+		window.panelComp = $("#panel-nodes").npPaginatedCells({
+			headerUser: taoUserProfile.username,
+			url       : urls,
+			viewMode  : preferences.viewMode,
+			order:[
+				{ "label": "Name ascending" ,"objAttributeName": "id", "direction": "ASC" },
+				{ "label": "Name descending","objAttributeName": "id", "direction": "DSC" }
+			],
+			filterAttribute: "id",
+			doDataPreprocessing: function (data, sets) {
+				var onlineNodes = getOnlineNodes();
+				var activeSet = getActiveSet(data, sets);
+				var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+				$.each(activeSet, function (index, elX) {
+					// Stats
+					elX.memorySizeGB    = elX.flavor.memory + "GB";
+					elX.processorCount  = elX.flavor.cpu    + "X";
+					elX.diskSpaceSizeGB = elX.flavor.disk   + "GB";
+					// Tags
+					!elX.tags && (elX.tags = []);
+					elX.volatile && elX.tags.push("VOLATILE");
+					if (elX.active) {
+						if (typeof onlineNodes[elX.id] !== "undefined") {
+							var resSum = parseInt(onlineNodes[elX.id].availableMemory + onlineNodes[elX.id].cpuTotal  + onlineNodes[elX.id].diskUsed);
+							if (resSum ===  -3) { elX.tags.push("OFFLINE"  ); } else
+							if (resSum ===   0) { elX.tags.push("UNDEFINED"); } else
+												{ elX.tags.push("ONLINE"   ); }
+						} else					{ elX.tags.push("UNDEFINED"); }
+					} else						{ elX.tags.push("INACTIVE" ); }
+				});
+				return activeSet;
+			},
+			doCustomRender: function($elClone, elX) {
+				// Clone status circles to simulate background transparency
+				$("circle", $elClone).eq(0).clone().css({ "opacity": ".3", "stroke": "0" }).insertBefore($("circle", $elClone).css({ "fill": "none" }));
+				
+				// Set node status (online/offline/tristate)
+				$(".box-top-tags span:last-child", $elClone).addClass("status");
+				if ($.inArray("ONLINE"   , elX.tags) > -1) { $elClone.addClass("online"  ); } else
+				if ($.inArray("OFFLINE"  , elX.tags) > -1) { $elClone.addClass("offline disabled" ); } else
+				if ($.inArray("UNDEFINED", elX.tags) > -1 ||
+					$.inArray("INACTIVE" , elX.tags) > -1) { $elClone.addClass("tristate disabled"); }
+				
+				// Set action buttons availabilities
+				var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+				if (taoUserProfile.userRole !== "ADMIN") {
+					$('button[data-action="enable" ]', $elClone).remove();
+					$('button[data-action="disable"]', $elClone).remove();
+					$('button[data-action="delete" ]', $elClone).remove();
+				}
+				if (action == "active_nodes") {
+					// remove "Enable" button
+					$('button[data-action="enable" ]', $elClone).remove();
+				} else {
+					// remove all buttons except "Edit" and "Enable"
+					$('button[data-action="disable"]', $elClone).remove();
+					$('button[data-action="delete" ]', $elClone).remove();
+					$('button[data-action="ssh"    ]', $elClone).remove();
+					$('button[data-action="monitor"]', $elClone).remove();
+					$('button[data-action="status" ]', $elClone).remove();
+				}
+			},
+			doAction: function (action, args) {
+				var dna = $.extend({}, args?.dna || {});
+				switch (action) {
+					// Add node			------------------------------------------
+					case "op-plus":		myModalNodesOpShow(action, dna);
+										break;
+					// Edit node		------------------------------------------
+					case "edit":		myModalNodesOpShow(action, dna);
+										break;
+					// Manage status	------------------------------------------
+					case "enable":
+					case "disable":
+					case "delete":		$("#confirm-dialog").modal("confirm", {
+											msg: 'Are you sure you want to ' + action + ' the node: <strong>' + dna.id + '</strong>?',
+											callbackConfirm: function () { manageNode(action, dna); }
+										});
+										break;
+					// Monitor node		------------------------------------------
+					case "monitor":		monitorNode(dna);
+										break;
+					// SSH Terminal		------------------------------------------
+					case "ssh":			sshNode(dna);
+										break;
+					// View usage		------------------------------------------
+					case "status":		statusNode(dna);
+										break;
+				}
+			}
+		});
+		
+		$selectActivePanel
+		// Change active tab (using the tab controls)
+		.on("click", '[data-toggle="tab"][aria-expanded="false"]', function (e) {
+			navCleanup();
+			
+			var action = $(this).data("action");
+			e.originalEvent && $("select", e.delegateTarget).val(action);
+			
+			urls = (urls.length == 0) ? $.map(actionsSet, function (set, idx) { return set.url; }) : [ actionsSet[action].url ];
+			window.panelComp.refreshData(urls);
+		})
+		// Change active tab (using the combobox)
+		.on("change", "select", function (e) {
+			$('[data-toggle="tab"][data-action="' + this.value + '"]', e.delegateTraget).eq(0).click();
+		})
+		// Manage content when active tab changes
+		.on("shown.bs.tab", '[data-toggle="tab"][aria-expanded]', function (e) {
+			// Toggle visibility of specific toolbar icons
+			$('[data-showwhen]', ".top-controls").addClass("hidden").filter('[data-showwhen="' + $(e.currentTarget).data("action") + '"]').removeClass("hidden");
+		});
+		
+		// Start with active toolbox containers
+		$('[data-toggle="tab"][data-action="active_nodes"]', $selectActivePanel).eq(0).click();
+    });
+	
+//# sourceURL=topology-admin2.fragment.js
+</script>

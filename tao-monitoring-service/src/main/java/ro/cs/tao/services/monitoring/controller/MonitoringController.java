@@ -15,11 +15,9 @@
  */
 package ro.cs.tao.services.monitoring.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.hsqldb.lib.HashMap;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.metrics.MetricsEndpoint;
+import org.springframework.boot.micrometer.metrics.actuate.endpoint.MetricsEndpoint;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +28,7 @@ import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
+import ro.cs.tao.execution.monitor.RuntimeInfoCluster;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
@@ -50,6 +49,7 @@ import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
+import tools.jackson.core.JacksonException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -63,6 +63,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Controller responsible for monitoring node resources, system notifications, and metrics.
+ * This class provides endpoints to access snapshots of node resources, statuses of nodes,
+ * system notifications, and collected metrics. It also allows the management of metrics collection settings.
+ *
  * @author Cosmin Cara
  */
 @RestController
@@ -90,7 +94,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns a list of all available nodes resources snapshots
      */
-    @RequestMapping(value = "/monitor/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/monitor/", "/monitor" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAllSnapshot() {
         if (isCurrentUserAdmin()) {
             return prepareResult(monitoringService.getNodesSnapshot(),
@@ -103,7 +107,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns a snapshot of the resources of the primary node
      */
-    @RequestMapping(value = "/monitor/master", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/monitor/master", "/monitor/master/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getMasterSnapshot() {
         if (isCurrentUserAdmin()) {
             final RuntimeInfo snapshot = monitoringService.getMasterSnapshot();
@@ -118,7 +122,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns a snapshot of the resources of a secondary node
      */
-    @RequestMapping(value = "/monitor/{host:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/monitor/{host:.+}", "/monitor/{host:.+}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNodeSnapshot(@PathVariable("host") String host) {
         if (isCurrentUserAdmin()) {
             final RuntimeInfo snapshot = monitoringService.getNodeSnapshot(host);
@@ -131,9 +135,24 @@ public class MonitoringController extends BaseController {
         }
     }
     /**
+     * Returns a snapshot of the resources for a cluster node
+     */
+    @RequestMapping(value = { "/monitor/cluster/{host:.+}", "/monitor/cluster/{host:.+}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getClusterSnapshot(@PathVariable("host") String host) {
+        if (isCurrentUserAdmin()) {
+            final RuntimeInfoCluster snapshot = monitoringService.getClusterSnapshot(host);
+            if (snapshot == null) {
+                return prepareResult("No information available for node ['" + host + "']", ResponseStatus.FAILED);
+            }
+            return prepareResult(snapshot);
+        } else {
+            return prepareResult("Not authorized", ResponseStatus.FAILED, HttpStatus.FORBIDDEN);
+        }
+    }
+    /**
      * Returns the active (i.e. not read) system notifications
      */
-    @RequestMapping(value = "/monitor/notification/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/monitor/notification/", "/monitor/notification" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getLiveNotifications() {
         try {
             if (isCurrentUserAdmin()) {
@@ -148,7 +167,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns the active (i.e. not read) notifications for a user
      */
-    @RequestMapping(value = "/monitor/notification/unread", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/monitor/notification/unread", "/monitor/notification/unread/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUnreadNotifications() {
         try {
             return prepareResult(monitoringService.getUnreadNotifications(currentUser()));
@@ -159,7 +178,7 @@ public class MonitoringController extends BaseController {
     /**
      * Returns a page of notifications for a user
      */
-    @RequestMapping(value = "/monitor/notification/{page}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/monitor/notification/{page}", "/monitor/notification/{page}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNotifications(@PathVariable("page") int page) {
         try {
             return prepareResult(monitoringService.getNotifications(currentUser(), page));
@@ -168,7 +187,7 @@ public class MonitoringController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/monitor/notification/{user}/{page}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/monitor/notification/{user}/{page}", "/monitor/notification/{user}/{page}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserNotifications(@PathVariable("user") String userId,
                                                                    @PathVariable("page") int page) {
         if (isCurrentUserAdmin() || currentUser().equals(userId)) {
@@ -186,7 +205,7 @@ public class MonitoringController extends BaseController {
      * Marks the given notifications as read
      * @param notificationIds The list of notification identifiers
      */
-    @RequestMapping(value = "/monitor/notification/ack", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/monitor/notification/ack", "/monitor/notification/ack/" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> acknowledgeNotifications(@RequestBody List<Long> notificationIds) {
         return prepareResult(monitoringService.acknowledgeNotification(notificationIds, currentUser()));
     }
@@ -194,7 +213,7 @@ public class MonitoringController extends BaseController {
     /**
      * Clears the notifications for the current user
      */
-    @RequestMapping(value = "/monitor/notification/clear", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/monitor/notification/clear", "/monitor/notification/clear/" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> clearNotifications() {
         try {
             monitoringService.deleteAll(currentUser());
@@ -207,7 +226,7 @@ public class MonitoringController extends BaseController {
     /**
      * Inspects the available nodes and returns their status (online or offline)
      */
-    @RequestMapping(value = "/monitor/status", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/monitor/status", "/monitor/status/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNodesOnlineStatus() {
         if (isCurrentUserAdmin()) {
             return prepareResult(monitoringService.getNodesOnlineStatus());
@@ -216,7 +235,7 @@ public class MonitoringController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/emit", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/emit", "/emit/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> emit(@RequestParam(name = "principal", required = false) String principal,
                                                    @RequestParam("topic") String topic) {
         try {
@@ -235,12 +254,28 @@ public class MonitoringController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/metrics", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    /**
+     * Endpoint to retrieve the collected metrics data.
+     * This method fetches a list of metrics by invoking an internal
+     * collection method and wraps the result into a response entity.
+     *
+     * @return a {@link ResponseEntity} containing a {@link ServiceResponse} object.
+     *         The response includes the list of collected metrics in the data field of the ServiceResponse.
+     */
+    @RequestMapping(value = { "/metrics", "/metrics/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getMetrics() {
         return prepareResult(collectMetrics());
     }
 
-    @RequestMapping(value = "/metrics/enable", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    /**
+     * Enables the metrics collection by scheduling a periodic task to collect data at a fixed interval.
+     * Cancels any existing tasks and timers before scheduling a new one.
+     *
+     * @return a {@link ResponseEntity} containing a {@link ServiceResponse} object.
+     *         The response indicates whether the operation was successfully carried out
+     *         or if an exception occurred during the process.
+     */
+    @RequestMapping(value = { "/metrics/enable", "/metrics/enable/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> enableMetrics() {
         try {
             collectTimer.cancel();
@@ -255,7 +290,14 @@ public class MonitoringController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/metrics/disable", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    /**
+     * Disables the metrics collection by canceling the associated timer task.
+     *
+     * @return A {@link ResponseEntity} containing a {@link ServiceResponse} object.
+     *         The response indicates whether the operation was successfully carried out
+     *         or if an exception occurred during the process.
+     */
+    @RequestMapping(value = { "/metrics/disable", "/metrics/disable/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> disableMetrics() {
         try {
             collectTimer.cancel();
@@ -281,7 +323,7 @@ public class MonitoringController extends BaseController {
                           .collect(Collectors.toList());
     }
 
-    private Message createMessage(Principal principal, String topic) throws JsonProcessingException {
+    private Message createMessage(Principal principal, String topic) throws JacksonException {
         Message message = null;
         final String master = NodeManager.getInstance().getMasterNode().getNode().getId();
         if (Topic.INFORMATION.value().equals(topic)) {

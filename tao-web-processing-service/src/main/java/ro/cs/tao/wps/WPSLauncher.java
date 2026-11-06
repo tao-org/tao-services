@@ -20,18 +20,36 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ImportResource;
 import ro.cs.tao.services.commons.ServiceLauncher;
+import ro.cs.tao.services.commons.menu.Section;
+import ro.cs.tao.services.commons.menu.ServiceEntry;
+import ro.cs.tao.services.commons.menu.Visibility;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Cosmin Cara
  */
 @SpringBootApplication()
 @ImportResource({"classpath:tao-web-processing-service-context.xml"})
-public class WPSLauncher implements ServiceLauncher {
+public class WPSLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(WPSLauncher.class, args);
     }
 
+    public WPSLauncher() {
+        super();
+    }
+
     @Override
     public String serviceName() { return "Web Processing Service"; }
+
+    @Override
+    protected List<ServiceEntry> exportedEntries() {
+        final List<ServiceEntry> entries = new ArrayList<>();
+        entries.add(new ServiceEntry("Remote Services", "my/remoteServices", "./fragments/remoteServices-components.fragment.html", new Visibility[] { Visibility.USER, Visibility.ADMIN }, Section.WORKFLOWS, 2));
+        entries.add(new ServiceEntry("Remote Web Services", "admin/remoteServices", "./fragments/remoteServices-admin2.fragment.html", new Visibility[] { Visibility.ADMIN }, Section.ADMINISTRATION, 4));
+        return entries;
+    }
 }

@@ -16,9 +16,7 @@ public class RestartController extends ControllerBase {
 
     @PostMapping("/restart")
     public ResponseEntity<ServiceResponse<?>> restart() {
-        asyncExecute(() -> {
-            restartService.doRestart();
-        });
+        restartService.doRestart();
         return prepareResult("Services restart initiated", ResponseStatus.SUCCEEDED);
     }
 }

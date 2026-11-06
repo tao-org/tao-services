@@ -1,0 +1,348 @@
+<style>
+	/*------BOX APPEARANCE------*/
+	#panel-nodes {
+		.nodes-item-core-box .with-label>label::before {min-width:7.0em;}
+		.nodes-item-core-box .box-description {min-height:5.688em;max-height:5.688em;color:inherit;
+			.with-label>label                 {margin-left:1em;opacity:.8;}
+			.with-label>label::before         {min-width:8.5em;}
+		}
+		
+		
+		.node-root.online  .btn[data-action="resume"] {display:none;}
+		.node-root.online  .status {color:#fff;background-color:var(--status-success);border-color:var(--status-success);}
+		.node-root.offline .btn[data-action="pause" ] {display:none;}
+		.node-root.offline .status {color:#fff;background-color:var(--status-danger);border-color:var(--status-danger);}
+		
+		@media (min-width: 768px) {
+			core-cell-list .box-description {padding-right:21em;margin-bottom:0;}
+			core-cell-list .box-bottom      {position:absolute;bottom:calc(1.1em + 0.4em - 0.15em);right:1.1em;width:fit-content;}
+		}
+	}
+	
+	/*------CUSTOM COLUMNS------*/
+	.col-custom {
+		padding-left:0.7em;padding-right:0.7em;
+		@media (min-width: 768px) {& {width:100%;float:left;}}
+		@media (min-width:1040px) {& {width: 50%;}}
+		@media (min-width:1410px) {& {width: 33%;}}
+		@media (min-width:1760px) {& {width: 25%;}}
+		@media (min-width:2130px) {& {width: 20%;}}
+		@media (min-width:2480px) {& {max-width: 37em;}}
+	}
+</style>
+
+<!-- Content Header -->
+<section class="content-header">
+	<h1>Here you can schedule <strong>workflow executions</strong> and manage them.</small></h1>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"> </i>Home</a></li><li class="active">Scheduled Jobs</li></ol>
+</section>
+
+<!-- Content Body -->
+<section class="content">
+	<!-- Custom Tabs -->
+	<div id="panel-nodes" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select desired schedulers view.">
+						<option class="role" data-target="#paginatedcells" value="manage_jobs" selected>All schedulers</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role active"><a href="#paginatedcells" data-toggle="tab" data-action="manage_jobs" aria-expanded="true">All schedulers</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="op-plus"   data-toggle="tooltip" data-original-title="Create a scheduled task"><i class="fa fa-plus"></i></button>
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">scheduled task</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				 <div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-sm-12 col-md-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-friendlyName"></span></div>
+									<div class="box-subtitle"><span class="val-id"></span></div>
+									<div class="box-text">
+										Start time: <strong><span class="val-startTime"> - </span></strong> |
+										Repeat interval: <strong><span class="val-repeatInterval"> - </span></strong> |
+										Scheduling mode: <strong><span class="val-mode"> - </span></strong>
+									</div>
+									<div class="box-icon"><i class="fa fa-clock-o"></i></div>
+								</div>
+								<div class="box-description">
+									<span><strong>Workflow information:</strong></span><br/>
+									<div class="box-text with-label"><label>Name: </label><strong><span class="val-workflowName"></span></strong></div>
+									<div class="box-text with-label"><label>Last execution time: </label><strong><span class="val-lastExecutionTime"></span></strong></div>
+									<div class="box-text with-label"><label>Last execution status: </label><strong><span class="val-lastExecutionStatus"></span></strong></div>
+								</div>
+								<div class="box-bottom">
+									<div class="text-right flat-buttons">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"  ><i class="fa fa-pencil fa-fw" ></i> Edit</button>
+										<button class="btn btn-primary btn-nodeop" data-action="pause" ><i class="fa fa-pause fa-fw"  ></i> Pause</button>
+										<button class="btn btn-primary btn-nodeop" data-action="resume"><i class="fa fa-play fa-fw"   ></i> Resume</button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"><i class="fa fa-trash-o fa-fw"></i> Delete</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-custom">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-friendlyName"></span></div>
+									<div class="box-subtitle">ID: <span class="val-id"></span></div>
+									<div class="box-text with-label"><label>Start time: </label><strong><span class="val-startTime"></span></strong></div>
+									<div class="box-text with-label"><label>Repeat interval: </label><strong><span class="val-repeatInterval"></span></strong></div>
+									<div class="box-text with-label"><label>Scheduling mode: </label><strong><span class="val-mode"></span></strong></div>
+									<div class="box-icon"><i class="fa fa-clock-o"></i></div>
+								</div>
+								<div class="box-description">
+									<span><strong>Workflow information:</strong></span><br/>
+									<div class="box-text with-label"><label>Name: </label><strong><span class="val-workflowName"></span></strong></div>
+									<div class="box-text with-label"><label>Last execution time: </label><strong><span class="val-lastExecutionTime"></span></strong></div>
+									<div class="box-text with-label"><label>Last execution status: </label><strong><span class="val-lastExecutionStatus"></span></strong></div>
+								</div>
+								<div class="box-bottom clearfix">
+									<div class="pull-left">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"   data-toggle="tooltip" data-original-title="Edit"  ><i class="fa fa-pencil fa-fw" ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete" data-toggle="tooltip" data-original-title="Delete"><i class="fa fa-trash-o fa-fw"></i></button>
+									</div>
+									<div class="pull-right">
+										<button class="btn btn-primary btn-nodeop" data-action="pause"  data-toggle="tooltip" data-original-title="Pause" ><i class="fa fa-pause fa-fw"  ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="resume" data-toggle="tooltip" data-original-title="Resume"><i class="fa fa-play fa-fw"   ></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix">
+			<div class="controls-left">
+				<div><i class="fa fa-clock-o"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> scheduled jobs</div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- Modal for user actions -->
+<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog">
+	<div class="modal-dialog"></div>
+</div>
+
+<script type="text/javascript">
+	var deleteNodeById = function (id) {
+		$.ajax({
+			cache   : false,
+			url     : baseRestApiURL + "scheduling/remove?id=" + id,
+			dataType: "json",
+			type    : "GET",
+			headers : { "Accept": "application/json", "Content-Type": "application/json", "X-Auth-Token": window.tokenKey },
+			error   : function (jqXHR, textStatus, errorThrown) {
+				if (jqXHR.status === 500) {
+					showMsg("Unable to delete scheduled task. Please try again.", "ERROR");
+				} else {
+					alert('An error has occurred, please try again or contact app admin.');
+				}
+			},
+			success: function (data) {
+				if (data.status == responseStatus.success) {
+					showMsg("Scheduled task successfully deleted.", "SUCCESS");
+				} else {
+					alert('An error has occurred, please try again or contact app admin.');
+				}
+				panelComp.refreshData();
+			}
+		});
+	};
+	
+	var manageNodeStatus = function (dna, action) {
+		if (!dna && !dna.id) {
+			showMsg("Invalid action requested.", "FAILED");
+			return;
+		}
+		$.ajax({
+			cache   : false,
+			url     : baseRestApiURL + "scheduling/" + action + "?id=" + dna.id,
+			dataType: "json",
+			type    : "GET",
+			headers : { "Accept": "application/json", "Content-Type": "application/json", "X-Auth-Token": window.tokenKey },
+			error   : function (jqXHR, textStatus, errorThrown) {
+				if (jqXHR.status === 500) {
+					showMsg("Unable to perform requested action. Please try again.", "ERROR");
+				} else {
+					showMsg("Unknown error. Unable to update the scheduled task status. Please try again.", "ERROR");
+				}
+			},
+			success: function (response) {
+				if (response.status == responseStatus.success) {
+					showMsg(response.message, "SUCCESS");
+					window.panelComp.refreshData();
+				} else {
+					showMsg(response.message, "FAILED");
+				}
+			}
+		});
+	};
+	
+	var myModalNodesOpShow = function (operationid, args) {
+		var $modal = $("#myModalNodes");
+		$(".modal-dialog",$modal).removeClass("modal-lg");
+		var rm_contentUrl = '';
+		window.userOpStack = [];
+		
+		if (operationid === "op-plus") {
+			window.userOpStack = [{ "dna": void 0, "action": "op-plus" }];
+			rm_contentUrl="./fragments/scheduling-plus.fragment.html?" + Math.random();
+		}
+		if (operationid === "edit") {
+			window.userOpStack = [{ "dna": args.dna, "action": "op-edit" }];
+			rm_contentUrl="./fragments/scheduling-plus.fragment.html?" + Math.random();
+		}
+		if (rm_contentUrl !== '') {
+			$.ajax({
+				url: rm_contentUrl,
+				success: function(result) {
+					var rmContent = result;
+					if (rmContent !== '') {
+						$modal.find('.modal-dialog').html(rmContent);
+					} else {
+						alert("Could not retrive needed data from server.");
+						return e.preventDefault();
+					}
+					$modal.modal('show');
+				}
+			});
+		} else {
+			alert("TAO - Operation mismatch");
+		}
+	};
+	
+	$(document).ready(function () {
+		var $selectActivePanel = $("#selectActivePanel");
+		var urls = [ baseRestApiURL + "scheduling/list" ];
+		var actionsSet = {
+			"manage_jobs": { badgeLabel: "All schedulers", pagLabel: "scheduled jobs", emptyLabel: "scheduled job", url: urls[0] }
+			
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
+				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+				$(".top-controls .search-container").attr("data-original-title", "Search " + (actionsSet[action]?.emptyLabel || action));
+			}
+			return selected;
+		};
+		window.panelComp = $("#panel-nodes").npPaginatedCells({
+			headerUser: taoUserProfile.username,
+			url       : urls,
+			viewMode  : preferences.viewMode,
+			order:[
+				{ "label": "Name ascending" , "objAttributeName": "friendlyName", "direction": "ASC" },
+				{ "label": "Name descending", "objAttributeName": "friendlyName", "direction": "DSC" }
+			],
+			filterAttribute: "friendlyName",
+			doDataPreprocessing: function (data, sets) {
+				var activeSet = getActiveSet(data, sets);
+				$.each(activeSet, function (index, elX) {
+					elX.startTime = moment.utc(elX.startTime).format("YYYY-MM-DD HH:mm:ss");
+					if (!elX.tags) elX.tags = [];
+					elX.tags.push(elX.mode);
+					elX.tags.push(elX.state == "NORMAL" ? "RUNNING" : elX.state);
+					elX.lastExecutionTime = elX.jobs.length > 0 ? moment.utc(elX.jobs[elX.jobs.length - 1].endTime).format("YYYY-MM-DD HH:mm:ss") : "-";
+					elX.lastExecutionStatus = elX.jobs.length > 0 ? elX.jobs[elX.jobs.length - 1].status : "-";
+				});
+				return activeSet;
+			},
+			doCustomRender: function($elClone, elX) {
+				$(".box-top-tags span:last-child", $elClone).addClass("status");
+				$("button[data-action='resume']" , $elClone).removeClass("collapse");
+				
+				$(".val-friendlyName", $elClone).attr("title", elX.friendlyName);
+				
+				if (elX.state == "NORMAL") {
+					$elClone.addClass("online");
+				} else if (elX.state == "PAUSED") {
+					$elClone.addClass("offline");
+				} else {
+					$elClone.addClass("offline");
+				}
+			},
+			doAction: function (action, args) {
+				if (action === "op-plus") myModalNodesOpShow(action, args);
+				if (action === "edit"   ) myModalNodesOpShow(action, args);
+				if (action === "delete" ) {
+					$('#confirm-dialog').modal('confirm', {
+						msg:"Are you sure you want to delete the scheduled task: <strong>" + args.dna.friendlyName + "</strong>?",
+						callbackConfirm: function () {
+							deleteNodeById(args.dna.id);
+						},
+						callbackCancel: function () {}
+					});
+				}
+				if (action === "resume" || action == "pause") {
+					$('#confirm-dialog').modal('confirm', {
+						msg:"Are you sure you want to " + action + " the scheduled task:<br/><strong>" + args.dna.friendlyName + "</strong>?",
+						callbackConfirm: function () {
+							manageNodeStatus(args.dna, action);
+						},
+						callbackCancel: function () {}
+					});
+				}
+			}
+		});
+	});
+	
+//# sourceURL=scheduling-admin2.fragment.js
+</script>

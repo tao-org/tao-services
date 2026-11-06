@@ -16,23 +16,33 @@
 package ro.cs.tao.services.query.service;
 
 import org.apache.commons.lang3.StringUtils;
+import org.geonames.Toponym;
+import org.geonames.ToponymSearchCriteria;
+import org.geonames.ToponymSearchResult;
+import org.geonames.WebService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.SystemVariable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.*;
 import ro.cs.tao.datasource.beans.Query;
+import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.datasource.param.DataSourceParameter;
 import ro.cs.tao.datasource.persistence.DataSourceConfigurationProvider;
 import ro.cs.tao.datasource.remote.FetchMode;
 import ro.cs.tao.eodata.EOProduct;
+import ro.cs.tao.eodata.Polygon2D;
 import ro.cs.tao.eodata.enums.ProductStatus;
 import ro.cs.tao.eodata.enums.SensorType;
+import ro.cs.tao.gadm.AdminL1Unit;
+import ro.cs.tao.gadm.Country;
 import ro.cs.tao.persistence.*;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.UserPrincipal;
+import ro.cs.tao.serialization.GeometryAdapter;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.DataSourceService;
+import ro.cs.tao.services.interfaces.SiteService;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 import ro.cs.tao.utils.Crypto;
 import ro.cs.tao.utils.FileUtilities;
@@ -52,6 +62,8 @@ import java.util.regex.Pattern;
 public class DataSourceServiceImpl implements DataSourceService {
     private static final Pattern satelliteVersionPattern = Pattern.compile("[-_]\\d[A-D]");
     private static final Set<FetchMode> localFetchModes = EnumSet.of(FetchMode.COPY, FetchMode.SYMLINK, FetchMode.CHECK);
+    private final Map<String, Map<String, DataSourceDescriptor>> cache = new HashMap<>();
+
     @Autowired
     private DownloadListener downloadListener;
 
@@ -69,6 +81,12 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     @Autowired
     private RepositoryProvider repositoryProvider;
+
+    @Autowired
+    private SiteService siteService;
+
+    @Autowired
+    private NamingRuleProvider namingRuleProvider;
 
     @Override
     public SortedSet<String> getSupportedSensors() {
@@ -92,75 +110,104 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
-    public List<DataSourceDescriptor> getDatasourceInstances() {
+    public String getProductTypeValue(String sensor, String productType, String dataSourceName) {
+        Set<String> synonims = this.namingRuleProvider.getSynonims(productType);
+        if (synonims == null || synonims.isEmpty()) {
+            return null;
+        }
+        List<DataSourceParameter> parameters = getSupportedParameters(sensor, dataSourceName);
+        if (parameters == null || parameters.isEmpty()) {
+            return null;
+        }
+        DataSourceParameter parameter = parameters.stream().filter(p -> CommonParameterNames.PRODUCT_TYPE.equals(p.getName())).findFirst().get();
+        if (parameter != null) {
+            Object[] valueSet = parameter.getValueSet();
+            if (valueSet != null && valueSet.length > 0) {
+                for (Object value : valueSet) {
+                    if (synonims.contains(value.toString())) {
+                        return value.toString();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<DataSourceDescriptor> getDatasourceInstances(String userId) {
         List<DataSourceDescriptor> instances = new ArrayList<>();
         final DataSourceManager dataSourceManager = DataSourceManager.getInstance();
         //final SortedSet<String> sensors = dataSourceManager.getSupportedSensors();
         final SortedSet<String> sensors = getSupportedSensors();
-        final List<DataSourceCredentials> userCredentials = credentialsProvider.getByUser(SessionStore.currentContext().getPrincipal().getName());
+        final List<DataSourceCredentials> userCredentials = credentialsProvider.getByUser(userId);
         for (String sensor : sensors) {
             //dataSourceManager.getNames(sensor).forEach(n -> {
-            getDatasourcesForSensor(sensor).forEach(n -> {
+            List<String> datasources = getDatasourcesForSensor(sensor);
+            for (String n : datasources) {
+                Map<String, DataSourceDescriptor> descriptorMap = cache.getOrDefault(sensor, new HashMap<>());
                 if (!"Local Database".equals(n)) {
-                    DataSource<?, ?> dataSource = dataSourceManager.get(sensor, n);
-                    Map<String, CollectionDescription> sensorTypes = dataSource.getSensorTypes();
-                    if (sensorTypes != null) {
-                        final Map<String, DataSourceParameter> parameters = dataSourceManager.getSupportedParameters(sensor, n);
-                        final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(sensor + "-" + n);
-                        // In case of symlink, copy or check fetch modes, authentication is not required
-                        final boolean requiresAuthentication;
-                        if (dataSourceConfiguration != null && localFetchModes.contains(dataSourceConfiguration.getFetchMode())) {
-                            requiresAuthentication = false;
-                        } else {
-                            requiresAuthentication = dataSource.requiresAuthentication();
+                    DataSourceDescriptor descriptor = descriptorMap.get(n);
+                    if (descriptor == null) {
+                        DataSource<?, ?> dataSource = dataSourceManager.get(sensor, n);
+                        if (dataSource == null) {
+                            Logger.getLogger(DataSourceService.class.getName()).warning("Datasource " + n + " for " + sensor + " doesn't appear to be registered");
+                            continue;
                         }
-                        CollectionDescription cd = sensorTypes.get(sensor);
-                        final DataSourceDescriptor descriptor;
-                        if (cd != null) {
-                            String mission = cd.getMission();
-                            if (mission == null) {
-                                mission = sensor.indexOf('(') > 0 ? sensor.substring(0, sensor.indexOf('(')).trim() : sensor;
+                        Map<String, CollectionDescription> sensorTypes = dataSource.getSensorTypes();
+                        if (sensorTypes != null) {
+                            final Map<String, DataSourceParameter> parameters = dataSourceManager.getSupportedParameters(sensor, n);
+                            final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(sensor + "-" + n);
+                            // In case of symlink, copy or check fetch modes, authentication is not required
+                            final boolean requiresAuthentication;
+                            if (dataSourceConfiguration != null && localFetchModes.contains(dataSourceConfiguration.getFetchMode())) {
+                                requiresAuthentication = false;
+                            } else {
+                                requiresAuthentication = dataSource.requiresAuthentication();
                             }
-                            if (satelliteVersionPattern.matcher(mission).find()) {
-                                mission = mission.substring(0, mission.length() - 1);
+                            CollectionDescription cd = sensorTypes.get(sensor);
+                            if (cd != null) {
+                                String mission = cd.getMission();
+                                if (mission == null) {
+                                    mission = sensor.indexOf('(') > 0 ? sensor.substring(0, sensor.indexOf('(')).trim() : sensor;
+                                }
+                                if (satelliteVersionPattern.matcher(mission).find()) {
+                                    mission = mission.substring(0, mission.length() - 1);
+                                }
+                                descriptor = new DataSourceDescriptor(mission, sensor, n, cd.getSensorType().friendlyName(),
+                                                                      cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
+                                                                      parameters, requiresAuthentication,
+                                                                      dataSource.is2FAEnabled() & requiresAuthentication,
+                                                                      cd.isTokenNeeded() & requiresAuthentication);
+                            } else {
+                                descriptor = new DataSourceDescriptor(sensor, sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
+                                                                      parameters, requiresAuthentication,
+                                                                      dataSource.is2FAEnabled() & requiresAuthentication,
+                                                                      false);
                             }
-                            descriptor = new DataSourceDescriptor(mission, sensor, n, cd.getSensorType().friendlyName(),
-                                                                  cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
-                                                                  parameters, requiresAuthentication,
-                                                                  dataSource.is2FAEnabled() & requiresAuthentication,
-                                                                  cd.isTokenNeeded() & requiresAuthentication);
-                        } else {
-                            descriptor = new DataSourceDescriptor(sensor, sensor, n, SensorType.UNKNOWN.friendlyName(), "", "", "",
-                                                                  parameters, requiresAuthentication,
-                                                                  dataSource.is2FAEnabled() & requiresAuthentication,
-                                                                  false);
-                        }
-                        instances.add(descriptor);
-                        //final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(sensor + "-" + n)).findFirst().orElse(null);
-                        final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(n)).findFirst().orElse(null);
-                        if (dsCreds != null) {
-                            descriptor.setUser(dsCreds.getUserName());
-                            descriptor.setPwd(dsCreds.getPassword());
-                            descriptor.setSecret(dsCreds.getSecret());
-                            if (dsCreds.getParams() != null) {
-                                final DataSourceParameter uParam = parameters.values().stream()
-                                        .filter(p -> p.getName().toLowerCase().contains("username")).findFirst().orElse(null);
-                                if (uParam != null) {
-                                    uParam.setDefaultValue(dsCreds.getParams().get(uParam.getName()));
-                                    parameters.values().stream()
-                                            .filter(p -> p.getName().toLowerCase().contains("password"))
-                                            .findFirst()
-                                            .ifPresent(pParam -> pParam.setDefaultValue(Crypto.decrypt(dsCreds.getParams().get(pParam.getName()),
-                                                                                                       dsCreds.getParams().get(uParam.getName()))));
+                            descriptorMap.put(n, descriptor);
+                            final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(n)).findFirst().orElse(null);
+                            if (dsCreds != null) {
+                                descriptor.setUser(dsCreds.getUserName());
+                                descriptor.setPwd(dsCreds.getPassword());
+                                descriptor.setSecret(dsCreds.getSecret());
+                                if (dsCreds.getParams() != null) {
+                                    final DataSourceParameter uParam = parameters.values().stream()
+                                                                                 .filter(p -> p.getName().toLowerCase().contains("username")).findFirst().orElse(null);
+                                    if (uParam != null) {
+                                        uParam.setDefaultValue(dsCreds.getParams().get(uParam.getName()));
+                                        parameters.values().stream()
+                                                  .filter(p -> p.getName().toLowerCase().contains("password"))
+                                                  .findFirst()
+                                                  .ifPresent(pParam -> pParam.setDefaultValue(Crypto.decrypt(dsCreds.getParams().get(pParam.getName()),
+                                                                                                             dsCreds.getParams().get(uParam.getName()))));
+                                    }
                                 }
                             }
                         }
                     }
-                }/* else {
-                    instances.add(new DataSourceDescriptor(sensor, n, SensorType.UNKNOWN.friendlyName(), "Local database repository", "" , "",
-                            dataSourceManager.getSupportedParameters(sensor, n)));
-                }*/
-            });
+                    instances.add(descriptor);
+                }
+            }
         }
         return instances;
     }
@@ -186,6 +233,7 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     @Override
     public List<EOProduct> query(Query queryObject) throws SerializationException {
+        checkInterrupted();
         if (StringUtils.isNotEmpty(queryObject.getUser()) && StringUtils.isNotEmpty(queryObject.getPassword())) {
             final String user = SessionStore.currentContext().getPrincipal().getName();
             //final String dsId = queryObject.getSensor() + "-" + queryObject.getDataSource();
@@ -219,8 +267,15 @@ public class DataSourceServiceImpl implements DataSourceService {
             }
         }
         final DataQuery dataQuery = Query.toDataQuery(queryObject);
+        checkInterrupted();
         dataQuery.setQueryDelay(1);
         return dataQuery.execute();
+    }
+
+    private void checkInterrupted() throws SerializationException {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new SerializationException("Datasource query was cancelled.");
+        }
     }
 
     @Override
@@ -308,7 +363,8 @@ public class DataSourceServiceImpl implements DataSourceService {
                     results = dsComponent.doFetch(products, null, path, localRepositoryRoot, properties);
                 //}
             } else {
-                properties.put("auto.uncompress", "true");
+                properties.put("auto.uncompress",
+                               ConfigurationManager.getInstance().getValue("datasource.decompress.downloads", "true"));
                 /*if (parallelism > 1) {
                     results = Collections.synchronizedList(new ArrayList<>());
                     Parallel.For(0, products.size(), parallelism, (i) -> {
@@ -341,5 +397,101 @@ public class DataSourceServiceImpl implements DataSourceService {
     public DataSourceCredentials getDataSourceCredentials(String dataSource) {
         final List<DataSourceCredentials> userCredentials = credentialsProvider.getByUser(SessionStore.currentContext().getPrincipal().getName());
         return userCredentials.stream().filter(c -> c.getDataSource().equals(dataSource)).findFirst().orElse(null);
+    }
+
+    @Override
+    public String lookupNameArea(String name) {
+        // first try a country or administrative unit
+        String normalizedName = name;
+        if (normalizedName != null) {
+            normalizedName = normalizedName.toLowerCase();
+            normalizedName = normalizedName.replace("county", "").replace("country", "").replace("region", "").trim();
+        }
+        Country country = this.siteService.getCountryByName(normalizedName);
+        if (country != null) {
+            return new GeometryAdapter().unmarshal(country.getExtent());
+        }
+        AdminL1Unit unit = this.siteService.getAdminL1UnitByName(normalizedName);
+        if (unit != null) {
+            return new GeometryAdapter().unmarshal(unit.getExtent());
+        }
+        final ToponymSearchCriteria criteria = new ToponymSearchCriteria();
+        criteria.setQ(normalizedName);
+        try {
+            WebService.setUserName(ConfigurationManager.getInstance().getValue("geonames.user", "kraftek"));
+            ToponymSearchResult result = WebService.search(criteria);
+            final List<Toponym> toponyms = result.getToponyms();
+            if (toponyms != null && !toponyms.isEmpty()) {
+                double lat = toponyms.get(0).getLatitude();
+                double lon = toponyms.get(0).getLongitude();
+                Polygon2D polygon = new Polygon2D();
+                polygon.append(lon - 0.1, lat + 0.1);
+                polygon.append(lon + 0.1, lat + 0.1);
+                polygon.append(lon + 0.1, lat - 0.1);
+                polygon.append(lon - 0.1, lat - 0.1);
+                polygon.append(lon - 0.1, lat + 0.1);
+                return polygon.toWKT(4);
+            }
+            return null;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private DataSourceDescriptor createDescriptor(DataSourceManager dataSourceManager, List<DataSourceCredentials> userCredentials,
+                                                  String sensor, String dataSourceName) {
+        DataSource<?, ?> dataSource = dataSourceManager.get(sensor, dataSourceName);
+        Map<String, CollectionDescription> sensorTypes = dataSource.getSensorTypes();
+        DataSourceDescriptor descriptor = null;
+        if (sensorTypes != null) {
+            final Map<String, DataSourceParameter> parameters = dataSourceManager.getSupportedParameters(sensor, dataSourceName);
+            final DataSourceConfiguration dataSourceConfiguration = configurationProvider.get(sensor + "-" + dataSourceName);
+            // In case of symlink, copy or check fetch modes, authentication is not required
+            final boolean requiresAuthentication;
+            if (dataSourceConfiguration != null && localFetchModes.contains(dataSourceConfiguration.getFetchMode())) {
+                requiresAuthentication = false;
+            } else {
+                requiresAuthentication = dataSource.requiresAuthentication();
+            }
+            CollectionDescription cd = sensorTypes.get(sensor);
+            if (cd != null) {
+                String mission = cd.getMission();
+                if (mission == null) {
+                    mission = sensor.indexOf('(') > 0 ? sensor.substring(0, sensor.indexOf('(')).trim() : sensor;
+                }
+                if (satelliteVersionPattern.matcher(mission).find()) {
+                    mission = mission.substring(0, mission.length() - 1);
+                }
+                descriptor = new DataSourceDescriptor(mission, sensor, dataSourceName, cd.getSensorType().friendlyName(),
+                                                      cd.getDescription(), cd.getTemporalCoverage(), cd.getSpatialCoverage(),
+                                                      parameters, requiresAuthentication,
+                                                      dataSource.is2FAEnabled() & requiresAuthentication,
+                                                      cd.isTokenNeeded() & requiresAuthentication);
+            } else {
+                descriptor = new DataSourceDescriptor(sensor, sensor, dataSourceName, SensorType.UNKNOWN.friendlyName(), "", "", "",
+                                                      parameters, requiresAuthentication,
+                                                      dataSource.is2FAEnabled() & requiresAuthentication,
+                                                      false);
+            }
+            final DataSourceCredentials dsCreds = userCredentials.stream().filter(c -> c.getDataSource().equals(dataSourceName)).findFirst().orElse(null);
+            if (dsCreds != null) {
+                descriptor.setUser(dsCreds.getUserName());
+                descriptor.setPwd(dsCreds.getPassword());
+                descriptor.setSecret(dsCreds.getSecret());
+                if (dsCreds.getParams() != null) {
+                    final DataSourceParameter uParam = parameters.values().stream()
+                                                                 .filter(p -> p.getName().toLowerCase().contains("username")).findFirst().orElse(null);
+                    if (uParam != null) {
+                        uParam.setDefaultValue(dsCreds.getParams().get(uParam.getName()));
+                        parameters.values().stream()
+                                  .filter(p -> p.getName().toLowerCase().contains("password"))
+                                  .findFirst()
+                                  .ifPresent(pParam -> pParam.setDefaultValue(Crypto.decrypt(dsCreds.getParams().get(pParam.getName()),
+                                                                                             dsCreds.getParams().get(uParam.getName()))));
+                    }
+                }
+            }
+        }
+        return descriptor;
     }
 }

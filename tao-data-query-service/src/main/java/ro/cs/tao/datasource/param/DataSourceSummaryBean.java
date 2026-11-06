@@ -1,7 +1,11 @@
 package ro.cs.tao.datasource.param;
 
+import ro.cs.tao.eodata.enums.SensorType;
 import ro.cs.tao.services.model.datasource.DataSourceDescriptor;
 
+/**
+ * A bean class representing a summary of a data source, providing access to its descriptor details.
+ */
 public class DataSourceSummaryBean {
     private final DataSourceDescriptor descriptor;
 
@@ -18,7 +22,16 @@ public class DataSourceSummaryBean {
     }
 
     public String getCategory() {
-        return descriptor.getCategory();
+        String label = getDataSourceLabel().toLowerCase();
+        if (label.contains("optical")) {
+            return SensorType.OPTICAL.friendlyName();
+        } else if (label.contains("sar")) {
+            return SensorType.RADAR.friendlyName();
+        } else if (label.contains("dem")) {
+            return SensorType.ALTIMETRIC.friendlyName();
+        } else {
+            return descriptor.getCategory();
+        }
     }
 
     public String getDescription() {

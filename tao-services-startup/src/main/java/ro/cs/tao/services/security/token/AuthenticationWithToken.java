@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
+ * Extends the JaasAuthenticationToken class by adding support for token-based authentication.
+ * This class provides methods to store and retrieve a token associated with the authentication object
+ * and overrides principal resolution logic to specifically retrieve a UserPrincipal if available.
  *
  * @author Oana H.
  */

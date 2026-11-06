@@ -9,6 +9,14 @@ public class Metadata {
     private String lang;
     private Object value;
 
+    public Metadata() {
+    }
+
+    public Metadata(String title, Object value) {
+        this.title = title;
+        this.value = value;
+    }
+
     public String getLang() {
         return lang;
     }

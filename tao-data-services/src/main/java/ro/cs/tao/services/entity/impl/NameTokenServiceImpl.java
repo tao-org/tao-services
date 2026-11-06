@@ -3,6 +3,7 @@ package ro.cs.tao.services.entity.impl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ro.cs.tao.Sort;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceComponentGroup;
 import ro.cs.tao.eodata.naming.NameExpressionParser;
@@ -108,6 +109,19 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
     }
 
     @Override
+    public List<NamingRule> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
+        if (pageNumber.isPresent() && pageSize.isPresent()) {
+            return namingRuleProvider.list(pageNumber.get(), pageSize.get(), sort);
+        }
+        return list();
+    }
+
+    @Override
+    public long count() {
+        return namingRuleProvider.count();
+    }
+
+    @Override
     public List<NamingRule> list(Iterable<Integer> ids) {
         Set<Integer> idSet = new HashSet<>();
         for (Integer id : ids) {
@@ -129,7 +143,7 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
 
     @Override
     public NamingRule update(NamingRule object) throws PersistenceException {
-        return namingRuleProvider.save(object);
+        return namingRuleProvider.update(object);
     }
 
     @Override

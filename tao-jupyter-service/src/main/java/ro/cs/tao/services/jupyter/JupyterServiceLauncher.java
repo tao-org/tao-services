@@ -26,10 +26,14 @@ import ro.cs.tao.services.commons.ServiceLauncher;
 @Configuration
 @ImportResource("classpath:jupyter-service-context.xml")
 
-public class JupyterServiceLauncher implements ServiceLauncher {
+public class JupyterServiceLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(JupyterServiceLauncher.class, args);
+    }
+
+    public JupyterServiceLauncher() {
+        super();
     }
 
     @Override

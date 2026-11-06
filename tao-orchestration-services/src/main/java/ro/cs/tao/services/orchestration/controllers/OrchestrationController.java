@@ -25,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.drmaa.Environment;
 import ro.cs.tao.execution.ExecutionException;
@@ -53,6 +54,21 @@ import ro.cs.tao.utils.StringUtilities;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * The OrchestrationController class provides RESTful endpoints for managing and orchestrating
+ * workflow executions, job management, and interactions with external services such as
+ * Web Processing Service (WPS) and Web Map Service (WMS). It supports functionalities
+ * for starting, stopping, pausing, resuming, and monitoring jobs, as well as managing
+ * job history and task statuses.
+ *
+ * This class extends the BaseController and serves as a centralized controller
+ * for workflow orchestration and job execution-related operations.
+ *
+ * Fields:
+ * - orchestrationService: Service to handle orchestration logic and workflow execution.
+ * - executionJobManager: Manages the execution and lifecycle of jobs.
+ * - executionTaskProvider: Provides task-related operations within a workflow.
+ */
 @RestController
 @RequestMapping("/orchestrator")
 @Tag(name = "Orchestration", description = "Operations related to workflow execution")
@@ -69,14 +85,28 @@ public class OrchestrationController extends BaseController {
      * Returns the available DRMAA execution environments
      *
      */
-    @RequestMapping(value = "/environment", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/environment", "/environment/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getEnvironments() {
         try {
             Set<Environment> environments = SessionFactory.getEnvironments();
             if (environments == null) {
                 environments = new HashSet<>();
             }
-            return prepareResult(environments.stream().sorted().collect(Collectors.toList()));
+            Environment defaultEnv = EnumUtils.getEnumConstantByString(Environment.class,
+                                                                       ConfigurationManager.getInstance()
+                                                                                           .getValue("execution.environment",
+                                                                                                     Environment.DEFAULT.friendlyName()));
+            if (defaultEnv == null) {
+                warn("Default execution environment not found. Using default value: '" + Environment.DEFAULT.friendlyName() + "'");
+                defaultEnv = Environment.DEFAULT;
+            }
+            final Environment de = defaultEnv;
+            final List<Environment> results = environments.stream()
+                                                          .filter(e -> e != de)
+                                                          .sorted()
+                                                          .collect(Collectors.toList());
+            results.add(0, defaultEnv);
+            return prepareResult(results);
         } catch (Exception ex) {
             return handleException(ex);
         }
@@ -87,7 +117,7 @@ public class OrchestrationController extends BaseController {
      * @param request   Structure containing the workflow identifier, parameters, job type and name
      * @see JobType
      */
-    @RequestMapping(value = "/start", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/start", "/start/" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> start(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -107,7 +137,7 @@ public class OrchestrationController extends BaseController {
      * Returns the available parameters for a workflow
      * @param workflowId    The workflow identifier
      */
-    @RequestMapping(value = "/parameters/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/parameters/{id}", "/parameters/{id}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getWorkflowParameters(@PathVariable("id") long workflowId) {
         try {
             return prepareResult(orchestrationService.getWorkflowParameters(workflowId));
@@ -119,11 +149,19 @@ public class OrchestrationController extends BaseController {
     /**
      * Returns the outputs of a workflow execution (a workflow can have more than one execution)
      * @param workflowId    The workflow identifier
+     * @param userId        The user that executed the workflow. Only an administrator can pass this value.
      */
-    @RequestMapping(value = "/outputs/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> getWorkflowOutputs(@PathVariable("id") long workflowId) {
+    @RequestMapping(value = { "/outputs/{id}", "/outputs/{id}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getWorkflowOutputs(@PathVariable("id") long workflowId,
+                                                                 @RequestParam(name = "userId", required = false) String userId) {
         try {
-            return prepareResult(orchestrationService.getWorkflowOutputs(workflowId));
+            boolean isUserIdSet = !StringUtilities.isNullOrEmpty(userId);
+            if (isUserIdSet && !(currentUser().equals(userId) || currentOwner().equals(userId))
+                && !isCurrentUserAdmin()) {
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
+            }
+            final String user = isUserIdSet ? userId : currentOwner();
+            return prepareResult(orchestrationService.getWorkflowOutputs(workflowId, user));
         } catch (Exception ex) {
             return handleException(ex);
         }
@@ -133,7 +171,7 @@ public class OrchestrationController extends BaseController {
      * Stops a running job
      * @param jobId The job identifier
      */
-    @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/stop", "/stop/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> stop(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -149,7 +187,7 @@ public class OrchestrationController extends BaseController {
      * Pauses a running job
      * @param jobId The job identifier
      */
-    @RequestMapping(value = "/pause", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/pause", "/pause/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> pause(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -165,7 +203,7 @@ public class OrchestrationController extends BaseController {
      * Resumes to execution a paused job
      * @param jobId The job identifier
      */
-    @RequestMapping(value = "/resume", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/resume", "/resume/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> resume(@RequestParam("jobId") long jobId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -183,8 +221,8 @@ public class OrchestrationController extends BaseController {
      *
      * @param userId    The user identifier
      */
-    @RequestMapping(value = "/purge", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RequestMapping(value = { "/purge", "/purge/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> purgeJobs(@RequestParam(name = "userId", required = false) String userId) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -202,10 +240,10 @@ public class OrchestrationController extends BaseController {
     /**
      * Returns the running tasks (steps of a job) of the current user
      */
-    @RequestMapping(value = "/running/tasks", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/running/tasks", "/running/tasks/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getRunningTasks() {
         List<ExecutionTaskSummary> tasks =
-                orchestrationService.getRunningTasks(isCurrentUserAdmin() ? null : currentUser());
+                orchestrationService.getRunningTasks(isCurrentUserAdmin() ? null : currentOwner());
         if (tasks == null) {
             tasks = new ArrayList<>();
         }
@@ -215,7 +253,7 @@ public class OrchestrationController extends BaseController {
     /**
      * Returns the output and the command line of a task
      */
-    @RequestMapping(value = "/tasks/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/tasks/{id}", "/tasks/{id}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getTaskOutput(@PathVariable("id") long taskId) {
         try {
             final ExecutionTaskSummary task = executionTaskProvider.getTaskStatus(taskId);
@@ -236,9 +274,9 @@ public class OrchestrationController extends BaseController {
      * Returns the running jobs of the current user.
      * If the user is in the admin group, returns all the running jobs.
      */
-    @RequestMapping(value = "/running/jobs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/running/jobs", "/running/jobs/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getRunningJobs() {
-        List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs(isCurrentUserAdmin() ? null : currentUser());
+        List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs(isCurrentUserAdmin() ? null : currentOwner());
         if (summaries == null) {
             summaries = new ArrayList<>();
         }
@@ -250,9 +288,9 @@ public class OrchestrationController extends BaseController {
      * Only an administrator can call perform this operation.
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/running/jobs/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/running/jobs/{userId}", "/running/jobs/{userId}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getRunningJobsForUser(@PathVariable("userId") String userId) {
-        if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
+        if (!(currentUser().equals(userId) || currentOwner().equals(userId)) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         List<ExecutionJobSummary> summaries = orchestrationService.getRunningJobs(userId);
@@ -266,7 +304,7 @@ public class OrchestrationController extends BaseController {
      * Returns the queued jobs for all the users (only if the current user is an admin)
      */
     @RequestMapping(value = "/queued/jobs", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> getQueuedJobs(@RequestParam(name = "grouped", required = false) Boolean grouped) {
         /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -290,9 +328,9 @@ public class OrchestrationController extends BaseController {
      * Returns the queued jobs of a specific user.
      * @param userId  The user identifier
      */
-    @RequestMapping(value = "/queued/jobs/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/queued/jobs/{userId}", "/queued/jobs/{userId}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getQueuedJobsForUser(@PathVariable("userId") String userId) {
-        if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
+        if (!(currentUser().equals(userId) || currentOwner().equals(userId)) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         Queue<ExecutionJobSummary> summaries = orchestrationService.getQueuedJobs(userId);
@@ -306,7 +344,7 @@ public class OrchestrationController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> moveJobInQueue(@RequestParam(name = "user", required = false) String userId,
                                                              @RequestParam("jobId") long jobId,
                                                              @RequestParam("operation") QueueOperation operation) {
-        if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
+        if (!(currentUser().equals(userId) || currentOwner().equals(userId)) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         try {
@@ -331,7 +369,7 @@ public class OrchestrationController extends BaseController {
      * Returns the summaries of tasks of a job
      * @param jobId The job identifier
      */
-    @RequestMapping(value = "/{jobId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/{jobId}", "/{jobId}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getJobTaskStatuses(@PathVariable("jobId") long jobId) {
         List<ExecutionTaskSummary> summaries = orchestrationService.getTasksStatus(jobId);
         if (summaries == null) {
@@ -344,7 +382,7 @@ public class OrchestrationController extends BaseController {
      * Returns the outputs of a job
      * @param jobId The job identifier
      */
-    @RequestMapping(value = "/{jobId}/output", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/{jobId}/output", "/{jobId}/output/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getJobOutput(@PathVariable("jobId") long jobId) {
         ExecutionJob job = executionJobManager.get(jobId);
         String output;
@@ -367,13 +405,19 @@ public class OrchestrationController extends BaseController {
      *  - for a user it returns the summaries of all his/her finished jobs
      * @param userId  The user account identifier
      */
-    @RequestMapping(value = {"/history","/history/{userId}"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = {"/history", "/history/", "/history/{userId}", "/history/{userId}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getJobsHistory(@PathVariable("userId") String userId) {
-        List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(userId != null ? userId : (isCurrentUserAdmin() ? null : currentUser()));
+        List<ExecutionJobSummary> summaries = orchestrationService.getCompletedJobs(userId != null ? userId : (isCurrentUserAdmin() ? null : currentOwner()));
         if (summaries == null) {
             summaries = new ArrayList<>();
         }
         return prepareResult(summaries);
+    }
+
+    @RequestMapping(value = {"/history/{userId}/{taskId}", "/history/{userId}/{taskId}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getJobsHistory(@PathVariable("userId") String userId,
+                                                             @PathVariable("taskId") long taskId) {
+        return prepareResult(executionTaskProvider.getTaskOutput(taskId));
     }
 
     /**
@@ -381,13 +425,13 @@ public class OrchestrationController extends BaseController {
      * If the user is not specified it clears the jobs of the current user
      * @param userId  The user identifier
      */
-    @RequestMapping(value = {"/history", "/history/{userId}"}, method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = {"/history", "/history/", "/history/{userId}", "/history/{userId}/" }, method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> clearJobsHistory(@PathVariable("userId") String userId) {
-        if (!currentUser().equals(userId) && !isCurrentUserAdmin()) {
+        if (!(currentUser().equals(userId) || currentOwner().equals(userId)) && !isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
         }
         try {
-            orchestrationService.clearJobHistory(userId != null ? userId : currentUser());
+            orchestrationService.clearJobHistory(userId != null ? userId : currentOwner());
             return prepareResult("Job history deleted", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
@@ -430,7 +474,7 @@ public class OrchestrationController extends BaseController {
      * Performs a remote Web Processing Service invocation.
      * @param request   The invocation parameters
      */
-    @RequestMapping(value = "/wps", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/wps", "/wps/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> invokeRemoteWPS(@RequestBody WebServiceExecutionRequest request) {
         try {
             if (request == null) {
@@ -491,7 +535,7 @@ public class OrchestrationController extends BaseController {
      * Performs a remote Web Map Service invocation.
      * @param request   The invocation parameters
      */
-    @RequestMapping(value = "/wms", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/wms", "/wms/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> invokeRemoteWMS(@RequestBody WebServiceExecutionRequest request) {
         try {
             if (request == null) {
@@ -522,7 +566,7 @@ public class OrchestrationController extends BaseController {
      * are properly computed.
      * @param request   The export request
      */
-    @RequestMapping(value = "/script", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/script", "/script/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> scriptJob(@RequestBody ExecutionRequest request) {
         ResponseEntity<ServiceResponse<?>> response;
         try {
@@ -546,12 +590,34 @@ public class OrchestrationController extends BaseController {
      * @param status    The new task status
      * @param message   (optional) A message associated with the status change
      */
+    // Keep IDs longer than the accepted timestamp window. Never evict live entries under load.
+    private final java.util.Map<String, Long> callbackEvents = new java.util.HashMap<>();
+
     @RequestMapping(value = "/statusChanged", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> taskStatusChanged(@RequestParam("taskId") long taskId,
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN + "," + ro.cs.tao.user.Role.CALLBACK)
+    public synchronized ResponseEntity<ServiceResponse<?>> taskStatusChanged(@RequestParam("taskId") long taskId,
                                                             @RequestParam("status") String status,
+                                                            @RequestParam("eventId") String eventId,
+                                                            @RequestParam("issuedAt") long issuedAt,
                                                             @RequestParam(name = "message", required = false) String message) {
         try {
             final ExecutionStatus taskStatus = EnumUtils.getEnumConstantByName(ExecutionStatus.class, status);
+            final ExecutionTaskSummary task = executionTaskProvider.getTaskStatus(taskId);
+            if (task == null || taskStatus == null) return prepareResult(null, HttpStatus.BAD_REQUEST);
+            if (!isCurrentUserAdmin() && !currentUser().equals(task.getUserId())) {
+                return prepareResult(null, HttpStatus.FORBIDDEN);
+            }
+            long now = System.currentTimeMillis() / 1000;
+            if (issuedAt < now - 300 || issuedAt > now + 30 || eventId == null
+                    || !eventId.matches("[a-zA-Z0-9_-]{16,128}")) return prepareResult(null, HttpStatus.BAD_REQUEST);
+            callbackEvents.entrySet().removeIf(entry -> entry.getValue() < now - 600);
+            String eventKey = currentUser() + ":" + eventId;
+            if (callbackEvents.containsKey(eventKey)) return prepareResult(null, HttpStatus.CONFLICT);
+            if (callbackEvents.size() >= 100000) return prepareResult(null, HttpStatus.SERVICE_UNAVAILABLE);
+            if (task.getTaskStatus() == taskStatus) return prepareResult("Already applied");
+            if (!allowedCallbackTransition(task.getTaskStatus(), taskStatus)) {
+                return prepareResult(null, HttpStatus.CONFLICT);
+            }
             if (!StringUtilities.isNullOrEmpty(message)) {
                 final Message msg = Message.create(SystemPrincipal.instance().getName(), this, taskStatus.name());
                 msg.setMessage(message);
@@ -559,13 +625,27 @@ public class OrchestrationController extends BaseController {
             } else {
                 Messaging.send(SystemPrincipal.instance(), Topic.EXECUTION.value(), taskId, taskStatus.name());
             }
+            callbackEvents.put(eventKey, now);
             return prepareResult("", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
         }
     }
 
+    private boolean allowedCallbackTransition(ExecutionStatus from, ExecutionStatus to) {
+        if (from == null) return false;
+        return switch (from) {
+            case QUEUED_ACTIVE -> to == ExecutionStatus.RUNNING || to == ExecutionStatus.FAILED || to == ExecutionStatus.CANCELLED;
+            case RUNNING -> to == ExecutionStatus.SUSPENDED || to == ExecutionStatus.DONE || to == ExecutionStatus.FAILED
+                    || to == ExecutionStatus.CANCELLED || to == ExecutionStatus.PENDING_FINALISATION;
+            case SUSPENDED -> to == ExecutionStatus.RUNNING || to == ExecutionStatus.CANCELLED || to == ExecutionStatus.FAILED;
+            case PENDING_FINALISATION -> to == ExecutionStatus.DONE || to == ExecutionStatus.FAILED;
+            default -> false;
+        };
+    }
+
     @RequestMapping(value = "/start/forced", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> forceStart(@RequestParam("jobId") long jobId) {
         try {
             if (jobId <= 0) {

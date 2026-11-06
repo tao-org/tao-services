@@ -1,0 +1,52 @@
+.guided-tour-menu .dropdown-menu {
+	min-width: 230px;
+}
+
+.guided-tour-menu .dropdown-menu > li > a > .fa {
+	width: 1.4em;
+}
+
+.popover.tao-guided-tour {
+	max-width: 360px;
+	border-color: var(--primary-border, #367fa9);
+	box-shadow: 0 0.7em 2em rgb(0 0 0 / 0.22);
+	z-index: 1110;
+}
+
+.popover.tao-guided-tour .popover-title {
+	font-weight: 600;
+	color: var(--primary-color, #fff);
+	background: var(--primary-bkg, #3c8dbc);
+	border-color: var(--primary-border, #367fa9);
+}
+
+.popover.tao-guided-tour .popover-content {
+	line-height: 1.45;
+}
+
+.popover.tao-guided-tour .popover-navigation {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.7em;
+	padding: 0.7em 1em;
+	border-top: 1px solid var(--hairline, #e5e5e5);
+}
+
+.popover.tao-guided-tour .popover-navigation .btn-group {
+	display: flex;
+	gap: 0.35em;
+}
+
+.popover.tao-guided-tour .popover-navigation .btn {
+	border-radius: 3px;
+}
+
+.tour-backdrop {
+	background-color: rgb(0 0 0 / 0.45);
+}
+
+.tour-step-backdrop {
+	position: relative;
+	z-index: 1101;
+	box-shadow: 0 0 0 0.25em rgb(60 141 188 / 0.35);
+}

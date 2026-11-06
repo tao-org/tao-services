@@ -1,0 +1,161 @@
+:root {
+	--primary-color             : #587da9;
+	--primary-bkg               : #f9fafb;
+	--primary-bkg-lighter       : #7eb9da;
+	--active-color              : #4d627b;
+	--default-color             : #7a878e;
+	--scroll-color              : #8399af;
+}
+html {
+	--scrollbar-default-thumb   : #d1dbe3;
+	--scrollbar-default-track   : transparent;
+}
+body {
+	--content-color             : var(--default-color);
+	--content-bkg               : var(--primary-bkg);
+	--content-header-color      : var(--active-color);
+	--content-header-bkg        : transparent;
+	
+	--header-color              : var(--active-color);
+	--header-bkg                : var(--primary-bkg);
+	--header-logo-color         : var(--active-color);
+	--header-logo-bkg           : #fff;
+	
+	--sidebar-color             : var(--default-color);
+	--sidebar-bkg               : #fff;
+	--sidebar-border            : rgb(0 0 0/.05);
+	--sidebar-item-bkg          : #587da9bf;
+	
+	--menu-color                : var(--default-color);
+	--menu-bkg                  : transparent;
+	--menu-border               : transparent;
+	--menu-header-color         : var(--active-color);
+	--menu-header-bkg           : transparent;
+	--menu-header-border        : rgb(0 0 0/.05);
+	--menu-hover-color          : var(--primary-color);
+	--menu-hover-bkg            : var(--primary-bkg);
+	--menu-hover-border         : var(--primary-color);
+	--menu-active-color         : var(--primary-color);
+	--menu-active-bkg           : var(--primary-bkg);
+	--menu-active-border        : transparent;
+	--menu-selected-color       : #fff;
+	--menu-selected-bkg         : var(--primary-color);
+	--menu-selected-border      : transparent;
+	--submenu-color             : var(--default-color);
+	--submenu-bkg               : var(--primary-bkg);
+	--submenu-selected-color    : var(--primary-color);
+	
+	--tab-color                 : var(--default-color);
+	--tab-bkg                   : #dbe3ec;
+	--tab-border                : #dbe3ec;
+	--tab-hover-bkg             : rgb(240 242 245/.7);
+	--tab-hover-border          : transparent;
+	--tab-active-color          : var(--active-color);
+	--tab-active-bkg            : #fff;
+	--tab-active-border         : var(--primary-color);
+	--tab-topo-active-border    : var(--primary-color);
+	--pill-active-color         : #fff;
+	--pill-active-bkg           : var(--primary-color);
+	--pill-active-border        : var(--primary-color);
+	--pill-topo-active-border   : var(--primary-color);
+	
+	--btn-nodeop-color          : #fff;
+	--btn-nodeop-bkg            : var(--primary-color);
+	--btn-nodeop-border         : var(--primary-color);
+	
+	--btn-primary-color         : #fff;
+	--btn-primary-bkg           : var(--primary-color);
+	--btn-primary-border        : var(--primary-color);
+	
+	--btn-default-color         : var(--default-color);
+	--btn-default-bkg           : #fff;
+	--btn-default-border        : rgb(0 0 0/.07);
+	
+	--hairline                  : rgb(0 0 0/.05);
+	--hairline-inv              : rgb(255 255 255/.05);
+	--hairline-strong           : rgb(0 0 0/.3);
+	--hairline-strong-inv       : rgb(255 255 255/.3);
+	
+	--dropdown-color            : var(--default-color);
+	--dropdown-bkg              : #fff;
+	--dropdown-header-border    : rgb(0 0 0/.05);
+	--dropdown-hover-color      : var(--active-color);
+	--dropdown-hover-bkg        : var(--primary-bkg);
+	--dropdown-open-color       : #fff;
+	--dropdown-open-bkg         : var(--primary-color);
+	
+	--footer-color              : var(--default-color);
+	--footer-bkg                : var(--primary-bkg);
+	--footer-border             : rgb(0 0 0/.07);
+	--footer-hover-color        : var(--active-color);
+	
+	--panel-color               : var(--active-color);
+	--panel-bkg                 : #f4f5f6;
+	--panel-border              : #f4f5f6;
+	--panel-hover-color         : var(--active-color);
+	--panel-hover-bkg           : #fcfcfd;
+	--panel-body-color          : var(--default-color);
+	--panel-body-bkg            : #fcfcfd;
+	--panel-text-shadow         : #fff;
+	
+	--box-color                 : var(--active-color);
+	--box-bkg                   : #fff;
+	--box-border                : #dde6ee;
+	--box-desc-color            : var(--default-color);
+	--box-desc-bkg              : var(--primary-bkg);
+	--box-disabled-bkg          : #e3e6e8;
+	
+	--callout-empty-color       : #444;
+	--callout-empty-bkg         : #f4f5f6;
+	--callout-empty-border      : #abb3ba;
+	--callout-empty-shadow      : #fff;
+	
+	--log-color                 : #444;
+	--log-bkg                   : #fff;
+	--log-header-color          : #444;
+	--log-header-bkg            : #f4f5f6;
+	
+	--list-hover-color          : var(--primary-color);
+	--list-hover-bkg            : #e3e6e8;
+	--list-selected-color       : #fff;
+	--list-selected-bkg         : var(--primary-color);
+	
+	--modal-color               : #555;
+	--modal-bkg                 : #fff;
+	--modal-border              : transparent;
+	--modal-header-color        : #555;
+	--modal-header-bkg          : transparent;
+	
+	--form-control-color        : #555;
+	--form-control-placeholder  : #bbb;
+	--form-control-bkg          : #fff;
+	--form-control-border       : #e3e6e8;
+	--form-control-focus-border : var(--primary-color);
+	--form-control-disabled-bkg : #eef0f1;
+	
+	--pag-color                 : var(--active-color);
+	--pag-bkg                   : transparent;
+	--pag-border                : rgb(0 0 0/.07);
+	--pag-hover-color           : var(--primary-color);
+	--pag-active-color          : #fff;
+	--pag-active-bkg            : var(--primary-color);
+	--pag-disabled-color        : #7b858e;
+	--pag-disabled-bkg          : transparent;
+	
+	--status-default            : #94979e;
+	--status-primary            : var(--primary-color);
+	--status-info               : #03a9f4;
+	--status-success            : #00a65a;
+	--status-danger             : #dd4b39;
+	--status-warning            : #f39c12;
+	--status-unavailable        : #808080;
+	
+	--scrollbar-default-thumb   : #d1dbe3;
+	--scrollbar-default-track   : transparent;
+	--scrollbar-onhover-thumb   : var(--scroll-color);
+	--scrollbar-onhover-track   : rgb(0 0 0/.1);
+	
+	--tree-folder-color         : #ffb85d;
+	--tree-caret-color          : #b9b9b9;
+	--tree-hover-caret-color    : #5c5d5e;
+}

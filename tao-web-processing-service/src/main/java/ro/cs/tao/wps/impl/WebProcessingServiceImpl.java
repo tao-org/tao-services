@@ -17,7 +17,6 @@
 package ro.cs.tao.wps.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.TargetDescriptor;
@@ -143,7 +142,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
 
     private List<TargetDescriptor> getWorkflowOutputsSave(long workflowId) {
         try {
-            return orchestratorService.getWorkflowOutputs(workflowId);
+            return orchestratorService.getWorkflowOutputDescriptors(workflowId);
         } catch (Exception e) {
             return new ArrayList<>();
         }
@@ -191,7 +190,7 @@ public class WebProcessingServiceImpl implements WebProcessingService<WorkflowIn
         }
     }
 
-    private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService(String userId) {
+    private StorageService<MultipartFile> getLocalRepositoryService(String userId) {
         return StorageServiceFactory.getInstance(repositoryProvider.getUserSystemRepositories(userId).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
     }
 }

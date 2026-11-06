@@ -1,7 +1,10 @@
 package ro.cs.tao.services.commons;
 
+import org.apache.catalina.Context;
+import org.springframework.boot.tomcat.TomcatContextCustomizer;
+import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
-import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
+import org.springframework.boot.web.server.servlet.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
@@ -21,6 +24,12 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.logging.Logger;
 
+/**
+ * Abstract class that provides configuration for a servlet-based application.
+ * This class contains methods for configuring the web server, scheduling tasks,
+ * setting up task executors, and retrieving version information.
+ * It utilizes the Spring Framework for configuration beans.
+ */
 public abstract class ServletConfiguration {
 
     private static final int MAGIC = 0xcafebabe;
@@ -34,19 +43,32 @@ public abstract class ServletConfiguration {
 
     @Bean
     public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> containerCustomizer() {
-        return (container -> {
-            String strPort = ConfigurationManager.getInstance().getValue("server.port");
-            int port = strPort != null ? Integer.parseInt(strPort) : 8080;
-            final Logger logger = Logger.getLogger(ServletConfiguration.class.getName());
-            final Map<String, String> map = versionInfo();
-            if (map != null) {
-                for (Map.Entry<String, String> entry : map.entrySet()) {
-                    logger.info(String.format("%s version: %s", entry.getKey(), entry.getValue()));
+        return new WebServerFactoryCustomizer<ConfigurableServletWebServerFactory>() {
+            @Override
+            public void customize(ConfigurableServletWebServerFactory factory) {
+                String strPort = ConfigurationManager.getInstance().getValue("server.port");
+                int port = strPort != null ? Integer.parseInt(strPort) : 8080;
+                final Logger logger = Logger.getLogger(ServletConfiguration.class.getName());
+                final Map<String, String> map = versionInfo();
+                if (map != null) {
+                    for (Map.Entry<String, String> entry : map.entrySet()) {
+                        logger.info(String.format("%s version: %s", entry.getKey(), entry.getValue()));
+                    }
+                }
+                logger.info("Using server port " + port);
+                factory.setPort(port);
+                if (factory instanceof TomcatServletWebServerFactory) {
+                    ((TomcatServletWebServerFactory) factory).addContextCustomizers(
+                            new TomcatContextCustomizer() {
+                                @Override
+                                public void customize(Context context) {
+                                    context.setReloadable(false);
+                                }
+                            }
+                    );
                 }
             }
-            logger.info("Using server port " + port);
-            container.setPort(port);
-        });
+        };
     }
 
     @Bean

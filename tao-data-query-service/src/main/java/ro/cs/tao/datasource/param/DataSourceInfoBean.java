@@ -5,6 +5,9 @@ import ro.cs.tao.datasource.DataSourceCredentials;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A bean class representing the information about a data source, including its parameters and authentication details.
+ */
 public class DataSourceInfoBean {
     final List<DataSourceParameterBean> parameter = new ArrayList<>();
     final DataSourceCredentials auth;

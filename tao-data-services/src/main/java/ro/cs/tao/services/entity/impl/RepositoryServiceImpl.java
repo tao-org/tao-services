@@ -4,13 +4,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.RepositoryProvider;
+import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.SystemPrincipal;
+import ro.cs.tao.security.UserPrincipal;
+import ro.cs.tao.services.commons.CapabilityTokens;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.interfaces.StorageService;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
+import tools.jackson.databind.ObjectMapper;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +33,9 @@ import java.util.UUID;
 @Service("repositoryService")
 public class RepositoryServiceImpl
         extends EntityService<Repository> implements RepositoryService {
+
+    private static final String tokenJSON = "{ \"repository\":\"%s\", \"fileName\":%s, \"folder\":%s, \"user\":\"%s\", \"base64\":\"%s\" }";
+
     @Autowired
     private RepositoryProvider workspaceProvider;
 
@@ -87,6 +99,10 @@ public class RepositoryServiceImpl
         if (existing == null) {
             throw new IllegalArgumentException("Entity does not exist. Call save() instead");
         }
+        requireOwner(existing);
+        if (existing.isSystem()) {
+            throw new org.springframework.security.access.AccessDeniedException("System repositories cannot be changed");
+        }
         existing.setName(object.getName());
         existing.setDescription(object.getDescription());
         existing.setType(object.getType());
@@ -101,7 +117,45 @@ public class RepositoryServiceImpl
     @Override
     public void delete(String id) throws PersistenceException {
         if (id != null) {
+            Repository existing = workspaceProvider.get(id);
+            requireOwner(existing);
+            if (existing.isSystem()) {
+                throw new org.springframework.security.access.AccessDeniedException("System repositories cannot be deleted");
+            }
             workspaceProvider.delete(id);
+        }
+    }
+
+    @Override
+    public String createDownloadURL(String userId, String repositoryId, String item, boolean isFile, boolean base64Encoded) {
+        if (StringUtilities.isNullOrEmpty(item)) {
+            throw new IllegalArgumentException("Empty item");
+        }
+        final Repository repository = workspaceProvider.get(repositoryId);
+        if (repository == null) {
+            throw new IllegalArgumentException("[repository] Invalid value");
+        }
+        List<Repository> userRepositories = workspaceProvider.getByUser(userId);
+        if (userRepositories.stream().noneMatch(r -> repositoryId.equals(r.getId()))) {
+            throw new IllegalArgumentException("Operation not allowed");
+        }
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("repository", repositoryId);
+        values.put(isFile ? "fileName" : "folder", item);
+        values.put("user", userId);
+        values.put("base64", Boolean.toString(base64Encoded));
+        final String json = new ObjectMapper().writeValueAsString(values);
+        return "/files/get?token=" + URLEncoder.encode(
+                CapabilityTokens.issue("download", json, Duration.ofMinutes(15)), StandardCharsets.UTF_8);
+    }
+
+    private void requireOwner(Repository repository) {
+        java.security.Principal principal = SessionStore.currentContext().getPrincipal();
+        String owner = principal instanceof UserPrincipal user && user.getMasterId() != null
+                ? user.getMasterId() : principal.getName();
+        if (repository == null || !(principal instanceof SystemPrincipal)
+                && !owner.equals(repository.getUserId()) && !principal.getName().equals(repository.getUserId())) {
+            throw new org.springframework.security.access.AccessDeniedException("Operation not allowed");
         }
     }
 

@@ -32,6 +32,10 @@ import ro.cs.tao.utils.StringUtilities;
 
 import java.util.Base64;
 
+/**
+ * Controller for handling progress reporting of long-running tasks and downloads.
+ * Provides endpoints to fetch information about tasks in progress and download statistics.
+ */
 @RestController
 @RequestMapping("/progress")
 @Tag(name = "Progress", description = "Reports the progress of lengthy operations")
@@ -50,33 +54,33 @@ public class ProgressReportController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> getTasksInProgress(@RequestParam(name = "category", required = false) String category,
                                                                  @RequestParam(name = "userId", required = false) String userId,
                                                                  @RequestParam(name = "filter", required = false) String jsonFilter) {
-        String filter = null;
-        if (!StringUtilities.isNullOrEmpty(userId) && (currentUser().equals(userId) || isCurrentUserAdmin())) {
-            if (StringUtilities.isNullOrEmpty(jsonFilter)) {
-                Filter f = new Filter();
-                f.setName("Principal");
-                f.setValue(userId);
-                filter = f.toString();
-            } else {
-                filter = new String(Base64.getDecoder().decode(jsonFilter));
-            }
-        } else if (StringUtilities.isNullOrEmpty(userId)) {
-            if (StringUtilities.isNullOrEmpty(jsonFilter)) {
-                Filter f = new Filter();
-                f.setName("Principal");
-                f.setValue(currentUser());
-                filter = f.toString();
-            } else {
-                filter = new String(Base64.getDecoder().decode(jsonFilter));
+        String owner = StringUtilities.isNullOrEmpty(userId) ? currentOwner() : userId;
+        if (!(currentUser().equals(owner) || currentOwner().equals(owner) || isCurrentUserAdmin())) {
+            return prepareResult(null, org.springframework.http.HttpStatus.FORBIDDEN);
+        }
+        Filter scope = new Filter();
+        scope.setName("Principal");
+        scope.setValue(owner);
+        var tasks = progressReportService.getRunningTasks(category,
+                new tools.jackson.databind.ObjectMapper().writeValueAsString(scope));
+        if (!StringUtilities.isNullOrEmpty(jsonFilter)) {
+            try {
+                Filter additional = new tools.jackson.databind.ObjectMapper().readValue(
+                        Base64.getDecoder().decode(jsonFilter), Filter.class);
+                if (additional.getName() == null || additional.getValue() == null) throw new IllegalArgumentException();
+                tasks = tasks.stream().filter(task -> additional.getValue().equals(task.getInfo(additional.getName()))).toList();
+            } catch (RuntimeException e) {
+                return prepareResult(null, org.springframework.http.HttpStatus.BAD_REQUEST);
             }
         }
-        return prepareResult(progressReportService.getRunningTasks(category, filter));
+        return prepareResult(tasks);
     }
 
     /**
      * Returns statistics about downloads
      */
     @RequestMapping(value = "/download/statistics", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ro.cs.tao.services.commons.RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> getGlobalDownloadStatus() {
         return prepareResult(DownloadManager.getOverallStatus());
     }
@@ -84,6 +88,7 @@ public class ProgressReportController extends BaseController {
      * Returns information about the current downloads
      */
     @RequestMapping(value = "/download/statistics/detail", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ro.cs.tao.services.commons.RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> getDownloadStatus() {
         return prepareResult(DownloadManager.getCurrentStatus());
     }

@@ -23,6 +23,15 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * The {@code Endpoints} class provides a centralized collection of endpoint paths and service path
+ * expressions used within the application. These endpoints are defined as static constants,
+ * allowing consistent and reusable access to REST API endpoints.
+ *
+ * Additionally, this class provides functionality to dynamically retrieve and process a list of
+ * endpoints by scanning for REST controllers within a given package prefix, ensuring that endpoints
+ * are managed and generalized rather than hardcoded.
+ */
 public class Endpoints {
     public static final String LOGIN_ENDPOINT = "/auth/login";
     public static final String REFRESH_ENDPOINT = "/auth/refresh";

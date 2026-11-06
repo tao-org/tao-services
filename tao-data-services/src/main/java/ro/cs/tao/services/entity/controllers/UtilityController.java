@@ -1,118 +1,111 @@
 package ro.cs.tao.services.entity.controllers;
 
-import org.apache.http.auth.Credentials;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.component.Variable;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.entity.beans.FetchFilesRequest;
-import ro.cs.tao.utils.FileUtilities;
-import ro.cs.tao.utils.NetStreamResponse;
-import ro.cs.tao.utils.NetUtils;
-import ro.cs.tao.utils.StringUtilities;
-import ro.cs.tao.utils.async.Parallel;
+import ro.cs.tao.utils.PublicHttp;
+import ro.cs.tao.utils.SafePaths;
 
 import java.io.IOException;
-import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.List;
-import java.util.stream.Stream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import java.util.UUID;
+import java.util.concurrent.Semaphore;
 
 @RestController
 @RequestMapping("/utilities")
+@Tag(name = "Utilities", description = "Bounded remote preview retrieval")
 public class UtilityController extends BaseController {
+    private static final int MAX_BYTES = 8 * 1024 * 1024;
+    private static final Semaphore FETCHES = new Semaphore(4);
 
-    @RequestMapping(value = "/tunnel/get", method = RequestMethod.GET)
-    public ResponseEntity<?> get(@RequestParam("url") String url,
-                                 @RequestParam("name") String productName,
+    @GetMapping("/tunnel/get")
+    public ResponseEntity<?> get(@RequestParam("url") String url, @RequestParam("name") String name,
                                  @RequestParam(name = "user", required = false) String user,
                                  @RequestParam(name = "password", required = false) String password) {
-        ResponseEntity<?> serviceResponse;
-        try {
-            if (StringUtilities.isNullOrEmpty(url) || "undefined".equalsIgnoreCase(url)) {
-                throw new IOException("Invalid url");
-            }
-            URI uri = URI.create(url);
-            String sitePath = ConfigurationManager.getInstance().getValue("site.path");
-            if (sitePath == null || sitePath.isEmpty()) {
-                throw new IOException("Cannot determine site path");
-            }
-            Path cachePath = Paths.get(sitePath).resolve("previews");
-            if (!Files.exists(cachePath)) {
-                FileUtilities.createDirectories(cachePath);
-            }
-            Path file = getFile(cachePath, url, productName, user, password);
-            if (file == null) {
-                throw new IOException("File could not be downloaded");
-            }
-            serviceResponse = ResponseEntity.ok(Paths.get(sitePath).relativize(file).toString().replace('\\', '/'));
-        } catch (Exception e) {
-            serviceResponse = new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        return serviceResponse;
+        try { return ResponseEntity.ok(fetch(url, name, user, password)); }
+        catch (IOException | IllegalArgumentException e) { return ResponseEntity.badRequest().body("Preview request rejected"); }
     }
 
-    @RequestMapping(value = "/tunnel/getmany", method = RequestMethod.POST)
+    @PostMapping("/tunnel/getmany")
     public ResponseEntity<?> getMany(@RequestBody FetchFilesRequest request) {
-        ResponseEntity<?> serviceResponse;
-        try {
-            String sitePath = ConfigurationManager.getInstance().getValue("site.path");
-            if (sitePath == null || sitePath.isEmpty()) {
-                throw new IOException("Cannot determine site path");
-            }
-            Path cachePath = Paths.get(sitePath).resolve("previews");
-            if (!Files.exists(cachePath)) {
-                FileUtilities.createDirectories(cachePath);
-            }
-            final String user = request.getUser();
-            final String password = request.getPassword();
-            final List<Variable> urls = request.getUrls();
-            if (urls == null || urls.isEmpty()) {
-                throw new IOException("Empty list");
-            }
-            final int size = urls.size();
-            Parallel.For(1, size, (i) -> {
-                                     try {
-                                         Path file = getFile(cachePath, urls.get(i).getKey(), urls.get(i).getValue(), user, password);
-                                         if (file != null) {
-                                             urls.get(i).setKey(Paths.get(sitePath).relativize(file).toString().replace('\\', '/'));
-                                         } else {
-                                             urls.get(i).setKey("undefined");
-                                         }
-                                     } catch (Exception e) {
-                                         error(e.getMessage());
-                                     }
-                                 });
-            serviceResponse = ResponseEntity.ok(urls);
-        } catch (IOException e) {
-            serviceResponse = new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        if (request == null || request.getUrls() == null || request.getUrls().isEmpty() || request.getUrls().size() > 20) {
+            return ResponseEntity.badRequest().body("Supply between 1 and 20 previews");
         }
-        return serviceResponse;
+        try {
+            for (Variable item : request.getUrls()) {
+                item.setKey(fetch(item.getKey(), item.getValue(), request.getUser(), request.getPassword()));
+            }
+            return ResponseEntity.ok(request.getUrls());
+        } catch (IOException | IllegalArgumentException e) { return ResponseEntity.badRequest().body("Preview request rejected"); }
     }
 
-    private Path getFile(Path cachePath, String url, String productName, String userName, String pwd) throws IOException {
-        Path file;
-        try (Stream<Path> stream = Files.list(cachePath)) {
-            file = stream.filter(f -> f.getFileName().toString().startsWith(productName)).findFirst().orElse(null);
-            if (file == null) {
-                Credentials credentials = null;
-                if (!StringUtilities.isNullOrEmpty(userName) && !StringUtilities.isNullOrEmpty(pwd)) {
-                    credentials = new UsernamePasswordCredentials(userName, pwd);
+    /** Private previews are never exposed through the site's static resource handler. */
+    @GetMapping("/preview/{name}")
+    public ResponseEntity<?> preview(@PathVariable("name") String name) {
+        try {
+            SafePaths.fileName(name);
+            if (!name.matches("[a-f0-9-]{36}\\.(png|jpg)")) return ResponseEntity.notFound().build();
+            Path file = SafePaths.resolve(cacheDirectory(), name);
+            if (!Files.isRegularFile(file) || Files.size(file) > MAX_BYTES) return ResponseEntity.notFound().build();
+            return ResponseEntity.ok().contentType(name.endsWith(".png") ? MediaType.IMAGE_PNG : MediaType.IMAGE_JPEG)
+                    .header("Cache-Control", "private, no-store").header("X-Content-Type-Options", "nosniff")
+                    .body(Files.readAllBytes(file));
+        } catch (IOException | IllegalArgumentException e) { return ResponseEntity.notFound().build(); }
+    }
+
+    private String fetch(String url, String name, String user, String password) throws IOException {
+        SafePaths.fileName(name);
+        Path directory = cacheDirectory();
+        if (!FETCHES.tryAcquire()) throw new IOException("Preview capacity exceeded");
+        try {
+            var credentials = user == null || password == null ? null : new UsernamePasswordCredentials(user, password);
+            byte[] data = PublicHttp.get(url, credentials, MAX_BYTES);
+            String extension;
+            if (data.length >= 8 && data[0] == (byte) 0x89 && data[1] == 'P' && data[2] == 'N' && data[3] == 'G'
+                    && data[4] == 13 && data[5] == 10 && data[6] == 26 && data[7] == 10) extension = ".png";
+            else if (data.length >= 3 && data[0] == (byte) 0xff && data[1] == (byte) 0xd8 && data[2] == (byte) 0xff) extension = ".jpg";
+            else throw new IOException("Only PNG and JPEG previews are supported");
+            synchronized (UtilityController.class) {
+                try (var files = Files.list(directory)) {
+                    for (Path file : files.toList()) {
+                        if (Files.getLastModifiedTime(file, LinkOption.NOFOLLOW_LINKS).toMillis() < System.currentTimeMillis() - 3600000L) {
+                            Files.deleteIfExists(file);
+                        }
+                    }
                 }
-                try (NetStreamResponse response = NetUtils.getResponseAsStream(url, credentials)) {
-                    String extension = response.getName() != null ?
-                                       response.getName().substring(response.getName().lastIndexOf('.')) : ".jpg";
-                    file = cachePath.resolve(productName + extension);
-                    Files.write(file, response.getStream(), StandardOpenOption.CREATE);
+                try (var files = Files.list(directory)) {
+                    if (files.limit(100).count() >= 100) throw new IOException("Preview quota exceeded");
                 }
+                String id = UUID.randomUUID() + extension;
+                Path file = SafePaths.resolve(directory, id);
+                Files.write(file, data, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS);
+                String base = ConfigurationManager.getInstance().getValue("tao.services.base", "");
+                return base.replaceAll("/+$", "") + "/utilities/preview/" + id;
             }
-        }
-        return file;
+        } finally { FETCHES.release(); }
+    }
+
+    private Path cacheDirectory() throws IOException {
+        String owner = currentOwner();
+        if (owner == null || owner.isBlank()) throw new IOException("Authentication required");
+        try {
+            String id = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(owner.getBytes(StandardCharsets.UTF_8)));
+            Path directory = Path.of(System.getProperty("java.io.tmpdir"), "tao-private-previews", id);
+            Files.createDirectories(directory);
+            return SafePaths.resolve(directory, ".");
+        } catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
     }
 }

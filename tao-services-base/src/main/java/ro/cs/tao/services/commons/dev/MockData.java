@@ -1,15 +1,13 @@
 package ro.cs.tao.services.commons.dev;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.workflow.WorkflowDescriptor;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectReader;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
 import java.util.*;
 
 public class MockData {
@@ -27,13 +25,9 @@ public class MockData {
     private static final Map<Long, List<TargetDescriptor>> mockTargets;
 
     static {
-        ObjectMapper objectMapper = new ObjectMapper();
-        Hibernate5Module hibernate5Module = new Hibernate5Module();
-        hibernate5Module.disable(Hibernate5Module.Feature.USE_TRANSIENT_ANNOTATION);
-        hibernate5Module.enable(Hibernate5Module.Feature.FORCE_LAZY_LOADING);
-        objectMapper.registerModule(hibernate5Module);
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        ObjectMapper objectMapper = JsonMapper.builder()
+                .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .build();
         ObjectReader reader = objectMapper.reader().forType(WorkflowDescriptor.class);
         mockWorkflows = new ArrayList<>();
         mockParameters = new HashMap<>();
@@ -68,7 +62,7 @@ public class MockData {
             targets = new ArrayList<>();
             Collections.addAll(targets, reader.readValue(WF2_Output));
             mockTargets.put(2L, targets);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }

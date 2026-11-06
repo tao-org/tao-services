@@ -21,19 +21,24 @@ import ro.cs.tao.Sort;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.*;
 import ro.cs.tao.component.constraints.ConstraintFactory;
+import ro.cs.tao.component.enums.ComponentCategory;
 import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.component.template.Template;
 import ro.cs.tao.component.template.TemplateException;
 import ro.cs.tao.component.template.TemplateType;
 import ro.cs.tao.component.validation.ValidationException;
+import ro.cs.tao.datasource.param.JavaType;
+import ro.cs.tao.datasource.persistence.DataSourceComponentProvider;
 import ro.cs.tao.docker.Application;
 import ro.cs.tao.docker.Container;
-import ro.cs.tao.persistence.ContainerProvider;
-import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.persistence.ProcessingComponentProvider;
-import ro.cs.tao.persistence.TagProvider;
+import ro.cs.tao.eodata.enums.DataFormat;
+import ro.cs.tao.persistence.*;
+import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
+import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.security.SystemSessionContext;
 import ro.cs.tao.serialization.*;
+import ro.cs.tao.services.bridge.spring.SpringContextBridge;
+import ro.cs.tao.services.bridge.spring.SpringContextBridgedServices;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.model.component.ProcessingComponentInfo;
@@ -58,16 +63,44 @@ public class ComponentServiceImpl
     extends EntityService<ProcessingComponent>
         implements ComponentService {
 
+    private static Set<EntityProvider<? extends TaoComponent, String>> otherComponentProviders;
+
     @Autowired
     private ProcessingComponentProvider processingComponentProvider;
     @Autowired
     private TagProvider tagProvider;
     @Autowired
     private ContainerProvider containerProvider;
+    @Autowired
+    private SourceDescriptorRepository sourceDescriptorRepository;
+    @Autowired
+    private TargetDescriptorRepository targetDescriptorRepository;
 
     @Override
     public ProcessingComponent findById(String id) {
-        return processingComponentProvider.get(id);
+        ProcessingComponent component = processingComponentProvider.get(id);
+        addInputOutputDescription(component);
+        return component;
+    }
+
+    @Override
+    public TaoComponent getComponent(String id) {
+        TaoComponent component = processingComponentProvider.get(id);
+        if (component == null) {
+            if (otherComponentProviders == null) {
+                otherComponentProviders = new HashSet<>();
+                SpringContextBridgedServices context = SpringContextBridge.services();
+                otherComponentProviders.add(context.getService(DataSourceComponentProvider.class));
+                otherComponentProviders.add(context.getService(ConditionComponentProvider.class));
+                otherComponentProviders.add(context.getService(GroupComponentProvider.class));
+            }
+            for (EntityProvider<? extends TaoComponent, String> provider : otherComponentProviders) {
+                if ((component = provider.get(id)) != null) {
+                    break;
+                }
+            }
+        }
+        return component;
     }
 
     @Override
@@ -75,6 +108,7 @@ public class ComponentServiceImpl
         List<ProcessingComponent> components = null;
         try {
             components = processingComponentProvider.list();
+            components.forEach(this::addInputOutputDescription);
         } catch (Exception e) {
             logger.severe(e.getMessage());
         }
@@ -83,16 +117,40 @@ public class ComponentServiceImpl
 
     @Override
     public List<ProcessingComponent> list(Iterable<String> ids) {
-        return processingComponentProvider.list(ids);
+        List<ProcessingComponent> components = processingComponentProvider.list(ids);
+        components.forEach(this::addInputOutputDescription);
+        return components;
     }
 
     @Override
     public List<ProcessingComponent> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort) {
+        return list(pageNumber, pageSize, sort, null, null);
+    }
+
+    @Override
+    public List<ProcessingComponent> list(Optional<Integer> pageNumber, Optional<Integer> pageSize, Sort sort,
+                                          String label, List<Tag> tags) {
+        List<ProcessingComponent> components;
         if (pageNumber.isPresent() && pageSize.isPresent()) {
-            return processingComponentProvider.list(pageNumber.get(), pageSize.get(), sort);
+            boolean hasLabel = !StringUtilities.isNullOrEmpty(label);
+            boolean hasTags = tags != null && tags.stream()
+                                                  .filter(Objects::nonNull)
+                                                  .map(Tag::getText)
+                                                  .anyMatch(t -> !StringUtilities.isNullOrEmpty(t));
+            if (hasLabel && hasTags) {
+                components = processingComponentProvider.list(label, tags, pageNumber.get(), pageSize.get(), sort);
+            } else if (hasLabel) {
+                components = processingComponentProvider.list(label, pageNumber.get(), pageSize.get(), sort);
+            } else if (hasTags) {
+                components = processingComponentProvider.list(tags, pageNumber.get(), pageSize.get(), sort);
+            } else {
+                components = processingComponentProvider.list(pageNumber.get(), pageSize.get(), sort);
+            }
         } else {
-            return processingComponentProvider.list();
+            components = processingComponentProvider.list();
         }
+        components.forEach(this::addInputOutputDescription);
+        return components;
     }
 
     @Override
@@ -102,8 +160,23 @@ public class ComponentServiceImpl
     }
 
     @Override
+    public long count() {
+        return processingComponentProvider.count();
+    }
+
+    @Override
+    public long count(String label, List<Tag> tags) {
+        return processingComponentProvider.count(label, tags);
+    }
+
+    @Override
     public List<ProcessingComponentInfo> getProcessingComponents() {
         return ServiceTransformUtils.toProcessingComponentInfos(list());
+    }
+
+    @Override
+    public List<ProcessingComponentInfo> getProcessingComponents(ComponentCategory category) {
+        return ServiceTransformUtils.toProcessingComponentInfos(processingComponentProvider.listByCategory(category));
     }
 
     @Override
@@ -122,6 +195,16 @@ public class ComponentServiceImpl
     }
 
     @Override
+    public List<ProcessingComponentInfo> findBySimilarity(String text, String userId) {
+        return ServiceTransformUtils.toProcessingComponentInfos(processingComponentProvider.findBySimilarity(text, userId));
+    }
+
+    @Override
+    public List<String> findLabelsBySimilarity(String text, String userId) {
+        return processingComponentProvider.findLabelsBySimilarity(text, userId);
+    }
+
+    @Override
     public ProcessingComponent save(ProcessingComponent component) {
         if (component != null) {
             if (processingComponentProvider.get(component.getId(), component.getContainerId()) != null) {
@@ -129,6 +212,7 @@ public class ComponentServiceImpl
             } else {
                 try {
                     addTagsIfNew(component);
+                    addInputOutputDescription(component);
                     return processingComponentProvider.save(component);
                 } catch (PersistenceException e) {
                     logger.severe(e.getMessage());
@@ -143,6 +227,20 @@ public class ComponentServiceImpl
     public ProcessingComponent update(ProcessingComponent component) {
         try {
             addTagsIfNew(component);
+            addInputOutputDescription(component);
+            ProcessingComponent existing = processingComponentProvider.get(component.getId());
+            List<SourceDescriptor> sources = existing.getSources();
+            List<TargetDescriptor> targets = existing.getTargets();
+            for (SourceDescriptor source : sources) {
+                if (!component.getSources().contains(source)) {
+                    sourceDescriptorRepository.delete(source);
+                }
+            }
+            for (TargetDescriptor target : targets) {
+                if (!component.getTargets().contains(target)) {
+                    targetDescriptorRepository.delete(target);
+                }
+            }
             return processingComponentProvider.update(component);
         } catch (PersistenceException e) {
             logger.severe(e.getMessage());
@@ -228,7 +326,7 @@ public class ComponentServiceImpl
     @Override
     public ProcessingComponent importComponent(InputStream source) throws IOException, SerializationException {
         final BaseSerializer<ProcessingComponent> serializer = SerializerFactory.create(ProcessingComponent.class, MediaType.JSON);
-        final char[] buffer = new char[MemoryUnit.KB.value().intValue()];
+        final char[] buffer = new char[(int) MemoryUnit.KB.value()];
         final StringBuilder builder = new StringBuilder();
         try (Reader reader = new InputStreamReader(source)) {
             for (int numRead; (numRead = reader.read(buffer, 0, buffer.length)) > 0;) {
@@ -239,13 +337,14 @@ public class ComponentServiceImpl
         if (StringUtilities.isNullOrEmpty(entity.getId())) {
             entity.setId(UUID.randomUUID().toString());
         }
-        for(SourceDescriptor sourceDescriptor : entity.getSources()){
+        for (SourceDescriptor sourceDescriptor : entity.getSources()){
             sourceDescriptor.setParentId(entity.getId());
         }
-        for(TargetDescriptor targetDescriptor : entity.getTargets()){
+        for (TargetDescriptor targetDescriptor : entity.getTargets()){
             targetDescriptor.setParentId(entity.getId());
         }
         entity.setTemplateType(TemplateType.VELOCITY);
+        entity.setNodeAffinity(NodeAffinity.Any);
         final ProcessingComponent existing = findById(entity.getId());
         if (existing != null) {
             throw new IOException("Processing component already exists");
@@ -265,18 +364,128 @@ public class ComponentServiceImpl
     @Override
     public String exportComponent(ProcessingComponent component) throws SerializationException {
         final BaseSerializer<ProcessingComponent> serializer = SerializerFactory.create(ProcessingComponent.class, MediaType.JSON);
+        serializer.addMixIn(ParameterDescriptor.class, DataTypeMixIn.class);
+        serializer.setIgnoreNullFields();
+        addInputOutputDescription(component);
         return serializer.serialize(component);
+    }
+
+    @Override
+    public void transformIntoSource(String parameterId, ProcessingComponent parentComponent) {
+        if (parentComponent == null) {
+            throw new NullPointerException("parentComponent");
+        }
+        if (StringUtilities.isNullOrEmpty(parameterId)) {
+            throw new IllegalArgumentException("parameterId");
+        }
+        ParameterDescriptor parameterDescriptor = parentComponent.getParameterDescriptors().stream()
+                                                                 .filter(p -> p.getId().equals(parameterId))
+                                                                 .findFirst().orElse(null);
+        if (parameterDescriptor == null) {
+            throw new IllegalArgumentException("Parameter with id " + parameterId + " does not exist");
+        }
+        String sourceName = parameterDescriptor.getName();
+        // Ensure uniqueness
+        List<SourceDescriptor> sources = parentComponent.getSources();
+        for (SourceDescriptor source : sources) {
+            sourceName = StringUtilities.incrementIfDuplicate(sourceName, source.getName());
+        }
+        final SourceDescriptor source = new SourceDescriptor(parameterDescriptor.getId());
+        source.setName(sourceName);
+        source.setCardinality(1);
+        source.setDataDescriptor(new DataDescriptor(DataFormat.ANY));
+        source.setDescription(parameterDescriptor.getDescription());
+        parentComponent.addSource(source);
+        parentComponent.getParameterDescriptors().removeIf(p -> p.equals(parameterDescriptor));
+        save(parentComponent);
+    }
+
+    @Override
+    public void transformIntoTarget(String parameterId, ProcessingComponent parentComponent) {
+        if (parentComponent == null) {
+            throw new NullPointerException("parentComponent");
+        }
+        if (StringUtilities.isNullOrEmpty(parameterId)) {
+            throw new IllegalArgumentException("parameterId");
+        }
+        ParameterDescriptor parameterDescriptor = parentComponent.getParameterDescriptors().stream()
+                                                                 .filter(p -> p.getId().equals(parameterId))
+                                                                 .findFirst().orElse(null);
+        if (parameterDescriptor == null) {
+            throw new IllegalArgumentException("Parameter with id " + parameterId + " does not exist");
+        }
+        String targetName = parameterDescriptor.getName();
+        List<TargetDescriptor> targets = parentComponent.getTargets();
+        for (TargetDescriptor target : targets) {
+            targetName = StringUtilities.incrementIfDuplicate(targetName, target.getName());
+        }
+        final TargetDescriptor target = new TargetDescriptor(parameterDescriptor.getId());
+        target.setName(targetName);
+        target.setCardinality(1);
+        target.setDataDescriptor(new DataDescriptor(DataFormat.ANY));
+        target.setDescription(parameterDescriptor.getDescription());
+        parentComponent.addTarget(target);
+        parentComponent.getParameterDescriptors().removeIf(p -> p.equals(parameterDescriptor));
+        save(parentComponent);
+    }
+
+    @Override
+    public void transformIntoParameter(String sourceOrTargetDescriptorId, ProcessingComponent parentComponent) {
+        if (parentComponent == null) {
+            throw new NullPointerException("parentComponent");
+        }
+        if (StringUtilities.isNullOrEmpty(sourceOrTargetDescriptorId)) {
+            throw new IllegalArgumentException("sourceOrTargetDescriptorId");
+        }
+        addInputOutputDescription(parentComponent);
+        SourceDescriptor sourceDescriptor = parentComponent.getSources().stream()
+                                                           .filter(p -> p.getId().equals(sourceOrTargetDescriptorId))
+                                                           .findFirst().orElse(null);
+        String name;
+        if (sourceDescriptor != null) {
+            name = sourceDescriptor.getName();
+            Set<ParameterDescriptor> parameterDescriptorSet = parentComponent.getParameterDescriptors();
+            for (ParameterDescriptor parameterDescriptor : parameterDescriptorSet) {
+                name = StringUtilities.incrementIfDuplicate(name, parameterDescriptor.getName());
+            }
+            ParameterDescriptor descriptor = new ParameterDescriptor(sourceDescriptor.getId());
+            descriptor.setDataType(JavaType.STRING.value());
+            descriptor.setName(name);
+            descriptor.setDescription(sourceDescriptor.getDescription());
+            parentComponent.addParameter(descriptor);
+            parentComponent.getSources().removeIf(s -> s.equals(sourceDescriptor));
+        } else {
+            TargetDescriptor targetDescriptor = parentComponent.getTargets().stream()
+                                                               .filter(p -> p.getId().equals(sourceOrTargetDescriptorId))
+                                                               .findFirst().orElse(null);
+            if (targetDescriptor != null) {
+                name = targetDescriptor.getName();
+                Set<ParameterDescriptor> parameterDescriptorSet = parentComponent.getParameterDescriptors();
+                for (ParameterDescriptor parameterDescriptor : parameterDescriptorSet) {
+                    name = StringUtilities.incrementIfDuplicate(name, parameterDescriptor.getName());
+                }
+                ParameterDescriptor descriptor = new ParameterDescriptor(targetDescriptor.getId());
+                descriptor.setDataType(JavaType.STRING.value());
+                descriptor.setName(name);
+                descriptor.setDescription(targetDescriptor.getDescription());
+                parentComponent.addParameter(descriptor);
+                parentComponent.getTargets().removeIf(s -> s.equals(targetDescriptor));
+            } else {
+                throw new IllegalArgumentException("There is no source/target descriptor with id " + sourceOrTargetDescriptorId);
+            }
+        }
+        save(parentComponent);
     }
 
     @Override
     protected void validateFields(ProcessingComponent entity, List<String> errors) {
         String value = entity.getId();
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[id] cannot be empty");
         }
         value = entity.getContainerId();
         Container container = null;
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[containerId] cannot be empty");
         } else {
             container = containerProvider.get(value);
@@ -291,15 +500,15 @@ public class ComponentServiceImpl
             }
         }
         value = entity.getLabel();
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[label] cannot be empty");
         }
         value = entity.getVersion();
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[version] cannot be empty");
         }
         value = entity.getFileLocation();
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[fileLocation] cannot be empty");
         } else {
             if (container != null) {
@@ -313,7 +522,7 @@ public class ComponentServiceImpl
             }
         }
         value = entity.getWorkingDirectory();
-        if (value == null || value.trim().isEmpty()) {
+        if (StringUtilities.isNullOrEmpty(value)) {
             errors.add("[workingDirectory] cannot be empty");
         } else {
             try {
@@ -331,7 +540,7 @@ public class ComponentServiceImpl
             errors.add("[templateType] cannot be determined");
         } else {
             Template template = entity.getTemplate();
-            if (template == null || template.getContents() == null || template.getContents().isEmpty()) {
+            if (template == null || StringUtilities.isNullOrEmpty(template.getContents())) {
                 errors.add("[template] cannot be empty");
             } else {
                 try {
@@ -344,33 +553,29 @@ public class ComponentServiceImpl
         Set<ParameterDescriptor> parameterDescriptors = entity.getParameterDescriptors();
         if (parameterDescriptors != null) {
             for (ParameterDescriptor descriptor : parameterDescriptors) {
-                String descriptorId = descriptor.getId();
-                if (descriptorId == null || descriptorId.trim().isEmpty()) {
-                    errors.add("Invalid parameter found (missing id)");
-                    continue;
-                }
+                final String descriptorId = descriptor.getName();
                 value = descriptor.getLabel();
-                if (value == null || value.trim().isEmpty()) {
+                if (StringUtilities.isNullOrEmpty(value)) {
                     errors.add(String.format("[$%s] label cannot be empty", descriptorId));
                 }
-                Class<?> dataType = descriptor.getDataType();
+                final Class<?> dataType = descriptor.getDataType();
                 if (dataType == null) {
                     errors.add(String.format("[$%s] cannot determine type", descriptorId));
                 }
                 if (LocalDateTime.class.equals(dataType)) {
                     value = descriptor.getFormat();
-                    if (value == null || value.trim().isEmpty()) {
+                    if (StringUtilities.isNullOrEmpty(value)) {
                         errors.add(String.format("[$%s] format for date parameter not specified", descriptorId));
                     }
                 }
                 value = descriptor.getDefaultValue();
-                if (descriptor.isNotNull() && (value == null || value.trim().isEmpty())) {
-                    errors.add(String.format("[$%s] is mandatory, but has no default value", descriptorId));
+                if (descriptor.isNotNull() && !StringUtilities.isNullOrEmpty(value)) {
+                    errors.add(String.format("[$%s] is mandatory, but has a default value", descriptorId));
                 }
             }
         }
-        List<SourceDescriptor> sources = entity.getSources();
-        Set<String> uniques = new HashSet<>();
+        final List<SourceDescriptor> sources = entity.getSources();
+        final Set<String> uniques = new HashSet<>();
         if (sources == null || sources.isEmpty()) {
             errors.add("[sources] at least one source must be defined");
         } else {
@@ -387,8 +592,14 @@ public class ComponentServiceImpl
                 errors.add(String.format("[sources] contain duplicate ids: %s", String.join(",", duplicates)));
                 uniques.clear();
             }
+            for (SourceDescriptor source : sources) {
+                DataDescriptor dataDescriptor = source.getDataDescriptor();
+                if (dataDescriptor == null || dataDescriptor.getFormatType() == null) {
+                    errors.add(String.format("[sources.%s] formatType cannot be empty", source.getName()));
+                }
+            }
         }
-        List<TargetDescriptor> targets = entity.getTargets();
+        final List<TargetDescriptor> targets = entity.getTargets();
         if (targets == null || targets.isEmpty()) {
             errors.add("[targets] at least one target must be defined");
         } else {
@@ -405,11 +616,17 @@ public class ComponentServiceImpl
                 errors.add(String.format("[targets] contain duplicate ids: %s", String.join(",", duplicates)));
                 uniques.clear();
             }
+            for (TargetDescriptor target : targets) {
+                DataDescriptor dataDescriptor = target.getDataDescriptor();
+                if (dataDescriptor == null || dataDescriptor.getFormatType() == null) {
+                    errors.add(String.format("[targets.%s] formatType cannot be empty", target.getName()));
+                }
+            }
         }
     }
 
     private void addTagsIfNew(TaoComponent component) {
-        List<String> tags = component.getTags();
+        final List<String> tags = component.getTags();
         if (tags != null) {
             List<Tag> componentTags = tagProvider.list(TagType.COMPONENT);
             for (String value : tags) {

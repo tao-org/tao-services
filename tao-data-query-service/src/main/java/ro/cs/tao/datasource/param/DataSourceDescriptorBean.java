@@ -6,6 +6,12 @@ import java.util.AbstractMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * A bean wrapper for the {@code DataSourceDescriptor} class, providing access to
+ * data source descriptor details in a structured format. This class exposes
+ * various methods to retrieve information about a data source's mission, sensor,
+ * name, category, description, coverage, authentication requirements, and other metadata.
+ */
 public class DataSourceDescriptorBean {
     private final DataSourceDescriptor descriptor;
 

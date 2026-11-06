@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html class="thin-scrollbar">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="application-name" content="TAO" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<title>Dashboard</title>
+	<link type="image/x-icon" rel="shortcut icon" href="/media/icons/dunia-favicon.ico" />
+	
+	<!-- External -->
+	<link type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" />
+	<link type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/switchery/0.8.2/switchery.min.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/bootstrap/css/bootstrap.min.css" />
+	<link type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/bootstrap/css/bootstrap-tour.min.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/libs/select2/4.1.0/select2.min.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/libs/gritter/css/avl.jquery.gritter.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/libs/draggable-modal/draggable-modal.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/xterm.css" />
+	<!-- TAO -->
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTE.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEplus.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/AdminLTEextra.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/guided-tours.css" />
+	<link type="text/css" rel="stylesheet" href="./assets/dist/css/skins/skins.css" />
+	
+	<!-- External -->
+	<script type="text/javascript" src="./assets/libs/jQuery/jQuery-2.2.4.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/jquery-validate/jquery.validate.min.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/switchery/0.8.2/switchery.min.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/md5.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/aes.js"></script>
+	<script type="text/javascript" src="./assets/libs/sockjs-1.6.1.js"></script>
+	<script type="text/javascript" src="./assets/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+	<script type="text/javascript" src="./assets/bootstrap/js/bootstrap-tour.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/underscore-min.js"></script>
+	<script type="text/javascript" src="./assets/libs/base64/base64.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/momentjs/moment.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/chartjs/chartjs.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/splitjs/split.js"></script>
+	<script type="text/javascript" src="./assets/libs/select2/4.1.0/select2.min.js"></script>
+	<script type="text/javascript" src="./assets/libs/gritter/js/jquery.gritter.js"></script>
+	<script type="text/javascript" src="./assets/libs/draggable-modal/draggable-modal.js"></script>
+	<script type="text/javascript" src="./assets/dist/js/xterm.js"></script>
+	<script type="text/javascript" src="./assets/dist/js/xterm-addon-fit.js"></script>
+	<script type="text/javascript" src="./assets/libs/jquery.idle/jquery.idle.js"></script>
+	<script type="text/javascript" src="./assets/libs/modernizr/modernizr.custom.input.js"></script>
+	<!-- TAO -->
+	<script type="text/javascript" src="./assets/dist/js/general-functions.js"></script>
+	<script type="text/javascript" src="./assets/dist/js/config.js"></script>
+	<script type="text/javascript" src="./assets/dist/js/common-dashboard-functions.js"></script>
+	<script type="text/javascript" src="./assets/dist/js/notification.js"></script>
+	<!-- NPs -->
+	<script type="text/javascript" src="./assets/libs/np/jquery.npmodalconfirm.js"></script>
+	<script type="text/javascript" src="./assets/libs/np/jquery.npexecpanel.js"></script>
+	<script type="text/javascript" src="./assets/libs/np/jquery.npnotificationpanel.js"></script>
+	<script type="text/javascript" src="./assets/libs/np/jquery.nppaginatedcells.js"></script>
+	
+	<script type="text/javascript" src="./assets/libs/nice-toggle/nice-toggle.js"></script>
+	
+	<style>
+		.error {color:red;font-weight:normal;}
+		.fonts {font-size:unset;}
+		#selectThemeColor                         {display:flex;flex-direction:column;}
+		#selectThemeColor .theme                  {display:inline-flex;}
+		#selectThemeColor .theme .title           {display:block;width:100%;}
+		#selectThemeColor .theme .selected-accent {width:2.5em;}
+		#selectThemeColor .theme small            {display:block;width:100%;font-weight:400;opacity:0.7;}
+		#selectThemeColor .theme a                {display:inline-block;font-size:1.78em;text-shadow:1px 1px 0.22em rgb(0 0 0/0.2);}
+		#selectThemeColor .theme a.disabled       {cursor:default;}
+		#selectThemeColor .theme a i              {padding: 0 0.7em 0 0;}
+		
+		#selectSettingsBodySize                   {display:flex;align-items:flex-end;justify-content:space-between;padding:0.7em;margin:0 -10%;
+			.btn.btn-icon                         {padding:0;margin:0;border:0;display:flex;justify-content:center;opacity:0.6;color:var(--sidebar-color);background:none;
+				.fa-aa                            {font-size:1em;line-height:normal;padding-bottom:2px;border-bottom:2px solid transparent;}
+				.fa-aa::before                    {content:"\f031";font-size:0.7em;margin-right:-0.3em;}
+				.fa-aa::after                     {content:"\f031";}
+				&:hover,&:active                  {opacity:1;box-shadow:none;transform:scale(1.3);}
+				&.selected                        {opacity:1;box-shadow:none;.fa-aa {border-color:var(--sidebar-color);}}
+				&:hover .fa-aa                    {transform:none;}
+				&[data-action="size-small" ]      {font-size:10px;}
+				&[data-action="size-normal"]      {font-size:16px;}
+				&[data-action="size-large" ]      {font-size:22px;}
+				&[data-action="size-larger"]      {font-size:28px;}
+			}
+		}
+		
+		#confirm-dialog .body-message {word-break:break-word;}
+		
+		#myModalNotifications {
+			.form-changepane,.nav-tabs>li>a {height:2.8em;}
+			.notif-list {height:0;}
+		}
+		
+		.user-panel                        {margin:1em 0;padding:0 0.35em;text-align:center;
+			.image                         {width:5em;max-width:5em;display:inline-block;transition:width .3s ease-in-out;
+				body.sidebar-collapse &    {width:100%;margin-bottom:2em;}
+			}
+			.image>img                     {width:100%;max-width:100%;height:auto;}
+		}
+		
+		.sidebar-menu>li:first-of-type {
+			&+.header                  {padding-top:0;border:0;}
+			.title>*                   {display:block;line-height:1.2;text-align:center;font-size:1em;}
+			.treeview-menu p           {margin-bottom:0.23em;}
+			.val-user-role,
+			body.sidebar-collapse &    {display:none};
+		}
+		.fa.fa-empty::before{content:"";}
+		#taoLlmChatFloating {
+			position:fixed;
+			inset:0;
+			z-index:1010;
+			pointer-events:none;
+			background:none;
+		}
+		#taoLlmChatFloating .modal-dialog {
+			position:fixed;
+			top:70px;
+			right:20px;
+			width:var(--assistant-menu-size);
+			margin:0;
+			pointer-events:auto;
+			transform-origin:center center;
+		}
+		#taoLlmChatFloating.tao-assistant-closing .modal-dialog {
+			pointer-events:none;
+			transition:transform 240ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
+		}
+		#taoLlmChatFloating.tao-assistant-minimized .modal-dialog {
+			width:300px !important;
+			height:auto !important;
+			bottom:0 !important;
+		}
+		#taoLlmChatFloating .modal-content {
+			border:1px solid rgba(0,0,0,0.18);
+			border-top-color: var(--primary-color) !important;
+			box-shadow:0 4px 14px rgba(0,0,0,0.22);
+			min-width:300px;
+			min-height:300px;
+			border-top-width: 0.23em !important;
+		}
+		#taoLlmChatFloating.tao-assistant-minimized .modal-content {
+			height:auto !important;
+			min-height:0;
+			border-top-width: 0.23em;
+		}
+		#taoLlmChatFloating .modal-header {
+			cursor:move;
+			padding:9px 14px;
+			border-top-width: 0.23em;
+		}
+		#taoLlmChatFloating.tao-assistant-minimized .modal-header {
+			cursor:default;
+			border-bottom:0;
+		}
+		#taoLlmChatFloating .modal-title {
+			overflow:hidden;
+			text-overflow:ellipsis;
+			white-space:nowrap;
+			padding-right:70px;
+		}
+		#taoLlmChatFloating .tao-assistant-window-control {
+			float:right;
+			margin-left:8px;
+			color:#000;
+			opacity:.55;
+			background:transparent;
+			border:0;
+			padding-right:0.5em;
+			font-size:1em;
+			line-height:1;
+		}
+		#taoLlmChatFloating .tao-assistant-window-control:hover {
+			opacity:.85;
+		}
+		#taoLlmChatFloating .modal-body {
+			padding:0;
+		}
+		#taoLlmChatFloating.tao-assistant-minimized .modal-body,
+		#taoLlmChatFloating.tao-assistant-minimized .tao-assistant-resize-handle {
+			display:none !important;
+		}
+		#taoLlmChatFloating .content-header,
+		#taoLlmChatFloating .tao-llm-chat-secondary-row,
+		#taoLlmChatFloating .tao-llm-chat-download-row {
+			display:none !important;
+		}
+		#taoLlmChatFloating .box-footer > div:nth-child(2) label,
+		#taoLlmChatFloating .box-footer > div:nth-child(2) button,
+		#taoLlmChatFloating .box-footer > div:nth-child(2) .docCount {
+			display:none !important;
+		}
+		#taoLlmChatFloating .content {
+			padding:0;
+		}
+		#taoLlmChatFloating .row,
+		#taoLlmChatFloating .col-md-12 {
+			margin:0;
+			padding:0;
+		}
+		#taoLlmChatFloating .tao-llm-chat {
+			margin-bottom:0;
+			border-top:0;
+			box-shadow:none;
+		}
+		#taoLlmChatFloating .tao-llm-chat .box-header {
+			display:none;
+		}
+		#taoLlmChatFloating .tao-llm-chat .chatMessages {
+			max-height:52vh !important;
+		}
+		#taoLlmChatFloating .tao-assistant-resize-handle {
+			position:absolute;
+			right:0;
+			bottom:0;
+			width:18px;
+			height:18px;
+			cursor:nwse-resize;
+			z-index:2;
+		}
+		#taoLlmChatFloating .tao-assistant-resize-handle:before {
+			content:"";
+			position:absolute;
+			right:4px;
+			bottom:4px;
+			width:10px;
+			height:10px;
+			border-right:2px solid rgba(0,0,0,0.35);
+			border-bottom:2px solid rgba(0,0,0,0.35);
+		}
+		@media (max-width: 767px) {
+			#taoLlmChatFloating .modal-dialog {
+				top:58px;
+				right:10px;
+				left:10px;
+				width:auto;
+			}
+		}
+	</style>
+</head>
+
+<body class="sidebar-mini noselect">
+<div class="wrapper" style="opacity:0;">
+	<!-- Main Header -->
+	<header class="main-header">
+		<!-- Logo -->
+		<a href="./sap.html" class="logo">
+			<span class="logo-mini"><img id="logoSmall" src="./media/images/avl_logo_small_transparent.png" alt="logo_small" /></span>
+			<span id="logoText" class="logo-lg"></span>
+		</a>
+		<!-- Header Navbar -->
+		<nav class="navbar navbar-static-top" role="navigation">
+			<a class="sidebar-toggle" data-toggle="offcanvas" role="button" href="#"><i class="fa fa-bars"></i></a>
+			<ul class="nav navbar-nav">
+				<!-- Messages -->
+				<li class="dropdown notif-menu">
+					<a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="fa fa-bell-o"><span class="badge notif label-danger val-messages-count"></span></i></a>
+					<ul class="dropdown-menu">
+						<li class="header"><span class="thin">No new events to show</span></li>
+						<li><ul class="menu"></ul></li>
+						<li class="footer"><a data-action="show-all-messages" href="#"><i class="fa fa-chevron-right pull-right"></i>Show All Notifications</a></li>
+					</ul>
+				</li>
+				<!-- Guided Tours -->
+				<li class="dropdown guided-tour-menu">
+					<a class="dropdown-toggle" data-toggle="dropdown" href="#" title="Guided tours"><i class="fa fa-question-circle-o"></i></a>
+					<ul class="dropdown-menu">
+						<li class="header"><span class="thin">Guided tours</span></li>
+						<li><a data-tour="application-flow" href="#"><i class="fa fa-play-circle-o"></i> Application flow</a></li>
+						<li><a data-tour="data-discovery" href="#"><i class="fa fa-search"></i> Find EO products</a></li>
+						<li><a data-tour="sites" href="#"><i class="fa fa-map"></i> Sites</a></li>
+						<li><a data-tour="repositories" href="#"><i class="fa fa-folder-open"></i> Repositories and product sets</a></li>
+						<li><a data-tour="workflow-authoring" href="#"><i class="fa fa-sitemap"></i> Build a workflow</a></li>
+						<li><a data-tour="workflow-execution" href="#"><i class="fa fa-paper-plane"></i> Run and preserve results</a></li>
+					</ul>
+				</li>
+				<!-- Floating Assistant -->
+				<li>
+					<a data-action="open-assistant-chat" href="#" title="TAO Assistant"><i class="fa fa-comments-o"></i></a>
+				</li>
+				<!-- User Account -->
+				<li class="dropdown user user-menu">
+					<a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="fa fa-user-o"></i></a>
+					<ul class="dropdown-menu">
+						<li class="header user-header">
+							<img src="https://www.gravatar.com/avatar/0000000000?d=mp&s=160" class="img-circle val-user-avatar"/>
+							<div><span class="val-user val-user-fullname bold"></span><span class="val-user val-user-role user-role"></span><small class="val-user val-user-email thin"></small></div>
+						</li>
+						<li><ul class="menu">
+							<li><a data-action="editprofile"       class="media" href="#"><div class="media-left"><i class="fa fa-user-o"></i></div><div class="media-body"><p class="text">Profile</p></div></a></li>
+							<li><a data-action="show-all-messages" class="media" href="#"><div class="media-left"><i class="fa fa-envelope-o"></i></div><div class="media-body"><p class="text">Messages<span class="pull-right badge label-danger val-messages-count">0</span></p></div></a></li>
+							<li><a data-toggle="control-sidebar"   class="media" href="#"><div class="media-left"><i class="fa fa-paint-brush"></i></div><div class="media-body"><p class="text">Themes<span class="pull-right badge label-success">New</span></p></div></a></li>
+							<li><a data-action="logout"            class="media" href="#"><div class="media-left"><i class="fa fa-sign-out"></i></div><div class="media-body"><p class="text">Logout</p></div></a></li>
+						</ul></li>
+					</ul>
+				</li>
+			</ul>
+			<!-- Control Sidebar Toggle Button -->
+			<a data-toggle="control-sidebar" href="#"><i class="fa fa-gears"></i></a>
+		</nav>
+	</header>
+	
+	<!-- Page content -->
+	<div class="content-wrapper tao-async-cw">
+		<!-- Content Header (Page header) -->
+		<section class="content-header tao-async-ph clearfix">
+			<h1>Dashboard <small>Overview of your activity.</small></h1>
+			<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li><li class="active">Dashboard</li></ol>
+		</section>
+		
+		<!-- Main content -->
+		<section class="content tao-async-mc">
+			<div class="row">Nothing to see!</div>
+		</section>
+	</div>
+	
+	<!-- Main menu -->
+	<aside class="main-sidebar">
+		<section class="sidebar thin-scrollbar onhover custom">
+			<!-- User panel -->
+			<div class="user-panel">
+				<div class="image">
+					<img src="https://www.gravatar.com/avatar/0000000000?d=mp&s=160" class="img-circle val-user-avatar" alt="User Image" />
+				</div>
+			</div>
+			<!-- Sidebar Menu -->
+			<ul class="sidebar-menu"></ul>
+			
+			<!-- Quota (resources) tiny -->
+			<div id="wrapper-quota-small" class="sidebar-quota-tiny">
+				<div class="quota-icon" data-toggle="tooltip" data-original-title="Quota&nbsp;usage" data-html="true">
+					<i class="fa fa-tasks"></i>
+				</div>
+			</div>
+			<!-- Quota (resources & time) -->
+			<div id="wrapper-quota"      class="sidebar-quota"><div class="holder"></div></div>
+			<div id="wrapper-quota-time" class="sidebar-quota"><div class="holder"></div></div>
+		</section>
+	</aside>
+	
+	<!-- Display settings -->
+	<aside class="control-sidebar">
+		<ul class="nav navbar-nav">
+			<li class="control-sidebar-heading"><span>Display settings</span></li>
+			<li><a data-toggle="control-sidebar" href="#"><i class="fa fa-times"></i><i class="fa fa-caret-down"></i></a></li>
+		</ul>
+		<section class="sidebar thin-scrollbar onhover">
+			<div class="display-settings">
+				<form id="frmSettings" name="frmSettings" class="clearfix">
+					<p>These settings will only affect your account.</p>
+					<div class="form-group">
+						<label class="control-sidebar-heading">Font size</label>
+						<div id="selectSettingsBodySize" class="form-changesettings">
+							<a class="btn btn-icon" data-action="size-small"  data-toggle="tooltip" data-original-title="Small"       href="#"><i class="fa fa-aa"></i></a>
+							<a class="btn btn-icon" data-action="size-normal" data-toggle="tooltip" data-original-title="Normal"      href="#"><i class="fa fa-aa"></i></a>
+							<a class="btn btn-icon" data-action="size-large"  data-toggle="tooltip" data-original-title="Large"       href="#"><i class="fa fa-aa"></i></a>
+							<a class="btn btn-icon" data-action="size-larger" data-toggle="tooltip" data-original-title="Extra Large" href="#"><i class="fa fa-aa"></i></a>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-sidebar-heading">Color schemes</label>
+						<div id="selectThemeColor">
+							<section class="theme" data-scheme="full"   data-title="LIGHT"      data-desc="Completely Light theme" data-accents="light"      ></section>
+							<section class="theme" data-scheme="full"   data-title="DARK"       data-desc="Completely Dark theme"  data-accents="dark"       ></section>
+							<section class="theme" data-scheme="modern" data-title="MODERN"     data-desc="Accent Color theme"     data-accents="navy,purple,green,red,teal,indigo"></section>
+							<section class="theme" data-scheme="nav"    data-title="NAVIGATION" data-desc="Navigation theme"       data-accents="navy,purple,green,red,teal,indigo"></section>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-sidebar-heading">Autorefresh rate</label>
+						<select id="selectSettingsRefreshRate" name="selectSettingsRefreshRate" class="form-control form-changesettings">
+							<option value="10000" selected>10 seconds</option>
+							<option value="30000" >30 seconds</option>
+							<option value="60000" >1 minute</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label class="control-sidebar-heading">Text-to-speech</label>
+						<input type="checkbox" class="form-changesettings" id="selectSettingsVoiceEnabled" name="selectSettingsVoiceEnabled"
+							data-ntg="true"
+							data-ntg-on='<i class="fa fa-volume-up"></i>ON'
+							data-ntg-off='<i class="fa fa-volume-off"></i>MUTE'
+							data-ntg-onstyle="{color:var(--sidebar-color),background:var(--sidebar-bkg),btn:{color:var(--menu-selected-color),background:var(--menu-selected-bkg),style:btn btn-primary}}"
+							data-ntg-offstyle="{color:var(--sidebar-color),background:var(--sidebar-bkg),btn:{color:var(--sidebar-color),background:var(--sidebar-bkg),style:btn btn-danger}}"
+						/>
+					</div>
+					<div class="form-group" style="padding-top:1em;border-top:1px solid var(--menu-header-border);">
+						<button type="submit" class="btn btn-primary" data-action="save-settings">Save</button>
+					</div>
+					<div class="form-group clearfix">
+						<p>Reset to default will restore your display settings to the initial values.</p>
+						<button id="btnRestore" type="submit" class="btn btn-primary" data-action="restore-settings" disabled="true">Reset to default</button>
+					</div>
+				</form>
+			</div>
+		</section>
+	</aside>
+	
+	<!-- Main Footer -->
+	<footer class="main-footer">
+		<span>&copy; 2026 <a href="//www.c-s.ro/">CS GROUP - ROMANIA</a></span>
+	</footer>
+	
+	<!-- bot-notifications -->
+	<div id="bot-notice-chat">
+		<div class="box box-primary box-solid direct-chat collapse">
+			<div class="box-header with-border">
+				<h3 class="box-title">Notifications</h3>
+				<div class="box-tools pull-right">
+					<span data-toggle="tooltip" title="" class="badge bg-yellow val-msgcount" data-original-title="No of messages">0</span>
+					<button type="button" class="btn btn-box-tool do-clear-all-notice"><i class="fa fa-trash-o"></i></button>
+					<button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+					<button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
+				</div>
+			</div>
+			<div class="box-body">
+				<!-- Conversations are loaded here -->
+				<div class="direct-chat-messages thin-scrollbar">
+					<div class="max-msg-note hidden">
+						<p> Showing a maximum of <span class="val-notificationsmaxnumber"></span> most recent messages. Same messages have been automatically removed. <br> Please check all your messages <a href="#admin/dashboard">here</a></p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Master message to the right -->
+		<div class="direct-chat-msg master hidden">
+			<div class="direct-chat-info clearfix">
+				<!--<span class="direct-chat-name pull-left">Msg Bot</span>-->
+				<span class="direct-chat-timestamp pull-right val-msg-ts">23 Jan 2:00 pm</span>
+			</div>
+			<!-- /.direct-chat-info -->
+			<img class="direct-chat-img" src="favicon-128.png" alt="Message User Image"/>
+			<div class="direct-chat-text">
+				<span class="val-msg-txt"></span>
+				<div class="tools">
+					<i class="fa fa-trash-o"></i>
+				</div>
+			</div>
+		</div>
+	</div>
+</div><!-- /.wrapper -->
+
+<!-- Notifications -->
+<div id="myModalNotifications" class="modal modal-stretched fade" data-scrollelement=".thin-scrollbar" data-margin="30" tabindex="-1" role="dialog" aria-labelledby="Notifications Panel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 id="myModalLabel" class="modal-title">Notifications</h4>
+			</div>
+			<div class="modal-body">
+				<div id="selectActiveNotifPanel">
+					<ul class="nav nav-tabs visible-xs-block"><li class="role-dropdown active"><select name="selectNotifPanel" class="form-control form-changepane" title="Select desired node view."></select></li></ul>
+					<ul class="nav nav-tabs hidden-xs"></ul>
+					<div class="tab-content"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Floating Assistant -->
+<div id="taoLlmChatFloating" class="modal fade no-trigger" tabindex="-1" role="dialog" aria-labelledby="taoLlmChatFloatingTitle" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content box box-primary">
+			<div class="modal-header">
+				<button type="button" class="tao-assistant-window-control" data-action="close-assistant-chat"><i class="fa fa-times"></i></button>
+				<button type="button" class="tao-assistant-window-control" data-action="toggle-assistant-chat-minimize" title="Minimize" aria-label="Minimize"><i class="fa fa-minus"></i></button>
+				<button type="button" class="tao-assistant-window-control" data-action="detach-assistant-chat" title="Move to separate window" aria-label="Move to separate window" hidden><i class="fa fa-external-link"></i></button>
+				<h4 id="taoLlmChatFloatingTitle" class="modal-title"><i class="fa fa-comments"></i> TAO Assistant</h4>
+			</div>
+			<div class="modal-body">
+				<div class="text-center text-muted" style="padding:30px;">Loading assistant...</div>
+			</div>
+			<div class="tao-assistant-resize-handle" title="Resize"></div>
+		</div>
+	</div>
+</div>
+
+<!-- Loading -->
+<div id="myModalLoading" class="modal no-trigger" tabindex="-1" role="dialog" aria-labelledby="Loading Content" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<svg class="cog-svg" width="67" height="67" xmlns="http://www.w3.org/2000/svg">
+				<g class="cog-group">
+					<circle fill="#65B2C2" class="under-cog" cx="33.521" cy="33.574" r="33.26"/>
+					<path   fill="#FFFFFF" class="large-cog" d="m26.2 25.2c-1.5.5-1.7.6-3.3 1.1 1.1 3.3-2.5 5.3-5 3.6-.9 1.3-1 1.5-1.9 2.8 2.5 1.7 1.5 5.9-2.2 5.9 0 1.3 0 2.6 0 3.9 3.6 0 5 3.8 2.2 6.2 1 1.2 1 1.4 2.2 2.5 2.8-2.1 6 .3 4.7 3.6 1.7.5 1.8.6 3.3 1.1 1-3.3 4.8-3.6 5.8 0 1.6-.5 1.7-.6 3.3-1.1-1.2-3.6 2.1-5.8 5-3.6.9-1.3 1-1.4 1.9-2.8-2.9-2.3-1.3-5.8 2.2-5.9 0-1.3 0-2.6 0-3.9-3.8-.1-4.6-4.1-2.2-6.2-1-1.2-1.1-1.3-2.2-2.5-2.3 2-5.7-.4-4.7-3.6-1.5-.5-1.7-.6-3.3-1.1-1 3.4-4.8 3.4-5.8-.1zm8.6 15.4c0 3.2-2.5 5.8-5.7 5.8-3.2 0-5.7-2.6-5.7-5.8 0-3.2 2.5-5.8 5.7-5.8 3.2-.1 5.7 2.5 5.7 5.8z"/>
+					<path   fill="#FFFFFF" class="small-cog" d="m40.6 11.6c-.9.2-1.1.2-1.8.4.4 1.9-1.7 2.7-2.8 1.6-.6.6-.7.8-1.2 1.3 1.2 1.1.3 3.1-1.5 2.9-.1.7-.2 1.3-.2 2 1.9.1 2.1 2.5.8 3.3.4.8.4.8 1 1.4 1.3-1 3 .5 2.2 2.1.7.3.8.4 1.7.8.7-1.6 2.7-1.4 3 .3.8-.2 1-.2 1.8-.4-.3-1.6 1.7-2.6 2.8-1.6.5-.5.6-.7 1.2-1.3-1.2-1-.5-3.1 1.5-2.9.1-.9.1-1.1.2-2-1.9-.3-2.2-2.4-.8-3.3-.4-.7-.5-.7-1-1.4-1.3.8-3.1-.4-2.2-2.1-.5-.3-1.1-.5-1.7-.8-.8 1.7-2.7 1.4-3-.3zm3.6 8.5c-.2 1.7-1.7 2.8-3.4 2.7-1.7-.2-2.9-1.7-2.6-3.3.2-1.7 1.7-2.8 3.4-2.7 1.6.2 2.8 1.7 2.6 3.3z"/>
+				</g>
+			</svg>
+			<p style="text-align:center;">LOADING</p>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript" src="./assets/dist/js/assistant-window.js"></script>
+<script type="text/javascript" src="./assets/dist/js/assistant-context.js"></script>
+<script type="text/javascript" src="./assets/dist/js/app.js"></script>
+<script type="text/javascript" src="./assets/dist/js/router.js"></script>
+<script type="text/javascript" src="./assets/dist/js/ui.js"></script>
+<script type="text/javascript" src="./assets/dist/js/websockets.js"></script>
+<script type="text/javascript" src="./assets/dist/js/guided-tours.js"></script>
+
+<script type="text/javascript">
+	var $myModalNotif = $("#myModalNotifications");
+	
+	var selectedSize  = window.defaultSize;
+	var selectedStyle = { "scheme": window.defaultScheme, "accent" : window.defaultAccent };
+	var notificationsList = [];
+	var topics = {
+		info     : { topic: "info"                    , title: "Info messages"   , badge: "badge label-success", icon: "fa fa-flag-o"              , color: "var(--status-success)", showFirst: true  },
+		execution: { topic: "execution.status.changed", title: "Execution events", badge: "badge label-warning", icon: "fa fa-envelope-o"          , color: "var(--status-warning)", showFirst: false },
+		error    : { topic: "error"                   , title: "Error messages"  , badge: "badge label-danger" , icon: "fa fa-exclamation-triangle", color: "var(--status-danger)" , showFirst: false }
+	};
+	
+	function openFloatingAssistant(e) {
+		e && e.preventDefault();
+		if (window.taoAssistantWindow.isDetached()) { window.taoAssistantWindow.focus(); return; }
+		var $modal = $("#taoLlmChatFloating");
+		var $dialog = $(".modal-dialog", $modal);
+		var $body = $(".modal-body", $modal);
+		window.clearTimeout($modal.data("closeTimer"));
+		$modal.removeData("closing");
+		$modal.removeClass("tao-assistant-closing");
+		$dialog.css({ opacity: "", transform: "", transition: "" });
+		if (!$modal.data("loaded")) {
+			$body.html('<div class="text-center text-muted" style="padding:30px;">Loading assistant...</div>');
+			$.ajax({
+				cache: false,
+				url: "./fragments/llm-chat.fragment.html?" + Math.random()
+			}).done(function (data) {
+				$body.html(data);
+				$modal.data("loaded", true);
+				if (typeof window.initTaoLlmChat === "function") {
+					window.initTaoLlmChat($modal);
+				}
+				enableFloatingAssistantInput();
+			}).fail(function () {
+				$body.html('<div class="callout callout-danger" style="margin:0;">Could not load assistant.</div>');
+			});
+		}
+		var assistantOpened = false;
+		if ($modal.hasClass("in") && !$modal.hasClass("tao-assistant-minimized")) {
+			closeFloatingAssistant(e);
+		} else {
+			$modal
+				.removeData("bs.modal")
+				.show()
+				.addClass("in")
+				.attr("aria-hidden", "false");
+			assistantOpened = true;
+		}
+		if ($modal.hasClass("tao-assistant-minimized")) {
+			restoreFloatingAssistant();
+			assistantOpened = true;
+		}
+		if (assistantOpened) {
+			enableFloatingAssistantInput();
+		}
+		$("body").removeClass("modal-open");
+		$(".modal-backdrop").remove();
+	}
+
+	function enableFloatingAssistantInput() {
+		var $modal = $("#taoLlmChatFloating");
+		var $input = $(".tao-llm-chat .messageInput", $modal);
+		if (!$input.length) {
+			return;
+		}
+		$input.prop({ readonly: false, disabled: false }).removeAttr("readonly disabled");
+		if ($modal.is(":visible") && !$modal.hasClass("tao-assistant-minimized")) {
+			window.setTimeout(function () {
+				$input.trigger("focus");
+			}, 0);
+		}
+	}
+
+	function setFloatingAssistantMinimizeButton(minimized) {
+		var $button = $('#taoLlmChatFloating [data-action="toggle-assistant-chat-minimize"]');
+		$button
+			.attr("title", minimized ? "Restore" : "Minimize")
+			.attr("aria-label", minimized ? "Restore" : "Minimize")
+			.find("i")
+			.attr("class", minimized ? "fa fa-plus" : "fa fa-window-minimize");
+	}
+
+	function restoreFloatingAssistant() {
+		var $modal = $("#taoLlmChatFloating");
+		var state = $modal.data("restoreState");
+		var $dialog = $(".modal-dialog", $modal);
+		var $content = $(".modal-content", $modal);
+		var $chatMessages = $(".tao-llm-chat .chatMessages", $dialog);
+		if (state) {
+			if (state.dialogStyle) { $dialog.attr("style", state.dialogStyle); } else { $dialog.removeAttr("style"); }
+			if (state.contentStyle) { $content.attr("style", state.contentStyle); } else { $content.removeAttr("style"); }
+			if (state.chatMessagesStyle && $chatMessages.length) {
+				$chatMessages.attr("style", state.chatMessagesStyle);
+			} else if ($chatMessages.length) {
+				$chatMessages.removeAttr("style");
+			}
+		}
+		$modal.removeClass("tao-assistant-minimized").removeData("restoreState");
+		setFloatingAssistantMinimizeButton(false);
+	}
+
+	function toggleFloatingAssistantMinimize(e) {
+		e && e.preventDefault();
+		var $modal = $("#taoLlmChatFloating");
+		var $dialog = $(".modal-dialog", $modal);
+		var $content = $(".modal-content", $modal);
+		var $chatMessages = $(".tao-llm-chat .chatMessages", $dialog);
+		if ($modal.hasClass("tao-assistant-minimized")) {
+			restoreFloatingAssistant();
+			return;
+		}
+		$modal.data("restoreState", {
+			dialogStyle: $dialog.attr("style") || "",
+			contentStyle: $content.attr("style") || "",
+			chatMessagesStyle: $chatMessages.attr("style") || ""
+		});
+		$dialog.css({ opacity: "", transform: "", transition: "", left: "auto", top: "auto", right: "1.4em", bottom: "0" });
+		$modal.addClass("tao-assistant-minimized");
+		setFloatingAssistantMinimizeButton(true);
+	}
+
+	function closeFloatingAssistant(e) {
+		e && e.preventDefault();
+		window.taoAssistantWindow.dock();
+		var $modal = $("#taoLlmChatFloating");
+		var $dialog = $(".modal-dialog", $modal);
+		var dialog = $dialog[0];
+		if (!$modal.is(":visible") || !dialog || $modal.data("closing")) {
+			return;
+		}
+		var start = dialog.getBoundingClientRect();
+		var $target = $('.main-header [data-action="open-assistant-chat"]').first();
+		var target = $target.length ? $target[0].getBoundingClientRect() : {
+			left: window.innerWidth - 40,
+			top: 20,
+			width: 24,
+			height: 24
+		};
+		var dx = target.left + target.width / 2 - (start.left + start.width / 2);
+		var dy = target.top + target.height / 2 - (start.top + start.height / 2);
+		var scale = Math.max(0.06, Math.min(0.16, Math.min(target.width / start.width, target.height / start.height)));
+		$modal.data("closing", true).addClass("tao-assistant-closing");
+		$dialog.css({
+			opacity: 1,
+			transform: "translate(0, 0) scale(1)"
+		});
+		window.requestAnimationFrame(function () {
+			$dialog.css({
+				opacity: 0,
+				transform: "translate(" + dx + "px, " + dy + "px) scale(" + scale + ")"
+			});
+		});
+		$modal.data("closeTimer", window.setTimeout(function () {
+			$modal
+				.removeClass("in tao-assistant-closing tao-assistant-minimized")
+				.removeData("closing")
+				.attr("aria-hidden", "true")
+				.hide();
+			$dialog.css({ opacity: "", transform: "", transition: "" });
+			restoreFloatingAssistant();
+		}, 260));
+	}
+	
+	// make the closeFloatingAssistant function globally accessible
+	window.closeFloatingAssistant = closeFloatingAssistant;
+
+	function initFloatingAssistantDrag() {
+		var $modal = $("#taoLlmChatFloating");
+		var $dialog = $(".modal-dialog", $modal);
+		var drag = null;
+		var resize = null;
+		$(".modal-header", $modal).on("mousedown", function (e) {
+			//if ($modal.hasClass("tao-assistant-minimized")) { return; }
+			if ($(e.target).closest("button,a,input,textarea,select").length) { return; }
+			var offset = $dialog.offset();
+			drag = {
+				x: e.pageX - offset.left,
+				y: e.pageY - offset.top
+			};
+			$("body").addClass("noselect");
+			e.preventDefault();
+		});
+		$(".tao-assistant-resize-handle", $modal).on("mousedown", function (e) {
+			if ($modal.hasClass("tao-assistant-minimized")) { return; }
+			var offset = $dialog.offset();
+			resize = {
+				x: e.pageX,
+				y: e.pageY,
+				width: $dialog.outerWidth(),
+				height: $dialog.outerHeight(),
+				left: offset.left,
+				top: offset.top
+			};
+			$("body").addClass("noselect");
+			e.preventDefault();
+			e.stopPropagation();
+		});
+		$(document).on("mousemove.taoLlmChatFloating", function (e) {
+			if (resize) {
+				var maxWidth = Math.max(300, $(window).width() - resize.left);
+				var maxHeight = Math.max(300, $(window).height() - resize.top);
+				var nextWidth = Math.max(300, Math.min(maxWidth, resize.width + e.pageX - resize.x));
+				var nextHeight = Math.max(300, Math.min(maxHeight, resize.height + e.pageY - resize.y));
+				$dialog.css({ width: nextWidth + "px", height: nextHeight + "px", right: "auto" });
+				$(".modal-content", $dialog).css({ height: nextHeight + "px" });
+				$(".tao-llm-chat .chatMessages", $dialog).css({ maxHeight: Math.max(120, nextHeight - 170) + "px" });
+				return;
+			}
+			if (drag) {
+				var width = $dialog.outerWidth();
+				var height = $dialog.outerHeight();
+				var left = Math.max(0, Math.min($(window).width() - width, e.pageX - drag.x));
+				var top = Math.max(0, Math.min($(window).height() - height, e.pageY - drag.y));
+				// NORMAL MODE
+				if (!$("#taoLlmChatFloating").hasClass("tao-assistant-minimized")) {
+					$dialog.css({ left: left + "px", top: top + "px", right: "auto", bottom: "auto" });
+				}
+				// MINIMIZED MODE -> keep at bottom
+				else {
+					$dialog.css({ left: left + "px", top: "auto", right: "auto", bottom: "0" });
+				}
+			}
+		}).on("mouseup.taoLlmChatFloating", function () {
+			drag = null;
+			resize = null;
+			$("body").removeClass("noselect");
+		});
+	}
+
+	function fragmentNameFromUrl(fragmentUrl) {
+		var value = fragmentUrl || "";
+		value = value.split("?")[0].replace(/\\/g, "/");
+		value = value.substring(value.lastIndexOf("/") + 1);
+		value = value.replace(/\.html$/i, "").replace(/\.fragment$/i, "");
+		return value;
+	}
+
+	function refreshCurrentTaoFragment() {
+		var fragmentUrl = window.taoCurrentFragmentUrl || "";
+		var hash = window.taoCurrentRoute || (window.location.hash ? window.location.hash.substring(1) : "");
+		if (!fragmentUrl) {
+			return;
+		}
+		$(document).trigger("tao:route-changing", [ hash ]);
+		$.ajax({
+			cache: false,
+			url: fragmentUrl
+		}).done(function (data) {
+			$(".tao-async-cw").html(data).addClass("visible");
+			$(document).trigger("tao:route-loaded", [ hash, fragmentUrl ]);
+		}).fail(function () {
+			if (typeof showMsg === "function") {
+				showMsg("Could not refresh page content.", "ERROR");
+			}
+		});
+	}
+	window.refreshCurrentTaoFragment = refreshCurrentTaoFragment;
+
+	$(document).on("tao:route-loaded", function (e, hash, fragmentUrl) {
+		window.taoCurrentRoute = hash || "";
+		window.taoCurrentFragmentUrl = fragmentUrl || "";
+		window.taoCurrentFragmentName = fragmentNameFromUrl(fragmentUrl);
+	});
+	
+	// Define actions for all "[data-action]" elements in "sidebar main menu" or "top header droppdown menu"
+	function menuActions(e) {
+		var $a = $(e.target).closest("[data-action]");
+		switch ($a.data("action")) {
+			case "show-all-messages": $myModalNotif.modal("show"); break;
+			case "open-assistant-chat": openFloatingAssistant(e); break;
+			case "toggle-assistant-chat-minimize": toggleFloatingAssistantMinimize(e); break;
+			case "close-assistant-chat": closeFloatingAssistant(e); break;
+			case "editprofile"      : $("#myModalUserProfile").trigger("editprofile", [e]); break;
+			case "logout"           : $("#myModalUserProfile").trigger("logout"     , [e]); break;
+			default: break;
+		}
+	}
+	
+	// Mark one or all notifications as read
+	function markAsRead(key, id) {
+		var payload = (typeof id !== "undefined") ? [id] : $.map(notificationsList[topics[key].topic], function (elem, idx) { return elem.id; });
+		if (payload.length > 0) {
+			// Call endpoint
+			$.ajax({
+				cache  : false,
+				url    : baseRestApiURL + "monitor/notification/ack/",
+				data   : JSON.stringify(payload),
+				type   : "POST",
+				headers: {
+					"Accept"      : "application/json",
+					"Content-Type": "application/json",
+					"X-Auth-Token": window.tokenKey
+				}
+			}).done(function (response) {
+			}).fail(function (jqXHR, textStatus) {
+			}).complete(function (ww,ww) {
+				getUnreadNotifications();
+			});
+		}
+	}
+	
+	// Show/hide notifications submenu
+	function showNotificationsMenu($a) {
+		if ($a.length == 0 || $(".notif.val-notif-count", $a).text() == "0") { return false; }
+		
+		var hide = $a.closest(".dropdown").is(".open");
+		$a.closest(".menu").find(".dropdown").removeClass("open");
+		!hide && $a.closest(".dropdown").addClass("open");
+	}
+	
+	// Generate notifications contents in both the menu and the "All notifications" panel
+	function renderNotificationsList(key) {
+		var data = notificationsList[topics[key].topic] || [];
+		
+		var no = data.length;
+		var $notifMenu = $("#" + key + "_notif_menu");
+		var $notifPane = $("#" + key + "_notif_panel");
+		($(".notif-list", $notifMenu).length == 0) && $notifMenu.append('<ul class="notif-list thin-scrollbar onhover"></ul>');
+		($(".notif-list", $notifPane).length == 0) && $notifPane.append('<ul class="notif-list thin-scrollbar"></ul>');
+		
+		if (no > 0) {
+			// Remove previous list content
+			$(".notif-list", $notifMenu).html('');
+			$(".notif-list", $notifPane).html('');
+			
+			// Render the list
+			$.each(data, function (index, value) {
+				if ($('[data-nid="' + value.id + '"]', $notifMenu).length == 0) {
+					var title = topics[key].topic.toUpperCase().trim();
+					var payload = "";
+					switch (value.topic) {
+						case "transfer":
+						case "product.progress":
+							try { payload = JSON.parse(value.data).Payload; } catch (error) {}
+							break;
+						case "info":
+						case "warn":
+						case "execution.status.changed":
+						case "authentication":
+							title = value.topic.toUpperCase().trim();
+							try { payload = JSON.parse(value.data).Message; } catch (error) {}
+							break;
+						default:
+							payload = value.data.substring(12, 200);
+							break;
+					}
+					var isTimestamp = !isNaN(value.timestamp);
+					var fromNow      = isTimestamp ? moment(value.timestamp).fromNow() : moment(value.timestamp).fromNow();
+					var formatDate   = moment(value.timestamp).format("YY-MM-DD HH:mm:ss");
+					var markAsReadId = value.timestamp + '_' + value.user;
+					var $li = $('<li data-nid="' + value.id + '">' +
+									'<div class="media payload">' +
+										'<div class="media-left"><i class="' + topics[key].icon + ' dbl-size" style="color:#fff;background-color:' + topics[key].color + ';"></i></div>' +
+										'<div class="media-body">' +
+											'<p class="title bold">' + title + '</p>' +
+											'<p class="text">' + payload + '</p>' +
+											//'<p class="full-payload">' + value.data + '</p>' +
+											'<small class="pull-left"><i class="fa fa-clock-o"></i>&nbsp;&nbsp;' + formatDate + '</small>' +
+											'<small class="pull-right">' + fromNow + '</small>' +
+											'<a class="markasread pull-right" id="' + markAsReadId + '" data-topic="' + topics[key].topic + '" href="#"><i class="fa fa-times-circle" title="mark as read" ></i></a>' +
+										'</div>' +
+									'</div>' +
+								'</li>');
+					$(".notif-list", $notifMenu).append($li);
+					// Events
+					$(".markasread", $li).on("click", function (e) {
+						e.preventDefault(); e.stopPropagation();
+						markAsRead(key, value.id);
+					});
+					$(".notif-list", $notifPane).append($li.clone(true, true));
+				}
+			});
+		} else {
+			$(".notif-list", $notifPane).html(
+				'<div class="panel-list-empty callout callout-empty collapse" style="display: block;">' +
+					'<p>No new ' + topics[key].title.toLowerCase() + ' to show</p>' +
+				'</div>'
+			);
+		}
+	}
+	
+	// Update notifications numbers in both the menu and the "All notifications" panel
+	function updateNotificationsMenu(key) {
+		var data = notificationsList[topics[key].topic] || [];
+		
+		var $menu = $(".notif-menu ." + key + "-notif-menu");
+		if ($menu.length && $.isArray(data)) {
+			var no = data.length;
+			$('[href="#' + key + '_notif_panel"] .val-notif-count', $myModalNotif).html(no);
+			$('option[data-target="#' + key + '_notif_panel"]', $myModalNotif).html(topics[key].title + " (" + no + ")");
+			if (no == 0) {
+				$menu.addClass("empty");
+				$menu.removeClass("open");
+				$(".val-notif-count", $menu).html("0");
+				$(".from-now"       , $menu).html('No new ' + topics[key].title.toLowerCase());
+				$(".dropdown-menu"  , $menu).remove();
+				$(".notif-list", "#" + key + "_notif_panel").html("");
+			} else {
+				data.sort(function (a, b) { return (a.timestamp == b.timestamp) ? 0 : (Date.parse(a.timestamp) < Date.parse(b.timestamp) ? 1 : -1); });
+				$menu.removeClass("empty");
+				$(".val-notif-count", $menu).html(no);
+				$(".from-now"       , $menu).html('Last Update ' + moment(data[0].timestamp).fromNow());
+				
+				var $ul = $(".dropdown-menu", $menu);
+				if ($ul.length == 0) {
+					var $ul = $('<ul class="dropdown-menu">' +
+									'<li class="header">' +
+										'<a class="do-closenotif media pull-right" href="#"><i class="fa fa-times"></i></a>' +
+										'<p class="title">Notifications<span class="' + topics[key].badge + ' val-notif-count">' + no + '</span></p>' +
+										'<a class="do-markallasread" href="#">Mark all as read</a>' +
+									'</li>' +
+									'<li id="' + key + '_notif_menu" class="notif-menu-panel"></li>' +
+								'</ul>');
+					$menu.append($ul);
+					
+					// Events
+					$("a.do-closenotif", $ul).on("click", function (e) {
+						e.preventDefault(); e.stopPropagation();
+						showNotificationsMenu($(e.currentTarget));
+					});
+					$("a.do-markallasread", $ul).on("click", function (e) {
+						e.preventDefault(); e.stopPropagation();
+						markAsRead(key);
+					});
+				}
+			}
+			// Generate notifications contents
+			renderNotificationsList(key);
+		}
+		
+		// Update the badges with the notifications count
+		var totalNo = $.map($(".notif-menu .notif.val-notif-count"), function (el) { return (parseInt($(el).text()) || 0); }).reduce(function (sum, a) { return sum + a; }, 0);
+		$(".val-messages-count").html(totalNo);
+		$(".notif.val-messages-count").html(totalNo > 0 ? " " : "");
+		$(".notif-menu>.dropdown-menu>.header>span").html((totalNo > 0 ? 'You have ' + totalNo + ' new notifications' : 'No new events to show') + '<i class="fa fa-refresh fa-spin-hover pull-right"></i>');
+		$(".notif-menu>.dropdown-menu>.header>span>.fa.fa-refresh").on("click", function (e) {
+			// Close all notifications submenus
+			showNotificationsMenu($(".dropdown.open>.do-shownotif").parent());
+			
+			getUnreadNotifications();
+		});
+	}
+	
+	// Create empty notifications menu
+	function createNotificationsMenu(key) {
+		$(".notif-menu .menu ." + key + "-notif-menu").remove();
+		var $li = $('<li class="dropdown ' + key + '-notif-menu"></li>');
+		var $a = $('<a class="media do-shownotif" href="#">' +
+						'<div class="media-left"><i class="' + topics[key].icon + ' dbl-size"><span class="' + topics[key].badge + ' notif val-notif-count">0</span></i></div>' +
+						'<div class="media-body"><p class="text bold">' + topics[key].title + '</p><small class="from-now">No new ' + topics[key].title.toLowerCase() + ' to show</small></div>' +
+					'</a>');
+		$(".notif-menu .menu").append($li.append($a));
+		// Events
+		$a.on("click", function (e) {
+			e.preventDefault(); e.stopPropagation();
+			showNotificationsMenu($(e.currentTarget));
+		});
+	}
+	
+	// Create empty notifications panel
+	function createNotificationsPanel(key, active) {
+		// Combobox option
+		$('#selectActiveNotifPanel select>option[data-target="#' + key + '_notif_panel"]').remove();
+		$('#selectActiveNotifPanel select').append('<option class="role" data-target="#' + key + '_notif_panel" value="show_' + key + '_notif"' + (active ? ' selected' : '') + '>' + topics[key].title + ' (0)</option>');
+		
+		// Tab control
+		$('#selectActiveNotifPanel .nav-tabs>li>[href="#' + key + '_notif_panel"]').parent().remove();
+		var $li = $('<li class="role' + (active ? ' active' : '') + '"><a href="#' + key + '_notif_panel" data-toggle="tab" data-action="show_' + key + '_notif" aria-expanded="' + (active ? 'true' : 'false') + '">' + topics[key].title + '<span class="' + topics[key].badge + ' val-notif-count">0</span></a></li>');
+		$('#selectActiveNotifPanel .nav-tabs.hidden-xs').append($li);
+		
+		// Tab panel
+		$('#' + key + '_notif_panel').remove();
+		var $tabPane = $('<div id="' + key + '_notif_panel" class="tab-pane notif-tab-panel' + (active ? ' active' : '') + '"><a class="do-markallasread" href="#">Mark all as read</a></div>');
+		$('.tab-content', $myModalNotif).append($tabPane);
+		
+		// Events
+		// Change active notifications tab (using the tab controls)
+		$("a", $li).on("click", function (e) {
+			if (e.originalEvent && $(this).attr("aria-expanded") == "false") { $("#selectActiveNotifPanel select").val("show_" + key + "_notif"); }
+		});
+		
+		// Change active notifications tab (using the combobox)
+		if (active) {
+			$("#selectActiveNotifPanel").on("change", "select", function (e) {
+				$('#selectActiveNotifPanel a[data-action="' + this.value + '"]').eq(0).click();
+			});
+		}
+		
+		// Mark all as read
+		$(".do-markallasread", $tabPane).on("click", function (e) {
+			e.preventDefault();
+			markAsRead(key);
+		});
+	}
+	
+	// Get unread notifications
+    function getUnreadNotifications() {
+		notificationsList = [];
+		$.ajax({
+			cache   : false,
+			url     : baseRestApiURL + "monitor/notification/unread/",
+			type    : "GET",
+			dataType: "json",
+			headers : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"user"        : taoUserProfile.username,
+				"X-Auth-Token": window.tokenKey
+			}
+		}).done(function (notificationsResponse) {
+			var r = chkTSRF(notificationsResponse);
+			if (r instanceof Object) {
+				notificationsList = r;
+				$.each(notificationsList, function (topic, notifications) {
+					var key = _.findKey(topics, { "topic": topic });
+					if (key) {
+						updateNotificationsMenu(key);
+					}
+				});
+			}
+		}).fail(function (jqXHR, textStatus) {
+			chkXHR(jqXHR.status);
+		});
+		
+		// Prevent closing menus when clicking the dropdown menu (except action buttons)
+		$('.dropdown-menu').on("click.bs.dropdown", function (e) {
+			e.preventDefault();
+			var $a = $(e.target).closest("a");
+			if ($a.length == 0) {
+				e.stopPropagation();
+			} else {
+				menuActions(e);
+			}
+		});
+ 	}
+	
+	// Intercept notifications on WebSockets
+	function interceptWsNotifications(key) {
+		$(".notif-menu ." + key + "-notif-menu").on("wsmessage", function (e, wsdna) {
+			
+			// Clone ws message and convert it to match db format
+			var wsnotif = $.extend({}, wsdna);
+			wsnotif.timestamp = moment(wsnotif.timestamp).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+			wsnotif.data = JSON.stringify(wsnotif.data);
+			
+			// Add new notification to the main notifications list
+			notificationsList[topics[key].topic].unshift(wsnotif);
+			
+			// Update the notifications menu
+			updateNotificationsMenu(key);
+		});
+	}
+	
+	// Initialize notifications
+	function initNotifications() {
+		// Notifications: menus, interception, management
+		$.each(topics, function (key, topic) {
+			createNotificationsMenu(key);
+			createNotificationsPanel(key, topic.showFirst);
+			interceptWsNotifications(key);
+		});
+		
+		// Close all notifications submenus when the main menu is closed
+		$(".notif-menu").on("hidden.bs.dropdown", function (e) {
+			$("li.open", e.delagateTarget).removeClass("open");
+		});
+		
+		// Define notifications panel modal
+		$myModalNotif.modal({ keyboard: true, backdrop: true, show: false });
+		
+		// Sync deleting notif history with notifications menu
+		$(document).on("refresh:toolbar", function (e) { getUnreadNotifications(); });
+		
+		// Get unread notifications
+		getUnreadNotifications();
+	}
+	
+	// Apply selected settings
+	function applySettingsChange(attribute, value) {
+		if (attribute === "body_size") {
+			// Add body size class
+			$("body").removeClass(function (index, className) { return (className.match(/\bsize-\S+/g) || []).join(' '); }).addClass(value);
+			
+			// Set body font size
+			document.documentElement.style.setProperty('--body-font-size', $("body").css("font-size"));
+			
+			// Adjust bootstrapSwitch size
+			$('.bootstrap-switch input[type="checkbox"]').length && $('.bootstrap-switch input[type="checkbox"]').bootstrapSwitch("size", bootstrapSwitchSize(value));
+			
+		} else if (attribute === "body_style") {
+			$("body").removeClass(function (index, className) { return (className.match(/\bskin-\S+/g) || []).join(' '); }).addClass("skin-" + value.scheme).addClass("skin-" + value.scheme + "-" + value.accent);
+		}
+		
+		$(document).trigger("settings-change", [attribute]);
+	}
+    
+	// Refresh current settings
+	function refreshSettings() {
+		// Size && Style
+		applySettingsChange("body_size" , selectedSize );
+		applySettingsChange("body_style", selectedStyle);
+	}
+
+	function getBooleanPreferenceValue(value) {
+		return value === true || value === "true" || value === "1";
+	}
+	
+	// Populate accent color options for all available themes
+	function populateAvailableStyles() {
+		var selectSchemeAccent = function ($el, $a, selected) {
+			var $clone = $a.clone();
+			$(".fa", $clone).attr("class", selected ? "fa fa-check-circle" : "fa fa-circle");
+			$el.find(".selected-accent").html("").prepend($clone);
+		};
+		
+		$.each($(".theme", "#selectThemeColor"), function (idx, elm) {
+			var $el     = $(elm).html("");
+			var scheme  = $el.data("scheme");
+			var title   = $el.data("title");
+			var desc    = $el.data("desc");
+			var accents = $el.data("accents").split(",");
+			
+			$el.append('<div class="selected-accent"></div><div><label class="title">' + title + '<br /><small>' + desc + '</small></label>' + (accents.length > 1 ? '<section class="accent-colors"></section>' : '') + '</div>');
+			$.each(accents, function (idx, accent) {
+				if ($.AdminLTE.options.colors[accent]) {
+					var style = { "scheme": scheme, "accent" : accent };
+					var $a = $('<a data-scheme="' + style.scheme + '" data-accent="' + style.accent + '" class="full-opacity-hover" href="#"><i class="fa fa-circle" style="color:' + $.AdminLTE.options.colors[accent] + '"></i></a>');
+					$(".accent-colors", $el).append($a);
+					var selected = (selectedStyle.scheme === style.scheme && selectedStyle.accent === style.accent);
+					if (accents.length == 1 || selected) {
+						selectSchemeAccent($el, $a, selected);
+					}
+				}
+			});
+			if ($(".selected-accent>a", $el).length == 0) {
+				var $a = $('<a class="disabled" href="#"><i class="fa fa-circle" style="color:#ccc"></i></a>');
+				selectSchemeAccent($el, $a, false);
+			}
+		});
+		
+		// Change theme color
+		$("#selectThemeColor").on("click", "a", function (e) {
+			e.preventDefault();
+			var $a = $(e.currentTarget);
+			if (!$a.hasClass("disabled")) {
+				$(".fa-check-circle", e.delegateTarget).attr("class", "fa fa-circle");
+				if ($a.closest(".accent-colors").length > 0) {
+					selectSchemeAccent($a.closest(".theme"), $a, true);
+				} else {
+					$(".fa", $a).attr("class", "fa fa-check-circle");
+				}
+				
+				selectedStyle = { "scheme": $a.attr("data-scheme"), "accent": $a.attr("data-accent") };
+				refreshSettings();
+			}
+		});
+	}
+	
+	// Update current settings to match user persisted preferences
+	function getUserPrefferences() {
+		var prefsList = $.map(taoUserProfile.preferences, function (item, idx) { return item.key; });
+		// Refresh rate
+		if ($.inArray("refresh_rate", prefsList) > -1) {
+			$("#selectSettingsRefreshRate").val(taoUserProfile.preferences.find(function (item) { return (item.key == "refresh_rate"); })?.value || 10000);
+			$("#btnRestore").prop("disabled", false); 
+		}
+
+		// Text-to-speech
+		if ($.inArray("voice_enabled", prefsList) > -1) {
+			$("#selectSettingsVoiceEnabled").prop("checked", getBooleanPreferenceValue(taoUserProfile.preferences.find(function (item) { return (item.key == "voice_enabled"); })?.value));
+			$("#btnRestore").prop("disabled", false);
+		}
+		
+		// Body size
+		selectedSize = defaultSize;
+		if ($.inArray("body_size", prefsList) > -1) {
+			selectedSize = taoUserProfile.preferences.find(function (item) { return (item.key == "body_size"); })?.value || defaultSize;
+		}
+		$('#selectSettingsBodySize [data-action="'+ selectedSize +'"]').addClass("selected").siblings().removeClass("selected");
+		
+		// Theme
+		if ($.inArray("body_theme", prefsList) > -1) {
+			var prefTheme = taoUserProfile.preferences.find(function (item) { return (item.key == "body_theme"); })?.value;
+			try {
+				prefTheme = JSON.parse(prefTheme);
+				if (prefTheme.scheme && prefTheme.accent) {
+					selectedStyle = { "scheme": prefTheme.scheme, "accent": prefTheme.accent };
+				}
+			} catch (exception) {}
+		}
+		refreshSettings();
+		populateAvailableStyles();
+	}
+	
+	// Voice controls
+	function initVoiceControls() {
+		if (taoUserProfile.preferences.find(function (item) { return (item.key == "voice_enabled"); })) {
+			voiceSettings.setEnabled(getBooleanPreferenceValue(taoUserProfile.preferences.find(function (item) { return (item.key == "voice_enabled"); }).value));
+		}
+		if (taoUserProfile.preferences.find(function (item) { return (item.key == "voice_language"); })) {
+			voiceSettings.setLanguage(taoUserProfile.preferences.find(function (item) { return (item.key == "voice_language"); }).value);
+		}
+		speak("Greetings " + taoUserProfile.firstName);
+	}
+	
+	// Intercept custom menu actions defined for all "a[data-action]" links in the "sidebar main menu"
+	function interceptCustomMenuActions() {
+		$(".main-sidebar .sidebar-menu").on("click", "a[data-action]", function (e) {
+			menuActions(e);
+		});
+	}
+	
+	// Floating assistant 
+	function allowFloatingAssistantFocus() {
+		if (!$.fn.modal || !$.fn.modal.Constructor || $.fn.modal.Constructor.prototype.taoFloatingAssistantFocusAllowed) {
+			return;
+		}
+		$.fn.modal.Constructor.prototype.taoFloatingAssistantFocusAllowed = true;
+		$.fn.modal.Constructor.prototype.enforceFocus = function () {
+			var modal = this;
+			$(document)
+				.off("focusin.bs.modal")
+				.on("focusin.bs.modal", function (e) {
+					if ($(e.target).closest("#taoLlmChatFloating").length) {
+						return;
+					}
+					if (modal.$element[0] !== e.target && !modal.$element.has(e.target).length) {
+						modal.$element.trigger("focus");
+					}
+				});
+		};
+	}
+	
+	function initFloatingAssistant() {
+		window.taoAssistantWindow.init();
+		allowFloatingAssistantFocus();
+		initFloatingAssistantDrag();
+		$(".main-header").on("click", "a[data-action]", function (e) {
+			menuActions(e);
+		});
+		$("#taoLlmChatFloating").on("click", "[data-action]", function (e) {
+			menuActions(e);
+		});
+	}
+	
+	$(document).ready(function () {
+		// Load app favicon and logo
+		$('link[rel*="icon"]').remove();
+		$("head").append('<link type="image/x-icon" rel="shortcut icon" href="' + (typeof window.favicon !== "undefined" ? window.favicon : "./favicon.ico") + '">');
+		$("#logoSmall").attr("src", window.logoSmall);
+		$("#logoText").text(window.logoText);
+		
+		getUserPrefferences();
+		
+		initNotifications();
+		
+		initVoiceControls();
+		
+		interceptCustomMenuActions();
+		
+		initFloatingAssistant();
+		
+		// Disable main menu's scrollbar when collapsed
+		$("body").on("collapsed.pushMenu expanded.pushMenu", function () {
+			$("body").is(".sidebar-collapse") ? $(".main-sidebar .sidebar").removeClass("thin-scrollbar") : $(".main-sidebar .sidebar").addClass("thin-scrollbar");
+		});
+		
+		// Modal dialog open/close events
+		$(document)
+		.on("shown.bs.modal", ".modal:not(.no-trigger)", function (e) {
+			var $modal = $(e.currentTarget);
+			
+			// .modal-stretched
+			if ($modal.hasClass("modal-stretched")) {
+				$modal.css({ "overflow": "hidden" });
+				var $dialog = $(".modal-dialog", $modal);
+				if ($dialog.length) {
+					var margin = $modal.data("margin") || 20;
+					$dialog.css({ "margin": margin + "px" });
+					
+					var $scroll = $(($modal.data("scrollelement") || ".foo") + ":visible", $dialog).eq(0);
+					if ($scroll.length) {
+						var scrollH = $dialog.outerHeight(true) + $dialog.offset().top - $scroll.outerHeight(true) - margin;
+						$($modal.data("scrollelement"), $dialog).css({ "height": "calc(100vh - " + parseInt(scrollH + 0.5) + "px)" });
+					}
+				}
+			}
+			
+			// .modal-form-focus
+			if ($modal.hasClass("modal-form-focus")) {
+				$(".form-control:enabled:visible:first", $modal).focus();
+			}
+			
+			// .modal-fullscreen
+			if ($modal.hasClass("modal-fullscreen")) {
+				setTimeout( function (e) {
+					$(".modal-backdrop").addClass("modal-backdrop-fullscreen");
+				}, 0);
+			}
+		})
+		.on("hidden.bs.modal", ".modal:not(.no-trigger)", function (e) {
+			var $modal = $(e.currentTarget);
+			
+			// .modal-keep-empty
+			if ($modal.hasClass("modal-keep-empty")) {
+				$(".modal-dialog", $modal).html("");
+			}
+			
+			// Persist body modal-open class when other modals are still open
+			if ($(".modal:visible").length) {
+				$("body").addClass("modal-open");
+			}
+			
+			$(".modal-backdrop").remove();
+		});
+		
+		// User settings form
+		$("#frmSettings")
+		.on("click", ".btn[data-action]", function (e) {
+			e.preventDefault();
+			
+			if ($(this).data("action") && $(this).data("action").startsWith("size-") && !$(this).hasClass("selected")) {
+				$(this).siblings().removeClass("selected");
+				$(this).addClass("selected");
+				selectedSize = $(this).data("action");
+				refreshSettings();
+			} else if ($(this).data("action") === "save-settings") {
+				var $a = $("i.fa-check-circle", "#selectThemeColor").closest("a");
+				var	postdata = [
+					{ key: "body_size"   , value: $("#selectSettingsBodySize [data-action].selected").data("action") || "" },
+					{ key: "refresh_rate", value: $("#selectSettingsRefreshRate").val() || "1" },
+					{ key: "voice_enabled", value: $("#selectSettingsVoiceEnabled").is(":checked") ? "true" : "false" },
+					{ key: "body_theme"  , value: JSON.stringify({ scheme: $a.attr("data-scheme"), accent: $a.attr("data-accent") }) }
+				];
+				$.ajax({
+					cache  : false,
+					url    : baseRestApiURL + "user/prefs",
+					data   : JSON.stringify(postdata),
+					type   : "POST",
+					headers: {
+						"Accept"      : "application/json",
+						"Content-Type": "application/json",
+						"X-Auth-Token": window.tokenKey
+					}
+				}).done(function (response) {
+					// Done
+					voiceSettings.setEnabled($("#selectSettingsVoiceEnabled").is(":checked"));
+				}).fail(function (jqXHR, textStatus) {
+					chkXHR(jqXHR.status);
+				}).complete(function(){
+					$("#btnRestore").prop("disabled", false);
+				});
+			} else if ($(this).data('action') === "restore-settings") {
+				var	postdata = [ "body_size", "refresh_rate", "body_theme", "voice_enabled" ];
+				$.ajax({
+					cache  : false,
+					url    : baseRestApiURL + "user/prefs",
+					data   : JSON.stringify(postdata),
+					type   : "DELETE",
+					headers: {
+						"Accept"      : "application/json",
+						"Content-Type": "application/json",
+						"X-Auth-Token": window.tokenKey
+					}
+				}).done(function (response) {
+					// Done
+				}).fail(function (jqXHR, textStatus) {
+					chkXHR(jqXHR.status);
+				}).complete(function(){
+					// Size
+					selectedSize = window.defaultSize;
+					$('#selectSettingsBodySize [data-action="' + selectedSize + '"]').addClass("selected").siblings().removeClass("selected");
+					// Theme
+					selectedStyle = { "scheme": window.defaultScheme, "accent": window.defaultAccent };
+					refreshSettings();
+					populateAvailableStyles();
+					// Refresh rate
+					$('#selectSettingsRefreshRate').val(10000);
+					// Text-to-speech
+					$("#selectSettingsVoiceEnabled").prop("checked", false);
+					voiceSettings.setEnabled(false);
+					
+					$("#btnRestore").prop("disabled", true);
+				});
+			}
+		});
+		
+		// Trigger some events
+		$(document).trigger("quota:update");
+	});
+</script>
+</body>
+</html>

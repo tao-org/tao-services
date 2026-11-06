@@ -36,7 +36,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+/**
+ * Abstract base class for initializing and running a service application. This class provides
+ * utility methods for setting up configuration, managing service launchers, and defining the
+ * application's home directory. It implements the {@code ApplicationListener} interface for
+ * observing application lifecycle events.
+ *
+ * Members of the class include static methods and configurations used to streamline the
+ * application startup process and provide support for background tasks.
+ */
 public abstract class StartupBase implements ApplicationListener {
+    private static final String LOG4J2_METRICS_AUTO_CONFIGURATION =
+            "org.springframework.boot.micrometer.metrics.autoconfigure.logging.log4j2.Log4J2MetricsAutoConfiguration";
     private static ApplicationHome home;
     private static final Properties allProperties = new Properties();
     protected final ExecutorService backgroundWorker = Executors.newSingleThreadExecutor();
@@ -98,11 +109,19 @@ public abstract class StartupBase implements ApplicationListener {
     }
 
     public static void run(Class startupClass, String[] args) throws IOException {
+        Properties properties = initialize();
+        String exclusions = properties.getProperty("spring.autoconfigure.exclude", "");
+        if (!exclusions.contains(LOG4J2_METRICS_AUTO_CONFIGURATION)) {
+            properties.setProperty("spring.autoconfigure.exclude",
+                                   exclusions.isBlank()
+                                           ? LOG4J2_METRICS_AUTO_CONFIGURATION
+                                           : exclusions + "," + LOG4J2_METRICS_AUTO_CONFIGURATION);
+        }
         SpringApplication app = new SpringApplicationBuilder()
                                         .profiles("server")
+                                        .properties(properties)
                                         .sources(detectLaunchers(startupClass))
                                         .build();
-        app.setDefaultProperties(initialize());
         if (Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("tao.dev.mode", "false"))) {
             System.out.println("Development mode is ON");
         }

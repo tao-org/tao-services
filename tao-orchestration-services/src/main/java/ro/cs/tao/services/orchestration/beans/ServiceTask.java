@@ -18,6 +18,14 @@ package ro.cs.tao.services.orchestration.beans;
 
 import java.time.LocalDateTime;
 
+/**
+ * The ServiceTask class represents a task executed within a service-oriented workflow.
+ * It contains information about the task's identifier, associated workflow node,
+ * resource allocation, execution host, and start time.
+ *
+ * This class provides constructors to initialize its attributes and getter/setter
+ * methods to access and modify them.
+ */
 public class ServiceTask {
     private Long id;
     private Long workflowNodeId;

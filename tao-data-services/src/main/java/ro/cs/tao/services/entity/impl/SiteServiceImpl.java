@@ -2,12 +2,15 @@ package ro.cs.tao.services.entity.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.persistence.SiteProvider;
+import ro.cs.tao.gadm.AdminL1Unit;
+import ro.cs.tao.gadm.AdminL2Unit;
+import ro.cs.tao.gadm.Country;
+import ro.cs.tao.persistence.*;
 import ro.cs.tao.services.interfaces.SiteService;
 import ro.cs.tao.workspaces.Site;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +25,15 @@ public class SiteServiceImpl
 
     @Autowired
     private SiteProvider siteProvider;
+
+    @Autowired
+    private CountryProvider countryProvider;
+
+    @Autowired
+    private AdminL1UnitProvider adminL1UnitProvider;
+
+    @Autowired
+    private AdminL2UnitProvider adminL2UnitProvider;
 
     @Override
     public Site findById(String id) {
@@ -60,6 +72,7 @@ public class SiteServiceImpl
         existing.setName(object.getName());
         existing.setDescription(object.getDescription());
         existing.setFootprint(object.getFootprint());
+        existing.setAdministrativeArea(object.getAdministrativeArea());
         existing.setStartDate(object.getStartDate());
         existing.setEndDate(object.getEndDate());
         return this.siteProvider.update(existing);
@@ -73,6 +86,79 @@ public class SiteServiceImpl
     @Override
     public List<Site> getByUser(String userId) {
         return this.siteProvider.getByUser(userId);
+    }
+
+    @Override
+    public List<Country> getCountries() {
+        final List<Country> countries = this.countryProvider.list();
+        countries.sort(new Comparator<Country>() {
+            @Override
+            public int compare(Country c1, Country c2) {
+                return c1.getName().compareTo(c2.getName());
+            }
+        });
+        return countries;
+    }
+
+    @Override
+    public Country getCountryByName(String name) {
+        return this.countryProvider.getByName(name);
+    }
+
+    @Override
+    public Country getCountryByCode(String isoCode) {
+        return this.countryProvider.getByIso3Code(isoCode);
+    }
+
+    @Override
+    public void saveCountries(List<Country> countries) {
+        this.countryProvider.saveAll(countries);
+    }
+
+    @Override
+    public List<AdminL1Unit> getAdminL1Units(String countryCode) {
+        return this.adminL1UnitProvider.getByCountryCode(countryCode);
+    }
+
+    @Override
+    public AdminL1Unit getAdminL1UnitByName(String name) {
+        return this.adminL1UnitProvider.getByName(name);
+    }
+
+    @Override
+    public void updateCountry(String countryCode, List<AdminL1Unit> units) {
+        if (units == null || units.isEmpty()) {
+            return;
+        }
+        units.forEach(unit -> { unit.setCountryCode(countryCode);});
+        this.adminL1UnitProvider.saveAll(units);
+    }
+
+    @Override
+    public List<AdminL2Unit> getAdminL2Units(String adminL1Id) {
+        return this.adminL2UnitProvider.getByAdminL1Id(adminL1Id);
+    }
+
+    @Override
+    public AdminL2Unit getAdminL2UnitByName(String name) {
+        return this.adminL2UnitProvider.getByName(name);
+    }
+
+    @Override
+    public void updateAdminL1(String adminL1Id, List<AdminL2Unit> units) {
+        if (units == null || units.isEmpty()) {
+            return;
+        }
+        units.forEach(unit -> { unit.setAdminL1Id(adminL1Id);});
+        this.adminL2UnitProvider.saveAll(units);
+    }
+
+    @Override
+    public void saveAdminL2Units(List<AdminL2Unit> units) {
+        if (units == null || units.isEmpty()) {
+            return;
+        }
+        this.adminL2UnitProvider.saveAll(units);
     }
 
     @Override

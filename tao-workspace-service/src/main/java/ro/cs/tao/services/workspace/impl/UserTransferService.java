@@ -1,7 +1,5 @@
 package ro.cs.tao.services.workspace.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.core.io.FileSystemResource;
 import ro.cs.tao.ListenableInputStream;
 import ro.cs.tao.component.SystemVariable;
@@ -19,6 +17,7 @@ import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.executors.BlockingQueueWorker;
 import ro.cs.tao.utils.executors.monitoring.ProgressListener;
 import ro.cs.tao.workspaces.Repository;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -29,6 +28,8 @@ import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Logger;
 
@@ -39,14 +40,20 @@ public class UserTransferService {
     private final Principal principal;
     private Timer retryTimer;
     private final BlockingQueueWorker<TransferableItem> queueWorker;
+    private final ExecutorService callbackExecutor;
 
     private final Map<String, Integer> batches;
     private final boolean saveState;
     private ProgressListener progressListener;
+    private final UserTransferListener transferListener;
     private final Logger logger;
 
 
     UserTransferService(Principal user) {
+        this(user, null);
+    }
+
+    UserTransferService(Principal user, UserTransferListener listener) {
         this.logger = Logger.getLogger(TransferService.class.getName());
         this.queue = new LinkedBlockingDeque<>();
         this.queueWorker = new BlockingQueueWorker<>(this.queue, this::processRequest, 1, "transfer-worker", 250);
@@ -56,6 +63,8 @@ public class UserTransferService {
         this.queueWorker.setStatePersister(this::saveState);
         this.batches = new HashMap<>();
         this.saveState = Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("allow.resumable.transfers", "false"));
+        this.transferListener = listener;
+        this.callbackExecutor = this.transferListener != null ? Executors.newSingleThreadExecutor() : null;
         queueWorker.start();
     }
 
@@ -136,6 +145,12 @@ public class UserTransferService {
                     }
                     if (item.isForce() || !destinationService.exists(item.getDestinationPath())) {
                         destinationService.storeFile(sourceStream, fileObject.getSize(), item.getDestinationPath(), srcPath);
+                        if (this.transferListener != null) {
+                            final String sourcePath = srcPath;
+                            this.callbackExecutor.execute(() -> this.transferListener.onTransferCompleted(this.principal.getName(),
+                                                                                                          sourcePath,
+                                                                                                          dstWorkspace.resolve(item.getDestinationPath())));
+                        }
                     } else {
                         logger.fine(String.format("File %s exists at the destination and no overwrite flag is set", srcPath));
                     }
@@ -213,7 +228,6 @@ public class UserTransferService {
                 final TransferableItem[] requests = queue.toArray(new TransferableItem[0]);
                 try (OutputStream stream = Files.newOutputStream(this.stateFile)) {
                     final ObjectMapper mapper = new ObjectMapper();
-                    mapper.registerModule(new JavaTimeModule());
                     mapper.writerFor(requests.getClass()).writeValue(stream, requests);
                     stream.flush();
                 }
@@ -232,7 +246,6 @@ public class UserTransferService {
                     this.queue.clear();
                     try (InputStream stream = Files.newInputStream(this.stateFile)) {
                         final ObjectMapper mapper = new ObjectMapper();
-                        mapper.registerModule(new JavaTimeModule());
                         final List<TransferableItem> requests = mapper.readerForListOf(TransferableItem.class)
                                 .readValue(stream);
                         if (requests != null) {
