@@ -1,0 +1,353 @@
+<style>
+	/*------BOX APPEARANCE------*/
+	#panel-nodes {
+		.nodes-item-core-box .with-label>label::before {min-width:4em;}
+		@media (min-width: 768px) {
+			core-cell-list .box-description {padding-right:21em;margin-bottom:0;}
+			core-cell-list .box-bottom      {position:absolute;bottom:calc(1.1em + 0.4em - 0.15em);right:1.1em;width:fit-content;}
+		}
+	}
+	
+	/*------CUSTOM WIDTH MODAL------*/
+	.modal-cw {
+		@media (min-width:  768px) {& {width: 766px;}}
+		@media (min-width:  992px) {& {width: 990px;}}
+		@media (min-width: 1400px) {& {width:1398px;}}
+	}
+	
+	/*------CUSTOM COLUMNS------*/
+	.col-custom {
+		padding-left:0.7em;padding-right:0.7em;
+		@media (min-width: 768px) {& {width:100%;float:left;}}
+		@media (min-width:1040px) {& {width: 50%;}}
+		@media (min-width:1410px) {& {width: 33%;}}
+		@media (min-width:1760px) {& {width: 25%;}}
+		@media (min-width:2130px) {& {width: 20%;}}
+		@media (min-width:2480px) {& {max-width: 37em;}}
+	}
+</style>
+
+<!-- Content Header -->
+<section class="content-header">
+	<h1>Sites <small>Eases the search for EO datasets on specific <strong>area of interest</strong> and <strong> temporal interval</strong>.</small></h1>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"> </i>Home</a></li><li class="active">Sites</li></ol>
+</section>
+
+<!-- Content Body -->
+<section class="content">
+	<!-- Custom Tabs -->
+	<div id="panel-nodes" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">				
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select sites.">
+						<option class="role" data-target="#paginatedcells" value="manage_sites" selected>Sites</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role active"><a href="#paginatedcells" data-toggle="tab" data-action="manage_sites" aria-expanded="true" >Sites</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="plus" data-toggle="tooltip" data-original-title="Add new site"><i class="fa fa-plus"></i></button>
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">saved site</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				<div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-sm-12 col-md-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-name"></span></div>
+									<br />
+									<div class="box-text">
+										Start date: <strong><span class="val-sDate"> - </span></strong> |
+										End date: <strong><span class="val-eDate"> - </span></strong>
+									</div>
+									<div class="box-icon"><i class="fa fa-map"></i></div>
+								</div>
+								<div class="box-description"><span class="val-description"></span></div>
+								<div class="box-bottom">
+									<div class="text-right flat-buttons">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"  ><i class="fa fa-pencil fa-fw" ></i> Edit</button>
+										<button class="btn btn-primary btn-nodeop" data-action="clone" ><i class="fa fa-clone fa-fw"  ></i> Clone</button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"><i class="fa fa-trash-o fa-fw"></i> Delete</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-custom">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"><span></span></div>
+								<div class="box-top">
+									<div class="box-title icon-shift"><span class="val-name"></span></div>
+									<br />
+									<div class="box-text with-label"><label>Start date: </label><strong><span class="val-sDate"></span></strong></div>
+									<div class="box-text with-label"><label>End date: </label><strong><span class="val-eDate"></span></strong></div>
+									<div class="box-icon icon"><i class="fa fa-map"></i></div>
+								</div>
+								<div class="box-description thin-scrollbar onhover"><span class="val-description"></span></div>
+								<div class="box-bottom">
+									<div class="text-left">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"   data-toggle="tooltip" data-original-title="Edit site"  ><i class="fa fa-pencil fa-fw" ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="clone"  data-toggle="tooltip" data-original-title="Clone site" ><i class="fa fa-clone fa-fw"  ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete" data-toggle="tooltip" data-original-title="Delete site"><i class="fa fa-trash-o fa-fw"></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix">
+			<div class="controls-left">
+				<div><i class="fa fa-map"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> <span class="val-title">sites</span></div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- Modal for user actions -->
+<div id="myModalNodes" class="modal fade" tabindex="-1" data-backdrop="static" role="dialog">
+	<div class="modal-dialog"></div>
+</div>
+
+<!-- Datepicker -->
+<link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.theme.css" rel="stylesheet" />
+<link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.structure.css" rel="stylesheet" />
+<link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.css" rel="stylesheet" />
+<script type="text/javascript" src="./assets/libs/jQuery-datepicker/jquery-ui.js"></script>
+<!-- Tags -->
+<link   type="text/css"       href="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" rel="stylesheet" />
+<script type="text/javascript" src="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.js"></script>
+<!-- Polygon Map -->
+<script type="text/javascript" src="./assets/libs/openlayers/ol-poly.js?v=theme-20260529-2"></script>
+
+<script type="text/javascript">
+	var nameList = [];
+	
+	var myModalNodesOpShow = function (operationid, dna) {
+		if ($.inArray(operationid, [ "plus", "edit" ]) == -1) {
+			alert("TAO - Operation mismatch");
+		} else {
+			window.userOpStack = {};
+			var rm_contentUrl = "";
+			switch (operationid) {
+				case "plus": window.userOpStack =  { "action": "plus"             } ; rm_contentUrl = "./fragments/sites-plus.fragment.html"; break;
+				case "edit": window.userOpStack =  { "action": "edit", "dna": dna } ; rm_contentUrl = "./fragments/sites-plus.fragment.html"; break;
+			}
+			$.ajax({
+				url: rm_contentUrl + "?" + Math.random(),
+				error: function (jqXHR, textStatus, errorThrown) {
+					alert("Could not retrive needed data from server.\n" + errorThrown);
+				},
+				success: function (result) {
+					if (result !== "") {
+						$(".modal-dialog", "#myModalNodes").addClass("modal-cw");
+						$(".modal-dialog", "#myModalNodes").html(result);
+						$("#myModalNodes").modal("show");
+					} else {
+						alert("Could not retrive needed data from server.");
+					}
+				}
+			});
+		}
+	};
+	
+	var deleteSiteById = function (id) {
+		$.ajax({
+			cache   : false,
+			url     : baseRestApiURL + "site/" + id,
+			dataType: "json",
+			type    : "DELETE",
+			headers : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				if (jqXHR.status === 500) {
+					showMsg("Unable to delete the site. Please try again.", "ERROR");
+				} else {
+					alert("An error has occurred, please try again or contact app admin.");
+				}
+			},
+			success: function (data) {
+				showMsg("Site successfully deleted.", "SUCCESS");
+				panelComp.refreshData();
+			}
+		});
+	};
+	
+	var cloneSiteByIdPOST = function (site) {
+		var cloneSite = $.ajax({
+			cache   : false,
+			url     : baseRestApiURL + "site/",
+			dataType: "json",
+			data    : JSON.stringify(site),
+			type    : "POST",
+			headers : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			}
+		});
+		$.when(cloneSite).done(function (response) {
+			var cSite = chkTSRF(response);
+			if (cSite.id) {
+				showMsg("Site successfully cloned. Site <i>" + cSite.name + "</i> created in your workspace.", "SUCCESS");
+				panelComp.refreshData();
+			} else {
+				showMsg("Cloning the site failed.", "ERROR");
+			}
+		}).fail(function (jqXHR, textStatus, errorThrown) {
+			showMsg("Cloning the site failed.<br/>" + errorThrown, "ERROR");
+		});
+	};
+	
+	var cloneSiteByIdGET = function(id) {
+		var cloneSite = $.ajax({
+			cache  : false,
+			url    : baseRestApiURL + "site/" + id,
+			type   : "GET",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			}
+		});
+		$.when(cloneSite).done(function (response) {
+			var site = chkTSRF(response);
+			if (site.id) {
+				delete site["id"];
+				var randNr = 1;
+				var tempName = site.name;
+				while ($.inArray(tempName, nameList) !== -1) {
+					tempName = site.name + "-" + randNr;
+					randNr ++;
+				}
+				site.name = tempName;
+				cloneSiteByIdPOST(site);
+				panelComp.refreshData();
+			} else {
+				showMsg("Cloning the site failed.", "ERROR");
+			}
+		}).fail(function (jqXHR, textStatus, errorThrown) {
+			showMsg("Cloning the site failed.<br/>" + errorThrown, "ERROR");
+		});
+	};
+	
+	$(document).ready(function () {
+		var $selectActivePanel = $("#selectActivePanel");
+		var urls = [ baseRestApiURL + "site/" ];
+		var actionsSet = {
+			"manage_sites": { badgeLabel: "Sites", pagLabel: "sites", emptyLabel: "site", url: urls[0] }
+			
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
+				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+				$(".top-controls .search-container").attr("data-original-title", "Search " + (actionsSet[action]?.emptyLabel || action));
+			}
+			return selected;
+		};
+		window.panelComp = $("#panel-nodes").npPaginatedCells({
+			headerUser: taoUserProfile.username,
+			url       : urls,
+			viewMode  : preferences.viewMode,
+			order     : [
+				{ "label": "Name ascending" , "objAttributeName": "name", "direction": "ASC", "default": true },
+				{ "label": "Name descending", "objAttributeName": "name", "direction": "DSC" }
+			],
+			filterAttribute: "name",
+			doDataPreprocessing: function (data, sets) {
+				var activeSet = getActiveSet(data, sets);
+				// Get a list with site names
+				nameList = $.map(activeSet, function (elX, idx) {
+					// Save dates also in YYYY-MM-DD format
+					elX.sDate = moment(elX.startDate).format("YYYY-MM-DD");
+					elX.eDate = moment(elX.endDate  ).format("YYYY-MM-DD");
+					return elX.name;
+				});
+				return activeSet;
+			},
+			doAction: function (action, args) {
+				var dna = $.extend({}, args?.dna || {});
+				switch (action) {
+					// Add new site	------------------------------------------
+					case "plus":	myModalNodesOpShow(action, dna);
+									break;
+					// Edit site	------------------------------------------
+					case "edit":	myModalNodesOpShow(action, dna);
+									break;
+					// Clone site	------------------------------------------
+					case "clone":	cloneSiteByIdGET(dna.id);
+									break;
+					// Delete site	------------------------------------------
+					case "delete":	if (taoUserProfile.userRole !== "ADMIN") {
+										alert("not allowed");
+									} else {
+										$("#confirm-dialog").modal("confirm", {
+											msg            : "Are you sure you want to delete the site: <strong>" + dna.name + "</strong>?",
+											callbackConfirm: function () { deleteSiteById(dna.id); },
+											callbackCancel : function () {}
+										});
+									}
+									break;
+				}
+			}
+		});
+	});
+	
+//# sourceURL=sites.js
+</script>

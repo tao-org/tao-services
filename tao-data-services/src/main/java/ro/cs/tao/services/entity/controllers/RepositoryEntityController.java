@@ -22,14 +22,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/workspace")
+@RequestMapping({ "/workspace", "/workspace/" })
 @Tag(name = "Repositories", description = "Operations related to repository management")
 public class RepositoryEntityController extends DataEntityController<Repository, String, RepositoryService> {
 
     /**
      * Returns the list of types of supported repositories.
      */
-    @RequestMapping(value = "/types/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/types/", "/types" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getWorkspaceTypes() {
         try {
             return prepareResult(Arrays.stream(RepositoryType.values()).map(ServiceTransformUtils::toBean).collect(Collectors.toList()));
@@ -54,7 +54,7 @@ public class RepositoryEntityController extends DataEntityController<Repository,
         final List<RepositoryBean> repositories = new ArrayList<>();
         if (!(pageNumber.isPresent() || pageSize.isPresent() || sortByField.isPresent() || sortDirection.isPresent())) {
             try {
-                List<Repository> userRepositories = this.service.getByUser(currentUser());
+                List<Repository> userRepositories = this.service.getByUser(currentOwner());
                 for (Repository repository : userRepositories) {
                     final RepositoryBean bean = ServiceTransformUtils.toBean(repository);
                     try {
@@ -111,7 +111,7 @@ public class RepositoryEntityController extends DataEntityController<Repository,
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") String id) {
         try {
             final Repository entity = this.service.findById(id);
-            if (entity == null || !entity.getUserId().equals(currentUser())) {
+            if (entity == null || !(entity.getUserId().equals(currentUser()) || entity.getUserId().equals(currentOwner()))) {
                 throw new IllegalArgumentException("You cannot access this workspace");
             }
             final RepositoryBean bean = ServiceTransformUtils.toBean(entity);
@@ -135,7 +135,10 @@ public class RepositoryEntityController extends DataEntityController<Repository,
     @Override
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Repository entity) {
         try {
-            entity.setUserId(currentUser());
+            if (entity.getType() == ro.cs.tao.workspaces.RepositoryType.LOCAL && !isCurrentUserAdmin()) {
+                return prepareResult(null, org.springframework.http.HttpStatus.FORBIDDEN);
+            }
+            entity.setUserId(currentOwner());
             entity.setSystem(false);
             return super.save(entity);
         } catch (Exception e) {
@@ -151,8 +154,14 @@ public class RepositoryEntityController extends DataEntityController<Repository,
     @Override
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody Repository entity) {
         try {
-            if (StringUtilities.isNullOrEmpty(entity.getUserId()) ||
-                !entity.getUserId().equals(currentUser())) {
+            final Repository existing = service.findById(id);
+            if (entity.getType() == ro.cs.tao.workspaces.RepositoryType.LOCAL && !isCurrentUserAdmin()) {
+                return prepareResult(null, org.springframework.http.HttpStatus.FORBIDDEN);
+            }
+            if (!id.equals(entity.getId()) || existing == null ||
+                !(currentUser().equals(existing.getUserId()) || currentOwner().equals(existing.getUserId())) ||
+                StringUtilities.isNullOrEmpty(entity.getUserId()) ||
+                !(entity.getUserId().equals(currentUser()) || entity.getUserId().equals(currentOwner()))) {
                 throw new IllegalArgumentException("Cannot update this workspace");
             }
             entity.setSystem(false);

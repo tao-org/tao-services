@@ -15,6 +15,13 @@
  */
 package ro.cs.tao.services.security.token;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -35,12 +42,6 @@ import ro.cs.tao.services.commons.Endpoints;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.StringUtilities;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -50,6 +51,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * A filter that handles authentication by examining incoming HTTP requests
+ * and verifying authentication tokens or other credentials.
+ * It extends {@link GenericFilterBean} from Spring Security and integrates
+ * with the authentication mechanism provided by an {@link AuthenticationManager}.
  *
  * @author Oana H.
  */
@@ -75,7 +80,7 @@ public class AuthenticationFilter extends GenericFilterBean {
         if (!systemInitialised && !httpResponse.isCommitted()) {
             httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "The system is not able yet to serve http requests");
         }
-        Optional<String> token = Optional.ofNullable(httpRequest.getHeader("X-Auth-Token"));
+        Optional<String> token = authenticationToken(httpRequest);
         final String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
 
         try {
@@ -113,7 +118,9 @@ public class AuthenticationFilter extends GenericFilterBean {
                     }
                 } else {
                     if (isExcludedResource(httpRequest, resourcePath)) {
-                        SecurityContextHolder.getContext().setAuthentication(new SystemAuthentication());
+                        if (!Endpoints.DOWNLOAD_ENDPOINT.equals(resourcePath)) {
+                            SecurityContextHolder.getContext().setAuthentication(new SystemAuthentication());
+                        }
                     } else {
                         if (requiresToken(resourcePath)) {
                             throw new AuthenticationCredentialsNotFoundException(resourcePath);
@@ -154,12 +161,30 @@ public class AuthenticationFilter extends GenericFilterBean {
         SecurityContextHolder.getContext().setAuthentication(responseAuthentication);
     }
 
+    private Optional<String> authenticationToken(HttpServletRequest request) {
+        String token = request.getHeader("X-Auth-Token");
+        if (StringUtilities.isNullOrEmpty(token)) {
+            token = request.getParameter("tokenKey");
+        }
+        if (StringUtilities.isNullOrEmpty(token) && request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("tokenKey".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
+        }
+        return StringUtilities.isNullOrEmpty(token) ? Optional.empty() : Optional.of(token);
+    }
+
     private boolean postToAuthenticate(HttpServletRequest httpRequest, String resourcePath) {
         return Endpoints.LOGIN_ENDPOINT.equalsIgnoreCase(resourcePath)
                 && httpRequest.getMethod().equals(Endpoints.LOGIN_ENDPOINT_METHOD);
     }
 
     private boolean requiresToken(String resourcePath) {
+        // Activation performs its own purpose-bound capability verification and never obtains system identity.
+        if (resourcePath.startsWith("/user/activate/")) return false;
         return Endpoints.endpoints("ro.cs.tao").stream().anyMatch(e -> e.indexOf('*') > 0
                 ? resourcePath.startsWith(e.substring(0, e.indexOf('*')))
                 : resourcePath.startsWith(e));
@@ -222,3 +247,4 @@ public class AuthenticationFilter extends GenericFilterBean {
         }
     }
 }
+

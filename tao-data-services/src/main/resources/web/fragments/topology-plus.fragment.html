@@ -1,0 +1,562 @@
+<style>
+	/*------FORM------*/
+	#frmExecNodeEdit                   {
+		.group-label                   {text-align:inherit;margin-top:0;width:100%;}
+		.node-type                     {position:absolute;top:0;right:15px;}
+		.node-type .radio-inline       {font-weight:700;}
+		.flavor-edit[type="number"]    {padding-right:0;}
+		.radio-inline:has(:disabled)   {color:var(--form-control-placeholder);cursor:not-allowed;}
+		.form-control-info             {font-style:italic;font-size:1.2rem;line-height:1.1;display:inline-block;}
+		.spaciated                     {margin-bottom:0.3em;}
+		#inputFlavor                                                {width:0;height:0;padding:0;border:0;opacity:0;pointer-events:none;}
+		#inputFlavor-button                                         {width:100%;padding:0.43em 0.86em;height:2.43em;line-height:1.4285;margin-right:10px;}
+		#inputFlavor:has([value=""].selected)+.ui-selectmenu-button {color:var(--form-control-placeholder);}
+		#inputFlavor-menu .ui-menu-item:has(.placeholder)           {display:none;}
+		.has-error>#inputFlavor-button                              {border-color:#a94442;}
+		
+		@media (min-width: 768px)       {
+			.group-section .form-group  {margin-bottom:1.5em;}
+			.group-section .form-group:has(+.form-group) {margin-bottom:0.3em;}
+			.control-label              {line-height:1.2;padding-top:0;min-height:2.4em;display:flex;align-items:center;justify-content:flex-end;}
+			.control-label.col-md-12    {min-height:unset;justify-content:flex-start;margin-bottom:0.4em;}
+			#inputProcessorcount-error,
+			#inputMemorysize-error,
+			#inputDiskspacesize-error,
+			#inputSwapspacesize-error   {transform:translateX(-54%);min-width:220%;text-align:right;}
+		}
+		[name="btnSave"]               {float:left;min-width:10em;}
+		.error                         {font-size:0.9em;line-height:1.1;}
+		#reset                         {background:none;border:0;opacity:0.8;font-size:1.2em;color:var(--status-info);float:right;}
+		#reset i                       {vertical-align:middle;}
+		#reset:hover,#reset:focus      {opacity:1;}
+	
+		.loading {position:absolute;top:0;right:0;bottom:0;left:0;background-color:var(--hairline-strong-inv);z-index:1;display:flex;justify-content:center;align-items:center;}
+	}
+</style>
+<div class="modal-content">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        <h4 id="myModalLabel" class="modal-title">Edit execution node</h4>
+    </div>
+	<div class="modal-body">
+		<!-- FORM -->
+		<form id="frmExecNodeEdit" class="form-horizontal form-newpc" action="" role="form">
+			<div class="loading"></div>
+			<div class="row">
+				<!-- Session -->
+				<label class="col-sm-12 col-md-12 group-label">Session</label>
+				<div class="col-sm-12 col-md-12 group-section">
+					<div class="form-group">
+						<label for="inputHostname" class="col-sm-3 col-md-3 control-label">Hostname</label>
+						<div class="col-sm-9 col-md-9">
+							<input id="inputHostname" type="text" class="form-control" name="inputHostname" placeholder="hostname" autocomplete="off" value="" />
+							<span class="form-control-info">Hostname must be <b>unique </b>and can contain letters (a-z) (A-Z), numbers (0-9), periods (.), dashes (-), and underscores (_)</span>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="inputUsername" class="col-sm-3 col-md-3 control-label">Username</label>
+						<div class="col-sm-9 col-md-9"><input id="inputUsername" type="text" class="form-control" name="inputUsername" placeholder="user name" autocomplete="off" value="" /></div>
+					</div>
+					<div class="form-group">
+						<label for="inputPassword" class="col-sm-3 col-md-3 control-label">Password</label>
+						<div class="col-sm-9 col-md-9 spaciated"><input id="inputPassword" type="password" autocomplete="off" class="form-control authPassKey" name="inputPassword" placeholder="password" autocomplete="off" value="" /></div>
+						<label for="inputSSHKey" class="col-sm-3 col-md-3 control-label">SSH Key</label>
+						<div class="col-sm-9 col-md-9"><input id="inputSSHKey" type="password" autocomplete="off" class="form-control authPassKey" name="inputSSHKey" placeholder="SSH key" autocomplete="off" value="" /></div>
+					</div>
+				</div>
+				<!-- Flavor -->
+				<div class="col-sm-12 col-md-12">
+					<div class="form-group">
+						<label class="col-sm-12 col-md-12 group-label">Flavor</label>
+						<div class="node-type hidden">
+							<label class="radio-inline"><input type="radio" name="inputType" value="local" checked />New local</label>
+							<label class="radio-inline"><input type="radio" name="inputType" value="openstack"     />OpenStack</label>
+						</div>
+					</div>
+				</div>
+				<div class="col-sm-12 col-md-12 group-section">
+					<div class="form-group">
+						<label for="inputFlavor" class="col-sm-3 col-md-3 control-label">Node flavor</label>
+						<div class="col-sm-9 col-md-9">
+							<div class="ui-front"><select id="inputFlavor" name="inputFlavor" class="form-control"></select></div>
+							<p id="inputFlavorMsg" class="collapse" style="margin:0"></p>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="inputProcessorcount" class="col-sm-3 col-md-3 control-label">Processor count</label>
+						<div class="col-sm-3 col-md-3"><input id="inputProcessorcount" type="number" class="form-control flavor-edit" name="inputProcessorcount" autocomplete="off" value="1" min="1" step="1" placeholder="CPU count" /></div>
+						<label for="inputMemorysize" class="col-sm-3 col-md-3 control-label">Memory size (GB) </label>
+						<div class="col-sm-3 col-md-3"><input id="inputMemorysize"     type="number" class="form-control flavor-edit" name="inputMemorysize"     autocomplete="off" value="1" min="1" step="1" placeholder="memory size GB" /></div>
+					</div>
+					<div class="form-group">
+						<label for="inputDiskspacesize" class="col-sm-3 col-md-3 control-label">Storage space (GB) </label>
+						<div class="col-sm-3 col-md-3"><input id="inputDiskspacesize"  type="number" class="form-control flavor-edit" name="inputDiskspacesize"  autocomplete="off" value="1" min="1" placeholder="storage size GB" /></div>
+						<label for="inputSwapspacesize" class="col-sm-3 col-md-3 control-label">Swap space (GB) </label>
+						<div class="col-sm-3 col-md-3"><input id="inputSwapspacesize"  type="number" class="form-control flavor-edit" name="inputSwapspacesize"  autocomplete="off" value="0" min="0" placeholder="swap size GB" /></div>
+					</div>
+				</div>
+				<!-- Status & description -->
+				<label class="col-sm-12 col-md-12 group-label">Status &amp; description</label>
+				<div class="col-sm-12 col-md-12 group-section">
+					<div class="form-group">
+						<label for="associatedUser" class="col-sm-3 col-md-3 control-label">Owner</label>
+						<div class="col-sm-9 col-md-9"><select id="associatedUser" class="form-control" name="associatedUser" autocomplete="off" ></select></div>
+					</div>
+					<div class="form-group">
+						<label for="inputActive" class="col-sm-3 col-md-3 control-label">Status</label>
+						<div class="col-sm-9 col-md-9">
+							<select id="inputActive" name="inputActive" class="form-control">
+								<option value="true" selected="">Active</option>
+								<option value="false">Inactive</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="inputDescription" class="col-sm-3 col-md-3 control-label">Description </label>
+						<div class="col-sm-9 col-md-9"><textarea id="inputDescription" class="form-control" rows="3" name="inputDescription" placeholder="Node description" style="resize: none;"></textarea></div>
+					</div>
+					<div class="form-group">
+						<label for="formTags" class="col-sm-3 col-md-3 control-label">Tags </label>
+						<div class="col-sm-9 col-md-9"><input id="formTags" name="formTags" class="form-control" value="" /></div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="btnSave"   type="submit" class="btn btn-flat btn-primary" name="btnSave">Save changes</button>
+				<button id="btnCancel" type="button" class="btn btn-flat btn-default" name="btnCancel" data-dismiss="modal">Cancel</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<link rel="stylesheet" href="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" type="text/css" />
+<script src="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.js" type="text/javascript"></script>
+<!-- 1.12.1/jquery-ui.min.js for autocomplete -->
+<link rel="stylesheet" href="./assets/libs/jQuery-datepicker/jquery-ui.css" type="text/css" />
+<script src="./assets/libs/jQuery-datepicker/jquery-ui.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+	var action        = window.userOpStack?.action || "edit";
+	var initData      = $.extend({}, window.userOpStack?.dna || { id: "foo" });
+    var $myModalNodes = $("#myModalNodes");
+	
+	// Get TAO flavors
+	var getFlavors = $.ajax({
+		cache  : false,
+		url    : baseRestApiURL + "topology/flavors",
+		type   : "GET",
+		headers: {
+			"Accept"      : "application/json",
+			"Content-Type": "application/json",
+			"X-Auth-Token": window.tokenKey
+		}
+	});
+    
+	// Get active users
+    var getUsers = $.ajax({
+		cache   : false,
+		url     : baseRestApiURL + "admin/users?status=ACTIVE",
+		dataType: "json",
+		type    : "GET",
+		headers : {
+			"Accept"      : "application/json",
+			"Content-Type": "application/json",
+			"X-Auth-Token": window.tokenKey
+		}
+	});
+	
+	// Get current execution node
+	var getNode = $.ajax({
+		cache      : false,
+		url        : baseRestApiURL + "topology/" + initData.id,
+		type       : "GET",
+		dataType   : "json",
+		headers: {
+			"Accept"      : "application/json",
+			"Content-Type": "application/json",
+			"X-Auth-Token": window.tokenKey
+		}
+	});
+	
+	// Get OpenStack availability
+	var openStackAvailable = $.ajax({
+		cache   : false,
+		url     : baseRestApiURL + "topology/external",
+		type    : "GET",
+		dataType: "json",
+		headers: {
+			"Accept"      : "application/json",
+			"Content-Type": "application/json",
+			"X-Auth-Token": window.tokenKey
+		}
+	});
+	
+    // Show flavors selection
+	function showFlavorsSelection($form, flavorID) {
+        var $sel = $("#inputFlavor"   , $form).empty().hide();
+		var $msg = $("#inputFlavorMsg", $form).empty().hide();
+		
+		if (action === "edit") {
+			$("input.flavor-edit", $form).prop({ "disabled": true, "readonly": true });
+			
+			var flavor = (flavorID === "master") ? { id: "master", cpu: 1, memory: 1, disk: 1, swap: 1 } : _.find(window.taoFlavors, { id: flavorID });
+			if (flavor) {
+				$sel.append($(`<option value="${flavor.id}" selected>${flavor.id}</option>`).data("payload", flavor));
+				$sel.npMultilineSelect();
+				$sel.npMultilineSelect("disable");
+				$sel.npMultilineSelect("refresh");
+				$sel.npMultilineSelect("menuWidget").addClass("overflow-npmultilineselect").parent().css("z-index", "9999");
+			} else {
+				$msg.html('<input type="text" class="form-control" placeholder="Flavor service unavailable" disabled />').show();
+			}
+		} else {
+			if (taoFlavors.length > 0 && $('[name="inputType"]:checked', $form).val() === "openstack") {
+				$sel.append($('<option class="selected" value="" selected>Choose a flavor...</option>').data("payload", { id: null, placeholder: "Choose a flavor..." }));
+				$.each(taoFlavors, function () {
+					$sel.append($(`<option value="${this.id}">${this.id}</option>`).data("payload", this));
+				});
+				$sel.npMultilineSelect({
+					select: function (e) {
+						$("option", $sel).removeClass("selected").filter(":selected").addClass("selected");
+					}
+				});
+				$sel.npMultilineSelect("refresh");
+				$sel.npMultilineSelect("menuWidget").addClass("overflow-npmultilineselect").parent().css("z-index", "9999");
+				$sel.show();
+				
+				$("input.flavor-edit", $form).val("").prop({ "disabled": false, "readonly": true });
+				$sel.on("selectmenuchange", function (event, ui) {
+					var payload = ui.item.element.data("payload");
+					$sel.valid();
+					$('[name="inputProcessorcount"]', $form).val(typeof payload?.cpu    === "undefined" ? "" : payload.cpu   ).valid();
+					$('[name="inputMemorysize"    ]', $form).val(typeof payload?.memory === "undefined" ? "" : payload.memory).valid();
+					$('[name="inputDiskspacesize" ]', $form).val(typeof payload?.disk   === "undefined" ? "" : payload.disk  ).valid();
+					$('[name="inputSwapspacesize" ]', $form).val(typeof payload?.swap   === "undefined" ? "" : payload.swap  ).valid();
+				});
+			} else {
+				if (typeof $sel.data("ui-npMultilineSelect") !== "undefined") { $sel.npMultilineSelect("destroy"); }
+				$sel.empty().hide();
+				$msg.html('<input type="text" class="form-control" placeholder="Flavor service unavailable" disabled />').show();
+				$("input.flavor-edit", $form).val(0).prop({ "disabled": false, "readonly": false });
+			}
+        }
+    }
+	
+	// Initialize form
+	function initializeForm($form) {
+		$.when(getUsers, getNode, getFlavors, openStackAvailable).done(function (getUsersResponse, getNodeResponse, getFlavorsResponse, openStackAvailableResponse) {
+			$(".loading", $form).remove();
+			// Active users
+			var $owner = $('[name="associatedUser"]', $form);
+			var allUsers = chkTSRF(getUsersResponse[0]);
+			allUsers.sort(function name(a, b) { return a.lastName < b.lastName? -1: (a.lastName > b.lastName)? 1 : 0; });
+			$owner.html('<option class="default" selected>Select node owner</option>');
+			$.each(allUsers, function (idx, user) {
+				var $option = $(`<option value="${user.id}">${user.lastName} ${user.firstName}</option>`);
+				(user.username === "admin") && $option.addClass("administratorAccount");
+				$owner.append($option);
+			});
+			
+			// Host
+			var host = chkTSRF(getNodeResponse[0]);
+			$('[name="inputHostname"      ]', $form).val(host?.id             || "");
+			$('[name="inputUsername"      ]', $form).val(host?.userName       || "");
+			$('[name="inputPassword"      ]', $form).val(host?.userPass       || "");
+			$('[name="inputSSHKey"        ]', $form).val(host?.sshKey         || "");
+			$('[name="inputProcessorcount"]', $form).val(typeof host?.flavor?.cpu    === "undefined" ? 1 : host.flavor.cpu   );
+			$('[name="inputMemorysize"    ]', $form).val(typeof host?.flavor?.memory === "undefined" ? 1 : host.flavor.memory);
+			$('[name="inputDiskspacesize" ]', $form).val(typeof host?.flavor?.disk   === "undefined" ? 1 : host.flavor.disk  );
+			$('[name="inputSwapspacesize" ]', $form).val(typeof host?.flavor?.swap   === "undefined" ? 0 : host.flavor.swap  );
+			$('[name="inputDescription"   ]', $form).val(host?.description    || "");
+			$('[name="inputActive"        ]', $form).val(host?.active ? "true" : "false");
+			
+			// Flavors
+			window.taoFlavors = getFlavorsResponse[0].status === responseStatus.success ? getFlavorsResponse[0].data : [];
+			showFlavorsSelection($form, host?.flavor?.id);
+			
+			// Tags
+			initializeTagsInputAutocomplete("#formTags", "topology");
+			
+			// Action specific settings
+			if (action === "edit") {
+				$("#myModalLabel").html("Edit execution node");
+				$("#btnSave"     ).html("Save changes");
+				$("#reset"       ).html('<span>Reset changes&nbsp;&nbsp;<i class="fa fa-refresh"></i></span>');
+				$('[name="inputHostname"]+.form-control-info', $form).addClass("hidden");
+				$('[name="inputHostname"      ]', $form).attr("disabled", "disabled");
+				$('[name="inputProcessorcount"]', $form).attr("disabled", "disabled");
+				$('[name="inputMemorysize"    ]', $form).attr("disabled", "disabled");
+				$('[name="inputDiskspacesize" ]', $form).attr("disabled", "disabled");
+				$('[name="inputSwapspacesize" ]', $form).attr("disabled", "disabled");
+				
+				(host?.tags && host.tags !== "") &&  $("#formTags").importTags(host.tags.join());
+				(host?.owner) && $owner.val(host.owner);
+				(host?.flavor?.id === "master") && $owner.addClass("master").attr("disabled", "disabled");
+			} else {
+				$('[name="inputType"]', $form).closest(".node-type").removeClass("hidden");
+				$owner.closest(".form-group").addClass("hidden");
+				var osAvailable = openStackAvailableResponse[0].status === responseStatus.success && openStackAvailableResponse[0].data;
+				$('[name="inputType"][value="openstack"]', $form).prop("disabled", !osAvailable);
+				
+			}
+		}).fail(function (jqXHR, textStatus, errorThrown) {
+			$(".loading", $form).remove();
+			showMsg(errorThrown, "ERROR");
+		});
+	}
+	
+	// Check unique values for hostname
+	function checkUnique(validator, value, element) {
+		var previous = validator.previousValue(element);
+		if (previous.old === value) { return previous.valid; }
+		previous.old = value;
+		validator.startRequest(element);
+		$.ajax({
+			cache      : false,
+			type       : "get",
+			url        : baseRestApiURL + "topology/" + value,
+			dataType   : "json",
+			contentType: "application/json; charset=utf-8",
+			headers    : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				$(element).attr("server-down", "true");
+				var errors = {};
+				errors[element.name] = validator.defaultMessage(element, "isUnique");
+				validator.invalid[element.name] = true;
+				validator.showErrors(errors);
+				previous.valid = false;
+				validator.stopRequest(element, false);
+			},
+			success: function (response) {
+				$(element).removeAttr("server-down");
+				var isValid = false;
+				var nodes = [ chkTSRF(response) ];
+				if ($.isArray(nodes)) {
+					var searchBy  = element.name;
+					var searchFor = element.value.trim().toLowerCase();
+					switch (element.name) {
+						case "inputHostname": searchBy = "id"; break;
+					}
+					// Element is valid when it's value is not found in the database
+					isValid = (_.where(nodes, { [searchBy]: element.value.trim().toLowerCase() }).length === 0);
+					// Element is valid when it matches its initial value (edit action)
+					!isValid && (action === "edit" && initData[searchBy] === searchFor) && (isValid = true);
+				}
+				if (true === isValid) {
+					var submitted = validator.formSubmitted;
+					validator.prepareElement(element);
+					validator.formSubmitted = submitted;
+					validator.successList.push(element);
+					delete validator.invalid[element.name];
+					validator.showErrors();
+				} else {
+					var errors = {};
+					errors[element.name] = validator.defaultMessage(element, "isUnique");
+					validator.invalid[element.name] = true;
+					validator.showErrors(errors);
+				}
+				previous.valid = isValid;
+				validator.stopRequest(element, isValid);
+			}
+		});
+		return "pending";
+	}
+	
+	// Save execution node
+    function saveNode($form) {
+		var flavorId = (action === "edit") ? $('[name="inputFlavor"]', $form).val() : ($('[name="inputFlavor"]>option:selected', $form).length ? $('[name="inputFlavor"]', $form).val() : $('[name="inputHostname"]', $form).val().toLowerCase());
+		var tags     = (action === "edit") ? $('[name="formTags"   ]', $form).val() : $("[name=inputType ]", $form).val();
+		var formData = {
+			"id"            : $('[name="inputHostname"   ]', $form).val().toLowerCase(),
+			"userName"      : $('[name="inputUsername"   ]', $form).val(),
+			"userPass"      : $('[name="inputPassword"   ]', $form).val() !== "" ? $('[name="inputPassword"]', $form).val() : "",
+			"sshKey"        : $('[name="inputSSHKey"     ]', $form).val() !== "" ? $('[name="inputSSHKey"  ]', $form).val() : null,
+			"description"   : $('[name="inputDescription"]', $form).val(),
+			"active"        : $('[name="inputActive"     ]', $form).val() === "true",
+			"tags"          : tags.split(","),
+			"owner"         : $('[name="associatedUser"  ]', $form).val() !== "Select node owner" ? $('[name="associatedUser"]', $form).val() : ($('[name="associatedUser"].master', $form).length ? null : ""),
+			"flavor"        : {
+				"id"        : flavorId,
+				"cpu"       : parseInt  ($('[name="inputProcessorcount"]', $form).val()),
+				"memory"    : parseInt  ($('[name="inputMemorysize"    ]', $form).val()),
+				"disk"      : parseFloat($('[name="inputDiskspacesize" ]', $form).val()),
+				"swap"      : parseFloat($('[name="inputSwapspacesize" ]', $form).val()),
+				"rxtxFactor": 1.0
+			},
+			"volatile"      : false
+		};
+		$.ajax({
+			cache   : false,
+			url     : baseRestApiURL + "topology/" + formData.id,
+			type    : action === "edit" ? "PUT" : "POST",
+			dataType: "json",
+			data    : JSON.stringify(formData),
+			headers : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				if (jqXHR.status === 500 ){
+					showMsg("Error " + (action === "edit" ? "updating" : "adding") + " execution node. Please check your data and try again.", "ERROR");
+				} else if (jqXHR.status === 400 || jqXHR.status === 406) {
+					showMsg("Error " + (action === "edit" ? "updating" : "adding") + " execution node. Please check your data, one or more values for the attributes was not in the acceptable range.", "ERROR");
+				} else {
+					showMsg("Unknown status error [" + textStatus + "]. Please check your data and try again.", "ERROR");
+				}
+			},
+			success: function(response, textStatus, jqXHR) {
+				if (response.status === window.responseStatus.success) {
+					showMsg("Execution node successfully " + (action === "edit" ? "updated" : "added") + ".", "SUCCESS");
+					$myModalNodes.modal("hide");
+					panelComp.refreshData();
+				} else {
+					showMsg(response.message, "ERROR");
+				}
+            }
+        });
+    }
+	
+    $(document).ready(function () {
+        var $form = $("#frmExecNodeEdit");
+		$("#myModalLoading svg").clone().appendTo(".loading", $form);
+		
+		// Initialize form
+		initializeForm($form);
+		
+		// Show flavors selection
+		$('[name="inputType"]', $form).on("change", function (e) {
+			showFlavorsSelection($form);
+		});
+		
+		// Form events
+		$form
+		// Disable form submit on keypress (Enter)
+		.on("keyup keypress", ".form-control", function (e) {
+			if ((e.keyCode || e.which) === 13) {
+				e.preventDefault();
+				return false;
+			}
+		})
+		// Disable default form submit (replaced by the validator submit handler)
+		.on("submit", function (event) {
+			event.preventDefault();
+			return false;
+		});
+		
+		$.validator.addMethod("isAlpha", function (value, element) {
+			return this.optional(element) || /^([A-Za-z0-9]|\.|-|_)+$/.test(value);
+		}, "This field contains characters that are not allowed.");
+		
+		// Redefine validator field events (keyup, focusout, ...)
+		$.validator.setDefaults({
+			// Redefine keyup functionality for inputs that require remote validations (isUnique rule is on)
+			onkeyup: function () {
+				var originalKeyUp = $.validator.defaults.onkeyup;
+				var customKeyUp = function (element, event) {
+					var validator = $form.data("validator");
+					if (validator?.settings?.rules[element.name]?.isUnique === true && typeof validator?.invalid[element.name] === "undefined") {
+						return false;
+					} else {
+						return originalKeyUp.call(this, element, event);
+					}
+				}
+				return customKeyUp;
+			}(),
+			// Redefine focusout functionality for inputs that affect the validity of other
+			onfocusout: function () {
+				var originalFocusOut = $.validator.defaults.onfocusout;
+				var customFocusOut = function (element, event) {
+					if (element.name === "inputPassword") {
+						$('[name="inputSSHKey"]', this.currentForm).removeData("previousValue").valid();
+					} else if (element.name === "inputSSHKey") {
+						$('[name="inputPassword"]', this.currentForm).removeData("previousValue").valid();
+					}
+					return originalFocusOut.call(this, element, event);
+				}
+				return customFocusOut;
+			}()
+		});
+		
+		// Custom validation for hostname (unique values)
+		$.validator.addMethod('isUnique', function (value, element) {
+			return checkUnique(this, value, element);
+		}, function (params, element) {
+			var message = "Value already in use";
+				 if (typeof $(element).attr("server-down") !== "undefined") { message = "Server inaccessible. Can\'t verify value validity."; }
+			else if (element.name.startsWith("inputHostname")) { message = "Hostname already in use"; }
+			return message;
+		});
+		
+		$.validator.addMethod("require_one", function (value, element, options) {
+			var numberRequired = 1;
+			var selector = options[0];
+			// Look for the selector within the parent form
+			var validOrNot = $(selector, element.form).filter(function () {
+				 // Each field is kept if it has a value
+				 return $(this).val() !== "";
+				 // Set to true if there are enough, else to false
+			}).length >= numberRequired;
+			return validOrNot;
+		}, function (params, element) {
+			var message = "Please fill out at least one of the fields above.";
+			switch (element?.name) {
+				case "inputPassword":
+				case "inputSSHKey"  : message = "Please fill out either the password or the SSH key."; break;
+			}
+			return message;
+		});
+		
+		// Form validation rules
+		var fValidator = $form.validate({
+			rules: {
+				inputHostname      : { required: true, isAlpha: true, isUnique: true },
+				inputUsername      : { required: true },
+				inputPassword      : { require_one: [ ".authPassKey" ] },
+				sshKey             : { require_one: [ ".authPassKey" ] },
+				inputProcessorcount: { min: 1 },
+				inputMemorysize    : { min: 1 },
+				inputDiskspacesize : { min: 1 },
+				inputSwapspacesize : { min: 0 },
+				inputFlavor        : { required: '[name="inputType"][value="openstack"]:checked' }
+				
+			},
+			highlight: function (element, errorClass) {
+				if ($(element).hasClass("authPassKey")) {
+					$(element).closest(".form-group").addClass("has-error");
+				} else {
+					$(element).parent().addClass("has-error");
+				}
+			},
+			unhighlight: function (element, errorClass) {
+				if ($(element).hasClass("authPassKey")) {
+					$(element).closest(".form-group").removeClass("has-error");
+				} else {
+					$(element).parent().removeClass("has-error");
+				}
+			},
+			messages: { },
+			errorPlacement: function (error, element) {
+				if (element.hasClass("authPassKey")) {
+					error.appendTo($("#inputSSHKey").parent());
+				} else {
+					error.appendTo(element.parent());
+				}
+			},
+			success: function (label) {
+				label.remove();
+			},
+			submitHandler: function (form) {
+				saveNode($form);
+				return false;
+			},
+			invalidHandler: function (event, validator) { }
+		});
+    });
+	
+//# sourceURL=topology-edit.fragment.js
+</script>

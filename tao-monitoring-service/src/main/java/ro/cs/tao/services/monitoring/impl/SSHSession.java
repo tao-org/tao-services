@@ -9,6 +9,8 @@ import org.apache.sshd.common.session.SessionContext;
 import org.springframework.web.socket.WebSocketSession;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.topology.NodeDescription;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -40,69 +42,23 @@ public class SSHSession {
     }
 
     public void connect(String target) throws IOException {
-        sendTextToTerminal(UpdateListener.Stream.STDERR, "Connecting to " + target + "...\r\n");
-        sshSession = new CompletableFuture<>();
         String[] targetSplit = target.split(":", 2);
         String hostname = targetSplit[0];
         Integer port = Optional.of(targetSplit).filter(a->a.length > 1).map(a->Integer.valueOf(a[1])).orElse(22);
         final ConfigurationProvider configurationProvider = ConfigurationManager.getInstance();
         final String user = configurationProvider.getValue("topology.master.user");
+        final String password = configurationProvider.getValue("topology.master.password");
         final String keyPath = configurationProvider.getValue("topology.node.ssh.key");
-        client.setKeyIdentityProvider(new FileKeyPairProvider(Path.of(keyPath)));
-        client.connect(user, hostname, port).addListener(cf->{
-            try {
-                cf.verify();
-            } catch (IOException e) {
-                this.sshSession.completeExceptionally(e);
-                this.client.stop();
-                this.updateListener.update(new UpdateListener.ErrorEvent(e));
-            }
-            ClientSession session = cf.getSession();
-            this.sshSession.complete(session);
-            CompletableFuture<Void> authenticaded = new CompletableFuture<Void>();
-            try {
-                session.auth().addListener(authFuture->{
-                    try {
-                        authFuture.verify();
-                        this.shellChannel = session.createShellChannel();
-                        shellChannel.setPtyType("xterm-256color");
-                        shellChannel.setOut(new StreamOutputStream(UpdateListener.Stream.STDOUT));
-                        shellChannel.setErr(new StreamOutputStream(UpdateListener.Stream.STDERR));
-                        shellChannel.open().addListener(o->{
-                            try {
-                                if (o.getException() != null) {
-                                    throw o.getException();
-                                }
-                                o.verify();
-                                if (o.isOpened()) {
-                                    log.finest("Channel opened");
-                                } else {
-                                    throw new IOException("Channel not opened");
-                                }
-                            } catch (Throwable e) {
-                                authenticaded.completeExceptionally(e);
-                            }
-                            authenticaded.complete(null);
-                        });
-                    } catch (Exception e) {
-                        authenticaded.completeExceptionally(e);
-                    }
-                });
-            } catch (IOException e) {
-                authenticaded.completeExceptionally(e);
-            }
-            authenticaded.handle((r, e) -> {
-                if (e == null) {
-                    log.finest("Authenticated!");
-                    sendTextToTerminal(UpdateListener.Stream.STDERR, "Authenticated successfuly.\r\n");
-                } else {
-                    log.severe("Not authenticated: " + e.getMessage());
-                    sendTextToTerminal(UpdateListener.Stream.STDERR, "Error authenticating.\r\n");
-                }
-                return null;
-            });
-            //askForPassword();
-        });
+        openClient(hostname, port, user, password, keyPath);
+    }
+
+    public void connect(NodeDescription node) throws IOException {
+        final String user = node.getUserName();
+        String keyPath = node.getSshKey();
+        if (StringUtilities.isNullOrEmpty(keyPath)) {
+            ConfigurationManager.getInstance().getValue("topology.node.ssh.key");
+        }
+        openClient(node.getId(), 22, node.getUserName(), node.getUserPass(), node.getSshKey());
     }
 
     public void enteredPassword(String password) {
@@ -162,6 +118,76 @@ public class SSHSession {
 
     private void sendTextToTerminal(UpdateListener.Stream stderr, String text) {
         updateListener.update(new UpdateListener.BytesEvent(stderr, text.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private void openClient(String host, int port, String username, String password, String keyPath) throws IOException {
+        sendTextToTerminal(UpdateListener.Stream.STDERR, "Connecting to " + host + "...\r\n");
+        sshSession = new CompletableFuture<>();
+        if (keyPath != null) {
+            client.setKeyIdentityProvider(new FileKeyPairProvider(Path.of(keyPath)));
+        } else {
+            client.setPasswordIdentityProvider(new PasswordIdentityProvider() {
+
+                @Override
+                public Iterable<String> loadPasswords(SessionContext session) throws IOException, GeneralSecurityException {
+                    return Arrays.asList(password);
+                }
+            });
+        }
+        client.connect(username, host, port).addListener(cf->{
+            try {
+                cf.verify();
+            } catch (IOException e) {
+                this.sshSession.completeExceptionally(e);
+                this.client.stop();
+                this.updateListener.update(new UpdateListener.ErrorEvent(e));
+            }
+            ClientSession session = cf.getSession();
+            this.sshSession.complete(session);
+            CompletableFuture<Void> authenticaded = new CompletableFuture<Void>();
+            try {
+                session.auth().addListener(authFuture->{
+                    try {
+                        authFuture.verify();
+                        this.shellChannel = session.createShellChannel();
+                        shellChannel.setPtyType("xterm-256color");
+                        shellChannel.setOut(new StreamOutputStream(UpdateListener.Stream.STDOUT));
+                        shellChannel.setErr(new StreamOutputStream(UpdateListener.Stream.STDERR));
+                        shellChannel.open().addListener(o->{
+                            try {
+                                if (o.getException() != null) {
+                                    throw o.getException();
+                                }
+                                o.verify();
+                                if (o.isOpened()) {
+                                    log.finest("Channel opened");
+                                } else {
+                                    throw new IOException("Channel not opened");
+                                }
+                            } catch (Throwable e) {
+                                authenticaded.completeExceptionally(e);
+                            }
+                            authenticaded.complete(null);
+                        });
+                    } catch (Exception e) {
+                        authenticaded.completeExceptionally(e);
+                    }
+                });
+            } catch (IOException e) {
+                authenticaded.completeExceptionally(e);
+            }
+            authenticaded.handle((r, e) -> {
+                if (e == null) {
+                    log.finest("Authenticated!");
+                    sendTextToTerminal(UpdateListener.Stream.STDERR, "Authenticated successfuly.\r\n");
+                } else {
+                    log.severe("Not authenticated: " + e.getMessage());
+                    sendTextToTerminal(UpdateListener.Stream.STDERR, "Error authenticating.\r\n");
+                }
+                return null;
+            });
+            //askForPassword();
+        });
     }
 
     public UUID getUUID() {

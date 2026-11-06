@@ -1,0 +1,496 @@
+<style>
+	/*------FORM------*/
+	#frmUserEdit {
+		.group-label                   {text-align:inherit;margin-top:0;width:100%;}
+		@media (min-width: 768px)      {
+			.group-section .form-group {margin-bottom:1.5em;}
+			.group-section .form-group:has(+.form-group) {margin-bottom:0.3em;}
+			.control-label             {line-height:1.2;padding-top:0;min-height:2.4em;display:flex;align-items:center;justify-content:flex-end;}
+			.control-label.col-md-12   {min-height:unset;justify-content:flex-start;margin-bottom:0.4em;}
+		}
+		[name="btnSave"]               {float:left;min-width:10em;}
+		.error                         {font-size:0.9em;line-height:1.1;}
+		label.input-group-addon        {cursor:pointer;line-height:1.4;}
+		label.input-group-addon>[type] {vertical-align:middle;margin-top:-3px;}
+		#reset                         {background:none;border:0;opacity:0.8;font-size:1.2em;color:var(--status-info);float:right;}
+		#reset i                       {vertical-align:middle;}
+		#reset:hover,#reset:focus      {opacity:1;}
+		.info-label                    {font-weight:400;font-style:italic;line-height:1.2;padding:0.3em 2.2em 0;}
+		#selectOwner                   {color:var(--form-control-color);
+			[value]                    {color:var(--form-control-color);}
+			[value=""]                 {color:var(--form-control-placeholder);}
+			&:has([value=""]:checked)  {color:var(--form-control-placeholder);}
+		}
+	}
+</style>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        <h4 id="myModalLabel" class="modal-title">Add new user</h4>
+    </div>
+	<div class="modal-body">
+		<!-- FORM -->
+		<form id="frmUserEdit" class="form-horizontal form-newpc" action="" role="form">
+			<div class="row">
+				<label class="col-sm-12 col-md-12 group-label">Profile</label>
+				<div class="col-sm-12 col-md-12 group-section">
+					<div class="form-group">
+						<label for="selectUserType" class="col-sm-3 col-md-3 control-label">User type</label>
+						<div class="col-sm-3 col-md-3"><select id="selectUserType" name="selectUserType" class="form-control"></select></div>
+						<label for="selectUserGroup" class="col-sm-3 col-md-3 control-label">User group</label>
+						<div class="col-sm-3 col-md-3"><select id="selectUserGroup" name="selectUserGroup" class="form-control"></select></div>
+					</div>
+				</div>
+				<div class="col-sm-12 col-md-12 group-section">
+					<div class="form-group has-feedback">
+						<label for="inputUsername" class="col-sm-3 col-md-3 control-label">User name</label>
+						<div class="col-sm-9 col-md-9"><input id="inputUsername" type="text" class="form-control" name="inputUsername" placeholder="User name" autocomplete="off" value=""/></div>
+					</div>
+					<div class="form-group">
+						<label for="inputFirstName" class="col-sm-3 col-md-3 control-label">First name</label>
+						<div class="col-sm-9 col-md-9"><input id="inputFirstName" type="text" class="form-control" name="inputFirstName" placeholder="First name" autocomplete="off" value=""/></div>
+					</div>
+					<div class="form-group">
+						<label for="inputLastName" class="col-sm-3 col-md-3 control-label">Last name</label>
+						<div class="col-sm-9 col-md-9"><input id="inputLastName" type="text" class="form-control" name="inputLastName" placeholder="Last name" autocomplete="off" value=""/></div>
+					</div>
+					<div class="form-group has-feedback">
+						<label for="inputEmail" class="col-sm-3 col-md-3 control-label">Email</label>
+						<div class="col-sm-9 col-md-9"><input id="inputEmail" type="email" class="form-control" name="inputEmail" placeholder="Email address" autocomplete="off" value=""/></div>
+					</div>
+					<div class="form-group has-feedback">
+						<label for="inputEmail2" class="col-sm-3 col-md-3 control-label">Alternate email</label>
+						<div class="col-sm-9 col-md-9"><input id="inputEmail2" type="email" class="form-control" name="inputEmail2" placeholder="Alternate email address" autocomplete="off" value=""/></div>
+					</div>
+				</div>
+				<div class="col-sm-12 col-md-12 group-section">
+					<div class="form-group">
+						<label for="inputPhone" class="col-sm-3 col-md-3 control-label">Phone</label>
+						<div class="col-sm-9 col-md-9"><input id="inputPhone" type="text" class="form-control" name="inputPhone" placeholder="Phone number" autocomplete="off" value=""/></div>
+					</div>
+					<div class="form-group">
+						<label for="inputOrg" class="col-sm-3 col-md-3 control-label">Organization</label>
+						<div class="col-sm-9 col-md-9"><input id="inputOrg" type="text" class="form-control" name="inputOrg" placeholder="Organization" autocomplete="off" value=""/></div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<label class="col-sm-12 col-md-12 group-label">Workspace Owner</label>
+				<label for="selectOwner" class="col-sm-3 col-md-3 control-label">Owner</label>
+				<div class="col-sm-9 col-md-9">
+					<select class="form-control" id="selectOwner" name="selectOwner"></select>
+				</div>
+				<label class="col-sm-9 col-md-9 col-sm-offset-3 col-md-offset-3 info-label">Select which user's workspace to use</label>
+			</div>
+			<div class="row">
+				<label class="col-sm-12 col-md-12 group-label">CPU &amp; Resource quota</label>
+				<div class="col-sm-6 col-md-6">
+					<div class="form-group">
+						<label for="cpuQuota" class="col-sm-12 col-md-12 control-label">CPU</label>
+						<div class="col-sm-12 col-md-12">
+							<div class="input-group">
+								<label class="input-group-addon"><input id="chkCpuQuota" class="val-toggle-unmetered" type="checkbox" checked="checked"> Unmetered</label>
+								<input id="cpuQuota" type="number" class="form-control val-togglable" name="cpuQuota" min="0" autocomplete="off" value="" disabled="disabled"/>
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="memoryQuota" class="col-sm-12 col-md-12 control-label">Memory (MB)</label>
+						<div class="col-sm-12 col-md-12">
+							<div class="input-group">
+								<label class="input-group-addon"><input id="chkMemoryQuota" class="val-toggle-unmetered" type="checkbox" checked="checked"> Unmetered</label>
+								<input id="memoryQuota" type="number" class="form-control val-togglable" name="memoryQuota" min="0" autocomplete="off" value="" disabled="disabled"/>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-sm-6 col-md-6">
+					<div class="form-group">
+						<label for="inputQuota" class="col-sm-12 col-md-12 control-label">Input (GB)</label>
+						<div class="col-sm-12 col-md-12">
+							<div class="input-group">
+								<label class="input-group-addon"><input id="chkInputQuota" class="val-toggle-unmetered" type="checkbox" checked="checked"> Unmetered</label>
+								<input id="inputQuota" type="number" class="form-control val-togglable" name="inputQuota" min="0" autocomplete="off" value="" disabled="disabled"/>
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="processingQuota" class="col-sm-12 col-md-12 control-label">Processing (GB)</label>
+						<div class="col-sm-12 col-md-12">
+							<div class="input-group">
+								<label class="input-group-addon"><input id="chkProcessingQuota" class="val-toggle-unmetered" type="checkbox" checked="checked"> Unmetered</label>
+								<input id="processingQuota" type="number" class="form-control val-togglable" name="processingQuota" min="0" autocomplete="off" value="" disabled="disabled"/>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12 col-md-12">
+					<button id="reset" type="reset"><span>Reset&nbsp;&nbsp;<i class="fa fa-recycle"></i></span></button>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="saveUser"  type="submit" class="btn btn-flat btn-primary" name="btnSave">Add user</button>
+				<button id="btnCancel" type="button" class="btn btn-flat btn-default" name="btnCancel" data-dismiss="modal">Cancel</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<script type="text/javascript">
+	var action        = window.userOpStack?.action || "plus";
+	var initData      = $.extend({}, window.userOpStack?.dna || {});
+    var $myModalNodes = $("#myModalNodes");
+	
+	// Populate 
+	function populateSelectElemUrl($selectElem, url, placeholder) {
+		$selectElem.html(`<option value="">${placeholder}</option>`);
+		var deferred = $.Deferred();
+			$.when(ajaxGeneralCallFnc(url, null, 'GET', 'json')).done(function (response, textStatus, jqXHR) {
+				if (response.status === window.responseStatus.success) {
+					$.each(response.data, function (key, value) {
+						$selectElem.append(`<option value="${value}">${key}</option>`);
+					});
+					deferred.resolve(response);
+				} else {
+					deferred.reject(jqXHR, textStatus, response);
+				}
+			}).fail(function (jqXHR, textStatus, errorThrown) {
+				deferred.reject(jqXHR, textStatus, errorThrown);
+			});
+		return deferred.promise();
+	}
+	
+	// Initialize form
+	function initializeForm($form) {
+		// Populate user types with available options
+		populateSelectElem($('[name="selectUserType"]', $form), "UserType");
+		if (action === "edit") {
+			$.when(populateSelectElemUrl($('[name="selectOwner"]', $form), baseRestApiURL + "user/list", 'Workspace owner not set...')).always(function () {
+				var currentUserId = initData?.id          || "-";
+				var selectedOwner = initData?.workspaceId || "";
+				$(`[name="selectOwner"]>option[value="${currentUserId}"]`, $form).remove();
+				$(`[name="selectOwner"]>option[value="${selectedOwner}"]`, $form).prop('selected', true);
+			});
+		} else {
+			$('[name="selectOwner"]', $form).closest(".row").remove();
+		}
+		
+		// Populate user groups with available options
+		$.each(taoUserGroups.data, function (i, item) { $('[name="selectUserGroup"]', $form).append($('<option>', { value: item.id, text: item.name })); });
+		
+		// Populate form fields
+		$('[name="inputUsername"  ]', $form).val(initData?.username           || "");
+		$('[name="inputEmail"     ]', $form).val(initData?.email              || "");
+		$('[name="inputEmail2"    ]', $form).val(initData?.alternativeEmail   || "");
+		$('[name="inputFirstName" ]', $form).val(initData?.firstName          || "");
+		$('[name="inputLastName"  ]', $form).val(initData?.lastName           || "");
+		$('[name="inputPhone"     ]', $form).val(initData?.phone              || "");
+		$('[name="inputOrg"       ]', $form).val(initData?.organization       || "");
+		$('[name="cpuQuota"       ]', $form).val(initData?.cpuQuota           || -1);
+		$('[name="memoryQuota"    ]', $form).val(initData?.memoryQuota        || -1);
+		$('[name="inputQuota"     ]', $form).val(initData?.inputQuota         || -1);
+		$('[name="processingQuota"]', $form).val(initData?.processingQuota    || -1);
+		$('[name="selectUserType" ]', $form).val(initData?.userType           || "INTERNAL");
+		$('[name="selectUserGroup"]', $form).val(_.first(initData.groups)?.id || _.find(taoUserGroups.data, { "name": "USER" })?.id);
+		
+		// Action specific settings
+		if (action === "edit") {
+			$("#myModalLabel").html("Edit user");
+			$("#saveUser"    ).html("Save changes");
+			$("#reset"       ).html('<span>Reset changes&nbsp;&nbsp;<i class="fa fa-refresh"></i></span>');
+			$('[name="inputUsername"]', $form).attr("disabled", "disabled");
+			$('[name="inputEmail"   ]', $form).attr("disabled", "disabled");
+		}
+	}
+	
+	// Trigger quota fields adjustments based on their values
+	function adjustQuotas($form) {
+		$('[name="cpuQuota"       ]', $form).trigger("check:togglebyval");
+		$('[name="memoryQuota"    ]', $form).trigger("check:togglebyval");
+		$('[name="inputQuota"     ]', $form).trigger("check:togglebyval");
+		$('[name="processingQuota"]', $form).trigger("check:togglebyval");
+	}
+	
+	// Save user
+	function saveUser($form) {
+		var formData = {
+			"id"              : action === "edit" ? initData.id : null,
+			"password"        : null,
+			"username"        : $('[name="inputUsername"  ]', $form).val(),
+			"email"           : $('[name="inputEmail"     ]', $form).val(),
+			"alternativeEmail": $('[name="inputEmail2"    ]', $form).val(),
+			"firstName"       : $('[name="inputFirstName" ]', $form).val(),
+			"lastName"        : $('[name="inputLastName"  ]', $form).val(),
+			"phone"           : $('[name="inputPhone"     ]', $form).val(),
+			"organization"    : $('[name="inputOrg"       ]', $form).val(),
+			"cpuQuota"        : $('[name="cpuQuota"       ]:disabled', $form).length ? -1 : parseInt($('[name="cpuQuota"       ]', $form).val()),
+			"memoryQuota"     : $('[name="memoryQuota"    ]:disabled', $form).length ? -1 : parseInt($('[name="memoryQuota"    ]', $form).val()),
+			"inputQuota"      : $('[name="inputQuota"     ]:disabled', $form).length ? -1 : parseInt($('[name="inputQuota"     ]', $form).val()),
+			"processingQuota" : $('[name="processingQuota"]:disabled', $form).length ? -1 : parseInt($('[name="processingQuota"]', $form).val()),
+			"userType"        : $('[name="selectUserType" ]', $form).val(),
+			"groups"          : [ taoUserGroups.getById($('[name="selectUserGroup"]', $form).val()) ]
+		};
+		if (action !== "edit") {
+			formData.status        = "PENDING";
+			formData.lastLoginDate = null;
+		}
+		$.ajax({
+			cache   : false,
+			url     : baseRestApiURL + "admin/users" + (action === "edit" ? "/" + initData.id : ""),
+			type    : (action === "edit" ? "PUT" : "POST"),
+			dataType: "json",
+			data    : JSON.stringify(formData),
+			headers : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				if (jqXHR.status === 500) {
+					showMsg("Error " + (action === "edit" ? "updating" : "adding") + " user. Please check your data and try again.", "ERROR");
+				} else if (jqXHR.status === 400 || jqXHR.status === 406) {
+					showMsg("Error " + (action === "edit" ? "updating" : "adding") + " user. Please check your data, one or more values for the attributes was not in the acceptable range.", "ERROR");
+				} else {
+					showMsg("Unknown status error [" + textStatus + "]. Please check your data and try again.", "ERROR");
+				}
+			},
+			success: function (response) {
+				if (response.status === window.responseStatus.success) {
+					showMsg("User successfully " + (action === "edit" ? "updated" : "added") + ".", "SUCCESS");
+					
+					// Set workspace owner
+					var currentOwnerId = initData?.workspaceId || "";
+					var ownerIdToBeSet = $('[name="selectOwner"]', $form).val();
+					if (action === "edit") {
+						var ownerData = { currentUserId: initData.id };
+						ownerIdToBeSet !== "" && (ownerData.userId = ownerIdToBeSet);
+						$.ajax({
+							url    : baseRestApiURL + "user/useWorkspace",
+							method : ownerIdToBeSet === "" ? "DELETE" : "POST",
+							data   : ownerData,
+							headers: {
+								"Content-Type": "application/x-www-form-urlencoded",
+								"X-Auth-Token": window.tokenKey
+							},
+							success: function (response) {
+								showMsg(response.message, response.status);
+								$myModalNodes.modal("hide");
+								panelComp.refreshData();
+							},
+							error  : function (jqXHR, textStatus, errorThrown) {
+								showMsg(errorThrown, "ERROR");
+							}
+						});
+					} else {
+						$myModalNodes.modal("hide");
+						panelComp.refreshData();
+					}
+
+				} else {
+					showMsg(response.message, "ERROR");
+				}
+			}
+		});
+	}
+	
+	// Check unique values for username and email
+	function checkUnique(validator, value, element) {
+		var previous = validator.previousValue(element);
+		if (previous.old === value) { return previous.valid; }
+		previous.old = value;
+		validator.startRequest(element);
+		$.ajax({
+			cache      : false,
+			type       : "get",
+			url        : baseRestApiURL + "admin/users/unicity",
+			dataType   : "json",
+			contentType: "application/json; charset=utf-8",
+			headers    : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				$(element).attr("server-down", "true");
+				var errors = {};
+				errors[element.name] = validator.defaultMessage(element, "isUnique");
+				validator.invalid[element.name] = true;
+				validator.showErrors(errors);
+				previous.valid = false;
+				validator.stopRequest(element, false);
+			},
+			success: function (response) {
+				$(element).removeAttr("server-down");
+				var isValid = false;
+				var users = chkTSRF(response);
+				if ($.isArray(users)) {
+					var searchBy  = element.name;
+					var searchFor = element.value.trim().toLowerCase();
+					switch (element.name) {
+						case "inputUsername": searchBy = "username"; break;
+						case "inputEmail"   : searchBy = "email"   ; break;
+						case "inputEmail2"  : searchBy = "email"   ; break;
+					}
+					// Element is valid when it's value is not found in the database
+					isValid = (_.where(users, { [searchBy]: element.value.trim().toLowerCase() }).length === 0);
+					// Element is valid when it matches its initial value (edit action)
+					!isValid && (action === "edit" && initData[searchBy] === searchFor) && (isValid = true);
+					// Alternate email should not match the email
+					isValid && (element.name === "inputEmail2" && searchFor !== "" && searchFor === $('[name="inputEmail"]', validator.currentForm).val()) && (isValid = false);
+				}
+				if (true === isValid) {
+					var submitted = validator.formSubmitted;
+					validator.prepareElement(element);
+					validator.formSubmitted = submitted;
+					validator.successList.push(element);
+					delete validator.invalid[element.name];
+					validator.showErrors();
+				} else {
+					var errors = {};
+					errors[element.name] = validator.defaultMessage(element, "isUnique");
+					validator.invalid[element.name] = true;
+					validator.showErrors(errors);
+				}
+				previous.valid = isValid;
+				validator.stopRequest(element, isValid);
+			}
+		});
+		return "pending";
+	}
+	
+	$(document).ready(function () {
+		var $form = $("#frmUserEdit");
+		
+		// Initialize form
+		initializeForm($form);
+		
+		// Form events
+		$form
+		// Toggle unmetered fields on click
+		.on("change", ".val-toggle-unmetered", function (e) {
+			if ($(this).is(':checked')) {
+				$(this).closest(".input-group").find(".val-togglable").val("").attr("disabled", "disabled").valid();
+			} else {
+				$(this).closest(".input-group").find(".val-togglable").removeAttr("disabled");
+			}
+		})
+		// Adjust quotas inputs availability based on their values
+		.on("check:togglebyval", ".val-togglable", function (e) {
+			var v = $(this).val();
+			if (v === "-1") {
+				$(this).closest(".input-group").find(".val-toggle-unmetered").prop("checked", true);
+				$(this).val("").attr("disabled", "disabled").valid();
+			} else {
+				$(this).closest(".input-group").find(".val-toggle-unmetered").prop("checked", false);
+				$(this).removeAttr("disabled");
+			}
+		})
+		// Toggle unmetered fields on user group change
+		.on("change", '[name="selectUserGroup"]', function (e) {
+			var selectedUserGroup = taoUserGroups.getById(this.value);
+			$('[name="inputQuota"     ]', e.delegateTarget).val(selectedUserGroup.inputQuota     ).trigger("check:togglebyval");
+			$('[name="processingQuota"]', e.delegateTarget).val(selectedUserGroup.processingQuota).trigger("check:togglebyval");
+		})
+		// Disable form submit on keypress (Enter)
+		.on("keyup keypress", ".form-control", function (e) {
+			if ((e.keyCode || e.which) === 13) {
+				e.preventDefault();
+				return false;
+			}
+		})
+		// Disable default form submit (replaced by the validator submit handler)
+		.on("submit", function (event) {
+			event.preventDefault();
+			return false;
+		});
+		
+		// Redefine validator field events (keyup, focusout, ...)
+		$.validator.setDefaults({
+			// Redefine keyup functionality for inputs that require remote validations (isUnique rule is on)
+			onkeyup: function () {
+				var originalKeyUp = $.validator.defaults.onkeyup;
+				var customKeyUp = function (element, event) {
+					var validator = $form.data("validator");
+					if (validator?.settings?.rules[element.name]?.isUnique === true && typeof validator?.invalid[element.name] === "undefined") {
+						return false;
+					} else {
+						return originalKeyUp.call(this, element, event);
+					}
+				}
+				return customKeyUp;
+			}(),
+			// Redefine focusout functionality for inputs that affect the validity of other
+			onfocusout: function () {
+				var originalFocusOut = $.validator.defaults.onfocusout;
+				var customFocusOut = function (element, event) {
+					if (element.name === "inputEmail") {
+						$('[name="inputEmail2"]', this.currentForm).removeData("previousValue").valid();
+					}
+					return originalFocusOut.call(this, element, event);
+				}
+				return customFocusOut;
+			}()
+		});
+		
+		// Custom validation for username and email type fields (unique values)
+		$.validator.addMethod('isUnique', function (value, element) {
+			return checkUnique(this, value, element);
+		}, function (params, element) {
+			var message = "Value already in use";
+				 if (typeof $(element).attr("server-down") !== "undefined") { message = "Server inaccessible. Can\'t verify value validity."; }
+			else if (element.name.startsWith("inputUsername"))              { message = "Username already in use";                            }
+			else if (element.name === "inputEmail2" && element.value === $('[name="inputEmail"]', this.currentForm).val()) { message = "Alternate email shound not match the email"; }
+			else if (element.name.startsWith("inputEmail"))                 { message = "Email already in use";                               }
+			return message;
+		});
+		
+		// Form validation rules
+		var fValidator = $form.validate({
+			rules: {
+				inputUsername  : { required: true, isUnique: true },
+				inputFirstName : { required: true },
+				inputLastName  : { required: true },
+				inputEmail     : { required: true, isUnique: true },
+				inputEmail2    : { isUnique: true },
+				cpuQuota       : { required: "#chkCpuQuota:not(:checked)"        },
+				memoryQuota    : { required: "#chkMemoryQuota:not(:checked)"     },
+				inputQuota     : { required: "#chkInputQuota:not(:checked)"      },
+				processingQuota: { required: "#chkProcessingQuota:not(:checked)" },
+			},
+			highlight: function(element, errorClass) {
+				$(element).parent().addClass("has-error");
+			},
+			unhighlight: function(element, errorClass) {
+				$(element).parent().removeClass("has-error");
+			},
+			messages: { },
+			errorPlacement: function(error, element) {
+				error.appendTo(element.parent());
+			},
+			success: function(label) {
+				label.remove();
+			},
+			submitHandler: function (form) {
+				saveUser($form);
+				return false;
+			},
+			invalidHandler: function (event, validator) { }
+		});
+		
+		// Reset form data
+		$form.on("reset", function (e) {
+			e.preventDefault();
+			initializeForm($(this), initData);
+			fValidator.resetForm();
+			adjustQuotas($form);
+		});
+		
+		// Adjust user quotas (call after form events and validation definitions)
+		adjustQuotas($form);
+	});
+	
+//# sourceURL=users-plus.js
+</script>

@@ -1,14 +1,14 @@
 package ro.cs.tds.test;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
 import java.lang.reflect.Array;
 
 /**
@@ -18,7 +18,7 @@ public abstract class AbstractServiceIntegrationTest <T> {
 
     @LocalServerPort
     private int port;
-    private TestRestTemplate restTemplate = new TestRestTemplate();
+    private RestTemplate restTemplate = new RestTemplate();
 
     private Class<T> classItem;
     protected abstract String getUrlMappingStr();
@@ -117,21 +117,17 @@ public abstract class AbstractServiceIntegrationTest <T> {
             // check if the item was really deleted and does not exist in the database
             return;
         }
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        ObjectMapper objectMapper = JsonMapper.builder()
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
         T[] items = null;
-        try {
-            if (isArray) {
-                Class<? extends T[]> arrayType =
-                        (Class<? extends T[]>) Array.newInstance(classItem, 0).getClass();
-                items = objectMapper.readValue(responseBody, arrayType);
-            } else {
-                items = (T[])Array.newInstance(classItem, 1);
-                items[0] = objectMapper.readValue(responseBody, classItem);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            Assert.assertFalse(true);
+        if (isArray) {
+            Class<? extends T[]> arrayType =
+                    (Class<? extends T[]>) Array.newInstance(classItem, 0).getClass();
+            items = objectMapper.readValue(responseBody, arrayType);
+        } else {
+            items = (T[])Array.newInstance(classItem, 1);
+            items[0] = objectMapper.readValue(responseBody, classItem);
         }
         for (int i = 0; i<items.length; i++) {
             T item = (T)items[i];

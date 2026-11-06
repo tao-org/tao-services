@@ -19,16 +19,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.Tag;
 import ro.cs.tao.component.StringIdentifiable;
 import ro.cs.tao.orchestration.Orchestrator;
+import ro.cs.tao.persistence.AdminKeyProvider;
 import ro.cs.tao.persistence.NodeDBProvider;
+import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.TopologyService;
+import ro.cs.tao.topology.AdminKey;
+import ro.cs.tao.topology.AdminKeyId;
 import ro.cs.tao.topology.NodeDescription;
 import ro.cs.tao.topology.ServiceDescription;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.utils.executors.MemoryUnit;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -45,10 +54,13 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     @Autowired
     private NodeDBProvider nodeDBProvider;
 
+    @Autowired
+    private AdminKeyProvider adminKeyProvider;
+
     /**
      * List all the tags associated with topology nodes.
      */
-    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/tags", "/tags/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getNodeTags();
         if (objects == null ) {
@@ -60,7 +72,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     /**
      * Returns the worker nodes that are active.
      */
-    @RequestMapping(value = "/active", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/active", "/active/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getActiveNodes() {
         return prepareResult(service.getNodes(true));
     }
@@ -78,7 +90,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
      * Note: if the OpenStack provider is activated, it is the list provided by the remote environment.
      * Otherwise, it is a list of current nodes hardware configuration.
      */
-    @RequestMapping(value = "/flavors", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/flavors", "/flavors/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNodeFlavors() {
         return prepareResult(service.getNodeFlavors());
     }
@@ -86,7 +98,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     /**
      * Checks if the OpenStack (or other) external provider is active or not.
      */
-    @RequestMapping(value = "/external", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/external", "/external/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> isExternalProviderAvailable() {
         return prepareResult(service.isExternalProviderAvailable());
     }
@@ -94,7 +106,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     /**
      * Returns a list of active node names (and 'Any') that will serve for assigning a component to be executed on a specific node.
      */
-    @RequestMapping(value = "/available", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/available", "/available/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getNodeAffinities() {
         List<NodeDescription> activeNodes = service.getNodes(true);
         List<String> names = activeNodes.stream().map(StringIdentifiable::getId).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
@@ -111,7 +123,7 @@ public class TopologyController extends DataEntityController<NodeDescription, St
      * @param serviceName The name of the service
      * @param version   The version of the service
      */
-    @RequestMapping(value = "/install", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/install", "/install/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> installServices(@RequestParam("nodeId") String nodeId,
                                                               @RequestParam(name = "service", required = false) String serviceName,
                                                               @RequestParam(name = "version", required = false) String version) {
@@ -137,17 +149,70 @@ public class TopologyController extends DataEntityController<NodeDescription, St
     }
 
     @Override
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/{id:.+}", "/{id:.+}/" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody NodeDescription entity) {
-        entity.setAppId(Orchestrator.getInstance().getId());
+        prepareForSave(entity);
         return super.save(entity);
     }
 
+    @RequestMapping(value = { "/{id:.+}", "/{id:.+}/" }, method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> save(@RequestPart("entity") NodeDescription entity,
+                                                   @RequestPart(value = "sshKey", required = false) MultipartFile sshKey) {
+        try {
+            prepareForSave(entity);
+            return persistSshKeyOnSuccess(super.save(entity), sshKey);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
     @Override
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/{id:.+}", "/{id:.+}/" }, method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id, @RequestBody NodeDescription entity) {
+        boolean isActive = entity.getActive();
+        prepareForUpdate(entity);
+        entity.setActive(isActive);
+        return super.update(id, entity);
+    }
+
+    @RequestMapping(value = { "/{id:.+}", "/{id:.+}/" }, method = RequestMethod.PUT, consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") String id,
+                                                     @RequestPart("entity") NodeDescription entity,
+                                                     @RequestPart(value = "sshKey", required = false) MultipartFile sshKey) {
+        try {
+            prepareForUpdate(entity);
+            return persistSshKeyOnSuccess(super.update(id, entity), sshKey);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    private void prepareForSave(NodeDescription entity) {
+        entity.setAppId(Orchestrator.getInstance().getId());
+        if (entity.getSshKey() != null && entity.getSshKey().trim().isEmpty()) {
+            entity.setSshKey(null);
+        }
+        if (entity.getUserPass() != null && entity.getUserPass().trim().isEmpty()) {
+            entity.setUserPass(null);
+        }
+        if (entity.getFlavor().getMemoryUnit() == null) {
+            entity.getFlavor().setMemoryUnit(MemoryUnit.GB); // by default, consider GB as memory unit in cases when it's not specified
+        }
+    }
+
+    private void prepareForUpdate(NodeDescription entity) {
         final NodeDescription initial = service.findById(entity.getId());
         entity.setFlavor(initial.getFlavor());
+        entity.setActive(initial.getActive());
+        entity.setVolatile(initial.getVolatile());
+        entity.setServicesStatus(initial.getServicesStatus());
+        entity.setTags(initial.getTags());
+        if (entity.getSshKey() != null && entity.getSshKey().trim().isEmpty()) {
+            entity.setSshKey(null);
+        }
+        if (entity.getUserPass() != null && entity.getUserPass().trim().isEmpty()) {
+            entity.setUserPass(null);
+        }
         if (entity.getAppId() == null) {
             entity.setAppId(initial.getAppId());
         }
@@ -157,6 +222,33 @@ public class TopologyController extends DataEntityController<NodeDescription, St
         if (entity.getOwner() == null) {
             entity.setOwner(initial.getOwner());
         }
-        return super.update(id, entity);
+    }
+
+    private ResponseEntity<ServiceResponse<?>> persistSshKeyOnSuccess(ResponseEntity<ServiceResponse<?>> response,
+                                                                      MultipartFile sshKey) throws IOException, PersistenceException {
+        final ServiceResponse<?> body = response.getBody();
+        if (body != null
+                && body.getStatus() == ResponseStatus.SUCCEEDED
+                && body.getData() instanceof NodeDescription node) {
+            persistSshKey(sshKey, node);
+        }
+        return response;
+    }
+
+    private void persistSshKey(MultipartFile sshKey, NodeDescription node) throws IOException, PersistenceException {
+        if (sshKey == null || sshKey.isEmpty()) {
+            return;
+        }
+        final String key = new String(sshKey.getBytes(), StandardCharsets.UTF_8);
+        if (key.trim().isEmpty()) {
+            return;
+        }
+        final AdminKey adminKey = new AdminKey(currentOwner(), node.getId(), key);
+        final AdminKeyId id = adminKey.getId();
+        if (adminKeyProvider.get(id) == null) {
+            adminKeyProvider.save(adminKey);
+        } else {
+            adminKeyProvider.update(adminKey);
+        }
     }
 }

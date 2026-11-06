@@ -5,6 +5,7 @@ import ro.cs.tao.user.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"password", "passwordResetKey", "apiKey"})
 public class UserInfo {
     private String id;
     private String username;
@@ -29,6 +30,9 @@ public class UserInfo {
     private UserType userType;
     // key used for 1st time password set for TAO internal users, or for future password resets requested by TAO internal users
     private String passwordResetKey;
+    private String apiKey;
+    private LocalDateTime apiKeyExpiration;
+    private String workspaceId;
 
     private LocalDateTime created;
     private LocalDateTime expiresOn;
@@ -62,11 +66,14 @@ public class UserInfo {
         this.status = user.getStatus();
         this.userType = user.getUserType();
         this.passwordResetKey = user.getPasswordResetKey();
+        this.apiKey = user.getApiKey();
+        this.apiKeyExpiration = user.getApiKeyExpiration();
         this.created = user.getCreated();
         this.expiresOn = user.getExpiresOn();
         this.modified = user.getModified();
         this.groups = user.getGroups();
         this.preferences = user.getPreferences();
+        this.workspaceId = user.getWorkspaceId();
     }
 
     public String getUsername() {
@@ -189,6 +196,22 @@ public class UserInfo {
         this.passwordResetKey = passwordResetKey;
     }
 
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
+    }
+
+    public LocalDateTime getApiKeyExpiration() {
+        return apiKeyExpiration;
+    }
+
+    public void setApiKeyExpiration(LocalDateTime apiKeyExpiration) {
+        this.apiKeyExpiration = apiKeyExpiration;
+    }
+
     public LocalDateTime getCreated() {
         return created;
     }
@@ -247,5 +270,13 @@ public class UserInfo {
 
     public void setApplicationTime(int applicationTime) {
         this.applicationTime = applicationTime;
+    }
+
+    public String getWorkspaceId() {
+        return workspaceId;
+    }
+
+    public void setWorkspaceId(String workspaceId) {
+        this.workspaceId = workspaceId;
     }
 }

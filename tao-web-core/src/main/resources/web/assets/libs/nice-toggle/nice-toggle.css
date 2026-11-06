@@ -1,0 +1,189 @@
+@property --ntg-color     { syntax: "<color>"; inherits: true; }
+@property --ntg-bkg       { syntax: "<color>"; inherits: true; }
+@property --ntg-btn-color { syntax: "<color>"; inherits: true; }
+@property --ntg-btn-bkg   { syntax: "<color>"; inherits: true; }
+
+label.nice-toggle {
+	--ntg-padding    : 0.142em;
+	--ntg-btn-padding: 0.265em;
+	--ntg-inset      : 0.142em;
+	--ntg-btn-inset  : 0.142em;
+	--ntg-on-color   : #a5afc7;
+	--ntg-off-color  : #a5afc7;
+	--ntg-on-bkg     : #6c7893;
+	--ntg-off-bkg    : #747c9e;
+	
+	--ntg-color      : var(--ntg-off-color);
+	--ntg-bkg        : var(--ntg-off-bkg);
+	
+	.foo{}
+	.nice-btn {
+		--ntg-btn-on-color : #f79615;
+		--ntg-btn-off-color: #5065d0;
+		--ntg-btn-on-bkg   : #747c9e;
+		--ntg-btn-off-bkg  : #747c9e;
+		
+		--ntg-btn-color    : var(--ntg-btn-off-color);
+		--ntg-btn-bkg      : var(--ntg-btn-off-bkg);
+	}
+	
+	&:has([type="checkbox"]:checked) {
+		--ntg-color: var(--ntg-on-color);
+		--ntg-bkg  : var(--ntg-on-bkg);
+		
+		.foo{}
+		.nice-btn {
+			--ntg-btn-color: var(--ntg-btn-on-color);
+			--ntg-btn-bkg  : var(--ntg-btn-on-bkg);
+		}
+	}
+}
+
+label.nice-toggle {
+	position: relative;
+	display: inline-flex;
+	width: fit-content;
+	height: fit-content;
+	margin: 0;
+	padding: var(--ntg-padding);
+	color: var(--ntg-color);
+	outline: var(--btn-default-border) 1px solid;
+	border: 0;
+	border-radius: 0.286em;
+	background: var(--ntg-bkg);
+	box-shadow: inset 0 3px 5px rgba(0,0,0,.125);
+	overflow:hidden;
+	cursor: pointer;
+	transition: all .35s;
+	
+	-webkit-touch-callout: none; /* iOS Safari */
+	  -webkit-user-select: none; /* Chrome/Safari/Opera */
+	   -khtml-user-select: none; /* Konqueror */
+	     -moz-user-select: none; /* Firefox */
+	      -ms-user-select: none; /* Internet Explorer/Edge */
+	          user-select: none; /* Non-prefixed version, currently not supported by any browser */
+	
+	.foo{}
+	input[type="checkbox"] {
+		display: none;
+	}
+	
+	.nice-bkg,
+	.nice-btn>span {
+		font-family: 'Source Sans Pro';
+		font-style: normal;
+		font-weight: 400;
+		line-height: 1;
+		display: flex;
+		align-items: center;
+        flex-wrap: nowrap;
+		justify-content: center;
+        white-space: nowrap;
+		box-sizing: border-box;
+		padding: var(--ntg-btn-padding) calc(2 * var(--ntg-btn-padding));
+		min-width: 2.214em;
+		min-height: 2.214em;
+		border: 0;
+		column-gap: 0.3em;
+		opacity: .5;
+		
+		.foo{}
+		&.icon-only {
+			padding-left: 0 !important;
+			padding-right: 0 !important;
+		}
+		.fa::before {
+			font-size: 1.45em;
+            line-height: .9;
+		}
+	}
+	
+	.nice-btn {
+		position: absolute;
+		top: var(--ntg-padding);
+		bottom: var(--ntg-padding);
+		left: calc(100% - var(--ntg-padding));
+		transform: translateX(-100%);
+		transition: all .35s;
+		border: 0;
+		border-radius: 0.23em;
+		padding: 0;
+		overflow: hidden;
+		box-shadow: 0 0.2em 0.2em rgb(0 0 0/.3);
+		
+		.foo{}
+		&:not(.btn) {
+			color: var(--ntg-btn-color);
+			background: linear-gradient(var(--ntg-btn-bkg)) padding-box, linear-gradient(183deg, rgb(240 240 240/.15) 45%, rgb(0 0 0/.2)) border-box var(--ntg-btn-bkg);
+		}
+		
+		.nice-on,.nice-off {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 0;
+			bottom: 0;
+			transition: opacity .35s;
+		}
+		.nice-on {
+			opacity: 0;
+		}
+		.nice-off {
+			opacity: 1;
+		}
+	}
+	
+	&:hover .nice-btn {
+		box-shadow: 0 0.22em 0.70em rgb(0 0 0/.25),inset 0 0 5em rgb(0 0 0/.05);
+	}
+	
+	&.pill {
+		border-radius: 1.5em;
+		border: var(--ntg-inset) solid transparent;
+		background: linear-gradient(var(--ntg-bkg)) padding-box, linear-gradient(3deg, rgb(240 240 240/.15) 45%, rgb(0 0 0/.2)) border-box;
+		outline-offset: calc(-1 * var(--ntg-inset));
+		
+		.foo{}
+		.nice-bkg,.nice-btn {
+			border: var(--ntg-btn-inset) solid transparent;
+		}
+		
+		.nice-bkg,
+		.nice-btn>span {
+			padding: var(--ntg-btn-padding) calc(2 * var(--ntg-btn-padding));
+		}
+		
+		.nice-btn {
+			border-radius: 1.5em;
+			
+			.foo{}
+			.nice-on,.nice-off {
+				left: calc(-1 * var(--ntg-btn-inset));
+				right: calc(-1 * var(--ntg-btn-inset));
+				top: calc(-1 * var(--ntg-btn-inset));
+				bottom: calc(-1 * var(--ntg-btn-inset));
+			}
+		}
+	}
+	
+	&.small {
+		font-size: 12px;
+	}
+	
+	&.large {
+		font-size: 20px;
+	}
+	
+	[type="checkbox"]:checked~.nice-btn {
+		left: var(--ntg-padding);
+		transform: translateX(0%);
+		
+		.foo{}
+		.nice-on {
+			opacity: 1;
+		}
+		.nice-off {
+			opacity: 0;
+		}
+	}
+}

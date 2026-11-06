@@ -5,16 +5,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.component.DataDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
@@ -31,7 +32,6 @@ import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.services.model.workflow.WorkflowInfo;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.enums.Status;
-import ro.cs.tao.wps.controllers.WPSController;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,23 +44,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(WPSController.class)
+@SpringBootTest(classes = WPSLauncher.class, webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 public class WPSIntegrationTest_SpringMocking {
 
     Object settingsBeforeTest;
-    @Autowired
     private MockMvc mvc;
-    @MockBean
+    @Autowired
+    private WebApplicationContext webApplicationContext;
+    @MockitoBean
     private WorkflowService workflowService;
-    @MockBean
+    @MockitoBean
     private OrchestratorService orchestratorService;
-    @MockBean
+    @MockitoBean
     private ExecutionJobProvider jobProvider;
-    @MockBean
-    private StorageService<MultipartFile, FileSystemResource> storageService;
+    @MockitoBean
+    private StorageService<MultipartFile> storageService;
 
     @Before
     public void setUp() throws Exception {
+        mvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         prepareConfigurationManagerForTest();
     }
 
@@ -113,7 +115,7 @@ public class WPSIntegrationTest_SpringMocking {
         dataDescriptor.setLocation("dataLocation");
         final TargetDescriptor output = new TargetDescriptor("9108h1f0nqndq");
         output.setDataDescriptor(dataDescriptor);
-        given(orchestratorService.getWorkflowOutputs(24))
+        given(orchestratorService.getWorkflowOutputDescriptors(24))
                 .willReturn(Arrays.asList(new TargetDescriptor[]{output}));
 
         //execution

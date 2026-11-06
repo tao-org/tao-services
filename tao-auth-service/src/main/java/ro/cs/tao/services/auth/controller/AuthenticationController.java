@@ -16,6 +16,7 @@
 package ro.cs.tao.services.auth.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -25,7 +26,6 @@ import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.AuditProvider;
-import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.services.commons.BaseController;
@@ -33,12 +33,10 @@ import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.AuthenticationService;
 import ro.cs.tao.services.model.auth.AuthInfo;
-import ro.cs.tao.user.LogEvent;
 import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 
 /**
@@ -76,15 +74,7 @@ public class AuthenticationController extends BaseController {
             }
             final User userObj = userProvider.get(currentUser());
             if (authInfo != null && authInfo.isAuthenticated() && userObj.getStatus() == UserStatus.ACTIVE) {
-                final LogEvent event = new LogEvent();
-                event.setUserId(authInfo.getUserId());
-                event.setTimestamp(LocalDateTime.now());
-                event.setEvent("Login");
-                try {
-                    auditProvider.save(event);
-                } catch (PersistenceException e) {
-                    error(e.getMessage());
-                }
+                record("Login");
                 if (StringUtilities.isNullOrEmpty(user)) {
                     user = userObj.getUsername();
                 }
@@ -170,3 +160,4 @@ public class AuthenticationController extends BaseController {
         }
     }
 }
+

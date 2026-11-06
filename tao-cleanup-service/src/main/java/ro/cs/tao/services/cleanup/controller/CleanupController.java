@@ -30,10 +30,13 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.CleanupService;
 
 /**
+ * REST controller providing an endpoint to clean up products
+ * with no attached valid files from the database.
+ *
  * @author Lucian Barbulescu
  */
 @RestController
-@RequestMapping("/cleanup")
+@RequestMapping({ "/cleanup", "/cleanup/" })
 @Tag(name ="Cleanup", description = "Endpoint for removing the products with no valid files attached from the database")
 public class CleanupController extends BaseController {
 
@@ -44,8 +47,8 @@ public class CleanupController extends BaseController {
     /**
      * Perform the cleanup operation.
      */
-    @RequestMapping(value = "/database/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RequestMapping(value = { "/database/", "/database" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> cleanupDatabase() {
 //        if (isCurrentUserAdmin()) {
         	final long deletedProducts = cleanupService.cleanupDatabase();

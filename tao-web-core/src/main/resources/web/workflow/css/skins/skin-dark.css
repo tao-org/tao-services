@@ -1,0 +1,20 @@
+/* Full */
+body.skin-full.skin-full-dark {
+	/* Skin specific values */
+	--sidebar-item-bkg             : hsl(218  16%  30% / 1);
+	--sidebar-item-border          : hsl(218  11%  35% / 1);
+	--sidebar-item-hover-bkg       : hsl(218  16%  30% / 1);
+	
+	--form-control-placeholder     : #9e9e9e;
+	--form-control-bkg             : hsl(218  16%  30% / 1);
+	--form-control-border          : hsl(218  11%  35% / 1);
+	--form-control-disabled-bkg    : #505b6d;
+	
+	/* Redefined root variables */
+	--primary-color: #08affd;
+	--primary-bkg: #343b46;
+	--primary-bkg-darker: #3d4552;
+	--active-color: #168ec5;
+	--default-color: #ababab;
+	--scroll-color: #168ec5;
+}

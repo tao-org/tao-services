@@ -26,10 +26,14 @@ import ro.cs.tao.services.commons.ServiceLauncher;
  */
 @SpringBootApplication()
 @ImportResource({"classpath:tao-ogc-service-context.xml"})
-public class OGCLauncher implements ServiceLauncher {
+public class OGCLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(OGCLauncher.class, args);
+    }
+
+    public OGCLauncher() {
+        super();
     }
 
     @Override

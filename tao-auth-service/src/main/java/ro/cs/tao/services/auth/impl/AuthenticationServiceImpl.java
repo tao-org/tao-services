@@ -20,6 +20,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.component.SystemVariable;
+import ro.cs.tao.configuration.ConfigurationItem;
+import ro.cs.tao.configuration.PersistentConfigurationProvider;
+import ro.cs.tao.configuration.UserConfigurationItem;
+import ro.cs.tao.configuration.UserPersistentConfigurationProvider;
 import ro.cs.tao.persistence.RepositoryProvider;
 import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.security.Token;
@@ -62,6 +66,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Autowired
     private RepositoryProvider workspaceProvider;
 
+    @Autowired
+    private PersistentConfigurationProvider persistentConfigurationProvider;
+
+    @Autowired
+    private UserPersistentConfigurationProvider userPersistentConfigurationProvider;
+
     @Override
     public AuthInfo login(String userName, String password) {
 
@@ -96,6 +106,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
                                                 user.getId(), ExceptionUtils.getStackTrace(e)));
                 }
+                postAuthenticationActions(userId);
                 // retrieve user groups and send them as profiles
                 return new AuthInfo(true, userId, userName, authenticationToken.getToken(),
                                     authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
@@ -132,6 +143,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         logger.severe(String.format("Cannot create workspace for user %s. Reason: %s",
                                                     user.getId(), ExceptionUtils.getStackTrace(e)));
                     }
+                    postAuthenticationActions(userId);
                     // retrieve user groups and send them as profiles
                     return new AuthInfo(true, userId, user.getUsername(), authenticationToken.getToken(),
                                         authenticationToken.getRefreshToken(), authenticationToken.getExpiresInSeconds(),
@@ -179,6 +191,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
         }
         return null;
+    }
+
+    private void postAuthenticationActions(String userId) {
+        final List<UserConfigurationItem> items = userPersistentConfigurationProvider.getItems(userId);
+        final List<ConfigurationItem> perUserItems = persistentConfigurationProvider.getPerUserItems();
+        final Set<String> userItemKeys = items.stream().map(i -> i.getId().getKey()).collect(Collectors.toSet());
+        for (ConfigurationItem item : perUserItems) {
+            if (!userItemKeys.contains(item.getId())) {
+                items.add(new UserConfigurationItem(userId, item));
+            }
+        }
+        if (!items.isEmpty()) {
+            userPersistentConfigurationProvider.saveItems(items);
+        }
     }
 
 }

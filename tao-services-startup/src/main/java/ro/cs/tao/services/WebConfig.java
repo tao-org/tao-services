@@ -16,19 +16,22 @@
 
 package ro.cs.tao.services;
 
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.services.commons.WebConfiguration;
 import ro.cs.tao.services.entity.beans.ContainerRequest;
 import ro.cs.tao.services.entity.conversion.ContainerRequestDeserializer;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Configuration
 public class WebConfig extends WebConfiguration {
+
+    public static final String sitePrefix = "/ui";
 
     @Override
     protected String siteURIPath() {
@@ -38,23 +41,24 @@ public class WebConfig extends WebConfiguration {
             sitePath = TaoServicesStartup.homeDirectory().resolve(siteBase).toAbsolutePath();
         }
         ConfigurationManager.getInstance().setValue("site.path", sitePath.toString());
+        ConfigurationManager.getInstance().setValue("site.static.prefix", sitePrefix);
         final String siteURI = sitePath.toUri().toString();
         ConfigurationManager.getInstance().setValue("site.url", siteURI);
         return siteURI;
     }
 
     @Override
-    protected String sitePrefix() { return "/ui"; }
+    protected String sitePrefix() { return sitePrefix; }
 
     @Override
     protected String defaultPage() { return "sap.html"; }//return "login.html"; }
 
     @Override
-    protected MappingJackson2HttpMessageConverter jacksonMessageConverter() {
-        final MappingJackson2HttpMessageConverter converter = super.jacksonMessageConverter();
+    protected JacksonJsonHttpMessageConverter jacksonMessageConverter() {
+        final JacksonJsonHttpMessageConverter converter = super.jacksonMessageConverter();
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ContainerRequest.class, new ContainerRequestDeserializer());
-        converter.getObjectMapper().registerModule(module);
-        return converter;
+        JsonMapper mapper = converter.getMapper().rebuild().addModule(module).build();
+        return new JacksonJsonHttpMessageConverter(mapper);
     }
 }

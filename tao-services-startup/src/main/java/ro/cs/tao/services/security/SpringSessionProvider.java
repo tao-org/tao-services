@@ -48,12 +48,14 @@ public class SpringSessionProvider implements ExternalSessionContextProvider {
                     final User user = persistenceManager.users().getByName(principal.toString());
                     if (user != null) {
                         principal =  new UserPrincipal(user.getId(),
+                                                       user.getWorkspaceId(),
                                                        user.getGroups().stream().map(Group::getName).collect(Collectors.toSet()));
                     }
                 } else if (!(principal instanceof UserPrincipal)) {
                     final User user = persistenceManager.users().getByName(principal.toString());
                     if (user != null) {
                         principal =  new UserPrincipal(user.getId(),
+                                                       user.getWorkspaceId(),
                                                        user.getGroups().stream().map(Group::getName).collect(Collectors.toSet()));
                     }
 

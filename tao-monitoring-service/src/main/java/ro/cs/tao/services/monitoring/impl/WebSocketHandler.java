@@ -1,6 +1,5 @@
 package ro.cs.tao.services.monitoring.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -17,15 +16,14 @@ import ro.cs.tao.services.interfaces.AdministrationService;
 import ro.cs.tao.services.monitoring.beans.MessageConverter;
 import ro.cs.tao.services.monitoring.beans.WSNotification;
 import ro.cs.tao.user.User;
+import tools.jackson.databind.ObjectMapper;
 
-import javax.inject.Singleton;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-@Singleton
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
     private static final List<WebSocketSession> sessions;
@@ -254,3 +252,4 @@ public class WebSocketHandler extends TextWebSocketHandler {
         }
     }
 }
+

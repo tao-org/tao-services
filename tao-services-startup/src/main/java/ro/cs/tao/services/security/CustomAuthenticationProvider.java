@@ -19,8 +19,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.jaas.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.keycloak.KeycloakClient;
@@ -154,7 +156,14 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     @Bean
     public JaasAuthenticationProvider jaasAuthProvider() {
-        JaasAuthenticationProvider authenticationProvider = new JaasAuthenticationProvider();
+        JaasAuthenticationProvider authenticationProvider = new JaasAuthenticationProvider() {
+            @Override
+            protected void publishFailureEvent(UsernamePasswordAuthenticationToken token, AuthenticationException ase) {
+                if (getApplicationEventPublisher() != null) {
+                    super.publishFailureEvent(token, ase);
+                }
+            }
+        };
         authenticationProvider.setAuthorityGranters(new AuthorityGranter[] { new TaoAuthorityGranter() });
         authenticationProvider.setCallbackHandlers(new JaasAuthenticationCallbackHandler[] {
                 new JaasNameCallbackHandler(), new JaasPasswordCallbackHandler()

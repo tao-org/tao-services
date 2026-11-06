@@ -1,6 +1,5 @@
 package ro.cs.tao.services.indexing;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.simple.JSONObject;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.simplify.DouglasPeuckerSimplifier;
@@ -16,6 +15,7 @@ import ro.cs.tao.eodata.Polygon2D;
 import ro.cs.tao.serialization.GeometryAdapter;
 import ro.cs.tao.serialization.JsonMapper;
 import ro.cs.tao.utils.DateUtils;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URI;

@@ -7,6 +7,12 @@ import ro.cs.tao.docker.ContainerType;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Represents a web service bean, encapsulating information about a web service
+ * including its identifier, name, description, type, tag, application path, logo,
+ * associated applications, supported formats, common parameters, format name parameter,
+ * authentication type, user credentials, and authentication URL.
+ */
 public class WebServiceBean {
     private String id;
     private String name;

@@ -25,17 +25,11 @@ import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.component.enums.TagType;
-import ro.cs.tao.docker.Application;
-import ro.cs.tao.docker.Container;
-import ro.cs.tao.docker.ContainerType;
-import ro.cs.tao.docker.ContainerVisibility;
+import ro.cs.tao.docker.*;
 import ro.cs.tao.export.Package;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
-import ro.cs.tao.persistence.ContainerProvider;
-import ro.cs.tao.persistence.PersistenceException;
-import ro.cs.tao.persistence.ProcessingComponentProvider;
-import ro.cs.tao.persistence.TagProvider;
+import ro.cs.tao.persistence.*;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.services.interfaces.ContainerService;
@@ -59,6 +53,8 @@ public class ContainerServiceImpl
 
     @Autowired
     private ContainerProvider containerProvider;
+    @Autowired
+    private ContainerInstanceProvider containerInstanceProvider;
     @Autowired
     private TagProvider tagProvider;
     @Autowired
@@ -334,6 +330,20 @@ public class ContainerServiceImpl
         } catch (SerializationException e) {
             throw new IOException(e);
         }
+    }
+
+    @Override
+    public List<ContainerInstance> getUserInstances(String userId) {
+        return this.containerInstanceProvider.getByUserId(userId);
+    }
+
+    @Override
+    public ContainerInstance getUserInstance(String userId, String containerName) {
+        Container container = this.containerProvider.getByName(containerName);
+        if (container == null) {
+            throw new IllegalArgumentException(String.format("[%s] not registered", containerName));
+        }
+        return this.containerInstanceProvider.getByContainerIdAndUserId(container.getId(), userId);
     }
 
     @Override

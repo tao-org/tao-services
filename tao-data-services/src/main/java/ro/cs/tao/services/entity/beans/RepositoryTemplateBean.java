@@ -2,6 +2,10 @@ package ro.cs.tao.services.entity.beans;
 
 import java.util.LinkedHashMap;
 
+/**
+ * Represents a repository template bean, encapsulating information about a data repository template
+ * including its identifier, name, description, URL prefix, root key, type, and parameters.
+ */
 public class RepositoryTemplateBean {
 
     private String id;

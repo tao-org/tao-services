@@ -46,6 +46,36 @@
           target: 'map',
           view: view
         });
+        centerOnCurrentUserLocation(view);
+    }
+    function centerOnCurrentUserLocation(view) {
+        if (!window.navigator || !navigator.geolocation) {
+            return;
+        }
+        var centerView = function (position) {
+            if (position) {
+                view.setCenter(ol.proj.fromLonLat([position.longitude, position.latitude]));
+            }
+        };
+        try {
+            var cachedPosition = JSON.parse(sessionStorage.getItem("tao.userLocation") || "null");
+            if (cachedPosition && isFinite(cachedPosition.latitude) && isFinite(cachedPosition.longitude)) {
+                centerView(cachedPosition);
+                return;
+            }
+        } catch (ignored) { }
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                var userLocation = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                };
+                try { sessionStorage.setItem("tao.userLocation", JSON.stringify(userLocation)); } catch (ignored) { }
+                centerView(userLocation);
+            },
+            function () { },
+            { enableHighAccuracy: false, timeout: 5000, maximumAge: 600000 }
+        );
     }
     function httpGet(theUrl)
     {

@@ -3,6 +3,7 @@ package ro.cs.eo.gdal.service;
 import org.springframework.stereotype.Service;
 import ro.cs.eo.gdal.dataio.GDALTileCache;
 import ro.cs.eo.gdal.dataio.Keys;
+import ro.cs.eo.gdal.reader.Extent;
 import ro.cs.eo.gdal.reader.ImageInfo;
 import ro.cs.eo.gdal.reader.TileReader;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
@@ -10,10 +11,18 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.utils.executors.MemoryUnit;
 
+import javax.imageio.ImageIO;
+import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageOutputStream;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 @Service("TileMap")
 public class GDALTileMapService {
@@ -22,6 +31,7 @@ public class GDALTileMapService {
     private final TileReader tileReader;
 
     private final GDALTileCache gdalTileCache;
+    private Path seriesPath;
 
     public GDALTileMapService() {
         ConfigurationProvider config = ConfigurationManager.getInstance();
@@ -53,7 +63,7 @@ public class GDALTileMapService {
         } catch (FileNotFoundException | IndexOutOfBoundsException e) {
             throw e;
         } catch (Exception ex) {
-            throw new IllegalStateException("Failed to compute the tile for level " + z + " and (X,Y) (" + x + "," + y + ").", ex);
+            throw new IllegalStateException(String.format("Failed to compute the tile for level " + z + " and (X,Y) (" + x + "," + y + ") - %s", ex.getMessage()), ex);
         }
     }
 
@@ -71,5 +81,44 @@ public class GDALTileMapService {
         }
     }
 
+    public String extractSubset(ProductDescriptor productDescriptor, Extent extent, String wkt, String name) throws FileNotFoundException {
+        try {
+            if (this.seriesPath == null) {
+                this.seriesPath = Paths.get(ConfigurationManager.getInstance().getValue("site.path")).resolve("series");
+            }
+            final Path sourceLocalFilePath = productDescriptor.getProductPath();
+            if (Files.exists(sourceLocalFilePath)) {
+                final String imageFileName = sourceLocalFilePath.getFileName().toString().replaceAll(regEx, "$1") + ".png";
+                this.tileReader.extractSubset(productDescriptor,
+                                              this.seriesPath.resolve(name).resolve(imageFileName),
+                                              extent.xmin, extent.ymin, extent.xmax - extent.xmin, extent.ymax - extent.ymin,
+                                              wkt);
+                return imageFileName;
+            } else {
+                throw new FileNotFoundException("Product path not exists.");
+            }
+        } catch (FileNotFoundException | IndexOutOfBoundsException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    public InputStream createAnimatedSeries(List<String> inputImages, int delayMillis, String outFile) throws IOException {
+        if (inputImages != null && !inputImages.isEmpty()) {
+            BufferedImage first = ImageIO.read(new File(inputImages.get(0)));
+            try (ImageOutputStream output = new FileImageOutputStream(new File(outFile))) {
+                GifSequenceWriter writer = new GifSequenceWriter(output, first.getType(), delayMillis, true);
+                writer.writeToSequence(first);
+                for (int i = 1; i < inputImages.size(); i++) {
+                    BufferedImage next = ImageIO.read(new File(inputImages.get(i)));
+                    writer.writeToSequence(next);
+                }
+                writer.close();
+            }
+            return Files.newInputStream(Paths.get(outFile));
+        }
+        return null;
+    }
 
 }

@@ -43,7 +43,8 @@ import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.*;
 import ro.cs.tao.services.model.component.DataSourceInfo;
 import ro.cs.tao.services.model.component.ProductSetInfo;
-import ro.cs.tao.utils.AutoEvictableCache;
+import ro.cs.tao.utils.AutoEvictableMemoryCache;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.Tuple;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
@@ -57,12 +58,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/datasource")
+@RequestMapping({ "/datasource", "/datasource/" })
 @io.swagger.v3.oas.annotations.tags.Tag(name = "Data Sources", description = "Operations related to data sources")
 public class DataSourceComponentController extends DataEntityController<DataSourceComponent, String, DataSourceComponentService>{
 
-    private final AutoEvictableCache<String, DataSourceInfo> componentCache
-            = new AutoEvictableCache<>(s -> new DataSourceInfo(service.findById(s)), 1800);
+    private final AutoEvictableMemoryCache<String, DataSourceInfo> componentCache
+            = new AutoEvictableMemoryCache<>(s -> new DataSourceInfo(service.findById(s)), 1800);
 
     @Autowired
     private ProductService productService;
@@ -74,7 +75,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
     private RepositoryProvider repositoryProvider;
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    @RequestMapping(value = "/page", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/page", "/page/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     @Override
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
@@ -95,21 +96,26 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/", "" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getSystemDatasources() {
         return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.getSystemDataSourceComponents()));
     }
 
-    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "id") String idList) {
-        if (idList == null || idList.isEmpty()) {
-            return prepareResult("Invalid id list", ResponseStatus.FAILED);
-        }
-        String[] ids = idList.split(",");
-        return prepareResult(service.list(Arrays.asList(ids)));
+    @RequestMapping(value = { "/system/page", "/system/page/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getSystemDatasources(@RequestParam(name = "pageNumber") int pageNumber,
+                                                                   @RequestParam(name = "pageSize", required = false, defaultValue = "10") int pageSize,
+                                                                   @RequestParam(name = "sortBy", required = false, defaultValue = "id") String sortByField,
+                                                                   @RequestParam(name = "sortDirection", required = false, defaultValue = "ASC") SortDirection sortDirection) {
+        Sort sort = new Sort().withField(sortByField, sortDirection);
+        return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.getSystemDataSourceComponents(pageNumber, pageSize, sort)));
     }
 
-    @RequestMapping(value = "/user/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/system/count", "/system/count/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> countSystemDatasources() {
+        return prepareResult(service.countSystemDataSourceComponents());
+    }
+
+    @RequestMapping(value = { "/user/", "/user" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponents() {
         return prepareResult(ServiceTransformUtils.toDataSourceInfos(service.getUserDataSourceComponents(SessionStore.currentContext().getPrincipal().getName())));
     }
@@ -132,13 +138,13 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/user/group/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/user/group/", "/user/group" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getUserDataSourceComponentGroups() {
         return prepareResult(ServiceTransformUtils.toDataSourceGroupInfos(
                 dataSourceGroupService.getUserDataSourceComponentGroups(SessionStore.currentContext().getPrincipal().getName())));
     }
 
-    @RequestMapping(value = "/user/group/save", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/user/group/save", "/user/group/save/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createOrUpdateDataSourceGroup(@RequestBody DataSourceGroupRequest request) throws PersistenceException {
         ResponseEntity<ServiceResponse<?>> result;
         try {
@@ -178,7 +184,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return result;
     }
 
-    @RequestMapping(value = "/user/group/remove", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/user/group/remove", "/user/group/remove/" }, method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> removeDataSourceComponentFromGroup(@RequestParam("groupId") String groupId) {
         ResponseEntity<ServiceResponse<?>> result;
         try {
@@ -209,7 +215,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return result;
     }
 
-    @RequestMapping(value = "/create", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/create", "/create/" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody DataSourceRequest request) {
         try {
             List<EOProduct> products = request.getProducts();
@@ -227,7 +233,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/create/names", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/create/names", "/create/names/" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createComponentFor(@RequestBody DataSourceNameRequest request) {
         try {
             if (request == null || request.getProducts() == null || request.getProducts().isEmpty()) {
@@ -284,17 +290,27 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/productset", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/productset", "/productset/" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> createProductSet(@RequestBody ProductSetRequest request) {
         try {
             List<String> productPaths;
             if (request == null || (productPaths = request.getProductPaths()) == null || productPaths.isEmpty()) {
                 throw new IllegalArgumentException("[productPaths] Body is empty");
             }
-            final StorageService repositoryService = getLocalRepositoryService();
-            final Repository localWorkspace = getLocalRepository(currentUser());
+            //final StorageService repositoryService = getLocalRepositoryService();
+            final StorageService repositoryService = StorageServiceFactory.getInstance(currentOwner(), productPaths.get(0));
+            String repositoryId = request.getRepositoryId();
+            Repository repository;
+            if (StringUtilities.isNullOrEmpty(repositoryId)) {
+                repository = getLocalRepository(currentOwner());
+            } else {
+                repository = getRepository(repositoryId);
+            }
+            if (!repositoryService.isIntendedFor(repository.getType())) {
+                throw new IllegalArgumentException("[repositoryType] is not intended");
+            }
             for (String path : productPaths) {
-                if (!repositoryService.exists(localWorkspace.resolve(path))) {
+                if (!repositoryService.exists(repository.resolve(path))) {
                     throw new FileNotFoundException(path + " does not exist");
                 }
             }
@@ -305,7 +321,48 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/tags", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/repositoryQuery", "/repositoryQuery/" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> createRepositoryQuery(@RequestBody RepositoryQueryRequest request) {
+        try {
+            if (request == null) {
+                throw new IllegalArgumentException("Body is empty");
+            }
+            Integer itemsCount = request.getItemsCount();
+            if (itemsCount == null || itemsCount < 0) {
+                itemsCount = StringUtilities.isNullOrEmpty(request.getFileNamePattern()) ? 1 : 0;
+            }
+            String dstRepositoryId = request.getDestinationRepositoryId();
+            if (StringUtilities.isNullOrEmpty(dstRepositoryId)) {
+                dstRepositoryId = getLocalRepository(currentOwner()).getId();
+            }
+            String dstPath = request.getDestinationPath();
+            if (StringUtilities.isNullOrEmpty(dstPath)) {
+                dstPath = "";
+            }
+            service.deleteQueryForRepository(request.getSourceRepositoryId(), request.getSourcePath());
+            final DataSourceComponent component = service.createRepositoryQuery(request.getLabel(),
+                                                                                request.getSourceRepositoryId(), request.getSourcePath(),
+                                                                                dstRepositoryId, dstPath,
+                                                                                itemsCount, request.getFileNamePattern());
+            return component != null ? prepareResult(component) : prepareResult("No component was created", ResponseStatus.FAILED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = { "/repositoryQuery", "/repositoryQuery/" }, method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> deleteRepositoryQuery(@RequestParam("repositoryId") String repositoryId,
+                                                                    @RequestParam("path") String path) {
+        try {
+            service.deleteQueryForRepository(repositoryId, path);
+            return prepareResult(String.format("Recurrent inspection was disabled for repository %s and path %s",
+                                               repositoryId, path), ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = { "/tags", "/tags/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listTags() {
         List<Tag> objects = service.getDatasourceTags();
         if (objects == null ) {
@@ -314,7 +371,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         return prepareResult(objects.stream().map(Tag::getText).collect(Collectors.toList()));
     }
 
-    @RequestMapping(value = "/config", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/config", "/config/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getConfiguration(@RequestParam("dataSourceId") String dataSourceId) {
         try {
             return prepareResult(service.getConfiguration(dataSourceId));
@@ -323,7 +380,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/config", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/config", "/config/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> saveConfiguration(@RequestBody DataSourceConfiguration configuration) {
         try {
             service.saveConfiguration(configuration);
@@ -333,7 +390,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/config", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/config", "/config/" }, method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody DataSourceConfiguration configuration) {
         try {
             service.updateConfiguration(configuration);
@@ -343,40 +400,41 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/productset", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/productset", "/productset/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> listProductSets() {
         try {
-            final String user = currentUser();
+            final String user = currentOwner();
             return prepareResult(ServiceTransformUtils.toProductSetInfos(this.service.getProductSets(user), user));
         } catch (Exception e) {
             return handleException(e);
         }
     }
 
-    @RequestMapping(value = "/productset/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/productset/{id}", "/productset/{id}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getProductSet(@PathVariable("id") String id) {
         try {
-            return prepareResult(new ProductSetInfo(this.service.findById(id), currentUser()));
+            return prepareResult(new ProductSetInfo(this.service.findById(id), currentOwner()));
         } catch (Exception e) {
             return handleException(e);
         }
     }
 
-    @RequestMapping(value = "/productset", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/productset", "/productset/" }, method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateProductSet(@RequestBody ProductSetInfo productSet) {
         try {
             List<String> products = productSet.getProducts();
+            final String ownerId = currentOwner();
             if (products != null) {
-                Repository localRepository = getLocalRepository(currentUser());
+                Repository localRepository = getLocalRepository(ownerId);
                 products.replaceAll(localRepository::resolve);
             }
-            return prepareResult(new ProductSetInfo(this.service.updateProductSet(productSet), currentUser()));
+            return prepareResult(new ProductSetInfo(this.service.updateProductSet(productSet), ownerId));
         } catch (Exception e) {
             return handleException(e);
         }
     }
 
-    @RequestMapping(value = "/productset/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/productset/{id}", "/productset/{id}/" }, method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> deleteProductSet(@PathVariable("id") String id) {
         try {
             this.service.delete(id);
@@ -386,7 +444,7 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
-    @RequestMapping(value = "/productset/{id}/check", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/productset/{id}/check", "/productset/{id}/check/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> verifyProductSet(@PathVariable("id") String id) {
         try {
             final DataSourceComponent component = this.service.findById(id);
@@ -411,14 +469,37 @@ public class DataSourceComponentController extends DataEntityController<DataSour
         }
     }
 
+    @RequestMapping(value = { "/repositoryQuery", "/repositoryQuery/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> listRepositoryQueries() {
+        try {
+            return prepareResult(this.service.getRepositoryQueries(currentOwner()));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = { "/repositoryQuery/{id}", "/repositoryQuery/{id}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getRepositoryQuery(@PathVariable("id") String id) {
+        try {
+            final List<DataSourceComponent> repositoryQueries = this.service.getRepositoryQueries(currentOwner());
+            return prepareResult(repositoryQueries.stream().filter(r -> r.getId().equals(id)).findFirst().orElse(null));
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    private Repository getRepository(String repositoryId) {
+        return repositoryProvider.get(repositoryId);
+    }
+
     private Repository getLocalRepository(String user) {
         return repositoryProvider.getUserSystemRepositories(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().orElse(null);
     }
 
     private StorageService getLocalRepositoryService() {
-        Repository repository = getLocalRepository(currentUser());
+        Repository repository = getLocalRepository(currentOwner());
         if (repository == null) {
-            throw new RuntimeException("User [" + currentUser() + "] doesn't have a local repository");
+            throw new RuntimeException("User [" + currentOwner() + "] doesn't have a local repository");
         }
         StorageService instance = StorageServiceFactory.getInstance(repository);
         instance.associate(repository);

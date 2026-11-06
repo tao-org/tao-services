@@ -1,0 +1,361 @@
+<style>
+	:root {
+		--box-grid-logo-size: 6.0em;
+		--box-list-logo-size: 6.0em;
+	}
+	
+	/*------BOX APPEARANCE------*/
+	#panel-nodes {
+		.nodes-item-core-box .with-label>label::before {min-width:4.5em;}
+		core-cell-list .box-bottom {background-color:var(--box-desc-bkg);padding:0.4em 1.1em;margin:0.8em -1.1em;margin-bottom:0;width:unset;}
+		core-cell-grid .box-bottom {margin-top:1em;} 
+		core-cell-list.disabled .box-bottom {background-color:var(--hairline);}
+		
+	}
+	
+	/*------CUSTOM COLUMNS------*/
+	.col-custom {
+		padding-left:0.7em;padding-right:0.7em;
+		@media (min-width: 768px) {& {width:100%;float:left;}}
+		@media (min-width:1040px) {& {width: 50%;}}
+		@media (min-width:1410px) {& {width: 33%;}}
+		@media (min-width:1760px) {& {width: 25%;}}
+		@media (min-width:2130px) {& {width: 20%;}}
+		@media (min-width:2480px) {& {max-width: 37em;}}
+	}
+	
+	/*------MISC------*/
+	.flex-row                 {display:flex;gap:0 1.2em;align-items:center;}
+	.flex-row>*:last-child    {overflow:auto;}
+	@media (max-width: 450px) {
+		.flex-row             {flex-direction:column;align-items:flex-start;}
+	}
+</style>
+
+<!-- Content Header -->
+<section class="content-header">
+	<h1>Users management<small>The <strong>users</strong> of the TAO platform.</small></h1>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"> </i>Home</a></li><li class="active">Users</li></ol>
+</section>
+
+<!-- Content Body -->
+<section class="content">
+	<!-- Custom Tabs -->
+	<div id="panel-nodes" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">				
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select users.">
+						<option class="role" data-target="#paginatedcells" value="active_users" selected>Active</option>
+						<option class="role" data-target="#paginatedcells" value="pending_users">Pending</option>
+						<option class="role" data-target="#paginatedcells" value="disabled_users">Disabled</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="active_users" aria-expanded="false">Active</a></li>
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="pending_users" aria-expanded="false">Pending</a></li>
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="disabled_users" aria-expanded="false">Disabled</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="op-plus" data-toggle="tooltip" data-original-title="Add new user" data-showwhen="active_users"><i class="fa fa-plus"></i></button>
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">user</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				<div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-sm-12 col-md-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title icon-shift"><span class="val-fullName"></span></div>
+									<div class="box-subtitle"><big><i class="fa fa-envelope-o fa-fw"></i></big> <span class="val-email"></span></div>
+									<div class="flex-row">
+										<div class="box-icon"><i class="fa fa-user"></i></div>
+										<div>
+											<div class="box-text with-label"><label>Username: </label><strong><span class="val-username"></span></strong></div>
+											<div class="box-text with-label"><label>Group: </label><strong><span class="val-labelGroups"></span></strong></div>
+											<div class="box-text with-label"><label>User type: </label><strong><span class="val-userType"></span></strong></div>
+											<div class="box-text with-label"><label>Status: </label><strong><span class="val-status"></span></strong></div>
+											<div class="box-text with-label"><label>Last login: </label><strong><span class="val-ago"></span></strong></div>
+										</div>
+									</div>
+								</div>
+								<div class="box-bottom">
+									<div class="text-right flat-buttons">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"     ><i class="fa fa-pencil fa-fw" ></i> Edit</button>
+										<button class="btn btn-primary btn-nodeop" data-action="resources"><i class="fa fa-cogs fa-fw"   ></i> Resources</button>
+										<button class="btn btn-primary btn-nodeop" data-action="disable"  ><i class="fa fa-pause fa-fw"  ></i> Disable</button>
+										<button class="btn btn-primary btn-nodeop" data-action="enable"   ><i class="fa fa-play fa-fw"   ></i> Enable</button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"   ><i class="fa fa-trash-o fa-fw"></i> Delete</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-custom">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"><span></span></div>
+								<div class="box-top">
+									<div class="box-title icon-shift"><span class="val-fullName"></span></div>
+									<div class="box-subtitle"><big><i class="fa fa-envelope-o fa-fw"></i></big> <span class="val-email"></span></div>
+									<div class="flex-row">
+										<div class="box-icon icon"><i class="fa fa-user"></i></div>
+										<div>
+											<div class="box-text with-label"><label>Username: </label><strong><span class="val-username"></span></strong></div>
+											<div class="box-text with-label"><label>Group: </label><strong><span class="val-labelGroups"></span></strong></div>
+											<div class="box-text with-label"><label>User type: </label><strong><span class="val-userType"></span></strong></div>
+											<div class="box-text with-label"><label>Status: </label><strong><span class="val-status"></span></strong></div>
+											<div class="box-text with-label"><label>Last login: </label><strong><span class="val-ago"></span></strong></div>
+										</div>
+									</div>
+								</div>
+								<div class="box-bottom">
+									<div class="text-left">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"      data-toggle="tooltip" data-original-title="Edit"     ><i class="fa fa-pencil fa-fw" ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="resources" data-toggle="tooltip" data-original-title="Resources"><i class="fa fa-cogs fa-fw"   ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="disable"   data-toggle="tooltip" data-original-title="Disable"  ><i class="fa fa-pause fa-fw"  ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="enable"    data-toggle="tooltip" data-original-title="Enable"   ><i class="fa fa-play fa-fw"   ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"    data-toggle="tooltip" data-original-title="Delete"   ><i class="fa fa-trash-o fa-fw"></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix">
+			<div class="controls-left">
+				<div><i class="fa fa-users"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> <span class="val-title">users</span></div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- Modal for user actions -->
+<div id="myModalNodes" class="modal fade modal-form-focus" tabindex="-1" role="dialog">
+	<div class="modal-dialog"></div>
+</div>
+
+<script type="text/javascript">
+	window.navCleanup = function () {
+	};
+</script>
+
+<script type="text/javascript">
+	// Enable/Disable/Delete user account
+	var manageUser = function (action, dna) {
+		var settings = {
+			cache  : false,
+			url    : baseRestApiURL + "admin/users/" + dna.id + (action === "delete" ? "" : "/" + action),
+			method : action === "delete" ? "DELETE" : "POST",
+			headers: {
+				"Content-Type" : "application/json",
+				"Cache-Control": "no-cache",
+				"X-Auth-Token" : window.tokenKey
+			}
+		};
+		(action === "disable") && (settings.data = '{"deletePrivateResources": true}');
+		$.ajax(settings)
+			.done(function (response) {
+				showMsg("User " + dna.fullName + " successfully " + action + "d.", "SUCCESS");
+				panelComp.refreshData();
+			});
+	};
+	
+	// Show modal actions
+	var myModalNodesOpShow = function (operationid, dna) {
+		window.userOpStack = [];
+		var rm_contentUrl = "";
+		var $modal  = $("#myModalNodes");
+		var $dialog = $(".modal-dialog", $modal).removeAttr("style");
+		switch (operationid) {
+			case "op-plus"  : window.userOpStack =  { "action": "plus"                      } ; rm_contentUrl = "./fragments/users-plus.fragment.html?"     + Math.random(); break;
+			case "edit"     : window.userOpStack =  { "action": "edit"         , "dna": dna } ; rm_contentUrl = "./fragments/users-plus.fragment.html?"     + Math.random(); break;
+			case "resources": window.userOpStack = [{ "action": "resource_edit", "dna": dna }]; rm_contentUrl = "./fragments/user-node_edit.fragment.html?" + Math.random(); $dialog.css({"width":"1200px", "padding":"25px"}); break;
+		}
+		if (rm_contentUrl !== "") {
+			$.ajax({
+				url    : rm_contentUrl,
+				success: function (result) {
+					if (result !== "") {
+						$dialog.html(result);
+					} else {
+						alert("Could not retrive needed data from server.");
+						return e.preventDefault();
+					}
+					$modal.modal("show");
+				}
+			});
+		} else {
+			alert("TAO - Operation mismatch");
+		}
+	};
+	
+    $(document).ready(function () {
+		var $selectActivePanel = $("#selectActivePanel");
+		var urls = [];
+		var actionsSet = {
+			"active_users"  : { badgeLabel: "Active"  , pagLabel: "active users"  , emptyLabel: "active user account"  , url: baseRestApiURL + "admin/users?status=ACTIVE"   },
+			"pending_users" : { badgeLabel: "Pending" , pagLabel: "pending users" , emptyLabel: "pending user account" , url: baseRestApiURL + "admin/users?status=PENDING"  },
+			"disabled_users": { badgeLabel: "Disabled", pagLabel: "disabled users", emptyLabel: "disabled user account", url: baseRestApiURL + "admin/users?status=DISABLED" }
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
+				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+				$(".top-controls .search-container").attr("data-original-title", "Search " + (actionsSet[action]?.emptyLabel || action));
+			}
+			return selected;
+		};
+        window.panelComp = $("#panel-nodes").npPaginatedCells({
+            headerUser: taoUserProfile.username,
+            url       : urls,
+            viewMode  : preferences.viewMode,
+            order     : [
+                { "label": "Name ascending" , "objAttributeName": "fullName", "direction": "ASC" },
+                { "label": "Name descending", "objAttributeName": "fullName", "direction": "DSC" }
+            ],
+            filterAttribute: "fullName",
+            doDataPreprocessing: function (data, sets) {
+                var activeSet = getActiveSet(data, sets);
+				var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+				$.each(activeSet, function (index, elX) {
+					// Additional cell info
+					elX.fullName      = elX.firstName + " " + elX.lastName;
+					elX.labelGroups   = _.map(elX.groups, function(g) { return g["name"]; }).join(", ");
+					elX.ago           = niceIsoTime(elX.lastLoginDate);
+					
+					// Quotas
+					elX.prettyCpuQuota        = elX.cpuQuota         === -1 ? "unmeterred" :               elX.cpuQuota              + " X";
+					elX.prettyMemoryQuota     = elX.memoryQuota      === -1 ? "unmeterred" :               elX.memoryQuota           + " GB";
+					elX.prettyInputQuota      = elX.inputQuota       === -1 ? "unmeterred" :               elX.inputQuota            + " GB";
+					elX.prettyProcessingQuota = elX.processingQuota  === -1 ? "unmeterred" :               elX.processingQuota       + " GB";
+					elX.usageInputQuota       = elX.inputQuota       === -1 ? ""           : ", using: " + elX.actualInputQuota      + " GB";
+					elX.usageProcessingQuota  = elX.processingQuota  === -1 ? ""           : ", using: " + elX.actualProcessingQuota + " GB";
+				});
+				return activeSet;
+            },
+            doCustomRender: function($elClone, elX){
+				// User gravatar
+				var iconHtml = $(".box-icon", $elClone).html();
+				$(".box-icon", $elClone).html('<img src="https://www.gravatar.com/avatar/' + CryptoJS.MD5(elX.email).toString() + '?d=mp&s=160" />');
+				$(".val-email", $elClone).attr("title", elX.email);
+				
+				// Check image validity and its layout (portrait/landscape)
+				var img = $(".box-icon>img", $elClone).get(0);
+				img.decode().then(function () {
+					$(img).parent().addClass("logo inline");
+					(img.naturalWidth < img.naturalHeight) && $(img).addClass("portrait");
+				}).catch(function () {
+					$(".box-icon", $elClone).html(iconHtml); // Restore default icon when image is not valid
+				});
+				
+				
+				// Set action buttons availabilities
+				var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+				(action === "disabled_users") && $elClone.addClass("disabled");
+				(action === "pending_users" ) && $elClone.addClass("disabled");
+				(action !== "active_users"   || taoUserProfile.userRole !== "ADMIN") && $('[data-action="disable"  ]', $elClone).addClass("hidden");
+				(action !== "disabled_users" || taoUserProfile.userRole !== "ADMIN") && $('[data-action="enable"   ]', $elClone).addClass("hidden");
+				(action !== "active_users"   || taoUserProfile.userRole !== "ADMIN") && $('[data-action="resources"]', $elClone).addClass("hidden");
+            },
+            doAction: function (action, args) {
+				var dna = $.extend({}, args?.dna || {});
+				switch (action) {
+					// Add user			------------------------------------------
+					case "op-plus":		myModalNodesOpShow(action, dna);
+										break;
+					// Edit user		------------------------------------------
+					case "edit":		myModalNodesOpShow(action, dna);
+										break;
+					// Edit resources	------------------------------------------
+					case "resources":	myModalNodesOpShow(action, dna);
+										break;
+					// Manage status	------------------------------------------
+					case "enable":
+					case "disable":
+					case "delete":		$("#confirm-dialog").modal("confirm", {
+											msg: 'Are you sure you want to ' + action + ' user: <strong>' + dna.fullName + '</strong>?',
+											callbackConfirm: function () { manageUser(action, dna); }
+										});
+										break;
+				}
+            }
+        });
+		
+		$selectActivePanel
+		// Change active tab (using the tab controls)
+		.on("click", '[data-toggle="tab"][aria-expanded="false"]', function (e) {
+			navCleanup();
+			
+			var action = $(this).data("action");
+			e.originalEvent && $("select", e.delegateTarget).val(action);
+			
+			urls = (urls.length == 0) ? $.map(actionsSet, function (set, idx) { return set.url; }) : [ actionsSet[action].url ];
+			window.panelComp.refreshData(urls);
+		})
+		// Change active tab (using the combobox)
+		.on("change", "select", function (e) {
+			$('[data-toggle="tab"][data-action="' + this.value + '"]', e.delegateTraget).eq(0).click();
+		})
+		// Manage content when active tab changes
+		.on("shown.bs.tab", '[data-toggle="tab"][aria-expanded]', function (e) {
+			// Toggle visibility of specific toolbar icons
+			$('[data-showwhen]', ".top-controls").addClass("hidden").filter('[data-showwhen="' + $(e.currentTarget).data("action") + '"]').removeClass("hidden");
+			taoUserProfile.userRole !== "ADMIN" && $('[data-action="op-plus"]', ".top-controls").remove();
+		});
+		
+		// Start with active toolbox containers
+		$('[data-toggle="tab"][data-action="active_users"]', $selectActivePanel).eq(0).click();
+	});
+	
+//# sourceURL=users-admin2.fragment.js
+</script>

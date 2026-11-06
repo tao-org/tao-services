@@ -1,6 +1,5 @@
 package ro.cs.tao.wps.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,13 +29,14 @@ import ro.cs.tao.services.interfaces.WebServiceAuthenticationService;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.wms.beans.LayerInfo;
 import ro.cs.tao.wms.impl.WMSClient;
+import tools.jackson.databind.ObjectMapper;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
 @RestController
-@RequestMapping("/wms")
+@RequestMapping({ "/wms", "/wms/" })
 @Tag(name = "WMS Endpoint", description = "Endpoint for remote WMS operations")
 public class WMSController extends BaseController {
 
@@ -56,7 +56,7 @@ public class WMSController extends BaseController {
     private TargetDescriptorRepository targetDescriptorRepository;
 
 
-    @RequestMapping(value = {"/list"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = {"/list", "/list/"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> list() {
         try {
             final List<Container> containers = containerService.listByType(ContainerType.WMS);
@@ -71,7 +71,7 @@ public class WMSController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/{id:.+}", "/{id:.+}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getById(@PathVariable("id") String id) {
         try {
             return prepareResult(wmsComponentService.findById(id));
@@ -84,7 +84,7 @@ public class WMSController extends BaseController {
      * Creates a new WMS component (client).
      * @param bean  Structure defining connection and authentication information for the remote WMS service
      */
-    @RequestMapping(value = "/", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/", "" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
@@ -114,7 +114,7 @@ public class WMSController extends BaseController {
      * Updates a WMS component definition.
      * @param bean  Structure defining connection and authentication information for the remote WMS service
      */
-    @RequestMapping(value = "/", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/", "" }, method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> update(@RequestBody WebServiceBean bean) {
         try {
             if (bean == null) {
@@ -152,7 +152,7 @@ public class WMSController extends BaseController {
      * Removes a WMS component.
      * @param id    The component identifier
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/{id:.+}", "/{id:.+}/" }, method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> delete(@PathVariable("id") String id) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
@@ -165,7 +165,8 @@ public class WMSController extends BaseController {
         return responseEntity;
     }
 
-    @RequestMapping(value = "/inspect", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/inspect", "/inspect/" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ro.cs.tao.services.commons.RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<?> inspectRemote(@RequestParam(name = "request") String requestType,
                                            @RequestParam(name = "remoteAddress") String endpoint,
                                            @RequestParam(name = "capability", required = false) String capability,
@@ -181,7 +182,7 @@ public class WMSController extends BaseController {
                 throw new IllegalArgumentException("[request] Unsupported value");
             }
             final WebServiceAuthentication auth = new ObjectMapper().readerFor(WebServiceAuthentication.class).readValue(authentication);
-            final WMSClient client = new WMSClient(endpoint, auth, currentPrincipal());
+            final WMSClient client = new WMSClient(endpoint, auth, currentPrincipal(), true);
             if ("GetCapabilities".equalsIgnoreCase(requestType)) {
                 Container capabilities = client.getCapabilities();
                 if (Boolean.TRUE.equals(save)) {
@@ -215,7 +216,7 @@ public class WMSController extends BaseController {
                 component.setDescription(description);
                 component.setRemoteAddress(endpoint);
                 component.setVisibility(ProcessingComponentVisibility.USER);
-                component.setOwner(currentUser());
+                component.setOwner(currentOwner());
                 component.setVersion("WMS " + layerInfo.getWmsVersion());
                 List<ParameterDescriptor> parameters = new ArrayList<>();
 

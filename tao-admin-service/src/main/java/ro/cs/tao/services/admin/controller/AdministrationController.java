@@ -16,6 +16,7 @@
 package ro.cs.tao.services.admin.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -34,6 +35,7 @@ import ro.cs.tao.persistence.ResourceSubscriptionProvider;
 import ro.cs.tao.persistence.managers.AuditManager;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.AuthenticationMode;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.admin.beans.Flavor;
 import ro.cs.tao.services.admin.beans.ResourceSubscriptionRequest;
 import ro.cs.tao.services.admin.beans.ResourceSubscriptionResponse;
@@ -55,9 +57,9 @@ import ro.cs.tao.user.User;
 import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.TriConsumer;
+import ro.cs.tao.utils.executors.MemoryUnit;
 import ro.cs.tao.utils.mail.MailSender;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.LocalDateTime;
@@ -65,7 +67,40 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author Oana H.
+ * Controller responsible for administrative operations related to user accounts, subscriptions,
+ * user sessions, and messaging. Provides endpoints for managing users and groups, retrieving
+ * session and processing metrics, and sending administrative notifications.
+ *
+ * Inherits common functionality from the {@code BaseController} class.
+ *
+ * Fields:
+ * - adminService: Service for managing administrative operations.
+ * - tokenService: Service for working with authentication tokens.
+ * - sessionRegistry: Registry for tracking user sessions.
+ * - auditManager: Service for auditing actions and events.
+ * - resourceSubscriptionProvider: Provider to manage resource subscriptions for users.
+ * - nodeFlavorProvider: Service for managing node configurations or types.
+ *
+ * Methods:
+ * - addNewUser: Endpoint to create a new user account.
+ * - getAllUsersUnicityInfo: Endpoint to retrieve all user uniqueness information.
+ * - getAllUserNames: Endpoint to retrieve all user IDs or names.
+ * - findUsersByStatus: Endpoint to list user accounts by their activation status.
+ * - findLoggedUsers: Endpoint to list currently logged-in users.
+ * - getGroups: Endpoint to list all existing user groups.
+ * - getUserInfo: Endpoint to retrieve detailed information about a specific user.
+ * - getUserActiveSubscription: Endpoint to retrieve a user's active resource subscription details.
+ * - createUserSubscription: Endpoint to create a new resource subscription for a user.
+ * - updateUserSubscription: Endpoint to update an existing resource subscription for a user.
+ * - closeUserSubscription: Endpoint to terminate a user's resource subscription.
+ * - updateUserInfo: Endpoint to update a user's account information.
+ * - disableUser: Endpoint to disable a specific user account along with any additional actions.
+ * - deleteUser: Endpoint to permanently delete a specific user account.
+ * - messageUser: Endpoint to send a message from the administrator to a logged-in user.
+ * - messageUsers: Endpoint to send a message from the administrator to all logged-in users.
+ * - impersonate: Endpoint to trigger Keycloak redirection after an impersonation action.
+ * - getSessionsTime: Endpoint to retrieve aggregated time spent by users within a specified interval.
+ * - getTotalProcessingTime: Endpoint to retrieve the total processing time of users, in minutes.
  */
 @RestController
 @RequestMapping("/admin")
@@ -95,7 +130,7 @@ public class AdministrationController extends BaseController {
      * @param newUserInfo   The user account information
      */
     @RequestMapping(value = "/users", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> addNewUser(@RequestBody User newUserInfo) {
         /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -109,7 +144,9 @@ public class AdministrationController extends BaseController {
                 //send email with activation link
                 final MailSender mailSender = new MailSender();
                 final ConfigurationProvider configManager = ConfigurationManager.getInstance();
-                final String activationEndpointUrl = configManager.getValue("tao.services.base") + "/user/activate/" + userInfo.getId();
+                final String activationEndpointUrl = configManager.getValue("tao.services.base") + "/user/activate/"
+                        + java.net.URLEncoder.encode(userInfo.getId(), java.nio.charset.StandardCharsets.UTF_8)
+                        + "?token=" + ro.cs.tao.services.commons.CapabilityTokens.issue("activation", userInfo.getId(), java.time.Duration.ofDays(1));
                 final String userFullName = userInfo.getFirstName() + " " + userInfo.getLastName();
                 final String activationEmailContent = constructEmailContentForAccountActivation(userFullName, activationEndpointUrl);
                 mailSender.sendMail(userInfo.getEmail(), "TAO - User activation required", activationEmailContent, null);
@@ -123,8 +160,14 @@ public class AdministrationController extends BaseController {
         }
     }
 
+    /**
+     * Retrieves information regarding the uniqueness of all user accounts.
+     * This method is accessible only to users with the "admin" role.
+     *
+     * @return ResponseEntity containing a ServiceResponse with details about the uniqueness of all users.
+     */
     @RequestMapping(value = "/users/unicity", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> getAllUsersUnicityInfo() {
         /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -132,8 +175,14 @@ public class AdministrationController extends BaseController {
         return prepareResult(adminService.getAllUsersUnicityInfo());
     }
 
+    /**
+     * Retrieves the list of all user names.
+     * This method can only be accessed by users with the "admin" role.
+     *
+     * @return ResponseEntity containing a ServiceResponse object with the list of user names.
+     */
     @RequestMapping(value = "/users/ids", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> getAllUserNames() {
         /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -146,7 +195,7 @@ public class AdministrationController extends BaseController {
      * @param activationStatus  The user status
      */
     @RequestMapping(value = "/users", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> findUsersByStatus(@RequestParam("status") UserStatus activationStatus) {
         /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -169,7 +218,7 @@ public class AdministrationController extends BaseController {
      * Lists the currently logged-in users
      */
     @RequestMapping(value = "/users/logged", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> findLoggedUsers() {
         /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -186,7 +235,7 @@ public class AdministrationController extends BaseController {
      * Lists the existing user groups
      */
     @RequestMapping(value = "/users/groups", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> getGroups() {
         /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -199,7 +248,7 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId) {
         /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -224,7 +273,7 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> getUserActiveSubscription(@PathVariable("userId") String userId) {
         if (!adminService.isDevModeEnabled()) {
             /*if (!isCurrentUserAdmin()) {
@@ -278,6 +327,7 @@ public class AdministrationController extends BaseController {
             nodeFlavor.setDisk(512);
             nodeFlavor.setSwap(16384);
             nodeFlavor.setRxtxFactor(0.5f);
+            nodeFlavor.setMemoryUnit(MemoryUnit.MB);
             flavor.setFlavor(nodeFlavor);
             flavor.setQuantity(1);
             flavor.setHdd(2048);
@@ -294,12 +344,9 @@ public class AdministrationController extends BaseController {
      * @param request The subscription entity request
      */
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> createUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
-        /*if (!isCurrentUserAdmin()) {
-            return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }*/
         Map<String, Map<String, Integer>> flavors;
         if (request == null || (flavors = request.getFlavors()) == null || flavors.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
@@ -338,7 +385,7 @@ public class AdministrationController extends BaseController {
                 } catch (PersistenceException e) {
                     throw new TopologyException(e);
                 }
-            }, "User subscription initialized", callback);
+            }, "Fixed Resources user nodes are being initialized!", callback);
             return prepareResult("Subscription is being initialized");
         } catch (Exception ex) {
             return handleException(ex);
@@ -351,12 +398,9 @@ public class AdministrationController extends BaseController {
      * @param request The subscription entity request
      */
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> updateUserSubscription(@PathVariable("userId") String userId,
                                                                      @RequestBody ResourceSubscriptionRequest request) {
-        /*if (!isCurrentUserAdmin()) {
-            return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }*/
         Map<String, Map<String, Integer>> flavorsRequest;
         if (request == null || (flavorsRequest = request.getFlavors()) == null || flavorsRequest.isEmpty()) {
             return prepareResult("One or more required values are empty!", ResponseStatus.FAILED);
@@ -370,10 +414,8 @@ public class AdministrationController extends BaseController {
             subscription.setObjectStorageGB(request.getObjectStorageGB());
             subscription.setType(request.getType());
             subscription.setPaid(request.isPaid());
-            if(!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
-                resourceSubscriptionProvider.update(subscription);
-                return prepareResult("Subscription information updated. Pay per use subscription cannot update node information");
-            }
+            //resourceSubscriptionProvider.update(subscription);
+            //return prepareResult("Subscription information updated. Pay per use subscription cannot update node information");
             final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
             for (Iterator<Map.Entry<String, FlavorSubscription>> it = subscription.getFlavors().entrySet().iterator(); it.hasNext(); ) {
                 Map.Entry<String, FlavorSubscription> flavorEntry = it.next();
@@ -385,7 +427,9 @@ public class AdministrationController extends BaseController {
                     it.remove();
                     asyncExecute(() -> {
                         try {
-                            adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, flavorSubscription.getQuantity());
+                            if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, flavorSubscription.getQuantity());
+                            }
                         } catch (PersistenceException | TopologyException e) {
                             throw new TopologyException(e);
                         }
@@ -405,7 +449,9 @@ public class AdministrationController extends BaseController {
                                     + quantityDifference + " quantity added";
                             asyncExecute(() -> {
                                 try {
-                                    adminService.createFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
+                                    if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                        adminService.createFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
+                                    }
                                 } catch (PersistenceException | TopologyException e) {
                                     throw new TopologyException(e);
                                 }
@@ -417,15 +463,16 @@ public class AdministrationController extends BaseController {
                                     + quantityDifference + " quantity deleted";
                             asyncExecute(() -> {
                                 try {
-                                    adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
-
+                                    if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                        adminService.deleteFlavorNodesForSubscription(subscription, flavorSubscription, quantityDifference);
+                                    }
                                 } catch (PersistenceException | TopologyException e) {
                                     throw new TopologyException(e);
                                 }
                             }, successMessage, callback);
                         }
+                        updated++;
                     }
-                    updated++;
                 }
                 flavorsRequest.remove(flavorId);
             }
@@ -446,7 +493,9 @@ public class AdministrationController extends BaseController {
                 final String successMessage = "Node with flavor " + nodeFlavor.getId() + " created";
                 asyncExecute(() -> {
                     try {
-                        adminService.createFlavorNodesForSubscription(subscription, newFlavorSubscription, quantity);
+                        if(subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                            adminService.createFlavorNodesForSubscription(subscription, newFlavorSubscription, quantity);
+                        }
                     } catch (PersistenceException | TopologyException e) {
                         throw new TopologyException(e);
                     }
@@ -466,36 +515,30 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}/subscription", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> closeUserSubscription(@PathVariable("userId") String userId) {
-        /*if (!isCurrentUserAdmin()) {
-            return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }*/
         try {
             ResourceSubscription subscription = resourceSubscriptionProvider.getUserOpenSubscription(userId);
-            if (subscription == null) {
-                throw new IllegalArgumentException("No such subscription");
+            if (subscription != null) {
+                if (subscription.getEnded() != null) {
+                    throw new IllegalAccessException("Subscription already closed");
+                }
+                subscription.setEnded(LocalDateTime.now());
+                resourceSubscriptionProvider.update(subscription);
+                for (Map.Entry<String, FlavorSubscription> entry : subscription.getFlavors().entrySet()) {
+                    final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
+                    asyncExecute(() -> {
+                        try {
+                            if (!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
+                                adminService.deleteFlavorNodesForSubscription(subscription, entry.getValue(), entry.getValue().getQuantity());
+                            }
+                        } catch (PersistenceException | TopologyException e) {
+                            throw new TopologyException(e);
+                        }
+                    }, "All nodes deleted for user subscription", callback);
+                }
             }
-            if (subscription.getEnded() != null) {
-                throw new IllegalAccessException("Subscription already closed");
-            }
-            subscription.setEnded(LocalDateTime.now());
-            resourceSubscriptionProvider.update(subscription);
-            //delete nodes as required
-            if(!subscription.getType().equals(SubscriptionType.FIXED_RESOURCES)) {
-                return prepareResult("Subscription information deleted. Pay per use subscription cannot delete nodes.");
-            }
-            for(Map.Entry<String, FlavorSubscription> entry : subscription.getFlavors().entrySet()){
-                final TriConsumer<String, Exception, String> callback = makeCallbackMessage(userId);
-                asyncExecute(() -> {
-                    try {
-                        adminService.deleteFlavorNodesForSubscription(subscription, entry.getValue(), entry.getValue().getQuantity());
-                    } catch (PersistenceException | TopologyException e) {
-                        throw new TopologyException(e);
-                    }
-                }, "All nodes deleted for user subscription", callback);
-            }
-            return prepareResult("Subscription closed", ResponseStatus.SUCCEEDED);
+            return prepareResult("Any open subscription closed", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             return handleException(ex);
         }
@@ -506,7 +549,7 @@ public class AdministrationController extends BaseController {
      * @param updatedUserInfo   The user account information
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> updateUserInfo(@PathVariable("userId") String userId,
                                                              @RequestBody User updatedUserInfo) {
         /*if (!isCurrentUserAdmin()) {
@@ -545,7 +588,7 @@ public class AdministrationController extends BaseController {
      * @param additionalDisableActions  Additional actions to be performed
      */
     @RequestMapping(value = "/users/{userId}/disable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> disableUser(@PathVariable("userId") String userId, @RequestBody DisableUserInfo additionalDisableActions) {
         /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -567,24 +610,28 @@ public class AdministrationController extends BaseController {
      * @param userId  The user identifier
      */
     @RequestMapping(value = "/users/{userId}", method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
-    public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("userId") String userId) {
-        /*if (!isCurrentUserAdmin()) {
-            return prepareResult(null, HttpStatus.UNAUTHORIZED);
-        }*/
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
+    public ResponseEntity<ServiceResponse<?>> deleteUser(@PathVariable("userId") String userId,
+                                                         @RequestParam(value = "deletePrivateResources", required = false, defaultValue = "false") boolean deletePrivateResources) {
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
-        try {
-            adminService.deleteUser(userId);
-            // TODO delete private resources
-            /*if (deletePrivateResources){
-
-            }*/
-            return prepareResult(String.format("User %s was deleted", userId), ResponseStatus.SUCCEEDED);
-        } catch (Exception ex) {
-            return handleException(ex);
-        }
+        final TriConsumer<String, Exception, String> callback = makeCallbackMessage(SystemPrincipal.instance().getName());
+        asyncExecute(() -> {
+            try {
+                if (deletePrivateResources) {
+                    DisableUserInfo disableUserInfo = new DisableUserInfo(true);
+                    adminService.disableUser(userId, disableUserInfo);
+                    adminService.deleteUser(userId);
+                } else {
+                    adminService.deleteUser(userId);
+                }
+            } catch (Exception ex) {
+                logger.warning(ex.getMessage());
+            }
+        } ,"User " + userId + (deletePrivateResources ? " and the associated resources were" : " was") + " deleted", callback);
+        return prepareResult(String.format("User %s is being deleted. Private resources will be removed in backround",
+                                           userId), ResponseStatus.SUCCEEDED);
     }
 
     /**
@@ -594,7 +641,7 @@ public class AdministrationController extends BaseController {
      * @param message The message
      */
     @RequestMapping(value = "/message", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> messageUser(@RequestParam("userId") String userId,
                                                           @RequestParam("message") String message) {
         /*if (!isCurrentUserAdmin()) {
@@ -621,7 +668,7 @@ public class AdministrationController extends BaseController {
      * @param message The message
      */
     @RequestMapping(value = "/message/all", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> messageUsers(@RequestParam("message") String message) {
         /*if (!isCurrentUserAdmin()) {
             return prepareResult(null, HttpStatus.UNAUTHORIZED);
@@ -648,7 +695,7 @@ public class AdministrationController extends BaseController {
      * @param userId    The user to impersonate
      */
     @RequestMapping(value = "/impersonate", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @RoleRequired(roles = "admin")
+    @RoleRequired(roles = ro.cs.tao.user.Role.ADMIN)
     public ResponseEntity<ServiceResponse<?>> impersonate(@RequestParam("userId") String userId, HttpServletRequest request) throws IOException {
         try {
             /*if (!isCurrentUserAdmin()) {
@@ -750,3 +797,4 @@ public class AdministrationController extends BaseController {
         };
     }
 }
+

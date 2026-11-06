@@ -3,17 +3,31 @@ package ro.cs.tao.services.security;
 import org.springframework.security.core.Authentication;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.security.TokenCache;
+import ro.cs.tao.security.TokenProvider;
 import ro.cs.tao.utils.Tuple;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
 public class TokenCacheImpl implements TokenCache {
     private final Map<String, Tuple<Token, Authentication>> cache = new HashMap<>();
     private final Logger logger = Logger.getLogger(TokenCache.class.getName());
     private final Map<Token, Authentication> expiredTokens = new HashMap<>();
+    private TokenProvider tokenProvider;
+    private BiFunction<String, String, Authentication> authenticationFactory;
+
+    @Override
+    public void setTokenProvider(TokenProvider tokenProvider) {
+        this.tokenProvider = tokenProvider;
+    }
+
+    @Override
+    public void setAuthenticationFactory(BiFunction<String, String, Authentication> function) {
+        this.authenticationFactory = function;
+    }
 
     @Override
     public void evictExpired() {
@@ -79,18 +93,33 @@ public class TokenCacheImpl implements TokenCache {
     @Override
     public Authentication getAuthentication(String token) {
         Authentication authentication = null;
+        Map.Entry<String, Tuple<Token, Authentication>> tEntry = null;
         for (Map.Entry<String, Tuple<Token, Authentication>> entry : cache.entrySet()) {
-            final Token t = entry.getValue().getKeyOne();
-            if ((!t.isExpired() && t.getToken().equals(token)) ||
-                    (t.getRefreshToken() != null && t.getRefreshToken().equals(token))) {
-                authentication = entry.getValue().getKeyTwo();
+            if (entry.getValue().getKeyOne().getToken().equals(token)) {
+                tEntry = entry;
+                break;
             }
         }
-        /*if (authentication == null) {
-            // maybe it was a just expired token
-            final Map.Entry<Token, Authentication> entry = expiredTokens.entrySet().stream().filter(e -> e.getKey().getRefreshToken().equals(token)).findFirst().orElse(null);
-            return entry != null ? entry.getValue() : null;
-        }*/
+        if (tEntry != null) {
+            Token t = tEntry.getValue().getKeyOne();
+            if (!t.isExpired()) {
+                authentication = tEntry.getValue().getKeyTwo();
+            } else {
+                String refreshToken;
+                if ((refreshToken = t.getRefreshToken()) != null) {
+                    if (refreshToken.equals(token)) {
+                        authentication = tEntry.getValue().getKeyTwo();
+                    } else if (this.tokenProvider != null) {
+                        final Token newToken = this.tokenProvider.newToken(refreshToken);
+                        if (newToken != null) {
+                            put(newToken,
+                                this.authenticationFactory.apply(newToken.getToken(), tEntry.getKey()));
+                            cache.remove(tEntry.getKey());
+                        }
+                    }
+                }
+            }
+        }
         return authentication;
     }
 

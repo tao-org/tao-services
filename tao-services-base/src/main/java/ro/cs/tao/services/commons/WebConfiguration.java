@@ -1,16 +1,16 @@
 package ro.cs.tao.services.commons;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.http.CacheControl;
+import org.springframework.http.converter.AbstractJacksonHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.*;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.cfg.EnumFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +36,7 @@ public abstract class WebConfiguration implements WebMvcConfigurer {
         //Here we add our custom-configured HttpMessageConverter
         final int size = converters.size();
         for (int i = 0; i < size; i++) {
-            if (converters.get(i) instanceof MappingJackson2HttpMessageConverter) {
+            if (converters.get(i) instanceof AbstractJacksonHttpMessageConverter) {
                 converters.set(i, jacksonMessageConverter());
             }
         }
@@ -44,7 +44,7 @@ public abstract class WebConfiguration implements WebMvcConfigurer {
 
     @Override
     public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
-        configurer.favorPathExtension(false);
+        configurer.favorParameter(false);
     }
 
     @Override
@@ -59,22 +59,16 @@ public abstract class WebConfiguration implements WebMvcConfigurer {
 
     protected abstract String defaultPage();
 
-    protected MappingJackson2HttpMessageConverter jacksonMessageConverter(){
-        MappingJackson2HttpMessageConverter messageConverter = new MappingJackson2HttpMessageConverter();
-        ObjectMapper mapper = new ObjectMapper();
-        //Registering Hibernate5Module to support lazy objects
-        Hibernate5Module hibernate5Module = new Hibernate5Module();
-        hibernate5Module.disable(Hibernate5Module.Feature.USE_TRANSIENT_ANNOTATION);
-        hibernate5Module.enable(Hibernate5Module.Feature.FORCE_LAZY_LOADING);
-        mapper.registerModule(hibernate5Module);
-        mapper.registerModule(new JavaTimeModule());
-        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
-        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        messageConverter.setObjectMapper(mapper);
-        return messageConverter;
+    protected JacksonJsonHttpMessageConverter jacksonMessageConverter(){
+        JsonMapper mapper = JsonMapper.builder()
+                .changeDefaultPropertyInclusion(incl ->
+                        incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .enable(EnumFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
+                .enable(EnumFeature.WRITE_ENUMS_USING_TO_STRING)
+                .build();
+        return new JacksonJsonHttpMessageConverter(mapper);
     }
 
 }

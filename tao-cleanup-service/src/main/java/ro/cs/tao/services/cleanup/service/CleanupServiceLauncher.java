@@ -26,10 +26,14 @@ import ro.cs.tao.services.commons.ServiceLauncher;
 @Configuration
 @ImportResource("classpath:cleanup-service-context.xml")
 
-public class CleanupServiceLauncher implements ServiceLauncher {
+public class CleanupServiceLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(CleanupServiceLauncher.class, args);
+    }
+
+    public CleanupServiceLauncher() {
+        super();
     }
 
     @Override

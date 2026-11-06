@@ -12,6 +12,7 @@ public class FormatDescriptor {
     private Integer pixelMaxScale;
     private Integer noDataValue;
     private int priority;
+    private String expression;
 
     private List<Pattern> namePatternsCompiled;
 
@@ -71,6 +72,14 @@ public class FormatDescriptor {
         this.priority = priority;
     }
 
+    public String getExpression() {
+        return expression;
+    }
+
+    public void setExpression(String expression) {
+        this.expression = expression;
+    }
+
     public boolean matches(String expression) {
         if (this.namePatterns != null) {
             if (this.namePatternsCompiled == null) {
@@ -88,6 +97,7 @@ public class FormatDescriptor {
     public static class Band {
         private int indexInRaster;
         private String pattern;
+        private String expression;
 
         public int getIndexInRaster() {
             return indexInRaster;
@@ -103,6 +113,14 @@ public class FormatDescriptor {
 
         public void setPattern(String pattern) {
             this.pattern = pattern;
+        }
+
+        public String getExpression() {
+            return expression;
+        }
+
+        public void setExpression(String expression) {
+            this.expression = expression;
         }
 
         public boolean matches(String expression) {

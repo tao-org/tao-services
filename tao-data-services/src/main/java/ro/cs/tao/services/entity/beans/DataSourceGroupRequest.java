@@ -1,5 +1,8 @@
 package ro.cs.tao.services.entity.beans;
 
+/**
+ * Represents a request for managing a data source group, including its identifier, label, and associated queries.
+ */
 public class DataSourceGroupRequest {
     private String groupId;
     private String groupLabel;

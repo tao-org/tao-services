@@ -15,6 +15,28 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * The ProcessingComponentBean class serves as a wrapper around the ProcessingComponent object.
+ * It provides access to various properties and behaviors of a processing component, enabling
+ * the retrieval of metadata, configuration, and operational details in a simplified manner.
+ *
+ * This class integrates with JSON and XML serialization frameworks by leveraging annotations
+ * such as @JsonIgnore, @JsonGetter, @XmlElementWrapper, and @XmlTransient to control the
+ * serialization of its fields and methods. It includes properties related to the component's
+ * file location, working directory, template, parameters, threading capabilities, visibility,
+ * and operational metadata.
+ *
+ * Methods:
+ * - Provides access to metadata such as ID, label, description, version, authors, and copyright.
+ * - Exposes configuration details like file location, working directory, parallelism,
+ *   container ID, and runtime properties.
+ * - Supplies information about inputs, outputs, tags, and custom descriptors for processing.
+ * - Offers insights into the component's behavior, including multi-threading, visibility,
+ *   and active state.
+ *
+ * Designed for integration in contexts where encapsulation and streamlined data access
+ * are required for processing components.
+ */
 public class ProcessingComponentBean {
     private final ProcessingComponent component;
 

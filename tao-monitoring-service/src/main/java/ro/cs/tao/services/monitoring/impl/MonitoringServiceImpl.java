@@ -21,6 +21,7 @@ import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.NodeRuntimeInspector;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
+import ro.cs.tao.execution.monitor.RuntimeInfoCluster;
 import ro.cs.tao.execution.monitor.RuntimeInspectorFactory;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.NotifiableComponent;
@@ -128,6 +129,27 @@ public class MonitoringServiceImpl extends NotifiableComponent implements Monito
             logger.warning(ex.getMessage());
         }
         return runtimeInfo;
+    }
+
+    @Override
+    public RuntimeInfoCluster getClusterSnapshot(String hostName) {
+        RuntimeInfoCluster runtimeInfoCluster = null;
+        try {
+            if (NodeManager.isAvailable()) {
+                runtimeInfoCluster = NodeManager.getInstance().getClusterSnapshot(hostName);
+            } else {
+                NodeDescription node = TopologyManager.getInstance().getNode(hostName);
+                AuthenticationType type = node.getSshKey() != null ? AuthenticationType.CERTIFICATE : AuthenticationType.PASSWORD;
+                NodeRuntimeInspector inspector = RuntimeInspectorFactory.getInstance().get(node.getId(), node.getRole(),
+                        type,
+                        node.getUserName(),
+                        type == AuthenticationType.PASSWORD ? node.getUserPass() : node.getSshKey());
+                runtimeInfoCluster = inspector.getSnapshotCluster();
+            }
+        } catch (Throwable ex) {
+            logger.warning(ex.getMessage());
+        }
+        return runtimeInfoCluster;
     }
 
     @Override

@@ -1,0 +1,76 @@
+/* Modern */
+body.skin-modern {
+	/* Skin specific values */
+	--content-header-color      : #fff;
+	--content-header-bkg        : var(--primary-color);
+	
+	--header-color              : #fff;
+	--header-bkg                : var(--primary-color);
+	--header-logo-color         : #fff;
+	--header-logo-bkg           : var(--primary-color);
+	
+	--tab-topo-active-border    : #fff;
+	--pill-active-color         : var(--active-color);
+	--pill-active-bkg           : #fff;
+	--pill-topo-active-border   : #fff;
+	
+	--btn-nodeop-color          : var(--primary-color);
+	--btn-nodeop-bkg            : transparent;
+	--btn-nodeop-border         : transparent;
+	
+	/* Redefined root variables */.foo{}
+	&.skin-modern-navy {
+		--primary-color         : hsl(210  48%  28% / 1);
+		--primary-bkg           : hsl(210  30%  97% / 1);
+		--primary-bkg-lighter   : #7eb9da;
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(210  38%  38% / 1);
+		--sidebar-item-bkg		: hsl(212  29%  55% / 1);
+	}
+	&.skin-modern-purple {
+		--primary-color         : hsl(282  40%  40% / 1);
+		--primary-bkg           : hsl(282  30%  97% / 1);
+		--primary-bkg-lighter   : hsl(281  48%  57% / 1);
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(282  30%  50% / 1);
+		--sidebar-item-bkg      : hsl(282  28%  46% / 1);
+	}
+	&.skin-modern-green {
+		--primary-color         : hsl(153  48%  28% / 1);
+		--primary-bkg           : hsl(153  30%  97% / 1);
+		--primary-bkg-lighter   : hsl(153  45%  43% / 1);
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(153  38%  38% / 1);
+		--sidebar-item-bkg      : hsl(153  37%  44% / 1);
+	}
+	&.skin-modern-red {
+		--primary-color         : hsl(  0  65%  50% / 1);
+		--primary-bkg           : hsl(  0  30%  97% / 1);
+		--primary-bkg-lighter   : hsl(  0  82%  70% / 1);
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(  0  55%  60% / 1);
+		--sidebar-item-bkg      : hsl(  0  61%  62% / 1);
+	}
+	&.skin-modern-teal {
+		--primary-color         : hsl(174 100%  29% / 1);
+		--primary-bkg           : hsl(174  30%  97% / 1);
+		--primary-bkg-lighter   : hsl(174  96%  41% / 1);
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(174  90%  36% / 1);
+		--sidebar-item-bkg      : hsl(173  65%  44% / 1);
+	}
+	&.skin-modern-indigo {
+		--primary-color         : hsl(243  40%  45% / 1);
+		--primary-bkg           : hsl(243  30%  97% / 1);
+		--primary-bkg-lighter   : hsl(242  86%  68% / 1);
+		--active-color          : #4d627b;
+		--default-color         : #7a878e;
+		--scroll-color          : hsl(243  30%  55% / 1);
+		--sidebar-item-bkg      : hsl(242  44%  56% / 1);
+	}
+}

@@ -5,6 +5,8 @@ import com.bc.wps.api.WpsServiceInstance;
 import com.bc.wps.api.schema.Execute;
 import com.bc.wps.api.schema.ExecuteResponse;
 import com.bc.wps.api.schema.StatusType;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,8 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
@@ -24,8 +24,8 @@ import java.util.Locale;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
 
 public class WPSControllerTest_Execute {
 

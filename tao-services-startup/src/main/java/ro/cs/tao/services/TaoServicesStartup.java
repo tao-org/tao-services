@@ -15,10 +15,10 @@
  */
 package ro.cs.tao.services;
 
+import jakarta.servlet.http.HttpSession;
 import org.ggf.drmaa.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -46,6 +46,7 @@ import ro.cs.tao.messaging.system.StartupCompletedMessage;
 import ro.cs.tao.persistence.AuditProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.TransactionalMethod;
+import ro.cs.tao.persistence.UserProvider;
 import ro.cs.tao.quota.QuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.services.commons.BaseController;
@@ -64,11 +65,12 @@ import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.executors.FileProcessFactory;
 import ro.cs.tao.utils.executors.MemoryUnit;
 
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -85,7 +87,7 @@ import java.util.stream.Stream;
  * @author Cosmin Cara
  */
 
-@SpringBootApplication(exclude = {SolrAutoConfiguration.class})
+@SpringBootApplication
 @EnableScheduling
 
 public class TaoServicesStartup extends StartupBase implements LifeCycleProcessorListener {
@@ -99,6 +101,8 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
     private ResourceUsageProvider resourceUsageProvider;
     @Autowired
     private ResourceUsageReportProvider resourceUsageReportProvider;
+    @Autowired
+    private UserProvider userProvider;
 
     private final static Logger logger = Logger.getLogger(TaoServicesStartup.class.getName());
     private static final Map<String, Class> plugins = new LinkedHashMap<String, Class>() {{
@@ -137,6 +141,7 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
                 System.exit(1);
             }
             TransactionalMethod.setTransactionManager(transactionManager);
+            lifeCycleProcessor.setApplicationContext(((ContextRefreshedEvent) event).getApplicationContext());
             lifeCycleProcessor.activate(this);
         } else if (event instanceof HttpSessionDestroyedEvent) {
             final LogEvent evt = new LogEvent();
@@ -150,6 +155,7 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
                 }
                 evt.setUserId(userId);
                 evt.setTimestamp(LocalDateTime.now());
+                evt.setSessionId(session.getId());
                 evt.setEvent("Logout");
                 try {
                     auditProvider.save(evt);
@@ -198,6 +204,7 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
         final String url = cfgProvider.getValue("tao.services.base");
         final String path = cfgProvider.getValue("site.path");
         Path configJsPath = Paths.get(path).resolve("assets").resolve("dist").resolve("js").resolve("config.js");
+        Path sapPath = Paths.get(path).resolve("sap.html");
         try (Stream<String> stream = Files.lines(configJsPath)) {
             final List<String> lines = stream.map(line -> {
                 if (line.contains("baseWssUrl") &&
@@ -218,10 +225,27 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
                 }
             }).collect(Collectors.toList());
             Files.write(configJsPath, lines);
+            String sapContents = Files.readString(sapPath);
+            int idx = sapContents.indexOf("Version ");
+            if (idx < 0) {
+                idx = sapContents.indexOf("&copy");
+                sapContents = sapContents.substring(0, idx) + "Version " + ConfigurationManager.getInstance().getValue("tao.version") + " " + sapContents.substring(idx);
+                Files.writeString(sapPath, sapContents, StandardOpenOption.TRUNCATE_EXISTING);
+            }
         } catch (IOException e) {
             logger.severe(e.getMessage());
         }
         logger.info(String.format("Web interface is accessible at %s", url));
+        try {
+            Object service = ApplicationContextHelper.getContext().getBean("documentIngestionService");
+            if (service != null) {
+                Method method = service.getClass().getMethod("reindexDocumentsAsync");
+                method.invoke(service);
+                logger.fine("Indexing new documents started in background");
+            }
+        } catch (Exception e) {
+            logger.warning(e.getMessage());
+        }
         Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.value(), new StartupCompletedMessage());
     }
 
@@ -237,6 +261,10 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
         final long limit = Long.parseLong(stringSize.replace(unit, "").trim()) * unitSize(unit);
         final Path cachePath = Paths.get(sitePath).resolve("previews");
         try {
+            if (!Files.exists(cachePath)) {
+                Files.createDirectories(cachePath);
+                return;
+            }
             long size = FileUtilities.folderSize(cachePath);
             try (Stream<Path> stream = Files.list(cachePath)) {
                 List<Path> files = stream.sorted((o1, o2) -> {
@@ -258,6 +286,15 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
         }
     }
 
+    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.DAYS)
+    public void evictExpiredApiKeys() {
+        try {
+            userProvider.deleteExpiredApiKeys();
+        } catch (Exception e) {
+            logger.warning("Exception encountered while purging expired API keys: " + e.getMessage());
+        }
+    }
+
     private long unitSize(String unit) {
         try {
             return MemoryUnit.getEnumConstantByName(unit).value();
@@ -266,3 +303,4 @@ public class TaoServicesStartup extends StartupBase implements LifeCycleProcesso
         }
     }
 }
+

@@ -21,12 +21,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.Sort;
 import ro.cs.tao.SortDirection;
+import ro.cs.tao.Tag;
+import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.component.validation.ValidationException;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.services.commons.BaseController;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.interfaces.CRUDService;
+import ro.cs.tao.utils.StringUtilities;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,7 +48,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
      * Returns the details of the entity
      * @param id    The entity identifier
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/{id:.+}", "/{id:.+}/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> get(@PathVariable("id") K id) {
         ResponseEntity<ServiceResponse<?>> response;
         T entity;
@@ -63,7 +66,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/", "" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> list(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
                                                    @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
                                                    @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
@@ -75,11 +78,79 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
             return prepareResult(service.list());
         }
     }
+
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    @RequestMapping(value = { "/filter", "/filter/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> filter(@RequestParam(name = "pageNumber", required = false) Optional<Integer> pageNumber,
+                                                     @RequestParam(name = "pageSize", required = false) Optional<Integer> pageSize,
+                                                     @RequestParam(name = "sortBy", required = false) Optional<String> sortByField,
+                                                     @RequestParam(name = "sortDirection", required = false) Optional<SortDirection> sortDirection,
+                                                     @RequestParam(name = "label", required = false) Optional<String> label,
+                                                     @RequestParam(name = "tags", required = false) Optional<List<String>> tags) {
+        if (pageNumber.isEmpty()) {
+            return prepareResult(filterResults(service.list()));
+        }
+        try {
+            Sort sort = new Sort().withField(sortByField.orElse("id"), sortDirection.orElse(SortDirection.ASC));
+            return prepareResult(filterResults(service.list(pageNumber, pageSize.or(() -> Optional.of(10)), sort,
+                                                             label.orElse(null), componentTags(tags))));
+        } catch (Exception e) {
+            return prepareResult(List.of());
+        }
+    }
+
+    @RequestMapping(value = { "/count", "/count/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> count(@RequestParam(name = "label", required = false) Optional<String> label,
+                                                    @RequestParam(name = "tags", required = false) Optional<List<String>> tags) {
+        return prepareResult(service.count(label.orElse(null), componentTags(tags)));
+    }
+
+    @RequestMapping(value = { "/list", "/list/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> listByIds(@RequestParam(name = "id") String idList) {
+        if (StringUtilities.isNullOrEmpty(idList)) {
+            return prepareResult("Invalid id list", ResponseStatus.FAILED);
+        }
+        List<K> ids = Arrays.stream(idList.split(","))
+                            .map(this::parseIdentifier)
+                            .collect(Collectors.toList());
+        return prepareResult(listResults(service.list(ids)));
+    }
+
+    @RequestMapping(value = { "/find", "/find/" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> find(@RequestParam(name = "text") String text,
+                                                   @RequestParam(name = "labels", required = false, defaultValue = "true") boolean labelsOnly) {
+        if (StringUtilities.isNullOrEmpty(text)) {
+            return prepareResult("Invalid search text", ResponseStatus.FAILED);
+        }
+        return prepareResult(labelsOnly
+                             ? service.findLabelsBySimilarity(text, currentOwner())
+                             : service.findBySimilarity(text, currentOwner()));
+    }
+
+    private List<Tag> componentTags(Optional<List<String>> tags) {
+        return tags.orElse(List.of()).stream()
+                   .filter(t -> !StringUtilities.isNullOrEmpty(t))
+                   .map(t -> new Tag(TagType.COMPONENT, t))
+                   .collect(Collectors.toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    protected K parseIdentifier(String value) {
+        return (K) value;
+    }
+
+    protected Object filterResults(List<T> entities) {
+        return entities;
+    }
+
+    protected Object listResults(List<T> entities) {
+        return entities;
+    }
     /**
      * Creates a new entity.
      * If values of the entity fields are not correct, the response will contain which values were faulty.
      */
-    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/", "" }, method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody T entity) {
         final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
         ServiceResponse<?> body = validationResponse.getBody();
@@ -94,7 +165,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
      * Updates an existing entity.
      * If values of the entity fields are not correct, the response will contain which values were faulty.
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/{id:.+}", "/{id:.+}/" }, method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> update(@PathVariable("id") K id, @RequestBody T entity) {
         final ResponseEntity<ServiceResponse<?>> validationResponse = validate(entity);
         ServiceResponse<?> body = validationResponse.getBody();
@@ -114,7 +185,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
      * @param id    The entity identifier
      * @param tags  The list of tags to be associated
      */
-    @RequestMapping(value = "/{id:.+}/tag", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/{id:.+}/tag", "/{id:.+}/tag/" }, method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> tag(@PathVariable("id") K id, @RequestBody List<String> tags) {
         try {
             return prepareResult(service.tag(id, tags));
@@ -127,7 +198,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
      * @param id    The entity identifier
      * @param tags  The list of tags to be removed
      */
-    @RequestMapping(value = "/{id:.+}/untag", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = { "/{id:.+}/untag", "/{id:.+}/untag/" }, method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> untag(@PathVariable("id") K id, @RequestBody List<String> tags) {
         try {
             return prepareResult(service.unTag(id, tags));
@@ -140,7 +211,7 @@ public abstract class DataEntityController<T, K, S extends CRUDService<T, K>> ex
      * Deletes an entity
      * @param id    The entity identifier
      */
-    @RequestMapping(value = "/{id:.+}", method = RequestMethod.DELETE)
+    @RequestMapping(value = { "/{id:.+}", "/{id:.+}/" }, method = RequestMethod.DELETE)
     public ResponseEntity<ServiceResponse<?>> delete(@PathVariable("id") K id) {
         ResponseEntity<ServiceResponse<?>> response;
         try {

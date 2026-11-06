@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ro.cs.tao.Sort;
 import ro.cs.tao.Tag;
+import ro.cs.tao.component.DataDescriptor;
 import ro.cs.tao.component.NodeAffinity;
 import ro.cs.tao.component.SourceDescriptor;
 import ro.cs.tao.component.TargetDescriptor;
@@ -27,6 +28,7 @@ import ro.cs.tao.component.enums.TagType;
 import ro.cs.tao.datasource.DataSourceComponent;
 import ro.cs.tao.datasource.DataSourceConfiguration;
 import ro.cs.tao.datasource.beans.Query;
+import ro.cs.tao.datasource.beans.RepositoryQuery;
 import ro.cs.tao.datasource.persistence.DataSourceComponentProvider;
 import ro.cs.tao.datasource.persistence.DataSourceConfigurationProvider;
 import ro.cs.tao.datasource.persistence.QueryProvider;
@@ -42,6 +44,7 @@ import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
 import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.services.interfaces.DataSourceComponentService;
 import ro.cs.tao.services.model.component.ProductSetInfo;
+import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 
 import java.nio.file.Paths;
@@ -119,6 +122,16 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
     }
 
     @Override
+    public List<DataSourceComponent> getSystemDataSourceComponents(int pageNumber, int pageSize, Sort sort) {
+        return dataSourceComponentProvider.getSystemDataSourceComponents(pageNumber, pageSize, sort);
+    }
+
+    @Override
+    public long countSystemDataSourceComponents() {
+        return dataSourceComponentProvider.countSystemDataSourceComponents();
+    }
+
+    @Override
     public List<Tag> getDatasourceTags() {
         return tagProvider.list(TagType.DATASOURCE);
     }
@@ -143,7 +156,7 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
 
     @Override
     public void delete(String id) throws PersistenceException {
-        if (id.startsWith("product-set-") || id.startsWith("stac-service-")) {
+        if (id.startsWith("product-set-") || id.startsWith("stac-service-") || id.startsWith("repository-query")) {
             dataSourceComponentProvider.delete(id);
         } else {
             throw new UnsupportedOperationException("Data source components cannot be deleted");
@@ -280,6 +293,18 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             throw new IllegalArgumentException("Invalid principal (null)");
         }
         final Repository repository = this.repositoryProvider.getByUserAndName(principal.getName(), "LOCAL");
+        return createForLocations(productPaths, repository.getId(), label, principal);
+    }
+
+    @Override
+    public DataSourceComponent createForLocations(List<String> productPaths, String repositoryId, String label, Principal principal) throws PersistenceException {
+        if (productPaths == null || productPaths.isEmpty()) {
+            throw new IllegalArgumentException("Product list is empty");
+        }
+        if (principal == null) {
+            throw new IllegalArgumentException("Invalid principal (null)");
+        }
+        final Repository repository = this.repositoryProvider.get(repositoryId);
         final List<String> list = productPaths.stream()
                                               .map(n -> Paths.get(repository.resolve(n)).toUri().toString())
                                               .collect(Collectors.toList());
@@ -287,12 +312,12 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         final String sensor = products != null && products.size() == productPaths.size()
                               && products.stream().map(EOProduct::getProductType).distinct().count() == 1
                 ? products.get(0).getProductType() : "n/a";
-        DataSourceComponent userDSC = new DataSourceComponent(sensor, "Local");
+        DataSourceComponent userDSC = new DataSourceComponent(sensor, repository.getId());
         userDSC.setFetchMode(FetchMode.OVERWRITE);
         userDSC.setVersion("1.0");
-        userDSC.setDescription(label + " (local product set)");
-        userDSC.setAuthors("AVL Team");
-        userDSC.setCopyright("(C) AVL Team");
+        userDSC.setDescription(label + " (" + repository.getName() + " product set)");
+        userDSC.setAuthors("TAO Team");
+        userDSC.setCopyright("(C) TAO Team");
         userDSC.setNodeAffinity(NodeAffinity.Any);
         LocalDateTime time = LocalDateTime.now();
         final String newId = String.join("-", "product", "set", principal.getName(),
@@ -305,13 +330,68 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         sourceDescriptor.getDataDescriptor().setSensorType(SensorType.UNKNOWN);
         sourceDescriptor.getDataDescriptor().setLocation(String.join(",", list));
         sourceDescriptor.setCardinality(productPaths.size());
-        sourceDescriptorRepository.save(sourceDescriptor);
         TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
-        targetDescriptor.setId(UUID.randomUUID().toString());
         targetDescriptor.setParentId(newId);
         targetDescriptor.setCardinality(productPaths.size());
         //targetDescriptor.addConstraint("Same cardinality");
-        targetDescriptorRepository.save(targetDescriptor);
+        userDSC.setSystem(false);
+        userDSC = dataSourceComponentProvider.save(userDSC);
+        tag(userDSC.getId(), new ArrayList<>() {{
+            add(label);
+        }});
+        return userDSC;
+    }
+
+    @Override
+    public DataSourceComponent createRepositoryQuery(String label,
+                                                     String srcRepositoryId, String srcPath,
+                                                     String dstRepositoryId, String dstPath,
+                                                     int itemsCount, String fileNamePattern) throws PersistenceException {
+
+        if (StringUtilities.isNullOrEmpty(srcRepositoryId)) {
+            throw new IllegalArgumentException("Missing source repository");
+        }
+        final RepositoryQuery query = new RepositoryQuery();
+        final Repository repository = this.repositoryProvider.get(srcRepositoryId);
+        if (repository == null) {
+            throw new IllegalArgumentException("Source repository not found");
+        }
+        query.setSourceRepositoryId(srcRepositoryId);
+        query.setSourcePath(StringUtilities.isNullOrEmpty(srcPath) ? "" : srcPath);
+        if (!this.repositoryProvider.exists(dstRepositoryId)) {
+            throw new IllegalArgumentException("Destination repository not found");
+        }
+        query.setDestinationRepositoryId(dstRepositoryId);
+        query.setDestinationPath(StringUtilities.isNullOrEmpty(dstPath) ? "" : dstPath);
+        query.setItemsCount(itemsCount > 0
+                                    ? itemsCount
+                                    : StringUtilities.isNullOrEmpty(fileNamePattern)
+                                      ? 1
+                                      : 0);
+        query.setFileNamePattern(fileNamePattern);
+        DataSourceComponent userDSC = new DataSourceComponent("n/a", "Local");
+        userDSC.setFetchMode(FetchMode.OVERWRITE);
+        userDSC.setVersion("1.0");
+        userDSC.setDescription(label + " (repository query)");
+        userDSC.setAuthors("TAO Team");
+        userDSC.setCopyright("(C) TAO Team");
+        userDSC.setNodeAffinity(NodeAffinity.Any);
+        LocalDateTime time = LocalDateTime.now();
+        final String newId = String.join("-", "repository", "query", repository.getId(), srcPath);
+        userDSC.setId(newId);
+        userDSC.getSources().forEach(s -> s.setParentId(newId));
+        userDSC.getTargets().forEach(t -> t.setParentId(newId));
+        userDSC.setLabel(label != null && !label.isEmpty() ? label : newId);
+        SourceDescriptor sourceDescriptor = userDSC.getSources().stream()
+                                                   .filter(s -> s.getName().equals(DataSourceComponent.QUERY_PARAMETER))
+                                                   .findFirst().get();
+        DataDescriptor dataDescriptor = sourceDescriptor.getDataDescriptor();
+        dataDescriptor.setSensorType(SensorType.UNKNOWN);
+        dataDescriptor.setLocation(query.toString());
+        sourceDescriptor.setCardinality(1);
+        TargetDescriptor targetDescriptor = userDSC.getTargets().get(0);
+        targetDescriptor.setParentId(newId);
+        targetDescriptor.setCardinality(itemsCount);
         userDSC.setSystem(false);
         userDSC = dataSourceComponentProvider.save(userDSC);
         tag(userDSC.getId(), new ArrayList<>() {{
@@ -408,5 +488,20 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
             this.targetDescriptorRepository.save(targetDescriptor);
         }
         return this.dataSourceComponentProvider.update(component);
+    }
+
+    @Override
+    public List<DataSourceComponent> getRepositoryQueries(String userId) throws PersistenceException {
+        return this.dataSourceComponentProvider.getPRepositoryQueries(userId);
+    }
+
+    @Override
+    public List<String> getQueryPathsForRepository(String repositoryId) throws PersistenceException {
+        return this.dataSourceComponentProvider.getQueryPathsForRepository(repositoryId);
+    }
+
+    @Override
+    public void deleteQueryForRepository(String repositoryId, String path) throws PersistenceException {
+        this.dataSourceComponentProvider.getRepositoryQuery(repositoryId, path);
     }
 }

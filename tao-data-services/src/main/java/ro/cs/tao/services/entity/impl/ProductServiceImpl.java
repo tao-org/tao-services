@@ -190,7 +190,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 					final double size = files.size();
 					for (Path file : files) {
 						try {
-							if (inspectionExclusions.stream().anyMatch(file::endsWith)) {
+							if (inspectionExclusions.stream().anyMatch(e -> file.toString().endsWith(e))) {
 								continue;
 							}
 							Path targetPath;
@@ -281,7 +281,7 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		final Principal principal = SessionStore.currentContext().getPrincipal();
 		try (Stream<Path> stream = Files.walk(srcPath, 1)) {
 			List<Path> folders = stream.collect(Collectors.toList());
-			Path publicFolder = Paths.get(SystemVariable.USER_WORKSPACE.value());
+			Path targetFolder = Paths.get(SystemVariable.UserWorkspace(principal.getName()).value());
 			Parallel.For(0, folders.size(), (idx) -> {
 				Path folder = folders.get(idx);
 				try {
@@ -305,15 +305,15 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 						}
 
 						Path targetPath;
-						if (!folder.toString().startsWith(publicFolder.toString())) {
-							targetPath = publicFolder.resolve(folder.getFileName());
+						if (!folder.toString().startsWith(targetFolder.toString())) {
+							targetPath = targetFolder.resolve(folder.getFileName());
 							if (!Files.exists(targetPath)) {
 								Logger.getLogger(ProductService.class.getName()).fine(String.format("%s %s to %s",
-										linkOnly ? "Linking" : "Copying", folder, publicFolder.toFile()));
+										linkOnly ? "Linking" : "Copying", folder, targetFolder.toFile()));
 								if (linkOnly) {
 									FileUtilities.link(folder, targetPath);
 								} else {
-									FileUtils.copyDirectoryToDirectory(folder.toFile(), publicFolder.toFile());
+									FileUtils.copyDirectoryToDirectory(folder.toFile(), targetFolder.toFile());
 									FileUtilities.ensurePermissions(targetPath);
 								}
 							}
@@ -400,9 +400,9 @@ public class ProductServiceImpl extends EntityService<EOProduct> implements Prod
 		} else {
 			product = list.get(0);
 		}
-		if (product != null) {
+		if (product != null && !StringUtilities.isNullOrEmpty(product.getQuicklookLocation())) {
 			try {
-				Path quicklook = OutputDataHandlerManager.getInstance().applyHandlers(targetPath);
+				Path quicklook = OutputDataHandlerManager.getInstance().applyHandlers(targetPath, principal.getName());
 				if (quicklook != null) {
 					product.setQuicklookLocation(quicklook.toString());
 				}

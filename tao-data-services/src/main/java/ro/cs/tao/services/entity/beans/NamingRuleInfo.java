@@ -2,6 +2,9 @@ package ro.cs.tao.services.entity.beans;
 
 import ro.cs.tao.eodata.naming.NamingRule;
 
+/**
+ * Represents information about a naming rule, including its identifier, sensor type, and description.
+ */
 public class NamingRuleInfo {
     private int id;
     private String sensor;
