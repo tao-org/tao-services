@@ -1,0 +1,285 @@
+<style>
+	@-webkit-keyframes pulse {50% {opacity:0.8;}}
+	@keyframes         pulse {50% {opacity:0.8;}}
+	#executionsHistory {
+		.details {
+			.row {font-style:italic;line-height:1.2em;font-weight:300;margin-top:0.714em;>* {margin:0;}}
+			@media (min-width: 768px) {.row {padding-left:3.214em;margin-top:0.357em;}}
+		}
+		.timelines                   {margin-right:-1.071em;max-height:calc(100vh - 23em);overflow-y:auto;@media (max-width: 767px) {& {max-height:unset;}}
+		.timeline                    {margin:0;
+			+&                       {margin-top:0.5em;}
+			>*                       {padding:0;margin:0;position:relative;}
+			>.helper                 {color:#333;border-bottom:0.15em solid;display:block;font-size:1.3em;width:fit-content;white-space:nowrap;}
+			ul                       {list-style:none;padding:0;}
+			li                       {list-style:none;padding-top:1em;}
+			.fa                      {margin-right:0.4em;}
+			.btn                     {display:block;width:6em;padding:0.3em;border:0;border-radius:0.3em;font-weight:600;line-height:1.4;text-align:center;outline:0;}
+			.btn:hover               {text-decoration:underline;}
+			&::before                {top:3em;bottom:1em;left:3em;margin-left:-0.142em;}
+			&.pending_route          {
+				&::before            {background-color   :#fcde83;}
+				.helper              {border-bottom-color:#fcde83;}
+				.btn                 {background-color   :#fcde83;color:inherit;}
+				.item-hook           {background-color   :#fcde83;}
+			}
+			&.history_route          {
+				&::before            {background-color   :#00587a;}
+				.helper              {border-bottom-color:#00587a;}
+				.item-hook           {background-color   :#00587a;}
+			}
+		}
+		.timeline-item               {position:relative;padding-right:1.071em;margin-left:2.857em;
+			&:nth-last-child(2)      {margin-bottom:1em;}
+			.item-hook               {background-color:#808080;position:absolute;top:1em;left:0;width:0;height:100%;}
+			.item-hook::before       {content:"";position:absolute;top:1.071em;bottom:0;display:block;width:0.285em;background-color:inherit;}
+			.item-hook::after        {content:"";position:absolute;top:-0.071em;left:-0.571em;display:block;width:1.428em;height:1.428em;background-color:inherit;border:0.357em solid white;border-radius:50%;}
+			.item-hook.bg-end        {height:0;&::after {border-radius:0;top:-1.428em;}}
+			.item-header             {cursor:pointer;}
+			.item-user               {margin-left:2em;box-decoration-break:clone;font-weight:700;color:#555;}
+			.item-timestamp          {margin-left:2em;box-decoration-break:clone;float:right;color:#999;}
+			.item-name               {margin-left:3em;box-decoration-break:clone;display:block;}
+			.item-status             {margin-left:3em;box-decoration-break:clone;color:#808080;.info {background-color:#808080;}}
+			.show-more               {margin-left:3em;display:block;.collapsed:hover>&::before {opacity:1;}
+						   &::before {content:"Tasks:";font-size:1em;margin-left:2em;}
+				.collapsed>&::before {content:"Show tasks...";font-size:0.9em;color:#3d668c;opacity:0.2;-webkit-animation:pulse linear 1s 2 forwards;animation:pulse linear 1s 2 forwards;}
+			}
+			.item-body               {margin-left:3em;box-decoration-break:clone;}
+			.item-components         {margin-left:2em;}
+		}
+		/* Status colors */
+		.timeline-item {
+			.item-hook {
+				.status-success    & {background-color:#008000;}
+				.status-error      & {background-color:#d01717;}
+				.status-warning    & {background-color:#ff6b19;}
+				.status-undefined  & {background-color:#808080;}
+			}
+			.item-status {
+				.status-success    & {color:#008000;.info {background-color:#008000;}}
+				.status-error      & {color:#d01717;.info {background-color:#d01717;}}
+				.status-warning    & {color:#ff6b19;.info {background-color:#ff6b19;}}
+				.status-undefined  & {color:#808080;.info {background-color:#808080;}}
+			}
+			.fa.fa-check             {color:#008000;}
+			.fa.fa-times             {color:#d01717;}
+			.fa.fa-question          {color:#f39c12;}
+		}
+	}
+</style>
+
+<div id="executionsHistory" class="modal-content">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+		<h4 class="modal-title">Executions History &nbsp;<small style="font-weight:300;color:white;">The history of executions for the <strong>selected</strong> workflow.</small></h4>
+		<div class="details"></div>
+	</div>
+	<div class="modal-body">
+		<section class="timelines">
+			<div class="timeline history_route">
+				<a class="helper" href="#historyExec" data-toggle="collapse" aria-expanded="true">Executions history</a>
+				<ul id="historyExec" class="collapse in" aria-expanded="true"></ul>
+			</div>
+			<div class="timeline pending_route">
+				<a class="helper" href="#pendingExec" data-toggle="collapse">Pending executions</a>
+				<ul id="pendingExec" class="collapse in"></ul>
+			</div>
+		</section>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-flat btn-default" data-dismiss="modal">Close</button>
+	</div>
+</div>
+
+<script type="text/javascript">
+	var $executionsHistory = $("#executionsHistory");
+	
+	// Show workflow details
+	function showWorkflowDetails(wf) {
+		var wfDetails = '<div class="row"><label class="col-sm-3 col-md-2">Workflow name:</label><div class="col-sm-9 col-md-10">' + wf.name       + '</div></div>' +
+						'<div class="row"><label class="col-sm-3 col-md-2">Initiator:</label>    <div class="col-sm-9 col-md-10">' + wf.userId     + '</div></div>' +
+						'<div class="row"><label class="col-sm-3 col-md-2">Status:</label>       <div class="col-sm-9 col-md-10">' + wf.status     + '</div></div>' +
+						'<div class="row"><label class="col-sm-3 col-md-2">Visibility:</label>   <div class="col-sm-9 col-md-10">' + wf.visibility + '</div></div>' +
+						'<div class="row"><label class="col-sm-3 col-md-2">Active:</label>       <div class="col-sm-9 col-md-10">' +  (wf.active ? "yes" : "no")  + '</div></div>';
+		$(".details", $executionsHistory).html(wfDetails);
+	}
+	
+	// Get workflow execution tasks
+	function getExecutionTasks(execution) {
+		var ui_getTimeInterval = function (startISO, endISO) {
+			var html = '';
+			var startTime = moment(startISO).format("HH:mm:ss");
+			var endTime   = moment(endISO  ).format("HH:mm:ss");
+			startTime = (startTime == "Invalid date" ? "N/A" : startTime);
+			endTime   = (endTime   == "Invalid date" ? "N/A" : endTime  );
+			html = '[' + startTime + ' - ' + endTime + ']';
+			return html;
+		}
+		var ui_getTaskStatusIcon = function (taskStatus){
+			var statusColor = "fa-question";
+			switch (taskStatus) {
+				case "QUEUED_ACTIVE": statusColor = "fa-clock-o" ; break;
+				case "UNDETERMINED" : statusColor = "fa-question"; break;
+				case "RUNNING"      : statusColor = "fa-bolt"    ; break;
+				case "DONE"         : statusColor = "fa-check"   ; break;
+				case "FAILED"       : statusColor = "fa-times"   ; break;
+				case "SUSPENDED"    : statusColor = "fa-ban"     ; break;
+				case "CANCELLED"    : statusColor = "fa-ban"     ; break;
+				default             : statusColor = "fa-question"; break;
+			}
+			html = '<i aria-hidden="true" class="fa fa-fw ' + statusColor + '"></i>';
+			return html;
+		};
+		var ui_getTaskHost = function (host){
+			return (host ? ', on host <strong>' + host + '</strong>' : '');
+		};
+		
+		var tasks = '';
+		$.ajax({
+			async   : false,
+			url     : baseRestApiURL + "workflow/" + execution.workflowId + "/executions/" + execution.id,
+			type    : "GET",
+			dataType: "json",
+			headers : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			success: function (response) {
+				if (response.status == responseStatus.success) {
+					tasks = '<div class="item-components">';
+					$.each(response.data, function (index, task) {
+						var statusIcon = ui_getTaskStatusIcon(task.executionStatus);
+						tasks += statusIcon + ui_getTimeInterval(task.startTime, task.endTime) + ' <strong>' + task.componentId + ' [' + task.workflowNodeId + ']' + '</strong>' + ui_getTaskHost(task.executionNodeHostName) + '<br>';
+					});
+					tasks += '</div>';
+				}
+			}
+		});
+		return tasks;
+	}
+	
+	// Show workflow executions list
+	function renderExecutions(executions, error) {
+		if (executions) {
+			var $pendingItemsList = $(".pending_route ul", $executionsHistory).html("");
+			var $historyItemsList = $(".history_route ul", $executionsHistory).html("");
+			
+			// Order executions list by start time
+			executions.sort(function(exec1, exec2) { return moment(exec1.startTime).toDate() < moment(exec2.startTime).toDate() ? 1 : (moment(exec1.startTime).toDate() > moment(exec2.startTime).toDate() ? -1 : 0); });
+			var prevPendingItemDate = "";
+			var prevHistoryItemDate = "";
+			$.each(executions, function (index, exec) {
+				var statusColor = "status-undefined";
+				var pendingItem = false;
+				switch (exec.executionStatus) {
+					case "UNDETERMINED" : statusColor = "status-undefined"; pendingItem = true; break;
+					case "QUEUED_ACTIVE": statusColor = "status-undefined"; pendingItem = true; break;
+					case "DONE"         : statusColor = "status-success"  ; break;
+					case "FAILED"       : statusColor = "status-error"    ; break;
+					case "SUSPENDED"    : statusColor = "status-warning"  ; break;
+					case "CANCELLED"    : statusColor = "status-undefined"; break;
+					default             : statusColor = "status-undefined"; break;
+				}
+				var startTime = moment(exec.startTime).format("YYYY-MM-DD HH:mm:ss"); startTime = (startTime == "Invalid date" ? "N/A" : startTime);
+				var endTime   = moment(exec.endTime  ).format("YYYY-MM-DD HH:mm:ss"); endTime   = (endTime   == "Invalid date" ? "N/A" : endTime  );
+				var tlItem    =
+					'<li class="timeline-item ' + statusColor + '">' +
+						'<i class="item-hook"></i>' +
+						'<div class="item-header collapsed" data-toggle="collapse" data-target="#item_' + index + '" aria-expanded="false">' +
+							'<span class="item-user"><i class="fa fa-user"></i>' + exec.userId + '</span>' +
+							'<span class="item-timestamp"><i class="fa fa-clock-o"></i><small>' + startTime + '</small></span>' +
+							'<span class="item-name">Job name: <strong>' + exec.name + '</strong></span>' +
+							'<span class="item-status">' +
+								'Status: <strong>' + exec.executionStatus + '</strong>&nbsp;' +
+								'<small class="label info"><i class="fa fa-clock-o fa-fw"></i>' + startTime + '</small> - <small class="label info"><i class="fa fa-clock-o fa-fw"></i>' + endTime + '</small>' +
+							'</span>' +
+							'<span class="show-more"></span>' +
+						'</div>' +
+						'<div id="item_' + index + '" class="item-body collapse" aria-expanded="false">' + getExecutionTasks(exec) + '</div>' +
+					'</li>';
+				
+				var itemDate = moment(exec.startTime).format("YYYY-MM-DD");
+				if (pendingItem) {
+					if (itemDate != prevPendingItemDate) {
+						$pendingItemsList.append('<li class="time-label"><button class="btn btn-primary collapsed" data-toggle="collapse" data-target="#pending' + itemDate + '" aria-expanded="false">' + itemDate + '</button><ul id="pending' + itemDate + '" class="collapse" aria-expanded="false"></ul></li>');
+						prevPendingItemDate = itemDate;
+					}
+					$("ul#pending" + itemDate).append(tlItem);
+				} else {
+					if (itemDate != prevHistoryItemDate) {
+						$historyItemsList.append('<li class="time-label"><button class="btn btn-primary collapsed" data-toggle="collapse" data-target="#history' + itemDate + '" aria-expanded="false">' + itemDate + '</button><ul id="history' + itemDate + '" class="collapse" aria-expanded="false"></ul></li>');
+						prevHistoryItemDate = itemDate;
+					}
+					$("ul#history" + itemDate).append(tlItem);
+				}
+			});
+			if ($pendingItemsList.find(".timeline-item").length == 0) {
+				$pendingItemsList.prev().remove();
+				$pendingItemsList.remove();
+			}
+			if ($historyItemsList.find(".timeline-item").length == 0) {
+				$historyItemsList.append(
+					'<li class="time-label">' +
+						'<button class="btn btn-primary" data-toggle="collapse" data-target="#history_empty" aria-expanded="true">...</button>' +
+						'<ul id="history_empty" class="collapse in" aria-expanded="true">' +
+							'<li class="timeline-item status-warning"><i class="item-hook"></i><span class="item-status"><i class="fa fa-warning"></i>No completed executions for this workflow.</span></li>' +
+						'</ul>' +
+					'</li>'
+				);
+			}
+			$(".time-label>ul", $executionsHistory).append('<li class="timeline-item"><i class="item-hook bg-end"></i></li>');
+			var $firstTime = $(".time-label:first-child>ul", $historyItemsList);
+			var $firstItem = $(".timeline-item:first-child>.item-body", $firstTime);
+			setTimeout(function () { $firstTime.collapse("show"); }, 150);
+			setTimeout(function () { $firstItem.collapse("show"); }, 500);
+		} else {
+			$(".modal-body", $executionsHistory).html(
+				'<div class="job-history-one cancelled panel empty" style="background-color:rgb(221 75 57/0.1);">' +
+					'<div class="panel-header">' +
+						'<span class="helper title">' + (error || 'No execution results to display.') + '</span>' +
+					'</div>' +
+				'</div>'
+			);
+		}
+	}
+	
+	// Get workflow executions list
+	function getWorkflowExecutions(workflowId) {
+		$.ajax({
+			url     : baseRestApiURL + "workflow/" + workflowId + "/executions",
+			type    : "GET",
+			dataType: "json",
+			headers : {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error: function (jqXHR, textStatus, error) {
+				var msg = error?.message || error;
+				(msg === "") && (msg = jqXHR?.responseText || "");
+				(msg === "") && (msg = "Error while loading workflow executions.");
+				renderExecutions(null, msg);
+			},
+			success: function(response) {
+				if (response.status == responseStatus.success) {
+					renderExecutions(response.data);
+				} else {
+					renderExecutions(null, response.message);
+				}
+			}
+		});
+	}
+	
+	$(document).ready( function() {
+		var initData = $.extend({}, window.userOpStack?.dna || {});
+		
+		// Show workflow details
+		showWorkflowDetails(initData);
+		
+		// Get the executions list for the selected workflow
+		getWorkflowExecutions(initData.id);
+	});
+	
+//# sourceURL=workflow-trace-executions.js
+</script>

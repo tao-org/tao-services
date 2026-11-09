@@ -1,6 +1,7 @@
 package ro.cs.tao.ogc.model.processes.core;
 
 import ro.cs.tao.ogc.model.common.Link;
+import ro.cs.tao.ogc.model.processes.core.execution.TransmissionMode;
 
 import java.util.ArrayList;
 import java.util.List;

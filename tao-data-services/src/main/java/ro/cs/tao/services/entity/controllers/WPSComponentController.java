@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/wpscomponent")
-@Tag(name = "WPS Components", description = "Operations related to WPS components managements")
+@Tag(name = "WPS Components", description = "Operations related to the management of WPS components")
 public class WPSComponentController extends BaseController {
 
     @Autowired

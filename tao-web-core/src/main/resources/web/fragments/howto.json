@@ -1,0 +1,436 @@
+[{
+	"name":"Dashboard",
+	"value":[
+		{
+			"note":"The EO dashboard is accessed from the 'Dashboard' section in the menu. <br>{dashboard_menu}<br>",
+			"cardinality": 1,
+			"title": "Running Jobs",
+			"content": "This panel displays the jobs that are running at the current time. <br>{running_jobs}<br>"
+		},
+		{
+			"cardinality": 2,
+			"title": "Executions History",
+			"content": "This panel displays the executions of workflows and remote services. <br>{executions_history}<br>"
+		},
+		{
+			"cardinality": 3,
+			"title": "Download Statistics",
+			"content": "This panel displays downloads in progress and their transfer progress. <br>{download_statistics}<br>"
+		},
+		{
+			"cardinality": 4,
+			"title": "Notifications History",
+			"content": "This panel displays all the notifications together with the date and time. It can be refreshed by pressing {refresh_icon} and pages can be changed using the two arrows {change_page}.<br>{notifications_history}<br> "
+		}	
+	]
+},
+{
+	"name": "Search",
+	"value": [
+		{
+			"title":"Search section",
+			"cardinality": 1,
+			"content": "The EO datasets accessible in TAO can be inspected or queried through the 'Search' section, located under 'My Datasets' in the side menu. <br>{my_datasets_menu}"
+		},
+		{
+			"cardinality": 2,
+			"title": "Choose where to look for products",
+			"content": "In the 'Dataset Explorer' list, select a category, collection, and provider. The 'Dataset Explorer' list can be easily filtered by clicking on {remote_datasets_filter}, and all filters can be reset by clicking {reset_filters}. <br>{dataset_explorer_tree}<br> For the category and provider filters, multiple selections are supported. After applying the desired filters, click the search button to proceed. <br>{dataset_filter_window}"
+		},
+		{
+			"cardinality": 3,
+			"title": "Search parametrization",
+			"content": "In the 'Dataset Explorer' list, select a data source to open a pop-up window.<br> If the provider requires an account, username and password fields will be displayed, where you must enter the credentials used to connect to the selected provider.<br>{datasource_parameters}</br> Use the slide bar to adjust the minimum coverage of the products for the selected polygon.<br>The polygon can be edited or modified via the pop-up in the top-right corner. <br>{polygon_edit}<br> Once all the details for the new interrogation are entered, click the {start_datasource_interogation} button to proceed."
+		},
+		{
+			"cardinality": 4,
+			"title": "Product selection",
+			"content": "In the 'Query Product Results' window, select the desired products and click the {datasets_collect_products} button.<br>{query_product_results}<br> The selected products will be highlighted on the map with a red border for easy identification.<br>{polygon_results}<br>"
+		}
+	]
+},
+
+{
+	"name":"Sites",
+	"value":[
+		{
+			"cardinality": 1,
+			"title": "Add a new site",
+			"content":"Click the {plus_icon} icon to open a pop-up window with the required parameters and a map for polygon selection to define the new site. After completing all fields and selecting the polygon, click the {add_site} button to confirm and add the new site.<br>{sites_add}<br>>",
+			"note":"Sites can be accessed from the 'My Datasets' section in the menu. <br>{my_datasets_menu}<br>"
+		},
+		{
+			"cardinality": 2,
+			"title": "Edit a site",
+			"content":"Click the {edit_icon} icon of a site to open a pop-up displaying the site's parameters. After updating the parameters, click the {save_changes} button to save your changes."
+		},
+		{
+			"cardinality": 3,
+			"title": "Delete a site",
+			"content":"Click the {delete_icon} icon of any site to initiate its deletion. A confirmation box will appear, and the site will be deleted once you click the {confirm} button."
+		},
+		{
+			"cardinality": 4,
+			"title": "Clone a site ",
+			"content":"Click the {clone} icon of any site to create a clone. The cloned site will have a unique name but retain the same parameters as the selected site."
+		}
+	]
+},
+{
+	"name":"Repositories",
+	"value":[
+		{
+			"cardinality": 1,
+			"title": "Add a new repository",
+			"content":"Click the {plus_icon} icon to open a pop-up window for adding a new repository.<br>Once all parameters for the new repository are filled in, click the {add_new_repository} button. If the process is successful, the new repository will be displayed on the 'Manage Repositories' page.",
+			"note":"Repositories can be managed from 'My Datasets' menu:<br>{my_datasets_menu}"
+		},
+		{
+			"cardinality": 2,
+			"title": "Edit an added repository",
+			"content": "Click the {edit_rep} icon of a repository to open a pop-up displaying its details. After updating the parameters, click the {save_rep} button to save the changes."
+		},
+		{
+			"cardinality": 3,
+			"title": "Delete repository files",
+			"content": "Click the {delete_rep} icon of an added repository to delete it. A confirmation box will appear, and the repository will be deleted once you click the {confirm} button."
+		},
+		{
+			"cardinality": 4,
+			"title": "View repository files",
+			"content": "Click the {view_repositorie_files_icon} icon of a repository to open a window displaying the repository's name. You can then directly select the tab associated with the repository name. <br>{repositories_tab}<br>"
+		},
+		{
+			"cardinality": 5,
+			"title": "View of selected repository",
+			"content": "When a repository is selected, its content will be displayed in two columns. The left column shows the folder hierarchy, while the right column displays the contents of the selected folder. <br>{selected_repository}<br>Using the icons below the tab menu, the user can upload files and create a new folder via {upload_new_rep}. These actions can be performed in both columns. The next two icons allow the user to copy and paste files: {copy_paste_rep}. The copy action is only applicable to selected files in the right column, while the paste action can be applied to any selected folder, whether in the left or right column. The delete icon {delete_file_rep} can be used to delete a selected file or folder in the right column.The final set of icons {create_inspect_rep} allows the user to create a product set, inspect a folder, and view properties. The 'Inspect Folder' action can be applied to any selected folder, whereas the other two actions can only be used on selected files or folders in the right column.The last icon is the search icon {search_icon_rep}, which enables the user to search for a folder or file within the selected folder.In the top-right corner, the download statistics bar {download_statistics_rep} shows the status of any ongoing transfers in the current repository. For the LOCAL repository, two additional options are available for specific files. The 'View on Map' icon {view_on_map} can be used for product files in the right column. When selected, a new window will open with a map view showing the product's location.<br>{map_image_view}<br>The 'Open File' icon {open_file} allows the user to view the content of different files. For large files, there are buttons for navigating between previous and next lines to help move through the content.<br>{opened_file_blank}<br>"
+		}
+	]
+},
+{
+	"name":"Product Sets",
+	"value": [{
+        "cardinality": 1,
+        "title": "Product sets and queries tabs",
+        "content": "On this page, the user can access queries and product sets through the tab menu {queries_product_sets}.",
+        "note":"Product sets can be managed from 'My Datasets' menu:<br>{my_datasets_menu}"
+    },{
+		"cardinality": 2,
+		"title": "Edit product sets",
+		"content": "To edit a product set, click the {edit_icon} icon. A pop-up window will appear, allowing the user to modify the label, description, tags, and products. The changes will be applied only after clicking the {save_btn} button, provided no error message is displayed."
+	}, {
+		"cardinality": 3,
+		"title": "Delete a product set",
+		"content": "Click the {delete_icon} icon of a query to delete it. A confirmation box will appear, and the query will be deleted once you click the 'Confirm' button."
+	},{
+		"cardinality": 4,
+		"title": "Add a new query",
+		"content": "Click the {plus_icon} icon to open a pop-up window for adding a new query.<br> In the 'Dataset Explorer' list, select a category, collection, and provider. You can easily filter the 'Dataset Explorer' list by clicking {remote_datasets_filter}. Once all the required information for the new query is entered, click the {start_datasource_interogation} button. In the 'Query Product Results' window, select the desired products and click the {datasets_collect_products} button.<br> After completing all the steps, click the {create_query} button to create the new query."
+	}, {
+		"cardinality": 5,
+		"title": "Edit query parameters",
+		"content": "To edit the parameters of a query, click the {edit_icon} icon. A pop-up window will appear. The changes will be applied only after clicking the {update_query} button, provided no error message is displayed."
+	}, {
+		"cardinality": 6,
+		"title": "Delete a query",
+		"content": "Click the {delete_icon} icon of a query to delete it. A confirmation box will appear, and the query will be deleted once you click the 'Confirm' button."
+	},
+	{
+		"cardinality": 7,
+		"title": "Create a datasource component",
+		"content": "A data source component is created from the editing window (see 'How to Edit Query Parameters') after the query has been executed (see 'How to Execute a Query') by clicking the {download_button}."
+	}]
+},
+{
+	"name":"Shared Datasets",
+	"value": [{
+        "cardinality": 1,
+        "title": "Shared datasets list",
+        "content": "On this page the user can access all shared datasets.",
+        "note":"Shared datasets can be managed from 'My Datasets' menu:<br>{my_datasets_menu}"
+    }, 
+	{
+		"cardinality": 2,
+		"title": "Delete a shared dataset",
+		"content": "Click the {delete_icon} icon of a query to delete it. A confirmation box will appear, and the query will be deleted once you click the 'Confirm' button."
+	}]
+},
+{
+	"name":"Workflows",
+	"value": [
+	{
+		"cardinality": 1,
+		"title": "Add a new workflow",
+		"content": "Click the {plus_icon} icon to open a pop-up window for adding a new workflow. After entering all the required information for the new workflow, click the {save_workflow} button. If the process is successful, the new workflow will be displayed on the page. ",
+		"note":"Workflows can be managed from 'My Workflows' menu: <br>{my_workflows_menu}<br> Workflow categories can be found as tabs in the upper part of the paage as follows: {active_workflows} and {inactive_workflows}."
+	}, 
+	{
+		"cardinality": 2,
+		"title": "Edit the description of a workflow",
+		"content": "To edit a workflow description, click the {edit_icon} icon. A pop-up window will appear. The changes will be applied only after clicking the {save_workflow} button, provided no error message is displayed."
+	},
+	{
+		"cardinality": 3,
+		"title": "Edit a workflow",
+		"content": "To edit a workflow, click the {edit_workflow} icon, which will redirect you to the editing page. The page features a toolbox menu on the left, a canvas where you can drag and drop elements from the toolbox, and a preview that allows easy access to elements on the canvas by clicking on the blue squares.<br>{toolbox_menu} {workflow_preview}<br> The elements will appear on the canvas, and you can link them together using the colored squares for inputs and outputs.<br>{workflow_ex}{workflow_ex_2}<br> The connectors offer options that can be accessed by clicking on the link arrows, triggering a pop-up to appear.<br>{workflow_link_arrow}<br> After adjusting the options, save your changes by clicking the {save_changes} button, or delete the connector by clicking the {delete_connector} button.     "
+	},{
+		"cardinality": 4,
+		"title": "Delete a workflow",
+		"content": "Click the {delete_icon} icon of any workflow to delete it. A confirmation box will appear, and the workflow will be deleted once you click the {confirm} button."
+	}, 
+	{
+		"cardinality": 5,
+		"title": "Start processing a workflow",
+		"content": "A workflow process can be initiated by clicking the {start_processing_icon} and then pressing the {process_workflow_button} in the pop-up window."
+	},
+	{
+		"cardinality": 6,
+		"title": "View workflow execution results",
+		"content": "The execution results are displayed in the pop-up window that appears after clicking the {workflow_results_execution_icon} icon."
+	},
+	{
+		"cardinality": 7,
+		"title": "View workflow execution traces",
+		"content": "The execution traces are available in the pop-up window that appears after clicking the {workflow_trace_execution_icon} icon."
+	},
+	{
+		"cardinality": 8,
+		"title": "Choose where to look for products",
+		"content": "A workflow is automatically cloned when clicking on the {clone} icon."
+	}]
+},
+{
+	"name":"Remote Services",
+	"value":[
+		{
+			"cardinality": 1,
+			"title": "Add a new remote service",
+			"content":"On each tab page, click the {plus_icon} icon to open a pop-up window for adding a new remote service.<br> After entering all the required information for the new remote service, click the {add_new_remote_service} button.<br> If no errors occur, the new remote service will be displayed on the page.",
+			"note":"Remote Services can be managed from 'My Workflows' menu:.<br>{my_workflows_menu}<br>Remote services categories can be found as tabs in the upper part of the paage as follows: {wms_wps_tabs}<br>"
+		},
+		{
+			"cardinality": 2,
+			"title": "Edit a remote service",
+			"content":"To edit the information of a remote service, click the {edit_icon} icon. A pop-up window will appear. By clicking the {inspect_button} button, the available applications for the remote service will be updated. The changes will be applied only after clicking the {update_remote_service} button."
+		},
+		{
+			"cardinality": 3,
+			"title": "Delete remote services",
+			"content": "Click the {delete_rep} icon of an added repository to delete it. A confirmation box will appear, and the repository will be deleted once you click the {confirm} button."
+		},
+		{
+			"cardinality": 4,
+			"title": "Start execution for a remote service ",
+			"content": "The Execution can be started by clicking the {start_processing_icon}, then pressing the {process_btn} button in the pop-up window after selecting the desired site."
+		}
+	]
+},
+{
+	"name":"Scheduled Jobs",
+	"value":[
+		{
+			"cardinality": 1,
+			"title": "Add a scheduled job ",
+			"content":"Click the {plus_icon} icon to open a pop-up window for adding a new schedule.<br> After filling in all the parameters for the new schedule, click the {schedule_workflow_execution_btn} button. If everything is correct, the new schedule will be added.",
+			"note":"Scheduled tasks can be managed from 'Workspace' menu:<br>{workspace}"
+		},
+		{
+			"cardinality": 2,
+			"title": "Edit a scheduled task",
+			"content": "Click the {edit_icon} icon of a schedule to open a pop-up displaying the schedule details. After updating the parameters, click the {schedule_workflow_execution_btn} button to save the changes."
+		},
+		{
+			"cardinality": 3,
+			"title": "Pause a scheduled task",
+			"content": "Click the {pause_sch} icon of a schedule to pause it. A confirmation box will appear, and the schedule will be paused once you click the 'Confirm' button."
+		},
+		{
+			"cardinality": 4,
+			"title": "Delete a scheduled task",
+			"content": "Click the {delete_icon} icon of a query to delete it. A confirmation box will appear, and the query will be deleted once you click the 'Confirm' button."
+		}
+	]
+},
+
+
+{
+	"name":"Admin System Dashboard",
+	"value":[
+		{
+			"cardinality": 1,
+			"title": "Page presentation",
+			"content":"On this page, the administrator can access available users, available VM's and queued jobs through the page tabs {system_dashboard_tabs}. ",
+			"note":"The system dashboard can be found under 'Admin area' menu.<br>{admin_area_menu}<br>"
+		},
+		{
+			"cardinality": 2,
+			"title": "Available Users",
+			"content":"On this tab, the administrator can view all users and their availability, as well as access each user's activity by clicking {user_view_activity}. Additionally, administrators have the option to send messages to users by clicking {message_user} or impersonate users by clicking {impersonate_user}. "
+		},
+		{
+			"cardinality": 3,
+			"title": "Available VM's ",
+			"content":"On this tab, the administrator can view all available VM's and monitor their activity by pressing {user_view_activity} on the desired VM."
+		},
+		{
+			"cardinality": 4,
+			"title": "Queued Jobs",
+			"content":"On this tab, the administrator can view all queued jobs."
+		}
+	]
+},
+{
+	"name":"Admin Toolbox Containers",
+	"value":[
+		{
+			"cardinality": 1,
+			"title": "Add a new toolbox container",
+			"content":"Click the {plus_icon} icon to open a pop-up window for adding a new toolbox container.<br> After entering all the required information for the new toolbox container, click the {add_new_container} button.<br> If everything is correct, the new container will be displayed on the page.<br>{add_toolbox_container}<br> Docker and auxiliary files or folders can be added by clicking the {folder_file} icons, and descriptors can be enabled by clicking {enable_descriptors}. Files can be uploaded by clicking the {choose_file} button.<br> After filling in all the fields, click the {add_new_container} button to save the new container. ",
+			"note":"In order to see the submenu 'Toolbox Containers', under the section 'Admin area', you must have an administrator profile.<br>{admin_area_menu}<br>"
+		},
+		{
+			"cardinality": 2,
+			"title": "Edit a toolbox container",
+			"content":"To edit the information of a toolbox container, click the {edit_icon} icon. A pop-up window will appear. The changes will be applied only after clicking the {update_container} button."
+		}
+	]
+},
+{
+	"name":"Admin Processing Modules",
+	"value":[
+		{
+			"cardinality": 1,
+			"title": "Add a new processing module",
+			"content": "Click the {plus_icon} icon to open a pop-up window for adding a new component. After completing all the parameters for the new component, click the {add_new_processing_component} button. If everything is correct, the new component will be displayed on the 'All Components' page. ",
+			"note":"Processing modules can be managed under 'Admin area' menu.<br>{admin_area_menu}<br>This interface allows to the user to add processing components that can be used later in the construction of the workflows.<br> A processing component represents an execution step in a workflow and can be: <br>- An OTB application<br>- A SNAP module<br>- An user defined script."
+		},
+		{
+			"cardinality": 2,
+			"title": "Edit a component",
+			"content": "To edit a component, click the {edit_icon} icon. A pop-up window will appear. The changes will be applied only after clicking the {save_processing_component} button, provided no error message is displayed."
+		},
+		{
+			"cardinality": 3,
+			"title": "Delete a component",
+			"content": "Click the {delete_icon} icon of any component to delete it. A confirmation box will appear, and the component will be deleted once you click the 'Confirm' button."
+		}
+	]
+},
+{
+	"name":"Admin Configuration",
+	"value":[
+		{
+			"cardinality": 1,
+			"title": "Edit configuration",
+			"content":"The Configuration page contains several categories to manage and customize system settings: General, Topology, Containers, Execution, Email, OpenStack, Workspaces, Data Sources.<br>{configuration_categories} ",
+			"note":"Configuration can be found under 'Admin area' menu.<br>{admin_area_menu}<br>"
+		}
+	]
+},
+
+{
+	"name":"Admin Remote Web Services",
+	"value":[
+		{
+			"cardinality": 1,
+			"title": "Add a new remote services component",
+			"content":"By clicking on the {plus_icon} icon, a pop-up window will be open.<br> After you select a service id and an application, click {inspect_button}. The 'Parameters' and 'Sources & Targets' windows will be automatically field, you can update the wanted information.<br> After you complete all the parameteres form 'General desc.' window click {create_remote_service} button.<br> If everything goes well, the new component will be displayed in the page.",
+			"note":"The remote services components can be managed from 'Workspace' submenu: <br>{remote_service_components}"
+		},
+		{
+			"cardinality": 2,
+			"title": "Edit a remote services component",
+			"content":"For editing a remote services component, you have to click on the {edit_icon} icon of a specific remote service. A pop-up window will be open. The changes will only apply after clicking the button {save_processing_component}."
+		},
+		{
+			"cardinality": 3,
+			"title": "Delete a remote services component",
+			"content":"Click the {delete_icon} icon of any remote service to delete it. A confirmation box will appear, and the component will be deleted once you click the 'Confirm' button."
+		},
+		{
+			"cardinality": 4,
+			"title": "Start a remote services execution",
+			"content":"By clicking on the {start_processing_icon} icon of any component a pop-up window will be open. <br>{start_rem_serv_comp}<br>In order to start an execution you have to select a site from a dropdown list of the existing sites. The parameters values can be changed and the changes will affect only the current execution.<br> After parameterization click the {remote_services_process} button to start execution."
+		}
+	]
+},
+{
+	"name":"Admin Data sources",
+	"value": [
+		{
+			"cardinality": 1,
+			"title": "Add/edit/delete tags",
+			"content": "A pop-up window for editing or adding tags will open when you click the {edit_icon} button.<br> In the 'Tags' input field, you can delete existing tags by clicking the {tag_delete_icon} or add new ones by typing and pressing Enter.<br> Tag suggestions will appear after typing two characters if matching tags exist in the database. If you attempt to add a tag that already exists for the same data source, the text will be highlighted in red.<br> All changes and new tags will be saved when the {save_tags_button} button is clicked.",
+			"note":"The datasource can be managed from 'Admin area' menu. <br>Data sources cannot be added, deleted or edited from here. Instead, they are plugins of the TAO framework, which are detected at system startup (therefore, to add/remove a new data source, it is sufficient to put/remove the plugin JAR into/from the system class path).<br>{admin_area_menu}"
+		},
+		{
+			"cardinality": 2,
+			"title": "View data source parameters",
+			"content": "To view the parameters of a data source, click the {view_button}. This will open the following dialog:<br> {view_datasource_dialog}"
+		}
+	]
+},
+{
+	"name":"Admin Public repositories",
+	"value": [
+	{
+		"cardinality": 1,
+		"title": "How to add a new public repository",
+		"content": "By clicking on the {plus_icon} icon, a pop-up window will be open.<br> After you fill in the name and description and select the repository type along with filling in each type's parameter, you can press {add_new_public_repositoy} to add a new public repository. ",
+		"note":"In order to see the submenu 'Public Repositories', in the left menu, under the section 'Admin area', you must have an administrator profile.<br>{admin_area_menu}<br>"
+	}, 
+	{
+		"cardinality": 2,
+		"title": "How to edit a public repository",
+		"content":"For editing a public repository, you have to click on the {edit_icon} icon of a specific public repository. A pop-up window will be open. The changes will only apply after clicking the button {save_repository}."
+	},
+	{
+		"cardinality": 3,
+		"title": "Delete a public repository",
+		"content":"Click the {delete_icon} icon of any public repository to delete it. A confirmation box will appear, and the component will be deleted once you click the 'Confirm' button."
+	}]
+},
+{
+	"name":"Admin Topology",
+	"value": [
+	{
+		"cardinality": 1,
+		"title": "How to add a new execution node",
+		"content": "A pop-up window for adding a new execution node will appear when you click the {plus_icon} icon. After entering all the required information for the new execution node, click the {add_new_execution_node} button. If successful, the new execution node will be displayed on the page.",
+		"note":"In order to see the submenu 'Topology', in the left menu, under the section 'Admin area', you must have an administrator profile.<br>{admin_area_menu}<br>Nodes categories can be found as tabs in the upper part of the paage as follows: {active_nodes} and {inactive_nodes}."
+	}, 
+	{
+		"cardinality": 2,
+		"title": "Edit an execution node",
+		"content": "For editing an execution node, you have to click on the {edit_icon} icon. A pop-up window will be open. In the input 'Tags' you can delete existing tags just clicking on the icon {tag_delete_icon} or add new tags just typing and pressing enter on input field.<br> Tags suggestion can be displayed after 2 characters typed if in database exists tags which contains those characters. If you try to add an already existing tag on the same datasource, the text will be colored in red The changes will only apply after clicking the {save_changes} button and if no error message is displayed."
+	}, 
+	{
+		"cardinality": 3,
+		"title": "Delete an execution node",
+		"content": "Click the {delete_icon} icon of any execution node to delete it. A confirmation box will appear, and the component will be deleted once you click the 'Confirm' button."
+	},{
+		"cardinality": 4,
+		"title": "Other options",
+		"content": "The user can disable the node by clicking the {pause_sch} icon, access the SSH terminal using the {ssh_topo} icon, open the node monitor via the {node_monitor_icon} icon, and check the service status using the {services_status} icon. Before disabling the node, a confirmation box will appear. The node will be disabled only after clicking the {confirm} button. "
+	}]
+},
+{
+	"name":"Admin Users",
+	"value": [
+		{
+		"cardinality": 1,
+		"title": "Add a new user",
+		"content": "A pop-up window for adding a new user will be open if you click on the {plus_icon} icon. After you add all the information about the new user you have to click the button {add_user}.If everything goes well, the new user will be displayed in the page. ",
+		"note":"In order to see the submenu 'Users', under the section 'Admin area', you must have an administrator profile.<br>{admin_area_menu}<br>"
+	}, 
+	{
+		"cardinality": 2,
+		"title": "Edit user informations",
+		"content": "To edit a user's information, click the {edit_icon} icon. A pop-up window will appear. Changes will only be saved after clicking the {save_changes} button, provided no error message is displayed."
+	}, 
+	{
+		"cardinality": 3,
+		"title": "Disable an user",
+		"content": "Clicking the {disable_user} icon will allow you to disable the user. A confirmation box will appear before the action is executed. The user will be disabled only after you click the {confirm} button."
+	}]
+}]

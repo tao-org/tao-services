@@ -75,7 +75,9 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 user = userProvider.getByName(userId);
             }
-            user.setActualProcessingQuota(taskProvider.getCPUsForUser(user.getId()));
+            if (user != null) {
+                user.setActualProcessingQuota(taskProvider.getCPUsForUser(user.getId()));
+            }
         }
         return user;
     }

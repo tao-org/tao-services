@@ -291,8 +291,8 @@ public class DataSourceComponentServiceImpl implements DataSourceComponentServic
         userDSC.setFetchMode(FetchMode.OVERWRITE);
         userDSC.setVersion("1.0");
         userDSC.setDescription(label + " (local product set)");
-        userDSC.setAuthors("AVL Team");
-        userDSC.setCopyright("(C) AVL Team");
+        userDSC.setAuthors("TAO Team");
+        userDSC.setCopyright("(C) TAO Team");
         userDSC.setNodeAffinity(NodeAffinity.Any);
         LocalDateTime time = LocalDateTime.now();
         final String newId = String.join("-", "product", "set", principal.getName(),

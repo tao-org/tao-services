@@ -32,6 +32,17 @@ import ro.cs.tao.services.interfaces.QueryService;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Controller managing operations related to saved queries.
+ *
+ * This controller provides endpoints to create, retrieve, update,
+ * and delete saved queries. It also supports filtering and pagination
+ * functionalities to manage queries effectively.
+ *
+ * The controller is annotated with {@code @RestController} and
+ * {@code @RequestMapping} to provide RESTful web services for managing
+ * queries within a data source.
+ */
 @RestController
 @RequestMapping("/datasource/query")
 @Tag(name = "Saved Queries", description = "Operations related to the management of saved queries")
@@ -76,6 +87,14 @@ public class QueryController extends BaseController {
         return responseEntity;
     }
 
+    /**
+     * Retrieves a paginated and sorted list of queries.
+     *
+     * @param pageNumber    The page number to retrieve. It must be a non-negative integer.
+     * @param size          The number of items per page. It must be a positive integer.
+     * @param sortDirection The direction of sorting, either "ASC" (ascending) or "DESC" (descending).
+     * @return              A {@code ResponseEntity} containing a {@code ServiceResponse} wrapping the list of queries.
+     */
     @RequestMapping(value = "/paged", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getAllQueries(@RequestParam("page") int pageNumber,
                                                             @RequestParam("pageSize") int size,
@@ -85,11 +104,27 @@ public class QueryController extends BaseController {
         return prepareResult(queries);
     }
 
+    /**
+     * Retrieves a query by its unique identifier.
+     *
+     * @param id The unique identifier of the query to be retrieved.
+     * @return A {@code ResponseEntity} containing a {@code ServiceResponse} with the query data if found,
+     *         or an appropriate error message if the query does not exist.
+     */
     @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> findById(@PathVariable("id") long id) {
         return prepareResult(queryService.getQueryById(id));
     }
 
+    /**
+     * Handles the creation and saving of a new {@code Query} object.
+     *
+     * @param object The {@code Query} object to be saved. It is expected to be provided in the request body
+     *               as a JSON object.
+     * @return A {@code ResponseEntity} containing a {@code ServiceResponse} with the result of the save operation.
+     *         If successful, the result will include the saved query object. If an error occurs, an appropriate
+     *         error message and status will be returned.
+     */
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> save(@RequestBody Query object) {
         try {
@@ -100,6 +135,11 @@ public class QueryController extends BaseController {
         }
     }
 
+    /**
+     * Deletes a query by its ID.
+     * @param id The ID of the query to delete.
+     * @return A {@code ResponseEntity} containing a {@code ServiceResponse} with the result of the delete operation.
+     */
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> deleteById(@PathVariable("id") long id) {
         try {
@@ -110,6 +150,11 @@ public class QueryController extends BaseController {
         }
     }
 
+    /**
+     * Updates a query.
+     * @param object The query object to update.
+     * @return A {@code ResponseEntity} containing a {@code ServiceResponse} with the result of the update operation.
+     */
     @RequestMapping(value = "/", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> update(@RequestBody Query object) {
         try {

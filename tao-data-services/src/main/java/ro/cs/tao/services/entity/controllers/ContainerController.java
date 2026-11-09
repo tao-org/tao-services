@@ -15,7 +15,12 @@
  */
 package ro.cs.tao.services.entity.controllers;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.google.common.base.Strings;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -24,6 +29,7 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.h2.util.IOUtils;
+import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -34,10 +40,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.cs.tao.EnumUtils;
 import ro.cs.tao.SortDirection;
+import ro.cs.tao.TaoEnum;
 import ro.cs.tao.component.*;
+import ro.cs.tao.component.enums.ComponentCategory;
 import ro.cs.tao.component.enums.ProcessingComponentType;
 import ro.cs.tao.component.enums.ProcessingComponentVisibility;
 import ro.cs.tao.configuration.ConfigurationManager;
+import ro.cs.tao.datasource.param.JavaType;
 import ro.cs.tao.docker.*;
 import ro.cs.tao.eodata.AuxiliaryData;
 import ro.cs.tao.messaging.Messaging;
@@ -46,10 +55,16 @@ import ro.cs.tao.persistence.AuxiliaryDataProvider;
 import ro.cs.tao.persistence.ContainerInstanceProvider;
 import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.ProcessingComponentProvider;
+import ro.cs.tao.persistence.repository.ParameterDescriptorRepository;
+import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
+import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.Token;
+import ro.cs.tao.serialization.BaseSerializer;
 import ro.cs.tao.serialization.JsonMapper;
+import ro.cs.tao.serialization.SerializationException;
+import ro.cs.tao.serialization.SerializerFactory;
 import ro.cs.tao.services.auth.token.TokenManagementService;
 import ro.cs.tao.services.commons.ResponseStatus;
 import ro.cs.tao.services.commons.RoleRequired;
@@ -93,6 +108,12 @@ public class ContainerController extends DataEntityController<Container, String,
     private ContainerInstanceProvider containerInstanceProvider;
     @Autowired
     private ProcessingComponentProvider processingComponentProvider;
+    @Autowired
+    private ParameterDescriptorRepository parameterDescriptorRepository;
+    @Autowired
+    private SourceDescriptorRepository sourceDescriptorRepository;
+    @Autowired
+    private TargetDescriptorRepository targetDescriptorRepository;
     @Autowired
     private TokenManagementService tokenManagementService;
 
@@ -190,10 +211,6 @@ public class ContainerController extends DataEntityController<Container, String,
             return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
         }*/
         try {
-            final List<MultipartFile> dockerFiles = request.getDockerFiles();
-            if (dockerFiles == null || dockerFiles.isEmpty()) {
-                throw new IllegalArgumentException("Empty file list");
-            }
             final MultipartFile jsonContainerFile = request.getJsonContainerDescriptor();
             if (jsonContainerFile == null) {
                 throw new IllegalArgumentException("Please attach a json file with the container and applications descriptors");
@@ -201,6 +218,16 @@ public class ContainerController extends DataEntityController<Container, String,
             String json;
             json = new String(jsonContainerFile.getBytes());
             final Container container = JsonMapper.instance().readValue(json, Container.class);
+            final List<MultipartFile> dockerFiles = request.getDockerFiles();
+            final boolean noFilePresent = dockerFiles == null || dockerFiles.isEmpty();
+            Container existingImage = DockerManager.getDockerImage(container.getName());
+            if (noFilePresent && existingImage == null) {
+                throw new IllegalArgumentException("Empty file list");
+            }
+            // set id to Docker id if possible
+            if (existingImage != null && !Strings.isNullOrEmpty(existingImage.getId())) {
+                container.setId(existingImage.getId());
+            }
 
             final MultipartFile logoFile = request.getContainerLogo();
             if (logoFile != null) {
@@ -213,67 +240,86 @@ public class ContainerController extends DataEntityController<Container, String,
                 json = new String(jsonComponentsFile.getBytes());
                 components = JsonMapper.instance().readValue(json, ProcessingComponent[].class);
             } else {
-                components = null;
+                components = new ProcessingComponent[0];
             }
+            final Runnable uploadCode;
 
-            final MultipartFile dockerFile = dockerFiles.stream().filter(f -> "Dockerfile".equals(f.getOriginalFilename())).findFirst().orElse(null);
-            if (dockerFile == null) {
-                throw new IllegalArgumentException("Dockerfile not found");
-            }
-            final String name = request.getName();
-            if (name == null) {
-                throw new IllegalArgumentException("[name] cannot be null");
-            }
-            if (!name.equals(container.getName())) {
-                container.setName(name);
-            }
-            if (container.getType() == null) {
-                container.setType(ContainerType.DOCKER);
-            }
-            container.setVisibility(ContainerVisibility.PRIVATE);
-            dockerFiles.remove(dockerFile);
-            final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
-            final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
-            for (MultipartFile file : dockerFiles) {
-                try {
-                    Path auxFile = resolveMultiPartFile(file, dockerImagesPath);
-                    AuxiliaryData data = new AuxiliaryData();
-                    data.setId(UUID.randomUUID().toString());
-                    data.setLocation(auxFile.toString());
-                    data.setDescription(String.format("Auxiliary file for container '%s'", name));
-                    data.setUserId(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
-                    data.setCreated(LocalDateTime.now());
-                    data.setModified(data.getCreated());
-                    auxiliaryDataProvider.save(data);
-                } catch (IOException e) {
-                    error(e.getMessage());
-                }
-            }
-            List<MultipartFile> auxiliaryFiles = request.getAuxiliaryFiles();
-            if (auxiliaryFiles != null) {
-                Path auxiliaryFilesPath = request.isSystem() ?
-                        Paths.get(SystemVariable.SHARED_FILES.value()) :
-                        SessionStore.currentContext().getUploadPath();
-                for (MultipartFile file : auxiliaryFiles) {
+            final Principal principal = currentPrincipal();
+            if(noFilePresent){
+                // The container was pulled from Docker Hub
+                uploadCode = () -> {
                     try {
-                        resolveMultiPartFile(file, auxiliaryFilesPath);
+                        initializeContainer(container, components);
+                        Messaging.send(principal, Topic.INFORMATION.value(), this,
+                                String.format("Docker image '%s' successfully registered", container.getName()));
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                };
+            } else {
+                final MultipartFile dockerFile = dockerFiles.stream().filter(f -> "Dockerfile".equals(f.getOriginalFilename())).findFirst().orElse(null);
+                if (dockerFile == null) {
+                    boolean isLocalContainer = service.list().stream().anyMatch(c -> c.getName().equals(container.getName().split(":")[0]));
+                    if (!isLocalContainer) {
+                        throw new IllegalArgumentException("Dockerfile not found");
+                    }
+                }
+                final String name = request.getName();
+                if (name == null) {
+                    throw new IllegalArgumentException("[name] cannot be null");
+                }
+                if (!name.equals(container.getName())) {
+                    container.setName(name);
+                }
+                if (container.getType() == null) {
+                    container.setType(ContainerType.DOCKER);
+                }
+                container.setVisibility(ContainerVisibility.PRIVATE);
+                dockerFiles.remove(dockerFile);
+                final Path dockerImagesPath = Paths.get(ConfigurationManager.getInstance().getValue("tao.docker.images"), name.replace(" ", "-"));
+                final Path dockerPath = resolveMultiPartFile(dockerFile, dockerImagesPath);
+                for (MultipartFile file : dockerFiles) {
+                    try {
+                        Path auxFile = resolveMultiPartFile(file, dockerImagesPath);
+                        AuxiliaryData data = new AuxiliaryData();
+                        data.setId(UUID.randomUUID().toString());
+                        data.setLocation(auxFile.toString());
+                        data.setDescription(String.format("Auxiliary file for container '%s'", name));
+                        data.setUserId(request.isSystem() ? SystemPrincipal.instance().getName() : currentUser());
+                        data.setCreated(LocalDateTime.now());
+                        data.setModified(data.getCreated());
+                        auxiliaryDataProvider.save(data);
                     } catch (IOException e) {
                         error(e.getMessage());
                     }
                 }
-            }
-            final String description = request.getDescription();
-            if (description != null && !description.equals(container.getDescription())) {
-                container.setDescription(description);
-            }
-            container.setOwnerId(currentUser());
-            asyncExecute(() -> {
-                try {
-                    service.registerContainer(dockerPath, container, components);
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
+                List<MultipartFile> auxiliaryFiles = request.getAuxiliaryFiles();
+                if (auxiliaryFiles != null) {
+                    Path auxiliaryFilesPath = request.isSystem() ?
+                            Paths.get(SystemVariable.SHARED_FILES.value()) :
+                            SessionStore.currentContext().getUploadPath();
+                    for (MultipartFile file : auxiliaryFiles) {
+                        try {
+                            resolveMultiPartFile(file, auxiliaryFilesPath);
+                        } catch (IOException e) {
+                            error(e.getMessage());
+                        }
+                    }
                 }
-            }, "Docker image registration completed", this::exceptionCallbackHandler);
+                final String description = request.getDescription();
+                if (description != null && !description.equals(container.getDescription())) {
+                    container.setDescription(description);
+                }
+                container.setOwnerId(currentUser());
+                uploadCode = () -> {
+                    try {
+                        service.registerContainer(dockerPath, container, components);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                };
+            }
+            asyncExecute(uploadCode, "Docker image registration completed", this::exceptionCallbackHandler);
             return prepareResult("Docker image registration started. A notification will be send when the process completes",
                                  ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
@@ -325,8 +371,13 @@ public class ContainerController extends DataEntityController<Container, String,
             final Container container = mapper.readerFor(Container.class).readValue(containerDescriptor);
             final List<MultipartFile> dockerFiles = request.getDockerFiles();
             final boolean noFilePresent = dockerFiles == null || dockerFiles.isEmpty();
-            if (noFilePresent && DockerManager.getDockerImage(container.getName()) == null) {
+            Container existingImage = DockerManager.getDockerImage(container.getName());
+            if (noFilePresent && existingImage == null) {
                 throw new IllegalArgumentException("Empty file list");
+            }
+            // set id to Docker id if possible
+            if (existingImage != null && !Strings.isNullOrEmpty(existingImage.getId())) {
+                container.setId(existingImage.getId());
             }
             final String description = request.getDescription();
             if (description != null && !description.equals(container.getDescription())) {
@@ -452,7 +503,9 @@ public class ContainerController extends DataEntityController<Container, String,
                     final Token token = tokenManagementService.getUserToken(user);
                     return prepareResult(((SingletonContainer) installer).start(user, user));//token.getToken()));
                 } catch (Exception e) {
-                    return prepareResult(((SingletonContainer) installer).start());
+                    //handle exception instead of starting container?
+                    //return prepareResult(((SingletonContainer) installer).start());
+                    return handleException(e);
                 }
             } else {
                 final String name = SystemPrincipal.instance().getName();
@@ -513,6 +566,81 @@ public class ContainerController extends DataEntityController<Container, String,
             } else {
                 return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
             }
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/{id:.+}/export", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> export(@PathVariable("id") String id, @RequestParam("folder") String folder) {
+        try {
+            Container entity;
+            entity = service.findById(id);
+            if (entity == null) {
+                return prepareResult(HttpServletResponse.SC_NOT_FOUND);
+            } else {
+                return prepareResult(service.exportContainer(entity, false, Paths.get(folder)).toString());
+            }
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/update/{id:.+}", method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RoleRequired(roles = "admin")
+    public ResponseEntity<ServiceResponse<?>> updateComponents(@PathVariable("id") String containerId,
+                                                               @RequestParam("file") MultipartFile file) {
+        try {
+            final Container container = service.findById(containerId);
+            if (container == null) {
+                throw new IllegalArgumentException(String.format("[%s] not found", containerId));
+            }
+            final String contents = new String(file.getBytes());
+            int added = 0, updated = 0;
+            List<ProcessingComponent> components = deserialize(contents);
+            for (ProcessingComponent component : components) {
+                component.setContainerId(containerId);
+                component.addTags(container.getName());
+                if (component.getCategory() == null) {
+                    component.setCategory(ComponentCategory.MISC);
+                }
+                for (SourceDescriptor descriptor : component.getSources()) {
+                    descriptor.setParentId(component.getId());
+                }
+                for (TargetDescriptor descriptor : component.getTargets()) {
+                    descriptor.setParentId(component.getId());
+                }
+                ProcessingComponent existing = null;
+                if ((existing = this.processingComponentProvider.get(component.getId(), containerId)) == null) {
+                    this.processingComponentProvider.save(component);
+                    added++;
+                } else {
+                    List<SourceDescriptor> existingSources = existing.getSources();
+                    List<TargetDescriptor> existingTargets = existing.getTargets();
+                    List<SourceDescriptor> sources = component.getSources();
+                    List<TargetDescriptor> targets = component.getTargets();
+                    if (existingSources != null) {
+                        for (SourceDescriptor source : sources) {
+                            SourceDescriptor descriptor = existingSources.stream().filter(s -> s.getId().equals(source.getId()) || s.getName().equals(source.getName())).findFirst().orElse(null);
+                            if (descriptor != null) {
+                                source.setId(descriptor.getId());
+                            }
+                        }
+                    }
+                    if (existingTargets != null) {
+                        for (TargetDescriptor target : targets) {
+                            TargetDescriptor descriptor = existingTargets.stream().filter(t -> t.getId().equals(target.getId()) || t.getName().equals(target.getName())).findFirst().orElse(null);
+                            if (descriptor != null) {
+                                target.setId(descriptor.getId());
+                            }
+                        }
+                    }
+                    this.processingComponentProvider.update(component);
+                    updated++;
+                }
+            }
+            return prepareResult(String.format("Components: %d added, %d updated", added, updated),
+                                 ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
         }
@@ -619,5 +747,31 @@ public class ContainerController extends DataEntityController<Container, String,
         FileUtilities.createDirectories(destination.getParent());
         file.transferTo(destination.toAbsolutePath().toFile());
         return destination;
+    }
+
+    private List<ProcessingComponent> deserialize(String contents) throws SerializationException {
+        final BaseSerializer<ProcessingComponent> componentSerializer = SerializerFactory.create(ProcessingComponent.class, ro.cs.tao.serialization.MediaType.JSON);
+        componentSerializer.setIgnoreNullFields();
+        componentSerializer.setFormatOutput(true);
+        Reflections reflections = new Reflections("ro.cs.tao");
+        Set<Class<? extends TaoEnum>> enums = reflections.getSubTypesOf(TaoEnum.class);
+        for (Class anEnum : enums) {
+            componentSerializer.addDeserializer(anEnum, new StdDeserializer(anEnum) {
+
+                @Override
+                public Object deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
+                    if (anEnum.equals(JavaType.class)) {
+                        return JavaType.fromFriendlyName(jsonParser.getText());
+                    } else {
+                        try {
+                            return EnumUtils.getEnumConstantByName(anEnum, jsonParser.getText());
+                        } catch (IllegalArgumentException e) {
+                            return EnumUtils.getEnumConstantByValue(anEnum, jsonParser.getText());
+                        }
+                    }
+                }
+            });
+        }
+        return componentSerializer.deserialize(ProcessingComponent.class, contents);
     }
 }

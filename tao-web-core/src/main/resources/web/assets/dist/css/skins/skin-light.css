@@ -1,0 +1,11 @@
+/* Full */
+body.skin-full.skin-full-light {
+	/* Skin specific values */
+	
+	/* Redefined root variables */
+	--primary-color             : #587da9;
+	--primary-bkg               : #f9fafb;
+	--active-color              : #4d627b;
+	--default-color             : #7a878e;
+	--scroll-color              : #8399af;
+}

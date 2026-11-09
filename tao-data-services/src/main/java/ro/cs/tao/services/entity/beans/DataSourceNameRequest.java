@@ -4,6 +4,9 @@ import ro.cs.tao.component.Variable;
 
 import java.util.List;
 
+/**
+ * Represents a request for managing a data source group, including its identifier, label, and associated queries.
+ */
 public class DataSourceNameRequest {
     private String label;
     private List<Variable> products;

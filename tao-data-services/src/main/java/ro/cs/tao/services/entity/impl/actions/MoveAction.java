@@ -2,6 +2,7 @@ package ro.cs.tao.services.entity.impl.actions;
 
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.ItemAction;
+import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import java.nio.file.Path;
@@ -17,6 +18,11 @@ public class MoveAction implements ItemAction {
     @Override
     public boolean isIntendedFor(RepositoryType repositoryType) {
         return repositoryType == RepositoryType.LOCAL;
+    }
+
+    @Override
+    public boolean canBeUsedWith(Repository repository) {
+        return repository != null && !repository.isReadOnly();
     }
 
     @Override

@@ -35,9 +35,13 @@ import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.storage.BaseStorageService;
+import ro.cs.tao.topology.NodeDescription;
+import ro.cs.tao.topology.TopologyManager;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
+import ro.cs.tao.utils.executors.*;
 import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import javax.validation.constraints.NotNull;
 import java.io.*;
@@ -45,7 +49,6 @@ import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -56,12 +59,14 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class FileStorageService extends BaseStorageService<MultipartFile, FileSystemResource> {
+public class FileStorageService extends BaseStorageService<MultipartFile> {
 
     private static final String PROTOCOL = "file";
     private static final Set<String> SIMPLE_PRODUCT_EXTENSIONS = new HashSet<>() {{
        add(".tif"); add(".nc"); add(".hd5");
     }};
+    private static final String FOLDER_SIZE_WINDOWS_CMD = "dir /-C /a /s %s";
+    private static final String FOLDER_SIZE_LINUX_CMD = "du -h --max-depth=1 %s";
     private EOProductProvider productProvider;
     private VectorDataProvider vectorDataProvider;
     private AuxiliaryDataProvider auxiliaryDataProvider;
@@ -87,6 +92,11 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     @Override
+    public boolean isIntendedFor(RepositoryType repositoryType) {
+        return RepositoryType.LOCAL.equals(repositoryType);
+    }
+
+    @Override
     public Path createFolder(String folderRelativePath, boolean userOnly) throws IOException {
         String cleanPath = StringUtils.cleanPath(folderRelativePath);
         return FileUtilities.createDirectories(Paths.get(repository().resolve(cleanPath)));
@@ -95,18 +105,19 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     @Override
     public void storeUserFile(MultipartFile file, String relativeFolder, String description) throws Exception {
         checkParameters(file, relativeFolder);
-        storeFile(file, Paths.get(repository().resolve(relativeFolder)),
-                  description, SessionStore.currentContext().getPrincipal());
+        storeFile(file, Paths.get(repository().resolve(relativeFolder)));
         
         // Update user processing quota
         UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
     }
 
     @Override
-    public void storeFile(InputStream stream, long length,String relativeFolder, String description) throws Exception {
-        storeFile(stream, Paths.get(repository().resolve(relativeFolder)));
+    public String storeFile(InputStream stream, String relativeFolder, String description) throws Exception {
+        String path = repository().resolve(relativeFolder);
+        storeFile(stream, Paths.get(path));
         // Update user processing quota
         UserQuotaManager.getInstance().updateUserProcessingQuota(SessionStore.currentContext().getPrincipal());
+        return path;
     }
 
     @Override
@@ -568,10 +579,10 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     @Override
-    public FileSystemResource download(String path) throws IOException {
+    public InputStream download(String path) throws IOException {
         FileSystemResource resource = new FileSystemResource(path);
         if (resource.exists() || resource.isReadable()) {
-            return resource;
+            return resource.getInputStream();
         } else {
             throw new IOException("Could not read file: " + path);
         }
@@ -608,8 +619,8 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     }
 
     @Override
-    public String readAsText(FileSystemResource resource, int lines, int skipLines) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));
+    public String readAsText(InputStream resource, int lines, int skipLines) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource));
              Stream<String> stream = reader.lines()) {
             return lines > 0
                    ? stream.skip(skipLines).limit(lines).collect(Collectors.joining("\n"))
@@ -620,6 +631,18 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
     @Override
     public String computeHash(String path) throws IOException, NoSuchAlgorithmException {
         return FileUtilities.computeHash(Path.of(path), "MD5");
+    }
+
+    @Override
+    public Map<String, Long> getUserStorage() {
+        final Path root = Path.of(SystemVariable.ROOT.value());
+        if (SystemUtils.IS_OS_LINUX) {
+            return getFoldersSizeWindows(root);
+        } else if (SystemUtils.IS_OS_WINDOWS) {
+            return getFoldersSizeLinux(root);
+        } else {
+            return new HashMap<>();
+        }
     }
 
     private List<FileObject> getResults(Long workflowId, Long jobId) {
@@ -673,7 +696,7 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         }
     }
 
-    private void storeFile(MultipartFile file, Path uploadPath, String description, Principal principal) throws IOException, PersistenceException {
+    private void storeFile(MultipartFile file, Path uploadPath) throws IOException, PersistenceException {
         if (file == null || file.getOriginalFilename() == null) {
             return;
         }
@@ -684,22 +707,6 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
             filePath = uploadPath.resolve(Paths.get(file.getOriginalFilename()).getFileName());
             Files.copy(stream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
-        String userId = principal.getName();
-        String location = filePath.toUri().toString(); //workspacePath.relativize(filePath).toString();
-        List<AuxiliaryData> listData = auxiliaryDataProvider.list(userId, location);
-        AuxiliaryData data;
-        if (listData != null && listData.size() == 1) {
-            data = listData.get(0);
-        } else {
-            data = new AuxiliaryData();
-            data.setId(UUID.randomUUID().toString());
-        }
-        data.setLocation(location);
-        data.setDescription(description);
-        data.setUserId(userId);
-        data.setCreated(LocalDateTime.now());
-        data.setModified(data.getCreated());
-        auxiliaryDataProvider.save(data);
     }
 
     private void storeFile(InputStream stream, Path uploadPath) throws IOException {
@@ -762,5 +769,80 @@ public class FileStorageService extends BaseStorageService<MultipartFile, FileSy
         } else {
             FileUtilities.deleteTree(folder);
         }
+    }
+
+    private Map<String, Long> getFoldersSizeWindows(Path root) {
+        final List<Path> folders;
+        try {
+            folders = FileUtilities.listFolders(root, 1);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        final Map<String, Long> result = new HashMap<>();
+        for  (Path folder : folders) {
+            String userId = folder.getFileName().toString();
+            if (StringUtilities.isGUID(userId)) {
+                final List<String> commands = ProcessHelper.tokenizeCommands(FOLDER_SIZE_WINDOWS_CMD, folder);
+                NodeDescription nodeInfo = TopologyManager.getInstance().getMasterNodeInfo();
+                ExecutionUnit job = new ExecutionUnit(ExecutorType.PROCESS,
+                                                      nodeInfo.getId(),
+                                                      nodeInfo.getUserName(),
+                                                      nodeInfo.getUserPass(),
+                                                      commands, false, SSHMode.EXEC);
+                final OutputAccumulator accumulator = new OutputAccumulator();
+                accumulator.preserveLineSeparator(true);
+                int retCode;
+                final Executor<?> executor = Executor.execute(accumulator, job);
+                if ((retCode = executor.getReturnCode()) == 0) {
+                    String[] lines = accumulator.getOutput().split("\n");
+                    String line = lines[lines.length - 3].trim();
+                    int idx1 = line.lastIndexOf(" ", line.indexOf("File(s)") + 7) + 1;
+                    int idx2 = line.indexOf(" ", idx1);
+                    result.put(userId, Long.parseLong(line.substring(idx1, idx2)));
+                }
+            }
+        }
+        return result;
+    }
+
+    private Map<String, Long> getFoldersSizeLinux(Path root) {
+        final List<String> commands = ProcessHelper.tokenizeCommands(FOLDER_SIZE_LINUX_CMD, root);
+        NodeDescription nodeInfo = TopologyManager.getInstance().getMasterNodeInfo();
+        ExecutionUnit job = new ExecutionUnit(ExecutorType.PROCESS,
+                                              nodeInfo.getId(),
+                                              nodeInfo.getUserName(),
+                                              nodeInfo.getUserPass(),
+                                              commands, false, SSHMode.EXEC);
+        final OutputAccumulator accumulator = new OutputAccumulator();
+        accumulator.preserveLineSeparator(true);
+        int retCode;
+        final Executor<?> executor = Executor.execute(accumulator, job);
+        if ((retCode = executor.getReturnCode()) == 0) {
+            String output = accumulator.getOutput();
+            String[] lines = output.split("\n");
+            final Map<String, Long> result = new HashMap<>();
+            for  (String line : lines) {
+                if (line.contains("\t")) {
+                    String[] values = line.split("\t");
+                    String userId = values[1].substring(values[1].lastIndexOf('/') + 1);
+                    if (StringUtilities.isGUID(userId)) {
+                        long value;
+                        if (values[0].endsWith("T")) {
+                            value = (long) (Double.parseDouble(values[0].substring(0, values[0].length() - 1)) * MemoryUnit.TB.value());
+                        } else if (values[0].endsWith("G")) {
+                            value = (long) (Double.parseDouble(values[0].substring(0, values[0].length() - 1)) * MemoryUnit.GB.value());
+                        } else if (values[0].endsWith("M")) {
+                            value = (long) (Double.parseDouble(values[0].substring(0, values[0].length() - 1)) * MemoryUnit.MB.value());
+                        } else if (values[0].endsWith("K")) {
+                            value = (long) (Double.parseDouble(values[0].substring(0, values[0].length() - 1)) * MemoryUnit.KB.value());
+                        } else {
+                            value = Long.parseLong(values[0]);
+                        }
+                        result.put(userId, value);
+                    }
+                }
+            }
+        }
+        return new HashMap<>();
     }
 }

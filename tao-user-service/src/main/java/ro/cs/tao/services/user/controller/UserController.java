@@ -44,7 +44,9 @@ import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
+import javax.servlet.http.HttpServletRequest;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -176,23 +178,32 @@ public class UserController extends BaseController {
      * @param userId    The user account identifier
      */
     @RequestMapping(value = "/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId) {
+    public ResponseEntity<ServiceResponse<?>> getUserInfo(@PathVariable("userId") String userId,
+                                                          @RequestParam(name = "extended", required = false) boolean extended,
+                                                          HttpServletRequest request) {
         if (StringUtilities.isNullOrEmpty(userId)) {
             return prepareResult("The expected request params are empty!", ResponseStatus.FAILED);
         }
         try {
             final User user = userService.getUserInfo(userId);
             if (user != null) {
-                final int processingTime = auditProvider.getAggregatedUserProcessingTime(userId);
-                final List<SessionDuration> sessions = auditProvider.getUserSessions(userId);
-                int sessionTime = sessions != null ? (int) sessions.stream().mapToDouble(SessionDuration::getDuration).sum() : 0;
-                final UserInfo userInfo = new UserInfo(user, sessionTime, processingTime);
-                if (userInfo.getActualInputQuota() == -1) {
-                    Repository repository = getLocalRepository(currentUser());
-                    userInfo.setActualInputQuota((int) (FileUtilities.folderSize(Paths.get(repository.root())) >> 20));
+                if (extended) {
+                    final int processingTime = auditProvider.getAggregatedUserProcessingTime(userId);
+                    final List<SessionDuration> sessions = auditProvider.getUserSessions(userId);
+                    int sessionTime = sessions != null ? (int) sessions.stream().mapToDouble(SessionDuration::getDuration).sum() : 0;
+                    final UserInfo userInfo = new UserInfo(user, sessionTime, processingTime);
+                    if (userInfo.getActualInputQuota() == -1) {
+                        Repository repository = getLocalRepository(currentUser());
+                        userInfo.setActualInputQuota((int) (FileUtilities.folderSize(Paths.get(repository.root())) >> 20));
+                    }
+                    return prepareResult(userInfo);
+                } else {
+                    return prepareResult(user);
                 }
-                return prepareResult(userInfo);
             } else {
+                if (currentPrincipal() == null) {
+                    request.getSession().invalidate();
+                }
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
         } catch (Exception ex) {
@@ -237,6 +248,21 @@ public class UserController extends BaseController {
             } else {
                 return prepareResult(null, HttpStatus.UNAUTHORIZED);
             }
+        } catch (Exception ex) {
+            return handleException(ex);
+        }
+    }
+
+    @RequestMapping(value = "/{userId}/apikey", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> updateApiKey(@PathVariable("userId") String userId) {
+        if (StringUtilities.isNullOrEmpty(userId) || !currentUser().equals(userId)) {
+            return prepareResult("Not allowed", ResponseStatus.FAILED, HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            Long days = Long.parseLong(ConfigurationManager.getInstance().getValue("api.key.expiration"));
+            String key = UUID.randomUUID().toString();
+            userProvider.updateUserApiKey(userId, key, LocalDateTime.now().plusDays(days));
+            return prepareResult(key, HttpStatus.OK);
         } catch (Exception ex) {
             return handleException(ex);
         }

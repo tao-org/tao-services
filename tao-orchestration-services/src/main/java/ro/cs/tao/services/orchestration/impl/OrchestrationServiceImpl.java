@@ -26,19 +26,32 @@ import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.TargetDescriptor;
 import ro.cs.tao.datasource.beans.Parameter;
 import ro.cs.tao.docker.ExecutionConfiguration;
+import ro.cs.tao.drmaa.Environment;
+import ro.cs.tao.eodata.enums.DataFormat;
 import ro.cs.tao.execution.ExecutionException;
+import ro.cs.tao.execution.JobCompletedListener;
 import ro.cs.tao.execution.callback.EndpointDescriptor;
 import ro.cs.tao.execution.model.*;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
+import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.orchestration.Orchestrator;
 import ro.cs.tao.orchestration.RunnableContextFactory;
 import ro.cs.tao.orchestration.RunnableDelegateProvider;
+import ro.cs.tao.orchestration.ScriptJobFactory;
+import ro.cs.tao.persistence.DryRunMetricsProvider;
 import ro.cs.tao.persistence.PersistenceException;
+import ro.cs.tao.persistence.ProcessingComponentProvider;
 import ro.cs.tao.persistence.UserProvider;
+import ro.cs.tao.quota.QuotaException;
+import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SessionStore;
+import ro.cs.tao.security.UserPrincipal;
 import ro.cs.tao.services.commons.dev.MockData;
+import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.OrchestratorService;
+import ro.cs.tao.services.interfaces.RepositoryService;
+import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.interfaces.WorkflowService;
 import ro.cs.tao.spi.ServiceRegistryManager;
 import ro.cs.tao.user.User;
@@ -46,16 +59,22 @@ import ro.cs.tao.user.UserStatus;
 import ro.cs.tao.utils.Tuple;
 import ro.cs.tao.workflow.ExternalGraphConverter;
 import ro.cs.tao.workflow.WorkflowDescriptor;
+import ro.cs.tao.workspaces.Repository;
+import ro.cs.tao.workspaces.RepositoryType;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Service("orchestrationService")
 public class OrchestrationServiceImpl implements OrchestratorService {
+
+    private static final Logger logger = Logger.getLogger(OrchestrationServiceImpl.class.getName());
 
     @Autowired
     private ExecutionJobProvider jobProvider;
@@ -69,8 +88,21 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Autowired
     private UserProvider userProvider;
 
+    @Autowired
+    private DryRunMetricsProvider dryRunMetricsProvider;
+
+    @Autowired
+    private ProcessingComponentProvider componentProvider;
+
+    @Autowired
+    private RepositoryService repositoryService;
+
     @Override
     public long startWorkflow(ExecutionRequest request) throws ExecutionException {
+        final Orchestrator instance = Orchestrator.getInstance();
+        if (instance.getJobFactory(request.getEnvironment()) instanceof ScriptJobFactory) {
+            return scriptJob(request).getId();
+        }
         ExecutionRequest modified = request;
         long id;
         if ((id = tryCreateTemporaryWorkflow(request)) > 0) {
@@ -78,7 +110,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             modified = new ExecutionRequest(request);
             modified.setWorkflowId(id);
         }
-        final ExecutionJob job = Orchestrator.getInstance().startWorkflow(SessionStore.currentContext(), modified);
+        final ExecutionJob job = instance.startWorkflow(SessionStore.currentContext(), modified);
         return job != null ? job.getId() : -1;
     }
 
@@ -92,12 +124,27 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     @Override
-    public List<TargetDescriptor> getWorkflowOutputs(long workflowId) throws PersistenceException {
+    public List<TargetDescriptor> getWorkflowOutputDescriptors(long workflowId) throws PersistenceException {
         if (!isDevModeEnabled()) {
             return workflowService.getWorkflowOutputs(workflowId);
         } else {
             return MockData.getMockOutputs().get(workflowId);
         }
+    }
+
+    @Override
+    public List<ExecutionTaskOutput> getWorkflowOutputs(long workflowId, String userId) throws PersistenceException {
+        final List<ExecutionTaskOutput> outputs = jobProvider.getWorkflowOutputs(workflowId, userId);
+        Iterator<ExecutionTaskOutput> iterator = outputs.iterator();
+        while (iterator.hasNext()) {
+            ExecutionTaskOutput output = iterator.next();
+            if (output.getUrl() != null) {
+                replaceWithURL(userId, output);
+            } else {
+                iterator.remove();
+            }
+        }
+        return outputs;
     }
 
     @Override
@@ -110,10 +157,12 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             modified.setWorkflowId(id);
         }
         JobType type = EnumUtils.getEnumConstantByName(JobType.class, request.getJobType());
+        Environment env = request.getEnvironment() != null ? EnumUtils.getEnumConstantByString(Environment.class, request.getEnvironment()) : Environment.DEFAULT;
         return Orchestrator.getInstance().createJob(SessionStore.currentContext(),
                                                     modified.getWorkflowId(), modified.getName(),
-                                                    modified.getParameters(), type);
+                                                    modified.getParameters(), type, env);
     }
+
 
     @Override
     public void stopJob(long jobId) throws ExecutionException {
@@ -181,6 +230,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                                             tasksStatus.get(0).getWorkflowName() :
                                             workflowService.getFullDescriptor(job.getWorkflowId()).getName();
                 summary.setWorkflowName(workflowName);
+                summary.setWorkflowId(job.getWorkflowId());
             }
             summary.setJobStatus(job.getExecutionStatus());
             summary.setJobStart(job.getStartTime());
@@ -211,6 +261,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                                             tasksStatus.get(0).getWorkflowName() :
                                             workflowService.getFullDescriptor(job.getWorkflowId()).getName();
                 summary.setWorkflowName(workflowName);
+                summary.setWorkflowId(job.getWorkflowId());
             }
             summary.setJobStatus(job.getExecutionStatus());
             summary.setJobStart(job.getStartTime());
@@ -236,6 +287,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                                             tasksStatus.get(0).getWorkflowName() :
                                             workflowService.getFullDescriptor(job.getWorkflowId()).getName();
                 summary.setWorkflowName(workflowName);
+                summary.setWorkflowId(job.getWorkflowId());
             }
             summary.setId(job.getId());
             summary.setJobName(job.getName());
@@ -263,6 +315,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                     ExecutionJobSummary summary = new ExecutionJobSummary();
                     summary.setId(job.getId());
                     summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
+                    summary.setWorkflowId(job.getWorkflowId());
                     summary.setJobName(job.getName());
                     summary.setUserId(job.getUserId());
                     summary.setJobStatus(job.getExecutionStatus());
@@ -295,6 +348,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 summary.setId(job.getId());
                 if (job.getWorkflowId() != null) {
                     summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
+                    summary.setWorkflowId(job.getWorkflowId());
                 }
                 summary.setJobName(job.getName());
                 summary.setUserId(job.getUserId());
@@ -322,6 +376,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 ExecutionJobSummary summary = new ExecutionJobSummary();
                 summary.setId(job.getId());
                 summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
+                summary.setWorkflowId(job.getWorkflowId());
                 summary.setJobName(job.getName());
                 summary.setUserId(job.getUserId());
                 summary.setJobStatus(job.getExecutionStatus());
@@ -356,7 +411,11 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     @Override
     public void deleteJobFromQueue(String userId, long jobId) throws PersistenceException {
         Orchestrator.getInstance().removeJob(userId, jobId);
-        jobProvider.delete(jobId);
+        try {
+            jobProvider.delete(jobId);
+        } catch (PersistenceException e) {
+            logger.warning("Failed to delete job " + jobId + " from database: " + e.getMessage());
+        }
     }
 
     @Override
@@ -372,6 +431,21 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             }
             job.setTasks(null);
             jobProvider.delete(job);
+            if (job.getExecutionStatus() != ExecutionStatus.CANCELLED && job.getJobOutputPath() != null) {
+                // try to also remove any files and folders for failed jobs
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    Repository repository = TaskUtilities.getUserLocalRepository(job);
+                    final StorageService<?> localStorage = StorageServiceFactory.getInstance(repository);
+                    try {
+                        localStorage.remove(job.getJobOutputPath());
+                        UserQuotaManager.getInstance().updateUserProcessingQuota(new UserPrincipal(userId));
+                    } catch (IOException e) {
+                        logger.warning("Failed to remove job output folder for job " + job.getId() + ": " + e.getMessage());
+                    } catch (QuotaException e) {
+                        logger.warning("Failed to update user quota for job " + job.getId() + ": " + e.getMessage());
+                    }
+                });
+            }
         }
     }
 
@@ -421,6 +495,16 @@ public class OrchestrationServiceImpl implements OrchestratorService {
         }
     }
 
+    @Override
+    public void registerListener(JobCompletedListener listener) {
+        Orchestrator.getInstance().addJobListener(listener);
+    }
+
+    @Override
+    public void unregisterListener(JobCompletedListener listener) {
+        Orchestrator.getInstance().removeJobListener(listener);
+    }
+
     @Bean
     private ExecutorService executor() {
         return new DelegatingSecurityContextExecutorService(Executors.newSingleThreadExecutor());
@@ -437,7 +521,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     private long tryCreateTemporaryWorkflow(ExecutionRequest request) {
-        final Map<Long, String> inputs = request.getInputs();
+        final Map<Long, Map<String, String>> inputs = request.getInputs();
         if (inputs != null && !inputs.isEmpty()) {
             try {
                 WorkflowDescriptor clone = workflowService.createTemporaryWorkflow(request.getWorkflowId(),
@@ -466,5 +550,25 @@ public class OrchestrationServiceImpl implements OrchestratorService {
             jobs.add(summary);
         }
         return jobs;
+    }
+
+    private void replaceWithURL(String ownerId, ExecutionTaskOutput output) {
+        String path = output.getUrl();
+        if (path != null) {
+            boolean isFile = output.getFormat() != DataFormat.FOLDER && output.getFormat() != DataFormat.DB_CONNECTION;
+            List<Repository> repositories = repositoryService.getByUser(ownerId);
+            Repository repository = repositories.stream().filter(r -> {
+                RepositoryType type = r.getType();
+                return path.startsWith(type.prefix()) || (type == RepositoryType.LOCAL && path.startsWith("/"));
+            }).findFirst().orElse(null);
+            if (repository != null) {
+                output.setUrl(repositoryService.createDownloadURL(ownerId, repository.getId(), path, isFile, false));
+                String previewUrl = output.getPreviewUrl();
+                if (previewUrl != null) {
+                    output.setPreviewUrl(repositoryService.createDownloadURL(ownerId, repository.getId(), previewUrl, isFile, true));
+                }
+                output.setRelativePath(repository.relativize(repository.root(), path));
+            }
+        }
     }
 }

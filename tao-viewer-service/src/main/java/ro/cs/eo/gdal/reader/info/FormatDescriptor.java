@@ -12,6 +12,8 @@ public class FormatDescriptor {
     private Integer pixelMaxScale;
     private Integer noDataValue;
     private int priority;
+    private String expression;
+    private String lutTableFile;
 
     private List<Pattern> namePatternsCompiled;
 
@@ -71,6 +73,14 @@ public class FormatDescriptor {
         this.priority = priority;
     }
 
+    public String getExpression() {
+        return expression;
+    }
+
+    public void setExpression(String expression) {
+        this.expression = expression;
+    }
+
     public boolean matches(String expression) {
         if (this.namePatterns != null) {
             if (this.namePatternsCompiled == null) {
@@ -85,9 +95,18 @@ public class FormatDescriptor {
         return this.bands != null && this.bands.stream().map(Band::getPattern).distinct().count() > 1;
     }
 
+    public String getLutTableFile() {
+        return lutTableFile;
+    }
+
+    public void setLutTableFile(String lutTableFile) {
+        this.lutTableFile = lutTableFile;
+    }
+
     public static class Band {
         private int indexInRaster;
         private String pattern;
+        private String expression;
 
         public int getIndexInRaster() {
             return indexInRaster;
@@ -103,6 +122,14 @@ public class FormatDescriptor {
 
         public void setPattern(String pattern) {
             this.pattern = pattern;
+        }
+
+        public String getExpression() {
+            return expression;
+        }
+
+        public void setExpression(String expression) {
+            this.expression = expression;
         }
 
         public boolean matches(String expression) {

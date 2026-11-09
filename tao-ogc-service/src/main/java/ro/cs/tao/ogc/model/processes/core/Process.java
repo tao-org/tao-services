@@ -1,24 +1,25 @@
 package ro.cs.tao.ogc.model.processes.core;
 
 import java.util.List;
+import java.util.Map;
 
 public class Process extends ProcessSummary {
-    private List<InputDescription<?>> inputDescription;
-    private List<OutputDescription> outputDescription;
+    private Map<String, InputDescription<?>> inputs;
+    private Map<String, OutputDescription> outputs;
 
-    public List<InputDescription<?>> getInputDescription() {
-        return inputDescription;
+    public Map<String, InputDescription<?>> getInputs() {
+        return inputs;
     }
 
-    public void setInputDescription(List<InputDescription<?>> inputDescription) {
-        this.inputDescription = inputDescription;
+    public void setInputs(Map<String, InputDescription<?>> inputs) {
+        this.inputs = inputs;
     }
 
-    public List<OutputDescription> getOutputDescription() {
-        return outputDescription;
+    public Map<String, OutputDescription> getOutputs() {
+        return outputs;
     }
 
-    public void setOutputDescription(List<OutputDescription> outputDescription) {
-        this.outputDescription = outputDescription;
+    public void setOutputs(Map<String, OutputDescription> outputs) {
+        this.outputs = outputs;
     }
 }

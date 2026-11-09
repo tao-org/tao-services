@@ -1,0 +1,113 @@
+<style>
+	#file {padding:0.43em;line-height:1.6em;height:2.6em;}
+</style>
+<div class="modal-content">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+		<h4 class="modal-title">Import processing module</h4>
+	</div>
+	<div class="modal-body">
+		<div class="row ">
+			<div class="col-sm-12 col-md-12">
+				<form id="frmUploadFile" class="form-horizontal clearfix" role="form">
+					<div class="form-group">
+						<label class="col-sm-12 col-md-12">File</label>
+						<div class="col-sm-12 col-md-12">
+							<input id="file" type="file" class="form-control" name="file" formenctype="multipart/form-data" />
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-md-12 col-sm-12 modal-footer">
+							<button type="submit" class="btn btn-flat btn-primary">Upload file</button>
+							<button type="button" class="btn btn-flat btn-default" data-dismiss="modal">Close</button>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="col-sm-12 col-md-12 undefined collapse">
+				<div class="form-group">
+					<label class="col-sm-12 col-md-12">This import operation has not been yet implemented!</label>
+				</div>
+				<div class="form-group">
+					<div class="col-md-12 col-sm-12 modal-footer">
+						<button type="button" class="btn btn-flat btn-default" data-dismiss="modal">Close</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+		var $myModalNodes = $("#myModalNodes");
+		var $form = $("#frmUploadFile");
+		
+		var endpoint = "";
+		switch (window.userOpStack[0].action) {
+			case "comp_import": $(".modal-title").html("Import processing module"); endpoint = "component/import"; break;
+			case "wf_import"  : $(".modal-title").html("Import workflow"         ); endpoint = "workflow/import" ; break;
+			default           : $(".modal-title").html("Undefined import"        );                                break;
+		}
+		if (endpoint !== "") {
+			// Custom validation for file type
+			$.validator.addMethod("isValidFileType", function (value, element, params) {
+				var validFileType = false;
+				$.validator.messages.isValidFileType = "Invalid file.";
+				switch (params.fileType) {
+					case "json":
+						$.validator.messages.isValidFileType = "Invalid configuration Json file.";
+						validFileType = (value.length == 0 || $.inArray(element.files[0]["type"], params.typesList) > -1);
+						break;
+				}
+				return validFileType;
+			}, $.validator.messages.isValidFileType);
+			
+			// Validate form before submit
+			$form.validate({
+				rules: {
+					file: {
+						required: true,
+						isValidFileType: { fileType: "json"  , typesList: [ "application/json" ] }
+					}
+				},
+				highlight     : function (element, errorClass) { $(element).parent().addClass("has-error"); },
+				unhighlight   : function (element, errorClass) { $(element).parent().removeClass("has-error"); },
+				errorPlacement: function (error, element) { error.appendTo(element.parent()); },
+				success       : function (label) { label.remove(); }
+			});
+			
+			// Submit form
+			$form.submit(function (e) {
+				e.preventDefault();
+				if ($(this).valid()) {
+					$.ajax({
+						cache      : false,
+						url        : baseRestApiURL + endpoint,
+						type       : "POST",
+						contentType: false,
+						processData: false,
+						data       : new FormData(this),
+						headers    : { "X-Auth-Token": window.tokenKey },
+						error      : function (jqXHR, textStatus, errorThrown) {
+							showMsg("Error importing file. Please check your data and try again.", "ERROR");
+						},
+						success    : function (response) {
+							if (response.status == responseStatus.success) {
+								showMsg("The file was successfully uploaded.", "SUCCESS");
+								$myModalNodes.modal("hide");
+								panelComp.refreshData();
+							} else {
+								showMsg("The file could not be imported. Please check your data and try again.", "ERROR");
+							}
+						}
+					});
+					return false; // To avoid actual submission of the form
+				}
+			});
+		} else {
+			$form.remove();
+			$(".undefined", $myModalNodes).removeClass("collapse");
+		}
+    });
+    //# sourceURL=components-import.js
+</script>

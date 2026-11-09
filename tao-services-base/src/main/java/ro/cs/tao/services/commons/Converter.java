@@ -16,7 +16,17 @@
 package ro.cs.tao.services.commons;
 
 /**
- * @author Cosmin Cara
+ * A generic interface designed to facilitate the conversion of objects between
+ * two distinct types. The {@code Converter} interface provides methods for
+ * transforming objects of type {@code V} into objects of type {@code T}, and
+ * vice versa.
+ *
+ * This interface is particularly useful in scenarios that require mapping
+ * between different data transfer object models, domain models, or any other
+ * distinct object representations, ensuring consistency and reusability.
+ *
+ * @param <T> the target type of the conversion
+ * @param <V> the source type of the conversion
  */
 public interface Converter<T, V> {
     T from(V value);

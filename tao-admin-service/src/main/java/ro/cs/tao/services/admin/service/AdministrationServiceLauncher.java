@@ -19,19 +19,53 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import ro.cs.tao.services.commons.ServiceLauncher;
+import ro.cs.tao.services.commons.menu.Section;
+import ro.cs.tao.services.commons.menu.ServiceEntry;
+import ro.cs.tao.services.commons.menu.Visibility;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * @author Oana H.
+ * Configuration class responsible for initializing and launching the
+ * User Administration Service within the application. This class is a
+ * Spring Boot entry point that sets up the necessary context using
+ * pre-defined XML configuration.
+ *
+ * The class implements the {@code ServiceLauncher} interface, providing
+ * a unique name for the service it represents.
+ *
+ * Features:
+ * - Loads additional Spring configuration defined in an external XML file.
+ * - Implements the {@code serviceName()} method to provide the service's name.
+ * - Defines the main method to bootstrap the Spring Boot application.
+ *
+ * Annotations:
+ * - {@code @Configuration}: Indicates that this class contains one or more
+ *   Spring bean definitions.
+ * - {@code @ImportResource}: Loads an external XML Spring configuration file
+ *   into the application context.
  */
 @Configuration
 @ImportResource("classpath:admin-service-context.xml")
-
-public class AdministrationServiceLauncher implements ServiceLauncher {
+public class AdministrationServiceLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(AdministrationServiceLauncher.class, args);
     }
 
+    public AdministrationServiceLauncher() {
+        super();
+    }
+
     @Override
     public String serviceName() { return "User Administration Service"; }
+
+    @Override
+    protected List<ServiceEntry> exportedEntries() {
+        final List<ServiceEntry> entries = new ArrayList<>();
+        entries.add(new ServiceEntry("System Dashboard", "admin/systemDashboard", "./fragments/systemDashboard-admin2.fragment.html", new Visibility[] { Visibility.ADMIN }, Section.ADMINISTRATION, 1));
+        entries.add(new ServiceEntry("Users", "admin/users", "./fragments/users-admin2.fragment.html", new Visibility[] { Visibility.ADMIN }, Section.ADMINISTRATION, 9));
+        return entries;
+    }
 }

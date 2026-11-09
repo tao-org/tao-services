@@ -1,0 +1,507 @@
+<style>
+	/*------BOX APPEARANCE------*/
+	#panel-nodes {
+		.node-root.productSet .nodes-item-core-box .with-label>label::before {min-width:5.9em;}
+		.node-root.query      .nodes-item-core-box .with-label>label::before {min-width:4.5em;}
+		@media (min-width: 768px) {
+			core-cell-list .box-bottom {position:absolute;bottom:1.1em;right:1.1em;width:fit-content;}
+		}
+	}
+	
+	/*------CUSTOM COLUMNS------*/
+	.col-custom {
+		padding-left:0.7em;padding-right:0.7em;
+		@media (min-width: 768px) {& {width:100%;float:left;}}
+		@media (min-width:1040px) {& {width: 50%;}}
+		@media (min-width:1410px) {& {width: 33%;}}
+		@media (min-width:1760px) {& {width: 25%;}}
+		@media (min-width:2130px) {& {width: 20%;}}
+		@media (min-width:2480px) {& {max-width: 37em;}}
+	}
+</style>
+
+<!-- Content Header -->
+<section class="content-header">
+	<h1>Product sets & queries <small>The list of user defined <strong>collection of products </strong> and parameterized <strong>queries</strong> that will serve as workflow inputs.</small></h1>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"> </i>Home</a></li><li class="active">Product Sets</li></ol>
+</section>
+
+<!-- Content Body -->
+<section class="content">
+	<!-- Custom Tabs -->
+	<div id="panel-nodes" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select desired product sets view.">
+						<option class="role" data-target="#paginatedcells" value="all_productSets" selected>Product Sets</option>
+						<option class="role" data-target="#paginatedcells" value="all_queries">Queries</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="all_productSets" aria-expanded="false">Product Sets</a></li>
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="all_queries"     aria-expanded="false">Queries</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="add"       data-toggle="tooltip" data-original-title="Add query" data-showwhen="all_queries"><i class="fa fa-plus"></i></button>
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">product set</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				<div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-sm-12 col-md-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-_dsLabel"></span></div>
+									<div class="box-subtitle"><span class="val-_dsSubtitle"></span></div>
+									<div class="val-_dsContents"></div>
+									<div class="box-icon"><i class="fa fa-cube"></i></div>
+								</div>
+								<div class="box-bottom">
+									<div class="text-right flat-buttons">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"  ><i class="fa fa-pencil fa-fw" ></i> Edit</button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"><i class="fa fa-trash-o fa-fw"></i> Delete</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-custom">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-_dsLabel"></span></div>
+									<div class="box-subtitle"><span class="val-_dsSubtitle"></span></div>
+									<div class="val-_dsContents"></div>
+									<div class="box-icon"><i class="fa fa-cube"></i></div>
+								</div>
+								<div class="box-bottom">
+									<div class="text-left">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"   data-toggle="tooltip" data-original-title="Edit"  ><i class="fa fa-pencil fa-fw" ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete" data-toggle="tooltip" data-original-title="Delete"><i class="fa fa-trash-o fa-fw"></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix">
+			<div class="controls-left">
+				<div><i class="fa fa-cubes"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> <span class="val-title">product sets</span></div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
+			</div>
+		</div>
+	</div>
+</section>	
+
+<!-- Modal to add/edit queries -->
+<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog" data-backdrop="false" data-keyboard="false"></div>
+
+<!-- Modal to edit product sets -->
+<div id="myModalNodesEdit" class="modal fade" tabindex="-1" role="dialog"></div>
+
+<!-- Templates -->
+<section data-action="edit" class="form-template collapse">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title" >Edit product set</h4>
+			</div>
+			<div class="modal-body">
+				<!-- FORM -->
+				<form class="form-horizontal" role="form">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-group">
+								<label for="formLabel" class="col-sm-2 col-md-2 control-label">Label</label>
+								 <div class="col-sm-10 col-md-10">
+									<input type="text" class="form-control" name="label" value="" />
+								</div>
+							</div>
+							<div class="form-group">
+								<label for="formDescription" class="col-sm-2 col-md-2 control-label">Description</label>
+								<div class="col-sm-10 col-md-10">
+									<input type="text" class="form-control" name="description" value="" />
+								</div>
+							</div>
+							<div class="form-group">
+								<label for="formSensor" class="col-sm-2 col-md-2 control-label">Sensor</label>
+								<div class="col-sm-10 col-md-10">
+									<input type="text" class="form-control" name="sensor" value="" />
+								</div>
+							</div>
+							<div class="form-group">
+								<label for="formTags" class="col-sm-2 col-md-2 control-label">Tags</label>
+								<div class="col-sm-10 col-md-10">
+									<input class="form-control" name="tags" value="" />
+								</div>
+							</div>
+							<div class="form-group">
+								<label for="formProducts" class="col-sm-2 col-md-2 control-label">Products</label>
+								<div class="col-sm-10 col-md-10">
+								   <select class="form-control" name="products" multiple="multiple"></select>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<div class="row">
+							<div class="col-md-offset-2 col-sm-10 col-sm-offset-2 col-md-10">
+								<button type="submit" class="btn btn-flat btn-primary pull-left"  name="btnSave">Save product set</button>
+								<button type="button" class="btn btn-flat btn-default pull-right" name="btnCancel" data-dismiss="modal">Cancel</button>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div><!-- /.modal-body -->
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</section>
+
+<!-- Datepicker -->
+<link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.theme.css" rel="stylesheet" />
+<link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.structure.css" rel="stylesheet" />
+<link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.css" rel="stylesheet" />
+<script type="text/javascript" src="./assets/libs/jQuery-datepicker/jquery-ui.js"></script>
+<!-- Tags -->
+<link   type="text/css"       href="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.css" rel="stylesheet" />
+<script type="text/javascript" src="./assets/libs/jQuery-tags-input-autocomplete/jquery.tagsinput-revisited.js"></script>
+<!-- Polygon Map -->
+<script type="text/javascript" src="./assets/libs/openlayers/ol-poly.js"></script>
+
+<script src="./assets/libs/jQuery/paginathing.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+	window.navCleanup = function () {
+		$.datepicker.dpDiv.remove();
+	};
+</script>
+
+<script type="text/javascript">
+	// Initialize form
+	function initializeForm($form, initData) {
+		$('[name="label"      ]', $form).val(initData.label);
+		$('[name="description"]', $form).val(initData.description);
+		$('[name="sensor"     ]', $form).val(initData.type);
+		// Tags
+		initializeTagsInputAutocomplete('#myModalNodesEdit [name="tags"]', "datasource");
+		$('[name="tags"]', $form).importTags(initData._dsTags.join());
+		// Products is set
+		$.each(initData.products, function (idx, prod) {
+			$('[name="products"]', $form).append('<option value="' + prod.replaceAll(' ', '%20') + '" selected>' + prod + '</option>');
+		});
+		$('[name="products"]', $form).select2({
+			placeholder      : "Select wanted products...",
+			width            : "100%",
+			selectionCssClass: "thin-scrollbar form-control",
+			dropdownParent   : "#myModalNodesEdit"
+		});
+	}
+	
+	// Show edit product set form
+	function manageProductSet(operationid, initData) {
+		var $modal = $("#myModalNodesEdit");
+		$modal.html($('.form-template[data-action="' + operationid + '"]').html());
+		
+		var $form = $("form", $modal);
+		initializeForm($form, initData);
+		$form.on("submit", function (e) {
+			e.preventDefault();
+			var formData = {
+				id         : initData.id,
+				label      : $('[name="label"]'      , this).val(),
+				description: $('[name="description"]', this).val(),
+				type       : $('[name="sensor"]'     , this).val(),
+				products   : $('[name="products"]'   , this).select2("val"),
+				tags       : $('[name="tags"]'       , this).val().split(",")
+			};
+			$.ajax({
+				cache  : false,
+				url    : baseRestApiURL + "datasource/productset",
+				type   : "PUT",
+				data   : JSON.stringify(formData),
+				headers: {
+					"Accept"      : "application/json",
+					"Content-Type": "application/json",
+					"X-Auth-Token": window.tokenKey
+				},
+				success: function (result) {
+					if (result.status === "SUCCEEDED") {
+						showMsg("The product set was successfully saved.", "SUCCESS");
+						$modal.modal("hide");
+						window.panelComp.refreshData();
+					} else {
+						showMsg("Error updating product set.", "ERROR");
+					}
+				},
+				error: function (jqXHR, textStatus, errorThrown) {
+					showMsg("Error updating product set. " + errorThrown + ".", "ERROR");
+				}
+			});
+		});
+		$modal.modal("show");
+	}
+	
+	// Open query map
+	function manageQuery(operationid, initData) {
+		$.ajax({
+			url: "./fragments/datasource-queries-plus.fragment.html?" + Math.random(),
+			error: function (jqXHR, textStatus, errorThrown) {
+				alert("Could not retrive needed data from server.\n" + errorThrown);
+			},
+			success: function (result) {
+				if (result !== "") {
+					// Prepare data: remove all custom fields added during the preprocessing stage (tags, _ds...)
+					var oDna = $.extend(true, {}, initData);
+					delete oDna["tags"];
+					$.each(Object.keys(oDna), function (index, key) {
+						if (key.indexOf("_ds") == 0) delete oDna[key];
+					});
+					
+					// Modal stuff
+					var $modal = $("#myModalNodes");
+					$modal.data({ action: operationid, dna: oDna });
+					$modal.html(result);
+					$modal.off("hidden.bs.modal");
+					$modal.on("hidden.bs.modal", function () {
+						$modal.html("");
+						window.panelComp.refreshData();
+					});
+					$modal.modal("show");
+				} else {
+					alert("Could not retrive needed data from server.");
+				}
+			}
+		});
+	}
+	
+	// Remove product set/query
+	function removeDatasource(initData, deleteUrl) {
+		$("#confirm-dialog").modal("confirm", {
+			msg: "Are you sure you want to delete:<br /><strong>" + initData.label + "</strong> ?",
+			callbackCancel : function () {},
+			callbackConfirm: function () {
+				$.ajax({
+					cache   : false,
+					url     : deleteUrl,
+					type    : "DELETE",
+					dataType: "json",
+					headers : {
+						"Accept"      : "application/json",
+						"Content-Type": "application/json",
+						"X-Auth-Token": window.tokenKey
+					},
+					error: function (jqXHR, textStatus, errorThrown) {
+						if (jqXHR.status === 500) {
+							showMsg("Unable to perform requested action. Please try again later.", "ERROR");
+						} else {
+							alert("An error has occurred, please try again or contact app admin.");
+						}
+					},
+					success: function (data) {
+						if (data.status === "FAILED") { 
+							showMsg("Failed to delete the selected datasource.", "FAILED");
+						} else {
+							showMsg("Datasource successfully deleted.", "SUCCESS");
+							window.panelComp.refreshData();
+						}
+					}
+				});
+			}
+		});
+	}
+	
+	$(document).ready(function () {
+		var $selectActivePanel = $("#selectActivePanel");
+		var urls = [];
+		var actionsSet = {
+			"all_productSets": { badgeLabel: "Product Sets", pagLabel: "product sets", emptyLabel: "product set", tags: [ "productSet" ], url: baseRestApiURL + "datasource/productset" },
+			"all_queries"    : { badgeLabel: "Queries"     , pagLabel: "queries"     , emptyLabel: "query"      , tags: [ "query"      ], url: baseRestApiURL + "datasource/query/"     }
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
+				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+				$(".top-controls .search-container").attr("data-original-title", "Search " + (actionsSet[action]?.emptyLabel || action));
+			}
+			return selected;
+		};
+		window.panelComp = $("#panel-nodes").npPaginatedCells({
+			headerUser: taoUserProfile.username,
+			url       : urls,
+			viewMode  : preferences.viewMode,
+			order     : [
+				{ "label": "Name ascending" , "objAttributeName": "label"   , "direction": "ASC", "default": true },
+				{ "label": "Name descending", "objAttributeName": "label"   , "direction": "DSC" },
+				{ "label": "Date ascending" , "objAttributeName": "modified", "direction": "ASC" },
+				{ "label": "Date descending", "objAttributeName": "modified", "direction": "DSC" }
+			],
+			filterAttribute: "_dsFilterBy",
+			itemsOnPage: 12,
+			doDataPreprocessing: function (data, sets) {
+				var activeSet = getActiveSet(data, sets);
+				var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+				$.each(activeSet, function (index, elX) {
+					var isProducSet = (action == "all_productSets");//typeof elX.siteId === "undefined" && typeof elX.products !== "undefined";
+					
+					// Additional cell info
+					elX._dsTags     = elX.tags;
+					elX._dsLabel    = isProducSet ? elX.label       : elX.sensor + " - " + elX.dataSource;
+					elX._dsSubtitle = isProducSet ? elX.description : elX.label;
+					elX._dsFilterBy = "";
+					elX._dsContents = "";
+					elX.tags        = actionsSet[action]?.tags || [];
+					
+					// Product Sets
+					if (isProducSet) {
+						var productTypes = $.unique($.map(elX.products, function (elem, idx) {
+							return (elem.indexOf(".") > -1 ) ? elem.substr(elem.toLowerCase().lastIndexOf(".") + 1).replaceAll("/","").toUpperCase() : null;
+						}));
+						
+						var count = elX.products.length;
+						var types = (typeof elX.type !== "undefined" ? elX.type : productTypes.filter(function(pt, idx) { return typeof pt !== "undefined"; }).length > 0 ? productTypes.join(",") : "Mixed");
+						elX._dsFilterBy = "[" + elX._dsLabel + "][" + types + "]";
+						elX._dsContents = '<div class="box-text with-label"><label>Products in set: </label><strong><span>' + count + '</span></strong></div>' +
+										  '<div class="box-text with-label"><label>Product types: </label><strong><span>' + types + '</span></strong></div>';
+					// Queries
+					} else {
+						// Get time interval for different components
+						var interval = "";
+						if (typeof elX.values !== "undefined") {
+							if (typeof elX.values.acquisition_date !== "undefined") {
+								interval = elX.values.acquisition_date;
+							} else if (typeof elX.values.startDate !== "undefined") {
+								if (typeof elX.values.endDate !== "undefined") {
+									interval = "[" + elX.values.startDate + ", " + elX.values.endDate + "]";
+								} else {
+									interval = elX.values.startDate;
+								}
+							} else if (typeof elX.values.beginPosition !== "undefined" && typeof elX.values.endPosition !== "undefined") {
+								interval = "[ " + elX.values.beginPosition + ", " + elX.values.endPosition + " ]";
+							}
+						}
+						elX._dsFilterBy = "[" + elX.label + "][" + elX.sensor + "][" + elX.dataSource + "][" + interval + "]";
+						elX._dsContents = '<div class="box-text with-label"><label>Datasource: </label><strong><span>' + elX.dataSource + '</span></strong></div>' +
+										  '<div class="box-text with-label"><label>Sensor: </label><strong><span>' + elX.sensor + '</span></strong></div>' +
+										  '<div class="box-text with-label"><label>Interval: </label><strong><span>' + interval + '</span></strong></div>';
+					}
+				});
+				return activeSet;
+			},
+			doCustomRender: function($elClone, elX){
+				var title = $(".val-_dsSubtitle", $elClone).html();
+				if (elX.dataSource === "Local Database") {
+					$elClone.find(".btn-edit").prop("disabled",true);
+				}
+				$elClone.addClass(elX.tags[0]);
+			},
+			doAction: function(action, args){
+				var dna = $.extend({}, args?.dna || {});
+				var isProducSet = (dna.tags || false) && dna.tags[0] === "productSet";
+				switch (action) {
+					// Add datasource		------------------------------------
+					case "add":
+					// Edit datasource		------------------------------------
+					case "edit":			if (isProducSet) {
+												manageProductSet(action, dna);
+											} else {
+												manageQuery(action, dna);
+											}
+											break;
+					// Remove datasource	------------------------------------
+					case "delete":			if (typeof dna.id !== "undefined") {
+												var deleteUrl = isProducSet ? baseRestApiURL + "datasource/productset/" + dna.id : baseRestApiURL + "datasource/query/" + dna.id + "/";
+												removeDatasource(dna, deleteUrl);
+											} else {
+												showMsg("Unable to perform requested action. Please try again later.", "ERROR");
+											}
+											break;
+				}
+			}
+		});
+		
+		$selectActivePanel
+		// Change active tab (using the tab controls)
+		.on("click", '[data-toggle="tab"][aria-expanded="false"]', function (e) {
+			navCleanup();
+			
+			var action = $(this).data("action");
+			e.originalEvent && $("select", e.delegateTarget).val(action);
+			
+			urls = (urls.length == 0) ? $.map(actionsSet, function (set, idx) { return set.url; }) : [ actionsSet[action].url ];
+			window.panelComp.refreshData(urls);
+		})
+		// Change active tab (using the combobox)
+		.on("change", "select", function (e) {
+			$('[data-toggle="tab"][data-action="' + this.value + '"]', e.delegateTraget).eq(0).click();
+		})
+		// Manage content when active tab changes
+		.on("shown.bs.tab", '[data-toggle="tab"][aria-expanded]', function (e) {
+			var action = $(e.currentTarget).data("action");
+			// Toggle visibility of specific toolbar icons
+			$('[data-showwhen]', ".top-controls").addClass("hidden").filter('[data-showwhen="' + action + '"]').removeClass("hidden");
+		});
+		
+		// Start with query map
+		if (decodeURI(window.location.hash).indexOf("/explorer") >= 0) {
+			$('[data-action="add"]', ".top-controls").eq(0).click();
+			
+		// Start with product sets management
+		} else {
+			$('[data-toggle="tab"][data-action="all_productSets"]', $selectActivePanel).eq(0).click();
+		}
+	});
+	
+//# sourceURL=datasources-queries.js
+</script>
+

@@ -19,6 +19,7 @@ import ro.cs.tao.EnumUtils;
 import ro.cs.tao.component.ProcessingComponent;
 import ro.cs.tao.component.WebServiceAuthentication;
 import ro.cs.tao.component.enums.AuthenticationType;
+import ro.cs.tao.component.ogc.OGCProcessComponent;
 import ro.cs.tao.component.ogc.WMSComponent;
 import ro.cs.tao.component.ogc.WPSComponent;
 import ro.cs.tao.datasource.DataSourceComponent;
@@ -44,6 +45,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Utility class for transforming various service-related objects into specific
+ * corresponding DTO (Data Transfer Object) representations. This class provides
+ * methods for mapping and converting between entity models and their respective
+ * DTOs to facilitate interoperability within the system.
+ *
+ * This class is not meant to be instantiated as it provides only static utility
+ * methods.
+ *
  * @author Oana H.
  */
 public final class ServiceTransformUtils {
@@ -55,6 +64,12 @@ public final class ServiceTransformUtils {
         // empty constructor
     }
 
+    /**
+     * Converts a list of ExecutionJob objects into a list of ExecutionJobInfo objects.
+     *
+     * @param executionJobs the list of ExecutionJob objects to be converted
+     * @return a list of ExecutionJobInfo objects created from the provided ExecutionJob objects
+     */
     public static List<ExecutionJobInfo> toJobInfos(final List<ExecutionJob> executionJobs){
         final List<ExecutionJobInfo> results = new ArrayList<>();
         for(ExecutionJob executionJob : executionJobs){
@@ -63,6 +78,12 @@ public final class ServiceTransformUtils {
         return results;
     }
 
+    /**
+     * Converts a list of ExecutionTask objects into a list of ExecutionTaskInfo objects.
+     *
+     * @param executionTasks the list of ExecutionTask objects to be converted
+     * @return a list of ExecutionTaskInfo objects created from the provided ExecutionTask objects
+     */
     public static List<ExecutionTaskInfo> toTaskInfos(final List<ExecutionTask> executionTasks){
         final List<ExecutionTaskInfo> results = new ArrayList<>();
         for(ExecutionTask executionTask : executionTasks){
@@ -71,6 +92,12 @@ public final class ServiceTransformUtils {
         return results;
     }
 
+    /**
+     * Converts a list of ProcessingComponent objects into a list of ProcessingComponentInfo objects.
+     *
+     * @param components the list of ProcessingComponent objects to be converted
+     * @return a list of ProcessingComponentInfo objects created from the provided ProcessingComponent objects
+     */
     public static List<ProcessingComponentInfo> toProcessingComponentInfos(final List<ProcessingComponent> components) {
         final List<ProcessingComponentInfo> results = new ArrayList<>();
         for (ProcessingComponent component : components) {
@@ -79,6 +106,13 @@ public final class ServiceTransformUtils {
         return results;
     }
 
+    /**
+     * Converts a list of {@code WPSComponent} objects into a list of {@code WPSComponentInfo} objects.
+     * Each {@code WPSComponentInfo} is created by mapping data from a corresponding {@code WPSComponent}.
+     *
+     * @param components the list of {@code WPSComponent} objects to be converted
+     * @return a list of {@code WPSComponentInfo} objects created from the provided {@code WPSComponent} objects
+     */
     public static List<WPSComponentInfo> toWPSComponentInfos(final List<WPSComponent> components) {
         final List<WPSComponentInfo> results = new ArrayList<>();
         for (WPSComponent component : components) {
@@ -87,6 +121,13 @@ public final class ServiceTransformUtils {
         return results;
     }
 
+    /**
+     * Converts a list of {@code WMSComponent} objects into a list of {@code WMSComponentInfo} objects.
+     * Each {@code WMSComponentInfo} is created by mapping data from a corresponding {@code WMSComponent}.
+     *
+     * @param components the list of {@code WMSComponent} objects to be converted
+     * @return a list of {@code WMSComponentInfo} objects created from the provided {@code WMSComponent} objects
+     */
     public static List<WMSComponentInfo> toWMSComponentInfos(final List<WMSComponent> components) {
         final List<WMSComponentInfo> results = new ArrayList<>();
         for (WMSComponent component : components) {
@@ -95,6 +136,28 @@ public final class ServiceTransformUtils {
         return results;
     }
 
+    /**
+     * Converts a list of {@code OGCProcessComponent} objects into a list of {@code OGCProcessComponentInfo} objects.
+     * Each {@code OGCProcessComponentInfo} is created by mapping data from a corresponding {@code OGCProcessComponent}.
+     *
+     * @param components the list of {@code OGCProcessComponent} objects to be converted
+     * @return a list of {@code OGCProcessComponentInfo} objects created from the provided {@code OGCProcessComponent} objects
+     */
+    public static List<OGCProcessComponentInfo> toOGCProcessComponentInfos(final List<OGCProcessComponent> components) {
+        final List<OGCProcessComponentInfo> results = new ArrayList<>();
+        for (OGCProcessComponent component : components) {
+            results.add(new OGCProcessComponentInfo(component));
+        }
+        return results;
+    }
+
+    /**
+     * Converts a list of {@code DataSourceComponent} objects into a list of {@code DataSourceInfo} objects.
+     * Each {@code DataSourceInfo} is created by mapping data from a corresponding {@code DataSourceComponent}.
+     *
+     * @param components the list of {@code DataSourceComponent} objects to be converted
+     * @return a list of {@code DataSourceInfo} objects created from the provided {@code DataSourceComponent} objects
+     */
     public static List<DataSourceInfo> toDataSourceInfos(final List<DataSourceComponent> components) {
         final List<DataSourceInfo> results = new ArrayList<>();
         for (DataSourceComponent component : components) {
@@ -103,6 +166,16 @@ public final class ServiceTransformUtils {
         return results;
     }
 
+    /**
+     * Converts a list of {@code DataSourceComponent} objects into a list of {@code ProductSetInfo} objects.
+     * Each {@code ProductSetInfo} is created by mapping data from the corresponding {@code DataSourceComponent}
+     * and associating it with the provided user.
+     *
+     * @param components the list of {@code DataSourceComponent} objects to be converted; may be {@code null}
+     * @param user the user information to be associated with each {@code ProductSetInfo}
+     * @return a list of {@code ProductSetInfo} objects created from the provided {@code DataSourceComponent} objects;
+     *         returns an empty list if {@code components} is {@code null}
+     */
     public static List<ProductSetInfo> toProductSetInfos(final List<DataSourceComponent> components, String user) {
         final List<ProductSetInfo> results = new ArrayList<>();
         if (components != null) {
@@ -113,6 +186,13 @@ public final class ServiceTransformUtils {
         return results;
     }
 
+    /**
+     * Converts a list of {@code DataSourceComponentGroup} objects into a list of {@code DataSourceGroupInfo} objects.
+     * Each {@code DataSourceGroupInfo} instance is created by mapping data from a corresponding {@code DataSourceComponentGroup}.
+     *
+     * @param components the list of {@code DataSourceComponentGroup} objects to be converted
+     * @return a list of {@code DataSourceGroupInfo} objects created from the provided {@code DataSourceComponentGroup} objects
+     */
     public static List<DataSourceGroupInfo> toDataSourceGroupInfos(final List<DataSourceComponentGroup> components) {
         final List<DataSourceGroupInfo> results = new ArrayList<>();
         for (DataSourceComponentGroup component : components) {
@@ -121,10 +201,19 @@ public final class ServiceTransformUtils {
         return results;
     }
 
+    /**
+     * Converts a list of {@code WorkflowDescriptor} objects into a list of {@code WorkflowInfo} objects.
+     * Each {@code WorkflowInfo} instance is created by mapping data from a corresponding {@code WorkflowDescriptor}
+     * and optionally associating it with an image from the provided map.
+     *
+     * @param descriptors the list of {@code WorkflowDescriptor} objects to be converted
+     * @param images a map associating workflow IDs to image URLs; can be {@code null} if no image mapping is needed
+     * @return a list of {@code WorkflowInfo} objects created from the provided {@code WorkflowDescriptor} objects
+     */
     public static List<WorkflowInfo> toWorkflowInfos(final List<WorkflowDescriptor> descriptors,
                                                      final Map<Long, String> images){
         final List<WorkflowInfo> results = new ArrayList<>();
-        for(WorkflowDescriptor workflowDescriptor : descriptors){
+        for (WorkflowDescriptor workflowDescriptor : descriptors){
             results.add(new WorkflowInfo(workflowDescriptor, images != null ? images.get(workflowDescriptor.getId()) : null));
         }
         return results;
@@ -134,6 +223,12 @@ public final class ServiceTransformUtils {
         return descriptor != null ? new WorkflowInfo(descriptor, image) : null;
     }
 
+    /**
+     * Converts a given RepositoryType instance into a RepositoryTypeBean instance.
+     *
+     * @param type the RepositoryType instance to be converted
+     * @return the resulting RepositoryTypeBean instance containing data from the provided RepositoryType
+     */
     public static RepositoryTypeBean toBean(RepositoryType type) {
         final RepositoryTypeBean bean = new RepositoryTypeBean();
         bean.setId(type.value());
@@ -146,6 +241,12 @@ public final class ServiceTransformUtils {
         return bean;
     }
 
+    /**
+     * Converts a given RepositoryBean instance into a Repository instance.
+     *
+     * @param bean the RepositoryBean instance to be converted
+     * @return the resulting Repository instance containing data mapped from the provided RepositoryBean
+     */
     public static Repository fromBean(RepositoryBean bean) {
         final Repository entity = new Repository();
         entity.setId(bean.getId());
@@ -161,6 +262,13 @@ public final class ServiceTransformUtils {
         return entity;
     }
 
+    /**
+     * Converts a given Repository entity into a RepositoryBean instance.
+     * Maps the properties of the Repository entity to their corresponding fields in the RepositoryBean.
+     *
+     * @param entity the Repository instance to be converted
+     * @return a RepositoryBean instance populated with data mapped from the provided Repository entity
+     */
     public static RepositoryBean toBean(Repository entity) {
         final RepositoryBean bean = new RepositoryBean();
         bean.setId(entity.getId());
@@ -179,6 +287,14 @@ public final class ServiceTransformUtils {
         return bean;
     }
 
+    /**
+     * Converts a given RepositoryTemplateBean instance into a RepositoryTemplate instance.
+     * Maps the properties of the RepositoryTemplateBean to their corresponding fields
+     * in the RepositoryTemplate.
+     *
+     * @param bean the RepositoryTemplateBean instance to be converted
+     * @return a RepositoryTemplate instance populated with data from the provided RepositoryTemplateBean
+     */
     public static RepositoryTemplate fromBean(RepositoryTemplateBean bean) {
         final RepositoryTemplate entity = new RepositoryTemplate();
         entity.setId(bean.getId());
@@ -190,6 +306,14 @@ public final class ServiceTransformUtils {
         return entity;
     }
 
+    /**
+     * Converts a given RepositoryTemplate instance into a RepositoryTemplateBean instance.
+     * Maps the properties of the RepositoryTemplate to their corresponding fields
+     * in the RepositoryTemplateBean.
+     *
+     * @param entity the RepositoryTemplate instance to be converted
+     * @return a RepositoryTemplateBean instance containing data from the provided RepositoryTemplate
+     */
     public static RepositoryTemplateBean toBean(RepositoryTemplate entity) {
         final RepositoryTemplateBean bean = new RepositoryTemplateBean();
         bean.setId(entity.getId());
@@ -202,6 +326,15 @@ public final class ServiceTransformUtils {
         return bean;
     }
 
+    /**
+     * Converts a given {@link Container} instance and an optional {@link WebServiceAuthentication} instance
+     * into a {@link WebServiceBean} instance. Populates the properties of the WebServiceBean based on the
+     * provided input objects.
+     *
+     * @param container the {@link Container} object from which to populate the {@link WebServiceBean} properties
+     * @param authentication the optional {@link WebServiceAuthentication} object to map authentication details into the bean
+     * @return a {@link WebServiceBean} instance populated with data from the provided container and authentication
+     */
     public static WebServiceBean toBean(Container container, WebServiceAuthentication authentication) {
         final WebServiceBean bean = new WebServiceBean();
         bean.setId(container.getId());
@@ -226,6 +359,12 @@ public final class ServiceTransformUtils {
         return bean;
     }
 
+    /**
+     * Creates and returns a {@link Container} instance by mapping properties from the given {@link WebServiceBean}.
+     *
+     * @param bean the {@link WebServiceBean} source from which to populate the {@link Container} object
+     * @return a {@link Container} object populated with data from the provided {@link WebServiceBean}
+     */
     public static Container getContainerPart(WebServiceBean bean) {
         final Container entity = new Container();
         entity.setId(bean.getId());
@@ -242,6 +381,13 @@ public final class ServiceTransformUtils {
         return entity;
     }
 
+    /**
+     * Converts a given {@link WebServiceBean} instance into a {@link WebServiceAuthentication} instance.
+     * Populates the authentication details in the resulting object based on the properties of the input bean.
+     *
+     * @param bean the {@link WebServiceBean} containing authentication information to be converted
+     * @return a {@link WebServiceAuthentication} instance populated with data from the provided bean
+     */
     public static WebServiceAuthentication getAuthenticationPart(WebServiceBean bean) {
         final WebServiceAuthentication entity = new WebServiceAuthentication();
         entity.setId(bean.getId());

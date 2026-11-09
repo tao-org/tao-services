@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ro.cs.tao.messaging.Messaging;
@@ -43,26 +44,51 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * BaseController is an abstract class extending ControllerBase and provides common functionality for managing
+ * user sessions, access control, and auditing across various controller implementations.
+ *
  * @author Cosmin Cara
  */
 public abstract class BaseController extends ControllerBase {
 
     private static AuditProvider auditProvider;
-    private static UserProvider userProvider;
+    protected static UserProvider userProvider;
     private static final Map<String, String> userTokens = new HashMap<>();
 
+    /**
+     * Builds a {@link ServletUriComponentsBuilder} instance initialized with the current request URI.
+     *
+     * @return a {@link ServletUriComponentsBuilder} instance pointing to the current request URI
+     */
     public static ServletUriComponentsBuilder currentURL() {
         return ServletUriComponentsBuilder.fromCurrentRequestUri();
     }
 
+    /**
+     * Retrieves the token associated with the specified user ID.
+     *
+     * @param userId the identifier of the user whose token is being requested
+     * @return the token associated with the specified user ID, or null if no token is found
+     */
     public static String tokenOf(String userId) {
         return userTokens.get(userId);
     }
 
+    /**
+     * Stores a token for the specified user ID.
+     *
+     * @param userId the identifier of the user for whom the token is being stored
+     * @param token the token to be associated with the specified user ID
+     */
     public static void storeToken(String userId, String token) {
         userTokens.put(userId, token);
     }
 
+    /**
+     * Removes the token associated with the specified user ID from the user token storage.
+     *
+     * @param userId the identifier of the user whose token is to be cleared
+     */
     public static void clearToken(String userId) {
         userTokens.remove(userId);
     }
@@ -84,17 +110,29 @@ public abstract class BaseController extends ControllerBase {
     @ExceptionHandler(Exception.class)
     public void handleUncaughtException(Exception exception, WebRequest request) {
         error(exception.getMessage());
-       final StringWriter writer = new StringWriter();
+        final StringWriter writer = new StringWriter();
         final PrintWriter printWriter = new PrintWriter(writer);
         exception.printStackTrace(printWriter);
         Messaging.send(request.getUserPrincipal(), Topic.ERROR.getCategory(),
                        request.getContextPath(), exception.getMessage(), writer.toString());
     }
 
+    /**
+     * Retrieves the username of the currently authenticated user.
+     *
+     * @return the username of the currently authenticated user
+     */
     protected String currentUser() {
         return currentPrincipal().getName();
     }
 
+    /**
+     * Retrieves the currently authenticated principal.
+     * If the principal is not an instance of {@code Principal}, it is assumed to be a username,
+     * and a {@code UserPrincipal} is created using the user's details retrieved via the {@code userProvider}.
+     *
+     * @return the authenticated principal, either as a {@code Principal} or as a {@code UserPrincipal}
+     */
     protected Principal currentPrincipal() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (!(principal instanceof Principal)) {
@@ -106,23 +144,52 @@ public abstract class BaseController extends ControllerBase {
 
     }
 
+    /**
+     * Determines whether the currently authenticated user has administrative privileges.
+     * The check is performed based on the type and roles of the principal returned by {@code currentPrincipal()}:
+     * - If the principal is an instance of {@code SystemPrincipal}, it is considered an admin.
+     * - If the principal is an instance of {@code UserPrincipal}, the method verifies if it has the "admin" role.
+     *
+     * @return {@code true} if the current user is an administrator, otherwise {@code false}.
+     */
     protected boolean isCurrentUserAdmin() {
         final Principal principal = currentPrincipal();
         return principal instanceof SystemPrincipal || ((UserPrincipal) principal).hasRole("admin");
     }
 
+    /**
+     * Checks if the user with the specified user ID has administrator privileges.
+     * The method determines this by retrieving the user's groups and checking if
+     * any of the groups has the name "admin" (case-insensitive).
+     *
+     * @param userId the identifier of the user whose administrative status is to be checked
+     * @return {@code true} if the user is an administrator, otherwise {@code false}
+     */
     protected boolean isAdmin(String userId) {
         return userProvider.get(userId).getGroups().stream().anyMatch(g -> "admin".equalsIgnoreCase(g.getName()));
     }
 
+    /**
+     * Records an audit log for a specific event. The event is saved with the current timestamp
+     * and the username of the currently authenticated user.
+     *
+     * @param event the description of the event to be recorded in the audit log
+     */
     protected void record(String event) {
         try {
-            auditProvider.save(new LogEvent(LocalDateTime.now(), currentUser(), event));
+            auditProvider.save(new LogEvent(LocalDateTime.now(), currentUser(), RequestContextHolder.currentRequestAttributes().getSessionId(), event));
         } catch (PersistenceException e) {
             Logger.getLogger(getClass().getName()).warning(e.getMessage());
         }
     }
 
+    /**
+     * Returns a standardized response entity indicating that the request is unauthorized.
+     * The response includes a message set to "Unauthorized" and an HTTP status of 401 (Unauthorized).
+     *
+     * @return a {@link ResponseEntity} wrapping a {@link ServiceResponse} with the message "Unauthorized"
+     *         and an HTTP status of {@code HttpStatus.UNAUTHORIZED}
+     */
     protected ResponseEntity<ServiceResponse<?>> unauthorizedResponse() {
         return prepareResult("Unauthorized", HttpStatus.UNAUTHORIZED);
     }

@@ -3,6 +3,7 @@ package ro.cs.tao.services.workspace.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -22,6 +23,7 @@ import ro.cs.tao.messaging.ProgressNotifier;
 import ro.cs.tao.messaging.Topic;
 import ro.cs.tao.persistence.*;
 import ro.cs.tao.quota.QuotaException;
+import ro.cs.tao.quota.StorageReport;
 import ro.cs.tao.quota.UserQuotaManager;
 import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.security.UserPrincipal;
@@ -30,6 +32,7 @@ import ro.cs.tao.services.commons.ServiceResponse;
 import ro.cs.tao.services.entity.controllers.DataEntityController;
 import ro.cs.tao.services.factory.StorageServiceFactory;
 import ro.cs.tao.services.interfaces.ProductService;
+import ro.cs.tao.services.interfaces.RepositoryService;
 import ro.cs.tao.services.interfaces.StorageService;
 import ro.cs.tao.services.model.FileObject;
 import ro.cs.tao.services.model.ItemAction;
@@ -46,10 +49,10 @@ import ro.cs.tao.workspaces.Repository;
 import ro.cs.tao.workspaces.RepositoryType;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,7 +72,6 @@ import java.util.zip.ZipOutputStream;
 @Tag(name = "Workspaces", description = "Operations related to file operations on user workspaces")
 public class StorageController extends DataEntityController<EOProduct, String, ProductService> {
 
-    private static final String tokenJSON = "{ \"repository\":\"%s\", \"fileName\":%s, \"folder\":%s, \"user\":\"%s\" }";
     private static final Pattern maliciousPathRegEx = Pattern.compile("\\.\\.\\/|\\.\\.|\\/\\/|\\\\\\\\|\\/\\.\\/|\\\\\\.\\\\|%|;");
 
     private static final Map<String, Integer> maliciousAttempts = new HashMap<>();
@@ -88,6 +90,9 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
     @Autowired
     private UserProvider userProvider;
+
+    @Autowired
+    private RepositoryService repositoryService;
 
     private static final BlockingQueue<Tuple<Repository, String>> deletionQueue;
 
@@ -122,8 +127,6 @@ public class StorageController extends DataEntityController<EOProduct, String, P
      * Lists the content of a remote workspace that is linked to the current user.
      *
      * @param workspaceId       The workspace identifier
-     *
-     * @param lastItem          [Optional] The item to start from (in case of paged results)
      */
     @PostMapping(value = "persistent", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> markPersistent(@RequestParam("workspaceId") String workspaceId) {
@@ -179,21 +182,56 @@ public class StorageController extends DataEntityController<EOProduct, String, P
 
         return responseEntity;
     }
+
+    /**
+     * Handles retrieval of selection data for a given item. The method processes
+     * the input parameter and retrieves the appropriate data from the storage service.
+     * The returned sub-tree would contain the first level nodes and child nodes only for the elements of the path.
+     *
+     * @param item the path or identifier specifying the item to retrieve data for.
+     *             If the input is null, empty, or ".", the method retrieves data
+     *             for the root path ("/").
+     * @return a {@code ResponseEntity} containing the service response. In the case
+     *         of successful retrieval, it contains the requested data. If an
+     *         exception occurs, it returns an appropriate error response.
+     */
+    @GetMapping(value = "selection", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getForSelection(@RequestParam("item") String item) {
+        ResponseEntity<ServiceResponse<?>> responseEntity;
+        try {
+            checkPath(item);
+            final StorageService repositoryService = getLocalRepositoryService(currentUser());
+            if (StringUtilities.isNullOrEmpty(item) || item.equals(".")) {
+                responseEntity = prepareResult(repositoryService.getForSelection("/"));
+            } else {
+                responseEntity = prepareResult(repositoryService.getForSelection(item));
+            }
+        } catch (IOException ex) {
+            responseEntity = handleException(ex);
+        }
+
+        return responseEntity;
+    }
     /**
      * Uploads a file into the given folder of the user workspace
-     * @param file          The file to be uploaded
+     * @param files         The file/files to be uploaded
      * @param folder        The folder into which the file will be uploaded
      * @param description   A description of the file
      */
     @PostMapping(value = "upload/", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile file,
+    public ResponseEntity<?> uploadUser(@RequestParam("file") MultipartFile[] files,
                                         @RequestParam("folder") String folder,
                                         @RequestParam("desc") String description) {
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             checkPath(folder);
-            checkFile(file.getOriginalFilename());
-            getLocalRepositoryService(currentUser()).storeUserFile(file, folder, description);
+            if(files == null || files.length == 0){
+                throw new IllegalArgumentException("No files sent to upload");
+            }
+            for(MultipartFile file : files) {
+                checkFile(file.getOriginalFilename());
+                getLocalRepositoryService(currentUser()).storeUserFile(file, folder, description);
+            }
             responseEntity = prepareResult("Upload succeeded", ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
             responseEntity = handleException(ex);
@@ -347,13 +385,32 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         ResponseEntity<ServiceResponse<?>> responseEntity;
         try {
             String[] files = file.split(",");
-            final Repository workspace = getOwnedWorkspace(currentUser(), workspaceId);
-            for (String f : files) {
-                checkPath(f);
-                if (f.startsWith("/")) {
-                    throw new IOException("The path must be relative [" + f + "]");
+            final String userId = currentUser();
+            final Repository workspace = getOwnedWorkspace(userId, workspaceId);
+            if (workspace.getType().equals(RepositoryType.LOCAL)) {
+                asyncExecute(() -> {
+                    try {
+                        if (SystemUtils.IS_OS_WINDOWS){
+                            for (String f : files){
+                                FileUtilities.deleteTree(Path.of(workspace.resolve(f)));
+                            }
+                        } else {
+                            for (String f : files) {
+                                FileUtilities.deleteTreeUnix(Path.of(workspace.resolve(f)));
+                            }
+                        }
+                    } catch (IOException e){
+                        throw new RuntimeException(e);
+                    }
+                }, null, errorCallback(userId));
+            } else {
+                for (String f : files) {
+                    checkPath(f);
+                    if (f.startsWith("/")) {
+                        throw new IOException("The path must be relative [" + f + "]");
+                    }
+                    deletionQueue.put(new Tuple<>(workspace, f));
                 }
-                deletionQueue.put(new Tuple<>(workspace, f));
             }
             responseEntity = prepareResult(String.format("%d items marked for deletion", files.length), ResponseStatus.SUCCEEDED);
         } catch (Exception ex) {
@@ -361,6 +418,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         }
         return responseEntity;
     }
+
+
     /**
      * Requests a download url for a file or a folder from one of the user workspaces
      *
@@ -382,20 +441,11 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             } else {
                 checkPath(folder);
             }
-            final Repository repository = repositoryProvider.get(repositoryId);
-            if (repository == null) {
-                throw new IllegalArgumentException("[repository] Invalid value");
-            }
-            final String user = currentUser();
-            List<Repository> userRepositories = repositoryProvider.getByUser(user);
-            if (userRepositories.stream().noneMatch(r -> repositoryId.equals(r.getId()))) {
-                throw new IllegalArgumentException("Operation not allowed");
-            }
-            fileName = StringUtilities.isNullOrEmpty(fileName) ? null : "\"" + fileName + "\"";
-            folder = StringUtilities.isNullOrEmpty(folder) ? null : "\"" + folder + "\"";
-            final String json = String.format(tokenJSON, repositoryId, fileName, folder, user);
-            return prepareResult("/files/get?token=" + URLEncoder.encode(Crypto.encrypt(json, SystemPrincipal.instance().getName()),
-                                                                         StandardCharsets.UTF_8));
+            return prepareResult(repositoryService.createDownloadURL(currentUser(),
+                                                                     repositoryId,
+                                                                     isFile ? fileName : folder,
+                                                                     isFile,
+                                                                     false));
         } catch (Exception e) {
             return handleException(e);
         }
@@ -415,6 +465,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             final String fileName = values.get("fileName");
             final String folder = values.get("folder");
             final String user = values.get("user");
+            final boolean base64 = Boolean.parseBoolean(values.get("base64"));
             final Repository repository = repositoryProvider.get(repositoryId);
             final boolean isFile = StringUtilities.isNullOrEmpty(folder);
             if (isFile) {
@@ -422,80 +473,87 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             } else {
                 checkPath(folder);
             }
+            final String contentType = base64 ? MediaType.TEXT_PLAIN_VALUE : MediaType.APPLICATION_OCTET_STREAM_VALUE;
             switch (repository.getType()) {
                 case LOCAL:
-                    //asyncExecute(() -> {
-                        try {
-                            if (isFile) {
-                                Resource file = loadAsResource(user, fileName);
-                                response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                    try {
+                        if (isFile) {
+                            Resource file = loadAsResource(user, fileName);
+                            response.setContentType(contentType);
+                            response.setStatus(HttpStatus.OK.value());
+                            if (!base64) {
                                 response.setContentLengthLong(file.contentLength());
                                 response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getFilename());
-                                response.setStatus(HttpStatus.OK.value());
-                                byte[] buffer = new byte[MemoryUnit.MB.value().intValue()];
                                 try (InputStream in = file.getInputStream()) {
-                                    int read;
-                                    while ((read = in.read(buffer)) > 0) {
-                                        response.getOutputStream().write(buffer, 0, read);
-                                    }
+                                    writeAsBytes(in, response.getOutputStream());
                                 }
                             } else {
-                                final Path path = Paths.get(repository.resolve(folder));
-                                if (Files.exists(path) && Files.isDirectory(path)) {
-                                    try {
-                                        response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                                        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
-                                        response.setStatus(HttpServletResponse.SC_OK);
-                                        try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
-                                            getLocalRepositoryService(user).streamToZip(path.toString(), zipOutputStream);
-                                            zipOutputStream.finish();
-                                        }
-                                    } catch (IOException ex) {
-                                        try {
-                                            warn(ex.getMessage());
-                                            response.sendError(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
-                                        } catch (IOException e) {
-                                            error(e.getMessage());
-                                        }
+                                try (InputStream in = file.getInputStream();
+                                     OutputStream out = Base64.getEncoder().wrap(response.getOutputStream())) {
+                                    writeAsBytes(in, out);
+                                }
+                            }
+
+                        } else {
+                            final Path path = Paths.get(repository.resolve(folder));
+                            if (Files.exists(path) && Files.isDirectory(path)) {
+                                try {
+                                    response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                                    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
+                                    response.setStatus(HttpServletResponse.SC_OK);
+                                    try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
+                                        getLocalRepositoryService(user).streamToZip(path.toString(), zipOutputStream);
+                                        zipOutputStream.finish();
                                     }
-                                } else {
+                                } catch (IOException ex) {
                                     try {
-                                        response.sendError(HttpStatus.BAD_REQUEST.value(), String.format("%s does not exist or it is not a folder", folder));
+                                        warn(ex.getMessage());
+                                        response.sendError(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
                                     } catch (IOException e) {
                                         error(e.getMessage());
                                     }
                                 }
+                            } else {
+                                try {
+                                    response.sendError(HttpStatus.BAD_REQUEST.value(), String.format("%s does not exist or it is not a folder", folder));
+                                } catch (IOException e) {
+                                    error(e.getMessage());
+                                }
                             }
-                        } catch (IOException e) {
-                            error(e.getMessage());
                         }
-                    //});
+                    } catch (IOException e) {
+                        error(e.getMessage());
+                        response.sendError(HttpStatus.NOT_FOUND.value(), e.getMessage());
+                    }
                     break;
                 default:
                     StorageService client = StorageServiceFactory.getInstance(repository.getUrlPrefix());
                     client.associate(repository);
-                    final Path path;
                     if (isFile) {
-                        //path = Paths.get(fileName.replace(repository.getUrlPrefix() + "://", ""));
                         String strPath = repository.resolve(fileName);
                         if (repository.getType() == RepositoryType.FTP || repository.getType() == RepositoryType.FTPS) {
                             strPath = strPath.replace(repository.root(), "");
                         } else {
                             strPath = strPath.replace(repository.getUrlPrefix() + "://", "");
                         }
-                        path = Paths.get(strPath);
-                        try (InputStream stream = (InputStream) client.download(path.toString())) {
-                            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                            response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName());
+                        final String fName = Paths.get(strPath).getFileName().toString();
+                        try (InputStream stream = (InputStream) client.download(strPath)) {
+                            response.setContentType(contentType);
                             response.setStatus(HttpServletResponse.SC_OK);
-                            IOUtils.copy(stream, response.getOutputStream());
-                            response.flushBuffer();
+                            if (!base64) {
+                                response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fName);
+                                IOUtils.copy(stream, response.getOutputStream());
+                                response.flushBuffer();
+                            } else {
+                                try (OutputStream out = Base64.getEncoder().wrap(response.getOutputStream())) {
+                                    writeAsBytes(stream, out);
+                                }
+                            }
                         }
                     } else {
-                        //path = Paths.get(folder.replace(repository.getUrlPrefix() + "://", ""));
-                        path = Paths.get(repository.resolve(folder).replace(repository.getUrlPrefix() + "://", ""));
+                        final Path path = Paths.get(repository.resolve(folder).replace(repository.getUrlPrefix() + "://", ""));
                         response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-                        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName().toString() + ".zip");
+                        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + path.getFileName() + ".zip");
                         response.setStatus(HttpServletResponse.SC_OK);
                         try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream())) {
                             client.streamToZip(path.toString(), zipOutputStream);
@@ -506,6 +564,13 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
         } catch (IOException e) {
             error(e.getMessage());
+            try {
+                if (e instanceof FileNotFoundException) {
+                    response.sendError(404, e.getMessage());
+                } else {
+                    response.sendError(400, e.getMessage());
+                }
+            } catch (IOException ignored) {}
         }
     }
     /**
@@ -861,7 +926,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                     throw new IllegalArgumentException("Not a file");
                 }
                 final Repository workspace = getLocalWorkspace(principal.getName());
-                final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(principal.getName());
+                final StorageService<MultipartFile> repositoryService = getLocalRepositoryService(principal.getName());
                 final List<ItemAction> actions = repositoryService.getRegisteredActions();
                 if (actions != null) {
                     final ItemAction itemAction = actions.stream().filter(a -> a.name().equals(action)).findFirst().orElse(null);
@@ -924,7 +989,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             if (StringUtilities.isNullOrEmpty(item)) {
                 throw new IllegalArgumentException("Not a file");
             }
-            final StorageService<MultipartFile, FileSystemResource> repositoryService = getLocalRepositoryService(user);
+            final StorageService<MultipartFile> repositoryService = getLocalRepositoryService(user);
             try {
                 repositoryService.rename(item, newName);
             } catch (IOException e) {
@@ -932,6 +997,31 @@ public class StorageController extends DataEntityController<EOProduct, String, P
             }
         }, successMessage, callback);
         return prepareResult(String.format("Renaming %s started", item), ResponseStatus.SUCCEEDED);
+    }
+
+    /**
+     * Retrieves a storage report based on the repository type and size filter.
+     * Returns a list of user storage usage sorted in descending order by size.
+     *
+     * @param repositoryType an optional parameter specifying the type of repository to filter the storage report.
+     *                        If null or empty, no filtering is applied based on the repository type.
+     * @param size an optional parameter specifying the size threshold to filter the storage report, in megabytes.
+     *             If null, no filtering is applied based on size.
+     * @return a {@code ResponseEntity} containing a {@code ServiceResponse} with the storage report data.
+     */
+    @GetMapping(value = "/report", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> rename(@RequestParam(name = "repositoryType", required = false) String repositoryType,
+                                                     @RequestParam(name = "size", required = false) Double size) {
+        try {
+            RepositoryType type = StringUtilities.isNullOrEmpty(repositoryType) ? null : RepositoryType.valueOf(repositoryType);
+            final StorageReport report = UserQuotaManager.getInstance().getStorageReport(type);
+            final Map<String, Tuple<Double, MemoryUnit>> values = size == null ? report.getUserStorageBySizeDescending() : report.getUserStorageBySizeDescending(size, MemoryUnit.MB);
+            return prepareResult(values.entrySet()
+                                       .stream().collect(Collectors.toMap(Map.Entry::getKey,
+                                                                          e -> String.valueOf(e.getValue().getKeyOne()) + " " + e.getValue().getKeyTwo().name())));
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
 
     private void queueFile(String batchId, FileObject file, Repository source, Repository destination, String folder, boolean move, boolean overwrite) {
@@ -952,7 +1042,8 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         if (!Files.exists(path)) {
             throw new IOException(String.format("File '%s' does not exist", path));
         }
-        return getLocalRepositoryService(user).download(path.toString());
+        return new FileSystemResource(path);
+        //return getLocalRepositoryService(user).download(path.toString());
     }
 
     private Repository getOwnedWorkspace(String user, String workspaceId) throws IOException {
@@ -988,7 +1079,7 @@ public class StorageController extends DataEntityController<EOProduct, String, P
         return instance;
     }
 
-    private StorageService<MultipartFile, FileSystemResource> getLocalRepositoryService(String user) {
+    private StorageService<MultipartFile> getLocalRepositoryService(String user) {
         return getRepositoryService(repositoryProvider.getUserSystemRepositories(user).stream().filter(w -> w.getType() == RepositoryType.LOCAL).findFirst().get());
     }
 
@@ -1044,6 +1135,30 @@ public class StorageController extends DataEntityController<EOProduct, String, P
                 warn(e.getMessage());
             }
             maliciousAttempts.remove(userId);
+        }
+    }
+
+    private TriConsumer<String, Exception, String> errorCallback(String userId){
+        return (u, e, s) -> {
+            String topic;
+            String message;
+            if (e == null) {
+                topic = Topic.INFORMATION.getCategory();
+                message = s;
+            } else {
+                topic = Topic.WARNING.getCategory();
+                message = e.getMessage();
+            }
+
+            Messaging.send(userId, topic, message);
+        };
+    }
+
+    private void writeAsBytes(InputStream in, OutputStream os) throws IOException {
+        final byte[] buffer = new byte[(int) MemoryUnit.MB.value()];
+        int read;
+        while ((read = in.read(buffer)) > 0) {
+            os.write(buffer, 0, read);
         }
     }
 

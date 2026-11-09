@@ -5,6 +5,9 @@ import ro.cs.tao.eodata.EOProduct;
 
 import java.util.List;
 
+/**
+ * Represents a query associated with a data source group, including the query itself and a list of products.
+ */
 public class GroupQuery {
     private Query query;
     private List<EOProduct> products;

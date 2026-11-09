@@ -1,3 +1,4 @@
 ro.cs.tao.services.entity.impl.actions.MoveAction
 ro.cs.tao.services.entity.impl.actions.ZipAction
 ro.cs.tao.services.entity.impl.actions.UnzipAction
+ro.cs.tao.services.entity.impl.actions.QuicklookAction

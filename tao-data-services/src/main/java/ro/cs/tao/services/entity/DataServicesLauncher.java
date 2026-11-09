@@ -19,18 +19,53 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ImportResource;
 import ro.cs.tao.services.commons.ServiceLauncher;
+import ro.cs.tao.services.commons.menu.Section;
+import ro.cs.tao.services.commons.menu.ServiceEntry;
+import ro.cs.tao.services.commons.menu.Visibility;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * @author Cosmin Cara
+ * Entry-point class for launching the Data Entities Service within the application.
+ *
+ * The {@code DataServicesLauncher} class extends the base {@code ServiceLauncher},
+ * providing an implementation specific to data-related features and functionality.
+ * It registers service entries associated with managing datasets, workflows,
+ * components, containers, and administrative configurations.
+ *
+ * The class utilizes Spring Boot's {@code @SpringBootApplication} annotation for
+ * automatic configuration, scanning, and launching of the application.
+ * Additionally, it imports resource files for configuring the application context
+ * to support data services and persistence.
  */
 @SpringBootApplication()
 @ImportResource({"classpath:tao-data-services-context.xml", "classpath*:tao-persistence-context.xml" })
-public class DataServicesLauncher implements ServiceLauncher {
+public class DataServicesLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(DataServicesLauncher.class, args);
     }
 
+    public DataServicesLauncher() {
+        super();
+    }
+
     @Override
     public String serviceName() { return "Data Entities Service"; }
+
+    @Override
+    protected List<ServiceEntry> exportedEntries() {
+        final List<ServiceEntry> entries = new ArrayList<>();
+        entries.add(new ServiceEntry("Sites", "my/sites", "./fragments/sites.fragment.html", new Visibility[] { Visibility.USER, Visibility.ADMIN }, Section.DATASETS, 2));
+        entries.add(new ServiceEntry("Shared Datasets", "my/sharedDatasets", "./fragments/shared-datasets.fragment.html", new Visibility[] { Visibility.USER, Visibility.ADMIN }, Section.DATASETS, 5));
+        entries.add(new ServiceEntry("Workflows", "my/workflows", "./fragments/workflows-admin2.fragment.html", new Visibility[] { Visibility.USER, Visibility.ADMIN }, Section.WORKFLOWS, 1));
+        entries.add(new ServiceEntry("Components", "my/components", "./fragments/components-user.fragment.html", new Visibility[] { Visibility.USER }, Section.COMPONENTS, 1));
+        entries.add(new ServiceEntry("Containers", "my/containers", "./fragments/containers-user.fragment.html", new Visibility[] { Visibility.USER }, Section.COMPONENTS, 2));
+        entries.add(new ServiceEntry("Toolbox Containers", "admin/containers" ,"./fragments/containers-admin2.fragment.html", new Visibility[] { Visibility.ADMIN }, Section.ADMINISTRATION, 2));
+        entries.add(new ServiceEntry("Processing Modules", "admin/components", "./fragments/component-admin2.fragment.html", new Visibility[] { Visibility.ADMIN }, Section.ADMINISTRATION, 3));
+        entries.add(new ServiceEntry("Configuration", "admin/config", "./fragments/configuration.fragment.html", new Visibility[] { Visibility.ADMIN }, Section.ADMINISTRATION, 4));
+        entries.add(new ServiceEntry("Topology", "admin/topology", "./fragments/topology-admin2.fragment.html", new Visibility[] { Visibility.ADMIN }, Section.ADMINISTRATION, 8));
+        return entries;
+    }
 }

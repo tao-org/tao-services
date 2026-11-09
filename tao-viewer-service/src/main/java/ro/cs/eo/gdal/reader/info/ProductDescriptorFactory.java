@@ -6,7 +6,9 @@ import ro.cs.tao.utils.AutoEvictableCache;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -36,12 +38,21 @@ public class ProductDescriptorFactory {
         this.descriptors = new HashSet<>();
         try (InputStream inputStream = ProductDescriptorFactory.class.getResourceAsStream("descriptors.json")) {
             this.descriptors.addAll(new ObjectMapper().readValue(inputStream, JSON_FORMAT_DESCRIPTOR_TYPE_REFERENCE));
+            for(FormatDescriptor descr: this.descriptors) {
+                if (descr.getLutTableFile() != null) {
+                    InputStream in = ProductDescriptorFactory.class.getResourceAsStream(descr.getLutTableFile());
+                    Path tempFile = Files.createTempFile("extracted_", "_" + descr.getLutTableFile());
+                    tempFile.toFile().deleteOnExit();
+                    Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
+                    descr.setLutTableFile(tempFile.toString());
+                }
+            }
         }
-        this.descriptorCache = new AutoEvictableCache<>(new Function<Path, ProductDescriptor>() {
+        this.descriptorCache = new AutoEvictableCache<>(new Function<>() {
             @Override
             public ProductDescriptor apply(Path path) {
                 List<FormatDescriptor> descriptors = instance.descriptors.stream().filter(d -> d.matches(path.toString())).collect(Collectors.toList());
-                if (descriptors.size() > 0) {
+                if (!descriptors.isEmpty()) {
                     descriptors.sort(Comparator.comparingInt(FormatDescriptor::getPriority));
                     for (FormatDescriptor descriptor : descriptors) {
                         try {

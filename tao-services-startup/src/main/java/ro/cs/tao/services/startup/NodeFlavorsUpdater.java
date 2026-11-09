@@ -8,6 +8,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * The {@code NodeFlavorsUpdater} class extends {@code BaseLifeCycle} and is responsible
+ * for managing the lifecycle events related to updating node flavors in the system.
+ * It retrieves the available node flavors from the topology manager and synchronizes
+ * them with the persistence layer, ensuring that flavor data is up-to-date.
+ *
+ * Node flavors are updated or saved based on their existence in the persistence storage.
+ * Errors during persistence operations are logged for diagnostics.
+ */
 public class NodeFlavorsUpdater extends BaseLifeCycle {
 
     @Override

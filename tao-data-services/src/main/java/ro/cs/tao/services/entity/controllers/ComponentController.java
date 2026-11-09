@@ -55,6 +55,38 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * The ComponentController class manages various operations related to components,
+ * including listing, retrieving, creating, updating, and deleting components,
+ * as well as handling naming rules and tokens associated with components.
+ *
+ * This controller provides RESTful endpoints for component and naming rule management.
+ * The class includes user-specific functionality, comprehensive query options, and administrative operations.
+ *
+ * Fields:
+ * - componentCache: Manages caching for components to enhance performance.
+ * - groupComponentService: Manages operations related to group components.
+ * - nameTokenService: Handles services regarding naming rules and tokens.
+ * - containerRepository: Repository for managing component data persistence.
+ *
+ * Methods:
+ * - listUserComponents: Lists components of a specified type visible to the current user.
+ * - list: Lists all registered components with optional pagination and sorting.
+ * - list (overloaded): Retrieves descriptors for specified component IDs.
+ * - findLabels: Finds and suggests labels for components based on input text.
+ * - getGroupComponent: Retrieves descriptors for group components by their IDs.
+ * - getNamingRules: Returns a list of available naming rules.
+ * - getTokens: Gets naming rule tokens associated with a specific sensor.
+ * - getNamingRuleDetails (overloaded 1): Retrieves tokens available for a workflow node by its ID.
+ * - getNamingRuleDetails (overloaded 2): Retrieves details of a naming rule by its ID.
+ * - saveRule: Creates a new naming rule.
+ * - updateRule: Updates an existing naming rule.
+ * - deleteRule: Deletes a naming rule by its ID.
+ * - get: Retrieves a processing component descriptor by its ID.
+ * - export: Exports a processing component descriptor as a JSON file.
+ * - save: Creates a new processing component for the current user.
+ * - update: Updates a processing component, accessible only to the owner or an administrator.
+ * - updateTemplateParameter: Updates a template parameter of a processing component; restricted to owners or administrators.
+ *
  * @author Cosmin Cara
  */
 @RestController
@@ -155,6 +187,25 @@ public class ComponentController extends DataEntityController<ProcessingComponen
     }
 
     /**
+     * Finds components or only the labels of components that match or are similar to the specified input text.
+     * Provides suggestions or results based on label similarity.
+     *
+     * @param text The input text used as the search criteria for finding similar labels.
+     * @return A ResponseEntity containing a ServiceResponse. If the text is valid, it contains the matching labels;
+     *         otherwise, it will include an error message indicating invalid input.
+     */
+    @RequestMapping(value = "/find", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> findLabels(@RequestParam(name = "text") String text,
+                                                         @RequestParam(name = "labels", required = false, defaultValue = "true") boolean labelsOnly) {
+        if (StringUtilities.isNullOrEmpty(text)) {
+            return prepareResult("Invalid search text", ResponseStatus.FAILED);
+        }
+        return prepareResult(labelsOnly
+                                     ? service.findLabelsBySimilarity(text, currentUser())
+                                     : service.findBySimilarity(text, currentUser()));
+    }
+
+    /**
      * Returns the descriptors of one or more group components given their ids.
      * A group component relates to a node group.
      * @param groupIdList   The list of identifiers
@@ -246,7 +297,11 @@ public class ComponentController extends DataEntityController<ProcessingComponen
      */
     @RequestMapping(value = "/naming", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> updateRule(@RequestBody NamingRule rule) {
-        return saveRule(rule);
+        try {
+            return prepareResult(nameTokenService.update(rule));
+        } catch (Exception e) {
+            return handleException(e);
+        }
     }
     /**
      * Removes a naming rule
@@ -364,6 +419,13 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             if (parameter == null) {
                 throw new IllegalArgumentException("empty body");
             }
+            final List<ParameterDescriptor> parameters = parameter.getParameters();
+            if (parameters != null) {
+                for (ParameterDescriptor parameterDescriptor : parameters) {
+                    if (StringUtilities.isNullOrEmpty(parameterDescriptor.getId()))
+                        parameterDescriptor.setId(UUID.randomUUID().toString());
+                }
+            }
             final ProcessingComponent component = service.findById(id);
             if (currentUser().equals(component.getOwner()) || isCurrentUserAdmin()) {
                 final Set<ParameterDescriptor> descriptors = component.getParameterDescriptors();
@@ -414,7 +476,9 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             return handleException(new IllegalArgumentException("Invalid identifier"));
         }
         if (currentUser().equals(component.getOwner()) || isCurrentUserAdmin()) {
-            return super.delete(id);
+            final ResponseEntity<ServiceResponse<?>> deleted = super.delete(id);
+            this.componentCache.remove(id);
+            return prepareResult(deleted);
         } else {
             return prepareResult("Not authorized", ResponseStatus.FAILED);
         }
@@ -431,12 +495,28 @@ public class ComponentController extends DataEntityController<ProcessingComponen
                 throw new IllegalArgumentException("[componentId] Missing");
             }
             final ProcessingComponent original = service.findById(componentId);
-            final ProcessingComponent cloned = original.clone();
+            ProcessingComponent cloned = original.clone();
+            cloned.setLabel("Clone of " + cloned.getLabel());
             cloned.setVisibility(ProcessingComponentVisibility.USER);
-            cloned.setId(UUID.randomUUID().toString());
+            if (isUUID(componentId)) {
+                cloned.setId(UUID.randomUUID().toString());
+            } else {
+                int suffix = 1;
+                String candidate;
+                while (true) {
+                    candidate = componentId + "_" + suffix;
+                    if (service.findById(candidate) == null) {
+                        cloned.setId(candidate);
+                        break;
+                    }
+                    suffix++;
+                }
+            }
             cloned.setContainerId(original.getContainerId());
             cloned.setOwner(currentUser());
-            return prepareResult(service.save(cloned));
+            cloned = service.save(cloned);
+            this.componentCache.put(cloned.getId(), new ProcessingComponentInfo(cloned));
+            return prepareResult(cloned);
         } catch (Exception e) {
             return handleException(e);
         }
@@ -527,4 +607,53 @@ public class ComponentController extends DataEntityController<ProcessingComponen
         }
     }
 
+    @RequestMapping(value = "/change", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> changeParameter(@RequestParam("parameterId") String parameterId,
+                                                              @RequestParam("componentId") String componentId,
+                                                              @RequestParam("toSourceDescriptor") boolean toSourceDescriptor) {
+        try {
+            if (StringUtilities.isNullOrEmpty(componentId)) {
+                throw new IllegalArgumentException("Invalid component id");
+            }
+            final ProcessingComponent component = this.service.findById(componentId);
+            if (component == null) {
+                throw new IllegalArgumentException("Component does not exist");
+            }
+            if (toSourceDescriptor) {
+                service.transformIntoSource(parameterId, component);
+            } else {
+                service.transformIntoTarget(parameterId, component);
+            }
+            return prepareResult("Processing component updated", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    @RequestMapping(value = "/toParameter", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> changeDescriptor(@RequestParam("descriptorId") String descriptorId,
+                                                              @RequestParam("componentId") String componentId) {
+        try {
+            if (StringUtilities.isNullOrEmpty(componentId)) {
+                throw new IllegalArgumentException("Invalid component id");
+            }
+            final ProcessingComponent component = this.service.findById(componentId);
+            if (component == null) {
+                throw new IllegalArgumentException("Component does not exist");
+            }
+            service.transformIntoParameter(descriptorId, component);
+            return prepareResult("Processing component updated", ResponseStatus.SUCCEEDED);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    private static boolean isUUID(String s) {
+        try {
+            UUID.fromString(s);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
 }

@@ -108,8 +108,8 @@ public class STACServiceController extends BaseController {
                     component.setFetchMode(FetchMode.OVERWRITE);
                     component.setVersion("1.0");
                     component.setDescription(bean.getDescription());
-                    component.setAuthors("AVL Team");
-                    component.setCopyright("(C) AVL Team");
+                    component.setAuthors("TAO Team");
+                    component.setCopyright("(C) TAO Team");
                     component.setNodeAffinity(NodeAffinity.Any);
                     final String newId = String.join("-", "stac", "service", container.getName(), application.getPath(), currentUser());
                     component.setId(newId);
@@ -179,8 +179,8 @@ public class STACServiceController extends BaseController {
                     component.setFetchMode(FetchMode.OVERWRITE);
                     component.setVersion("1.0");
                     component.setDescription(bean.getDescription());
-                    component.setAuthors("AVL Team");
-                    component.setCopyright("(C) AVL Team");
+                    component.setAuthors("TAO Team");
+                    component.setCopyright("(C) TAO Team");
                     component.setNodeAffinity(NodeAffinity.Any);
                     final String newId = String.join("-", "stac", "service", container.getName(), application.getPath(), currentUser());
                     component.setId(newId);

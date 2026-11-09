@@ -16,12 +16,19 @@
 package ro.cs.tao.services.auth.token;
 
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.authentication.jaas.JaasAuthenticationToken;
+import org.springframework.security.authentication.jaas.JaasGrantedAuthority;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 import ro.cs.tao.security.Token;
 import ro.cs.tao.security.TokenCache;
 import ro.cs.tao.security.TokenProvider;
+import ro.cs.tao.security.UserPrincipal;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -96,8 +103,19 @@ public class TokenManagementService {
         return tokenCache.getFromRefreshToken(refreshToken);
     }
 
-    public void removeUserTokens(String user) {
-        tokenCache.remove(user);
+    public void removeUserTokens(String userId) {
+        tokenCache.remove(userId);
+        tokenProvider.logout(userId);
+    }
+
+    public Authentication createAuthentication(String token, String userId, List<String> roles) {
+        final Token fullToken = tokenCache.getFullToken(token);
+        final UserPrincipal principal = new UserPrincipal(userId, new HashSet<>(roles));
+        final List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new JaasGrantedAuthority(roles.get(0), principal));
+        final JaasAuthenticationToken auth = new JaasAuthenticationToken(principal, token, authorities, null);
+        tokenCache.put(fullToken, auth);
+        return auth;
     }
 
 }

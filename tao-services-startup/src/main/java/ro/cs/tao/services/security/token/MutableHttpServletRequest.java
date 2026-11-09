@@ -4,6 +4,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import java.util.*;
 
+/**
+ * A wrapper class for {@link HttpServletRequest} that allows modification of HTTP headers.
+ * Provides functionality to add and retrieve custom headers in addition to the original headers
+ * from the wrapped request object.
+ *
+ * This class is useful in scenarios where request headers need to be dynamically altered or
+ * augmented before being processed, such as during authentication or when forwarding requests.
+ */
 public class MutableHttpServletRequest extends HttpServletRequestWrapper {
 
     private final Map<String, String> customHeaders;

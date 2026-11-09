@@ -14,16 +14,16 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class KeycloakLoginModule extends TaoLoginModule {
+public class KeycloakLoginModule extends TaoLoginModule<KeycloakClient> {
 
-    private final KeycloakClient client;
+    //private final KeycloakClient client;
 
     public KeycloakLoginModule() {
         super();
-        this.client = new KeycloakClient();
+        this.tokenProvider = new KeycloakClient();
         final TokenCache cache = TokenCacheManager.getCache();
-        this.client.setTokenKeeper(cache);
-        this.client.setUserProvider(new Supplier<UserProvider>() {
+        this.tokenProvider.setTokenKeeper(cache);
+        this.tokenProvider.setUserProvider(new Supplier<UserProvider>() {
             @Override
             public UserProvider get() {
                 return userProvider;
@@ -50,21 +50,28 @@ public class KeycloakLoginModule extends TaoLoginModule {
             return new User();
         }
         User userEntity = !StringUtilities.isNullOrEmpty(password)
-                          ? this.client.checkLoginCredentials(username, password)
-                          : this.client.checkLoginCredentials(username);
+                          ? this.tokenProvider.checkLoginCredentials(username, password)
+                          : this.tokenProvider.checkLoginCredentials(username);
         if (userEntity != null) {
             this.username = userEntity.getUsername();
             User existing = userProvider.getByName(userEntity.getUsername());
             try {
                 if (existing == null) {
-                    final boolean isAdmin = password != null && username.equals(this.client.getAdminUser());
+                    final boolean isAdmin = password != null && username.equals(this.tokenProvider.getAdminUser());
                     final List<Group> groups = userProvider.listGroups().stream()
                             .filter(g -> (isAdmin ? "ADMIN" : "USER").equalsIgnoreCase(g.getName())).collect(Collectors.toList());
                     userEntity.setGroups(groups);
                     userEntity.setPassword(password);
                     if (!isAdmin) {
-                        userEntity.setProcessingQuota(userProvider.defaultCPUQuota());
+                        userEntity.setCpuQuota(userProvider.defaultCPUQuota());
+                        userEntity.setInputQuota(userProvider.defaultInputQuota());
+                        userEntity.setProcessingQuota(userProvider.defaultProcessingQuota());
                         userEntity.setMemoryQuota(userProvider.defaultMemoryQuota());
+                    } else {
+                        userEntity.setCpuQuota(-1);
+                        userEntity.setInputQuota(-1);
+                        userEntity.setProcessingQuota(-1);
+                        userEntity.setMemoryQuota(-1);
                     }
                     existing = userEntity;
                     userProvider.save(existing);
