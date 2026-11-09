@@ -230,6 +230,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                                             tasksStatus.get(0).getWorkflowName() :
                                             workflowService.getFullDescriptor(job.getWorkflowId()).getName();
                 summary.setWorkflowName(workflowName);
+                summary.setWorkflowId(job.getWorkflowId());
             }
             summary.setJobStatus(job.getExecutionStatus());
             summary.setJobStart(job.getStartTime());
@@ -260,6 +261,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                                             tasksStatus.get(0).getWorkflowName() :
                                             workflowService.getFullDescriptor(job.getWorkflowId()).getName();
                 summary.setWorkflowName(workflowName);
+                summary.setWorkflowId(job.getWorkflowId());
             }
             summary.setJobStatus(job.getExecutionStatus());
             summary.setJobStart(job.getStartTime());
@@ -285,6 +287,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                                             tasksStatus.get(0).getWorkflowName() :
                                             workflowService.getFullDescriptor(job.getWorkflowId()).getName();
                 summary.setWorkflowName(workflowName);
+                summary.setWorkflowId(job.getWorkflowId());
             }
             summary.setId(job.getId());
             summary.setJobName(job.getName());
@@ -312,6 +315,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                     ExecutionJobSummary summary = new ExecutionJobSummary();
                     summary.setId(job.getId());
                     summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
+                    summary.setWorkflowId(job.getWorkflowId());
                     summary.setJobName(job.getName());
                     summary.setUserId(job.getUserId());
                     summary.setJobStatus(job.getExecutionStatus());
@@ -344,6 +348,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 summary.setId(job.getId());
                 if (job.getWorkflowId() != null) {
                     summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
+                    summary.setWorkflowId(job.getWorkflowId());
                 }
                 summary.setJobName(job.getName());
                 summary.setUserId(job.getUserId());
@@ -371,6 +376,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
                 ExecutionJobSummary summary = new ExecutionJobSummary();
                 summary.setId(job.getId());
                 summary.setWorkflowName(workflowService.findById(job.getWorkflowId()).getName());
+                summary.setWorkflowId(job.getWorkflowId());
                 summary.setJobName(job.getName());
                 summary.setUserId(job.getUserId());
                 summary.setJobStatus(job.getExecutionStatus());
@@ -515,7 +521,7 @@ public class OrchestrationServiceImpl implements OrchestratorService {
     }
 
     private long tryCreateTemporaryWorkflow(ExecutionRequest request) {
-        final Map<Long, String> inputs = request.getInputs();
+        final Map<Long, Map<String, String>> inputs = request.getInputs();
         if (inputs != null && !inputs.isEmpty()) {
             try {
                 WorkflowDescriptor clone = workflowService.createTemporaryWorkflow(request.getWorkflowId(),

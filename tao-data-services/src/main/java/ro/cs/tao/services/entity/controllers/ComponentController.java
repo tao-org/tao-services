@@ -498,7 +498,20 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             ProcessingComponent cloned = original.clone();
             cloned.setLabel("Clone of " + cloned.getLabel());
             cloned.setVisibility(ProcessingComponentVisibility.USER);
-            cloned.setId(UUID.randomUUID().toString());
+            if (isUUID(componentId)) {
+                cloned.setId(UUID.randomUUID().toString());
+            } else {
+                int suffix = 1;
+                String candidate;
+                while (true) {
+                    candidate = componentId + "_" + suffix;
+                    if (service.findById(candidate) == null) {
+                        cloned.setId(candidate);
+                        break;
+                    }
+                    suffix++;
+                }
+            }
             cloned.setContainerId(original.getContainerId());
             cloned.setOwner(currentUser());
             cloned = service.save(cloned);
@@ -632,6 +645,15 @@ public class ComponentController extends DataEntityController<ProcessingComponen
             return prepareResult("Processing component updated", ResponseStatus.SUCCEEDED);
         } catch (Exception e) {
             return handleException(e);
+        }
+    }
+
+    private static boolean isUUID(String s) {
+        try {
+            UUID.fromString(s);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 }
