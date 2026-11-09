@@ -1,11 +1,18 @@
 package ro.cs.tao.ogc.model.processes.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public abstract class Descriptor<E> {
     private String title;
     private Type type;
     private String description;
     private String format;
+    @JsonProperty("default")
     private E defaultValue;
+    @JsonProperty("enum")
+    private E[] enumValues;
+    @JsonProperty("x-ui-widget")
+    private String uiWidget;
     private boolean nullable;
     private boolean readOnly;
     private boolean writeOnly;
@@ -108,5 +115,21 @@ public abstract class Descriptor<E> {
 
     public void setWriteOnly(boolean writeOnly) {
         this.writeOnly = writeOnly;
+    }
+
+    public E[] getEnumValues() {
+        return enumValues;
+    }
+
+    public void setEnumValues(E[] enumValues) {
+        this.enumValues = enumValues;
+    }
+
+    public String getUiWidget() {
+        return uiWidget;
+    }
+
+    public void setUiWidget(String uiWidget) {
+        this.uiWidget = uiWidget;
     }
 }

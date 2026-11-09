@@ -1529,10 +1529,10 @@ li.select2-search.select2-search--inline {display:none}
                 showMsg("The component id contains invalid characters.", "ERROR");
                 return;
             }
-			if($("#tbl-edt-sources tr.val-row").length <=0 || $("#tbl-edt-targets tr.val-row").length <= 0){
-				showMsg("At least one source and target must be defined.", "ERROR");
-				return;
-			}
+//			if($("#tbl-edt-sources tr.val-row").length <=0 || $("#tbl-edt-targets tr.val-row").length <= 0){
+//				showMsg("At least one source and target must be defined.", "ERROR");
+//				return;
+//			}
 			
 			var fileLocationText =  $('select[name=inputfilePathId]', $el).find(":selected").text();
 			if (fileLocationText=="Select...")

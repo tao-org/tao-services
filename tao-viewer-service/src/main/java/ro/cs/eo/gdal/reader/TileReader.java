@@ -2,6 +2,9 @@ package ro.cs.eo.gdal.reader;
 
 import org.geotools.geojson.geom.GeometryJSON;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
 import ro.cs.eo.gdal.dataio.GDALTileCache;
@@ -9,6 +12,7 @@ import ro.cs.eo.gdal.dataio.drivers.*;
 import ro.cs.eo.gdal.reader.info.ExpressionEvaluator;
 import ro.cs.eo.gdal.reader.info.FormatDescriptor;
 import ro.cs.eo.gdal.reader.info.ProductDescriptor;
+import ro.cs.tao.eodata.Polygon2D;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.Triple;
@@ -75,8 +79,10 @@ public class TileReader {
             final Extent tileExtent = config.tileGrid.tileExtent(x, y, z);
             gdalDatasets = prepareDatasets(productDescriptor, tileExtent);
             vrtDataset = buildVRTDataset(productDescriptor, gdalDatasets);
-            final String tmpFileName = "/vsimem/" + System.currentTimeMillis() + ".tif";
-            warpDataset = buildWarpedDataset(productDescriptor, tileExtent, vrtDataset, tmpFileName);
+            //final String tmpFileName = "/vsimem/" + System.currentTimeMillis() + ".tif";
+            final String tmpFileName = tileFilePath.toString().replace(".PNG", ".tif");
+            warpDataset = buildWarpedDataset(productDescriptor, tileExtent, vrtDataset, tmpFileName,
+                    TileReader.config.tileGrid.projectionCode, TileReader.config.tileWidth, TileReader.config.tileHeight);
             translateDataset = buildTranslatedDataset(productDescriptor, warpDataset, tileFilePath.toString());
             if (this.gdalTileCache.isCacheEnabled()){
                 final long tileSize = Files.size(tileFilePath);
@@ -109,7 +115,13 @@ public class TileReader {
             if (geom.getNumGeometries() > 1) {
                 geom = geom.getEnvelope();
             }
-            gJson.write(geom, out);
+            if (geom instanceof Polygon) {
+                gJson.writePolygon((Polygon) geom, out);
+            } else if (geom instanceof MultiLineString) {
+                gJson.writeMultiLine((MultiLineString) geom, out);
+            } else {
+                gJson.writeMultiPolygon((MultiPolygon) geom, out);
+            }
         }
     }
 
@@ -119,11 +131,11 @@ public class TileReader {
         Dataset vrtDataset = null;
         Dataset warpDataset = null;
         Dataset translateDataset = null;
+        Dataset coloredDataset = null;
+        Path warpFileName = null;
         try {
             GDAL.useExceptions();
             FileUtilities.createDirectories(filePath.getParent());
-            final Path shapeFile = filePath.getParent().resolve("wkt.shp");
-            writeGeoJSON(wkt, shapeFile);
             if (config.reverseY) {
                 y = - y;
             }
@@ -131,12 +143,24 @@ public class TileReader {
             gdalDatasets = prepareDatasets2(productDescriptor);
             vrtDataset = buildVRTDataset(productDescriptor, gdalDatasets);
             //final String tmpFileName = "/vsimem/" + System.currentTimeMillis() + ".tif";
-            final String warpFileName = filePath.getParent().resolve("warped.tif").toString();
-            warpDataset = buildWarpedDataset2(productDescriptor, extent, vrtDataset, warpFileName);
-            buildRasterizedDataset(shapeFile, warpFileName, warpDataset.getRasterCount());
-            warpDataset = GDAL.open(warpFileName, GDALConst.gaReadonly());
+            warpFileName = filePath.getParent().resolve(UUID.randomUUID() + "_" + System.currentTimeMillis() + "_warped.tif");
+            warpDataset = buildWarpedDataset(productDescriptor, extent, vrtDataset, warpFileName.toString(),
+                    "4326", -1, -1);
+            int bandsNo = warpDataset.getRasterCount();
+            warpDataset.close();
+            if (productDescriptor.getFormatDescriptor().getBands().size() == 1) {
+                if (productDescriptor.getFormatDescriptor().getLutTableFile() != null) {
+                    final Path coloredFile = filePath.getParent().resolve(UUID.randomUUID() + "_" + System.currentTimeMillis() + "_warped_color.tif");
+                    coloredDataset = buildColoredDataset(productDescriptor.getFormatDescriptor().getLutTableFile(),
+                            warpFileName.toString(), coloredFile.toString());
+                    Files.deleteIfExists(warpFileName);
+                    warpFileName = coloredFile;
+                    bandsNo = coloredDataset.getRasterCount();
+                }
+            }
+
+            warpDataset = buildRasterizedDataset(filePath.getParent(), wkt, warpFileName.toString(), bandsNo);
             translateDataset = buildTranslatedDataset(productDescriptor, warpDataset, filePath.toString().replace(".tif", ".png"));
-            Files.deleteIfExists(shapeFile);
         } finally {
             if (gdalDatasets != null) {
                 for (Dataset gdalDataset : gdalDatasets) {
@@ -151,6 +175,12 @@ public class TileReader {
             }
             if (translateDataset != null) {
                 deleteDataset(translateDataset, false);
+            }
+            if (coloredDataset != null) {
+                deleteDataset(coloredDataset, false);
+            }
+            if (warpFileName != null) {
+                Files.deleteIfExists(warpFileName);
             }
         }
     }
@@ -324,7 +354,7 @@ public class TileReader {
         if (gdalDatasets.length > 1 && formatDescriptor.multiRaster()) {
             vrtOptions.add("-separate");
         }
-        final String tempVrtFileName = "/vsimem/" + System.currentTimeMillis() + ".vrt";
+        final String tempVrtFileName = "/vsimem/" + UUID.randomUUID() + "_" + System.currentTimeMillis() + ".vrt";
         Dataset vrtDataset = GDAL.buildVRT(tempVrtFileName, gdalDatasets, new BuildVRTOptions(vrtOptions));
         if (vrtDataset == null) {
             throw new IllegalStateException("Fail to build VRT dataset. " + GDAL.getLastErrorMsg());
@@ -332,18 +362,21 @@ public class TileReader {
         return vrtDataset;
     }
 
-    private static Dataset buildWarpedDataset(ProductDescriptor productDescriptor, Extent tileExtent, Dataset gdalDataset, String tileFilePath) {
+    private static Dataset buildWarpedDataset(ProductDescriptor productDescriptor, Extent tileExtent, Dataset gdalDataset, String tileFilePath, String projectionCode,
+                                              long tileWidth, long tileHeight) {
         final Vector<String> warpOptions = new Vector<>();
         warpOptions.add("-t_srs");
-        warpOptions.add("EPSG:" + TileReader.config.tileGrid.projectionCode);
+        warpOptions.add("EPSG:" + projectionCode);
         warpOptions.add("-te");
         warpOptions.add(String.valueOf(tileExtent.xmin));
         warpOptions.add(String.valueOf(tileExtent.ymin));
         warpOptions.add(String.valueOf(tileExtent.xmax));
         warpOptions.add(String.valueOf(tileExtent.ymax));
-        warpOptions.add("-ts");
-        warpOptions.add(String.valueOf(TileReader.config.tileWidth));
-        warpOptions.add(String.valueOf(TileReader.config.tileHeight));
+        if (tileWidth > 0 && tileHeight > 0) {
+            warpOptions.add("-ts");
+            warpOptions.add(String.valueOf(tileWidth));
+            warpOptions.add(String.valueOf(tileHeight));
+        }
         //warpOptions.add("-tap");
         if (productDescriptor.getNoDataValue() != null) {
             warpOptions.add("-srcnodata");
@@ -367,6 +400,7 @@ public class TileReader {
         return warpDataset;
     }
 
+/*    // TO BE REMOVE - Replaced by buildWarpedDataset that was updated with additional parameters for covering this function behaviour too
     private static Dataset buildWarpedDataset2(ProductDescriptor productDescriptor, Extent tileExtent, Dataset gdalDataset, String tileFilePath) {
         final Vector<String> warpOptions = new Vector<>();
         warpOptions.add("-t_srs");
@@ -395,19 +429,44 @@ public class TileReader {
         }
         return warpDataset;
     }
+*/
 
-    private static Dataset buildRasterizedDataset(Path vectorFile, String raster, int bands) throws Exception {
-        final List<String> args = new ArrayList<>();
-        args.add("gdal_rasterize");
-        args.add("-burn");
-        for (int i = 1; i <= bands; i++) {
-            args.add("32767");
+    private Dataset buildRasterizedDataset(Path shpFolder, String wkt, String raster, int bands) throws Exception {
+        final Path vectorFile = shpFolder.resolve(UUID.randomUUID() + "_" + System.currentTimeMillis() + "_wkt.shp");
+        Polygon2D poly2D = Polygon2D.fromWKT(wkt);
+        String[] wktArr = poly2D.toWKTArray();
+        for (String geoWkt: wktArr) {
+            geoWkt = geoWkt.replace("POLYGON", "MULTILINESTRING");
+            writeGeoJSON(geoWkt, vectorFile);
+
+            final List<String> args = new ArrayList<>();
+            args.add("gdal_rasterize");
+            for (int i = 1; i <= bands; i++) {
+                args.add("-b");
+                args.add(String.valueOf(i));
+                args.add("-burn");
+                args.add("32767");
+            }
+            args.add(vectorFile.toString());
+            args.add(raster);
+            Executor executor = Executor.create(ExecutorType.PROCESS, null, args);
+            executor.execute(true);
         }
-        args.add(vectorFile.toString());
-        args.add(raster);
-        Executor executor = Executor.create(ExecutorType.PROCESS, null, args);
-        executor.execute(false);
+        Files.deleteIfExists(vectorFile);
         return GDAL.open(raster, GDALConst.gaReadonly());
+    }
+
+    private Dataset buildColoredDataset(String lutFile, String raster, String outRaster) throws Exception {
+        final List<String> args = new ArrayList<>();
+        args.add("gdaldem");
+        args.add("color-relief");
+        args.add(raster);
+        args.add(lutFile);
+        args.add(outRaster.toString());
+        args.add("-alpha");
+        Executor executor = Executor.create(ExecutorType.PROCESS, null, args);
+        executor.execute(true);
+        return GDAL.open(outRaster, GDALConst.gaReadonly());
     }
 
     private static Dataset buildTranslatedDataset(ProductDescriptor productDescriptor, Dataset warpDataset, String tileFilePath) {
@@ -454,11 +513,13 @@ public class TileReader {
         }
         // Apply any band transformation if expression is defined
         final List<FormatDescriptor.Band> bands = formatDescriptor.getBands();
+        int bandIdx = 0;
         for (FormatDescriptor.Band band : bands) {
             String expression;
+            bandIdx++;
             if (!StringUtilities.isNullOrEmpty(expression = band.getExpression())) {
                 try {
-                    final Band gdalBand = warpDataset.getRasterBand(band.getIndexInRaster());
+                    final Band gdalBand = warpDataset.getRasterBand(bandIdx);
                     final int xSize = gdalBand.getXSize();
                     final int ySize = gdalBand.getYSize();
                     final int type = gdalBand.getDataType();
@@ -488,7 +549,19 @@ public class TileReader {
                         //for (int i = 0; i < size; i++) {
                         Parallel.For(0, size, Math.max(Runtime.getRuntime().availableProcessors() / 4, 2), (i) -> {
                             try {
-                                sBuffer.put(i, evaluator.evaluate(sBuffer.get(i), expression));
+                                short val = sBuffer.get(i);
+                                short reversedVal = Short.reverseBytes(val);
+//                                if (val > 3500) {
+//                                    val = 3500;
+//                                }
+//                              short computedVal = (short)(reversedVal*0.99);
+                                short computedVal = evaluator.evaluate(reversedVal, expression);
+                                short reversedComputedVal = Short.reverseBytes(computedVal);
+//                              short val2 = Short.reverseBytes((short) ((bandIdx * 10 + i) % 255 ));
+//                              sBuffer.put(i, val2);
+                                sBuffer.put(i, reversedComputedVal);
+//                              sBuffer.put(i, Short.reverseBytes((short) ((float) (val / 3500.0 * 255.0))));
+//                              sBuffer.put(i, evaluator.evaluate(sBuffer.get(i), expression));
                             } catch (Throwable t) {}
                         });
                     } else if (type == GDALConstConstants.gdtUint32() || type == GDALConstConstants.gdtInt32()) {

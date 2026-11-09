@@ -385,7 +385,7 @@
 			rules: {
 				name: {
 					required: true,
-					containerName: { regEx: "^[a-z0-9-]+$" },
+					containerName: { regEx: "^[\\w.\/-]+(:[\\w.-]+)?$" },
 					isUnique: true
 				},
 				description: {

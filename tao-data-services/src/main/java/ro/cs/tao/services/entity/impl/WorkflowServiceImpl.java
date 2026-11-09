@@ -686,7 +686,7 @@ public class WorkflowServiceImpl
             throw new PersistenceException("groupDescriptor [null]");
         }
         TransactionalMethod.withExceptionType(PersistenceException.class).execute(() -> {
-            final List<WorkflowNodeDescriptor> nodes = Collections.unmodifiableList(groupDescriptor.getNodes());
+            final List<WorkflowNodeDescriptor> nodes = new ArrayList<>(groupDescriptor.getNodes());
             final WorkflowDescriptor workflow = groupDescriptor.getWorkflow();
             final Set<ComponentLink> linksToRemove = new HashSet<>();
             if (removeChildren) {
@@ -716,7 +716,8 @@ public class WorkflowServiceImpl
                         SourceDescriptor sourceDescriptor = WorkflowUtilities.findSourceById(groupSource.getReferencedSourceDescriptorId(), sourceNode);
                         if (sourceDescriptor == null) {
                             logger.warning(String.format("Cannot determine originating source descriptor [groupNode=%s, groupSource=%s, sourceNode=%s]",
-                                                         groupDescriptor.getName(), groupSource.getName(), sourceNode.getName()));
+                                    groupDescriptor.getName(), groupSource == null ? "null" : groupSource.getName(),
+                                    sourceNode == null ? "null" : sourceNode.getName()));
                             continue;
                         }
                         link.setOutput(sourceDescriptor);
@@ -846,7 +847,7 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public WorkflowDescriptor createTemporaryWorkflow(long fromWorkflowId, String name, Map<Long, String> linksToAdd) throws PersistenceException {
+    public WorkflowDescriptor createTemporaryWorkflow(long fromWorkflowId, String name, Map<Long, Map<String, String>> linksToAdd) throws PersistenceException {
         WorkflowDescriptor clone = null;
         if (linksToAdd != null) {
             // These inputs are not yet connected to the level 1 nodes, we need to create the nodes and the links
@@ -855,31 +856,34 @@ public class WorkflowServiceImpl
             clone = clone(workflow, true);
             clone.setName(name);
             final Set<Long> ids = new HashSet<>();
-            for (Map.Entry<Long, String> entry : linksToAdd.entrySet()) {
+            for (Map.Entry<Long, Map<String, String>> entry : linksToAdd.entrySet()) {
                 // For each input create a node
-                final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(entry.getValue());
-                final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
-                final WorkflowNodeDescriptor targetNode = workflowNodeProvider.findClonedNode(clone.getId(), entry.getKey());
-                final TaoComponent targetComponent = componentService.getComponent(targetNode.getComponentId());
-                final String targetSourceId = targetComponent.getSources().get(0).getId();
-                WorkflowNodeDescriptor node;
-                final List<WorkflowNodeDescriptor> descriptors = workflowNodeProvider.listByComponentId(clone.getId(), entry.getValue());
-                if (descriptors == null || descriptors.isEmpty()) {
-                    node = new WorkflowNodeDescriptor();
-                    node.setWorkflow(clone);
-                    node.setName(sourceComponent.getDataSourceName());
-                    node.setComponentId(entry.getValue());
-                    node.setComponentType(ComponentType.DATASOURCE);
-                    node.setPreserveOutput(true);
-                    node.setCreated(LocalDateTime.now());
-                    node.setLevel(1);
-                    node = addNode(clone.getId(), node);
-                } else {
-                    node = descriptors.get(0);
+                Map<String, String> inputValue = entry.getValue();
+                for (Map.Entry<String, String> inputValueEntry : inputValue.entrySet()) {
+                    final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(inputValueEntry.getValue());
+                    final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
+                    final WorkflowNodeDescriptor targetNode = workflowNodeProvider.findClonedNode(clone.getId(), entry.getKey());
+                    // final TaoComponent targetComponent = componentService.getComponent(targetNode.getComponentId());
+                    final String targetSourceId = inputValueEntry.getKey(); //targetComponent.getSources().get(0).getId();
+                    WorkflowNodeDescriptor node;
+                    final List<WorkflowNodeDescriptor> descriptors = workflowNodeProvider.listByComponentId(clone.getId(), inputValueEntry.getValue());
+                    if (descriptors == null || descriptors.isEmpty()) {
+                        node = new WorkflowNodeDescriptor();
+                        node.setWorkflow(clone);
+                        node.setName(sourceComponent.getDataSourceName());
+                        node.setComponentId(inputValueEntry.getValue());
+                        node.setComponentType(ComponentType.DATASOURCE);
+                        node.setPreserveOutput(true);
+                        node.setCreated(LocalDateTime.now());
+                        node.setLevel(1);
+                        node = addNode(clone.getId(), node);
+                    } else {
+                        node = descriptors.get(0);
+                    }
+                    // and add a link from this new node to the given target source
+                    addLink(node.getId(), sourceTargetId, targetNode.getId(), targetSourceId);
+                    ids.add(node.getId());
                 }
-                // and add a link from this new node to the given target source
-                addLink(node.getId(), sourceTargetId, targetNode.getId(), targetSourceId);
-                ids.add(node.getId());
             }
             // Increment the level of the other nodes
             clone.getNodes().forEach(n -> {
@@ -1182,8 +1186,12 @@ public class WorkflowServiceImpl
             List<ParameterValue> customValues = node.getCustomValues();
             if (customValues != null) {
                 for (ParameterValue value : customValues) {
-                    componentParams.stream().filter(cp -> cp.getName().equals(value.getParameterName()))
-                            .forEach(cp -> cp.setValue(value.getParameterValue()));
+                    String parameterValue = value.getParameterValue();
+                    componentParams.stream()
+                            .filter(cp -> cp.getName().equals(value.getParameterName()))
+                            .filter(cp -> parameterValue != null && !"\n".equals(parameterValue)
+                                    && cp.getValue() == null)
+                            .forEach(cp -> cp.setValue(parameterValue));
                 }
             }
             parameters.put((prefixWithId ? node.getId() + ":" : "") + node.getName(), componentParams);

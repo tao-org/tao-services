@@ -70,10 +70,10 @@ public class ViewerController extends ControllerBase {
 
     @Autowired
     private RepositoryProvider repositoryProvider;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private DataSourceComponentService dataSourceComponentService;
+//    @Autowired
+//    private UserRepository userRepository;
+//    @Autowired
+//    private DataSourceComponentService dataSourceComponentService;
 
     public ViewerController() {
         this.context = new AnnotationConfigApplicationContext();
@@ -221,6 +221,7 @@ public class ViewerController extends ControllerBase {
      */
     @RequestMapping(value = "config", method = RequestMethod.POST)
     public ResponseEntity<String> setCacheDir(@RequestParam("cache-dir") String newCacheDir) {
+/*
         final AtomicBoolean forbidden = new AtomicBoolean(false);
         userRepository.findById(currentUser()).ifPresentOrElse(new Consumer<User>() {
             @Override
@@ -236,6 +237,7 @@ public class ViewerController extends ControllerBase {
         if (forbidden.get()) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
+ */
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE);
         try {
@@ -254,7 +256,8 @@ public class ViewerController extends ControllerBase {
 
     @RequestMapping(value = "/series", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> extractSeriesInfo(@RequestParam("id") String id,
-                                                                @RequestParam("geometry") String geometryWKT) {
+                                                                @RequestParam("geometry") String geometryWKT,
+                                                                @RequestParam(name = "filters", required = false) String filteringPropsJson) {
         GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
         try {
             final ServiceRegistry<FileGeometryFilter> registry = ServiceRegistryManager.getInstance().getServiceRegistry(FileGeometryFilter.class);
@@ -272,7 +275,7 @@ public class ViewerController extends ControllerBase {
             }
             final FileGeometryFilter filter = services.iterator().next();
             final Extent extent = filter.computeEnvelope(geometryWKT);
-            final List<Path> files = filter.filter(geometryWKT);
+            final List<Path> files = filter.filter(geometryWKT, filteringPropsJson);
             files.sort(new Comparator<Path>() {
                 @Override
                 public int compare(Path o1, Path o2) {
@@ -283,13 +286,16 @@ public class ViewerController extends ControllerBase {
                     return h1.getSensingDate().compareTo(h2.getSensingDate());
                 }
             });
-            final Map<String, String> innerMap = new LinkedHashMap<>();
+
+            List<Map<String, String>> outFiles = new ArrayList<>();
             for (Path file : files) {
+            final Map<String, String> innerMap = new LinkedHashMap<>();
                 final ProductHelper helper = ProductHelperFactory.getHelper(file.getFileName().toString());
                 innerMap.put("date", helper != null ? helper.getSensingDate() : null);
                 innerMap.put("image", file.toString());
+                outFiles.add(innerMap);
             }
-            return prepareResult(innerMap);
+            return prepareResult(outFiles);
         } catch (Exception e) {
             return handleException(e);
         }
@@ -302,6 +308,7 @@ public class ViewerController extends ControllerBase {
      *
      * @return  A list of resulting subsetted images (as PNG), as absolute web paths.
      */
+/*
     @RequestMapping(value = "/productset/images", method = RequestMethod.POST,
             consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -333,7 +340,7 @@ public class ViewerController extends ControllerBase {
             return handleException(e);
         }
     }
-
+*/
     /**
      * Extracts a spatial subset from a time series of rasters.
      * @param id    An identifier for the spatial subset
@@ -378,6 +385,7 @@ public class ViewerController extends ControllerBase {
      *
      * @return  An animated GIF file contents, named [id.gif]
      */
+/*
     @RequestMapping(value = "/productset/animation", method = RequestMethod.POST,
             consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -411,7 +419,7 @@ public class ViewerController extends ControllerBase {
             error(e.getMessage());
         }
     }
-
+*/
     /**
      * Creates an animated GIF from a spatial subset extracted from a time series of rasters, optionally specifying a buffer.
      * @param id    An identifier for the spatial subset
@@ -454,37 +462,71 @@ public class ViewerController extends ControllerBase {
     private ProductDescriptor getCompositeDescriptor(Path file) throws IOException {
         final String bandPatterns;
         final String namePattern;
-        final String subfolderPattern;
-        if (Boolean.parseBoolean(ConfigurationManager.getInstance().getValue("downloader.use.esa.l2a", "true"))) {
-            bandPatterns = ConfigurationManager.getInstance().getValue("series.composite.band.patterns", "B04_10m,B03_10m,B02_10m");
-            namePattern = "S2[ABCD]_MSIL2A_\\d{8}T\\d{6}_N\\d{4}_R\\d{3}_T\\d{2}\\w{3}_\\d{8}T\\d{6}.SAFE";
-            subfolderPattern = null;
+        final Matcher matcher = Pattern.compile("S2[ABCD]_MSIL2A_\\d{8}T\\d{6}_N\\d{4}_R\\d{3}_T\\d{2}\\w{3}_\\d{8}T\\d{6}.SAFE").
+                matcher(file.toString());
+        if (matcher.find()) {
+            //final String subfolderPattern;
+            String l2aEnabled = ConfigurationManager.getInstance().getValue("downloader.use.esa.l2a", "true");
+            if (Boolean.parseBoolean(l2aEnabled)) {
+                bandPatterns = ConfigurationManager.getInstance().getValue("series.composite.band.patterns", "B04_10m,B03_10m,B02_10m");
+                namePattern = "S2[ABCD]_MSIL2A_\\d{8}T\\d{6}_N\\d{4}_R\\d{3}_T\\d{2}\\w{3}_\\d{8}T\\d{6}.SAFE";
+                // subfolderPattern = null;
+            } else {
+                bandPatterns = ConfigurationManager.getInstance().getValue("series.composite.band.patterns", "FRE_B4,FRE_B3,FRE_B2");
+                namePattern = "S2[ABCD]_MSIL2A_(\\d{8})T\\d{6}_N\\d{4}_R\\d{3}_T(\\d{2}\\w{3})_\\d{8}T\\d{6}.SAFE";
+                // subfolderPattern = "SENTINEL2[A-D]_\\d{8}-\\d{6}-\\d{3}_L2A_T\\d{2}[A-Z]{3}.*";
+            }
+            final List<FormatDescriptor.Band> bands = Arrays.stream(bandPatterns.split(",")).map(p -> {
+                final FormatDescriptor.Band band = new FormatDescriptor.Band();
+                band.setPattern(p);
+                band.setIndexInRaster(1);
+                //band.setExpression("($1 > 1500 ? cbrt($1*0.00006) : (short)0.00029876031644 * $1)*10000");
+                band.setExpression("(short)(255.0 / (1.0 + exp(-4.0 * ((($1 - 1000.0) / 1500.0) - 0.5))))");
+                return band;
+            }).collect(Collectors.toList());
+            FormatDescriptor formatDescriptor = new FormatDescriptor();
+            formatDescriptor.setBands(bands);
+            formatDescriptor.setPriority(1);
+            formatDescriptor.setPixelMinScale(0);
+            formatDescriptor.setPixelMaxScale(8191);
+            formatDescriptor.setNoDataValue(-1000);
+            formatDescriptor.setNamePatterns(new ArrayList<>() {{ add(namePattern); }});
+            formatDescriptor.setBands(bands);
+            return new ProductDescriptor(formatDescriptor, file);
         } else {
-            bandPatterns = ConfigurationManager.getInstance().getValue("series.composite.band.patterns", "FRE_B4,FRE_B3,FRE_B2");
-            namePattern = "S2[ABCD]_MSIL2A_(\\d{8})T\\d{6}_N\\d{4}_R\\d{3}_T(\\d{2}\\w{3})_\\d{8}T\\d{6}.SAFE";
-            subfolderPattern = "SENTINEL2[A-D]_\\d{8}-\\d{6}-\\d{3}_L2A_T\\d{2}[A-Z]{3}.*";
+            namePattern = "S2AGRI_L3B_SNDVI_A(\\d{8})T\\d{6}_T(\\d{2}\\w{3})(?:.TIF)?";
+            final Matcher matcherL3B = Pattern.compile(namePattern).matcher(file.toString());
+            if (matcherL3B.find()) {
+                ProductDescriptor productDescriptor = ProductDescriptorFactory.getDescriptor(Paths.get(file.toString()));
+                if (productDescriptor == null) {
+                    final List<FormatDescriptor.Band> bands = new ArrayList<>();
+                    final FormatDescriptor.Band band = new FormatDescriptor.Band();
+                    band.setPattern("NDVI");
+                    band.setIndexInRaster(1);
+                    bands.add(band);
+
+                    FormatDescriptor formatDescriptor = new FormatDescriptor();
+                    formatDescriptor.setBands(bands);
+                    formatDescriptor.setPriority(1);
+                    formatDescriptor.setPixelMinScale(0);
+                    formatDescriptor.setPixelMaxScale(255);
+                    formatDescriptor.setNoDataValue(-10000);
+                    formatDescriptor.setNamePatterns(new ArrayList<>() {{
+                        add(namePattern);
+                    }});
+                    formatDescriptor.setBands(bands);
+                    return new ProductDescriptor(formatDescriptor, file);
+                }
+                return productDescriptor;
+            }
+            return null;
         }
-        final List<FormatDescriptor.Band> bands = Arrays.stream(bandPatterns.split(",")).map(p -> {
-            final FormatDescriptor.Band band = new FormatDescriptor.Band();
-            band.setPattern(p);
-            band.setIndexInRaster(1);
-            return band;
-        }).collect(Collectors.toList());
-        FormatDescriptor formatDescriptor = new FormatDescriptor();
-        formatDescriptor.setBands(bands);
-        formatDescriptor.setPriority(1);
-        formatDescriptor.setPixelMinScale(0);
-        formatDescriptor.setPixelMaxScale(8191);
-        formatDescriptor.setNoDataValue(-1000);
-        formatDescriptor.setNamePatterns(new ArrayList<>() {{ add(namePattern); }});
-        formatDescriptor.setBands(bands);
-        return new ProductDescriptor(formatDescriptor, file);
     }
 
     private List<String> extractSubsetImages(String id, List<String> input, String geometryWKT) {
         GDALTileMapService gdalTileMapService = (GDALTileMapService) context.getBean("TileMap");
         List<Path> paths = input.stream().map(Paths::get).collect(Collectors.toList());
-        final Matcher matcher = Pattern.compile("_T(\\d{2}\\w{3})_").matcher(input.get(0));
+        final Matcher matcher = Pattern.compile("_T(\\d{2}\\w{3})[_\\.]").matcher(input.get(0));
         final String utmZone;
         if (matcher.find()) {
             utmZone = matcher.group(1);
@@ -523,7 +565,7 @@ public class ViewerController extends ControllerBase {
                 }
 
                 @Override
-                public List<Path> filter(String geometryWKT) {
+                public List<Path> filter(String geometryWKT, String filteringPropsJson) {
                     return new ArrayList<>();
                 }
             };
@@ -531,8 +573,6 @@ public class ViewerController extends ControllerBase {
             filter = services.iterator().next();
         }
         final Extent extent = filter.computeEnvelope(geometryWKT);
-        // Convert polygon to multilinestring so that vector will not be filled when rasterized
-        geometryWKT = geometryWKT.replace("POLYGON", "MULTILINESTRING");
         final List<String> outFiles = new ArrayList<>();
         for (Path file : paths) {
             try {

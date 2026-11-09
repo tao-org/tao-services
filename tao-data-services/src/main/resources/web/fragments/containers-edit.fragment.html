@@ -338,7 +338,7 @@ form .tagsinput .tag{background-color:#f4f4f4;border:1px solid #dedede;color:#55
 			rules: {
 				name: {
 					required: true,
-					containerName: { regEx: "^[a-z0-9-]+$" },
+					containerName: { regEx: "^[\\w.\/-]+(:[\\w.-]+)?$" },
 					isUnique: true
 				},
 				description: {

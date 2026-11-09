@@ -674,7 +674,7 @@ function closePolygonMap() {
 		var $poly2D = window.myPolygonMap.container.closest(".for-poly2D");
 		// Clear bound field focus
 		var $footprintField = $poly2D.data("footprintField");
-		$footprintField.length && $footprintField.removeClass("focus");
+		typeof $footprintField !== "undefined" && $footprintField.length && $footprintField.removeClass("focus");
 		// Remove poly2D map
 		$poly2D.remove();
 		delete window.myPolygonMap;

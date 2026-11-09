@@ -297,11 +297,11 @@ form .tagsinput .tag{background-color:#f4f4f4;border:1px solid #dedede;color:#55
 		});
 		
 		// Custom validation for container name
-		$.validator.addMethod('containerName', function (value, element, params) {
-			var pattern = new RegExp(params.regEx, "g");
-			var match = value.match(pattern);
-			return value.length == 0 || match;
-		}, 'Remove invalid characters (only allowed small caps letters, numbers and dashes).');
+		// $.validator.addMethod('containerName', function (value, element, params) {
+		// 	var pattern = new RegExp(params.regEx, "g");
+		// 	var match = value.match(pattern);
+		// 	return value.length == 0 || match;
+		// }, 'Remove invalid characters (only allowed small caps letters, numbers and dashes).');
 
 		$.validator.addMethod( "isUnique", function(value,element,params){
 			var isUni = true;

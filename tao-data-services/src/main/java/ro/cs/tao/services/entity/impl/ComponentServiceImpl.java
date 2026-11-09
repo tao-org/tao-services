@@ -528,9 +528,10 @@ public class ComponentServiceImpl
         }
         final List<SourceDescriptor> sources = entity.getSources();
         final Set<String> uniques = new HashSet<>();
-        if (sources == null || sources.isEmpty()) {
-            errors.add("[sources] at least one source must be defined");
-        } else {
+//        if (sources == null || sources.isEmpty()) {
+//            errors.add("[sources] at least one source must be defined");
+//        } else {
+        if (sources != null) {
             Set<String> duplicates = sources.stream().map(SourceDescriptor::getName)
                                                      .filter(name -> !uniques.add(name))
                                                      .collect(Collectors.toSet());

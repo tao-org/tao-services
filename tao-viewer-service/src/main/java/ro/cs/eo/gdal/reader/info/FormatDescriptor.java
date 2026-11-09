@@ -13,6 +13,7 @@ public class FormatDescriptor {
     private Integer noDataValue;
     private int priority;
     private String expression;
+    private String lutTableFile;
 
     private List<Pattern> namePatternsCompiled;
 
@@ -92,6 +93,14 @@ public class FormatDescriptor {
 
     public boolean multiRaster() {
         return this.bands != null && this.bands.stream().map(Band::getPattern).distinct().count() > 1;
+    }
+
+    public String getLutTableFile() {
+        return lutTableFile;
+    }
+
+    public void setLutTableFile(String lutTableFile) {
+        this.lutTableFile = lutTableFile;
     }
 
     public static class Band {

@@ -537,6 +537,31 @@
                     $option.prop("selected", true);
                     $option.parents("select").trigger("change");
 
+                    var data = $("#selectionWKT option[value='" + siteVal + "']").data("dna");
+                    if (data.startDate !== "undefined" && data.startDate !== null) {
+                        var match = data.startDate.match(/^\[(.*),(.*)\]$/);
+                        date1 = match ? match[1] : data.startDate;
+                        date2 = match ? match[2] : "";
+                        date1 = date1.split("T")[0];
+                        date2 = date2.split("T")[0];
+						
+                        $(elem).parents("tbody").find('input.var-value-string[type="date"][name="startdate"]').val(date1).trigger("input").trigger("change").show();
+                        if (date2 !== "") {
+                            $(elem).parents("tbody").find('input.var-value-string2[type="date"][name="startdate"]').val(date2).trigger("input").trigger("change").show();
+                        }
+                    }
+                    if (data.endDate !== "undefined" && data.endDate !== null) {
+                        var match = data.endDate.match(/^\[(.*),(.*)\]$/);
+                        date1 = match ? match[1] : data.endDate;
+                        date2 = match ? match[2] : "";
+                        date1 = date1.split("T")[0];
+                        date2 = date2.split("T")[0];
+
+                        $(elem).parents("tbody").find('input.var-value-string[type="date"][name="enddate"]').val(date1).trigger("input").trigger("change").show();
+                        if (date2 !== "") {
+                            $(elem).parents("tbody").find('input.var-value-string2[type="date"][name="enddate"]').val(date2).trigger("input").trigger("change").show();
+                        }
+                    }
                 }
             })
         });
@@ -722,9 +747,13 @@
                     $('select[id^=inputList]').each(function(){
                         data = $(this).data();
                         var value = data.lastInput;
+                        var inputSourceId = data.inputSourceId;
                         var key = data.processingUnit.id;
                         if(value !== ""){
-                            formData['inputs'][key] = value;
+                            if (!formData.inputs[key]) {
+                                formData.inputs[key] = {};
+                            }
+                            formData.inputs[key][inputSourceId] = value;
                         }
                     });
 
@@ -794,8 +823,10 @@
                                 date1 = match ? match[1] : value;
                                 date2 = match ? match[2] : "";
                             }
-                            $('input.var-value-string' , $el).val(date1).show();
-                            $('input.var-value-string2', $el).val(date2).show();
+                            $('input.var-value-string' , $el).attr("name", name.toLowerCase()).val(date1).show();
+                            if (date2 !== "") {
+                                $('input.var-value-string2', $el).attr("name", name.toLowerCase()).val(date2).show();
+                            }
                             return;
                         }
                     }
@@ -1341,18 +1372,20 @@
     $("#chooseInput").on("change","select[id^=inputList]", function(){
         var selectedInput = $("option:selected",this).data("definition");
         var processingUnit = $("#"+this.id).data("processingUnit");
+        var inputSourceID = this?.id?.split("-").slice(2).join("-") || null;
         var lastInput = $("#"+this.id).data("lastInput");
         //if(typeof selectedInput !== "undefined" && typeof $("#"+this.id).data("lastInput") === "undefined"){
         if(typeof selectedInput !== "undefined"){
             if( lastInput !== selectedInput.id && lastInput !== undefined){
                 $("#acc-panel-productSet-"+lastInput+processingUnit.id).remove();
                 $("#"+this.id).data("lastInput", selectedInput.id);
+                $("#"+this.id).data("inputSourceId", inputSourceID);
                 addEntryForInput(selectedInput, processingUnit);
 
             }else if(lastInput !== selectedInput.id){
                 $("#"+this.id).data("lastInput", selectedInput.id);
+                $("#"+this.id).data("inputSourceId", inputSourceID);
                 addEntryForInput(selectedInput, processingUnit);
-
             }
         }
         //$("#acc-panel-productSet-"+selectedInput.id).remove();

@@ -8,9 +8,9 @@ import java.util.List;
 public interface FileGeometryFilter {
 
     default Extent computeEnvelope(String geometryWKT) {
-        return computeEnvelope(geometryWKT, 0.01);
+        return computeEnvelope(geometryWKT, 0.001);
     }
     Extent computeEnvelope(String geometryWKT, double buffer);
 
-    List<Path> filter(String geometryWKT);
+    List<Path> filter(String geometryWKT, String filteringPropsJson);
 }

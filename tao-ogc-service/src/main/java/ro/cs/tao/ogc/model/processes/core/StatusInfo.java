@@ -1,5 +1,6 @@
 package ro.cs.tao.ogc.model.processes.core;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import ro.cs.tao.ogc.model.common.Exception;
 import ro.cs.tao.ogc.model.common.Link;
 
@@ -14,8 +15,23 @@ public class StatusInfo {
     private StatusCode status;
     private String message;
     private Exception exception;
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            timezone = "UTC"
+    )
     private LocalDateTime created;
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            timezone = "UTC"
+    )
     private LocalDateTime started;
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            timezone = "UTC"
+    )
     private LocalDateTime updated;
     private int progress;
     private List<Link> links;
