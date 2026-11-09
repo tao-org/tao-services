@@ -1,0 +1,2858 @@
+<style>
+	/* ------ BOX APPEARANCE ------ */
+	#panel_repo_wrapper {
+		.nodes-item-core-box .with-label>label::before {min-width:3.5em;}
+		@media (min-width: 768px) {
+			core-cell-list .box-description {padding-right:21em;margin-bottom:0;}
+			core-cell-list .box-bottom      {position:absolute;bottom:calc(1.1em + 0.4em - 0.15em);right:1.1em;width:fit-content;}
+		}
+	}
+	
+	/* ------ OTHER ------ */
+	.spacer                {display:inline-block;width:2em;padding:0.3em 0;text-align:center;&::before{content:"|";opacity:0.65;}&:has(+.hidden,+.invisible){display:none;}}
+	.fa-browse             {position:relative;&::before{content:"\f114"}&::after {content:"\f002";font-size:0.7em;position:absolute;bottom:-0.1em;right:0.35em;border-radius:50%;background:var(--btn-nodeop-bkg);}}
+	.tree-controls::before {bottom:-2em;}
+	
+	/* ------ CUSTOM COLUMNS ------ */
+	.col-custom {
+		padding-left:0.7em;padding-right:0.7em;
+		@media (min-width: 768px) {& {width:100%;float:left;}}
+		@media (min-width:1040px) {& {width: 50%;}}
+		@media (min-width:1410px) {& {width: 33%;}}
+		@media (min-width:1760px) {& {width: 25%;}}
+		@media (min-width:2130px) {& {width: 20%;}}
+		@media (min-width:2480px) {& {max-width: 37em;}}
+	}
+	
+	/* ------ HEADER ------ */
+	.top-controls .btn:disabled .fa        {color:inherit;}
+	.top-controls .btn:disabled .fa::after {color:inherit;background-color:inherit;}
+	
+	.selection-row     {position:relative;display:flex;align-items:center;width:100%;
+		>*             {padding:0;margin:0 0.5em 0 0;}
+		#selected-item {opacity:.8;}
+		.fa-move-files {position:relative;margin-left:0.5em;&::before{content:"\f016"}&::after {content:"\f061";font-size:0.7em;position:absolute;bottom: 0.2em;right:0.70em;border-radius:50%;background:var(--primary-bkg);color:var(--status-success);line-height:0.85;padding:1px;}}
+		.fa-ban        {color:var(--status-danger);}
+	}
+	
+	.top-actions .fa-add-star::after {content:"*";position:absolute;top:0;right:0;}
+	.top-actions .fa-paste           {color:orange;}
+	.top-actions .fa-copy            {color:#47ace7;}
+	.top-actions .fa-folder-open     {color:#ffc300;}
+	.top-actions .fa-times           {color:#ff0030;}
+	.top-actions .fa-inspect::before {content:"";display:inline-block;width:0.9em;height:0.9em;mask:url(../assets/dist/img/inspect.svg) no-repeat 50% 50%;mask-size:cover;background-color:currentColor;}
+	.top-actions .fa-search-eye      {position:relative; &::before{content:"\f002"} &::after {content:"\f06e";position:absolute;top:0;right:0;}}
+	
+	.statistics {position:relative;width:25%;margin:0.7em 0;padding:0;
+		@media (max-width: 1199px) { & {width: 50%;} }
+		@media (max-width:  767px) { & {width:100%;} }
+	}
+</style>
+<style>
+/* ------ RESIZABLE FILE EXPLORER ------ */
+.fileexplorer-content {display:flex;
+	.foldertree       {overflow:auto;border-top-right-radius:0;border-bottom-right-radius:0;flex-shrink:0;width:250px;}
+	.gutter           {position:relative;cursor:col-resize;&::after {content:"\f0c9";font-family:'FontAwesome';position:absolute;top:50%;left:1px;width:7px;line-height:1;overflow:hidden;color:#ccc;}}
+	.foldercontent    {overflow:auto;border-top-left-radius:0;border-bottom-left-radius:0;flex-grow:1;}
+}
+
+/* ------ PROPERTIES ------ */
+#properties                     {
+	.modal-content              {width:600px;max-width:calc(100% - 2em);}
+	.modal-body                 {padding:0 0 2em;
+		.panel                  {margin:0;border-left:0;}
+		.panel-header           {
+			.attr               {cursor:default;}
+			.attr:has(small)    {line-height:1;small {display:block;}}
+			.btns a.loading     {pointer-events:none;opacity:.3;.fa::before {content:"\f110";}}
+			.fa-product         {position:relative; &::after{content:"\f0ac";font-size:0.7142em;opacity:.7;line-height:1;position:absolute;top:50%;left:50%;transform:translateX(30%);}}
+			.fa-inspect::before {content:"";display:inline-block;width:1em;height:1em;mask:url(../assets/dist/img/inspect.svg) no-repeat 50% 50%;mask-size:cover;background-color:currentColor;}
+		}
+		.panel-attr             {max-height:50vh;
+			.keyval             {margin-bottom:0.2em;&:not(.quickview):hover {background-color:var(--hairline);}
+				&:first-of-type {margin-top:1em;}
+				&:last-of-type  {margin-bottom:1em;}
+				>:first-child   {width:13em;font-weight:600;}
+				>:last-child    {font-size:0.9em;}
+			}
+			.img-holder         {
+				img             {width:7em;max-height:7em;object-fit:cover;object-position:right top;border:2px solid var(--hairline-strong);border-radius:0.3em;opacity:.8;cursor:pointer;}
+				img:hover       {opacity:1;}
+				&.empty         {
+					&::before   {content:"\f03e";font-family:'FontAwesome';font-size:4em;line-height:1;padding:0.14em;color:#ccc;}
+					img         {display:none;}
+				}
+			}
+		}
+	}
+}
+
+/* ------ MAP ------ */
+#view_on_map       {
+	.modal-content {width:1000px;max-width:calc(100% - 2em);}
+	.map           {min-height:600px;border:0;}
+}
+
+/* ------ FILE CONTENTS ------ */
+#view_file                  {
+	.modal-content          {width:1000px;max-width:calc(100% - 2em);}
+	.modal-body             {padding:1em 0 1em 0;}
+	.file-content           {height:500px;padding:0 1.5em;display:flex;flex-direction:column;align-items:center;
+		>*                  {flex-grow:0;flex-shrink:0;}
+		.content-area       {padding:1em 1.5em;font-family:monospace;line-height:1.4em;width:100%;flex-grow:1;resize:none;white-space:pre;background:var(--btn-default-bkg);border-color:var(--btn-default-border);z-index:1;
+			&.text-wrap     {white-space:pre-wrap;}
+		}
+		.prev,.next         {position:relative;color:var(--btn-nodeop-color);box-shadow:none;margin:0;z-index:2;&:hover {box-shadow:inset 0 0 5em rgb(0 0 0 / .05);}}
+		.prev               {margin-bottom:-1px;border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:0;&:active {box-shadow:inset 0  0.22em 0.35em rgb(0 0 0/.25);}}
+		.next               {margin-top   :-1px;border-top-left-radius   :0;border-top-right-radius   :0;border-top   :0;&:active {box-shadow:inset 0 -0.22em 0.35em rgb(0 0 0/.25);}}
+		
+		.toggle-ctrl        {position:absolute;top:0.9em;
+			&::before       {content:"";position:absolute;bottom:calc(100% + 0.2em);left:50%;transform:translateX(-50%);opacity:0;font-size:0.8em;font-family:monospace;line-height:1;text-align:center;}
+			&:hover::before {opacity:1;}
+			&.wrap          {right:2em;}
+			&.wheel         {right:7em;}
+		}
+		.fa-svg::before     {content:"";display:inline-block;mask-size:cover;mask-repeat:no-repeat;-webkit-mask-position-x:50%;-webkit-mask-position-y:50%;background-color:currentColor;width:1em;height:1em;margin:0 0 -0.1em 0;}
+		.fa-wrap::before    {mask-image:url(../assets/dist/img/wrap.svg  );}
+		.fa-unwrap::before  {mask-image:url(../assets/dist/img/unwrap.svg);}
+		.fa-scroll::before  {mask-image:url(../assets/dist/img/scroll.svg);}
+		.fa-wheel::before   {mask-image:url(../assets/dist/img/wheel.svg );height:1.4em;margin:-0.3em 0;}
+		
+		.tooltip .tooltip-inner i {opacity:.3;}
+	}
+}
+
+.full-screen img {position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:contain;z-index:9999;cursor:pointer;background:rgb(0 0 0/.75);}
+
+/* ------ UPLOAD ------ */
+.upload-message.error { color: red }
+.upload-message h4 { background-color: transparent; margin: -15px; padding: 15px }
+.upload-message.error h4 { margin-bottom: 0; background-color: #ff00001c }
+.upload-content { overflow: hidden }
+.upload-content .path { background-color: #eee; margin: 0; direction: rtl; text-align: left; white-space: nowrap; text-overflow: ellipsis; overflow-x: hidden }
+.upload-content input[name='chkSubfolder'] ~ label.new-folder-on { display: block; color: #378bbb; padding: 0; margin: 0; cursor: pointer; background-color: #eee; border: 1px solid #b4d0e0; text-align: center; line-height: 32px }
+.upload-content input[name='chkSubfolder']:checked ~ label.new-folder-on { display: none }
+.upload-content input[name='chkSubfolder'] ~ label.new-folder-on:hover { background-color: #d8effd }
+.upload-content input[name='chkSubfolder'] ~ label.new-folder-off { display: none; position: absolute; top: 0; right: 20px; line-height: 22px; font-size: 26px; cursor: pointer; padding: 5px; z-index: 1 }
+.upload-content input[name='chkSubfolder']:checked ~ label.new-folder-off { display: block }
+.upload-content input[name='chkSubfolder'] ~ label.new-folder-off:hover { color: red }
+.upload-content input[name='chkSubfolder'] ~ div > input[name='subfolder'] { position: absolute; right: -110%; padding-right: 28px }
+.upload-content input[name='chkSubfolder']:checked ~ div > input[name='subfolder'] { position: relative; right: auto }
+.form-control ~ label.error { font-weight: 400; color: red }
+/* ------ QUERY ------ */
+.query-message.error { color: red }
+.query-message h4 { background-color: transparent; margin: -15px; padding: 15px }
+.query-message.error h4 { margin-bottom: 0; background-color: #ff00001c }
+.query-message .result-content { margin-top: 30px }
+.query-message .result-content label { color: #3c8dbc }
+.query-message .result-content p { color: #777; font-weight: 600; font-style: italic }
+/*font-weight:600*/
+.query-content .products { color: #777 }
+.query-content .products label { color: #3c8dbc; text-decoration: underline; padding-left: 35px }
+.query-content .products p { padding-left: 35px; font-weight: 600 }
+.query-content .products p i { display: block }
+
+#confirm-dialog .body-message { word-break: break-word }
+#confirm-dialog .folder { color: #f58b00 }
+#confirm-dialog .file { color: #3c8dbc }
+
+.progress{white-space:nowrap;overflow:hidden;text-overflow:ellipsis; background-color: #79cde277; margin-bottom: 0px;}
+.progress,.progress>.progress-bar{clear:both;height:auto;margin-bottom:0px;text-align:left;text-shadow:1px 1px 1px black;text-indent:5px;line-height:2em;white-space:nowrap}
+.progress-bar-aqua,.progress-bar-info {background-color: #79cde2;}
+
+.tab-content [data-action="rp-open-file"] .fa-file-o::after{position:absolute;content:"\f002";font-size:0.5em;color:#3c8dbc;right:35%;bottom:35%;}
+
+/* ------ Style for share pop-up ------ */
+#share-content .content_area {resize: none;}
+#share-content {display: grid; grid-gap: 10px; padding-left: 25px; padding-right: 25px; padding-top: 25px;}
+.content_area::placeholder {font-family: 'Source Sans Pro';}
+.share-name{height: 20vh !important; width: 30vw !important; min-height: 170px !important;}
+
+/* ------ Upload files ------ */
+.add-extra-file{position:absolute;top:0;right:14px;color:#146b9c;font:normal normal normal 25px/1 FontAwesome;padding:5px;margin:5px;cursor:pointer}
+.add-extra-file::after{content:"\f15b"}
+
+.add-extra-folder{position:absolute;top:0;right:40px;color:#146b9c;font:normal normal normal 29px/1 FontAwesome;padding:5px;margin:5px;cursor:pointer}
+.add-extra-folder::after{content:"\f07b"}
+
+.extra-files-container>input[type="file"]{width:92%;margin-bottom:2px}
+.extra-files-container>input[type="file"]::after{content:"\f014";font:normal normal normal 16px/1 FontAwesome;display:inline-block;cursor:pointer;padding:2px;position:absolute;left:91%;color:red}
+
+</style>
+
+<section class="content-header tao-async-ph">
+    <h1>Repositories <small>Your workspace comprising of <strong>user</strong> added repositories from public sources & <strong>system</strong> repositories that hold your EO products and workflow execution results, on which can be performed various operations.</small></h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
+        <li class="active">Repositories</li>
+    </ol>
+</section>
+
+<div id="tab_pane_template" class="tab-pane tree-pane hidden">
+    <div class="tree-content">
+		<div class="treeview-header">
+			<div class="col-md-12 loading hidden"><img src="./assets/dist/img/loading.gif" /></div>
+		</div>
+		<div class="fileexplorer-content">
+			<div class="foldersub foldertree thin-scrollbar treeview"></div>
+			<div class="foldersub foldercontent thin-scrollbar"></div>
+		</div>
+	</div>
+</div>
+
+<!-- Content Body -->
+<section class="content">
+	<!-- Custom Tabs -->
+	<div id="panel_repo_wrapper" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select desired repository.">
+						<option class="role" data-target="#paginatedcells" value="manage_repositories" selected>Manage Repositories</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role active"><a href="#paginatedcells" data-toggle="tab" data-action="manage_repositories" aria-expanded="true">Manage Repositories</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="top-actions pull-left" data-showwhen="manage_repositories">
+				<button class="btn btn-master-tool" data-action="rp-plus" data-toggle="tooltip" data-original-title="Add new repository"><i class="fa fa-plus"></i></button>
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right" data-showwhen="manage_repositories">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right" data-showwhen="manage_repositories">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left" data-showwhen="manage_repositories">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left" data-showwhen="manage_repositories">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Repo top controls -->
+		<div class="top-controls tree-controls clearfix hidden" data-showwhen="browse_repository">
+			<div id="selection-row" class="selection-row hide-element pull-left">
+				<label>Selected item(s) to be moved:</label><p id="selected-item"></p>
+				<button class="btn btn-master-tool" data-action="rp-move"           data-toggle="tooltip" data-original-title="Move files"         disabled><i class="fa fa-move-files"></i></button>
+				<button class="btn btn-master-tool" data-action="rp-cancel"         data-toggle="tooltip" data-original-title="Cancel"                     ><i class="fa fa-ban"></i></button>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="rp-upload"         data-toggle="tooltip" data-original-title="New File"           disabled><i class="fa fa-upload"></i></button>
+				<button class="btn btn-master-tool" data-action="rp-new-folder"     data-toggle="tooltip" data-original-title="New Folder"         disabled><i class="fa fa-folder-open fa-add-star"></i></button>
+				<div class="spacer"></div>
+				<button class="btn btn-master-tool" data-action="rp-copy"           data-toggle="tooltip" data-original-title="Copy"               disabled><i class="fa fa-copy"></i></button>
+				<button class="btn btn-master-tool" data-action="rp-paste"          data-toggle="tooltip" data-original-title="Paste"              disabled><i class="fa fa-paste"></i></button>
+				<div class="spacer"></div>
+				<button class="btn btn-master-tool" data-action="rp-delete-file"    data-toggle="tooltip" data-original-title="Delete"             disabled><i class="fa fa-times"></i></button>
+			</div>
+			<div class="top-actions left-spacer pull-left">
+				<button class="btn btn-master-tool" data-action="rp-share"          data-toggle="tooltip" data-original-title="Share data"         disabled><i class="fa fa-regular fa-share"></i></button>
+				<button class="btn btn-master-tool" data-action="rp-product-set"    data-toggle="tooltip" data-original-title="Create product set" disabled><i class="fa fa-cubes"></i></button>
+				<button class="btn btn-master-tool" data-action="rp-inspect-folder" data-toggle="tooltip" data-original-title="Inspect folder"     disabled><i class="fa fa-inspect"></i></button>
+				<button class="btn btn-master-tool" data-action="rp-properties"     data-toggle="tooltip" data-original-title="Properties"         disabled><i class="fa fa-list-alt"></i></button>
+				<button class="btn btn-master-tool" data-action="rp-view-on-map"    data-toggle="tooltip" data-original-title="View on map"        disabled><i class="fa fa-map-marker"></i></button>
+				<button class="btn btn-master-tool" data-action="rp-open-file"      data-toggle="tooltip" data-original-title="Open file"          disabled><i class="fa fa-file-o"></i></button>
+			</div>
+			<div class="top-actions left-spacer pull-left">
+				<select class="field-master-tool actionsSelect" data-action="rp-actions" type="text" name="actionsList" autocomplete="off" value="" placeholder="Actions..." disabled></select>
+				<div class="spacer"></div>
+				<form class="search-folder-container" data-toggle="tooltip" data-original-title="Search in folder"><input id="search-folder-box" type="text" class="search-box search-folder field-master-tool" placeholder="Search by name..." /><label for="search-folder-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool pull-right" data-action="rp-refresh" data-toggle="tooltip" data-original-title="Refresh"><i class="fa fa-refresh fa-spin-hover"></i></button>
+			</div>
+			<div id="download-statistics-bar" class="statistics pull-right">
+				<div class="progress"></div>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">workflow</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				<div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-sm-12 col-md-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-name"></span></div>
+									<div class="box-subtitle"><span class="val-description"></span></div>
+									<div class="box-icon"><i class="fa fa-folder-open"></i></div>
+								</div>
+								<div class="box-description">
+									Protocol: <strong><span class="val-urlPrefix"></span></strong> |
+									Type: <strong><span class="val-visibility"></span></strong><!-- |
+									Parameters: <strong><span class="val-parameters"></strong></span>-->
+								</div>
+								<div class="box-bottom">
+									<div class="text-right flat-buttons">
+										<button class="btn btn-primary btn-nodeop" data-action="rp-edit"  ><i class="fa fa-pencil fa-fw" ></i> Edit</button>
+										<button class="btn btn-primary btn-nodeop" data-action="rp-delete"><i class="fa fa-trash-o fa-fw"></i> Delete</button>
+										<button class="btn btn-primary btn-nodeop" data-action="rp-browse"><i class="fa fa-browse fa-fw" ></i> Browse files</button>
+										<div class="spacer"></div>
+										<input type="checkbox" data-toggle="toggle" data-action="rp-persist" />
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-custom">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-name"></span></div>
+									<div class="box-subtitle"><span class="val-description"></span></div>
+									<div class="box-icon"><i class="fa fa-folder-open"></i></div>
+								</div>
+								<div class="box-description thin-scrollbar onhover">
+									<div class="box-text with-label"><label>Protocol: </label><strong><span class="val-urlPrefix"></span></strong></div>
+									<div class="box-text with-label"><label>Type: </label><strong><span class="val-visibility"></span></strong></div>
+								</div>
+								<div class="box-bottom clearfix">
+									<div class="pull-left">
+										<button class="btn btn-primary btn-nodeop" data-action="rp-edit" data-toggle="tooltip" data-original-title="Edit"><i class="fa fa-pencil fa-fw"></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="rp-delete" data-toggle="tooltip" data-original-title="Delete"><i class="fa fa-trash-o fa-fw"></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="rp-browse" data-toggle="tooltip" data-original-title="Browse files"><i class="fa fa-browse fa-fw"></i></button>
+									</div>
+									<div class="pull-right">
+										<input type="checkbox" data-toggle="toggle" data-action="rp-persist" />
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix" data-showwhen="manage_repositories">
+			<div class="controls-left">
+				<div><i class="fa fa-folder-open"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> <span class="val-title">repositories</span></div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
+			</div>
+		</div>
+	</div>
+</section>
+
+<div id="view_on_map">
+	<div id="mapExtent"></div>
+</div>
+
+<div id="properties">
+	<div class="panel job-history-one">
+		<div class="panel-header">
+			<a href="#panel_attr" class="helper atts" data-toggle="collapse" aria-expanded="true">
+				<span class="name"><i class="fa fa-file-image-o fa-fw"></i><span class="title"></span></span>
+			</a>
+			<div class="btns">
+				<a class="hidden download" href=""><button class="btn btn-primary btn-nodeop" data-toggle="tooltip" data-placement="bottom" data-original-title="Download" data-action="rp-download"><i class="fa fa-fw fa-download"></i></button></a>
+			</div>
+		</div>
+		<div id="panel_attr" class="modal-flexible panel-attr collapse in thin-scrollbar" aria-expanded="true"></div>
+	</div>
+</div>
+
+<div id="view_file">
+    <div class="file-content">
+		<div class="toggle-ctrl wrap"  data-toggle="tooltip" data-original-title="<i>Text wrap</i><br />Normal" data-html="true"><input type="checkbox" data-toggle="toggle" data-action="rp-wrap" /></div>
+		<div class="toggle-ctrl wheel" data-toggle="tooltip" data-original-title="Continuous scroll<br /><i>Normal scroll</i>" data-html="true"><input type="checkbox" data-toggle="toggle" data-action="rp-wheel" checked /></div>
+		<button class="btn btn-default btn-nodeop prev"><i class="fa fa-arrow-up fa-fw"></i> <span>Previous lines</span></button>
+		<textarea class="content-area thin-hscrollbar" disabled></textarea>
+		<button class="btn btn-default btn-nodeop next"><i class="fa fa-arrow-down fa-fw"></i> <span>Next lines</span><span class="eof hidden">End of file</span></button>
+    </div>
+</div>
+
+<div id="share-name-content" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title">Share data</h4>
+			</div>
+			<div class="modal-body">
+				<div class="form-group">
+					<label class="col-sm-2 col-md-2" style="padding-top: 7px; text-align: center;">Name</label>
+					<div class="col-sm-10 col-md-10">
+						<textarea class="content_area" placeholder="Name of the shared set" autocomplete="off" rows="1" style="resize:vertical; max-height:100px; width: 103%"></textarea>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="submit" id="share-btn" name="btnSave" class="btn btn-primary btn-submit" style="margin-top: 0%;">Create shared set</button>
+				<button class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="myModalUpload" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title">Add new file</h4>
+			</div>
+			<form id="frmUploadFile" class="form-horizontal" enctype="multipart/form-data" role="form">
+				<div class="modal-body">
+					<section class="upload-message collapse">
+						<h4>File successfully uploaded.</h4>
+					</section>
+					<section class="upload-content">
+						<div class="row">
+							<div class="col-sm-12 col-md-12">
+								<div class="form-group">
+									<label class="col-sm-12 col-md-12">Add File or Directory</label>
+									<div class="col-sm-12 col-md-12">
+										<!-- <input type="file" class="form-control" name="file" /> -->
+
+                                        <div class="collapse in" id="collapseNewDocker" data-parent="#accordionDocker">
+                                            <div class="col-md-12">
+                                                <div class=" col-sm-9 col-md-9 extra-files-container">
+
+                                                </div>
+                                                <div class="form-group auxiliary-files">
+                                                    <div class="add-extra-file" data-toggle="tooltip" data-original-title="Add file" ></div>
+                                                    <div class="add-extra-folder" data-toggle="tooltip" data-original-title="Add directory"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                       
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="col-sm-12 col-md-12">Upload path</label>
+									<div class="col-sm-12 col-md-12">
+										<p class="form-control path" title="">/</p>
+                                        <input type="hidden" name="folder" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="col-sm-12 col-md-12">Description</label>
+									<div class="col-sm-12 col-md-12">
+										<textarea class="form-control" name="desc" rows="3" placeholder="File description" style="resize:vertical;min-height:75px;max-height:215px"></textarea>
+									</div>
+								</div>
+								<div class="form-group">
+									<div class="col-md-12 col-sm-12">
+										<button type="submit" class="btn btn-primary btn-submit">Upload selected file</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</section>
+				</div>
+			</form>
+			<div class="modal-footer">
+				<button class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="mdlCreateProductSet" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+    <form id="frmCreateProductSet" class="form-horizontal" role="form">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">Create product set</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="col-sm-2 col-md-2 control-label">Name</label>
+                        <div class="col-sm-10 col-md-10">
+                            <input type="text" id="txtProductSet" name="label" class="form-control required" placeholder="Name of your product set" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" id="btnCreateProductSet" class="btn btn-primary btn-submit" style="margin-top: 0%;">Create product set</button>
+                    <button class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Modal for user actions -->
+<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog">
+	<div class="modal-dialog"></div>
+</div>
+
+<!-- Clone Bootstrap's tooltip class to prevent it being overwritten by juery-ui -->
+<script>$.fn.bttooltip = $.fn.tooltip;</script>
+<!-- Draggable dialog windows -->
+<link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.theme.css" rel="stylesheet" />
+<link   type="text/css"       href="./assets/libs/jQuery-datepicker/jquery-ui.css" rel="stylesheet" />
+<script type="text/javascript" src="./assets/libs/jQuery-datepicker/jquery-ui.js"></script>
+<!-- Polygon Map -->
+<script type="text/javascript" src="./assets/libs/openlayers/ol-poly.js"></script>
+
+<script type="text/javascript">
+    var $repoPanel = $("#panel_repo_wrapper");
+	var maxFileSizeUnits = "100 MB";
+	var imageExtentions = [ ".tif", ".tiff", ".png", ".jpeg", ".jpg" ];
+	var readFileMaxSizeGB = 10;
+	
+	var adjustTimer;
+	$(window).on("resize", function () {
+		clearTimeout(adjustTimer);
+		adjustTimer = setTimeout(function () {
+			$(".draggable-modal:visible").draggableModal("adjust-position");
+			adjustTreeHeight();
+		}, 250);
+	});
+	
+	var $sharedPathCopy;
+	function detectIE() {
+		var ua = window.navigator.userAgent;
+
+		// IE 10 or older => return version number
+		var msie = ua.indexOf('MSIE ');
+		if (msie > 0) {
+			return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
+		}
+
+		// IE 11 => return version number
+		var trident = ua.indexOf('Trident/');
+		if (trident > 0) {
+			var rv = ua.indexOf('rv:');
+			return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10);
+		}
+
+		// Edge (IE 12+) => return version number
+		var edge = ua.indexOf('Edge/');
+		if (edge > 0) {
+			return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10);
+		}
+
+		// other browser
+		return false;
+	}
+	
+// ------ FILE TREE SECTION ------ //
+	function adjustTreeHeight() {
+		var $fe = $(".fileexplorer-content:visible");
+		if ($fe.length) {
+			var windowH = $(window).height();
+			var treeTop = $fe.offset().top;
+			var footerH = $(".main-footer").outerHeight(true) + parseFloat($(".content-wrapper>.content").css("padding-bottom")) + parseFloat($(".tab-content:visible", $repoPanel).css("margin-bottom"));
+			var minH = Math.max(parseInt(windowH - treeTop - footerH), 200);
+			$(".foldersub", $fe).css("height", minH + "px");
+		}
+	}
+	
+    function refreshTree($tree, attributes) {
+        var deferred = $.Deferred();
+			var $loading = $("#myModalLoading .modal-content");
+			if ($loading.length) {
+				$loading = $loading.clone().attr("class", "loading");
+			} else {
+				$loading = $('<div class="loading"><img src="./assets/dist/img/loader.gif" /></div>')
+			}
+			
+			var root = (typeof attributes === "undefined") || (typeof attributes.fileInfo === "undefined") || (typeof attributes.fileInfo.relativePath === "undefined") || (attributes.fileInfo.relativePath === "");
+			root && $(".foldersub", $tree).html('').append($loading.clone());
+			
+			var url_base = $tree.data("url_base");
+			var repo = $tree.data("repo");
+			var folder = (typeof attributes === "undefined") ? $tree.data("folder") : attributes.fileInfo.relativePath;
+			var url = url_base + "folder=" + escape(folder);
+			$.when(ajaxGeneralCallFnc(url, {}, "GET", 'json')).done(function (response) {
+				root && $(".loading", $tree).remove();
+				
+				if (response.status == responseStatus.success) {
+					renderTree($tree, response.data, root ? void (0) : attributes.fileInfo.relativePath);
+					root && renderFolderContent($tree, response.data, void (0));
+					deferred.resolve(response);
+				} else {
+					root && $(".foldersub", $tree).html('<div class="empty">');
+					
+					showMsg(response.message, "FAIL");
+					deferred.reject(null, response.status, "Error while loading files.");
+				}
+			}).fail(function (jqXHR, status, message) {
+				root && $(".foldersub", $tree).html('<div class="empty">');
+				showMsg(message, "FAIL");
+				deferred.reject(null, status, message);
+			});
+			
+        return deferred.promise();
+    }
+	
+    function getParentFolder($tree, relativePath) {
+        var $compsTree = $(".treeview", $tree);
+        var tree_data = $tree.data();
+
+        var parentId = relativePath.substring(0, relativePath.lastIndexOf("/"));
+        var parent = $('input[id="tree_' + tree_data.id + "_" + parentId + '"]', $tree).parent().find(">.sub");
+        if (parent.length == 0) { parent = $compsTree; }
+        return parent;
+    }
+	
+    function renderFolderInTree($tree, relPath, file) {
+        var $compsTree = $(".treeview", $tree);
+        var tree_data = $tree.data();
+
+        var attributes = (file != null ? $.extend(true, {}, file.attributes) : null);
+		if (typeof file.productName !== "undefined") {
+			attributes.productName = file.productName;
+		}
+		
+        var relativePath = relPath.replace(/\\/g, "/");
+        if (relativePath.endsWith("/")) {
+            relativePath = relativePath.substring(0, relativePath.length - 1);
+        }
+        // get parent, render if null
+        var parent = getParentFolder($tree, relativePath);
+        if (parent == $compsTree && relativePath.indexOf("/") >= 0) {
+            parent = renderFolderInTree($tree, relativePath.substring(0, relativePath.lastIndexOf("/")), null);
+        }
+
+        var isRoot = (relativePath === "");
+
+        var protocol = (typeof file.protocol === "string") ? file.protocol : false;
+        var hrefPath = (typeof file.relativePath === "string") ? file.relativePath : ((typeof file.attributes !== "undefined" && typeof file.attributes.remotePath !== "undefined") ? file.attributes.remotePath : false);
+        var href = (protocol != false && hrefPath != false) ? baseRestApiURL + "files/download/" + tree_data.repo.id + "?folder=" + escape(hrefPath) : "#";
+
+        //var fileName = (isRoot ? (file != null ? file.displayName : relativePath) : relativePath.substring(relativePath.lastIndexOf("/") + 1));
+        var fileName = (isRoot ? (file != null ? file.displayName : relativePath) : file.displayName);
+
+        if (!attributes) { attributes = {}; }
+        attributes.fileInfo = {};
+        attributes.fileInfo.relativePath = relativePath;
+        attributes.fileInfo.fileSize = 0;
+        attributes.fileInfo.fileName = fileName;
+        attributes.fileInfo.fileType = "folder";
+        attributes.fileInfo.protocol = protocol;
+        attributes.fileInfo.uri = href;
+        attributes.fileInfo.dldUri = "#";
+
+        // render folder if not found
+        var chk = parent.find('input[id="tree_' + tree_data.id + "_" + relativePath + '"]');
+        if (chk.length == 0) {
+            var element = $('<div' + (relativePath == 'files' ? ' class="files-folder"' : '') + ">" +
+                '<input type="checkbox" id="tree_' + tree_data.id + "_" + relativePath + '" ' + (isRoot ? " checked disabled " : "") + ' >' +
+                '<label for="tree_' + tree_data.id + "_" + relativePath + '">' +
+                '<a href="#" title="' + attributes.fileInfo.fileName + '">' +
+                '<span class="fa fa-folder"></span>' +
+                attributes.fileInfo.fileName +
+                '</a>' +
+                '</label>' +
+                '<div class="sub loading">Loading </div>' +
+                '</div>');
+            parent.append(element);
+            parent.removeClass("loading");
+            if(isRoot){
+                parent.find(".sub").text("");
+            }
+            
+            chk = parent.find('input[id="tree_' + tree_data.id + "_" + relativePath + '"]');
+        }
+        chk.find("~label>a").data({
+            "attributes": attributes,
+            "file": file
+        });
+
+        return chk.find("~.sub");
+    }
+	
+    function loadFolderContent($tree, attributes) {
+        var $compsTree = $(".treeview", $tree);
+        var root = (typeof attributes === "undefined") || (typeof attributes.fileInfo === "undefined") || (typeof attributes.fileInfo.relativePath === "undefined") || (attributes.fileInfo.relativePath === "");
+        var deferred = $.Deferred();
+		
+        if (attributes !== "nextPage") {
+            $tree.removeData("url_complete");
+            $(".foldercontent", $tree).html("");
+            $(".foldercontent", $tree).text("Loading ");
+        } else {
+            var nextPage = attributes;
+        }
+        $(".foldercontent", $tree).addClass("loading");
+
+        if(typeof $($tree).data("url_complete") !== "undefined"){
+            var url_ = $($tree).data("url_complete");
+            folder = $tree.data("folder");
+
+        } else if(typeof $($tree).data("url_base") !== "undefined"){
+            var url_base = $tree.data("url_base");
+            var repo = $tree.data("repo");
+            var folder = (typeof attributes.fileInfo === "undefined") ? $tree.data("folder") : attributes.fileInfo.relativePath;
+            //for the root parent the value is an empty string because that is the way the input element id is created
+		    var parent = folder.lastIndexOf("/") > -1 ? folder.substr(0, folder.lastIndexOf("/")) : "";
+		    $(".foldercontent", $tree).data("parent", parent);
+            var url_ = url_base + "folder=" + escape(folder);
+        }
+
+		
+		
+        if (typeof url_base === "undefined") {
+            var a = 1;
+        }
+        $.when(ajaxGeneralCallFnc(url_, {}, "GET", 'json')).done(function(response){
+            if(response.status === "SUCCEEDED"){
+                $(".foldercontent", $tree).removeClass("loading");
+                $(".treeview.sub.foldertree").find(".selected").parent().siblings(".loading").removeClass("loading")
+                renderFolderContent($tree, response.data, root ? void (0) : attributes.fileInfo.relativePath, nextPage);
+                if(attributes === 'nextPage'){
+                    renderTree($tree, response.data, folder);
+                }
+                if (!root) {
+                    renderTree($tree, response.data, attributes.fileInfo.relativePath);
+                }
+                deferred.resolve(response);
+                
+            }else{
+                if (root) $(".loading", $tree).addClass("hidden");
+                deferred.reject(null, response.status, "Error while loading files.");
+                showMsg(response.message, "FAIL");
+            }
+        });
+        return deferred.promise();
+    }
+	
+    function renderFolderInContent($tree, relPath, file) {
+        var $compsTree = $(".foldercontent", $tree);
+        var tree_data = $tree.data();
+
+        var attributes = (file != null ? $.extend(true, {}, file.attributes) : null);
+		if (typeof file.productName !== "undefined") {
+			attributes.productName = file.productName;
+		}
+		
+        var relativePath = relPath.replace(/\\/g, "/");
+        if (relativePath.endsWith("/")) {
+            relativePath = relativePath.substring(0, relativePath.length - 1);
+        }
+
+        var protocol = (typeof file.protocol === "string") ? file.protocol : false;
+        var hrefPath = (typeof file.relativePath === "string") ? file.relativePath : ((typeof file.attributes !== "undefined" && typeof file.attributes.remotePath !== "undefined") ? file.attributes.remotePath : false);
+        var href = (protocol != false && hrefPath != false) ? baseRestApiURL + "files/download/" + tree_data.repo.id + "?folder=" + escape(hrefPath) : "#";
+
+        if (!attributes) { attributes = {}; }
+        attributes.fileInfo = {};
+        attributes.fileInfo.relativePath = relativePath;
+        attributes.fileInfo.fileSize = 0;
+        //attributes.fileInfo.fileName = relativePath.substring(relativePath.lastIndexOf("/") + 1);
+        attributes.fileInfo.fileName = file.displayName === "" ? relativePath.substring(relativePath.lastIndexOf("/") + 1) : file.displayName;
+        attributes.fileInfo.fileType = "folder";
+        attributes.fileInfo.protocol = protocol;
+        attributes.fileInfo.uri = href;
+        attributes.fileInfo.dldUri = "#";
+
+        // render folder
+        var selectable = false;//file != null && file.productName != undefined;
+        var faProduct = (typeof file.productName !== 'undefined' ? " fa-product" : "");
+        var $element = $('<div class="foldercontent-item">' +
+            '<a href="#" title="' + attributes.fileInfo.fileName + '">' +
+            '<span class="foldercontent-icon fa fa-folder ' + faProduct + '"></span>' +
+            '<span class="foldercontent-label">' + attributes.fileInfo.fileName + '</span>' +
+            '</a>' +
+            '</div>');
+
+        $element.data({
+            "attributes": attributes,
+            "file": file
+        });
+
+        $compsTree.append($element);
+    }
+	
+    function renderFolderContent($tree, response, relativePath, nextPage) {
+        var $compsTree = $(".foldercontent", $tree);
+        var tree_data = $tree.data();
+
+        if (nextPage !== "nextPage"){
+            $compsTree.html("");
+        }
+        $(".foldercontent", $tree).removeClass("loading");
+        $(".page-next").remove();
+		
+		if (typeof relativePath !== "undefined" && relativePath != "/" && relativePath != "") {
+			$compsTree.append("<span class='back-one-folder'><i class='fa fa-folder fa-back'></i>..</span>");
+		}
+		
+        $.each(response, function (index, file) {
+            if (file.folder && file.relativePath != "/") {
+                renderFolderInContent($tree, file.relativePath, file);
+            }
+        });
+
+        // Render files
+        $.each(response, function (index, file) {
+            if (!file.folder) {
+                var size = parseInt(file.size);
+                if (size < 1024) {
+                    size = size + " B";
+                } else if (size < 1024 * 1024) {
+                    size = parseFloat(size / 1024, 2).toFixed(2) + " KB";
+                } else if (size < 1024 * 1024 * 1024) {
+                    size = parseFloat(size / 1024 / 1024, 2).toFixed(2) + " MB";
+                } else if (size < 1024 * 1024 * 1024 * 1024) {
+                    size = parseFloat(size / 1024 / 1024 / 1024, 2).toFixed(2) + " GB";
+                } else {
+                    size = parseFloat(size / 1024 / 1024 / 1024 / 1024, 2).toFixed(2) + " TB";
+                }
+                var relPath = file.relativePath.replace(/\\/g, "/");
+                var name = relPath.substring(relPath.lastIndexOf("/") + 1);
+                var type = name.substring(name.lastIndexOf("."));
+                type = type == name ? "-" : type;
+                var $folder = getParentFolder($tree, relPath);
+
+                var protocol = (typeof file.protocol === "string") ? file.protocol : false;
+                var hrefPath = (typeof file.relativePath === "string") ? file.relativePath : ((typeof file.attributes !== "undefined" && typeof file.attributes.remotePath !== "undefined") ? file.attributes.remotePath : false);
+                var href = (protocol != false && hrefPath != false) ? baseRestApiURL + "files/download/" + tree_data.repo.id + "?fileName=" + escape(hrefPath) : "#";
+
+                var fafile = "fa-file-o";
+                switch (type) {
+                    case ".txt" : fafile = "fa-file-text-o"   ; break;
+                    case ".log" : fafile = "fa-file-text-o"   ; break;
+                    case ".html": fafile = "fa-file-code-o"   ; break;
+                    case ".xml" : fafile = "fa-file-code-o"   ; break;
+                    case ".json": fafile = "fa-file-code-o"   ; break;
+                    case ".tif" : fafile = "fa-file-image-o"  ; break;
+                    case ".tiff": fafile = "fa-file-image-o"  ; break;
+                    case ".png" : fafile = "fa-file-image-o"  ; break;
+                    case ".jpg" : fafile = "fa-file-image-o"  ; break;
+                    case ".jpeg": fafile = "fa-file-image-o"  ; break;
+                    case ".pdf" : fafile = "fa-file-pdf-o"    ; break;
+                    case ".zip" : fafile = "fa-file-archive-o"; break;
+                }
+
+                var faProduct = (typeof file.productName !== 'undefined' ? " fa-product" : "");
+                var $element = $(
+					'<div class="foldercontent-item">' +
+						'<a href="#" title="' + name + '">' +
+							'<span class="foldercontent-icon fa ' + fafile + faProduct + '"></span>' +
+							'<span class="foldercontent-label">' + name + '</span>' +
+							'<span class="foldercontent-subitem">' + size + '</span>' +
+							'<span class="foldercontent-subitem">' + type + '</span>' +
+						'</a>' +
+					'</div>'
+				);
+				
+                var attributes = (typeof file.attributes === "undefined") ? {} : $.extend(true, {}, file.attributes);
+                attributes.fileInfo = {};
+                attributes.fileInfo.relativePath = relPath;
+                attributes.fileInfo.fileSize = size;
+                attributes.fileInfo.fileName = name;
+                attributes.fileInfo.fileType = type;
+                attributes.fileInfo.protocol = protocol;
+                attributes.fileInfo.uri = href;
+                attributes.fileInfo.dldUri = "#";
+                $element.data({
+                    "attributes": attributes,
+                    "file": file
+                });
+                $compsTree.append($element);
+            }
+        });
+        $('input[id="tree_' + tree_data.id + "_" + relativePath + '"]~div.sub', $compsTree).removeClass("loading");
+        var pageLimit;
+        if(typeof tree_data.repo.parameters !== "undefined"){
+            $.each(tree_data.repo.parameters, function(index, param){
+                if(index === "page.limit" || index === "page.size"){
+                    pageLimit = param;
+                }
+            });
+        }
+
+        if (tree_data.repo.pageItem !== "none" && response.length !== 0 && typeof pageLimit !== "undefined" && response.length === parseInt(pageLimit) || response.length === parseInt(pageLimit)+1 ) {
+			$compsTree.append("<div class='page-next'><span>Next items</span><i class='fa fa-solid fa-chevron-right'></i></div>");
+            $(".page-next").data("pageItem", tree_data.repo.pageItem);
+		}
+    }
+	
+    $(".tab-content").on("click",".page-next", function (e) {
+        var nextPage = "nextPage";
+        var pageItem = $(".page-next").data("pageItem");
+        var repoId = $("li.role.active").children().data("repo").id;
+        var lastItem;
+        var selectedFolder = $(e.target).closest(".tree-content").find(".selected").data("file").relativePath;
+        if(pageItem === "item"){
+            var index = $(this).siblings(".foldercontent-item").length-1;
+            var $lastFolder = $(this).siblings(".foldercontent-item")[index];
+            lastItem = $($lastFolder).data("file").relativePath;
+
+        }else if (pageItem === "position"){
+            lastItem = ($(this).siblings(".foldercontent-item").length).toString();
+        }
+        
+        var $tree = $(e.target).closest(".tree-content");
+        $tree.data({
+            "id": repoId,
+            "url_complete": baseRestApiURL + "files/browse?workspace=" + repoId + "&" + "folder="+ selectedFolder +"&" + "last=" + lastItem,
+            "folder": selectedFolder
+        });
+        loadFolderContent($tree, nextPage);
+        //getNextPage(repoId, selectedFolder,lastItem);
+    });
+	
+    function renderTree($tree, response, relativePath) {
+        var $compsTree = $(".treeview", $tree);
+        var tree_data = $tree.data();
+
+        var parentFolder = (typeof relativePath === "undefined") ? "" : relativePath;
+        if (parentFolder == "") {
+            $compsTree.html("");
+        } else {
+            $('input[id="tree_' + tree_data.id + "_" + relativePath + '"]~div.sub', $compsTree).html("");
+        }
+
+        // Render only folders in tree
+        if (response.length == 0) {
+            $('input[id="tree_' + tree_data.id + "_" + relativePath + '"]~div.sub', $compsTree).removeClass("loading");
+        }
+        $.each(response, function (index, file) {
+            if (file.folder/* && file.relativePath != ""*/) {
+                if (file.relativePath === "" || file.relativePath === "/") {
+                    //root
+                    if( !($(".treeview", $tree).find("[title='__root']").length > 0) ){
+                        renderFolderInTree($tree, file.relativePath, file);
+                    } 
+                }
+                else {
+                    if (file.relativePath != parentFolder) {
+                        renderFolderInTree($tree, file.relativePath, file);
+                    } 
+                }
+            }
+        });
+
+        // Adjust folder indentation
+        $('input[id="tree_' + tree_data.id + "_" + relativePath + '"]~div.sub', $compsTree).removeClass("loading");
+    }
+	
+    function navigateTo($tree, attributes) {
+        var $compsTree = $(".treeview", $tree);
+        var tree_data = $tree.data();
+
+        if (attributes.fileInfo.fileType === "folder") {
+            var $folder = $('input[id="tree_' + tree_data.id + "_" + attributes.fileInfo.relativePath + '"]', $compsTree);
+            if ($folder.length > 0) {
+                // Check all folder checkboxes above current folder
+                $folder.prop("checked", true);
+                var $upLevelAttr = $folder.closest(".sub").siblings("label").find("a");
+                if ($upLevelAttr.length > 0) {
+                    navigateTo($tree, $upLevelAttr.data("attributes"));
+                }
+            }
+        }
+    }
+	
+    function expandFolder($tree, relativeTreePath) {
+        var $compsTree = $(".treeview", $tree);
+        var tree_data = $tree.data();
+
+        var $chk = $('input[id="' + relativeTreePath + '"]', $compsTree);
+        if ($chk.is(":checked") && $chk.siblings("div.sub.loading").length > 0) {
+            var attributes = $chk.siblings("label").find("a").data("attributes")
+            refreshTree($tree, attributes);
+        }
+    }
+	
+    $(".tab-content").on("dblclick", ".treeview label", function (e) {
+        var $tree = $(e.target).closest(".tree-content");
+		
+		var $chk = $(this).siblings("input[type='checkbox']");
+		if ($chk.length > 0 && !$chk.is(':disabled')) {
+			// Expand/collapse folder
+			$chk.prop("checked", !$chk.prop("checked"));
+			// Show folder contents
+			expandFolder($tree, $chk.attr("id"));
+		}
+    });
+	
+    $(".tab-content").on("change", ".treeview input[type='checkbox']", function (e) {
+        var $tree = $(e.target).closest(".tree-content");
+
+        expandFolder($tree, $(this).attr("id"));
+    });
+	
+// ------ PROPERTIES WINDOW SECTION ------ //
+	var $properties = $("#properties");
+		$properties
+			.draggableModal({
+				setContent: function (attributes) { setPropertiesContent(attributes); closeModalsExcept([ "#properties" ]); },
+				onClear   : function (attributes) { clearPropertiesContents(); }
+			});
+			
+	function clearPropertiesContents() {
+		// Reset dynamic data
+		$(".btns>a", $properties).addClass("hidden");
+		$(".attr"  , $properties).remove();
+		$(".keyval", $properties).remove();
+	}
+	
+	function getQuickview(attributes) {
+		if (attributes.fileInfo?.fileType !== "folder" && attributes?.productType === "GeoTIFF" && attributes?.formatType === "RASTER") {
+			$(".panel-attr", $properties).append('<p class="keyval quickview"><label>imagePreview</label><span class="img-holder empty"></span></p>');
+			
+			var url = attributes.fileInfo?.uri.replace(/files\/download\/[0-9a-f-]{36}/, "product/preview");
+			$.when(ajaxGeneralCallFnc(url, {}, "GET")).done(function (response) {
+				if (response.status === "SUCCEEDED") {
+					var $imgHolder = $(".img-holder", $properties);
+					var $img = $('<img src="' + 'data:image/jpeg;base64, ' + response.data + '" />');
+					$img
+						.on("load" , function (e) { $imgHolder.removeClass("empty"); })
+						.on("click", function (e) { $imgHolder.clone().appendTo(".tab-content", $repoPanel).addClass("full-screen"); });
+					$imgHolder.append($img);
+				} else {
+					showMsg(response.message, "FAILED");
+				}
+			}).fail(function (jqXHR, status, message) {
+				showMsg(message, "FAILED");
+			});
+		}
+	}
+	
+	function getDownloadLink(uri) {
+		var deferred = $.Deferred();
+			$.when(ajaxGeneralCallFnc(uri, {}, "GET")).done(function(response){
+				if(response.status === "SUCCEEDED"){
+					deferred.resolve(response);
+				}else{
+					deferred.reject(null, response.status, response.message);
+					showMsg(response.message, "FAIL");
+				}
+			});
+		return deferred.promise();
+	}
+	
+	function setPropertiesContent(attributes) {
+		if (typeof attributes.fileInfo !== "undefined" && typeof attributes.fileInfo.fileName !== "undefined") {
+			var protocol = attributes.fileInfo?.fileType || "file";
+			
+			// Attributes
+			var $atts = $(".atts", $properties);
+				// icon
+				var $icon = $(".tree-pane.active .foldercontent .selected .foldercontent-icon", $repoPanel);
+				$(".name i", $atts).attr("class", $icon.attr("class"));
+				// formatType
+				$atts.append('<span class="attr type">' + (attributes?.formatType || attributes.fileInfo?.fileType || 'file') + '<span>');
+				// fileSize
+				$atts.append('<span class="attr size">Download size<small>' + (protocol == "folder" ? 'TBD' : attributes.fileInfo.fileSize) + '<small><span>');
+				// other dynamic attributes
+				var $panelAtts = $(".panel-attr", $properties);
+				$.each(attributes, function (name, value) { (name !== "fileInfo") && $panelAtts.append('<p class="keyval"><label>' + name + '</label><span>' + value.replace(/[\r\n\x0B\x0C\u0085\u2028\u2029]+/g, "<br/>") + '</span></p>'); });
+				($(".keyval", $panelAtts).length == 0) && $panelAtts.append('<p class="keyval">No relevant information to show.</p>');
+				// quickview
+				getQuickview(attributes);
+				
+			// Actions
+			var $btns = $(".btns", $properties);
+				// Download
+				$(".download .fa", $btns).addClass("fa-spin");
+				$(".download"    , $btns).removeClass("hidden").addClass("loading");
+				if (attributes.fileInfo?.dldUri === "#") {
+					// Get download uri
+					$.when(getDownloadLink(attributes.fileInfo.uri)).done(function (response) {
+						if (response.status === responseStatus.success) {
+							attributes.fileInfo.dldUri = response.data;
+							$(".download .fa", $btns).removeClass("fa-spin");
+							$(".download"    , $btns).removeClass("loading").attr("href", baseRestApiURL.replace(/\/$/, '') + attributes.fileInfo.dldUri);
+						}
+					});
+				} else {
+					$(".download .fa", $btns).removeClass("fa-spin");
+					$(".download"    , $btns).removeClass("loading").attr("href", baseRestApiURL.replace(/\/$/, '') + attributes.fileInfo?.dldUri);
+				}
+		}
+	}
+	
+// ------ MAP WINDOW SECTION ------ //
+	var $viewOnMap = $("#view_on_map");
+		$viewOnMap
+			.draggableModal({
+				setContent: function (attributes) { showProductOnMap(attributes); closeModalsExcept([ "#view_on_map" ]); },
+				onShow    : function (attributes) { myPolygonMap.updateMapSize(); },
+				onClear   : function (attributes) { clearMapContents(); }
+			});
+			
+	function extendToGeometry(extent) {
+		var polygon = ol.geom.Polygon.fromExtent(extent);
+		polygon.transform('EPSG:3857', 'EPSG:4326');
+		
+		var polyCoords = polygon.getCoordinates();
+		return myPolygonMap.polygonTextFromArray(polyCoords);
+	}
+	
+	function productInfo(attributes) {
+		var url = baseRestApiURL + "view/info?relativePath="+attributes.fileInfo.relativePath;
+		$.when(ajaxGeneralCallFnc(url, {}, "GET")).done(function (response) {
+			if (response) {
+				attributes.geometry = extendToGeometry(response.projection.extent);
+				attributes.formatType = "raster";
+				showDraggableModal($viewOnMap, attributes);
+			} else {
+				showMsg("Unknown product format. Try another product.", "ERROR");
+			}
+		});
+	}
+	
+	function removeMapLayer(layerName) {
+		var _map = myPolygonMap;
+		_map.removeAllFeatures("preview");
+		if (typeof layerName === "undefined") {
+			$(".drawer-content .slidercontainer:not(:has([data-name='Map'],[data-name='Features']))", "#mapExtent").remove();
+			
+			var layersToRemove = [];
+			_map.map.getLayers().forEach(function (layer) {
+				if (typeof layer !== "undefined" && layer.get("name") != "Map" && layer.get("name") != "Features") {
+					layersToRemove.push(layer);
+				}
+			});
+			for (var i = 0; i < layersToRemove.length; i++) {
+				_map.map.removeLayer(layersToRemove[i]);
+			}
+		} else {
+			$(".drawer-content .slidercontainer:has([data-name='" + layerName + "'])", "#mapExtent").remove();
+			
+			var layersToRemove = [];
+			_map.map.getLayers().forEach(function (layer) {
+				if (typeof layer !== "undefined" && layer.get("name") == layerName) {
+					layersToRemove.push(layer);
+				}
+			});
+			for (var i = 0; i < layersToRemove.length; i++) {
+				_map.map.removeLayer(layersToRemove[i]);
+			}
+		}
+	}
+	
+	function displayRasterOnMap(geometry, attributes) {
+		if (!myPolygonMap.mapActive) {
+			return;
+		}
+		removeMapLayer("Raster");
+		
+		var _map = myPolygonMap;
+		if (typeof attributes !== "undefined" && typeof geometry !== "undefined") {
+			_map.createShapeFromGeometry(geometry, { description: "footprint", extraFeatureDescription: "preview"});
+			_map.fitAllFeatures();
+		}
+		var features = _map.getAllFeatures("preview").getArray();
+		if (features.length > 0 && features[0].getGeometry().getArea() > 0) {
+			var tileCounter = 0;
+			var tilesInError = 0;
+			var rasterTile = new ol.layer.Tile({
+				name: "Raster",
+				source: new ol.source.XYZ({					
+					url: baseRestApiURL + "view/tile?file="+attributes.fileInfo.relativePath+"&z={z}&x={x}&y={-y}",
+					tileLoadFunction:function(tile, src) {
+						tileCounter++;
+						var xhr = new XMLHttpRequest();
+						xhr.responseType = 'blob';
+						xhr.addEventListener('loadend', function (evt) {
+							var data = this.response;
+							if (data !== undefined) {
+								tile.getImage().src = URL.createObjectURL(data);
+							} else {
+								tile.setState(3);
+							}
+						});
+						xhr.addEventListener('error', function () {
+							tile.setState(3);
+						});
+						xhr.open('GET', src);
+						xhr.setRequestHeader("X-Auth-Token", window.tokenKey);
+						xhr.send();
+					}
+				}),
+				extent: features[0].getGeometry().getExtent()
+			});	
+			rasterTile.getSource().on("tileloaderror", function (e) {
+				if (e.tile.state === 3) { tilesInError++; }
+				if (tilesInError === tileCounter) {
+					showMsg("Unknown product format. Try another product.", "WARNING");
+				}
+			});
+			_map.map.addLayer(rasterTile);
+			_map.refreshLayerOpacity();
+		}
+	}
+	
+	function showProductOnMap(attributes) {
+		$("#mapExtent", $viewOnMap).addClass("modal-flexible");
+		
+		if (typeof attributes.geometry !== "undefined") {
+			// Geometry
+			var geometry = attributes.geometry
+							.replace('MULTIPOLYGON (((', 'POLYGON((')
+							.replace(')))', '))')
+							.replace(' ((', '((');
+			if (typeof attributes.formatType !== "undefined" && attributes.formatType.toLowerCase() === "raster") {
+				// Raster
+				displayRasterOnMap(geometry, attributes);
+			} else {
+				// Initialize map
+				var _map = window.myPolygonMap;
+				_map.createShapeFromGeometry(geometry, { extraFeatureDescription: "preview" }, true);
+				_map.fitAllFeatures();
+			}
+		}
+	}
+	
+	function clearMapContents() {
+		$("#mapExtent", $viewOnMap).removeClass("modal-flexible");
+	}
+	
+// ------ FILE CONTENTS WINDOW SECTION ------ //
+	var nbrLinesOnPage = 20;
+	var $viewFile = $("#view_file");
+		$viewFile
+			.draggableModal({
+				setContent: function (attributes) { showFileContents(attributes); closeModalsExcept([ "#view_file" ]); },
+				onClear   : function (attributes) { clearFileContents(); }
+			});
+			viewFileEventsBinding();
+			
+	function viewFileEventsBinding() {
+		$viewFile
+			.on("change", '[data-action="rp-wrap"],[data-action="rp-wheel"]', function (e) {
+				var action = $(e.currentTarget).data("action");
+				var isChecked = $(e.currentTarget).is(":checked")
+				var tooltip = "";
+				if (action == "rp-wheel") {
+					tooltip = isChecked ? 'Continuous scroll<br /><i>Normal scroll</i>' : '<i>Continuous scroll</i><br />Normal scroll';
+				} else if (action == "rp-wrap") {
+					tooltip = isChecked ? 'Text wrap<br /><i>Normal</i>' : '<i>Text wrap</i><br />Normal'
+					isChecked ? $(".content-area", $viewFile).addClass("text-wrap") : $(".content-area", $viewFile).removeClass("text-wrap");
+				}
+				var $tt = $(e.currentTarget).closest(".toggle-ctrl");
+				$tt.attr("data-original-title", tooltip);
+				$tt.bttooltip("show");
+			})
+			.on("click", ".prev,.next", function (e) {
+				var readAttr = $viewFile.data("read");
+				
+				var action = $(e.currentTarget).hasClass("prev") ? "prev" : "next";
+				var firstRead = (action == "prev" && readAttr.skip == 0);
+				
+				readAttr.skip = (action == "next") ? readAttr.skip + (nbrLinesOnPage - 2) : readAttr.skip - (nbrLinesOnPage - 2);
+				(readAttr.skip < 0) && (readAttr.skip = 0);
+				$.when(getFileContents()).done(function (response) {
+					var $textarea = $(".content-area", $viewFile);
+					$textarea.html(response || "");
+					(firstRead || action == "next") ? $textarea.scrollTop(0) : $textarea.scrollTop($textarea.get(0).scrollHeight);
+					
+					showFileControls(response || "", readAttr.skip);
+				}).fail(function (jqXHR, status, message) {
+					showFileControls("", readAttr.skip);
+				});
+			})
+			.on("mousewheel", ".content-area", function (e) {
+				var textarea = $(".content-area", $viewFile).get(0);
+				
+				var action = $('[data-action="rp-wheel"]:checked').length ? (e.originalEvent.wheelDelta < 0 ? "next" : "prev") : "none";
+				var triggerPrevAction = (action == "prev") && !$(".prev", $viewFile).prop("disabled") && (textarea.scrollTop == 0);
+				var triggerNextAction = (action == "next") && !$(".next", $viewFile).prop("disabled") && (parseInt(textarea.scrollTop + textarea.clientHeight + 1) >= textarea.scrollHeight);
+				triggerPrevAction && $(".prev", $viewFile).get(0).click();
+				
+				triggerNextAction && $(".next", $viewFile).get(0).click();
+			});
+	}
+	
+	function clearFileContents() {
+		// Clear file read parameters
+		$viewFile.removeData("read");
+		
+		// Clear read contents
+		$(".content-area", $viewFile).html("");
+	}
+	
+	function showFileContents(attributes) {
+		// Set file read parameters
+		$viewFile.data("read", {
+			"repoId": $(".tree-pane.active .tree-content", $repoPanel).data("id"),
+			"file"  : attributes?.fileInfo?.relativePath,
+			"skip"  : 0
+		});
+		
+		// Trigger first page read
+		$(".prev", $viewFile).prop("disabled", false).get(0).click();
+		
+		$('[data-action="rp-wrap"]', $viewFile).bootstrapToggle({
+			on      : '<i class="fa fa-svg fa-wrap">',
+			off     : '<i class="fa fa-svg fa-unwrap">',
+			style   : "btn-nodeop",
+			onstyle : "primary",
+			offstyle: "default"
+		});
+		$('[data-action="rp-wheel"]', $viewFile).bootstrapToggle({
+			on      : '<i class="fa fa-svg fa-wheel">',
+			off     : '<i class="fa fa-svg fa-scroll">',
+			style   : "btn-nodeop",
+			onstyle : "primary",
+			offstyle: "default"
+		});
+	}
+	
+	function showFileControls(pageText, skippedLines) {
+		// "prev" control visibility
+		var sof = (skippedLines == 0);
+		sof ? $(".prev").find("i").addClass("hidden") : $(".prev").find("i").removeClass("hidden");
+		
+		// "next" control visibility
+		eof = (typeof pageText === "string" && pageText.split(/\r\n|\r|\n/).length < nbrLinesOnPage);
+		eof ? $(".next .eof", $viewFile).removeClass("hidden").siblings().addClass("hidden") : $(".next .eof", $viewFile).addClass("hidden").siblings().removeClass("hidden");
+		
+		// Controls availability (both should be disabled when pageText is null)
+		$(".prev").prop("disabled", pageText == null || skippedLines == 0);
+		$(".next").prop("disabled", pageText == null || eof);
+	}
+	
+	function getFileContents() {
+		var readAttr = $viewFile.data("read");
+		
+		var deferred = $.Deferred();
+			// Disable file controls
+			showFileControls(null, readAttr.skip);
+			
+			// Read file contents
+			var url = baseRestApiURL + "files/read?repositoryId=" + readAttr.repoId + "&file=" + readAttr.file + "&lines=" + nbrLinesOnPage + "&skip=" + readAttr.skip;
+			$.when(ajaxGeneralCallFnc(url, {}, "GET")).done(function (response) {
+				if (response.status === responseStatus.success) {
+					deferred.resolve(response.data);
+				} else {
+					showMsg(response.message, response.status);
+					deferred.reject(null, response.status, response.message);
+				}
+			}).fail(function (jqXHR, status, message) {
+				showMsg("Failed to read the file.", "ERROR");
+				deferred.reject(jqXHR, status, message);
+			});
+		return deferred.promise();
+	}
+	
+// ------ MISCELLANEOUS SECTION ------ //
+	function closeModals(selectors) {
+		$.each(selectors || [ "#properties", "#view_on_map", "#view_file" ], function (idx, selector) {
+			$(selector).is(":visible") && $(selector).draggableModal("hide");
+		});
+	}
+	
+	function closeModalsExcept(exception_list) {
+		var selectors = [ "#properties", "#view_on_map", "#view_file" ];
+		$.each(exception_list, function (idx, selector) {
+			selectors.splice(selectors.indexOf(selector), 1);
+		});
+		closeModals(selectors);
+	}
+	
+	function restoreActionVisibility($tree) {
+		if (typeof $tree === "undefined") {
+			$(".tree-controls [data-action]").prop("disabled", true);
+			return;
+		}
+		
+		updateTransferProgress($tree);
+		
+		var $rightSelected = $(".foldercontent-item.selected", $tree);
+		var $leftSelected = $(".treeview label>a.selected", $tree);
+		var attributes = ($rightSelected.length === 1) ? $rightSelected.data("attributes") : ($leftSelected.length === 1 ? $leftSelected.data("attributes") : { fileInfo: { fileType: "" } });
+		
+		var $selectedInTree = $("a.selected", $tree);
+		var $repo = $tree.data("repo");
+		
+		if (typeof $repo !== "undefined") {
+			// MOVE FILES: cancel button is always enabled
+			$("button[data-action='rp-cancel']", $repoPanel).prop("disabled", false);
+			
+			// NEW FILE (left or right panel): is enabled only when one folder is selected in the tree and repo is read/write
+			if ($selectedInTree.length == 1 && !$repo.readOnly) {
+				$('button[data-action="rp-upload"]', $repoPanel).prop("disabled", false);
+			} else {
+				$('button[data-action="rp-upload"]', $repoPanel).prop("disabled", true);
+			}
+			
+			// NEW FOLDER (left or right panel): is enabled only when one folder is selected in the tree and repo is read/write
+			if ($selectedInTree.length == 1 && !$repo.readOnly) {
+				$('button[data-action="rp-new-folder"]', $repoPanel).prop("disabled", false);
+			} else {
+				$('button[data-action="rp-new-folder"]', $repoPanel).prop("disabled", true);
+			}
+			
+			// COPY (right panel): is enabled when at least one file or folder is selected
+			if ($rightSelected.length > 0) {
+				$('button[data-action="rp-copy"]', $repoPanel).prop("disabled", false);
+			} else {
+				$('button[data-action="rp-copy"]', $repoPanel).prop("disabled", true);
+			}
+			
+			// PASTE (left or right panel): is enabled only when one folder is selected in the tree, clipboard is not empty and repo is read/write
+			if ($selectedInTree.length == 1 && (typeof $repoPanel.data("copy") !== "undefined") && !$repo.readOnly) {
+				$('button[data-action="rp-paste"]', $repoPanel).prop("disabled", false);
+			} else {
+				$('button[data-action="rp-paste"]', $repoPanel).prop("disabled", true);
+			}
+			
+			// DELETE (right panel): is enabled only when one file or folder is selected
+			if ($rightSelected.length == 1) {
+				$('button[data-action="rp-delete-file"]', $repoPanel).prop("disabled", false);
+			} else {
+				$('button[data-action="rp-delete-file"]', $repoPanel).prop("disabled", true);
+			}
+			
+			// SHARE (right panel): is enabled only on SYSTEM repositories with at least one selected element
+			if ($rightSelected.length == 1 && $repo.system) {
+				$('button[data-action="rp-share"]', $repoPanel).prop("disabled", false);
+			} else {
+				$('button[data-action="rp-share"]', $repoPanel).prop("disabled", true);
+			}
+			
+			// CREATE PRODUCT SET (right panel): is enabled only on LOCAL repository with at least one selected element
+			if ($rightSelected.length == 1 && $repo.type == "LOCAL") {
+				$('button[data-action="rp-product-set"]', $repoPanel).prop("disabled", false);
+			} else {
+				$('button[data-action="rp-product-set"]', $repoPanel).prop("disabled", true);
+			}
+			
+			// INSPECT (left or right panel): is enabled when only one folder is selected
+			if (($rightSelected.length == 1 && attributes.fileInfo.fileType === "folder") || ($leftSelected.length == 1 && attributes.fileInfo.fileType === "folder" && $repo.name === "LOCAL")) {
+				$('button[data-action="rp-inspect-folder"]', $repoPanel).prop("disabled", false);
+			} else {
+				$('button[data-action="rp-inspect-folder"]', $repoPanel).prop("disabled", true);
+			}
+			
+			// PROPERTIES (right panel): is enabled only when one file or folder is selected
+			if ($rightSelected.length == 1) {
+				$('button[data-action="rp-properties"]', $repoPanel).prop("disabled", false);
+			} else {
+				$('button[data-action="rp-properties"]', $repoPanel).prop("disabled", true);
+			}
+			
+			// VIEW ON MAP (right panel): is enabled for single selected products (files or folders)
+			if ($rightSelected.length == 1 && $repo.urlPrefix === "file" && typeof attributes.geometry !== "undefined") {
+				$('button[data-action="rp-view-on-map"]', $repoPanel).prop("disabled", false);
+			} else {
+				$('button[data-action="rp-view-on-map"]', $repoPanel).prop("disabled", true);
+			}
+			
+			// OPEN FILE (right panel): is enabled only for files that are not products or images, with a size less than maximum allowed
+			if ($rightSelected.length == 1 && attributes.fileInfo.fileType !== "folder" && $.inArray(attributes.fileInfo.fileType.toLowerCase(), imageExtentions) < 0 && typeof attributes.geometry === "undefined" && getFileSize(attributes.fileInfo?.fileSize || "0", "GB") <= readFileMaxSizeGB) {
+				$("button[data-action='rp-open-file']", $repoPanel).prop("disabled", false);
+			} else {
+				$("button[data-action='rp-open-file']", $repoPanel).prop("disabled", true);
+			}
+			
+			// ACTIONS (not panel related): are enabled only when there are actions available
+			$(".actionsSelect", $repoPanel).html('<option class="defaultTemplate" value="" disabled selected >Actions...</option>');
+			if (typeof $repo.actions !== "undefined") {
+				// Populate Actions select for current repository
+				$.each($repo.actions, function(index, action){
+					$(".actionsSelect", $repoPanel).append('<option value = "' + action.name + '">' + action.name + '</option>');
+				});
+				$(".actionsSelect", $repoPanel).prop("disabled", false);
+			} else {
+				$(".actionsSelect", $repoPanel).prop("disabled", true);
+			}
+			
+			// REFRESH: is always enabled
+			$("button[data-action='rp-refresh']", $repoPanel).prop("disabled", false);
+		}
+	}
+	
+	function inspectFolder(attributes) {
+		var url = baseRestApiURL + "product/inspect/";
+		$.when(ajaxGeneralCallFnc(url, { "sourceDir": attributes.fileInfo.relativePath + "/" }, "POST", void 0, "application/x-www-form-urlencoded" )).done(function (response) {
+			if (response.status === "SUCCEEDED") {
+				showMsg(response.message, "SUCCESS");
+			} else {
+				showMsg("Failed to inspect element.", "ERROR");
+			}
+		});
+	}
+	
+    $("#mdlCreateProductSet").on("submit", "#frmCreateProductSet", function (e) {
+        e.preventDefault(e);  // prevent standard form submission
+
+        var form = $(this);
+        if (form.valid()) {
+
+            var $tree = $("#panel_repo_wrapper .tree-pane.active").find(".tree-content");
+            var $selected = $(".foldercontent .foldercontent-item.selected", $tree);
+
+            var formData = {
+                "label": $('input[name=label]', this).val(),
+                productPaths: []
+            };
+            $selected.each(function () {
+                var attr = $(this).data("attributes");
+                formData.productPaths.push(attr.fileInfo.relativePath)
+            });
+
+            var url = baseRestApiURL + "datasource/productset";
+            $.when(ajaxGeneralCallFnc(url, JSON.stringify(formData), "POST" )).done(function(response){
+                if(response.status === "SUCCEEDED"){
+                    showMsg("Product set successfully created", "SUCCESS");
+                }else{
+                    showMsg("Failed to create product set. " + (typeof response.message !== 'undefined' ? response.message : ''), "ERROR");
+                }
+                $("#mdlCreateProductSet").modal('hide');
+            });
+        }
+    });
+
+    $('#mdlCreateProductSet').on("shown.bs.modal", function (e) {
+        $('#txtProductSet').focus();     
+        $('#txtProductSet').keypress(function (e) {
+            if (e.keyCode === 13) {
+                e.preventDefault();
+                $("#btnCreateProductSet").click();
+            }
+        });
+    });
+
+    function createProductSet($selected) {
+        var $modal = $("#mdlCreateProductSet");
+
+        // reset form (fields & validator)
+        $('#frmCreateProductSet')[0].reset();
+        $("#frmCreateProductSet").validate().resetForm();
+        $("#frmCreateProductSet .form-control").parent().removeClass("has-error");
+
+        $modal.modal('show');
+    }
+    
+	function shareProductSet($selected, name) {
+        if(!name){
+            name =  $selected.data("file").displayName;
+        }
+
+        var url = baseRestApiURL + "files/share?workspace=" + $selected.data("workspaceId") + "&file=" + $selected.data("file").relativePath + "&name=" + name;
+        $.when(ajaxGeneralCallFnc(url, {}, "POST")).done(function(response){
+            if(response.status === "SUCCEEDED"){
+                showMsg("File successfully shared.", "SUCCESS");
+                $("#share-name-content").modal('hide');
+            }else{
+                showMsg(response.message, response.status);
+            }
+        });
+
+    }
+
+    function viewSharePopUp($selected){
+        var $modal = $("#share-name-content");
+        $modal.find(".content_area").val($selected.data("file").displayName);
+        $modal.modal('show');
+	}
+
+    $("#share-btn").on("click", function(e){
+        var $modal = $("#share-name-content");
+        var name = $modal.find(".content_area").val();
+        shareProductSet($sharedPathCopy, name);
+    });
+
+	$(".tab-content").on("click", ".treeview a", function (e) {
+		e.preventDefault();
+		
+		var $tree = $(e.target).closest(".tree-content");
+		$("a.selected", $tree).removeClass("selected");
+		$(this).addClass("selected");
+		
+		$.when(loadFolderContent($tree, $(this).data("attributes")))
+			.done(function () {
+				restoreActionVisibility($tree);
+				closeModals();
+			});
+	});
+	
+    function setContentSelected($elements){
+        $.each($elements, function(idx, element){
+            if(!$(element).hasClass("selected")){
+                $(element).addClass("selected");
+                $(element).removeData("countClick");
+            }
+        });
+    }
+
+    $(".tab-content").on("click", ".foldercontent .foldercontent-item", function (e) {
+        e.preventDefault();
+
+        var $foldercontent = $(e.target).closest(".foldercontent");
+        if (e.ctrlKey) {
+            $(this).toggleClass("selected");
+            if ($(this).hasClass("selected")) {
+                $foldercontent.data("lastSelectedItem", $(this));
+            }
+        }
+        else if (e.shiftKey && e.which == 1)
+        {
+            var $lastSelectedItem = $foldercontent.data("lastSelectedItem");
+            if ($lastSelectedItem != null) {
+                var lastSelectedIndex = $lastSelectedItem.index();
+                var crtIndex = $(this).index();
+
+                $(".foldercontent-item.selected", $foldercontent).removeClass("selected");
+
+                setContentSelected($lastSelectedItem);
+
+                if (lastSelectedIndex < crtIndex) {
+                    setContentSelected($lastSelectedItem.nextUntil($(this), ".foldercontent-item:not(.selected)"));
+                }
+                else {
+                    setContentSelected($lastSelectedItem.prevUntil($(this), ".foldercontent-item:not(.selected)"));
+                }
+                setContentSelected($(this));
+            }
+            else {
+                //select from begining
+                var $firstElement = $(".foldercontent-item", $foldercontent).first();
+
+                setContentSelected($firstElement);
+                setContentSelected($firstElement.nextUntil($(this), ".foldercontent-item:not(.selected)"));
+
+                $(this).addClass("selected");
+            }
+        }
+        else {
+            $(".foldercontent-item.selected", $foldercontent).not(this).removeClass("selected");
+            setContentSelected($(this));
+            //$(this).addClass("selected");
+            $foldercontent.data("lastSelectedItem", $(this));
+        }
+
+        var $tree = $(this).closest(".tree-content");
+        restoreActionVisibility($tree);
+        closeModals();
+    });
+
+    $(".tab-content").on("dblclick", ".foldercontent .foldercontent-item", function (e) {
+        e.preventDefault();
+
+        var $tree = $(e.target).closest(".tree-content");
+        var tree_data = $tree.data();
+
+        var attributes = $(this).data("attributes");
+        if (attributes && attributes.fileInfo.fileType === "folder") {
+
+            $(".foldercontent", $tree).html("");
+            $(".foldercontent", $tree).text("Loading ");
+            $(".foldercontent", $tree).addClass("loading");
+
+            //expand parent
+            var parentRelPath = attributes.fileInfo.relativePath.substring(0, attributes.fileInfo.relativePath.lastIndexOf("/"));
+            if (parentRelPath !== "") {
+                var parentId = "tree_" + tree_data.id + "_" + parentRelPath;
+                var $parentChk = $('input[id="' + parentId + '"]');
+                $parentChk.prop('checked', true);
+
+                var parentAttributes = $parentChk.siblings("label").find("a").data("attributes");
+                $.when(refreshTree($tree, parentAttributes))
+                    .done(function () {
+
+                        var elementId = "tree_" + tree_data.id + "_" + attributes.fileInfo.relativePath;
+                        var $elementChk = $('input[id="' + elementId + '"]');
+                        $elementChk.siblings("label").find("a").click();
+                    });
+            } else {
+                var elementId = "tree_" + tree_data.id + "_" + attributes.fileInfo.relativePath;
+                var $elementChk = $('input[id="' + elementId + '"]');
+                $elementChk.siblings("label").find("a").click();
+            }
+            restoreActionVisibility($tree);
+        }
+    });
+
+    //clear selection when clicking outside items
+    $(".tab-content").on("click", ".foldercontent", function (e) {
+        if ($(e.target).closest(".foldercontent-item").length == 0) {
+            $(".foldercontent-item.selected", $(this)).removeClass("selected");
+            $(this).data("lastSelectedItem", null);//no selection
+            var $tree = $(this).closest(".tree-content");
+            restoreActionVisibility($tree);
+            closeModals();
+        }
+    });
+	
+	$(".tab-content").on("dblclick", ".back-one-folder", function (e) {
+		var $tree = $(this).closest(".tree-content");
+		var tree_data = $tree.data();
+		
+		var folderParent = $(".foldercontent", ".tab-pane.tree-pane.active").data("parent");
+		var elementId = "tree_" + tree_data.id + "_" + folderParent;
+		var $elementChk = $('input[id="' + elementId + '"]');
+		$elementChk.siblings("label").find("a").click();
+	});
+	
+	$("#panel_repo_wrapper .tab-content").on("click", ".full-screen", function (e) {
+		e.stopPropagation();
+		$(this).remove();
+	});
+	
+//# sourceURL=browse-files.js
+</script>
+
+<script type="text/javascript">
+	window.myPolygonMap = { mapActive: false };
+    // === START ======================================================================================
+	
+    function doActionSelected($tree,actionName, itemPath1, itemPath2){
+        if(typeof itemPath2 === "undefined" ){
+
+            var url = baseRestApiURL + "files/action?action=" + actionName + "&item=" + itemPath1;
+            $.when(ajaxGeneralCallFnc(url, {}, 'POST')).done(function(response){
+            if(response.status === "SUCCEEDED"){
+                showMsg("Action successfully started.", "SUCCESS");
+                window.panelComp.refreshData();
+                refreshTree($tree);
+            }else{
+                showMsg("Action error.", "FAIL");
+            }
+        });
+
+        } else {
+          
+            var url = baseRestApiURL + "files/action?action=" + actionName + "&item=" + itemPath1 + "&destination=" + itemPath2;
+            $.when(ajaxGeneralCallFnc(url, {}, "POST")).done(function(response){
+            if(response.status === "SUCCEEDED"){
+                showMsg("Action successfully started.", "SUCCESS");
+                window.panelComp.refreshData();
+                refreshTree($tree);
+            }else{
+                showMsg(response.message, "FAIL");
+            }
+        });
+
+        }
+    }
+	
+    function renameItem($tree, newName, $item){
+        var url = baseRestApiURL + "files/rename?item="+ $item.data("file").relativePath + "&name=" + newName;
+        $.when(ajaxGeneralCallFnc(url, {}, 'POST')).done(function(response){
+            if(response.status === "SUCCEEDED"){
+                showMsg("Renamed successfully.", "SUCCESS");
+                window.panelComp.refreshData();
+                refreshTree($tree);
+            }else{
+                showMsg("Rename Error", "FAIL");
+            }
+        });
+    }
+	
+    //not used 
+    function updateDownloadStatistics(once, repoId) {
+	    var filter,url;
+	    if (repoId === undefined) {
+	        url = baseRestApiURL + "progress?category=transfer";
+        } else {
+            filter = {name:'Repository',value:repoId};
+	        url = baseRestApiURL + "progress?category=transfer&filter=" + btoa(JSON.stringify(filter));
+        }
+		$.ajax({
+            cache    : false,
+			url      : url,
+            dataType : 'json',
+            type     : 'GET',
+            headers  : {
+                "Accept"      : "application/json",
+                "Content-Type": "application/json",
+                "X-Auth-Token": window.tokenKey
+            }
+		}).done(function (result) {
+			var res = chkTSRF(result);
+			
+			var totPrc = 0
+			var cnt = 0;
+			$(".statistics .progress").html("");
+			var $bar = "";
+			if (res.length > 0) {
+				res.sort(function (a, b){
+					if (a.name.toLowerCase() > b.name.toLowerCase()) { return 1; }
+					if (a.name.toLowerCase() < b.name.toLowerCase()) { return -1; }
+					return 0;
+				});
+				
+				$.each(res, function (index, resource) {
+					//$bar = $('<div class="progress-bar progress-bar-success" role="progressbar" data-toggle="tooltip" title="" data-placement="bottom" onmouseover="$(this).tooltip({content:\'In progress\',show:true});">' + '</div>'); //+ resource.name + '</div>');
+					//$bar.attr("title", parseInt(resource.progress*100) + "%");
+					//$bar.css({ width: parseInt(resource.progress*100) + "%" });
+					//$(".statistics .progress").append($bar);
+					
+					totPrc += resource.progress;
+					cnt ++;
+				});
+				$bar = $('<div class="progress-bar progress-bar-info" data-toggle="tooltip" title="" data-placement="bottom" onmouseover="$(this).tooltip({content:\'In progress\',show:true});">Overall operation progress (' + Math.ceil(totPrc) + ' of ' + cnt + ')</div>');
+				//$bar.attr("title", parseInt(totPrc*100/cnt) + "%");
+				$bar.css({ width: parseInt(totPrc*100/cnt) + "%" });
+			} else {
+				$bar = $('<div class="progress-bar progress-bar-info" data-toggle="tooltip" title="" data-placement="bottom" onmouseover="$(this).tooltip({content:\'Operations in progress\',show:true});">No operation in progress</div>');
+				$bar.attr("title", "");
+				$bar.css({ width: "100%" });
+			}
+			$(".statistics .progress").prepend($bar);
+		}).fail(function (jqXHR, textStatus) {
+		});
+	} 
+	
+    function updateTransferProgress($el){
+        // put the dafault bar
+        $(".statistics .progress").html("");
+        $bar = $('<div class="progress-bar progress-bar-info" data-toggle="tooltip" title="" data-placement="bottom">No operation in progress</div>');
+        $bar.css({ width: "100%" });
+        $(".statistics .progress").prepend($bar);
+
+        // on receiving a message and being in a pane
+        $el.on("wsmessage", function (e, wsdna) {
+            
+            if (typeof $("div.tree-content", ".tab-pane.tree-pane.active").data() !== 'undefined' && $("div.tree-content", ".tab-pane.tree-pane.active").data().id == wsdna.data.Repository){
+                
+                var downloadValue = 0;
+                var $bar = "";  
+
+                // clear pane
+                $(".statistics .progress").html("");
+
+                if( wsdna.data.Payload.search("Start transfer") >= 0){
+                    $bar = $('<div class="progress-bar progress-bar-info" data-toggle="tooltip" title="In progress" data-placement="bottom">Overall operation progress ( ' + parseInt(downloadValue*100) + "%" + ')</div>');
+                    $bar.css({ width: parseInt(downloadValue*100) + "%" });
+                }else{
+                    if((wsdna.data.Payload.search("Completed transfer") >=0 ) || (wsdna.data.Payload === 'true' || wsdna.data.Payload === 'false')){
+                        $bar = $('<div class="progress-bar progress-bar-info" data-toggle="tooltip" title="" data-placement="bottom">No operation in progress</div>');
+                        $bar.css({ width: "100%" });
+                    }else{
+                        // if it is not a simple message (ex name:procentage)
+                        if(wsdna.data.Payload.split(" ").length != 1){
+                            var arrayWords = wsdna.data.Payload.split(" ");
+
+                            // take the procentage of the file
+                            downloadValue = parseFloat(arrayWords.at(-1));
+                        }else{
+                            // take the procentage of the file
+                            var resourceName = wsdna.data.Payload.split(":")[0]
+                            downloadValue = parseFloat(wsdna.data.Payload.split(":").at(-1));
+                        }
+                    
+                        // display percentage
+                        // overall progress (modified to instead show percentage)
+                        $bar = $('<div class="progress-bar progress-bar-info" data-toggle="tooltip" title="In progress" data-placement="bottom">Overall operation progress ( ' + parseInt(downloadValue*100) + "%" + ')</div>');
+                        $bar.css({ width: parseInt(downloadValue*100) + "%" });
+                    }
+                }
+                // append the bar
+                $(".statistics .progress").prepend($bar);
+            }
+            // update progress
+            $(document).trigger("quota:update");
+        });
+    }
+	
+	function bindPaneTransfer($el, repoId) {
+		$el.attr("ws-id", "transfer|" +  repoId);
+		updateTransferProgress($el);
+	}
+	
+	function createRepositoryTab(repo) {
+		var $tabPane = $("#tab_pane_template").clone().removeClass("hidden").attr({ "id": "repository_" + repo.id });
+		
+		// bind pane
+		bindPaneTransfer($tabPane, repo.id);
+		
+		$(".tab-content", $repoPanel).append($tabPane);
+		Split([$(".foldertree", $tabPane)[0], $(".foldercontent", $tabPane)[0]], {
+			sizes: [25, 75],
+			direction: 'horizontal',
+			cursor: 'col-resize',
+			gutterSize: 9,
+		});
+		
+		// Tree content
+		var $tree = $(".tree-content", $tabPane);
+		$tree.data({
+			"id": repo.id,
+			"url_base": baseRestApiURL + "files/browse?workspace=" + repo.id + "&",
+			"folder": "/",
+			"repo": repo
+		});
+		restoreActionVisibility();
+		$.when(refreshTree($tree)).done(function () {
+			// Select root folder
+			$("a.selected", $tree).removeClass("selected");
+			var $root = $(".treeview a", $tree).first();
+			$root.addClass("selected");
+			$(".foldertree .selected", $tree).parent().siblings(".loading").removeClass("loading");
+			restoreActionVisibility($tree);
+		});          
+	}
+	
+	function createTab(repo) {
+		// Tab Creation
+		$('[name="selectActivePanel"]', $repoPanel).append('<option class="role" value="browse_repository_' + repo.id + '" data-target="#repository_' + repo.id + '">' + repo.name + ' </option>');
+		var $a = $('<a href="#repository_' + repo.id + '" data-toggle="tab" data-action="browse_repository_' + repo.id + '" aria-expanded="false">' + repo.name + '</a>');
+		$a.data("repo", repo);
+		var $li = $('<li class="role"></li>');
+		$li.append($a);
+		$(".nav-pills.hidden-xs", $repoPanel).append($li);
+	}
+	
+	function deleteRepositoryTab(repo) {
+		// Tab Cleanup
+		$('[data-target="#repository_'       + repo.id + '"]', $repoPanel).remove();
+		$('[data-action="browse_repository_' + repo.id + '"]', $repoPanel).remove();
+		$("#repository_" + repo.id, $repoPanel).remove();
+	}
+	
+	function deleteRepository(repo) {
+		var url = baseRestApiURL + "workspace/" + repo.id + "/";
+		$.when(ajaxGeneralCallFnc(url, {}, "DELETE", "json")).done(function (response) {
+			if (response.status === "SUCCEEDED") {
+				showMsg("Repository successfully deleted.", "SUCCESS");
+			} else {
+				showMsg("Could not delete the repository.", "FAIL");
+			}
+			window.panelComp.refreshData();
+		});
+	}
+	
+    function myModalNodesOpShow(operationid, args) {
+        var $modal = $("#myModalNodes");
+
+        $(".modal-dialog", $modal).removeClass("modal-lg");
+        var rm_contentUrl = '';
+        var rmContent = '';
+        window.userOpStack = [];
+
+        if (operationid === "rp-plus") {
+            window.userOpStack = [{ "action": operationid }];
+            rm_contentUrl = "./fragments/repositories-plus.fragment.html?" + Math.random();
+        } else if (operationid === "rp-edit") {
+            window.userOpStack = [{ "dna": args, "action": operationid }];
+            rm_contentUrl = "./fragments/repositories-plus.fragment.html?" + Math.random();
+        }
+
+        if (rm_contentUrl !== '') {
+            $.ajax({
+                url: rm_contentUrl,
+                success: function (result) {
+                    rmContent = result;
+                    if (rmContent !== '') {
+                        $modal.find('.modal-dialog').html(rmContent);
+
+                    } else {
+                        alert("Could not retrive needed data from server.");
+                        return e.preventDefault();
+                    }
+                    $modal.modal('show');
+                }
+            });
+        }
+    }
+	
+    function copyFiles($tree, orig, dest) {
+        var tData = {
+            "sourceWorkspace": orig.repo.id,
+            "fileObjects": orig.files,
+            "destinationWorkspace": dest.repo.id,
+            "destinationPath": dest.relativePath
+        }
+
+        var url = baseRestApiURL + "files/transfer/";
+        $.when(ajaxGeneralCallFnc(url, JSON.stringify(tData), 'POST')).done(function(response){
+            if(response.status === "SUCCEEDED"){
+                if (dest.relativePath.endsWith("/")) {
+                     dest.relativePath = dest.relativePath.substring(0, dest.relativePath.length - 1);
+                }
+                var $destChk = $('input[id="tree_' + dest.repo.id + "_" + dest.relativePath + '"]', $tree);
+                var $destAttributes = $destChk.siblings("label").find("a").data("attributes");
+
+                $.when(refreshTree($tree, $destAttributes))
+                    .done(function () {
+                        //click destination to reload
+                        $('input[id="tree_' + dest.repo.id + "_" + dest.relativePath + '"]', $tree).siblings("label").find("a").click();
+                    })
+            }else{
+                showMsg('Failed to transfer files', "FAIL");
+            }
+        });
+    }
+	
+    function makeNewFolder($tree, dest, filename) {
+        var data = {
+                "workspace": dest.repo.id,
+                "folder": (dest.relativePath + "/" + filename).replace("//", "/")
+            };
+        var url = baseRestApiURL + "files/folder/";
+        
+        $.when(ajaxGeneralCallFnc(url, data, "POST", undefined, "application/x-www-form-urlencoded")).done(function(response){
+            if(response.status === "SUCCEEDED"){
+                showMsg("New folder created.", "SUCCESS");
+
+                if (dest.relativePath.endsWith("/")) {
+                    dest.relativePath = dest.relativePath.substring(0, dest.relativePath.length - 1);
+                }
+                var $destChk = $('input[id="tree_' + dest.repo.id + "_" + dest.relativePath + '"]', $tree);
+                var $destAttributes = $destChk.siblings("label").find("a").data("attributes");
+
+                $.when(refreshTree($tree, $destAttributes))
+                    .done(function () {
+                        //click destination to reload
+                        $('input[id="tree_' + dest.repo.id + "_" + dest.relativePath + '"]', $tree).siblings("label").find("a").click();
+                    });
+            }else{
+                showMsg("Failed to create new folder.", "FAIL");
+            }
+        });
+    }
+	
+    function deleteFile($tree, dest) {
+
+        var url = baseRestApiURL + "files/?workspace=" + dest.repo.id + "&file=" + escape(dest.relativePath);
+        $.when(ajaxGeneralCallFnc(url, {}, 'DELETE')).done(function(response){
+            if(response.status === "SUCCEEDED"){
+                showMsg("File deleted.", "SUCCESS");
+
+                var parentRelPath = dest.relativePath;
+                if (parentRelPath.endsWith("/")) {
+                    parentRelPath = parentRelPath.substring(0, parentRelPath.length - 1);
+                }
+                parentRelPath = parentRelPath.substring(0, parentRelPath.lastIndexOf("/"));
+
+                var parentId = "tree_" + dest.repo.id + "_" + parentRelPath;
+                var $parentChk = $('input[id="' + parentId + '"]');
+                var $parentAttributes = $parentChk.siblings("label").find("a").data("attributes");
+
+                $.when(refreshTree($tree, $parentAttributes))
+                    .done(function () {
+                        //click parent to reload
+                        $('input[id="tree_' + dest.repo.id + "_" + parentRelPath + '"]', $tree).siblings("label").find("a").click();
+                    });
+
+            }else{
+                showMsg("Failed to delete file.", "FAIL");
+            }
+        });
+    }
+	
+    function deleteItem($tree, dest) {
+        var err = "";
+        var url = baseRestApiURL + "files/?workspace=" + dest.repo.id + "&file=" + escape(dest.relativePath);
+        $.when(ajaxGeneralCallFnc(url,{}, 'DELETE' )).done(function(response){
+            if(response.status === "SUCCEEDED"){
+ 
+            }else{
+                err = "Failed to delete item: " + dest.relativePath + "</br>";
+                showMsg(response.message, "FAIL");
+            }
+        });
+        return err;
+    }
+	
+    function refreshFolderAfterDelete($tree, dest) {
+        var parentRelPath = dest.relativePath;
+                    if (parentRelPath.endsWith("/")) {
+                        parentRelPath = parentRelPath.substring(0, parentRelPath.length - 1);
+                    }
+                    parentRelPath = parentRelPath.substring(0, parentRelPath.lastIndexOf("/"));
+
+                    var parentId = "tree_" + dest.repo.id + "_" + parentRelPath;
+                    var $parentChk = $('input[id="' + parentId + '"]');
+                    var $parentAttributes = $parentChk.siblings("label").find("a").data("attributes");
+
+                    $.when(refreshTree($tree, $parentAttributes))
+                        .done(function () {
+                            //click parent to reload
+                            $('input[id="tree_' + dest.repo.id + "_" + parentRelPath + '"]', $tree).siblings("label").find("a").click();
+                        });
+        $(document).trigger( "quota:update" );
+    }
+	
+    // === UPLOAD SECTION =============================================================================
+	
+	function bytesFromSizeUnits(sizeUnits) {
+		// Get size in bytes from sizeUnits. Ex: 100 MB -> 104857600
+		if (sizeUnits) {
+			var size = parseFloat(sizeUnits.substr(0, sizeUnits.length - 2));
+			var unit = sizeUnits.substr(sizeUnits.length - 2).toUpperCase();
+			switch (unit) {
+				case "KB": size *= 1024; break;
+				case "MB": size *= 1024*1024; break;
+				case "GB": size *= 1024*1024*1024; break;
+				case "TB": size *= 1024*1024*1024*1024; break;
+				default  : size = 0; break;
+			}
+		return size;
+		} else {
+			return false;
+		}
+	}
+	
+	function formatSizeUnits(bytes) {
+		// Format size in sizeUnits. Ex: 131334144 -> 125.25 MB
+	   if (bytes) {
+		   var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+		   if (bytes == 0) return '0 Bytes';
+		   var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+		   var size = bytes / Math.pow(1024, i)
+		   return size.toFixed(2) + ' ' + sizes[i];
+	   } else {
+		return false;
+	   }
+	}
+	
+    function uploadFile ($tree) {	
+		var $modal = $("#myModalUpload");
+		// reset upload dialog contents
+		$(".upload-content", $modal).show();
+		$(".upload-message", $modal).hide();
+
+        $modal.find(".extra-files-container>input[type='file']").each(function(){
+            $(this).remove();      
+        });
+		
+		// reset form (fields & validator)
+		$('#frmUploadFile')[0].reset();
+		$("#frmUploadFile").validate().resetForm();
+		$("#frmUploadFile .form-control").parent().removeClass("has-error");
+
+        var $folder = $(".treeview a.selected", $tree);
+		if ($folder.length > 0 && typeof $folder.data("attributes").fileInfo.relativePath !== "undefined") {
+			var fileInfo = $folder.data("attributes").fileInfo;
+			if (fileInfo.fileType == "folder") {
+				$("#frmUploadFile p.path").html("/" + fileInfo.relativePath + "/").attr("title", "/" + fileInfo.relativePath + "/");
+				
+				// show upload dialog
+				$modal.modal('show');				
+				return true;
+			}
+		}
+		showMsg("The file could not pe uploaded.<br/>Please select a valid folder and try again.", "INFO");
+		$modal.modal('hide');
+	}
+	
+	$("#frmUploadFile input[name='file']").on("change", function() {
+		$(this).valid();
+	});
+	
+	$.validator.addMethod("regex", function (value, element, regexp) {
+		return this.optional(element) || regexp.test(value) || element.disabled;
+	}, "Please enter a valid path.");
+	
+	$.validator.addMethod("filesize", function (value, element, param) {
+		return this.optional(element) || (element.files[0].size <= param);
+	}, 'File size must be less than ' + maxFileSizeUnits );
+	
+	$("#frmUploadFile").validate({
+		rules: {
+			file     : { required: true, filesize: bytesFromSizeUnits(maxFileSizeUnits) },
+			desc     : { required: false }
+			//subfolder: {
+			//	required: function () { return $("#chkSubfolder").is(":checked"); },
+			//	regex   : /^(?![\.\/\\])((?![<>:"\\|?*]|(\/\/)).)*[^\.\/<>:"\\|?*]$/
+		 //  }
+		},
+		highlight: function(element, errorClass) {
+			$(element).parent().addClass("has-error");
+		},
+		unhighlight: function(element, errorClass) {
+			$(element).parent().removeClass("has-error");
+		},
+		errorPlacement: function(error, element) {
+			error.appendTo(element.parent());
+		},
+		success: function(label) {
+			label.remove();
+		}
+	});
+	
+	function showUploadMessage(message, error) {
+		$("#frmUploadFile .upload-message").html("<h4>" + message + "</h4>");
+		if (!error) {
+			$("#frmUploadFile .upload-message").removeClass("error");
+			$("#frmUploadFile .upload-content").hide("slow");
+		} else {
+			$("#frmUploadFile .upload-message").addClass("error");
+		}
+		$("#frmUploadFile .upload-message").show("slow");
+	}
+	
+	$("#frmUploadFile").submit(function (event) {
+		event.preventDefault();
+		
+		if ($(this).valid()) {
+            var $tree = $($(".tree-content:visible").get(0));
+            var $folder = $(".treeview a.selected", $tree);
+			if ($folder.length > 0 && typeof $folder.data("attributes").fileInfo.relativePath !== "undefined") {
+				var attributes = $folder.data("attributes");
+				var uploadPath = attributes.fileInfo.relativePath;
+				uploadPath = uploadPath.replace(/^(\/)|(\/)$/, "");																		// remove shashes in front and at the end
+				
+				$("input[name='folder']", this).val(uploadPath);
+				var formData = new FormData(this);
+				var xhr = new XMLHttpRequest();
+				xhr.open("POST", baseRestApiURL + "files/upload/", true);
+				xhr.responseType = "json";
+				xhr.setRequestHeader("X-Auth-Token", tokenKey);
+				
+				xhr.upload.onprogress = function (e) {
+					if (e.lengthComputable) {
+						var percentComplete = (e.loaded / e.total) * 100;
+						// console.log(percentComplete + '% uploaded');
+					}
+				};
+				xhr.onload = function (e) {
+					if (this.status == 200) {
+						var data = this.response;
+						
+						// Fix for IE not honoring responseType 'json' when the requested data is not of 'json' type
+						if (detectIE()) {
+							if (data.status == undefined && typeof(data) === "string") {
+								// Force JSON parse in IE
+								data = JSON.parse(data);
+							}
+						}
+						if (!data || typeof data.status === "undefined") {
+							// Inconclusive response from server
+							showUploadMessage("Operation failed. Please try again or contact app admin.", true);
+						} else if (data.status == responseStatus.success) {
+                            showMsg("File successfully uploaded.", "SUCCESS");
+                            $folder.click();//refresh current folder
+                            $("#myModalUpload").modal('hide');
+						} else {
+                            if(data.message === "Invalid parameters provided for adding new entity of type AuxiliaryData!"){
+                                showUploadMessage("A file with this name already exists.", data.status);
+                            }else{
+							    showUploadMessage(data.message, true);
+                            }
+						}
+					} else {
+						// Failed to connect to server
+                        var errMessage = (this.response != null ? this.response.error : "");
+						showUploadMessage("Operation failed.<br/>" + errMessage, true);
+					}
+				}
+				xhr.onerror = function (e, x, y) {
+					// Failed to connect to server
+					showUploadMessage("Operation failed. Please try again or contact app admin.", true);
+				}
+				xhr.send(formData);
+			} else {
+				showUploadMessage("Unable to locate the selected path for upload.<br/>Please try again or contact app admin.", true);
+			}
+		}
+		return false; // To avoid actual submission of the form
+	});
+	
+    $(document).ready(function () {
+
+        $("#selection-row").hide();
+
+        if(!$("#myModalUpload").ariaHidden){
+
+            $(".add-extra-folder").on("click",function (e) {
+                var $elX = $(this).closest(".form-group").parent();
+                $elX.find(".extra-files-container").append('<input type="file" name="file" aria-required="true" aria-invalid="false" class="form-control" webkitdirectory mozdirectory msdirectory odirectory directory>');
+            });
+
+            $(".add-extra-file").on("click", function (e) {
+                var $elX = $(this).closest(".form-group").parent();
+                $elX.find(".extra-files-container").append('<input type="file" multiple class="form-control" name="file" aria-required="true" aria-invalid="false">');
+            });
+
+            $(".upload-content").on("click",".extra-files-container>input[type='file']", function (e) {
+                if (e.offsetX > e.target.offsetWidth) {
+                    e.preventDefault();
+                    $(this).remove();
+                }
+            });
+  
+        }
+
+		var $selectActivePanel = $("#selectActivePanel");
+        var urls = [ baseRestApiURL + "workspace/" ];
+		var actionsSet = {
+			"manage_repositories": { badgeLabel: "Manage Repositories", pagLabel: "repositories", emptyLabel: "repository", url: urls[0] },
+			
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
+				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+				$(".top-controls .search-container").attr("data-original-title", "Search " + (actionsSet[action]?.emptyLabel || action));
+			}
+			return selected;
+		};
+		window.panelComp = $('#panel_repo_wrapper').npPaginatedCells({
+			headerUser: taoUserProfile.username,
+			url: urls,
+			viewMode: preferences.viewMode,
+			filterAttribute: "name",
+			//order: [{ "label": "ID ascending", "objAttributeName": "strId", "direction": "ASC" },
+			//{ "label": "ID descending", "objAttributeName": "strId", "direction": "DSC" },
+			//{ "label": "Name ascending", "objAttributeName": "name", "direction": "ASC" },
+			//{ "label": "Name descending", "objAttributeName": "name", "direction": "DSC" }],
+			doDataPreprocessing: function (data, sets) {
+				var activeSet = getActiveSet(data, sets);
+				$.each(activeSet, function (index, elX) {
+					elX.tags = [elX.type];
+					elX.strId = elX.id.toString().padStart(10, "0");
+					elX.userId = window.taoUserProfile.id;
+					elX.visibility = elX.readOnly ? "read only" : "writable";
+					if( typeof $('[data-action="browse_repository_' + elX.id + '"]')[0] === "undefined"){
+						createTab(elX);
+					}
+				});
+				return activeSet;
+			},
+			doCustomRender: function ($el, data) {
+				var params = "";
+				$.each(data.parameters, function (idx, param) {
+					params += '<label>' + idx + ':<span>' + (idx.indexOf(".key") >= 0 || idx.indexOf(".password") >= 0 ? "*****" : param) + '</span></label>';
+				});
+				$(".val-parameters", $el).html(params);
+				if (data.system) {
+					$("[data-action='rp-edit']", $el).prop("disabled", true);
+					$("[data-action='rp-delete']", $el).prop("disabled", true);
+				}
+				
+				var $toggle = $('[data-toggle="toggle"]', $el);
+				data.persistent && $toggle.prop("checked", true);
+				if (data.visibility === "writable") {
+					$toggle.bootstrapToggle({
+						on     : '<i class="fa fa-check">',
+						off    : "OFF",
+						style  : "btn-nodeop",
+						onstyle: "success"
+					});
+					data.persistent && $toggle.prop("disabled", true) && $(".toggle", $el).prop("title", "This repository will hold the results of workflows executions");
+					!data.persistent && $(".toggle", $el).prop("title", "Set as default repository to hold the results of workflows executions");
+				} else {
+					$toggle.remove();
+				}
+			},
+			doAction: function (action, args) {
+				if (action === "rp-delete") {
+					if (args.dna.system) {
+						showMsg("You are not allowed to delete system repositories.", "ERROR");
+					} else {
+						$('#confirm-dialog').modal('confirm', {
+							msg: "Are you sure you want to delete the repository: <strong>" + args.dna.name + "</strong>?",
+							callbackConfirm: function () { deleteRepository(args.dna); },
+							callbackCancel: function () { }
+						});
+					}
+				} else if (action === "rp-browse") {
+					$("select", $selectActivePanel).val("browse_repository_" + args.dna.id).eq(0).change();
+				} else {
+					// Actions with pop-up modal window
+					myModalNodesOpShow(action, (typeof args === "undefined") ? args : args.dna);
+				}
+			}
+		});
+		
+		$selectActivePanel
+		// Change active tab (using the tab controls)
+		.on("click", '[data-toggle="tab"][aria-expanded="false"]', function (e) {
+			var action = $(this).data("action");
+			e.originalEvent && $("select", e.delegateTarget).val(action);
+			
+			// Cleanup
+			closeModals();
+			
+			// Browse Repository
+			if (action.startsWith("browse_repository")) {
+				var $repoPane = $(e.currentTarget.hash, $repoPanel);
+				// Rendered
+				if ($repoPane.length) {
+					// Fully rendered
+					if ($(".tree-content .gutter.gutter-horizontal", $repoPane).size() === 1) {
+						restoreActionVisibility($(".tree-content", $repoPane));
+					}
+					
+				// Not rendered
+				} else {
+					createRepositoryTab($(this).data("repo"));
+				}
+				
+			// Manage Repositories
+			} else {
+				urls = (urls.length == 0) ? $.map(actionsSet, function (set, idx) { return set.url; }) : [ actionsSet[action].url ];
+				window.panelComp.refreshData(urls);
+			}
+		})
+		// Change active tab (using the combobox)
+		.on("change", "select", function (e) {
+			$('a[data-action="' + this.value + '"]', e.delegateTraget).eq(0).click();
+		})
+		// Show or hide specific toolbar icons when active tab changes
+		.on("shown.bs.tab", '[data-toggle="tab"][aria-expanded]', function (e) {
+			// Toggle visibility of specific toolbar icons
+			var action = $(e.currentTarget).data("action");
+			action.startsWith("browse_repository") && (action = "browse_repository");
+			$('[data-showwhen]', $repoPanel).addClass("hidden").filter('[data-showwhen="' + action + '"]').removeClass("hidden");
+			
+			adjustTreeHeight();
+		});
+		
+        $repoPanel.on("change", '[data-action="rp-persist"]', function (e) {
+			if (e.currentTarget.checked) {
+                var url = baseRestApiURL + "files/persistent?workspaceId=" + $(e.currentTarget).closest(".node-root").data("dna").id;
+                $.when(ajaxGeneralCallFnc(url, {}, "POST")).done(function (response) {
+                    if (response.status === "SUCCEEDED") {
+                        showMsg(response.data, "SUCCESS");
+                        window.panelComp.refreshData();
+                    } else {
+                        showMsg("Failed to set the default repository.", "ERROR");
+                    }
+					window.panelComp.refreshData();
+                }).fail(function (jqXHR, status, message) {
+					showMsg("Failed to set the default repository.", "ERROR");
+					window.panelComp.refreshData();
+				});
+            }
+        });
+// ------ Actions ------ //
+        $repoPanel.on("click", ".tree-controls .btn-master-tool", function (e) {
+			//var $tree = $(this).closest(".tree-pane").find(".tree-content");
+            var $tree = $(".tree-pane.active .tree-content", e.delegateTarget);
+			
+            var tree_data = $tree.data();
+
+			var $rightSelected = $(".foldercontent .foldercontent-item.selected", $tree);
+			var $leftSelected = $(".treeview label>a.selected", $tree);
+			
+            var $selected = $rightSelected.size() > 0 ? $rightSelected : $leftSelected;
+            var $selectedParent = $(".treeview a.selected", $tree);
+
+            var action = $(this).data("action");
+            switch (action) {
+                case "rp-copy":
+                    var files = [];
+                    $.each($selected, function () {
+                        files.push($(this).data("file"));
+                    });
+                    $repoPanel.data("copy", { "repo": tree_data.repo, "files": files });
+                    restoreActionVisibility($tree);
+                    break;
+                case "rp-paste":
+                    var orig = $repoPanel.data("copy");
+                    var dest = false;
+                    if ($selectedParent.length > 1) {
+                        showMsg("Please only select one destinaton.", "WARNING");
+                    } else if ($selectedParent.length == 1 && !$selectedParent.data("file").folder) {
+                        showMsg("Please select a folder.", "WARNING");
+                    } else {
+                        dest = { repo: tree_data.repo, relativePath: ($selectedParent.length == 0 ? tree_data.folder : $selectedParent.data("file").relativePath) }
+                    }
+                    if (dest != false) {
+                        // Transfer
+                        var msg = '<h4>Copy file?</h4><br />Origin:<br />';
+                        $.each(orig.files, function (idx, file) { msg += ' - <b class="' + (file.folder ? "folder" : "file") + '">' + orig.repo.name + ': ' + file.relativePath + '</b><br />'; });
+                        msg += '<br />Destination:<br /><b class="folder">' + dest.repo.name + ": " + dest.relativePath + '</b>';
+
+                        $('#confirm-dialog .modal-dialog').addClass("modal-lg");
+                        $('#confirm-dialog').modal('confirm', {
+                            msg: msg,
+                            callbackConfirm: function () {
+                                closeModals();
+                                copyFiles($tree, orig, dest);
+                                $('#confirm-dialog .modal-dialog').removeClass("modal-lg");
+                            },
+                            callbackCancel: function () {
+                                $('#confirm-dialog .modal-dialog').removeClass("modal-lg");
+                            }
+                        });
+                    }
+                    break;
+                case "rp-new-folder":
+                    var dest = false;
+                    if ($selectedParent.length > 1) {
+                        showMsg("Please only select one destinaton.", "WARNING");
+                    } else if ($selectedParent.length == 1 && !$selectedParent.data("file").folder) {
+                        showMsg("Please select a folder.", "WARNING");
+                    } else {
+                        dest = { repo: tree_data.repo, relativePath: ($selectedParent.length == 0 ? tree_data.folder : $selectedParent.data("file").relativePath) }
+                    }
+                    if (dest != false) {
+                        var msg = '<p class="body-message"><h4>Add new folder?</h4><b>Name&ensp;</b><input name="new-folder-name" value=""><br><br>'
+                        msg += 'Destination:<br /><b class="folder">' + dest.repo.name + ": " + dest.relativePath + '</b>';
+
+                        $('#confirm-dialog').off("shown.bs.modal");
+                        $('#confirm-dialog').on("shown.bs.modal", function (e) {
+                            if ($('[name="new-folder-name"]', e.currentTarget).is(":visible")) {
+                                $('[name="new-folder-name"]', e.currentTarget).focus();
+                            }
+                            $('[name="new-folder-name"]').keypress(function (e) {
+                                if (e.keyCode === 13) {
+                                    e.preventDefault();
+                                    $("#confirm-dialog button.confirm").click();
+                                }
+                            });
+                        });
+                        $('#confirm-dialog .modal-dialog').removeClass("modal-sm");
+                        $('#confirm-dialog').modal('confirm', {
+                            msg: msg,
+                            callbackConfirm: function () {
+                                if ($("input[name='new-folder-name']", "#confirm-dialog").val() !== "") {
+                                    closeModals();
+                                    makeNewFolder($tree, dest, $("input[name='new-folder-name']", "#confirm-dialog").val());
+                                } else {
+                                    showMsg("New folder name must not be empty.", "WARNING");
+                                }
+                                $('#confirm-dialog .modal-dialog').addClass("modal-sm");
+                            },
+                            callbackCancel: function () {
+                                $('#confirm-dialog .modal-dialog').addClass("modal-sm");
+                            }
+                        });
+                    }
+                    break;
+                case "rp-delete-file":
+                    if ($selected.length == 0) {
+                        showMsg("Please select at least one file or folder.", "WARNING");
+                        return;
+                    }
+                    var msg = '<h4>Are you sure you want to delete the selected item(s)?</h4>'
+                    $('#confirm-dialog .modal-dialog').removeClass("modal-sm");
+                    $('#confirm-dialog').modal('confirm', {
+                        msg: msg,
+                        callbackConfirm: function () {
+                            closeModals();
+							
+                            var errors = "";
+                            var dest = false;
+                            $selected.each(function () {
+                                dest = { repo: tree_data.repo, relativePath: $(this).data("file").relativePath }
+                                errors += deleteItem($tree, dest);
+                                $(document).trigger( "quota:update" );
+                            });
+                            refreshFolderAfterDelete($tree, dest);
+                            if (errors.length == 0) {
+                                showMsg("Item(s) marked for deletion.", "SUCCESS");
+                            }
+                            else {
+                                showMsg(errors, "ERROR");
+                            }
+                            $('#confirm-dialog .modal-dialog').addClass("modal-sm");
+                        },
+                        callbackCancel: function () {
+                            $('#confirm-dialog .modal-dialog').addClass("modal-sm");
+                        }
+                    });
+                    break;
+                case "rp-properties":
+                    var attributes = $selected.data("attributes");
+					$properties.data("draggableModal").options.title = attributes?.fileInfo?.fileName || "";
+					$properties.data("draggableModal").options.data  = attributes;
+					$properties.draggableModal("show");
+                    break;
+				case "rp-view-on-map":
+                    var attributes = $selected.data("attributes");
+					if (typeof attributes.geometry !== "undefined" && attributes.geometry !== "") {
+						$viewOnMap.data("draggableModal").options.title = attributes?.fileInfo?.fileName || "";
+						$viewOnMap.data("draggableModal").options.data  = attributes;
+						$viewOnMap.draggableModal("show");
+					} else {
+						productInfo(attributes);
+					}
+                    break;
+				case "rp-open-file":
+					var attributes = $selected.data("attributes");
+                    $viewFile.data("draggableModal").options.title = attributes?.fileInfo?.fileName || "";
+					$viewFile.data("draggableModal").options.data  = attributes;
+					$viewFile.draggableModal("show");
+					break;
+                case "rp-refresh":
+                    var $parentAttr = $selectedParent.data("attributes")
+                    $.when(refreshTree($tree, $parentAttr))
+                        .done(function () {
+                            if ($parentAttr.fileInfo.relativePath === "") {
+                                //refresh on root, tree is recreated => click on root to load content
+                                $('input[id="tree_' + tree_data.id + '_"]', $tree).siblings("label").find("a").click();
+                            }
+                            else {
+                                //reload folder content
+                                loadFolderContent($tree, $parentAttr);
+                            }
+                        });
+                    break;
+                case "rp-upload":
+                    uploadFile($tree);
+                    break;
+                case "rp-inspect-folder":
+                    inspectFolder($selected.data("attributes"));
+                    break;
+                case "rp-product-set":
+                    createProductSet($selected);
+                    break;
+                case "rp-share":
+                    $selected.data("workspaceId", tree_data.repo.id);
+                    $sharedPathCopy = $selected;
+                    viewSharePopUp($selected);
+                    break;
+                        
+            }
+        });
+
+        $repoPanel.on("change", ".actionsSelect[data-action='rp-actions']", function(e){
+
+            var selectedActionName = $(this).val();
+            //var $tree = $(this).closest(".tree-pane").find(".tree-content");
+            var $tree = $(".tree-pane.active .tree-content", e.delegateTarget);
+            var $selected = $(".foldercontent .foldercontent-item.selected", $tree);
+            var $repo = $tree.data("repo");
+            var isOk = false;
+            var multipleSelection = false;
+            if ($selected.length === 1 && !$repo.readOnly) {
+                $.each($repo.actions, function(index, action){
+				    if (!isOk && action.name == selectedActionName) {
+				        if (action.filters == null) {
+				            isOk = true;
+				        } else {
+                            $.each(action.filters,function(index, fileType){
+                                if ($selected.data("file").displayName.toLowerCase().endsWith(fileType)) {
+                                    isOk = true;
+                                    return false;
+                                }
+                            });
+                        }
+				    }
+                });
+            } else if($selected.length > 1 && !$repo.readOnly) {
+                var allSelected  = $selected;
+                multipleSelection = true;
+
+                $.each(allSelected, function(index, selection){
+                    $.each($repo.actions, function(index, action){
+                        if (!isOk && action.name == selectedActionName) {
+                            if (action.filters == null) {
+                                isOk = true;
+                            } else {
+                                $.each(action.filters,function(index, fileType){
+                                    if ($selection.data("file").displayName.toLowerCase().endsWith(fileType)) {
+                                        isOk = true;
+                                        return false;
+                                    } else{
+                                        isOk = false;
+                                    }
+                                });
+                            }
+                        }
+                    });
+                });
+
+            }
+
+            if (isOk) {
+                if(!multipleSelection){
+                    var selectedFile = $selected.data("file").relativePath;
+                    var selectedFileName = $selected.data("file").displayName;
+                    var selectedFileRepo = $(".tree-pane.active .tree-content", e.delegateTarget).data("repo").name;
+                    if(selectedActionName == "Move"){
+                        $("#selection-row label").text("Selected item to be moved:");
+						$("#selected-item").text(selectedFileName);
+                        $("#selected-item").data("selectedItem", $selected.data("file"));
+                        $("#selected-item").data("action", selectedActionName);
+                        $("#selected-item").data("repo", selectedFileRepo);
+                        $("#selected-item").data("selectedItem").allPaths = selectedFile;
+                        $("#selection-row").show();
+                    } else {
+                    doActionSelected($tree, selectedActionName, selectedFile);
+                    }
+                } else{
+                    var allPaths = "";
+                    var selectedFileName = $selected.eq(0).data("file").displayName + ", ...";
+                    var selectedFileRepo = $(".tree-pane.active .tree-content", e.delegateTarget).data("repo").name;
+					$.each($selected, function(index, selection){
+                        allPaths += $(selection).data("file").relativePath +';';
+                        if(index === 0 && selectedActionName === "Move" ){
+                            $("#selection-row label").text("Selected items to be moved:");
+							$("#selected-item").text(selectedFileName);
+                            $("#selected-item").data("selectedItem", $selected.data("file"));
+                            $("#selected-item").data("action", selectedActionName);
+                            $("#selected-item").data("repo", selectedFileRepo);
+                            $("#selection-row").show();
+                        }
+                    });
+                    $("#selected-item").data("selectedItem").allPaths = allPaths;
+                }
+            }else{
+                if(typeof selectedFile === "undefined"){
+                    var execError = "wrong selection";
+                } else{
+                    var execError = selectedFile;
+                }
+                alert("Selected action cannot be executed on " + execError + "!");
+                $("option.defaultTemplate").prop("selected", true);
+            }
+        });
+        
+        //Move action - when an item from the right side is selected
+        $repoPanel.on("click", ".foldercontent-item, [title='__root']", function(e){
+
+            if(typeof $("#selected-item").data("selectedItem") !== "undefined"){
+                //var selectedRepo = $(this).closest(".tree-pane").find(".tree-content").data("repo").name;
+                var selectedRepo = $(".tree-pane.active .tree-content", e.delegateTarget).data("repo").name;
+
+                if(selectedRepo === $("#selected-item").data("repo") && $(this).data("file").folder === true){
+                    var selectedItemPath = $("#selected-item").data("selectedItem").relativePath;
+                    var selectedFolderPath = $(this).data("file").relativePath;
+                    var selectedAction = $("#selected-item").data("action");
+
+                    var splitFolder = ($(this).data("file").relativePath).split("/");
+                    var desiredFolder = splitFolder[splitFolder.length-2];
+
+                    splitFolder = ($("#selected-item").data("selectedItem").relativePath).split("/");
+                    if($("#selected-item").data("selectedItem").folder){
+                        var selectedItemFolder = splitFolder[splitFolder.length-3];
+                    } else {
+                        var selectedItemFolder = splitFolder[splitFolder.length-2];
+                    }
+
+                    if( desiredFolder !== selectedItemFolder && $("#selected-item").data("selectedItem").displayName !== $(this).data("file").displayName ){
+                        $("button[data-action=rp-move]").attr("disabled", false);
+                        $("#selected-item").data("destinationPath",selectedFolderPath);
+                    } else {
+                        $("button[data-action=rp-move]").attr("disabled", true);
+                        $("#selected-item").removeData("destinationPath")
+                    }
+                } else {
+                    $("button[data-action=rp-move]").attr("disabled", true);
+                }
+            }
+        });
+
+        $repoPanel.on('keydown slow-dblclick', ".foldercontent-item.selected", function(e) {
+
+            if(!e.shiftKey && !e.ctrlKey){
+                if (e.keyCode === 113 || e.type === "slow-dblclick") { // F2 key code
+
+                    //var $tree = $(this).closest(".tree-pane").find(".tree-content");
+                    var $tree = $(".tree-pane.active .tree-content", e.delegateTarget);
+                    $selectedItem = $(".foldercontent-item.selected");
+                    var oldText = $selectedItem.find(".foldercontent-label").text();
+                    var $input;
+                    $input = $('<input type="text" class="rename-item" />').val(oldText).appendTo($selectedItem).focus().select();
+
+                    $input.on('blur keyup', function(e){
+						if( e.type === 'blur' || e.keyCode === 13){ //Enter key code
+                            var newText = $(this).val();
+                            if(oldText !== newText){
+                                renameItem($tree, newText, $selectedItem);
+                            } else {
+                                $input.remove();
+                            }
+                        } else if(e.keyCode === 27){ //Esc key code
+                            $input.remove();
+                        }
+                    });
+                }
+            }
+        });
+
+        
+        $repoPanel.on("click", ".foldercontent-item.selected", function(e){ 
+            if(!e.shiftKey && !e.ctrlKey){
+                var $this = $(this);
+                var slowDblclickTimeout;
+                var countClick = $this.data("countClick");
+                if(typeof countClick === "undefined"){
+                    slowDblclickTimeout = setTimeout( function(){$this.data("countClick",1)}, 500);
+                } else if(countClick == 1){
+                    clearTimeout(slowDblclickTimeout);
+                    $this.removeData("countClick");
+                    setTimeout( function(e){ 
+                        if($this.parent().length > 0){
+                            $this.trigger("slow-dblclick", ["Slow Dblclick", e]);
+                        }
+                    }, 500);
+                }
+            }
+        }); 
+        
+
+        //Move action - move button
+        $("button[data-action=rp-move]").on("click", function(){
+            var selectedItemPath = $("#selected-item").data("selectedItem").allPaths;
+            //var selectedFolderPath = $(".foldercontent-item.selected").data("file").relativePath;
+            var selectedFolderPath = $("#selected-item").data("destinationPath");
+            var selectedAction = $("#selected-item").data("action");
+            $("button[data-action=rp-move]").attr("disabled", true);
+            var $tree = $(".selected").closest(".tree-pane").find(".tree-content");
+            $.when(doActionSelected($tree, selectedAction, selectedItemPath, selectedFolderPath)).done(function(){
+                $("#selected-item").text("");
+                $("#selected-item").removeData();
+                $("#selection-row").hide();
+            });
+        });
+
+        //Move action - cancel button
+        $("button[data-action=rp-cancel]").on("click", function(){
+            $("#selected-item").text("");
+            $("#selected-item").removeData();
+            $("#selection-row").hide();
+        });
+       
+        function delayExecution(callback, ms) {
+            var timer = 0;
+            return function () {
+                var context = this, args = arguments;
+                clearTimeout(timer);
+                timer = setTimeout(function () {
+                    callback.apply(context, args);
+                }, ms || 0);
+            };
+        }
+
+        $repoPanel.on("keyup", ".search-folder", delayExecution(function (e) {
+            var $tree = $(".tree-pane.active .tree-content", e.delegateTarget);
+            var searchValue = $(this).val().toLowerCase();;
+            $(".foldercontent .foldercontent-label", $tree).each(function () {
+
+                if (!$(this).html().toLowerCase().includes(searchValue.trim())) {
+                    $(this).closest(".foldercontent-item").addClass("hidden");
+                }
+                else {
+                    $(this).closest(".foldercontent-item").removeClass("hidden");
+                }
+            });
+        }, 300));
+
+		var olPoly = $("#mapExtent").poly2D({ startLat: 47, startLon: 14, zoom: 5, maxFeaturesNo: 5, extraFeatureDescription: "preview" });
+			$.when(olPoly).done(function (result) {
+				if (typeof result.readOnly === "boolean") {
+					$("#mapExtent").removeClass("hidden");
+					$("#mapExtent").remove(".poly-map-title");
+					myPolygonMap = result;
+					_map = myPolygonMap;
+					if (_map.mapActive) {
+						_map.setReadOnly(true);
+					}
+				}
+			});
+    });
+	
+//# sourceURL=repositories.js
+</script>

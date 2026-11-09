@@ -19,6 +19,20 @@ import java.lang.reflect.Method;
 import java.security.Principal;
 import java.util.stream.Collectors;
 
+/**
+ * Aspect for enforcing role-based access control on methods annotated with the {@link RoleRequired} annotation.
+ * This class utilizes AOP to intercept method calls and validate whether the authenticated user has the required roles.
+ *
+ * The aspect is triggered around methods annotated with {@link RoleRequired} and performs validation
+ * on the security context's principal to ensure access control.
+ *
+ * It supports different types of principals, including:
+ * - SystemPrincipal: Allows access without further validation.
+ * - UserPrincipal: Checks if the user has any of the required roles specified in the annotation.
+ *
+ * If the roles are missing or the principal does not meet the requirements, an {@link AuthorizationServiceException}
+ * is thrown to deny access.
+ */
 @Aspect
 @Component
 public class RoleRequiredAspect {

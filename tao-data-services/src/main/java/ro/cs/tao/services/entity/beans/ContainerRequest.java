@@ -7,6 +7,16 @@ import ro.cs.tao.services.entity.conversion.ContainerRequestDeserializer;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * Represents a data transfer object for creating or modifying a container configuration.
+ * The class contains properties for storing metadata, descriptors, files, and system-specific attributes
+ * related to a container request.
+ *
+ * This class is designed to be deserialized from JSON using a custom deserializer,
+ * {@link ContainerRequestDeserializer}, which handles mapping JSON fields into this object's properties.
+ *
+ * Implements {@link Serializable} to allow instances of this class to be serialized.
+ */
 @JsonDeserialize(using = ContainerRequestDeserializer.class)
 public class ContainerRequest implements Serializable {
     private String name;

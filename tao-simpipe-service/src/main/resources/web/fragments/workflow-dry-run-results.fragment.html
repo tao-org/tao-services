@@ -1,0 +1,153 @@
+<div class="modal-content" id="showDryRunResults">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        <h4 class="modal-title">Dry Run Results<small> The outputs of the <strong>dry run results.</strong></small></h4>
+    </div>
+    <div class="modal-body">
+        <section>
+            <div >
+                <div class="box">
+                    <div class="box-body table-responsive no-padding box-shadow--6dp">
+                        <table class="table table-bordered box-shadow--6dp tbl-edt" id="view-metrics">
+                            <thead>
+                            <tr>
+                                <th>Component Name</th>
+                                <th>Duration</th>
+                                <th>CPU Metrics</th>
+                                <th>Memory Metrics</th>
+                            </tr>
+                            </thead>
+                            <tbody class="tpl-sample-body">
+                            <tr class="tpl-sample-row">
+                                <td>
+                                    <div class="var-name"></div>
+                                </td>
+                                <td>
+                                    <div class="var-duration"></div>
+                                </td>
+                                <td><div rows="2" class="var-cpu"></div></td>
+                                <td>
+                                    <div rows="2" class="var-memory"></div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+    </div>
+</div><!-- /.modal-content -->
+<style>
+	/* ===== Modal dialog adjustments ===== */
+	#myModalNodes .modal-dialog{width:auto;max-width:800px}
+	#showResults{background-color:#ecf0f5;border:0}
+	#showResults .modal-header{border:0}
+	#showResults .modal-header>h4.modal-title{font-size:24px}
+	#showResults .modal-header>h4.modal-title>small{font-size:15px;display:inline-block;padding-left:4px;font-weight:300;color:white}
+	#showResults .modal-footer{border:0;padding:0 15px 15px 15px}
+
+	/* ===== Full screen image preview ===== */
+	#myModalNodes .full-screen{position:fixed;top:0;left:0;width:100%;height:100%;margin:0;padding:0;background-color:rgba(0, 0, 0, 0.5);cursor:pointer;overflow:auto;z-index:9999}
+	#myModalNodes .full-screen img{position:absolute;top:0;bottom:0;left:0;right:0;margin:auto;width:auto;border:5px solid rgba(255, 255, 255, 0.3);border-radius:5px;max-width:100%;max-height:100%}
+</style>
+
+<script>
+	function getComponentsIdList(workflowId){
+		var componentList = {
+			id: [],
+			name: []
+		};
+		$.ajax({
+			async: false,
+			cache: false,
+			type: "get",
+			url: baseRestApiURL + "workflow/"+workflowId+"/",
+			dataType: "json",
+			contentType: "application/json; charset=utf-8",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error : function (jqXHR, textStatus, errorThrown) {
+				if( jqXHR.status === 500 ){
+					alert('E001, Exec node no longer found.');
+				} else {
+					alert('E001, An error has occurred, please try again or contact app admin.');
+				}
+			},
+			success: function(r) {
+				var response = chkTSRF(r);
+				$.each(response.nodes, function(i, node){
+					componentList.id.push(node.componentId);
+					componentList.name.push(node.name);
+				});
+			}
+		});
+		return componentList;
+	}
+
+	function getDryRunResults(compIdList){
+		var results = [];
+		$.ajax({
+			async: false,
+			cache: false,
+			type: "get",
+			url: baseRestApiURL + "simpipe/metrics?id="+compIdList,
+			dataType: "json",
+			contentType: "application/json; charset=utf-8",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error : function (jqXHR, textStatus, errorThrown) {
+				if( jqXHR.status === 500 ){
+					alert('E001, Exec node no longer found.');
+				} else {
+					alert('E001, An error has occurred, please try again or contact app admin.');
+				}
+			},
+			success: function(r) {
+				results = chkTSRF(r);
+			}
+		});
+		return results;
+	}
+
+	function displayMetrics(metrics, componentName) {
+		if(metrics.length > 0){
+			$.each(metrics, function(i, metric){
+				var $el = $("#view-metrics").find(".tpl-sample-body").clone().removeClass("tpl-sample-body");
+				var $sRow = $el.find(".tpl-sample-row").addClass("val-row").removeClass("tpl-sample-row");
+
+				$('.var-name', $el).text(componentName[i]);
+				$('.var-cpu', $el).text(metric.cpuMetrics);
+				$('.var-memory', $el).text(metric.memoryMetrics);
+				$('.var-duration', $el).text(metric.duration);
+				$("#view-metrics").append($el);
+			});
+		} else {
+			var $el = $("#view-metrics").find(".tpl-sample-body").clone().removeClass("tpl-sample-body");
+			var $sRow = $el.find(".tpl-sample-row");
+			var element = $('<tr><th colspan="5" class="warning">No dry run results to display</th></tr>');
+			$el.append(element);
+			$("#view-metrics").append($el);
+		}
+	}
+
+	$(document).ready( function() {
+		// Get executions results for selected workflow
+		var currentWfID = window.userOpStack[0].dna.id;
+		//getWorkflowResults(currentWfID);
+		var compList = getComponentsIdList(currentWfID);
+		var drResults = getDryRunResults(compList.id.join(","));
+		displayMetrics(drResults, compList.name);
+	});
+
+//# sourceURL=workflow-show-results.js
+</script>

@@ -15,11 +15,7 @@
  */
 package ro.cs.tao.services.entity.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -45,16 +41,18 @@ import ro.cs.tao.execution.model.ExecutionJob;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.execution.persistence.ExecutionJobProvider;
 import ro.cs.tao.execution.persistence.ExecutionTaskProvider;
-import ro.cs.tao.execution.util.TaskUtilities;
 import ro.cs.tao.persistence.*;
 import ro.cs.tao.persistence.repository.SourceDescriptorRepository;
 import ro.cs.tao.persistence.repository.TargetDescriptorRepository;
+import ro.cs.tao.persistence.repository.WorkflowNodeDescriptorRepository;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.serialization.BaseSerializer;
 import ro.cs.tao.serialization.MediaType;
 import ro.cs.tao.serialization.SerializationException;
 import ro.cs.tao.serialization.SerializerFactory;
+import ro.cs.tao.services.base.WorkflowBuilderBase;
 import ro.cs.tao.services.commons.dev.MockData;
+import ro.cs.tao.services.entity.beans.Workflow;
 import ro.cs.tao.services.entity.util.ServiceTransformUtils;
 import ro.cs.tao.services.interfaces.ComponentService;
 import ro.cs.tao.services.interfaces.GroupComponentService;
@@ -68,6 +66,7 @@ import ro.cs.tao.subscription.WorkflowSubscription;
 import ro.cs.tao.utils.ExceptionUtils;
 import ro.cs.tao.utils.StringUtilities;
 import ro.cs.tao.utils.Tuple;
+import ro.cs.tao.utils.executors.CWLImportExecutor;
 import ro.cs.tao.workflow.ParameterValue;
 import ro.cs.tao.workflow.WorkflowDescriptor;
 import ro.cs.tao.workflow.WorkflowNodeDescriptor;
@@ -78,6 +77,7 @@ import ro.cs.tao.workflow.enums.Status;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -110,6 +110,8 @@ public class WorkflowServiceImpl
     @Autowired
     private ProcessingComponentProvider componentProvider;
     @Autowired
+    private ContainerProvider containerProvider;
+    @Autowired
     private ComponentService componentService;
     @Autowired
     private GroupComponentService groupComponentService;
@@ -119,6 +121,8 @@ public class WorkflowServiceImpl
     private SourceDescriptorRepository sourceDescriptorRepository;
     @Autowired
     private TargetDescriptorRepository targetDescriptorRepository;
+    @Autowired
+    private WorkflowNodeDescriptorRepository workflowNodeDescriptorRepository;
     @Autowired
     private WorkflowSubscriptionProvider workflowSubscriptionProvider;
 
@@ -152,6 +156,9 @@ public class WorkflowServiceImpl
     @Override
     public List<WorkflowInfo> getUserWorkflowsByStatus(String user, Status status) {
         final List<WorkflowDescriptor> list = workflowProvider.listUserWorkflowsByStatus(user, status.value());
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
         final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
                                                                                 .map(WorkflowDescriptor::getId)
                                                                                 .collect(Collectors.toSet()));
@@ -161,6 +168,9 @@ public class WorkflowServiceImpl
     @Override
     public List<WorkflowInfo> getUserPublishedWorkflowsByVisibility(String user, Visibility visibility) {
         final List<WorkflowDescriptor> list = workflowProvider.listUserPublishedWorkflowsByVisibility(user, visibility.value());
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
         final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
                                                                                 .map(WorkflowDescriptor::getId)
                                                                                 .collect(Collectors.toSet()));
@@ -170,6 +180,9 @@ public class WorkflowServiceImpl
     @Override
     public List<WorkflowInfo> getOtherPublicWorkflows(String user) {
         final List<WorkflowDescriptor> list = workflowProvider.listOtherPublicWorkflows(user);
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
         final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
                                                                                 .map(WorkflowDescriptor::getId)
                                                                                 .collect(Collectors.toSet()));
@@ -184,6 +197,9 @@ public class WorkflowServiceImpl
         } else {
             list = MockData.getMockWorkflows();
         }
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
         final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
                                                                                 .map(WorkflowDescriptor::getId)
                                                                                 .collect(Collectors.toSet()));
@@ -191,8 +207,11 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public List<WorkflowInfo> getUserVisibleWorkflows(String userId) {
-        final List<WorkflowDescriptor> list = workflowProvider.listUserVisible(userId);
+    public List<WorkflowInfo> getUserVisibleWorkflows(String userId, boolean active) {
+        final List<WorkflowDescriptor> list = workflowProvider.listUserVisible(userId, active);
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
         final Map<Long, String> images = workflowProvider.getWorkflowImages(list.stream()
                                                                                 .map(WorkflowDescriptor::getId)
                                                                                 .collect(Collectors.toSet()));
@@ -361,6 +380,7 @@ public class WorkflowServiceImpl
             throw new PersistenceException(String.format("Node contains errors: [%s]",
                                                          String.join(",", validationErrors)));
         }
+        nodeDescriptor.setLevel(1);
         return workflowNodeProvider.save(nodeDescriptor, workflow);
     }
 
@@ -486,7 +506,7 @@ public class WorkflowServiceImpl
     //region Links
     @Override
     public WorkflowNodeDescriptor addLink(long sourceNodeId, String sourceTargetId,
-                                      long targetNodeId, String targetSourceId) throws PersistenceException {
+                                          long targetNodeId, String targetSourceId) throws PersistenceException {
         if (sourceTargetId == null || targetSourceId == null || sourceNodeId == 0 || targetNodeId == 0) {
             throw new PersistenceException("Invalid link data");
         }
@@ -530,6 +550,7 @@ public class WorkflowServiceImpl
                 }
                 links.add(link);
                 targetNode.setIncomingLinks(links);
+                targetNode.setLevel(sourceNode.getLevel() + 1);
                 return updateNode(targetNode.getWorkflow().getId(), targetNode);
             } catch (Exception e) {
                 throw new PersistenceException(e);
@@ -559,6 +580,9 @@ public class WorkflowServiceImpl
             throw new PersistenceException("Parent node does not exist");
         }
         node.getIncomingLinks().removeIf(l -> l.equals(link));
+        if (node.getIncomingLinks().size() == 0) {
+            node.setLevel(1);
+        }
         return workflowNodeProvider.update(node);
     }
     //endregion
@@ -662,7 +686,7 @@ public class WorkflowServiceImpl
             throw new PersistenceException("groupDescriptor [null]");
         }
         TransactionalMethod.withExceptionType(PersistenceException.class).execute(() -> {
-            final List<WorkflowNodeDescriptor> nodes = Collections.unmodifiableList(groupDescriptor.getNodes());
+            final List<WorkflowNodeDescriptor> nodes = new ArrayList<>(groupDescriptor.getNodes());
             final WorkflowDescriptor workflow = groupDescriptor.getWorkflow();
             final Set<ComponentLink> linksToRemove = new HashSet<>();
             if (removeChildren) {
@@ -692,7 +716,8 @@ public class WorkflowServiceImpl
                         SourceDescriptor sourceDescriptor = WorkflowUtilities.findSourceById(groupSource.getReferencedSourceDescriptorId(), sourceNode);
                         if (sourceDescriptor == null) {
                             logger.warning(String.format("Cannot determine originating source descriptor [groupNode=%s, groupSource=%s, sourceNode=%s]",
-                                                         groupDescriptor.getName(), groupSource.getName(), sourceNode.getName()));
+                                    groupDescriptor.getName(), groupSource == null ? "null" : groupSource.getName(),
+                                    sourceNode == null ? "null" : sourceNode.getName()));
                             continue;
                         }
                         link.setOutput(sourceDescriptor);
@@ -796,8 +821,8 @@ public class WorkflowServiceImpl
                                                         .forEach(n -> clonedNode.addNode(cloneMap.get(n.getId())));
                     workflowNodeProvider.update(clonedNode);
                 }
-            }
-            for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {
+            /*}
+            for (WorkflowNodeDescriptor node : workflowNodeDescriptors) {*/
                 final Set<ComponentLink> links = node.getIncomingLinks();
                 if (links != null) {
                     WorkflowNodeDescriptor clonedNode = cloneMap.get(node.getId());
@@ -806,6 +831,7 @@ public class WorkflowServiceImpl
                         TargetDescriptor input = targetDescriptorRepository.findById(link.getInput().getId()).get(); //WorkflowUtilities.findTarget(link.getInput().getId(), clonedSource);
                         SourceDescriptor output = sourceDescriptorRepository.findById(link.getOutput().getId()).get(); //WorkflowUtilities.findSource(link.getOutput().getId(), clonedNode);
                         ComponentLink clonedLink = new ComponentLink(clonedSource.getId(), input, output);
+                        clonedLink.setAggregator(link.getAggregator());
                         Set<ComponentLink> clonedLinks = clonedNode.getIncomingLinks();
                         if (clonedLinks == null) {
                             clonedLinks = new HashSet<>();
@@ -821,7 +847,7 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public WorkflowDescriptor createTemporaryWorkflow(long fromWorkflowId, String name, Map<Long, String> linksToAdd) throws PersistenceException {
+    public WorkflowDescriptor createTemporaryWorkflow(long fromWorkflowId, String name, Map<Long, Map<String, String>> linksToAdd) throws PersistenceException {
         WorkflowDescriptor clone = null;
         if (linksToAdd != null) {
             // These inputs are not yet connected to the level 1 nodes, we need to create the nodes and the links
@@ -830,31 +856,34 @@ public class WorkflowServiceImpl
             clone = clone(workflow, true);
             clone.setName(name);
             final Set<Long> ids = new HashSet<>();
-            for (Map.Entry<Long, String> entry : linksToAdd.entrySet()) {
+            for (Map.Entry<Long, Map<String, String>> entry : linksToAdd.entrySet()) {
                 // For each input create a node
-                final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(entry.getValue());
-                final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
-                final WorkflowNodeDescriptor targetNode = workflowNodeProvider.findClonedNode(clone.getId(), entry.getKey());
-                final TaoComponent targetComponent = TaskUtilities.getComponentFor(targetNode);
-                final String targetSourceId = targetComponent.getSources().get(0).getId();
-                WorkflowNodeDescriptor node;
-                final List<WorkflowNodeDescriptor> descriptors = workflowNodeProvider.listByComponentId(clone.getId(), entry.getValue());
-                if (descriptors == null || descriptors.isEmpty()) {
-                    node = new WorkflowNodeDescriptor();
-                    node.setWorkflow(clone);
-                    node.setName(sourceComponent.getDataSourceName());
-                    node.setComponentId(entry.getValue());
-                    node.setComponentType(ComponentType.DATASOURCE);
-                    node.setPreserveOutput(true);
-                    node.setCreated(LocalDateTime.now());
-                    node.setLevel(0);
-                    node = addNode(clone.getId(), node);
-                } else {
-                    node = descriptors.get(0);
+                Map<String, String> inputValue = entry.getValue();
+                for (Map.Entry<String, String> inputValueEntry : inputValue.entrySet()) {
+                    final DataSourceComponent sourceComponent = dataSourceComponentProvider.get(inputValueEntry.getValue());
+                    final String sourceTargetId = sourceComponent.getTargets().get(0).getId();
+                    final WorkflowNodeDescriptor targetNode = workflowNodeProvider.findClonedNode(clone.getId(), entry.getKey());
+                    // final TaoComponent targetComponent = componentService.getComponent(targetNode.getComponentId());
+                    final String targetSourceId = inputValueEntry.getKey(); //targetComponent.getSources().get(0).getId();
+                    WorkflowNodeDescriptor node;
+                    final List<WorkflowNodeDescriptor> descriptors = workflowNodeProvider.listByComponentId(clone.getId(), inputValueEntry.getValue());
+                    if (descriptors == null || descriptors.isEmpty()) {
+                        node = new WorkflowNodeDescriptor();
+                        node.setWorkflow(clone);
+                        node.setName(sourceComponent.getDataSourceName());
+                        node.setComponentId(inputValueEntry.getValue());
+                        node.setComponentType(ComponentType.DATASOURCE);
+                        node.setPreserveOutput(true);
+                        node.setCreated(LocalDateTime.now());
+                        node.setLevel(1);
+                        node = addNode(clone.getId(), node);
+                    } else {
+                        node = descriptors.get(0);
+                    }
+                    // and add a link from this new node to the given target source
+                    addLink(node.getId(), sourceTargetId, targetNode.getId(), targetSourceId);
+                    ids.add(node.getId());
                 }
-                // and add a link from this new node to the given target source
-                addLink(node.getId(), sourceTargetId, targetNode.getId(), targetSourceId);
-                ids.add(node.getId());
             }
             // Increment the level of the other nodes
             clone.getNodes().forEach(n -> {
@@ -990,12 +1019,12 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public List<ExecutionJobInfo> getWorkflowExecutions(long workflowId) throws PersistenceException {
+    public List<ExecutionJobInfo> getWorkflowExecutions(long workflowId, String userId) throws PersistenceException {
         final WorkflowDescriptor workflow = workflowProvider.get(workflowId);
         if (workflow == null) {
             throw new PersistenceException("There is no workflow having the given identifier " + String.valueOf(workflowId));
         }
-        return ServiceTransformUtils.toJobInfos(jobProvider.listByWorkflow(workflowId));
+        return ServiceTransformUtils.toJobInfos(jobProvider.listByWorkflow(workflowId, userId));
     }
 
     @Override
@@ -1101,8 +1130,8 @@ public class WorkflowServiceImpl
                     for (ParameterDescriptor descriptor : descriptors) {
                         paramType = descriptor.getDataType();
                         componentParams.add(new Parameter(descriptor.getName(),
-                                                          //paramType.getName(),
                                                           descriptor.typeFriendlyName(),
+                                                          descriptor.javaType().friendlyName(),
                                                           !"null".equals(descriptor.getDefaultValue()) ? descriptor.getDefaultValue() : null,
                                                           paramType.isEnum() ?
                                                                   Parameter.stringValueSet(paramType.getEnumConstants()) :
@@ -1113,6 +1142,35 @@ public class WorkflowServiceImpl
                                 Class<?> descriptorParamType = param.getDataType();
                                 componentParams.add(new Parameter(descriptor.getName() + "~" + param.getName(),
                                         param.typeFriendlyName(),
+                                        param.javaType().friendlyName(),
+                                        !"null".equals(param.getDefaultValue()) ? param.getDefaultValue() : null,
+                                        descriptorParamType.isEnum() ?
+                                                Parameter.stringValueSet(descriptorParamType.getEnumConstants()) :
+                                                Parameter.stringValueSet(param.getValueSet()),
+                                        param.isNotNull()));
+                            }
+                        }
+                    }
+                    break;
+                case CONDITION:
+                    ConditionComponent conditionComponent = (ConditionComponent) component;
+                    Set<ParameterDescriptor> descriptorsCondition = conditionComponent.getParameterDescriptors();
+                    for (ParameterDescriptor descriptor : descriptorsCondition) {
+                        paramType = descriptor.getDataType();
+                        componentParams.add(new Parameter(descriptor.getName(),
+                                descriptor.typeFriendlyName(),
+                                descriptor.javaType().friendlyName(),
+                                !"null".equals(descriptor.getDefaultValue()) ? descriptor.getDefaultValue() : null,
+                                paramType.isEnum() ?
+                                        Parameter.stringValueSet(paramType.getEnumConstants()) :
+                                        Parameter.stringValueSet(descriptor.getValueSet()),
+                                descriptor.isNotNull()));
+                        if(descriptor instanceof TemplateParameterDescriptor){
+                            for(ParameterDescriptor param : ((TemplateParameterDescriptor) descriptor).getParameters()){
+                                Class<?> descriptorParamType = param.getDataType();
+                                componentParams.add(new Parameter(descriptor.getName() + "~" + param.getName(),
+                                        param.typeFriendlyName(),
+                                        param.javaType().friendlyName(),
                                         !"null".equals(param.getDefaultValue()) ? param.getDefaultValue() : null,
                                         descriptorParamType.isEnum() ?
                                                 Parameter.stringValueSet(descriptorParamType.getEnumConstants()) :
@@ -1128,8 +1186,12 @@ public class WorkflowServiceImpl
             List<ParameterValue> customValues = node.getCustomValues();
             if (customValues != null) {
                 for (ParameterValue value : customValues) {
-                    componentParams.stream().filter(cp -> cp.getName().equals(value.getParameterName()))
-                            .forEach(cp -> cp.setValue(value.getParameterValue()));
+                    String parameterValue = value.getParameterValue();
+                    componentParams.stream()
+                            .filter(cp -> cp.getName().equals(value.getParameterName()))
+                            .filter(cp -> parameterValue != null && !"\n".equals(parameterValue)
+                                    && cp.getValue() == null)
+                            .forEach(cp -> cp.setValue(parameterValue));
                 }
             }
             parameters.put((prefixWithId ? node.getId() + ":" : "") + node.getName(), componentParams);
@@ -1170,6 +1232,16 @@ public class WorkflowServiceImpl
     }
 
     @Override
+    public WorkflowDescriptor importWorkflow(List<Path> sources, String userId) throws IOException, PersistenceException {
+        try {
+            CWLImportExecutor executor = new CWLImportExecutor(componentService, containerProvider, this);
+            return executor.parse(sources);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public String workflowToSnapGraph(WorkflowDescriptor workflowDescriptor) throws Exception {
         return null;
     }
@@ -1195,12 +1267,11 @@ public class WorkflowServiceImpl
     }
 
     @Override
-    public WorkflowDescriptor importWorkflow(InputStream source) throws IOException, SerializationException, PersistenceException {
-        final ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new JavaTimeModule());
-        mapper.setAnnotationIntrospector(new JaxbAnnotationIntrospector());
-        final ObjectReader objectReader = mapper.readerFor(WorkflowDescriptor.class);
-        WorkflowDescriptor descriptor = objectReader.readValue(source);
+    public WorkflowDescriptor importWorkflow(InputStream source, String userId) throws IOException, SerializationException, PersistenceException {
+        BaseSerializer<Workflow> serializer = SerializerFactory.create(Workflow.class, MediaType.JSON);
+        serializer.setOverrideJAXBPrecedence();
+        Workflow bean = serializer.deserialize(source);
+        WorkflowDescriptor descriptor = bean.toEntity();
         WorkflowDescriptor existing;
         if (descriptor.getId() != null) {
             existing = getFullDescriptor(descriptor.getId());
@@ -1214,23 +1285,83 @@ public class WorkflowServiceImpl
         if (existing != null) {
             descriptor.setName(descriptor.getName() + " (imported " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + ")");
         }
-        // Verify that all the components from nodes are registered with this instance
-        final List<WorkflowNodeDescriptor> nodes = descriptor.getNodes();
+        // Make a copy of the node collection
+        final List<WorkflowNodeDescriptor> nodes = new ArrayList<>(descriptor.getNodes());
+        final Map<Long, Long> nodeIdMap = new HashMap<>();
+        final Map<Long, Set<ComponentLink>> nodeLinks = new HashMap<>();
+        // First save the empty workflow to get a new ID
+        descriptor.setUserId(userId);
+        descriptor.getNodes().clear();
+        descriptor.setId(null);
+        descriptor.setStatus(Status.DRAFT);
+        descriptor.setVisibility(Visibility.PRIVATE);
+        descriptor = workflowProvider.save(descriptor);
+        // and then re-add the nodes to get the new workflow ID
         for (WorkflowNodeDescriptor node : nodes) {
             final String componentId = node.getComponentId();
-            if (StringUtilities.isNullOrEmpty(componentId) || componentService.findById(componentId) == null) {
+            if (StringUtilities.isNullOrEmpty(componentId) || componentService.getComponent(componentId) == null) {
                 throw new IOException("Component for node [" + node.getName() + "] is missing or not registered");
             }
+            long oldId = node.getId();
             node.setId(null);
+            Set<ComponentLink> links = node.getIncomingLinks();
+            if (links != null && !links.isEmpty()) {
+                nodeLinks.put(oldId, new HashSet<>(links));
+            }
+            node.setIncomingLinks(null);
+            node = workflowNodeProvider.save(node);
+            nodeIdMap.put(oldId, node.getId());
+            nodeLinks.put(node.getId(), nodeLinks.get(oldId));
+            nodeLinks.remove(oldId);
+            descriptor.addNode(node);
+        }
+        for (Map.Entry<Long, Set<ComponentLink>> entry : nodeLinks.entrySet()) {
+            if (entry.getValue() != null) {
+                WorkflowNodeDescriptor node = nodes.stream().filter(n -> entry.getKey().equals(n.getId())).findFirst().get();
+                for (ComponentLink link : entry.getValue()) {
+                    final ComponentLink fLink = link;
+                    TaoComponent fromComponent = componentService.getComponent(nodes.stream().filter(n -> n.getId().equals(nodeIdMap.get(fLink.getSourceNodeId())))
+                                                                                    .findFirst().get().getComponentId());
+                    TaoComponent toComponent = componentService.getComponent(node.getComponentId());
+                    ComponentLink convertedLink = convertLink(link, fromComponent, toComponent);
+                    convertedLink.setSourceNodeId(nodeIdMap.get(convertedLink.getSourceNodeId()));
+                    node.addLink(convertedLink);
+                }
+            }
+        }
+        if (!StringUtilities.isNullOrEmpty(bean.getImage())) {
+            workflowProvider.addWorkflowImage(descriptor.getId(), bean.getImage());
         }
         return workflowProvider.save(descriptor);
     }
 
     @Override
     public String exportWorkflow(WorkflowDescriptor descriptor) throws SerializationException {
-        final BaseSerializer<WorkflowDescriptor> serializer = SerializerFactory.create(WorkflowDescriptor.class, MediaType.JSON);
+        final BaseSerializer<Workflow> serializer = SerializerFactory.create(Workflow.class, MediaType.JSON);
         serializer.enable(SerializationFeature.EAGER_SERIALIZER_FETCH);
-        return serializer.serialize(descriptor);
+        Workflow workflow = new Workflow(descriptor);
+        workflow.setImage(workflowProvider.getWorkflowImage(descriptor.getId()));
+        return serializer.serialize(workflow);
+    }
+
+    @Override
+    public void removeWorkflow(long workflowId) throws PersistenceException {
+        WorkflowDescriptor workflow = findById(workflowId);
+        if (workflow != null) {
+            final List<ExecutionJob> jobs = jobProvider.listByWorkflow(workflowId);
+            if (jobs != null) {
+                for (ExecutionJob job : jobs) {
+                    final List<ExecutionTask> tasks = job.getTasks();
+                    for (ExecutionTask task : tasks) {
+                        task.setWorkflowNodeId(null);
+                        taskProvider.update(task);
+                    }
+                    job.setWorkflowId(null);
+                    jobProvider.update(job);
+                }
+            }
+            workflowProvider.delete(workflow);
+        }
     }
 
     /**
@@ -1323,6 +1454,27 @@ public class WorkflowServiceImpl
         return workflowNodeProvider.update(outsideNode);
     }
 
+    private ComponentLink convertLink(ComponentLink link, TaoComponent fromComponent, TaoComponent toComponent) {
+        TargetDescriptor input = link.getInput();
+        SourceDescriptor output = link.getOutput();
+        final ComponentLink convertedLink = new ComponentLink();
+        convertedLink.setSourceNodeId(link.getSourceNodeId());
+        convertedLink.setAggregator(link.getAggregator());
+        TargetDescriptor tgtDescriptor = fromComponent.getTargets().stream().filter(t -> t.getName().equals(input.getName())).findFirst().get();
+        if (!tgtDescriptor.equals(input)) {
+            convertedLink.setInput(tgtDescriptor);
+        } else {
+            convertedLink.setInput(input);
+        }
+        SourceDescriptor srcDescriptor = toComponent.getSources().stream().filter(s -> s.getName().equals(output.getName())).findFirst().get();
+        if (!srcDescriptor.equals(output)) {
+            convertedLink.setOutput(srcDescriptor);
+        } else {
+            convertedLink.setOutput(output);
+        }
+        return convertedLink;
+    }
+
     private void validateNode(WorkflowDescriptor workflow, WorkflowNodeDescriptor node, List<String> errors) {
         // Validate simple fields
         String value = node.getName();
@@ -1377,6 +1529,14 @@ public class WorkflowServiceImpl
                                                                                    .filter(p -> p instanceof TemplateParameterDescriptor)
                                                                                    .map(p -> (TemplateParameterDescriptor) p)
                                                                                    .collect(Collectors.toList());
+                        }
+                        if (component instanceof ConditionComponent) {
+                            descriptors = ((ConditionComponent) component).getParameterDescriptors();
+                            templateDescriptors = ((ConditionComponent) component).getParameterDescriptors()
+                                    .stream()
+                                    .filter(p -> p instanceof TemplateParameterDescriptor)
+                                    .map(p -> (TemplateParameterDescriptor) p)
+                                    .collect(Collectors.toList());
                         }
                         if (descriptors != null && !descriptors.isEmpty()) {
                             final List<ParameterDescriptor> descriptorList = new ArrayList<>(descriptors);
@@ -1451,7 +1611,7 @@ public class WorkflowServiceImpl
                                 errors.add(String.format("[node.incomingLinks] the input format of '%s' is not compatible with the output format of '%s'",
                                                          component.getLabel(), linkedComponent.getLabel()));
                             }
-                            if (linkedComponent instanceof ProcessingComponent && component instanceof ProcessingComponent) {
+                            if (linkedComponent instanceof ProcessingComponent && component instanceof ProcessingComponent){
                                 if (!ComponentCategory.isCompatibleWith(((ProcessingComponent) component).getCategory(),
                                                                         ((ProcessingComponent) linkedComponent).getCategory())) {
                                     errors.add(String.format("[node.incomingLinks] component '%s' is not compatible with component '%s'",
@@ -1463,5 +1623,38 @@ public class WorkflowServiceImpl
                 }
             }
         }
+    }
+
+    @Override
+    public WorkflowDescriptor createFromPairs(String name, String[][] listOfPairs) throws PersistenceException {
+        if (listOfPairs == null || listOfPairs.length == 0) {
+            throw new PersistenceException("Empty list");
+        }
+        final Map<String, WorkflowNodeDescriptor> createdNodes = new HashMap<>();
+        WorkflowBuilderBase workflowBuilder = new WorkflowBuilderBase() {
+            @Override
+            protected void addNodes(WorkflowDescriptor workflow) throws PersistenceException {
+
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+        };
+        WorkflowDescriptor workflow = workflowBuilder.createWorkflowDescriptor();
+        for (int i = 0; i < listOfPairs.length; i++) {
+            String[] pair = listOfPairs[i];
+            if (pair.length != 2) {
+                throw new PersistenceException(String.format("Invalid pair at index %d: expected 2 elements, got %d", i, pair.length));
+            }
+            WorkflowNodeDescriptor parentNode = createdNodes.get(pair[0]);
+            if (parentNode == null) {
+                parentNode = workflowBuilder.addNode(workflow, pair[0], pair[0], null, null, WorkflowBuilderBase.Direction.BOTTOM);
+                createdNodes.put(pair[0], parentNode);
+            }
+            createdNodes.put(pair[1], workflowBuilder.addNode(workflow, pair[1], pair[1], null, parentNode, null));
+        }
+        return workflow;
     }
 }

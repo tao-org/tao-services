@@ -2,6 +2,10 @@ package ro.cs.tao.services.entity.beans;
 
 import java.util.Map;
 
+/**
+ * Represents a repository type bean, encapsulating information about a data repository type
+ * including its identifier, name, description, URL prefix, root key, and parameters.
+ */
 public class RepositoryTypeBean {
     private int id;
     private String name;

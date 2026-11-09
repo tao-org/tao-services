@@ -6,6 +6,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Represents a metric that contains information such as its name, description,
+ * unit of measurement, and a set of statistical measurements.
+ *
+ * This class is primarily used to encapsulate metric-related data and provides
+ * methods for accessing and mutating the metric's properties. Additionally,
+ * it includes a utility method for converting external metric response objects
+ * into instances of the Metric class.
+ */
 public class Metric {
     private String name;
     private String description;

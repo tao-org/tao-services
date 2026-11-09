@@ -50,6 +50,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * A filter that handles authentication by examining incoming HTTP requests
+ * and verifying authentication tokens or other credentials.
+ * It extends {@link GenericFilterBean} from Spring Security and integrates
+ * with the authentication mechanism provided by an {@link AuthenticationManager}.
  *
  * @author Oana H.
  */

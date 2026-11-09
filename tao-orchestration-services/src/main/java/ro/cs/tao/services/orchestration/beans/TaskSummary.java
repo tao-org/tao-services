@@ -5,6 +5,11 @@ import ro.cs.tao.execution.model.ExecutionTaskSummary;
 
 import java.time.LocalDateTime;
 
+/**
+ * Represents a summary of a task, containing information about its identity, execution, and resources.
+ * This class provides methods to access and manipulate details such as the task's ID, workflow, component,
+ * status, resource utilization, and other related metadata.
+ */
 public class TaskSummary {
     private long taskId;
     private String workflowName;

@@ -1,0 +1,212 @@
+<style>
+	/*------BOX APPEARANCE------*/
+	#panel-nodes {
+		.nodes-item-core-box .with-label>label::before {min-width:4.7em;}
+		core-cell-list .box-text.with-label {padding-right:8em;}
+		core-cell-list .box-bottom {position:absolute;bottom:calc(1.1em + 0.4em - 0.15em);right:1.1em;width:fit-content;}
+	}
+	
+	.fa-unshare {position:relative;background:inherit;&::before{content:"\f1e0"}&::after {content:"\f05e";font-size:0.8em;position:absolute;bottom:-0.5em;right:-0.1em;background:inherit;border-radius:50%;color:red;}}
+</style>
+
+<!-- Content Header -->
+<section class="content-header">
+	<h1>Shared Datasets <small>The list of <strong>datasets</strong> that are shared with other users of the platform.</small></h1>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"> </i>Home</a></li><li class="active">Shared Datasets</li></ol>
+</section>
+
+<!-- Content Body -->
+<section class="content">
+	<!-- Custom Tabs -->
+	<div id="panel-nodes" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select desired product sets view.">
+						<option class="role" data-target="#paginatedcells" value="manage_shared_datasets" selected>Shared Datasets</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role active"><a href="#paginatedcells" data-toggle="tab" data-action="manage_shared_datasets" aria-expanded="true">Shared Datasets</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">shared dataset</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				<div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-sm-12 col-md-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-name"></span></div>
+									<br />
+									<div class="box-text with-label"><label>Created: </label><strong><span class="val-created"></span></strong></div>
+									<div class="box-text with-label"><label>Subscribers: </label><strong><span class="val-subscribers"></span></strong></div>
+									<div class="box-text with-label"><label>Root path: </label><strong><span class="val-dataRootPath"></span></strong></div>
+									<div class="box-icon"><i class="fa fa-database"></i></div>
+								</div>
+								<div class="box-bottom">
+									<div class="text-right flat-buttons">
+										<button class="btn btn-primary btn-nodeop" data-action="unshare"><i class="fa fa-unshare fa-fw"></i> Unshare</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-md-4 col-sm-6">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-name"></span></div>
+									<br />
+									<div class="box-text with-label"><label>Created: </label><strong><span class="val-created"></span></strong></div>
+									<div class="box-text with-label"><label>Subscribers: </label><strong><span class="val-subscribers"></span></strong></div>
+									<div class="box-text with-label"><label>Root path: </label><strong><span class="val-dataRootPath"></span></strong></div>
+									<div class="box-icon"><i class="fa fa-database"></i></div>
+								</div>
+								<div class="box-bottom with-line">
+									<div class="text-left">
+										<button class="btn btn-primary btn-nodeop" data-action="unshare" data-toggle="tooltip" data-original-title="Unshare dataset"><i class="fa fa-unshare fa-fw"></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix">
+			<div class="controls-left">
+				<div><i class="fa fa-database"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> <span class="val-title">datasets</span></div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
+			</div>
+		</div>
+	</div>
+</section>
+
+<script type="text/javascript">
+	// Unshare dataset
+	var unshareDataset = function (name) {
+		$.ajax({
+			cache  : false,
+			url    : baseRestApiURL + "files/unshare?name=" + name,
+			type   : "POST",
+			headers: {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				if(jqXHR.status === 500 ){
+					showMsg("Unable to unshare dataset. Please try again.", "ERROR");
+				} else {
+					alert("An error has occurred, please try again or contact app admin.");
+				}
+			},
+			success: function (response) {
+				if (response.status === "SUCCEEDED") {
+					showMsg("Product set successfully unshared.", "SUCCESS");
+				} else {
+					showMsg("An error has occured. Could not unshare dataset.", response.status);
+				}
+				panelComp.refreshData();
+			}
+		});
+	};
+	
+	$(document).ready(function () {
+		var $selectActivePanel = $("#selectActivePanel");
+		var urls = [ baseRestApiURL + "files/share/list" ];
+		var actionsSet = {
+			"manage_shared_datasets": { badgeLabel: "Shared Datasets", pagLabel: "datasets", emptyLabel: "shared dataset", url: urls[0] }
+			
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
+				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+				$(".top-controls .search-container").attr("data-original-title", "Search " + (actionsSet[action]?.emptyLabel || action));
+			}
+			return selected;
+		};
+		window.panelComp = $("#panel-nodes").npPaginatedCells({
+			headerUser: taoUserProfile.username,
+			url       : urls,
+			viewMode  : preferences.viewMode,
+			order     :[
+				{ "label": "Name ascending" , "objAttributeName": "name", "direction": "ASC" },
+				{ "label": "Name descending", "objAttributeName": "name", "direction": "DSC" }
+			],
+			filterAttribute: "_dsFilterBy",
+			itemsOnPage: 12,
+			doDataPreprocessing: function (data, sets) {
+				var activeSet = getActiveSet(data, sets);
+				$.each(activeSet, function (index, elX) {
+					elX.created = moment(elX.created).format("YYYY-MM-DD HH:mm:ss");
+					elX._dsFilterBy = ("[" + elX.name + "][" + elX.created + "][" + elX.dataRootPath + "]");
+				});
+				return activeSet;
+			},
+			doAction: function (action, args) {
+				if (action === "unshare") {
+					$("#confirm-dialog").modal("confirm", {
+						msg: "Are you sure you want to unshare the dataset: <strong>" + args.dna.name + "</strong>?",
+						callbackConfirm: function () {
+							unshareDataset(args.dna.name);
+						},
+						callbackCancel: function () {}
+					});
+				}
+			}
+		});
+	});
+	
+//# sourceURL=shared-datasets.js
+</script>

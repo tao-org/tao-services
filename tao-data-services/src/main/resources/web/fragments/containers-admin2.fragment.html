@@ -1,0 +1,348 @@
+<style>
+	:root {
+		--box-grid-logo-size: 4.2em;
+		--box-grid-icon-size: 2.3em;
+		--box-list-logo-size: 5.0em;
+		--box-list-icon-size: 2.3em;
+	}
+	
+	/*------BOX APPEARANCE------*/
+	#panel-nodes {
+		.nodes-item-core-box .with-label>label::before {min-width:6em;}
+		@media (min-width: 768px) {
+			core-cell-list .box-description {padding-right:14em;margin-bottom:0;}
+			core-cell-list .box-bottom      {position:absolute;bottom:calc(1.1em + 0.4em - 0.15em);right:1.1em;width:fit-content;}
+		}
+	}
+	
+	/*------CUSTOM COLUMNS------*/
+	.col-custom {
+		padding-left:0.7em;padding-right:0.7em;
+		@media (min-width: 768px) {& {width:100%;float:left;}}
+		@media (min-width:1040px) {& {width: 50%;}}
+		@media (min-width:1410px) {& {width: 33%;}}
+		@media (min-width:1760px) {& {width: 25%;}}
+		@media (min-width:2130px) {& {width: 20%;}}
+		@media (min-width:2480px) {& {max-width: 37em;}}
+	}
+</style>
+
+<!-- Content Header -->
+<section class="content-header">
+	<h1>Toolbox Containers <small>The available docker <strong>containers</strong> that can be used for processing.</small></h1>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"> </i>Home</a></li><li class="active">Toolbox Containers</li></ol>
+</section>
+
+<!-- Content Body -->
+<section class="content">
+	<!-- Custom Tabs -->
+	<div id="panel-nodes" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select workflows by status.">
+						<option class="role" data-target="#paginatedcells" value="active_nodes">Toolbox containers</option>
+						<option class="role" data-target="#paginatedcells" value="pending_containers">Pending containers</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="active_nodes"       aria-expanded="false">Toolbox containers</a></li>
+						<li class="role"><a href="#paginatedcells" data-toggle="tab" data-action="pending_containers" aria-expanded="false">Pending containers</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="op-plus" data-showwhen="active_nodes" data-toggle="tooltip" data-original-title="Add new toolbox container"><i class="fa fa-plus"></i></button>
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">container</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				<div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-md-12 col-sm-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-name"></span></div>
+									<div class="box-subtitle"><i><span class="val-tag"></span></i></div>
+									<div class="box-text">
+										APPLICATIONS: <strong><span class="val-appsCount">0</span></strong> | 
+										FORMATS: <strong><span class="val-formatCount">0</span></strong> | 
+										PATH: <strong><span class="val-applicationPath">0</span></strong>
+									</div>
+									<div class="box-icon icon"><i class="fa fa-sitemap"></i></div>
+								</div>
+								<div class="box-description"><span class="val-description"> - </span></div>
+								<div class="box-bottom">
+									<div class="text-right flat-buttons">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"  ><i class="fa fa-pencil fa-fw" ></i> Edit</button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"><i class="fa fa-trash-o fa-fw"></i> Delete</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-custom">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-name"></span></div>
+									<div class="box-subtitle"><i><span class="val-tag"></span></i></div>
+									<div class="box-text with-label icon-shift"><label>APPLICATIONS: </label><strong><span class="val-appsCount">0</span></strong></div>
+									<div class="box-text with-label icon-shift"><label>FORMATS: </label><strong><span class="val-formatCount">0</span></strong></div>
+									<div class="box-text with-label icon-shift"><label>PATH: </label><strong><span class="val-applicationPath">0</span></strong></div>
+									<div class="box-icon icon bottom"><i class="fa fa-archive"></i></div>
+								</div>
+								<div class="box-description"><span class="val-description"> - </span></div>
+								<div class="box-bottom">
+									<div class="text-left">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"   data-toggle="tooltip" data-original-title="Edit"  ><i class="fa fa-pencil fa-fw" ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete" data-toggle="tooltip" data-original-title="Delete"><i class="fa fa-trash-o fa-fw"></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix">
+			<div class="controls-left">
+				<div><i class="fa fa-archive"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> <span class="val-title">containers</span></div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- Modal for user actions -->
+<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog">
+	<div class="modal-dialog"></div>
+</div>
+
+<!-- Modal for container descriptor -->
+<div id="myModalNodesContDesc" class="modal fade" tabindex="-1" role="dialog">
+	<div class="modal-dialog"></div>
+</div>
+
+<!-- Modal for component descriptor -->
+<div id="myModalNodesCompDesc" class="modal fade" tabindex="-1" role="dialog">
+	<div class="modal-dialog"></div>
+</div>
+
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ace.min.js" charset="utf-8"></script>
+
+<script type="text/javascript">
+	window.navCleanup = function () {
+	};
+</script>
+
+<script type="text/javascript">
+	var nameListTC = [];
+	
+	var myModalNodesOpShow = function (operationid, args) {
+		var $modal = $("#myModalNodes");
+		$(".modal-dialog", $modal).removeClass("modal-lg");
+		var rm_contentUrl = "";
+		var rmContent = "";
+		window.userOpStack = [];
+		
+		if (operationid === "op-plus") {
+			$(".modal-dialog", $modal).addClass("modal-lg");
+			rm_contentUrl = "./fragments/containers-plus.fragment.html?" + Math.random();
+		} else if (operationid === "edit") {
+			$(".modal-dialog", $modal).addClass("modal-lg");
+			window.userOpStack = { "dna": args.dna };
+			rm_contentUrl = "./fragments/containers-edit.fragment.html?" + Math.random();
+		}
+		
+		if (rm_contentUrl === "") {
+			alert("TAO - Operation mismatch");
+		} else {
+			$.ajax({
+				url: rm_contentUrl,
+				error: function (jqXHR, textStatus, errorThrown) {
+					alert("Could not retrive needed data from server.\n" + errorThrown);
+				},
+				success: function (result) {
+					if (result !== "") {
+						$(".modal-dialog", $modal).html(result);
+						$modal.modal("show");
+					} else {
+						alert("Could not retrive needed data from server.");
+					}
+				}
+			});
+		}
+	};
+	
+	var deleteContainerbyId = function(id) {
+		var deleteContainer = $.ajax({
+            cache  : false,
+            url    : baseRestApiURL + "docker/" + id,
+            type   : "DELETE",
+            headers: {
+				"Accept"      : "application/json",
+				"Content-Type": "application/json",
+				"X-Auth-Token": window.tokenKey
+			}
+        });
+        $.when(deleteContainer).done(function (deleteContResponse) {
+			if (deleteContResponse?.status === "SUCCEEDED") {
+				showMsg("Container deleted", "SUCCESS");
+				panelComp.refreshData();
+			} else {
+				showMsg("Container deletion failed. " + (deleteContResponse?.message || ""), "ERROR");
+			}
+		}).fail(function (jqXHR, textStatus, errorThrown) {
+			showMsg("Container delete failed. " + errorThrown, "ERROR");
+		});
+	}
+	
+	$(document).ready(function () {
+		var $selectActivePanel = $("#selectActivePanel");
+		var urls = [];
+		var actionsSet = {
+			"active_nodes"      : { badgeLabel: "Toolbox containers", pagLabel: "containers"        , emptyLabel: "container"        , url: baseRestApiURL + "docker/"                         },
+			"pending_containers": { badgeLabel: "Pending containers", pagLabel: "pending containers", emptyLabel: "pending container", url: baseRestApiURL + "docker/type?type=1&visibility=1" }
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
+				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+				$(".top-controls .search-container").attr("data-original-title", "Search " + (actionsSet[action]?.emptyLabel || action));
+			}
+			return selected;
+		};
+		window.panelComp = $("#panel-nodes").npPaginatedCells({
+			headerUser: taoUserProfile.username,
+			url       : urls,
+			viewMode  : preferences.viewMode,
+			order     : [
+				{ "label": "Name ascending" , "objAttributeName": "name", "direction": "ASC" },
+				{ "label": "Name descending", "objAttributeName": "name", "direction": "DSC" }
+			],
+			filterAttribute: "name",
+			doDataPreprocessing: function (data, sets) {
+				var activeSet = getActiveSet(data, sets);
+				$.each(activeSet, function (index, elX) {
+					elX.appsCount = elX.applications.length;
+					elX.formatCount = elX.format.length;
+					elX.tags = [ elX.tag ];
+					nameListTC.push(elX.name);
+				});
+				return activeSet;
+			},
+			doCustomRender: function($elClone, elX) {
+				// Hide delete button for active containers
+				var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+				(action === "active_nodes") && $('.btn[data-action="delete"]', $elClone).remove();
+				
+				// Show image
+				if (typeof elX.logo !== "undefined") {
+					var iconHtml = $(".box-icon", $elClone).html();
+					// Replace existing icon with image
+					$(".box-icon", $elClone).addClass("logo").html('<img src="data:image/jpeg;base64, ' + elX.logo + '" />');
+					
+					// Check image validity and its layout (portrait/landscape)
+					var img = $(".box-icon>img", $elClone).get(0);
+					img.decode().then(function () {
+						(img.naturalWidth < img.naturalHeight) && $(img).addClass("portrait");
+					}).catch(function () {
+						$(".box-icon", $elClone).removeClass("logo").html(iconHtml); // Restore default icon when image is not valid
+					});
+				}
+			},
+			doAction: function (action, args) {
+				if (action === "op-plus") {
+					if (taoUserProfile.userRole === "ADMIN") {
+						myModalNodesOpShow(action, args);
+					} else {
+						showMsg("Only admin roles can add toolbox containers.", "ERROR");
+					}
+				} else if (action === "edit") {
+					myModalNodesOpShow(action, args);
+				} else if (action === "delete") {
+					if (taoUserProfile.userRole === "ADMIN" || taoUserProfile.id === args.dna.id) {
+						$("#confirm-dialog").modal("confirm", {
+							msg: 'Are you sure you want to delete container <strong style="word-break:break-word">' + args.dna.name + '</strong>?',
+							callbackConfirm: function () { deleteContainerbyId(args.dna.id); },
+							callbackCancel : function () {}
+						});
+					} else {
+						showMsg("Not allowed!", "ERROR");
+					}
+				}
+			}
+		});
+		
+		$selectActivePanel
+		// Change active tab (using the tab controls)
+		.on("click", '[data-toggle="tab"][aria-expanded="false"]', function (e) {
+			navCleanup();
+			
+			var action = $(this).data("action");
+			e.originalEvent && $("select", e.delegateTarget).val(action);
+			
+			urls = (urls.length == 0) ? $.map(actionsSet, function (set, idx) { return set.url; }) : [ actionsSet[action].url ];
+			window.panelComp.refreshData(urls);
+		})
+		// Change active tab (using the combobox)
+		.on("change", "select", function (e) {
+			$('a[data-action="' + this.value + '"]', e.delegateTraget).eq(0).click();
+		})
+		// Show or hide specific toolbar icons when active tab changes
+		.on("shown.bs.tab", '[data-toggle="tab"][aria-expanded]', function (e) {
+			// Toggle visibility of specific toolbar icons
+			$('[data-showwhen]', ".top-controls").addClass("hidden").filter('[data-showwhen="' + $(e.currentTarget).data("action") + '"]').removeClass("hidden");
+		});
+		
+		// Start with active toolbox containers
+		$('[data-toggle="tab"][data-action="active_nodes"]', $selectActivePanel).eq(0).click();
+	});
+	
+//# sourceURL=containers-admin2.js
+</script>

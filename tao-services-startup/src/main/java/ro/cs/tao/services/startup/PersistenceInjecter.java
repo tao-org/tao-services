@@ -1,18 +1,23 @@
 package ro.cs.tao.services.startup;
 
+import ro.cs.tao.component.ConditionComponent;
+import ro.cs.tao.component.constraints.ConstraintFactory;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
 import ro.cs.tao.execution.Executor;
 import ro.cs.tao.execution.TaskStatusListener;
+import ro.cs.tao.execution.drmaa.ConditionExecutor;
 import ro.cs.tao.execution.drmaa.DRMAAExecutor;
 import ro.cs.tao.execution.local.NullExecutor;
 import ro.cs.tao.execution.local.QueryExecutor;
 import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTask;
 import ro.cs.tao.execution.model.ResourceUsage;
+import ro.cs.tao.execution.ogc.OGCProcessExecutor;
 import ro.cs.tao.execution.wms.WMSExecutor;
 import ro.cs.tao.execution.wps.WPSExecutor;
 import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.persistence.PersistenceException;
 import ro.cs.tao.persistence.managers.ResourceUsageManager;
 import ro.cs.tao.security.SessionStore;
 import ro.cs.tao.security.SystemPrincipal;
@@ -28,10 +33,30 @@ import ro.cs.tao.topology.NodeFlavor;
 import ro.cs.tao.utils.ExceptionUtils;
 
 import javax.security.auth.spi.LoginModule;
+import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
+/**
+ * The {@code PersistenceInjecter} class is responsible for managing the initialization
+ * and configuration of persistence-related components and services within the application lifecycle.
+ * It extends {@code BaseLifeCycle} to utilize lifecycle hooks for startup and shutdown processes.
+ *
+ * This class performs the following key tasks during the startup process:
+ * 1. Refreshes the system principal using user data from the persistence manager.
+ * 2. Registers a {@link TaskStatusListener} to handle task status changes and update
+ *    the corresponding persistence states.
+ * 3. Configures various executors and services with the appropriate persistence data providers.
+ * 4. Initializes and saves predefined condition components if they do not already exist.
+ * 5. Sets up session providers and authentication-related providers for the security framework.
+ *
+ * The shutdown process is defined but does not currently implement any specific functionality.
+ *
+ * This class interacts heavily with multiple subsystems such as task handling,
+ * job management, resource usage tracking, and data storage to ensure proper initialization
+ * and persistence integration across the application.
+ */
 public class PersistenceInjecter extends BaseLifeCycle {
 
     @Override
@@ -42,6 +67,10 @@ public class PersistenceInjecter extends BaseLifeCycle {
     @Override
     public void onStartUp() {
         SystemPrincipal.refresh(persistenceManager.users());
+        persistenceManager.users().updateUserApiKey(SystemPrincipal.instance().getName(),
+                                                    SystemPrincipal.instance().getApiKey(),
+                                                    LocalDateTime.now().plusDays(Long.parseLong(ConfigurationManager.getInstance()
+                                                                                                                    .getValue("api.key.expiration", "60"))));
         Executor.addStatusListener(new TaskStatusListener() {
             final EnumSet<ExecutionStatus> stoppedStates = EnumSet.of(ExecutionStatus.DONE,
                                                                       ExecutionStatus.FAILED,
@@ -105,13 +134,19 @@ public class PersistenceInjecter extends BaseLifeCycle {
         DRMAAExecutor.setTaskProvider(persistenceManager.tasks());
         DRMAAExecutor.setJobProvider(persistenceManager.jobs());
         DRMAAExecutor.setContainerProvider(persistenceManager.containers());
+        DRMAAExecutor.setNodeDBProvider(persistenceManager.nodes());
         WPSExecutor.setTaskProvider(persistenceManager.tasks());
         WPSExecutor.setJobProvider(persistenceManager.jobs());
         WPSExecutor.setAuthenticationProvider(persistenceManager.webServiceAuthentication());
+        WMSExecutor.setTaskProvider(persistenceManager.tasks());
         WMSExecutor.setJobProvider(persistenceManager.jobs());
         WMSExecutor.setAuthenticationProvider(persistenceManager.webServiceAuthentication());
+        OGCProcessExecutor.setTaskProvider(persistenceManager.tasks());
+        OGCProcessExecutor.setJobProvider(persistenceManager.jobs());
+        OGCProcessExecutor.setAuthenticationProvider(persistenceManager.webServiceAuthentication());
         NullExecutor.setWorkflowNodeProvider(persistenceManager.workflowNodes());
         NullExecutor.setComponentProvider(persistenceManager.processingComponents());
+        ConditionExecutor.setTaskProvider(persistenceManager.tasks());
         Messaging.setPersister(this.persistenceManager.notifications());
         logger.fine("Persistence injection completed");
         SpringSessionProvider.setPersistenceManager(this.persistenceManager);
@@ -126,12 +161,45 @@ public class PersistenceInjecter extends BaseLifeCycle {
         StorageServiceFactory.setProductProvider(this.persistenceManager.rasterData());
         StorageServiceFactory.setVectorDataProvider(this.persistenceManager.vectorData());
         StorageServiceFactory.setAuxiliaryDataProvider(this.persistenceManager.auxiliaryData());
+        StorageServiceFactory.setRepositoryProvider(this.persistenceManager.repositories());
         ServiceRegistry<ItemAction> registry = registryManager.getServiceRegistry(ItemAction.class);
         Set<ItemAction> services = registry.getServices();
         for (ItemAction action : services) {
             action.setProductProvider(this.persistenceManager.rasterData());
         }
         ContainerTunnelFilter.setContainerInstanceProvider(this.persistenceManager.containerInstance());
+        ConstraintFactory.setNamingRuleProvider(this.persistenceManager.namingRules());
+        // Condition components
+        ConditionComponent component = this.persistenceManager.conditionComponents()
+                                                              .get(ConditionComponent.ONE_CONDITION_COMPONENT_ID);
+        if (component == null) {
+            component = ConditionComponent.oneConditionComponent();
+            try {
+                this.persistenceManager.conditionComponents().save(component);
+            } catch (PersistenceException e) {
+                logger.warning(e.getMessage());
+            }
+        }
+        component = this.persistenceManager.conditionComponents()
+                                           .get(ConditionComponent.TWO_CONDITIONS_COMPONENT_ID);
+        if (component == null) {
+            component = ConditionComponent.twoConditionsComponent();
+            try {
+                this.persistenceManager.conditionComponents().save(component);
+            } catch (PersistenceException e) {
+                logger.warning(e.getMessage());
+            }
+        }
+        component = this.persistenceManager.conditionComponents()
+                                           .get(ConditionComponent.PASS_THROUGH_COMPONENT_ID);
+        if (component == null) {
+            component = ConditionComponent.passThroughComponent();
+            try {
+                this.persistenceManager.conditionComponents().save(component);
+            } catch (PersistenceException e) {
+                logger.warning(e.getMessage());
+            }
+        }
     }
 
     @Override

@@ -1,5 +1,6 @@
 package ro.cs.tao.services.entity.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.springframework.http.HttpStatus;
@@ -26,8 +27,24 @@ import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/utilities")
+@Tag(name = "Utilities", description = "Request proxy utility controller")
 public class UtilityController extends BaseController {
 
+    /**
+     * Handles HTTP GET requests to retrieve a file based on the provided parameters.
+     * The method processes the request, validates the input, and attempts to fetch or
+     * download a file from the specified URL in the request parameters. The response
+     * contains the relative path to the downloaded file or an error message if the
+     * operation fails.
+     *
+     * @param url          The URL of the file to be downloaded. This parameter is mandatory.
+     * @param productName  The name of the product related to the file being retrieved. This parameter is mandatory.
+     * @param user         The username to access the URL, if required. This parameter is optional.
+     * @param password     The password to access the URL, if required. This parameter is optional.
+     * @return A {@code ResponseEntity} containing the relative path of the downloaded file upon
+     *         success or an error message with an HTTP status code of {@code INTERNAL_SERVER_ERROR}
+     *         in case of failure.
+     */
     @RequestMapping(value = "/tunnel/get", method = RequestMethod.GET)
     public ResponseEntity<?> get(@RequestParam("url") String url,
                                  @RequestParam("name") String productName,
@@ -58,6 +75,21 @@ public class UtilityController extends BaseController {
         return serviceResponse;
     }
 
+    /**
+     * Handles HTTP POST requests to process a batch of file retrieval requests.
+     * The method processes the list of URLs provided in the request, attempts to fetch or generate
+     * files associated with the specified parameters, and returns the resulting file paths.
+     *
+     * @param request The {@code FetchFilesRequest} object containing the following:
+     *                - {@code user}: The username to access the URLs, if required.
+     *                - {@code password}: The password to access the URLs, if required.
+     *                - {@code urls}: A list of {@code Variable} objects, where each contains the URL
+     *                  and associated product name to process.
+     * @return A {@code ResponseEntity} containing:
+     *         - The list of processed URLs with updated file paths upon success.
+     *         - An error message with an HTTP status code of {@code INTERNAL_SERVER_ERROR}
+     *           in case of processing failure (e.g., invalid configuration or empty URL list).
+     */
     @RequestMapping(value = "/tunnel/getmany", method = RequestMethod.POST)
     public ResponseEntity<?> getMany(@RequestBody FetchFilesRequest request) {
         ResponseEntity<?> serviceResponse;

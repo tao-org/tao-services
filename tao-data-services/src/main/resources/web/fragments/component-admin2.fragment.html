@@ -1,0 +1,365 @@
+<style>
+	/*------BOX APPEARANCE------*/
+	#panel-nodes {
+		.nodes-item-core-box .with-label>label::before {min-width:4em;}
+		@media (min-width: 768px) {
+			core-cell-list .box-description {padding-right:28em;margin-bottom:0;}
+			core-cell-list .box-bottom      {position:absolute;bottom:calc(1.1em + 0.4em - 0.15em);right:1.1em;width:fit-content;}
+		}
+	}
+	
+	/*------CUSTOM COLUMNS------*/
+	.col-custom {
+		padding-left:10px;padding-right:10px;
+		@media (min-width: 768px) {& {width:100%;float:left;}}
+		@media (min-width:1040px) {& {width: 50%;}}
+		@media (min-width:1410px) {& {width: 33%;}}
+		@media (min-width:1760px) {& {width: 25%;}}
+		@media (min-width:2130px) {& {width: 20%;}}
+		@media (min-width:2480px) {& {max-width: 37em;}}
+	}
+</style>
+
+<!-- Content Header -->
+<section class="content-header">
+	<h1>Processing Modules <small>The list of <strong>executables</strong> that constitute the building block of workflows.</small></h1>
+	<ol class="breadcrumb"><li><a href="#"><i class="fa fa-dashboard"> </i>Home</a></li><li class="active">Processing Modules</li></ol>
+</section>
+
+<!-- Content Body -->
+<section class="content">
+	<!-- Custom Tabs -->
+	<div id="panel-nodes" class="nav-tabs-custom">
+		<!-- Top controls: tabs, action buttons, search, sort -->
+		<div class="top-controls clearfix">
+			<div class="box-notification"><p><span>List updated</span></p></div>
+			<div class="top-actions pull-left">
+				<div id="selectActivePanel">
+					<select name="selectActivePanel" class="field-master-tool form-changepane visible-xs-block" title="Select workflows by status.">
+						<option class="role" data-target="#paginatedcells" value="active_nodes" selected>Components</option>
+					</select>
+					<ul class="nav nav-pills hidden-xs">
+						<li class="role active"><a href="#paginatedcells" data-toggle="tab" data-action="active_nodes" aria-expanded="true">Components</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="top-actions pull-left">
+				<button class="btn btn-master-tool" data-action="op-plus" data-toggle="tooltip" data-original-title="Add new processing module"><i class="fa fa-plus"></i></button>
+				<button class="btn btn-master-tool" data-action="op-plus-import" data-toggle="tooltip" data-original-title="Import processing module"><i class="fa fa-upload"></i></button>
+				<button class="btn btn-master-tool" data-action="op-filter" data-toggle="tooltip" data-original-title="Filter by tags"><i class="fa fa-filter"></i><span class="label label-warning val-count-filters" style="display:none;">0</span></button>
+				<form class="search-container" data-toggle="tooltip" data-original-title="Search"><input id="search-box" type="text" class="search-box field-master-tool" name="q" placeholder="Search..." /><label for="search-box" class="fa fa-search search-icon"></label></form>
+			</div>
+			<div class="top-actions pull-right">
+				<button class="btn btn-master-tool" data-action="refresh-list" data-toggle="tooltip" data-original-title="Refresh"  ><i class="fa fa-refresh fa-spin-hover"></i></button>
+				<button class="btn btn-master-tool" data-action="view-list"    data-toggle="tooltip" data-original-title="List view"><i class="fa fa-list"></i></button>
+				<button class="btn btn-master-tool" data-action="view-table"   data-toggle="tooltip" data-original-title="Grid view"><i class="fa fa-table"></i></button>
+			</div>
+			<div class="top-actions pull-right">
+				<div class="nppaginatedcells-order collapse" data-toggle="tooltip" title="Change order"></div>
+			</div>
+			<div class="like collapse pull-left">
+				<span data-tag="tag">Label like: <strong class="val-q"></strong>&nbsp;<i class="fa fa-times fa-fw clear-search"></i></span>
+			</div>
+			<div class="tags collapse pull-left">
+				<span class="collapse" data-tag="tag">tag<i class="fa fa-check fa-fw"></i></span>
+			</div>
+		</div>
+		<!-- Cells -->
+		<div class="tab-content">
+			<div id="paginatedcells" class="tab-pane active clearfix">
+				<div class="nppaginatedcells-empty callout callout-empty collapse">
+					<p>List is empty. <span class="results-empty">You do not have any <span class="val-title">processing module</span>.</span><span class="filter-results-empty collapse">Your current selection returned no results.</span></p>
+				</div>
+				<div class="nppaginatedcells-panel-body clearfix"></div>
+				<div class="cell-templates collapse">
+					<core-cell-list>
+						<div class="col-sm-12 col-md-12">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-label"></span></div>
+									<div class="box-subtitle"><span class="val-id"></span></div>
+									<div class="box-text">
+										Version: <strong><span class="val-version"></span></strong> | 
+										Authors: <strong><span class="val-authors"></span></strong> | 
+										Copyright: <strong><span class="val-copyright"></span></strong> 
+									</div>
+									<div class="box-icon"><i class="fa fa-microchip"></i></div>
+								</div>
+								<div class="box-description"><span class="val-description"></span></div>
+								<div class="box-bottom" >
+									<div class="text-right flat-buttons">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"     ><i class="fa fa-pencil fa-fw"  ></i> Edit</button>
+										<button class="btn btn-primary btn-nodeop" data-action="clone"    ><i class="fa fa-clone fa-fw"   ></i> Clone</button>
+										<button class="btn btn-primary btn-nodeop" data-action="save-json"><i class="fa fa-download fa-fw"></i> Export</button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"   ><i class="fa fa-trash-o fa-fw" ></i> Delete</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-list>
+					<core-cell-grid>
+						<div class="col-lg-3 col-custom">
+							<div class="nodes-item-core-box">
+								<div class="box-top-tags"></div>
+								<div class="box-top">
+									<div class="box-title"><span class="val-label"></span></div>
+									<div class="box-subtitle"><i><span class="val-id"></span></i></div>
+									<div class="box-text with-label"><label>Version: </label><strong><span class="val-version"></span></strong></div>
+									<div class="box-text with-label"><label>Authors: </label><strong><span class="val-authors"></span></strong></div>
+									<div class="box-text with-label"><label>Copyright: </label><strong><span class="val-copyright"></span></strong></div>
+									<div class="box-icon"><i class="fa fa-microchip"></i></div>
+								</div>
+								<div class="box-description thin-scrollbar onhover"><span class="val-description"></span></div>
+								<div class="box-bottom with-line">
+									<div class="text-left">
+										<button class="btn btn-primary btn-nodeop" data-action="edit"      data-toggle="tooltip" data-original-title="Edit component"     ><i class="fa fa-pencil fa-fw"  ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="clone"     data-toggle="tooltip" data-original-title="Clone component"    ><i class="fa fa-clone fa-fw"   ></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="save-json" data-toggle="tooltip" data-original-title="Export to file"><i class="fa fa-download fa-fw"></i></button>
+										<button class="btn btn-primary btn-nodeop" data-action="delete"    data-toggle="tooltip" data-original-title="Delete component"   ><i class="fa fa-trash-o fa-fw" ></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</core-cell-grid>
+				</div>
+			</div>
+		</div>
+		<!-- Bottom controls: pagination -->
+		<div class="bottom-controls clearfix">
+			<div class="controls-left">
+				<div><i class="fa fa-microchip"></i>&nbsp;&nbsp;Showing <span class="val-itemfrom">0</span> to <span class="val-itemto">0</span> of <span class="val-itemscount">0</span> <span class="val-title">processing modules</span></div>
+			</div>
+			<div class="controls-right">
+				<ul class="nppaginatedcells-panel-pagination pagination pagination-sm inline"></ul>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- Modal for user actions -->
+<div id="myModalNodes" class="modal fade" tabindex="-1" role="dialog">
+	<div class="modal-dialog"></div>
+</div>
+
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ace.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ext-language_tools.min.js" charset="utf-8"></script>
+
+<script type="text/javascript">
+	window.navCleanup = function () {
+	};
+</script>
+
+<script type="text/javascript">
+    var myModalNodesOpShow = function (operationid, args) {
+        var $modal = $("#myModalNodes");
+        $(".modal-dialog",$modal).removeClass("modal-lg");
+        var rm_contentUrl = '';
+        var rmContent = '';
+        window.userOpStack = [];
+
+        if(operationid === "op-plus"){
+            $(".modal-dialog",$modal).addClass("modal-lg");
+            rm_contentUrl="./fragments/component-plus.fragment.html?" + Math.random();
+        }
+        if(operationid === "op-plus-import"){
+            window.userOpStack = [{
+                "action": "comp_import"
+            }]
+            $(".modal-dialog",$modal).addClass("modal-md");
+            rm_contentUrl = "./fragments/components-import.fragment.html?" + Math.random();
+        }
+        if(operationid === "edit"){
+            window.userOpStack = [{
+                "dna": args.dna,
+                "action": "comp_edit"
+            }];
+            $(".modal-dialog",$modal).addClass("modal-lg");
+            rm_contentUrl="./fragments/component-plus.fragment.html?" + Math.random();
+        }
+        if(rm_contentUrl === ''){
+            alert("TAO - Operation mismatch");
+            return;
+        }
+        $.ajax({
+            url: rm_contentUrl,
+            success: function(result) {
+                rmContent = result;
+                if(rmContent !== ''){
+                    $modal.find('.modal-dialog').first().html(rmContent);
+                }else{
+                    alert("Could not retrive needed data from server.");
+                    return e.preventDefault();
+                }
+                $modal.modal('show');
+            }
+        });
+    };
+	
+    var deleteProcessingComponentById = function (id) {
+        $.ajax({
+            cache: false,
+            url: baseRestApiURL + "component/"+id+"/",
+            dataType : 'json',
+            type: 'DELETE',
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-Auth-Token": window.tokenKey
+            },
+            error : function (jqXHR, textStatus, errorThrown) {
+                if(jqXHR.status === 500 ){
+                    showMsg("Unable to delete component. Please try again.", "ERROR");
+                } else {
+                    alert('An error has occurred, please try again or contact app admin.');
+                }
+            },
+            success: function(data) {
+                if(data.status === "SUCCEEDED"){
+                    showMsg("Component successfully deleted.", "SUCCESS");
+                }else{
+                    showMsg("The component could not be deleted.", "ERROR");
+                }
+                panelComp.refreshData();
+            }
+        });
+    };
+	
+    var exportAsJson = function (id) {
+        $.ajax({
+            cache    : false,
+			url      : baseRestApiURL + "component/"+ id + "/export",
+            dataType : 'json',
+            type     : 'GET',
+            headers  : {
+                "Content-Type": "application/json",
+                "X-Auth-Token": window.tokenKey
+            },
+            error : function (jqXHR, textStatus, errorThrown) {
+                if(jqXHR.status === 500 ){
+                    showMsg("Unable to export component. Please try again.", "ERROR");
+                } else {
+                    alert('An error has occurred, please try again or contact app admin.');
+                }
+            },
+            success: function(data) {
+                if(typeof data !== 'undefined'){
+                    showMsg("Component successfully exported to your downloads folder.", "SUCCESS");
+                    const link = document.createElement("a");
+                    var content = JSON.stringify(data);
+                    var file = new Blob([content], {type: "application/json"});
+                    link.href = URL.createObjectURL(file);
+                    link.download = data.id;
+                    link.click();
+                    URL.revokeObjectURL(link.href);
+                }else{
+                    showMsg("The component could not be exported.", "ERROR");
+                }
+            }
+        });
+    };
+	
+    var cloneComponent = function (id) {
+        var cloneWf = $.ajax({
+            cache: false,
+            url: baseRestApiURL + "component/clone/?componentId=" + id,
+            type: 'POST',
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-Auth-Token": window.tokenKey
+            }
+        });
+        $.when(cloneWf)
+            .done(function (cloneWfResponse) {
+                var r = chkTSRF(cloneWfResponse);
+                if(r.id){
+                    showMsg("Component successfully cloned. Component <i>"+r.label+"</i> with id <i>"+r.id+"</i> was created in your workspace.", "SUCCESS");
+                    panelComp.refreshData();
+                }else{
+                    showMsg("Component cloning failed. " + (typeof cloneWfResponse.message !== 'undefined' ? cloneWfResponse.message : ''), "ERROR");
+                }
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+                showMsg("Component cloning failed. " + errorThrown, "ERROR");
+            });
+    };
+	
+    $(document).ready(function () {
+		var $selectActivePanel = $("#selectActivePanel");
+        var urls = [ baseRestApiURL + "component/" ];
+		var actionsSet = {
+			"active_nodes" : { badgeLabel: "Components", pagLabel: "processing modules", emptyLabel: "processing module", url: urls[0] },
+			
+		};
+		var getActiveSet = function (data, sets) {
+			var action = $('[data-toggle="tab"][aria-expanded="true"]', $selectActivePanel).data("action");
+			var selected = (typeof action === "undefined" || typeof actionsSet[action].filter === "undefined") ? data : _.where(data, actionsSet[action].filter);
+			if (typeof action !== "undefined") {
+				if (typeof sets !== "undefined") {
+					$.each(sets, function (idx, set) {
+						// Select active set
+						var setAction = _.findKey(actionsSet, { url: idx });
+						var filterSet = (typeof actionsSet[setAction].filter === "undefined") ? set : _.where(set, actionsSet[setAction].filter);
+						if (setAction === action) { selected = filterSet; }
+						// Refresh count badge for all action sets
+						$('select>[value="' + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' (' + filterSet.length + ')');
+						$('[data-action="'  + setAction + '"]', $selectActivePanel).html((actionsSet[setAction]?.badgeLabel || setAction) + ' <span class="badge label-success">' + filterSet.length + '</span>');
+					});
+				}
+				// Refresh count badge for current action set
+				$('select>[value="' + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' (' + selected.length + ')');
+				$('[data-action="'  + action + '"]', $selectActivePanel).html((actionsSet[action]?.badgeLabel || action) + ' <span class="badge label-success">' + selected.length + '</span>');
+				// Change texts specific to current action set
+				$(".val-title", ".bottom-controls"       ).text(actionsSet[action]?.pagLabel   || action);
+				$(".val-title", ".nppaginatedcells-empty").text(actionsSet[action]?.emptyLabel || action);
+				$(".top-controls .search-container").attr("data-original-title", "Search " + (actionsSet[action]?.emptyLabel || action));
+			}
+			return selected;
+		};
+		window.panelComp = $("#panel-nodes").npPaginatedCells({
+			headerUser: taoUserProfile.username,
+			url       : urls,
+			loading   : true,
+			viewMode  : preferences.viewMode,
+			order     : [
+				{ "label": "Name ascending" , "objAttributeName": "label", "direction": "ASC" },
+				{ "label": "Name descending", "objAttributeName": "label", "direction": "DSC" }
+			],
+			filterAttribute: "label",
+			doDataPreprocessing: function (data, sets) {
+				var activeSet = getActiveSet(data, sets);
+				return activeSet;
+			},
+			doAction: function (action, args) {
+				if (action === "op-plus") {
+					if (taoUserProfile.userRole !== "ADMIN") {
+						showMsg("Only admin can add components to the shared workspace. You should try adding components to your own workspace", "ERROR");
+						return;
+					}
+					myModalNodesOpShow(action, args);
+				} else if (action === "edit" || action == "op-plus-import") {
+					myModalNodesOpShow(action, args);
+				} else if (action === "clone") {
+                    cloneComponent(args.dna.id);
+                } else if (action === "save-json") {
+                    exportAsJson(args.dna.id);
+                } else if (action === "delete") {
+					if (taoUserProfile.userRole !== "ADMIN") {
+						alert("not allowed");
+						return;
+					}
+					$("#confirm-dialog").modal("confirm", {
+						msg: "Are you sure you want to delete the processing module: <strong style='word-break: break-word'>" + args.dna.label + "</strong>?",
+						callbackConfirm: function () {
+							deleteProcessingComponentById(args.dna.id);
+						},
+						callbackCancel: function () {}
+					});
+				}
+			}
+		});
+    });
+	
+//# sourceURL=component-admin2.js
+</script>

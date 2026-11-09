@@ -246,6 +246,9 @@ public class TopologyServiceImpl
                 if (flavor.getDisk() <= 0) {
                     errors.add("[flavor.disk] cannot be less than 1");
                 }
+                if (flavor.getMemoryUnit() == null) {
+                    errors.add("[flavor.memoryUnit] cannot be null");
+                }
                 if (Float.compare(flavor.getRxtxFactor(), 0.0f) <= 0) {
                     errors.add("[flavor.rxtxFactor] must be positive");
                 }

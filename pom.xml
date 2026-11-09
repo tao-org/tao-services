@@ -7,7 +7,7 @@
     <parent>
         <groupId>ro.c-s.tao</groupId>
         <artifactId>tao-core</artifactId>
-        <version>1.4.3</version>
+        <version>1.6.1</version>
     </parent>
 
     <artifactId>tao-services</artifactId>
@@ -34,10 +34,17 @@
         <module>tao-workspace-service</module>
         <module>tao-viewer-service</module>
         <module>tao-services-kit</module>
+        <module>tao-jupyter-service</module>
+        <module>tao-cleanup-service</module>
+        <module>tao-ogc-service</module>
+        <module>tao-simpipe-service</module>
+        <module>tao-web-core</module>
+        <module>tao-zeppelin-service</module>
+        <!--<module>tao-openeo-service</module>-->
     </modules>
 
     <properties>
-        <spring.boot.version>2.7.11</spring.boot.version>
+        <spring.boot.version>2.7.18</spring.boot.version>
         <taoReleasesUrl>${project.deploy.root.path}/tao-services</taoReleasesUrl>
     </properties>
 
@@ -45,6 +52,11 @@
         <repository>
             <id>Nexus</id>
             <url>https://nexus.senbox.net/nexus/content/repositories/public/</url>
+        </repository>
+        <repository>
+            <id>maven_central</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2/</url>
         </repository>
     </repositories>
 
@@ -78,7 +90,11 @@
             <artifactId>spring-boot-starter-security</artifactId>
             <version>${spring.boot.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <version>${spring.boot.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.session</groupId>
             <artifactId>spring-session-core</artifactId>
@@ -146,7 +162,9 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven.compiler.plugin.version}</version>
                     <configuration>
-                        <release>11</release>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <release>${maven.compiler.release}</release>
                         <annotationProcessorPaths>
                             <path>
                                 <groupId>com.github.therapi</groupId>
@@ -201,7 +219,7 @@
                             </goals>
                             <configuration>
                                 <includeScope>runtime</includeScope>
-                                <excludeGroupIds>ro.cs.tao</excludeGroupIds>
+                                <excludeGroupIds>ro.c-s.tao</excludeGroupIds>
                                 <overWriteReleases>false</overWriteReleases>
                                 <overWriteSnapshots>true</overWriteSnapshots>
                                 <outputDirectory>../tao-services-kit/target/tao-services-${project.version}/tao/lib</outputDirectory>

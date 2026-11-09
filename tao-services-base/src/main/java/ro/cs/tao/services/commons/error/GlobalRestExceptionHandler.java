@@ -39,10 +39,26 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
+/**
+ * A global exception handler for REST controllers that extends
+ * ResponseEntityExceptionHandler. This class provides centralized exception
+ * handling across the whole application by overriding various exception handling
+ * methods. It handles common Spring MVC exceptions and produces standardized
+ * error responses.
+ *
+ * The handler logs error details, including the client IP address, the request's
+ * origin, the user (if available), and the request URI, and produces a response
+ * body containing the error message and request parameters.
+ *
+ * Methods in this class are invoked automatically whenever an exception occurs
+ * during request processing, provided the exception matches one of the overridden
+ * handler methods.
+ */
 @ControllerAdvice
 public class GlobalRestExceptionHandler extends ResponseEntityExceptionHandler {
     private static final String detail = "%s (origin:%s,user:%s,request:%s)";
@@ -131,12 +147,23 @@ public class GlobalRestExceptionHandler extends ResponseEntityExceptionHandler {
     private ResponseEntity<Object> handle(Exception exception, WebRequest request, HttpStatus status) {
         ServletWebRequest req = (ServletWebRequest) request;
         logger.severe(String.format(detail, exception.getMessage(),
-                                    req.getRequest().getRemoteAddr(),
+                                    getRequestIp(req.getRequest()),
                                     req.getUserPrincipal() != null ? req.getUserPrincipal().getName() : "anonymous",
                                     req.getRequest().getRequestURI()));
         Map<String, Object> body = new HashMap<>();
         body.put("error", exception.getMessage());
         body.put("requestParameters", request.getParameterMap());
         return new ResponseEntity<>(body, status);
+    }
+
+    private String getRequestIp(HttpServletRequest httpRequest) {
+        final String xfHeader = httpRequest.getHeader("X-Forwarded-For");
+        final String ip;
+        if (xfHeader != null) {
+            ip = xfHeader.split(",")[0];
+        } else {
+            ip = httpRequest.getRemoteAddr();
+        }
+        return ip;
     }
 }

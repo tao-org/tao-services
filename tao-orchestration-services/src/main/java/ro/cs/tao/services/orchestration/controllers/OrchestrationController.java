@@ -25,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.cs.tao.EnumUtils;
+import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.datasource.param.CommonParameterNames;
 import ro.cs.tao.drmaa.Environment;
 import ro.cs.tao.execution.ExecutionException;
@@ -53,6 +54,21 @@ import ro.cs.tao.utils.StringUtilities;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * The OrchestrationController class provides RESTful endpoints for managing and orchestrating
+ * workflow executions, job management, and interactions with external services such as
+ * Web Processing Service (WPS) and Web Map Service (WMS). It supports functionalities
+ * for starting, stopping, pausing, resuming, and monitoring jobs, as well as managing
+ * job history and task statuses.
+ *
+ * This class extends the BaseController and serves as a centralized controller
+ * for workflow orchestration and job execution-related operations.
+ *
+ * Fields:
+ * - orchestrationService: Service to handle orchestration logic and workflow execution.
+ * - executionJobManager: Manages the execution and lifecycle of jobs.
+ * - executionTaskProvider: Provides task-related operations within a workflow.
+ */
 @RestController
 @RequestMapping("/orchestrator")
 @Tag(name = "Orchestration", description = "Operations related to workflow execution")
@@ -76,7 +92,21 @@ public class OrchestrationController extends BaseController {
             if (environments == null) {
                 environments = new HashSet<>();
             }
-            return prepareResult(environments.stream().sorted().collect(Collectors.toList()));
+            Environment defaultEnv = EnumUtils.getEnumConstantByString(Environment.class,
+                                                                       ConfigurationManager.getInstance()
+                                                                                           .getValue("execution.environment",
+                                                                                                     Environment.DEFAULT.friendlyName()));
+            if (defaultEnv == null) {
+                warn("Default execution environment not found. Using default value: '" + Environment.DEFAULT.friendlyName() + "'");
+                defaultEnv = Environment.DEFAULT;
+            }
+            final Environment de = defaultEnv;
+            final List<Environment> results = environments.stream()
+                                                          .filter(e -> e != de)
+                                                          .sorted()
+                                                          .collect(Collectors.toList());
+            results.add(0, defaultEnv);
+            return prepareResult(results);
         } catch (Exception ex) {
             return handleException(ex);
         }
@@ -119,11 +149,18 @@ public class OrchestrationController extends BaseController {
     /**
      * Returns the outputs of a workflow execution (a workflow can have more than one execution)
      * @param workflowId    The workflow identifier
+     * @param userId        The user that executed the workflow. Only an administrator can pass this value.
      */
     @RequestMapping(value = "/outputs/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ServiceResponse<?>> getWorkflowOutputs(@PathVariable("id") long workflowId) {
+    public ResponseEntity<ServiceResponse<?>> getWorkflowOutputs(@PathVariable("id") long workflowId,
+                                                                 @RequestParam(name = "userId", required = false) String userId) {
         try {
-            return prepareResult(orchestrationService.getWorkflowOutputs(workflowId));
+            boolean isUserIdSet = !StringUtilities.isNullOrEmpty(userId);
+            if (isUserIdSet && !currentUser().equals(userId) && !isCurrentUserAdmin()) {
+                return prepareResult(null, HttpStatus.UNAUTHORIZED);
+            }
+            final String user = isUserIdSet ? userId : currentUser();
+            return prepareResult(orchestrationService.getWorkflowOutputs(workflowId, user));
         } catch (Exception ex) {
             return handleException(ex);
         }

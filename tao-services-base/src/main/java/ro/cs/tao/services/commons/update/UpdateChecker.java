@@ -3,6 +3,9 @@ package ro.cs.tao.services.commons.update;
 import org.springframework.beans.factory.annotation.Autowired;
 import ro.cs.tao.configuration.ConfigurationManager;
 import ro.cs.tao.configuration.ConfigurationProvider;
+import ro.cs.tao.messaging.Messaging;
+import ro.cs.tao.messaging.Topic;
+import ro.cs.tao.security.SystemPrincipal;
 import ro.cs.tao.utils.FileUtilities;
 import ro.cs.tao.utils.NetStreamResponse;
 import ro.cs.tao.utils.NetUtils;
@@ -29,7 +32,6 @@ public class UpdateChecker {
         if (instance == null) {
             final Logger localLogger = Logger.getLogger(UpdateChecker.class.getName());
             final ConfigurationProvider cfgManager = ConfigurationManager.getInstance();
-            ShutdownHook.register(cfgManager.getApplicationHome());
             final String url = cfgManager.getValue("update.repository.url");
             if (url == null) {
                 localLogger.warning("Update repository url not defined");
@@ -163,8 +165,9 @@ public class UpdateChecker {
                                                  targetPath.resolve("update"));
                 final Map<String, String> checkSums = readChecksums(Files.readAllLines(checksumFile));
                 if (performUpdates(checkSums) > 0) {
-                    logger.info("Services modules have been updated. They will be restarted.");
-                    restartService.doRestart();
+                    logger.info("Services modules have been updated. They need to be restarted.");
+                    Messaging.send(SystemPrincipal.instance(), Topic.SYSTEM.getCategory(), "Services have been updated. A restart is needed to apply the changes.");
+                    //restartService.doRestart();
                 }
             } catch (IOException ex) {
                 logger.severe(String.format("Cannot retrieve update information from %s. Cause: %s",

@@ -129,7 +129,7 @@ public class NameTokenServiceImpl extends EntityService<NamingRule> implements N
 
     @Override
     public NamingRule update(NamingRule object) throws PersistenceException {
-        return namingRuleProvider.save(object);
+        return namingRuleProvider.update(object);
     }
 
     @Override

@@ -20,6 +20,17 @@ import ro.cs.tao.messaging.Message;
 import java.util.Calendar;
 
 /**
+ * A utility class responsible for converting objects of type {@link Message} to objects of
+ * type {@link Notification} and vice versa.
+ *
+ * This class implements the {@link Converter} interface and provides functionality to
+ * transfer data between the {@link Message} and {@link Notification} objects, preserving
+ * their data integrity while adapting their format as per the requirements of each type.
+ *
+ * The {@code MessageConverter} ensures the mapping of properties between the two types,
+ * such as timestamps, user details, topic, and message data. It also handles null values
+ * gracefully, ensuring that neither type faces NullPointerException during conversions.
+ *
  * @author Cosmin Cara
  */
 public class MessageConverter implements Converter<Message, Notification> {

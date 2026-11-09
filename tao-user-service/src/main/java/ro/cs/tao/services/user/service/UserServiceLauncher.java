@@ -26,10 +26,14 @@ import ro.cs.tao.services.commons.ServiceLauncher;
 @Configuration
 @ImportResource("classpath:user-service-context.xml")
 
-public class UserServiceLauncher implements ServiceLauncher {
+public class UserServiceLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(UserServiceLauncher.class, args);
+    }
+
+    public UserServiceLauncher() {
+        super();
     }
 
     @Override

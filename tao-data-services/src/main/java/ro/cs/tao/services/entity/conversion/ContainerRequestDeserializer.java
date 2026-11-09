@@ -11,6 +11,15 @@ import ro.cs.tao.services.entity.beans.ContainerRequest;
 
 import java.io.IOException;
 
+/**
+ * Custom deserializer for the {@link ContainerRequest} class.
+ * This deserializer is responsible for converting JSON input into a {@link ContainerRequest} instance,
+ * with special handling for the "containerDescriptor" property to map it to a {@link Container} object.
+ * Extends {@link StdDeserializer} for Jackson-based deserialization.
+ *
+ * This class provides two constructors for flexibility and overrides the {@code deserialize} method
+ * to implement the custom deserialization logic.
+ */
 public class ContainerRequestDeserializer extends StdDeserializer<ContainerRequest> {
 
     public ContainerRequestDeserializer(Class<ContainerRequest> vc) {

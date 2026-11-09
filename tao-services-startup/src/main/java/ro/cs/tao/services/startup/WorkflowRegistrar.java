@@ -7,6 +7,36 @@ import ro.cs.tao.workflow.WorkflowDescriptor;
 
 import java.util.Set;
 
+/**
+ * WorkflowRegistrar is responsible for initializing and registering system-level
+ * workflow descriptors for all {@link WorkflowBuilder} services available in the
+ * {@link ServiceRegistry}. It executes this process during the start-up phase of
+ * its lifecycle.
+ *
+ * This class is a part of the application lifecycle and extends {@link BaseLifeCycle},
+ * inheriting its lifecycle management methods. It directly interacts with
+ * {@link ServiceRegistryManager} to retrieve and process {@link WorkflowBuilder} services.
+ *
+ * During startup, the class retrieves all {@link WorkflowBuilder} services from the
+ * {@link ServiceRegistry} and attempts to generate and register corresponding
+ * {@link WorkflowDescriptor}s for system workflows. It logs the outcome of
+ * each registration process separately for troubleshooting or debugging purposes.
+ *
+ * The class is structured with the following lifecycle methods inherited and implemented:
+ *
+ * - {@link #onStartUp()}:
+ *   Executes the logic for processing and registering system-level workflow descriptors.
+ *   If no services are found, it logs an informational message.
+ *
+ * - {@link #onShutdown()}:
+ *   No specific shutdown behavior is implemented.
+ *
+ * - {@link #priority()}:
+ *   Returns the priority level for the component's lifecycle execution.
+ *
+ * Exceptions occurring during workflow descriptor creation are caught and logged
+ * at the warning level.
+ */
 public class WorkflowRegistrar extends BaseLifeCycle {
     @Override
     public int priority() {

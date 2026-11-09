@@ -15,6 +15,9 @@ import ro.cs.tao.services.scheduling.beans.SchedulingRequest;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Controller for managing scheduled executions via RESTful endpoints.
+ */
 @RestController
 @RequestMapping("/scheduling")
 @Tag(name = "Scheduled Executions", description = "Endpoint for managing scheduled executions")

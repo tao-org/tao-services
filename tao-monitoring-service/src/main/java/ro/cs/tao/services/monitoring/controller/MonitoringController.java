@@ -30,6 +30,7 @@ import ro.cs.tao.execution.model.ExecutionStatus;
 import ro.cs.tao.execution.model.ExecutionTaskSummary;
 import ro.cs.tao.execution.monitor.NodeManager;
 import ro.cs.tao.execution.monitor.RuntimeInfo;
+import ro.cs.tao.execution.monitor.RuntimeInfoCluster;
 import ro.cs.tao.messaging.Message;
 import ro.cs.tao.messaging.Messaging;
 import ro.cs.tao.messaging.Topic;
@@ -63,6 +64,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Controller responsible for monitoring node resources, system notifications, and metrics.
+ * This class provides endpoints to access snapshots of node resources, statuses of nodes,
+ * system notifications, and collected metrics. It also allows the management of metrics collection settings.
+ *
  * @author Cosmin Cara
  */
 @RestController
@@ -122,6 +127,21 @@ public class MonitoringController extends BaseController {
     public ResponseEntity<ServiceResponse<?>> getNodeSnapshot(@PathVariable("host") String host) {
         if (isCurrentUserAdmin()) {
             final RuntimeInfo snapshot = monitoringService.getNodeSnapshot(host);
+            if (snapshot == null) {
+                return prepareResult("No information available for node ['" + host + "']", ResponseStatus.FAILED);
+            }
+            return prepareResult(snapshot);
+        } else {
+            return prepareResult("Not authorized", ResponseStatus.FAILED, HttpStatus.FORBIDDEN);
+        }
+    }
+    /**
+     * Returns a snapshot of the resources for a cluster node
+     */
+    @RequestMapping(value = "/monitor/cluster/{host:.+}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ServiceResponse<?>> getClusterSnapshot(@PathVariable("host") String host) {
+        if (isCurrentUserAdmin()) {
+            final RuntimeInfoCluster snapshot = monitoringService.getClusterSnapshot(host);
             if (snapshot == null) {
                 return prepareResult("No information available for node ['" + host + "']", ResponseStatus.FAILED);
             }
@@ -235,11 +255,27 @@ public class MonitoringController extends BaseController {
         }
     }
 
+    /**
+     * Endpoint to retrieve the collected metrics data.
+     * This method fetches a list of metrics by invoking an internal
+     * collection method and wraps the result into a response entity.
+     *
+     * @return a {@link ResponseEntity} containing a {@link ServiceResponse} object.
+     *         The response includes the list of collected metrics in the data field of the ServiceResponse.
+     */
     @RequestMapping(value = "/metrics", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> getMetrics() {
         return prepareResult(collectMetrics());
     }
 
+    /**
+     * Enables the metrics collection by scheduling a periodic task to collect data at a fixed interval.
+     * Cancels any existing tasks and timers before scheduling a new one.
+     *
+     * @return a {@link ResponseEntity} containing a {@link ServiceResponse} object.
+     *         The response indicates whether the operation was successfully carried out
+     *         or if an exception occurred during the process.
+     */
     @RequestMapping(value = "/metrics/enable", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> enableMetrics() {
         try {
@@ -255,6 +291,13 @@ public class MonitoringController extends BaseController {
         }
     }
 
+    /**
+     * Disables the metrics collection by canceling the associated timer task.
+     *
+     * @return A {@link ResponseEntity} containing a {@link ServiceResponse} object.
+     *         The response indicates whether the operation was successfully carried out
+     *         or if an exception occurred during the process.
+     */
     @RequestMapping(value = "/metrics/disable", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ServiceResponse<?>> disableMetrics() {
         try {

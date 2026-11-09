@@ -23,10 +23,14 @@ import ro.cs.tao.services.commons.ServiceLauncher;
 @Configuration
 @ImportResource("classpath:progress-report-service-context.xml")
 
-public class ProgressReportLauncher implements ServiceLauncher {
+public class ProgressReportLauncher extends ServiceLauncher {
 
     public static void main(String[] args) {
         SpringApplication.run(ProgressReportLauncher.class, args);
+    }
+
+    public ProgressReportLauncher() {
+        super();
     }
 
     @Override
